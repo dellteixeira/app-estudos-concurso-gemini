@@ -289,7 +289,7 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO SUPABASE
+        // CONFIGURAÇÃO SUPABASE COM SUAS CREDENCIAIS DEFINIDAS
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -407,7 +407,7 @@
             }
         }
 
-        // --- IMPORTAR JSON ---
+        // --- IMPORTAR JSON MELHORADO ---
         async function importJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -415,25 +415,57 @@
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    const data = JSON.parse(e.target.result);
+                    const rawData = JSON.parse(e.target.result);
                     const user = (await supabaseClient.auth.getUser()).data.user;
+                    let formattedData = [];
 
-                    const formattedData = data.map(item => ({
-                        materia: item.materia || item.disciplina || 'Geral',
-                        assunto: item.assunto || item.topico || 'Geral',
-                        prioridade: item.prioridade || item.peso || 1,
-                        teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
-                        user_id: user.id
-                    }));
+                    // 1. Trata se o JSON for um Array de objetos
+                    if (Array.isArray(rawData)) {
+                        formattedData = rawData.map(item => ({
+                            materia: item.materia || item.disciplina || 'Geral',
+                            assunto: item.assunto || item.topico || item.nome || 'Geral',
+                            prioridade: parseInt(item.prioridade || item.peso || 1),
+                            teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
+                            user_id: user.id
+                        }));
+                    } 
+                    // 2. Trata se o JSON for um Objeto chave/valor (Ex: {"Português": ["Sintaxe", "Crase"]})
+                    else if (typeof rawData === 'object' && rawData !== null) {
+                        Object.keys(rawData).forEach((materiaKey, index) => {
+                            const assuntos = rawData[materiaKey];
+                            if (Array.isArray(assuntos)) {
+                                assuntos.forEach(assuntoItem => {
+                                    formattedData.push({
+                                        materia: materiaKey,
+                                        assunto: typeof assuntoItem === 'string' ? assuntoItem : (assuntoItem.nome || assuntoItem.assunto || 'Tópico'),
+                                        prioridade: typeof assuntoItem === 'object' ? parseInt(assuntoItem.prioridade || assuntoItem.peso || index + 1) : index + 1,
+                                        teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
+                                        user_id: user.id
+                                    });
+                                });
+                            }
+                        });
+                    }
 
-                    await supabaseClient.from('edital').insert(formattedData);
-                    alert('Edital importado com sucesso!');
-                    loadData();
+                    if (formattedData.length === 0) {
+                        alert('Nenhum tópico válido encontrado no arquivo JSON.');
+                        return;
+                    }
+
+                    const { error } = await supabaseClient.from('edital').insert(formattedData);
+                    
+                    if (error) {
+                        alert('Erro ao salvar no banco: ' + error.message);
+                    } else {
+                        alert(`Sucesso! ${formattedData.length} tópicos foram importados.`);
+                        loadData();
+                    }
                 } catch (err) {
-                    alert('Erro ao ler arquivo JSON. Verifique a estrutura do arquivo.');
+                    alert('Erro na leitura do JSON: Verifique a formatação do arquivo.');
                 }
             };
             reader.readAsText(file);
+            event.target.value = ''; // Reseta o campo para permitir importar o mesmo arquivo se desejar
         }
 
         // --- GRÁFICO (CHART.JS) ---
@@ -443,7 +475,7 @@
 
             editalItems.forEach(item => {
                 if (!counts[item.materia]) counts[item.materia] = { total: 0, concluido: 0 };
-                counts[item.materia].total += 5; // 5 checkpoints (Teoria, Questões, 3 Revs)
+                counts[item.materia].total += 5; // 5 etapas (Teoria, Questões, 3 Revs)
                 if (item.teoria) counts[item.materia].concluido++;
                 if (item.questoes) counts[item.materia].concluido++;
                 if (item.rev_24h) counts[item.materia].concluido++;
