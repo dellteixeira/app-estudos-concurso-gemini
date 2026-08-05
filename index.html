@@ -231,7 +231,21 @@
 
         .timer-settings input { width: 60px; text-align: center; }
 
-        /* CALENDÁRIO SEMANAL */
+        /* CALENDÁRIO SEMANAL & CONTABILIZADOR DE HORAS */
+        .weekly-hours-banner {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid var(--primary-blue);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--header-materia-text);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -253,10 +267,18 @@
         .day-header {
             font-weight: 700;
             text-align: center;
-            padding-bottom: 6px;
+            padding-bottom: 4px;
             border-bottom: 2px solid var(--border-color);
             font-size: 0.9rem;
             color: var(--header-materia-text);
+        }
+
+        .day-hours-total {
+            font-size: 0.75rem;
+            text-align: center;
+            color: #10b981;
+            font-weight: 600;
+            margin-top: -6px;
         }
 
         .schedule-item {
@@ -264,12 +286,13 @@
             border: 1px solid var(--border-color);
             padding: 8px;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             position: relative;
         }
 
         .schedule-item .time { font-weight: 700; color: var(--primary-blue); display: block; margin-bottom: 2px; }
-        .schedule-item .subject { word-break: break-word; font-weight: 600; }
+        .schedule-item .subject { word-break: break-word; font-weight: 700; display: block; }
+        .schedule-item .topic { word-break: break-word; opacity: 0.85; font-size: 0.78rem; margin-top: 2px; display: block; }
         .schedule-item .btn-del-slot {
             position: absolute; top: 2px; right: 4px; background: none; border: none;
             color: #94a3b8; cursor: pointer; font-size: 0.85rem;
@@ -324,7 +347,7 @@
             font-weight: 600;
         }
 
-        /* ESTILO DO ACCORDION POR MATÉRIA */
+        /* ACCORDION */
         .materia-header-row {
             background-color: var(--header-materia-bg);
             color: var(--header-materia-text);
@@ -477,13 +500,17 @@
             </div>
         </div>
 
-        <!-- ABA 2: CALENDÁRIO SEMANAL DE ESTUDOS -->
+        <!-- ABA 2: CALENDÁRIO SEMANAL DE ESTUDOS COM CONTABILIZAÇÃO DE HORAS -->
         <div id="tab-calendario" class="tab-content">
             <div class="card">
                 <h3>📅 Cronograma Semanal de Estudos</h3>
-                <p style="margin-bottom: 1rem; font-size: 0.9rem; opacity: 0.8;">
-                    Monte sua rotina semanal vinculando os horários com as matérias cadastradas no edital.
-                </p>
+                
+                <!-- BANNER DE HORAS SEMANAIS -->
+                <div class="weekly-hours-banner">
+                    <span>⏱️ Total Planejado para a Semana:</span>
+                    <span id="weeklyHoursTotal">0h 00min</span>
+                </div>
+
                 <div class="calendar-grid" id="calendarGrid">
                     <!-- Dias da semana preenchidos via JS -->
                 </div>
@@ -492,7 +519,7 @@
 
     </div>
 
-    <!-- MODAL: CADASTRAR NOVO CONCURSO (COM DATA DA PROVA) -->
+    <!-- MODAL: CADASTRAR NOVO CONCURSO -->
     <div class="modal-overlay" id="modalNovoConcurso">
         <div class="modal">
             <h3>Cadastrar Novo Concurso</h3>
@@ -511,7 +538,7 @@
         </div>
     </div>
 
-    <!-- MODAL: ADICIONAR HORÁRIO AO CALENDÁRIO SEMANAL -->
+    <!-- MODAL: ADICIONAR HORÁRIO AO CALENDÁRIO (MATÉRIA + ASSUNTO VINCULADOS) -->
     <div class="modal-overlay" id="modalSlot">
         <div class="modal">
             <h3>Adicionar Horário de Estudo</h3>
@@ -524,8 +551,15 @@
 
             <div class="form-group">
                 <label for="slotMateriaSelect">Matéria (Vinculada ao Edital Importado)</label>
-                <select id="slotMateriaSelect">
-                    <!-- Preenchido dinamicamente com as matérias do JSON/Edital -->
+                <select id="slotMateriaSelect" onchange="onMateriaSelectChange(this.value)">
+                    <!-- Preenchido dinamicamente -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="slotAssuntoSelect">Assunto (Vinculado à Matéria Escolhida)</label>
+                <select id="slotAssuntoSelect">
+                    <!-- Preenchido dinamicamente baseado na matéria -->
                 </select>
             </div>
 
@@ -605,7 +639,7 @@
             }
         }
 
-        // --- GERENCIAMENTO E REMOÇÃO DE CONCURSOS ---
+        // --- GERENCIAMENTO DE CONCURSOS ---
         function saveConcursosMetadata() {
             localStorage.setItem('concursos_metadata', JSON.stringify(concursosMetadata));
         }
@@ -666,10 +700,10 @@
 
         function removerConcursoAtual() {
             if (currentConcurso === 'Concurso Geral') {
-                return alert('O "Concurso Geral" padrão não pode ser removido. Você pode apenas apagar seu edital.');
+                return alert('O "Concurso Geral" padrão não pode ser removido.');
             }
 
-            if (confirm(`Tem certeza que deseja apagar o concurso "${currentConcurso}"? Isso apagará todos os tópicos e a grade horária dele.`)) {
+            if (confirm(`Tem certeza que deseja apagar o concurso "${currentConcurso}"?`)) {
                 allEditalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') !== currentConcurso);
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
 
@@ -716,7 +750,33 @@
             renderCalendar();
         }
 
-        // --- CALENDÁRIO SEMANAL VINCULADO AO EDITAL ---
+        // --- UTILITÁRIO DE CÁLCULO DE HORAS ---
+        function parseTimeIntervalToMinutes(timeIntervalStr) {
+            if (!timeIntervalStr) return 0;
+            const parts = timeIntervalStr.split('-').map(s => s.trim());
+            if (parts.length !== 2) return 0;
+
+            const parseMinutes = (str) => {
+                const [h, m] = str.split(':').map(Number);
+                if (isNaN(h)) return null;
+                return (h * 60) + (isNaN(m) ? 0 : m);
+            };
+
+            const start = parseMinutes(parts[0]);
+            const end = parseMinutes(parts[1]);
+
+            if (start === null || end === null || end <= start) return 0;
+            return end - start;
+        }
+
+        function formatMinutesToHours(totalMinutes) {
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            if (m === 0) return `${h}h`;
+            return `${h}h ${m}min`;
+        }
+
+        // --- CALENDÁRIO SEMANAL DE ESTUDOS ---
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
             grid.innerHTML = '';
@@ -724,31 +784,47 @@
             const currentMeta = concursosMetadata[currentConcurso] || {};
             const schedule = currentMeta.schedule || {};
 
+            let grandTotalMinutes = 0;
+
             DIAS_SEMANA.forEach(dia => {
                 const col = document.createElement('div');
                 col.className = 'day-column';
 
                 let htmlSlots = '';
                 const slots = schedule[dia] || [];
+                let dayTotalMinutes = 0;
 
                 slots.forEach((item, index) => {
+                    const mins = parseTimeIntervalToMinutes(item.horario);
+                    dayTotalMinutes += mins;
+
+                    const assuntoHtml = item.assunto ? `<span class="topic">📌 ${item.assunto}</span>` : '';
+
                     htmlSlots += `
                         <div class="schedule-item">
                             <button class="btn-del-slot" onclick="removerSlot('${dia}', ${index})">✕</button>
                             <span class="time">${item.horario}</span>
                             <span class="subject">${item.materia}</span>
+                            ${assuntoHtml}
                         </div>
                     `;
                 });
 
+                grandTotalMinutes += dayTotalMinutes;
+
+                const dayHoursText = dayTotalMinutes > 0 ? `Total: ${formatMinutesToHours(dayTotalMinutes)}` : '0h';
+
                 col.innerHTML = `
                     <div class="day-header">${dia}</div>
+                    <div class="day-hours-total">${dayHoursText}</div>
                     ${htmlSlots}
                     <button class="btn-add-slot" onclick="openModalSlot('${dia}')">+ Adicionar</button>
                 `;
 
                 grid.appendChild(col);
             });
+
+            document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(grandTotalMinutes);
         }
 
         function openModalSlot(dia) {
@@ -760,14 +836,41 @@
             const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
 
             if (materiasValidas.length === 0) {
-                selectMat.innerHTML = '<option value="Estudo Geral">Estudo Geral (Importe o JSON para ver matérias)</option>';
+                selectMat.innerHTML = '<option value="">Estudo Geral</option>';
+                onMateriaSelectChange('');
             } else {
                 materiasValidas.forEach(m => {
                     selectMat.innerHTML += `<option value="${m}">${m}</option>`;
                 });
+                onMateriaSelectChange(materiasValidas[0]);
             }
 
             document.getElementById('modalSlot').style.display = 'flex';
+        }
+
+        function onMateriaSelectChange(selectedMateria) {
+            const selectAssunto = document.getElementById('slotAssuntoSelect');
+            selectAssunto.innerHTML = '';
+
+            if (!selectedMateria) {
+                selectAssunto.innerHTML = '<option value="">Revisão Geral / Livre</option>';
+                return;
+            }
+
+            const assuntos = editalItems
+                .filter(i => (i.materia || 'Geral') === selectedMateria)
+                .map(i => i.assunto);
+
+            const uniqueAssuntos = Array.from(new Set(assuntos));
+
+            if (uniqueAssuntos.length === 0) {
+                selectAssunto.innerHTML = '<option value="">Revisão Geral da Matéria</option>';
+            } else {
+                selectAssunto.innerHTML = '<option value="">-- Todos ou Geral --</option>';
+                uniqueAssuntos.forEach(a => {
+                    selectAssunto.innerHTML += `<option value="${a}">${a}</option>`;
+                });
+            }
         }
 
         function closeModalSlot() {
@@ -778,9 +881,10 @@
         function salvarSlot() {
             const dia = document.getElementById('slotDiaSemana').value;
             const horario = document.getElementById('slotHorario').value.trim();
-            const materia = document.getElementById('slotMateriaSelect').value;
+            const materia = document.getElementById('slotMateriaSelect').value || 'Estudo Geral';
+            const assunto = document.getElementById('slotAssuntoSelect').value || '';
 
-            if (!horario) return alert('Informe o horário de estudo.');
+            if (!horario) return alert('Informe o horário de estudo (ex: 08:00 - 10:00).');
 
             if (!concursosMetadata[currentConcurso]) {
                 concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
@@ -792,7 +896,7 @@
                 concursosMetadata[currentConcurso].schedule[dia] = [];
             }
 
-            concursosMetadata[currentConcurso].schedule[dia].push({ horario, materia });
+            concursosMetadata[currentConcurso].schedule[dia].push({ horario, materia, assunto });
             saveConcursosMetadata();
             renderCalendar();
             closeModalSlot();
@@ -826,7 +930,7 @@
             if (local) allEditalItems = JSON.parse(local);
         }
 
-        // --- RENDERIZAÇÃO TABELA EXPANSÍVEL POR MATÉRIA (ACCORDION REFORÇADO) ---
+        // --- RENDERIZAÇÃO TABELA EXPANSÍVEL POR MATÉRIA (ACCORDION) ---
         function renderTable() {
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
@@ -1048,7 +1152,6 @@
                         return;
                     }
 
-                    // Abre todas as sanfonas após importar
                     formattedData.forEach(d => openMaterias[d.materia] = true);
 
                     allEditalItems = [...allEditalItems, ...formattedData];
@@ -1169,7 +1272,7 @@
             });
         }
 
-        // --- POMODORO EDITÁVEL ---
+        // --- POMODORO ---
         let timerInterval = null;
         let isFocusTime = true;
         let timeLeft = 25 * 60;
@@ -1234,6 +1337,7 @@
         window.confirmarNovoConcurso = confirmarNovoConcurso;
         window.removerConcursoAtual = removerConcursoAtual;
         window.openModalSlot = openModalSlot;
+        window.onMateriaSelectChange = onMateriaSelectChange;
         window.closeModalSlot = closeModalSlot;
         window.salvarSlot = salvarSlot;
         window.removerSlot = removerSlot;
