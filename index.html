@@ -15,8 +15,11 @@
             --text-color: #333333;
             --border-color: #e2e8f0;
             --primary-blue: #2563eb;
+            --primary-hover: #1d4ed8;
             --header-materia-bg: #e0e7ff;
             --header-materia-text: #1e3a8a;
+            --danger-bg: #fee2e2;
+            --danger-text: #ef4444;
         }
 
         body.dark-mode {
@@ -27,6 +30,8 @@
             --primary-blue: #3b82f6;
             --header-materia-bg: #1e293b;
             --header-materia-text: #93c5fd;
+            --danger-bg: #451a1a;
+            --danger-text: #f87171;
         }
 
         * {
@@ -96,6 +101,22 @@
             padding: 0.5rem 1rem;
             border-radius: 8px;
             border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .countdown-badge {
+            background: #eff6ff;
+            color: var(--primary-blue);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: 1px solid #bfdbfe;
+        }
+        body.dark-mode .countdown-badge {
+            background: #1e3a8a;
+            color: #93c5fd;
+            border-color: #1e40af;
         }
 
         .action-bar {
@@ -180,6 +201,70 @@
         }
 
         .timer-settings input { width: 60px; text-align: center; }
+
+        /* CALENDÁRIO SEMANAL */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            overflow-x: auto;
+        }
+
+        .day-column {
+            background: rgba(0,0,0,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            min-width: 130px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .day-header {
+            font-weight: 700;
+            text-align: center;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .schedule-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            position: relative;
+        }
+
+        .schedule-item .time { font-weight: 700; color: var(--primary-blue); display: block; margin-bottom: 2px; }
+        .schedule-item .subject { word-break: break-word; font-weight: 600; }
+        .schedule-item .btn-del-slot {
+            position: absolute; top: 2px; right: 4px; background: none; border: none;
+            color: #94a3b8; cursor: pointer; font-size: 0.85rem;
+        }
+        .schedule-item .btn-del-slot:hover { color: #ef4444; }
+
+        .btn-add-slot {
+            width: 100%; border: 1px dashed var(--border-color); background: transparent;
+            color: var(--text-color); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 0.8rem;
+        }
+        .btn-add-slot:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+
+        /* MODAIS */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal {
+            background: var(--card-bg); color: var(--text-color); padding: 24px;
+            border-radius: 12px; width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 16px;
+            border: 1px solid var(--border-color);
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.85rem; font-weight: 600; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
         .form-row {
             display: flex;
@@ -266,13 +351,15 @@
         <header>
             <h2>🎯 Painel de Estudos</h2>
             
-            <!-- SELETOR DE CONCURSOS -->
+            <!-- SELETOR E GERENCIADOR DE CONCURSOS -->
             <div class="concurso-selector-bar">
                 <label>📌 <strong>Concurso:</strong></label>
                 <select id="concursoSelect" onchange="changeConcurso(this.value)">
                     <!-- Preenchido via JS -->
                 </select>
-                <button class="btn btn-primary btn-sm" onclick="addNovoConcurso()">➕ Novo</button>
+                <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">➕ Novo</button>
+                <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">🗑️ Excluir</button>
+                <div id="countdownBadge" class="countdown-badge">Sem data de prova</div>
             </div>
 
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
@@ -309,6 +396,14 @@
             <div class="card">
                 <h3>📊 Progresso Geral de Estudo</h3>
                 <canvas id="progressChart" height="160"></canvas>
+            </div>
+        </div>
+
+        <!-- CALENDÁRIO SEMANAL DE ESTUDOS -->
+        <div class="card">
+            <h3>📅 Cronograma Semanal de Estudos</h3>
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Preenchido via JS -->
             </div>
         </div>
 
@@ -351,17 +446,65 @@
         </div>
     </div>
 
+    <!-- MODAL: CADASTRAR NOVO CONCURSO (COM DATA DA PROVA) -->
+    <div class="modal-overlay" id="modalNovoConcurso">
+        <div class="modal">
+            <h3>Cadastrar Novo Concurso</h3>
+            <div class="form-group">
+                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
+                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
+            </div>
+            <div class="form-group">
+                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
+                <input type="date" id="inputDataConcurso">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADICIONAR HORÁRIO AO CALENDÁRIO SEMANAL -->
+    <div class="modal-overlay" id="modalSlot">
+        <div class="modal">
+            <h3>Adicionar Horário de Estudo</h3>
+            <input type="hidden" id="slotDiaSemana">
+            
+            <div class="form-group">
+                <label for="slotHorario">Horário (ex: 08:00 - 10:00)</label>
+                <input type="text" id="slotHorario" placeholder="08:00 - 10:00">
+            </div>
+
+            <div class="form-group">
+                <label for="slotMateriaSelect">Matéria (Vincular do Edital)</label>
+                <select id="slotMateriaSelect">
+                    <!-- Preenchido dinamicamente com as matérias importadas -->
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalSlot()">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarSlot()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+
         let myChart = null;
         let allEditalItems = [];
         let editalItems = [];
         let openMaterias = {}; 
-        let concursos = ['Concurso Geral'];
         let currentConcurso = 'Concurso Geral';
+        
+        // Estrutura complementar de concursos (metadados como data da prova e calendário)
+        let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
         // --- AUTH ---
         async function handleSignUp() {
@@ -404,19 +547,30 @@
             document.body.classList.toggle('dark-mode');
         }
 
-        // --- GERENCIAMENTO DE CONCURSOS ---
+        // --- GERENCIAMENTO E REMOÇÃO DE CONCURSOS ---
+        function saveConcursosMetadata() {
+            localStorage.setItem('concursos_metadata', JSON.stringify(concursosMetadata));
+        }
+
         function renderConcursoSelector() {
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
             
-            // Extrai lista única de concursos
-            const set = new Set(concursos);
+            const set = new Set(Object.keys(concursosMetadata));
+            set.add('Concurso Geral');
             allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
-            concursos = Array.from(set);
+            
+            const list = Array.from(set);
 
-            concursos.forEach(c => {
+            if (!list.includes(currentConcurso)) {
+                currentConcurso = list[0] || 'Concurso Geral';
+            }
+
+            list.forEach(c => {
                 select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`;
             });
+
+            updateCountdownBadge();
         }
 
         function changeConcurso(val) {
@@ -424,14 +578,78 @@
             filterDataByConcurso();
         }
 
-        function addNovoConcurso() {
-            const nome = prompt('Digite o nome do novo concurso (ex: Polícia Federal 2026):');
-            if (nome && nome.trim()) {
-                const cleanName = nome.trim();
-                if (!concursos.includes(cleanName)) concursos.push(cleanName);
-                currentConcurso = cleanName;
+        function openModalNovoConcurso() {
+            document.getElementById('modalNovoConcurso').style.display = 'flex';
+        }
+
+        function closeModalNovoConcurso() {
+            document.getElementById('modalNovoConcurso').style.display = 'none';
+            document.getElementById('inputNomeConcurso').value = '';
+            document.getElementById('inputDataConcurso').value = '';
+        }
+
+        function confirmarNovoConcurso() {
+            const nome = document.getElementById('inputNomeConcurso').value.trim();
+            const dataProva = document.getElementById('inputDataConcurso').value;
+
+            if (!nome) return alert('Digite o nome do concurso.');
+
+            if (!concursosMetadata[nome]) {
+                concursosMetadata[nome] = { dataProva: dataProva || null, schedule: {} };
+            } else {
+                concursosMetadata[nome].dataProva = dataProva || null;
+            }
+
+            saveConcursosMetadata();
+            currentConcurso = nome;
+            closeModalNovoConcurso();
+            filterDataByConcurso();
+        }
+
+        function removerConcursoAtual() {
+            if (currentConcurso === 'Concurso Geral') {
+                return alert('O "Concurso Geral" padrão não pode ser removido. Você pode apenas apagar seu edital.');
+            }
+
+            if (confirm(`Tem certeza que deseja apagar o concurso "${currentConcurso}"? Isso apagará todos os tópicos e a grade horária dele.`)) {
+                // Remove dos itens locais do edital
+                allEditalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') !== currentConcurso);
+                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+
+                // Remove dos metadados
+                delete concursosMetadata[currentConcurso];
+                saveConcursosMetadata();
+
+                // Remove do Supabase se online
+                if (navigator.onLine) {
+                    supabaseClient.auth.getUser().then(({ data }) => {
+                        if (data?.user) {
+                            supabaseClient.from('edital').delete().eq('concurso', currentConcurso).eq('user_id', data.user.id);
+                        }
+                    });
+                }
+
+                currentConcurso = 'Concurso Geral';
                 filterDataByConcurso();
             }
+        }
+
+        function updateCountdownBadge() {
+            const badge = document.getElementById('countdownBadge');
+            const dataStr = concursosMetadata[currentConcurso]?.dataProva;
+
+            if (!dataStr) {
+                badge.textContent = "Data da prova não definida";
+                return;
+            }
+
+            const dataProva = new Date(dataStr + "T00:00:00");
+            const hoje = new Date();
+            const diffDias = Math.ceil((dataProva - hoje) / (1000 * 60 * 60 * 24));
+
+            if (diffDias < 0) badge.textContent = "Prova realizada";
+            else if (diffDias === 0) badge.textContent = "🚨 Prova HOJE!";
+            else badge.textContent = `⏳ Faltam ${diffDias} dias`;
         }
 
         function filterDataByConcurso() {
@@ -440,6 +658,98 @@
             document.getElementById('edital-title').innerText = `📚 Edital: ${currentConcurso}`;
             renderTable();
             renderChart();
+            renderCalendar();
+        }
+
+        // --- CALENDÁRIO SEMANAL COM VÍNCULO DE MATÉRIAS ---
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            const currentMeta = concursosMetadata[currentConcurso] || {};
+            const schedule = currentMeta.schedule || {};
+
+            DIAS_SEMANA.forEach(dia => {
+                const col = document.createElement('div');
+                col.className = 'day-column';
+
+                let htmlSlots = '';
+                const slots = schedule[dia] || [];
+
+                slots.forEach((item, index) => {
+                    htmlSlots += `
+                        <div class="schedule-item">
+                            <button class="btn-del-slot" onclick="removerSlot('${dia}', ${index})">✕</button>
+                            <span class="time">${item.horario}</span>
+                            <span class="subject">${item.materia}</span>
+                        </div>
+                    `;
+                });
+
+                col.innerHTML = `
+                    <div class="day-header">${dia}</div>
+                    ${htmlSlots}
+                    <button class="btn-add-slot" onclick="openModalSlot('${dia}')">+ Adicionar</button>
+                `;
+
+                grid.appendChild(col);
+            });
+        }
+
+        function openModalSlot(dia) {
+            document.getElementById('slotDiaSemana').value = dia;
+            
+            // Popula o select de matérias vinculando dos dados do edital importado
+            const selectMat = document.getElementById('slotMateriaSelect');
+            selectMat.innerHTML = '';
+
+            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            if (materiasValidas.length === 0) {
+                selectMat.innerHTML = '<option value="Estudo Geral">Estudo Geral (Importe um JSON para ver as matérias)</option>';
+            } else {
+                materiasValidas.forEach(m => {
+                    selectMat.innerHTML += `<option value="${m}">${m}</option>`;
+                });
+            }
+
+            document.getElementById('modalSlot').style.display = 'flex';
+        }
+
+        function closeModalSlot() {
+            document.getElementById('modalSlot').style.display = 'none';
+            document.getElementById('slotHorario').value = '';
+        }
+
+        function salvarSlot() {
+            const dia = document.getElementById('slotDiaSemana').value;
+            const horario = document.getElementById('slotHorario').value.trim();
+            const materia = document.getElementById('slotMateriaSelect').value;
+
+            if (!horario) return alert('Informe o horário de estudo.');
+
+            if (!concursosMetadata[currentConcurso]) {
+                concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
+            }
+            if (!concursosMetadata[currentConcurso].schedule) {
+                concursosMetadata[currentConcurso].schedule = {};
+            }
+            if (!concursosMetadata[currentConcurso].schedule[dia]) {
+                concursosMetadata[currentConcurso].schedule[dia] = [];
+            }
+
+            concursosMetadata[currentConcurso].schedule[dia].push({ horario, materia });
+            saveConcursosMetadata();
+            renderCalendar();
+            closeModalSlot();
+        }
+
+        function removerSlot(dia, index) {
+            if (concursosMetadata[currentConcurso]?.schedule?.[dia]) {
+                concursosMetadata[currentConcurso].schedule[dia].splice(index, 1);
+                saveConcursosMetadata();
+                renderCalendar();
+            }
         }
 
         // --- DADOS LOCAL-FIRST ---
@@ -627,7 +937,7 @@
             }
         }
 
-        // --- PARSER JSON AVANÇADO (SUPORTE A DUMP DE BANCO E ESTRUTURAS COMPLEXAS) ---
+        // --- PARSER JSON AVANÇADO ---
         async function importJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -639,15 +949,12 @@
                     const user = (await supabaseClient.auth.getUser())?.data?.user;
                     let formattedData = [];
 
-                    // Remove wrappers genéricos de export/dump de API
                     if (rawData.payload_public_edital) rawData = rawData.payload_public_edital;
                     if (rawData.payload) rawData = rawData.payload;
                     if (rawData.data) rawData = rawData.data;
 
-                    // Caso 1: Array de Objetos
                     if (Array.isArray(rawData)) {
                         formattedData = rawData.map((item, idx) => {
-                            // Trata nomes de matérias caso venha de dump de tabela
                             let mName = item.materia || item.disciplina || item.subject;
                             if (!mName || mName === 'payload_public_edital') mName = 'Matéria Importada';
 
@@ -661,9 +968,7 @@
                                 user_id: user ? user.id : null
                             };
                         });
-                    } 
-                    // Caso 2: Objeto Aninhado { "Direito Penal": ["Art. 121", ...], "Português": [...] }
-                    else if (typeof rawData === 'object' && rawData !== null) {
+                    } else if (typeof rawData === 'object' && rawData !== null) {
                         let count = 0;
                         Object.keys(rawData).forEach((materiaKey, index) => {
                             const assuntos = rawData[materiaKey];
@@ -866,7 +1171,14 @@
         window.toggleAllAccordions = toggleAllAccordions;
         window.updateMateriaPriority = updateMateriaPriority;
         window.changeConcurso = changeConcurso;
-        window.addNovoConcurso = addNovoConcurso;
+        window.openModalNovoConcurso = openModalNovoConcurso;
+        window.closeModalNovoConcurso = closeModalNovoConcurso;
+        window.confirmarNovoConcurso = confirmarNovoConcurso;
+        window.removerConcursoAtual = removerConcursoAtual;
+        window.openModalSlot = openModalSlot;
+        window.closeModalSlot = closeModalSlot;
+        window.salvarSlot = salvarSlot;
+        window.removerSlot = removerSlot;
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
