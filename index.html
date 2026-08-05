@@ -19,6 +19,9 @@
             --header-materia-bg: #1e3a8a;
             --header-materia-text: #93c5fd;
             --danger-bg: #ef4444;
+            --completed-bg: rgba(16, 185, 129, 0.15);
+            --completed-border: #10b981;
+            --completed-text: #34d399;
         }
 
         body.light-mode {
@@ -30,6 +33,9 @@
             --primary-hover: #1d4ed8;
             --header-materia-bg: #e0e7ff;
             --header-materia-text: #1e3a8a;
+            --completed-bg: #d1fae5;
+            --completed-border: #10b981;
+            --completed-text: #065f46;
         }
 
         * {
@@ -110,6 +116,12 @@
             font-weight: 600;
             font-size: 0.85rem;
             border: 1px solid #1e40af;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .countdown-badge:hover {
+            opacity: 0.85;
+            text-decoration: underline;
         }
 
         .action-bar {
@@ -231,7 +243,7 @@
 
         .timer-settings input { width: 60px; text-align: center; }
 
-        /* CALENDÁRIO SEMANAL & CONTABILIZADOR DE HORAS */
+        /* CALENDÁRIO SEMANAL & BLOCOS DE ESTUDO */
         .weekly-hours-banner {
             background: rgba(59, 130, 246, 0.15);
             border: 1px solid var(--primary-blue);
@@ -288,14 +300,41 @@
             border-radius: 6px;
             font-size: 0.82rem;
             position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+        }
+
+        .schedule-item:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-1px);
+        }
+
+        /* ESTILO DO BLOCO CONCLUÍDO/ESTUDADO */
+        .schedule-item.completed {
+            background: var(--completed-bg);
+            border-color: var(--completed-border);
+        }
+
+        .schedule-item.completed .time {
+            color: var(--completed-text);
+        }
+
+        .schedule-item.completed .subject {
+            text-decoration: line-through;
+            opacity: 0.85;
+            color: var(--completed-text);
         }
 
         .schedule-item .time { font-weight: 700; color: var(--primary-blue); display: block; margin-bottom: 2px; }
         .schedule-item .subject { word-break: break-word; font-weight: 700; display: block; }
         .schedule-item .topic { word-break: break-word; opacity: 0.85; font-size: 0.78rem; margin-top: 2px; display: block; }
+        .schedule-item .check-icon { display: none; font-size: 0.8rem; margin-left: 4px; }
+        .schedule-item.completed .check-icon { display: inline; }
+
         .schedule-item .btn-del-slot {
             position: absolute; top: 2px; right: 4px; background: none; border: none;
-            color: #94a3b8; cursor: pointer; font-size: 0.85rem;
+            color: #94a3b8; cursor: pointer; font-size: 0.85rem; z-index: 2;
         }
         .schedule-item .btn-del-slot:hover { color: #ef4444; }
 
@@ -413,7 +452,11 @@
                 </select>
                 <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">➕ Novo</button>
                 <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">🗑️ Excluir</button>
-                <div id="countdownBadge" class="countdown-badge">Sem data de prova</div>
+                
+                <!-- BADGE EDITÁVEL DE DATA DA PROVA -->
+                <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
+                    Sem data de prova
+                </div>
             </div>
 
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
@@ -504,6 +547,9 @@
         <div id="tab-calendario" class="tab-content">
             <div class="card">
                 <h3>📅 Cronograma Semanal de Estudos</h3>
+                <p style="margin-bottom: 1rem; font-size: 0.85rem; opacity: 0.8;">
+                    💡 <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcá-lo como <strong>concluído/estudado</strong> (ficando verde). Clique novamente para desfazer a ação.
+                </p>
                 
                 <!-- BANNER DE HORAS SEMANAIS -->
                 <div class="weekly-hours-banner">
@@ -519,18 +565,29 @@
 
     </div>
 
-    <!-- MODAL: CADASTRAR NOVO CONCURSO -->
+    <!-- MODAL: CADASTRAR NOVO CONCURSO (COM OPÇÃO DE COPIAR OUTRO CONCURSO) -->
     <div class="modal-overlay" id="modalNovoConcurso">
         <div class="modal">
             <h3>Cadastrar Novo Concurso</h3>
+            
             <div class="form-group">
                 <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
                 <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
             </div>
+
             <div class="form-group">
                 <label for="inputDataConcurso">Data da Prova (Opcional)</label>
                 <input type="date" id="inputDataConcurso">
             </div>
+
+            <div class="form-group">
+                <label for="selectCopyConcurso">Copiar Estrutura de Concurso Existente (Opcional)</label>
+                <select id="selectCopyConcurso">
+                    <option value="">-- Criar concurso em branco --</option>
+                    <!-- Preenchido via JS com os concursos cadastrados -->
+                </select>
+            </div>
+
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar</button>
                 <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar</button>
@@ -538,7 +595,7 @@
         </div>
     </div>
 
-    <!-- MODAL: ADICIONAR HORÁRIO AO CALENDÁRIO (MATÉRIA + ASSUNTO VINCULADOS) -->
+    <!-- MODAL: ADICIONAR HORÁRIO AO CALENDÁRIO -->
     <div class="modal-overlay" id="modalSlot">
         <div class="modal">
             <h3>Adicionar Horário de Estudo</h3>
@@ -559,7 +616,7 @@
             <div class="form-group">
                 <label for="slotAssuntoSelect">Assunto (Vinculado à Matéria Escolhida)</label>
                 <select id="slotAssuntoSelect">
-                    <!-- Preenchido dinamicamente baseado na matéria -->
+                    <!-- Preenchido dinamicamente -->
                 </select>
             </div>
 
@@ -671,6 +728,17 @@
         }
 
         function openModalNovoConcurso() {
+            const selectCopy = document.getElementById('selectCopyConcurso');
+            selectCopy.innerHTML = '<option value="">-- Criar concurso em branco --</option>';
+
+            const set = new Set(Object.keys(concursosMetadata));
+            set.add('Concurso Geral');
+            allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
+
+            Array.from(set).forEach(c => {
+                selectCopy.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+
             document.getElementById('modalNovoConcurso').style.display = 'flex';
         }
 
@@ -678,21 +746,55 @@
             document.getElementById('modalNovoConcurso').style.display = 'none';
             document.getElementById('inputNomeConcurso').value = '';
             document.getElementById('inputDataConcurso').value = '';
+            document.getElementById('selectCopyConcurso').value = '';
         }
 
-        function confirmarNovoConcurso() {
+        async function confirmarNovoConcurso() {
             const nome = document.getElementById('inputNomeConcurso').value.trim();
             const dataProva = document.getElementById('inputDataConcurso').value;
+            const concursoParaCopiar = document.getElementById('selectCopyConcurso').value;
 
             if (!nome) return alert('Digite o nome do concurso.');
 
-            if (!concursosMetadata[nome]) {
-                concursosMetadata[nome] = { dataProva: dataProva || null, schedule: {} };
-            } else {
-                concursosMetadata[nome].dataProva = dataProva || null;
+            // Criar a entrada nos metadados
+            let newSchedule = {};
+            if (concursoParaCopiar && concursosMetadata[concursoParaCopiar]?.schedule) {
+                // Copia profunda da grade horária
+                newSchedule = JSON.parse(JSON.stringify(concursosMetadata[concursoParaCopiar].schedule));
             }
 
+            concursosMetadata[nome] = { 
+                dataProva: dataProva || null, 
+                schedule: newSchedule 
+            };
             saveConcursosMetadata();
+
+            // Copiar os tópicos do edital caso tenha sido selecionado um concurso para copiar
+            if (concursoParaCopiar) {
+                const user = (await supabaseClient.auth.getUser())?.data?.user;
+                const itemsParaCopiar = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === concursoParaCopiar);
+
+                const novosItems = itemsParaCopiar.map((item, idx) => ({
+                    ...item,
+                    id: Date.now() + idx,
+                    concurso: nome,
+                    teoria: false,
+                    questoes: false,
+                    rev_24h: false,
+                    rev_7d: false,
+                    rev_30d: false,
+                    user_id: user ? user.id : null
+                }));
+
+                allEditalItems = [...allEditalItems, ...novosItems];
+                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+
+                if (navigator.onLine && user && novosItems.length > 0) {
+                    const toInsert = novosItems.map(d => { const copy = {...d}; delete copy.id; return copy; });
+                    await supabaseClient.from('edital').insert(toInsert);
+                }
+            }
+
             currentConcurso = nome;
             closeModalNovoConcurso();
             filterDataByConcurso();
@@ -728,7 +830,7 @@
             const dataStr = concursosMetadata[currentConcurso]?.dataProva;
 
             if (!dataStr) {
-                badge.textContent = "Data da prova não definida";
+                badge.textContent = "Data da prova não definida (clique para definir)";
                 return;
             }
 
@@ -736,9 +838,23 @@
             const hoje = new Date();
             const diffDias = Math.ceil((dataProva - hoje) / (1000 * 60 * 60 * 24));
 
-            if (diffDias < 0) badge.textContent = "Prova realizada";
-            else if (diffDias === 0) badge.textContent = "🚨 Prova HOJE!";
-            else badge.textContent = `⏳ Faltam ${diffDias} dias`;
+            if (diffDias < 0) badge.textContent = "Prova realizada (clique para alterar)";
+            else if (diffDias === 0) badge.textContent = "🚨 Prova HOJE! (clique para alterar)";
+            else badge.textContent = `⏳ Faltam ${diffDias} dias (clique para alterar)`;
+        }
+
+        function editarDataProva() {
+            const dataAtual = concursosMetadata[currentConcurso]?.dataProva || '';
+            const novaData = prompt(`Digite a data da prova para o concurso "${currentConcurso}" (no formato AAAA-MM-DD):`, dataAtual);
+            
+            if (novaData !== null) {
+                if (!concursosMetadata[currentConcurso]) {
+                    concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
+                }
+                concursosMetadata[currentConcurso].dataProva = novaData.trim() || null;
+                saveConcursosMetadata();
+                updateCountdownBadge();
+            }
         }
 
         function filterDataByConcurso() {
@@ -798,12 +914,13 @@
                     const mins = parseTimeIntervalToMinutes(item.horario);
                     dayTotalMinutes += mins;
 
+                    const isCompleted = item.completed ? 'completed' : '';
                     const assuntoHtml = item.assunto ? `<span class="topic">📌 ${item.assunto}</span>` : '';
 
                     htmlSlots += `
-                        <div class="schedule-item">
-                            <button class="btn-del-slot" onclick="removerSlot('${dia}', ${index})">✕</button>
-                            <span class="time">${item.horario}</span>
+                        <div class="schedule-item ${isCompleted}" onclick="toggleSlotCompleted('${dia}', ${index})">
+                            <button class="btn-del-slot" onclick="event.stopPropagation(); removerSlot('${dia}', ${index})">✕</button>
+                            <span class="time">${item.horario} <span class="check-icon">✅</span></span>
                             <span class="subject">${item.materia}</span>
                             ${assuntoHtml}
                         </div>
@@ -825,6 +942,16 @@
             });
 
             document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(grandTotalMinutes);
+        }
+
+        function toggleSlotCompleted(dia, index) {
+            const currentMeta = concursosMetadata[currentConcurso];
+            if (currentMeta && currentMeta.schedule && currentMeta.schedule[dia] && currentMeta.schedule[dia][index]) {
+                const slot = currentMeta.schedule[dia][index];
+                slot.completed = !slot.completed;
+                saveConcursosMetadata();
+                renderCalendar();
+            }
         }
 
         function openModalSlot(dia) {
@@ -896,7 +1023,7 @@
                 concursosMetadata[currentConcurso].schedule[dia] = [];
             }
 
-            concursosMetadata[currentConcurso].schedule[dia].push({ horario, materia, assunto });
+            concursosMetadata[currentConcurso].schedule[dia].push({ horario, materia, assunto, completed: false });
             saveConcursosMetadata();
             renderCalendar();
             closeModalSlot();
@@ -930,7 +1057,7 @@
             if (local) allEditalItems = JSON.parse(local);
         }
 
-        // --- RENDERIZAÇÃO TABELA EXPANSÍVEL POR MATÉRIA (ACCORDION) ---
+        // --- RENDERIZAÇÃO TABELA EXPANSÍVEL POR MATÉRIA ---
         function renderTable() {
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
@@ -1336,11 +1463,13 @@
         window.closeModalNovoConcurso = closeModalNovoConcurso;
         window.confirmarNovoConcurso = confirmarNovoConcurso;
         window.removerConcursoAtual = removerConcursoAtual;
+        window.editarDataProva = editarDataProva;
         window.openModalSlot = openModalSlot;
         window.onMateriaSelectChange = onMateriaSelectChange;
         window.closeModalSlot = closeModalSlot;
         window.salvarSlot = salvarSlot;
         window.removerSlot = removerSlot;
+        window.toggleSlotCompleted = toggleSlotCompleted;
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
