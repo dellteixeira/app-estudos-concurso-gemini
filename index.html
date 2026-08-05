@@ -39,6 +39,17 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
+        /* BANNER STATUS OFFLINE */
+        #offline-banner {
+            display: none;
+            background-color: #f59e0b;
+            color: #ffffff;
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
         /* AUTH SCREEN */
         .auth-container {
             display: flex;
@@ -197,6 +208,9 @@
 </head>
 <body>
 
+    <!-- BANNER DE CONEXÃO -->
+    <div id="offline-banner">⚠️ Você está sem conexão com a internet. Alterações serão salvas localmente e sincronizadas em breve.</div>
+
     <!-- AUTH SCREEN -->
     <div id="auth-screen" class="auth-container">
         <div class="auth-card">
@@ -289,7 +303,7 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO SUPABASE COM SUAS CREDENCIAIS DEFINIDAS
+        // CONFIGURAÇÃO SUPABASE
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -297,7 +311,7 @@
         let myChart = null;
         let editalItems = [];
 
-        // --- AUTHENTICATION ---
+        // --- AUTENTICAÇÃO ---
         async function handleSignUp() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -339,13 +353,31 @@
             document.body.classList.toggle('dark-mode');
         }
 
-        // --- CARREGAR & RENDERIZAR DADOS ---
+        // --- LÓGICA DE DADOS LOCAL-FIRST E OFFLINE ---
         async function loadData() {
-            const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
-            if (!error && data) {
-                editalItems = data;
-                renderTable();
-                renderChart();
+            if (navigator.onLine) {
+                try {
+                    const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
+                    if (!error && data) {
+                        editalItems = data;
+                        localStorage.setItem('edital_offline_data', JSON.stringify(data));
+                    } else {
+                        loadLocalData();
+                    }
+                } catch (e) {
+                    loadLocalData();
+                }
+            } else {
+                loadLocalData();
+            }
+            renderTable();
+            renderChart();
+        }
+
+        function loadLocalData() {
+            const local = localStorage.getItem('edital_offline_data');
+            if (local) {
+                editalItems = JSON.parse(local);
             }
         }
 
@@ -371,10 +403,22 @@
         }
 
         async function toggleCheck(id, field, currentValue) {
-            const updateObj = {};
-            updateObj[field] = !currentValue;
-            await supabaseClient.from('edital').update(updateObj).eq('id', id);
-            loadData();
+            // Atualização rápida na memória e localStorage
+            const item = editalItems.find(i => i.id === id);
+            if (item) item[field] = !currentValue;
+            
+            localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
+            renderTable();
+            renderChart();
+
+            // Persiste no Supabase ou salva na fila offline
+            if (navigator.onLine) {
+                const updateObj = {};
+                updateObj[field] = !currentValue;
+                await supabaseClient.from('edital').update(updateObj).eq('id', id);
+            } else {
+                addToSyncQueue({ type: 'UPDATE', id, field, value: !currentValue });
+            }
         }
 
         async function addManualItem(e) {
@@ -382,32 +426,59 @@
             const materia = document.getElementById('materia').value;
             const assunto = document.getElementById('assunto').value;
             const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
-            const user = (await supabaseClient.auth.getUser()).data.user;
+            const user = (await supabaseClient.auth.getUser())?.data?.user;
 
-            await supabaseClient.from('edital').insert([{
-                materia, assunto, prioridade, user_id: user.id,
+            const newItem = {
+                id: Date.now(), // Temporário caso esteja offline
+                materia, assunto, prioridade,
+                user_id: user ? user.id : null,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
-            }]);
+            };
 
+            editalItems.push(newItem);
+            localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
             document.getElementById('materia').value = '';
             document.getElementById('assunto').value = '';
-            loadData();
+            renderTable();
+            renderChart();
+
+            if (navigator.onLine && user) {
+                delete newItem.id;
+                await supabaseClient.from('edital').insert([newItem]);
+                loadData();
+            } else {
+                addToSyncQueue({ type: 'INSERT', item: newItem });
+            }
         }
 
         async function deleteItem(id) {
-            await supabaseClient.from('edital').delete().eq('id', id);
-            loadData();
+            editalItems = editalItems.filter(i => i.id !== id);
+            localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
+            renderTable();
+            renderChart();
+
+            if (navigator.onLine) {
+                await supabaseClient.from('edital').delete().eq('id', id);
+            } else {
+                addToSyncQueue({ type: 'DELETE', id });
+            }
         }
 
         async function clearData() {
             if (confirm('Tem certeza que deseja apagar todos os tópicos do edital?')) {
-                const user = (await supabaseClient.auth.getUser()).data.user;
-                await supabaseClient.from('edital').delete().eq('user_id', user.id);
-                loadData();
+                editalItems = [];
+                localStorage.removeItem('edital_offline_data');
+                renderTable();
+                renderChart();
+
+                if (navigator.onLine) {
+                    const user = (await supabaseClient.auth.getUser())?.data?.user;
+                    if (user) await supabaseClient.from('edital').delete().eq('user_id', user.id);
+                }
             }
         }
 
-        // --- IMPORTAR JSON MELHORADO ---
+        // --- IMPORTAR JSON ---
         async function importJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -416,31 +487,32 @@
             reader.onload = async function(e) {
                 try {
                     const rawData = JSON.parse(e.target.result);
-                    const user = (await supabaseClient.auth.getUser()).data.user;
+                    const user = (await supabaseClient.auth.getUser())?.data?.user;
                     let formattedData = [];
 
-                    // 1. Trata se o JSON for um Array de objetos
                     if (Array.isArray(rawData)) {
-                        formattedData = rawData.map(item => ({
+                        formattedData = rawData.map((item, idx) => ({
+                            id: Date.now() + idx,
                             materia: item.materia || item.disciplina || 'Geral',
                             assunto: item.assunto || item.topico || item.nome || 'Geral',
                             prioridade: parseInt(item.prioridade || item.peso || 1),
                             teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
-                            user_id: user.id
+                            user_id: user ? user.id : null
                         }));
-                    } 
-                    // 2. Trata se o JSON for um Objeto chave/valor (Ex: {"Português": ["Sintaxe", "Crase"]})
-                    else if (typeof rawData === 'object' && rawData !== null) {
+                    } else if (typeof rawData === 'object' && rawData !== null) {
+                        let count = 0;
                         Object.keys(rawData).forEach((materiaKey, index) => {
                             const assuntos = rawData[materiaKey];
                             if (Array.isArray(assuntos)) {
                                 assuntos.forEach(assuntoItem => {
+                                    count++;
                                     formattedData.push({
+                                        id: Date.now() + count,
                                         materia: materiaKey,
                                         assunto: typeof assuntoItem === 'string' ? assuntoItem : (assuntoItem.nome || assuntoItem.assunto || 'Tópico'),
                                         prioridade: typeof assuntoItem === 'object' ? parseInt(assuntoItem.prioridade || assuntoItem.peso || index + 1) : index + 1,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
-                                        user_id: user.id
+                                        user_id: user ? user.id : null
                                     });
                                 });
                             }
@@ -452,20 +524,83 @@
                         return;
                     }
 
-                    const { error } = await supabaseClient.from('edital').insert(formattedData);
-                    
-                    if (error) {
-                        alert('Erro ao salvar no banco: ' + error.message);
-                    } else {
-                        alert(`Sucesso! ${formattedData.length} tópicos foram importados.`);
+                    editalItems = [...editalItems, ...formattedData];
+                    localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
+                    renderTable();
+                    renderChart();
+
+                    if (navigator.onLine && user) {
+                        const dataToInsert = formattedData.map(d => { const copy = {...d}; delete copy.id; return copy; });
+                        await supabaseClient.from('edital').insert(dataToInsert);
                         loadData();
+                    } else {
+                        formattedData.forEach(item => addToSyncQueue({ type: 'INSERT', item }));
                     }
+
+                    alert(`Sucesso! ${formattedData.length} tópicos foram importados.`);
                 } catch (err) {
                     alert('Erro na leitura do JSON: Verifique a formatação do arquivo.');
                 }
             };
             reader.readAsText(file);
-            event.target.value = ''; // Reseta o campo para permitir importar o mesmo arquivo se desejar
+            event.target.value = '';
+        }
+
+        // --- FILA DE SINCRONIZAÇÃO OFFLINE ---
+        function addToSyncQueue(action) {
+            const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
+            queue.push(action);
+            localStorage.setItem('sync_queue', JSON.stringify(queue));
+        }
+
+        async function syncOfflineData() {
+            const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
+            if (queue.length === 0) return;
+
+            const user = (await supabaseClient.auth.getUser())?.data?.user;
+            if (!user) return;
+
+            for (const action of queue) {
+                if (action.type === 'UPDATE') {
+                    const updateObj = {};
+                    updateObj[action.field] = action.value;
+                    await supabaseClient.from('edital').update(updateObj).eq('id', action.id);
+                } else if (action.type === 'INSERT') {
+                    const item = action.item;
+                    delete item.id;
+                    item.user_id = user.id;
+                    await supabaseClient.from('edital').insert([item]);
+                } else if (action.type === 'DELETE') {
+                    await supabaseClient.from('edital').delete().eq('id', action.id);
+                }
+            }
+
+            localStorage.removeItem('sync_queue');
+            loadData();
+        }
+
+        // MONITORA STATUS DE CONEXÃO
+        function updateOnlineStatus() {
+            const banner = document.getElementById('offline-banner');
+            if (navigator.onLine) {
+                banner.style.display = 'none';
+                syncOfflineData();
+            } else {
+                banner.style.display = 'block';
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        window.addEventListener('load', updateOnlineStatus);
+
+        // --- REGISTRO DO SERVICE WORKER PARA SUPORTE PWA/OFFLINE ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('Service Worker Registrado'))
+                    .catch(err => console.error('Falha ao registrar Service Worker:', err));
+            });
         }
 
         // --- GRÁFICO (CHART.JS) ---
@@ -475,7 +610,7 @@
 
             editalItems.forEach(item => {
                 if (!counts[item.materia]) counts[item.materia] = { total: 0, concluido: 0 };
-                counts[item.materia].total += 5; // 5 etapas (Teoria, Questões, 3 Revs)
+                counts[item.materia].total += 5;
                 if (item.teoria) counts[item.materia].concluido++;
                 if (item.questoes) counts[item.materia].concluido++;
                 if (item.rev_24h) counts[item.materia].concluido++;
