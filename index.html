@@ -84,6 +84,18 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .concurso-selector-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
         .action-bar {
@@ -197,7 +209,6 @@
             font-weight: 600;
         }
 
-        /* MATÉRIA EXPANSÍVEL (ACCORDION) */
         .materia-header-row {
             background-color: var(--header-materia-bg);
             color: var(--header-materia-text);
@@ -253,7 +264,17 @@
     <!-- MAIN DASHBOARD -->
     <div id="app-dashboard">
         <header>
-            <h2>🎯 Meu Painel de Estudos</h2>
+            <h2>🎯 Painel de Estudos</h2>
+            
+            <!-- SELETOR DE CONCURSOS -->
+            <div class="concurso-selector-bar">
+                <label>📌 <strong>Concurso:</strong></label>
+                <select id="concursoSelect" onchange="changeConcurso(this.value)">
+                    <!-- Preenchido via JS -->
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="addNovoConcurso()">➕ Novo</button>
+            </div>
+
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
         </header>
 
@@ -266,7 +287,7 @@
                 <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="importJSON(event)">
             </label>
 
-            <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Dados</button>
+            <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Edital Atual</button>
         </div>
 
         <div class="grid-top">
@@ -293,7 +314,7 @@
 
         <!-- SEÇÃO INFERIOR: EDITAL COM EXPANSÃO E PRIORIDADE EDITÁVEL -->
         <div class="card">
-            <h3>📚 Edital por Ordem de Prioridade (24h / 7d / 30d)</h3>
+            <h3 id="edital-title">📚 Edital por Ordem de Prioridade</h3>
             
             <form class="form-row" onsubmit="addManualItem(event)">
                 <input type="text" id="materia" placeholder="Matéria (ex: Direito Administrativo)" required>
@@ -336,8 +357,11 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let myChart = null;
+        let allEditalItems = [];
         let editalItems = [];
-        let openMaterias = {}; // Estado das sanfonas (abertas/fechadas)
+        let openMaterias = {}; 
+        let concursos = ['Concurso Geral'];
+        let currentConcurso = 'Concurso Geral';
 
         // --- AUTH ---
         async function handleSignUp() {
@@ -380,25 +404,62 @@
             document.body.classList.toggle('dark-mode');
         }
 
+        // --- GERENCIAMENTO DE CONCURSOS ---
+        function renderConcursoSelector() {
+            const select = document.getElementById('concursoSelect');
+            select.innerHTML = '';
+            
+            // Extrai lista única de concursos
+            const set = new Set(concursos);
+            allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
+            concursos = Array.from(set);
+
+            concursos.forEach(c => {
+                select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`;
+            });
+        }
+
+        function changeConcurso(val) {
+            currentConcurso = val;
+            filterDataByConcurso();
+        }
+
+        function addNovoConcurso() {
+            const nome = prompt('Digite o nome do novo concurso (ex: Polícia Federal 2026):');
+            if (nome && nome.trim()) {
+                const cleanName = nome.trim();
+                if (!concursos.includes(cleanName)) concursos.push(cleanName);
+                currentConcurso = cleanName;
+                filterDataByConcurso();
+            }
+        }
+
+        function filterDataByConcurso() {
+            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+            renderConcursoSelector();
+            document.getElementById('edital-title').innerText = `📚 Edital: ${currentConcurso}`;
+            renderTable();
+            renderChart();
+        }
+
         // --- DADOS LOCAL-FIRST ---
         async function loadData() {
             if (navigator.onLine) {
                 try {
                     const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
                     if (!error && data) {
-                        editalItems = data;
+                        allEditalItems = data;
                         localStorage.setItem('edital_offline_data', JSON.stringify(data));
                     } else loadLocalData();
                 } catch (e) { loadLocalData(); }
             } else loadLocalData();
 
-            renderTable();
-            renderChart();
+            filterDataByConcurso();
         }
 
         function loadLocalData() {
             const local = localStorage.getItem('edital_offline_data');
-            if (local) editalItems = JSON.parse(local);
+            if (local) allEditalItems = JSON.parse(local);
         }
 
         // --- RENDERIZAÇÃO TABELA EXPANSÍVEL (ACCORDION) ---
@@ -406,7 +467,6 @@
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
 
-            // 1. Agrupar itens por Matéria
             const materiasMap = {};
             editalItems.forEach(item => {
                 const mat = item.materia || 'Geral';
@@ -419,17 +479,14 @@
                 materiasMap[mat].items.push(item);
             });
 
-            // 2. Ordenar Matérias por Prioridade
             const sortedMaterias = Object.keys(materiasMap).sort((a, b) => {
                 return (materiasMap[a].prioridade || 1) - (materiasMap[b].prioridade || 1);
             });
 
-            // 3. Renderizar cada Matéria e seus Assuntos contidos
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
                 const isOpen = !!openMaterias[materiaName];
 
-                // Cabeçalho da Matéria
                 tbody.innerHTML += `
                     <tr class="materia-header-row" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
                         <td onclick="event.stopPropagation()">
@@ -445,7 +502,6 @@
                     </tr>
                 `;
 
-                // Linhas dos Assuntos (só exibe se a matéria estiver expandida/aberta)
                 if (isOpen) {
                     group.items.forEach(item => {
                         tbody.innerHTML += `
@@ -475,35 +531,34 @@
             renderTable();
         }
 
-        // --- ATUALIZAR PRIORIDADE DA MATÉRIA ---
         async function updateMateriaPriority(materiaName, newPriority) {
             const val = parseInt(newPriority) || 1;
-            
-            // Atualiza localmente todos os assuntos dessa matéria
-            editalItems.forEach(item => {
-                if (item.materia === materiaName) item.prioridade = val;
+            allEditalItems.forEach(item => {
+                if (item.materia === materiaName && (item.concurso || 'Concurso Geral') === currentConcurso) {
+                    item.prioridade = val;
+                }
             });
 
-            localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
-            renderTable();
+            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+            filterDataByConcurso();
 
             if (navigator.onLine) {
                 await supabaseClient
                     .from('edital')
                     .update({ prioridade: val })
-                    .eq('materia', materiaName);
+                    .eq('materia', materiaName)
+                    .eq('concurso', currentConcurso);
             } else {
-                addToSyncQueue({ type: 'UPDATE_PRIORITY', materia: materiaName, prioridade: val });
+                addToSyncQueue({ type: 'UPDATE_PRIORITY', materia: materiaName, prioridade: val, concurso: currentConcurso });
             }
         }
 
         async function toggleCheck(id, field, currentValue) {
-            const item = editalItems.find(i => i.id === id);
+            const item = allEditalItems.find(i => i.id === id);
             if (item) item[field] = !currentValue;
             
-            localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
-            renderTable();
-            renderChart();
+            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+            filterDataByConcurso();
 
             if (navigator.onLine) {
                 const updateObj = {};
@@ -524,18 +579,18 @@
             const newItem = {
                 id: Date.now(),
                 materia, assunto, prioridade,
+                concurso: currentConcurso,
                 user_id: user ? user.id : null,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
             };
 
-            openMaterias[materia] = true; // Abre a matéria adicionada automaticamente
-            editalItems.push(newItem);
-            localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
+            openMaterias[materia] = true;
+            allEditalItems.push(newItem);
+            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
             
             document.getElementById('materia').value = '';
             document.getElementById('assunto').value = '';
-            renderTable();
-            renderChart();
+            filterDataByConcurso();
 
             if (navigator.onLine && user) {
                 delete newItem.id;
@@ -547,10 +602,9 @@
         }
 
         async function deleteItem(id) {
-            editalItems = editalItems.filter(i => i.id !== id);
-            localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
-            renderTable();
-            renderChart();
+            allEditalItems = allEditalItems.filter(i => i.id !== id);
+            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+            filterDataByConcurso();
 
             if (navigator.onLine) {
                 await supabaseClient.from('edital').delete().eq('id', id);
@@ -560,21 +614,20 @@
         }
 
         async function clearData() {
-            if (confirm('Tem certeza que deseja apagar todos os tópicos do edital?')) {
-                editalItems = [];
+            if (confirm(`Tem certeza que deseja apagar todos os tópicos do edital "${currentConcurso}"?`)) {
+                allEditalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') !== currentConcurso);
                 openMaterias = {};
-                localStorage.removeItem('edital_offline_data');
-                renderTable();
-                renderChart();
+                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                filterDataByConcurso();
 
                 if (navigator.onLine) {
                     const user = (await supabaseClient.auth.getUser())?.data?.user;
-                    if (user) await supabaseClient.from('edital').delete().eq('user_id', user.id);
+                    if (user) await supabaseClient.from('edital').delete().eq('concurso', currentConcurso).eq('user_id', user.id);
                 }
             }
         }
 
-        // --- IMPORTAR JSON INTELIGENTE ---
+        // --- PARSER JSON AVANÇADO (SUPORTE A DUMP DE BANCO E ESTRUTURAS COMPLEXAS) ---
         async function importJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -586,20 +639,31 @@
                     const user = (await supabaseClient.auth.getUser())?.data?.user;
                     let formattedData = [];
 
-                    // Desembrulha invólucros comuns (ex: {"payload": ...} ou {"edital": ...})
+                    // Remove wrappers genéricos de export/dump de API
+                    if (rawData.payload_public_edital) rawData = rawData.payload_public_edital;
                     if (rawData.payload) rawData = rawData.payload;
                     if (rawData.data) rawData = rawData.data;
 
+                    // Caso 1: Array de Objetos
                     if (Array.isArray(rawData)) {
-                        formattedData = rawData.map((item, idx) => ({
-                            id: Date.now() + idx,
-                            materia: item.materia || item.disciplina || item.subject || 'Geral',
-                            assunto: item.assunto || item.topico || item.nome || 'Geral',
-                            prioridade: parseInt(item.prioridade || item.peso || 1),
-                            teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
-                            user_id: user ? user.id : null
-                        }));
-                    } else if (typeof rawData === 'object' && rawData !== null) {
+                        formattedData = rawData.map((item, idx) => {
+                            // Trata nomes de matérias caso venha de dump de tabela
+                            let mName = item.materia || item.disciplina || item.subject;
+                            if (!mName || mName === 'payload_public_edital') mName = 'Matéria Importada';
+
+                            return {
+                                id: Date.now() + idx,
+                                materia: mName,
+                                assunto: item.assunto || item.topico || item.nome || item.descricao || 'Tópico de Estudo',
+                                prioridade: parseInt(item.prioridade || item.peso || 1),
+                                concurso: currentConcurso,
+                                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
+                                user_id: user ? user.id : null
+                            };
+                        });
+                    } 
+                    // Caso 2: Objeto Aninhado { "Direito Penal": ["Art. 121", ...], "Português": [...] }
+                    else if (typeof rawData === 'object' && rawData !== null) {
                         let count = 0;
                         Object.keys(rawData).forEach((materiaKey, index) => {
                             const assuntos = rawData[materiaKey];
@@ -611,6 +675,7 @@
                                         materia: materiaKey,
                                         assunto: typeof assuntoItem === 'string' ? assuntoItem : (assuntoItem.nome || assuntoItem.assunto || 'Tópico'),
                                         prioridade: typeof assuntoItem === 'object' ? parseInt(assuntoItem.prioridade || assuntoItem.peso || index + 1) : index + 1,
+                                        concurso: currentConcurso,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
                                         user_id: user ? user.id : null
                                     });
@@ -624,10 +689,9 @@
                         return;
                     }
 
-                    editalItems = [...editalItems, ...formattedData];
-                    localStorage.setItem('edital_offline_data', JSON.stringify(editalItems));
-                    renderTable();
-                    renderChart();
+                    allEditalItems = [...allEditalItems, ...formattedData];
+                    localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                    filterDataByConcurso();
 
                     if (navigator.onLine && user) {
                         const dataToInsert = formattedData.map(d => { const copy = {...d}; delete copy.id; return copy; });
@@ -637,7 +701,7 @@
                         formattedData.forEach(item => addToSyncQueue({ type: 'INSERT', item }));
                     }
 
-                    alert(`Sucesso! ${formattedData.length} tópicos foram importados.`);
+                    alert(`Sucesso! ${formattedData.length} tópicos foram importados para o concurso "${currentConcurso}".`);
                 } catch (err) {
                     alert('Erro na leitura do JSON: Verifique a formatação do arquivo.');
                 }
@@ -666,7 +730,10 @@
                     updateObj[action.field] = action.value;
                     await supabaseClient.from('edital').update(updateObj).eq('id', action.id);
                 } else if (action.type === 'UPDATE_PRIORITY') {
-                    await supabaseClient.from('edital').update({ prioridade: action.prioridade }).eq('materia', action.materia);
+                    await supabaseClient.from('edital')
+                        .update({ prioridade: action.prioridade })
+                        .eq('materia', action.materia)
+                        .eq('concurso', action.concurso);
                 } else if (action.type === 'INSERT') {
                     const item = action.item;
                     delete item.id;
@@ -798,6 +865,8 @@
         window.toggleMateria = toggleMateria;
         window.toggleAllAccordions = toggleAllAccordions;
         window.updateMateriaPriority = updateMateriaPriority;
+        window.changeConcurso = changeConcurso;
+        window.addNovoConcurso = addNovoConcurso;
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
