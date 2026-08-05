@@ -1,875 +1,420 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Painel de Estudos</title>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --border-color: #e2e8f0;
-            --primary-blue: #2563eb;
-            --header-materia-bg: #e0e7ff;
-            --header-materia-text: #1e3a8a;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Estudos para Concursos</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --bg-slate: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+    }
 
-        body.dark-mode {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --border-color: #334155;
-            --primary-blue: #3b82f6;
-            --header-materia-bg: #1e293b;
-            --header-materia-text: #93c5fd;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-slate); color: var(--text-main); padding: 20px; }
+    .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+    /* Card Topo - Seleção de Concurso */
+    .top-bar {
+      background: var(--card-bg);
+      padding: 16px 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s;
-        }
+    .concurso-selector-group { display: flex; align-items: center; gap: 12px; }
+    .concurso-selector-group label { font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; }
+    select, input, button { font-size: 0.95rem; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); outline: none; }
+    select:focus, input:focus { border-color: var(--primary); }
 
-        #offline-banner {
-            display: none;
-            background-color: #f59e0b;
-            color: #ffffff;
-            text-align: center;
-            padding: 0.5rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
+    .btn { cursor: pointer; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
+    .btn-primary { background-color: var(--primary); color: white; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-danger { background-color: #fee2e2; color: var(--danger); }
+    .btn-danger:hover { background-color: #fca5a5; }
 
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+    .countdown-badge {
+      background: #eff6ff;
+      color: var(--primary);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: 1px solid #bfdbfe;
+    }
 
-        .auth-card {
-            background: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 100;
+    }
+    .modal { background: white; padding: 24px; border-radius: 12px; width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 16px; }
+    .modal h3 { margin-bottom: 4px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
-        .auth-card h2 { margin-bottom: 1.5rem; color: var(--primary-blue); }
+    /* Calendário Semanal */
+    .section-card {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .section-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
 
-        #app-dashboard {
-            display: none;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      overflow-x: auto;
+    }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
+    .day-column {
+      background: var(--bg-slate);
+      border-radius: 8px;
+      padding: 10px;
+      min-width: 130px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-        .concurso-selector-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--card-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
+    .day-header { font-weight: 700; text-align: center; padding-bottom: 6px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.9rem; }
 
-        .action-bar {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
+    .schedule-item {
+      background: white;
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      position: relative;
+    }
 
-        .grid-top {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
+    .schedule-item .time { font-weight: 700; color: var(--primary); display: block; margin-bottom: 2px; }
+    .schedule-item .subject { color: var(--text-main); word-break: break-word; }
+    .schedule-item .btn-del-slot { position: absolute; top: 4px; right: 4px; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.8rem; }
+    .schedule-item .btn-del-slot:hover { color: var(--danger); }
 
-        @media (max-width: 768px) {
-            .grid-top { grid-template-columns: 1fr; }
-        }
+    .btn-add-slot { width: 100%; border: 1px dashed var(--border-color); background: transparent; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 0.8rem; }
+    .btn-add-slot:hover { border-color: var(--primary); color: var(--primary); }
 
-        .card {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            margin-bottom: 1.5rem;
-        }
-
-        .card h3 {
-            margin-bottom: 1rem;
-            color: var(--primary-blue);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            transition: opacity 0.2s;
-        }
-        .btn:hover { opacity: 0.9; }
-        .btn-primary { background-color: var(--primary-blue); color: white; }
-        .btn-secondary { background-color: #64748b; color: white; }
-        .btn-success { background-color: #10b981; color: white; }
-        .btn-danger { background-color: #ef4444; color: white; }
-        .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
-
-        input, select {
-            padding: 0.6rem 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .timer-display {
-            font-size: 4rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 0.5rem 0;
-            letter-spacing: 2px;
-        }
-
-        .timer-settings {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .timer-settings input { width: 60px; text-align: center; }
-
-        .form-row {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-        .form-row input[type="text"] { flex: 2; }
-        .form-row input[type="number"] { width: 90px; }
-
-        .table-responsive { overflow-x: auto; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-
-        th, td {
-            padding: 0.75rem 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            background-color: rgba(0,0,0,0.03);
-            font-weight: 600;
-        }
-
-        .materia-header-row {
-            background-color: var(--header-materia-bg);
-            color: var(--header-materia-text);
-            font-weight: bold;
-            cursor: pointer;
-            text-align: left !important;
-            user-select: none;
-        }
-
-        .materia-header-row td {
-            padding: 0.8rem 1rem;
-            font-size: 1rem;
-        }
-
-        .materia-header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .priority-input {
-            width: 55px;
-            text-align: center;
-            padding: 0.2rem 0.4rem;
-        }
-
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-    </style>
+    @media (max-width: 768px) {
+      .calendar-grid { grid-template-columns: repeat(1, 1fr); }
+    }
+  </style>
 </head>
 <body>
 
-    <div id="offline-banner">⚠️ Você está sem conexão. As alterações serão sincronizadas quando reconectar.</div>
+<div class="container">
 
-    <!-- AUTH SCREEN -->
-    <div id="auth-screen" class="auth-container">
-        <div class="auth-card">
-            <h2>🔑 Entrar no Sistema</h2>
-            <div style="margin-bottom: 1rem;">
-                <input type="email" id="email" placeholder="seu@email.com" style="width:100%; margin-bottom: 0.5rem;" required>
-                <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" style="width:100%;" required>
-            </div>
-            <div style="display:flex; gap:0.5rem;">
-                <button class="btn btn-primary" style="flex:1;" onclick="handleLogin()">Entrar</button>
-                <button class="btn btn-secondary" style="flex:1;" onclick="handleSignUp()">Cadastrar</button>
-            </div>
-        </div>
+  <!-- Top Bar / Seletor de Concursos -->
+  <div class="top-bar">
+    <div class="concurso-selector-group">
+      <label>📌 Concurso:</label>
+      <select id="concursoSelect" onchange="trocarConcurso()"></select>
+      <button class="btn btn-primary" onclick="abrirModalConcurso()">+ Novo</button>
+      <button class="btn btn-danger" onclick="removerConcurso()" title="Remover Concurso Atual">🗑️ Excluir</button>
+    </div>
+    
+    <div id="countdown" class="countdown-badge">Data da prova não cadastrada</div>
+  </div>
+
+  <!-- Calendário Semanal -->
+  <div class="section-card">
+    <div class="section-title">
+      <span>📅 Cronograma Semanal de Estudos</span>
     </div>
 
-    <!-- MAIN DASHBOARD -->
-    <div id="app-dashboard">
-        <header>
-            <h2>🎯 Painel de Estudos</h2>
-            
-            <!-- SELETOR DE CONCURSOS -->
-            <div class="concurso-selector-bar">
-                <label>📌 <strong>Concurso:</strong></label>
-                <select id="concursoSelect" onchange="changeConcurso(this.value)">
-                    <!-- Preenchido via JS -->
-                </select>
-                <button class="btn btn-primary btn-sm" onclick="addNovoConcurso()">➕ Novo</button>
-            </div>
+    <div class="calendar-grid" id="calendarGrid">
+      <!-- Dias preenchidos via JS -->
+    </div>
+  </div>
 
-            <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
-        </header>
+</div>
 
-        <!-- BARRA DE AÇÕES -->
-        <div class="action-bar">
-            <button class="btn btn-secondary" onclick="toggleDarkMode()">🌙 Modo Escuro</button>
-            
-            <label class="btn btn-success" style="cursor: pointer;">
-                📥 Importar JSON
-                <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="importJSON(event)">
-            </label>
-
-            <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Edital Atual</button>
-        </div>
-
-        <div class="grid-top">
-            <!-- TIMER POMODORO -->
-            <div class="card">
-                <h3>⏱️ Relógio Pomodoro</h3>
-                <div class="timer-display" id="timer">25:00</div>
-                <div style="text-align: center; margin-bottom: 1rem;">
-                    <button class="btn btn-primary" onclick="startTimer()">Iniciar</button>
-                    <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
-                </div>
-                <div class="timer-settings">
-                    <label>Foco (min): <input type="number" id="focoMin" value="25" min="1" onchange="updateTimerSettings()"></label>
-                    <label>Pausa (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
-                </div>
-            </div>
-
-            <!-- GRÁFICO -->
-            <div class="card">
-                <h3>📊 Progresso Geral de Estudo</h3>
-                <canvas id="progressChart" height="160"></canvas>
-            </div>
-        </div>
-
-        <!-- SEÇÃO INFERIOR: EDITAL COM EXPANSÃO E PRIORIDADE EDITÁVEL -->
-        <div class="card">
-            <h3 id="edital-title">📚 Edital por Ordem de Prioridade</h3>
-            
-            <form class="form-row" onsubmit="addManualItem(event)">
-                <input type="text" id="materia" placeholder="Matéria (ex: Direito Administrativo)" required>
-                <input type="text" id="assunto" placeholder="Assunto (ex: Atos Administrativos)" required>
-                <input type="number" id="prioridade" placeholder="Prioridade" value="1" min="1">
-                <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
-            </form>
-
-            <!-- CONTROLES DE EXPANSÃO GLOBAL -->
-            <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
-                <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">📖 Expandir Todos</button>
-                <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">📕 Recolher Todos</button>
-            </div>
-
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 100px;">Prioridade</th>
-                            <th>Matéria / Assunto</th>
-                            <th>Teoria</th>
-                            <th>Questões</th>
-                            <th>Rev. 24h</th>
-                            <th>Rev. 7d</th>
-                            <th>Rev. 30d</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="edital-list">
-                        <!-- Linhas geradas dinamicamente -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<!-- Modal: Criar Novo Concurso -->
+<div class="modal-overlay" id="modalConcurso">
+  <div class="modal">
+    <h3>Cadastrar Novo Concurso</h3>
+    
+    <div class="form-group">
+      <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
+      <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico">
     </div>
 
-    <script>
-        const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <div class="form-group">
+      <label for="inputDataConcurso">Data da Prova</label>
+      <input type="date" id="inputDataConcurso">
+    </div>
 
-        let myChart = null;
-        let allEditalItems = [];
-        let editalItems = [];
-        let openMaterias = {}; 
-        let concursos = ['Concurso Geral'];
-        let currentConcurso = 'Concurso Geral';
+    <div class="form-group">
+      <label for="inputFileEdital">Edital em JSON (Opcional)</label>
+      <input type="file" id="inputFileEdital" accept=".json">
+    </div>
 
-        // --- AUTH ---
-        async function handleSignUp() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if (!email || !password) return alert('Preencha e-mail e senha.');
+    <div class="modal-actions">
+      <button class="btn" onclick="fecharModalConcurso()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarNovoConcurso()">Salvar</button>
+    </div>
+  </div>
+</div>
 
-            const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) alert('Erro ao cadastrar: ' + error.message);
-            else alert('Cadastro realizado com sucesso! Clique em Entrar.');
+<!-- Modal: Adicionar Slot de Estudo -->
+<div class="modal-overlay" id="modalSlot">
+  <div class="modal">
+    <h3>Adicionar Horário de Estudo</h3>
+    <input type="hidden" id="slotDiaSemana">
+    
+    <div class="form-group">
+      <label for="slotHorario">Horário (ex: 08:00 - 10:00)</label>
+      <input type="text" id="slotHorario" placeholder="08:00 - 10:00">
+    </div>
+
+    <div class="form-group">
+      <label for="slotMateria">Matéria / Tópico</label>
+      <input type="text" id="slotMateria" placeholder="Ex: Direito Administrativo">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="fecharModalSlot()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarSlot()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+
+  // Estrutura de Dados Padrão Inicial
+  let dadosAppState = JSON.parse(localStorage.getItem('appConcursos')) || {
+    concursoAtual: 'TJ-CE',
+    concursos: {
+      'TJ-CE': {
+        dataProva: '2026-10-18',
+        gradeEstudos: {
+          'Segunda': [{ horario: '08:00 - 10:00', materia: 'Língua Portuguesa' }],
+          'Quarta': [{ horario: '14:00 - 16:00', materia: 'Direito Constitucional' }]
         }
+      }
+    }
+  };
 
-        async function handleLogin() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if (!email || !password) return alert('Preencha e-mail e senha.');
+  // Inicialização
+  document.addEventListener("DOMContentLoaded", () => {
+    renderizarSelectConcursos();
+    carregarConcursoAtual();
+  });
 
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert('Erro ao entrar: ' + error.message);
-            else showDashboard();
-        }
+  function salvarState() {
+    localStorage.setItem('appConcursos', JSON.stringify(dadosAppState));
+  }
 
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            document.getElementById('app-dashboard').style.display = 'none';
-            document.getElementById('auth-screen').style.display = 'flex';
-        }
+  // --- GESTÃO DE CONCURSOS ---
+  function renderizarSelectConcursos() {
+    const select = document.getElementById('concursoSelect');
+    select.innerHTML = '';
+    
+    const lista = Object.keys(dadosAppState.concursos);
+    
+    if (lista.length === 0) {
+      select.innerHTML = '<option value="">Nenhum concurso</option>';
+      return;
+    }
 
-        function showDashboard() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('app-dashboard').style.display = 'block';
-            loadData();
-        }
+    lista.forEach(nome => {
+      const opt = document.createElement('option');
+      opt.value = nome;
+      opt.textContent = nome;
+      if (nome === dadosAppState.concursoAtual) opt.selected = true;
+      select.appendChild(opt);
+    });
+  }
 
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) showDashboard();
-        });
+  function trocarConcurso() {
+    const val = document.getElementById('concursoSelect').value;
+    dadosAppState.concursoAtual = val;
+    salvarState();
+    carregarConcursoAtual();
+  }
 
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-        }
+  function carregarConcursoAtual() {
+    const id = dadosAppState.concursoAtual;
+    const concurso = dadosAppState.concursos[id];
 
-        // --- GERENCIAMENTO DE CONCURSOS ---
-        function renderConcursoSelector() {
-            const select = document.getElementById('concursoSelect');
-            select.innerHTML = '';
-            
-            // Extrai lista única de concursos
-            const set = new Set(concursos);
-            allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
-            concursos = Array.from(set);
+    if (!concurso) {
+      document.getElementById('countdown').textContent = "Selecione ou adicione um concurso";
+      renderizarCalendario({});
+      return;
+    }
 
-            concursos.forEach(c => {
-                select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`;
-            });
-        }
+    atualizarContador(concurso.dataProva);
+    renderizarCalendario(concurso.gradeEstudos || {});
+  }
 
-        function changeConcurso(val) {
-            currentConcurso = val;
-            filterDataByConcurso();
-        }
+  function abrirModalConcurso() {
+    document.getElementById('modalConcurso').style.display = 'flex';
+  }
 
-        function addNovoConcurso() {
-            const nome = prompt('Digite o nome do novo concurso (ex: Polícia Federal 2026):');
-            if (nome && nome.trim()) {
-                const cleanName = nome.trim();
-                if (!concursos.includes(cleanName)) concursos.push(cleanName);
-                currentConcurso = cleanName;
-                filterDataByConcurso();
-            }
-        }
+  function fecharModalConcurso() {
+    document.getElementById('modalConcurso').style.display = 'none';
+    document.getElementById('inputNomeConcurso').value = '';
+    document.getElementById('inputDataConcurso').value = '';
+    document.getElementById('inputFileEdital').value = '';
+  }
 
-        function filterDataByConcurso() {
-            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-            renderConcursoSelector();
-            document.getElementById('edital-title').innerText = `📚 Edital: ${currentConcurso}`;
-            renderTable();
-            renderChart();
-        }
+  function salvarNovoConcurso() {
+    const nome = document.getElementById('inputNomeConcurso').value.trim();
+    const dataProva = document.getElementById('inputDataConcurso').value;
 
-        // --- DADOS LOCAL-FIRST ---
-        async function loadData() {
-            if (navigator.onLine) {
-                try {
-                    const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
-                    if (!error && data) {
-                        allEditalItems = data;
-                        localStorage.setItem('edital_offline_data', JSON.stringify(data));
-                    } else loadLocalData();
-                } catch (e) { loadLocalData(); }
-            } else loadLocalData();
+    if (!nome) {
+      alert("Por favor, digite o nome do concurso.");
+      return;
+    }
 
-            filterDataByConcurso();
-        }
+    dadosAppState.concursos[nome] = {
+      dataProva: dataProva || null,
+      gradeEstudos: {}
+    };
 
-        function loadLocalData() {
-            const local = localStorage.getItem('edital_offline_data');
-            if (local) allEditalItems = JSON.parse(local);
-        }
+    dadosAppState.concursoAtual = nome;
+    salvarState();
+    
+    renderizarSelectConcursos();
+    carregarConcursoAtual();
+    fecharModalConcurso();
+  }
 
-        // --- RENDERIZAÇÃO TABELA EXPANSÍVEL (ACCORDION) ---
-        function renderTable() {
-            const tbody = document.getElementById('edital-list');
-            tbody.innerHTML = '';
+  function removerConcurso() {
+    const atual = dadosAppState.concursoAtual;
+    if (!atual || !dadosAppState.concursos[atual]) {
+      alert("Nenhum concurso selecionado para remover.");
+      return;
+    }
 
-            const materiasMap = {};
-            editalItems.forEach(item => {
-                const mat = item.materia || 'Geral';
-                if (!materiasMap[mat]) {
-                    materiasMap[mat] = {
-                        items: [],
-                        prioridade: item.prioridade || 1
-                    };
-                }
-                materiasMap[mat].items.push(item);
-            });
+    if (confirm(`Tem certeza que deseja remover o concurso "${atual}" e todos os seus dados?`)) {
+      delete dadosAppState.concursos[atual];
+      
+      const restantes = Object.keys(dadosAppState.concursos);
+      dadosAppState.concursoAtual = restantes.length > 0 ? restantes[0] : '';
+      
+      salvarState();
+      renderizarSelectConcursos();
+      carregarConcursoAtual();
+    }
+  }
 
-            const sortedMaterias = Object.keys(materiasMap).sort((a, b) => {
-                return (materiasMap[a].prioridade || 1) - (materiasMap[b].prioridade || 1);
-            });
+  function atualizarContador(dataStr) {
+    const el = document.getElementById('countdown');
+    if (!dataStr) {
+      el.textContent = "Data da prova não informada";
+      return;
+    }
 
-            sortedMaterias.forEach(materiaName => {
-                const group = materiasMap[materiaName];
-                const isOpen = !!openMaterias[materiaName];
+    const dataProva = new Date(dataStr + "T00:00:00");
+    const hoje = new Date();
+    const diffTempo = dataProva - hoje;
+    const diffDias = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
 
-                tbody.innerHTML += `
-                    <tr class="materia-header-row" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
-                        <td onclick="event.stopPropagation()">
-                            <input type="number" class="priority-input" value="${group.prioridade}" min="1" 
-                                onchange="updateMateriaPriority('${materiaName.replace(/'/g, "\\'")}', this.value)">
-                        </td>
-                        <td colspan="7">
-                            <div class="materia-header-content">
-                                <span>${isOpen ? '📂' : '📁'} <strong>${materiaName}</strong> (${group.items.length} assuntos)</span>
-                                <span>${isOpen ? '▲ Recolher' : '▼ Expandir'}</span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+    if (diffDias < 0) {
+      el.textContent = "Prova já realizada";
+    } else if (diffDias === 0) {
+      el.textContent = "🚨 A prova é HOJE!";
+    } else {
+      el.textContent = `⏳ Faltam ${diffDias} dias para a prova`;
+    }
+  }
 
-                if (isOpen) {
-                    group.items.forEach(item => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td></td>
-                                <td style="text-align: left; padding-left: 2rem;">📌 ${item.assunto}</td>
-                                <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'teoria', ${item.teoria})"></td>
-                                <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'questoes', ${item.questoes})"></td>
-                                <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_24h', ${item.rev_24h})"></td>
-                                <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_7d', ${item.rev_7d})"></td>
-                                <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_30d', ${item.rev_30d})"></td>
-                                <td><button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id})">✕</button></td>
-                            </tr>
-                        `;
-                    });
-                }
-            });
-        }
+  // --- CALENDÁRIO SEMANAL ---
+  function renderizarCalendario(grade) {
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
 
-        function toggleMateria(materiaName) {
-            openMaterias[materiaName] = !openMaterias[materiaName];
-            renderTable();
-        }
+    DIAS_SEMANA.forEach(dia => {
+      const col = document.createElement('div');
+      col.className = 'day-column';
 
-        function toggleAllAccordions(open) {
-            editalItems.forEach(i => openMaterias[i.materia] = open);
-            renderTable();
-        }
+      let htmlSlots = '';
+      const slots = grade[dia] || [];
 
-        async function updateMateriaPriority(materiaName, newPriority) {
-            const val = parseInt(newPriority) || 1;
-            allEditalItems.forEach(item => {
-                if (item.materia === materiaName && (item.concurso || 'Concurso Geral') === currentConcurso) {
-                    item.prioridade = val;
-                }
-            });
+      slots.forEach((item, index) => {
+        htmlSlots += `
+          <div class="schedule-item">
+            <button class="btn-del-slot" onclick="removerSlot('${dia}', ${index})">✕</button>
+            <span class="time">${item.horario}</span>
+            <span class="subject">${item.materia}</span>
+          </div>
+        `;
+      });
 
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            filterDataByConcurso();
+      col.innerHTML = `
+        <div class="day-header">${dia}</div>
+        ${htmlSlots}
+        <button class="btn-add-slot" onclick="abrirModalSlot('${dia}')">+ Adicionar</button>
+      `;
 
-            if (navigator.onLine) {
-                await supabaseClient
-                    .from('edital')
-                    .update({ prioridade: val })
-                    .eq('materia', materiaName)
-                    .eq('concurso', currentConcurso);
-            } else {
-                addToSyncQueue({ type: 'UPDATE_PRIORITY', materia: materiaName, prioridade: val, concurso: currentConcurso });
-            }
-        }
+      grid.appendChild(col);
+    });
+  }
 
-        async function toggleCheck(id, field, currentValue) {
-            const item = allEditalItems.find(i => i.id === id);
-            if (item) item[field] = !currentValue;
-            
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            filterDataByConcurso();
+  function abrirModalSlot(dia) {
+    if (!dadosAppState.concursoAtual) {
+      alert("Crie ou selecione um concurso primeiro.");
+      return;
+    }
+    document.getElementById('slotDiaSemana').value = dia;
+    document.getElementById('modalSlot').style.display = 'flex';
+  }
 
-            if (navigator.onLine) {
-                const updateObj = {};
-                updateObj[field] = !currentValue;
-                await supabaseClient.from('edital').update(updateObj).eq('id', id);
-            } else {
-                addToSyncQueue({ type: 'UPDATE', id, field, value: !currentValue });
-            }
-        }
+  function fecharModalSlot() {
+    document.getElementById('modalSlot').style.display = 'none';
+    document.getElementById('slotHorario').value = '';
+    document.getElementById('slotMateria').value = '';
+  }
 
-        async function addManualItem(e) {
-            e.preventDefault();
-            const materia = document.getElementById('materia').value.trim();
-            const assunto = document.getElementById('assunto').value.trim();
-            const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
-            const user = (await supabaseClient.auth.getUser())?.data?.user;
+  function salvarSlot() {
+    const dia = document.getElementById('slotDiaSemana').value;
+    const horario = document.getElementById('slotHorario').value.trim();
+    const materia = document.getElementById('slotMateria').value.trim();
 
-            const newItem = {
-                id: Date.now(),
-                materia, assunto, prioridade,
-                concurso: currentConcurso,
-                user_id: user ? user.id : null,
-                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
-            };
+    if (!horario || !materia) {
+      alert("Preencha o horário e a matéria.");
+      return;
+    }
 
-            openMaterias[materia] = true;
-            allEditalItems.push(newItem);
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            
-            document.getElementById('materia').value = '';
-            document.getElementById('assunto').value = '';
-            filterDataByConcurso();
+    const concurso = dadosAppState.concursos[dadosAppState.concursoAtual];
+    if (!concurso.gradeEstudos) concurso.gradeEstudos = {};
+    if (!concurso.gradeEstudos[dia]) concurso.gradeEstudos[dia] = [];
 
-            if (navigator.onLine && user) {
-                delete newItem.id;
-                await supabaseClient.from('edital').insert([newItem]);
-                loadData();
-            } else {
-                addToSyncQueue({ type: 'INSERT', item: newItem });
-            }
-        }
+    concurso.gradeEstudos[dia].push({ horario, materia });
 
-        async function deleteItem(id) {
-            allEditalItems = allEditalItems.filter(i => i.id !== id);
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            filterDataByConcurso();
+    salvarState();
+    carregarConcursoAtual();
+    fecharModalSlot();
+  }
 
-            if (navigator.onLine) {
-                await supabaseClient.from('edital').delete().eq('id', id);
-            } else {
-                addToSyncQueue({ type: 'DELETE', id });
-            }
-        }
-
-        async function clearData() {
-            if (confirm(`Tem certeza que deseja apagar todos os tópicos do edital "${currentConcurso}"?`)) {
-                allEditalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') !== currentConcurso);
-                openMaterias = {};
-                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-                filterDataByConcurso();
-
-                if (navigator.onLine) {
-                    const user = (await supabaseClient.auth.getUser())?.data?.user;
-                    if (user) await supabaseClient.from('edital').delete().eq('concurso', currentConcurso).eq('user_id', user.id);
-                }
-            }
-        }
-
-        // --- PARSER JSON AVANÇADO (SUPORTE A DUMP DE BANCO E ESTRUTURAS COMPLEXAS) ---
-        async function importJSON(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    let rawData = JSON.parse(e.target.result);
-                    const user = (await supabaseClient.auth.getUser())?.data?.user;
-                    let formattedData = [];
-
-                    // Remove wrappers genéricos de export/dump de API
-                    if (rawData.payload_public_edital) rawData = rawData.payload_public_edital;
-                    if (rawData.payload) rawData = rawData.payload;
-                    if (rawData.data) rawData = rawData.data;
-
-                    // Caso 1: Array de Objetos
-                    if (Array.isArray(rawData)) {
-                        formattedData = rawData.map((item, idx) => {
-                            // Trata nomes de matérias caso venha de dump de tabela
-                            let mName = item.materia || item.disciplina || item.subject;
-                            if (!mName || mName === 'payload_public_edital') mName = 'Matéria Importada';
-
-                            return {
-                                id: Date.now() + idx,
-                                materia: mName,
-                                assunto: item.assunto || item.topico || item.nome || item.descricao || 'Tópico de Estudo',
-                                prioridade: parseInt(item.prioridade || item.peso || 1),
-                                concurso: currentConcurso,
-                                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
-                                user_id: user ? user.id : null
-                            };
-                        });
-                    } 
-                    // Caso 2: Objeto Aninhado { "Direito Penal": ["Art. 121", ...], "Português": [...] }
-                    else if (typeof rawData === 'object' && rawData !== null) {
-                        let count = 0;
-                        Object.keys(rawData).forEach((materiaKey, index) => {
-                            const assuntos = rawData[materiaKey];
-                            if (Array.isArray(assuntos)) {
-                                assuntos.forEach(assuntoItem => {
-                                    count++;
-                                    formattedData.push({
-                                        id: Date.now() + count,
-                                        materia: materiaKey,
-                                        assunto: typeof assuntoItem === 'string' ? assuntoItem : (assuntoItem.nome || assuntoItem.assunto || 'Tópico'),
-                                        prioridade: typeof assuntoItem === 'object' ? parseInt(assuntoItem.prioridade || assuntoItem.peso || index + 1) : index + 1,
-                                        concurso: currentConcurso,
-                                        teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
-                                        user_id: user ? user.id : null
-                                    });
-                                });
-                            }
-                        });
-                    }
-
-                    if (formattedData.length === 0) {
-                        alert('Nenhum tópico válido encontrado no arquivo JSON.');
-                        return;
-                    }
-
-                    allEditalItems = [...allEditalItems, ...formattedData];
-                    localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-                    filterDataByConcurso();
-
-                    if (navigator.onLine && user) {
-                        const dataToInsert = formattedData.map(d => { const copy = {...d}; delete copy.id; return copy; });
-                        await supabaseClient.from('edital').insert(dataToInsert);
-                        loadData();
-                    } else {
-                        formattedData.forEach(item => addToSyncQueue({ type: 'INSERT', item }));
-                    }
-
-                    alert(`Sucesso! ${formattedData.length} tópicos foram importados para o concurso "${currentConcurso}".`);
-                } catch (err) {
-                    alert('Erro na leitura do JSON: Verifique a formatação do arquivo.');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
-        }
-
-        // --- FILA DE SINCRONIZAÇÃO OFFLINE ---
-        function addToSyncQueue(action) {
-            const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
-            queue.push(action);
-            localStorage.setItem('sync_queue', JSON.stringify(queue));
-        }
-
-        async function syncOfflineData() {
-            const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
-            if (queue.length === 0) return;
-
-            const user = (await supabaseClient.auth.getUser())?.data?.user;
-            if (!user) return;
-
-            for (const action of queue) {
-                if (action.type === 'UPDATE') {
-                    const updateObj = {};
-                    updateObj[action.field] = action.value;
-                    await supabaseClient.from('edital').update(updateObj).eq('id', action.id);
-                } else if (action.type === 'UPDATE_PRIORITY') {
-                    await supabaseClient.from('edital')
-                        .update({ prioridade: action.prioridade })
-                        .eq('materia', action.materia)
-                        .eq('concurso', action.concurso);
-                } else if (action.type === 'INSERT') {
-                    const item = action.item;
-                    delete item.id;
-                    item.user_id = user.id;
-                    await supabaseClient.from('edital').insert([item]);
-                } else if (action.type === 'DELETE') {
-                    await supabaseClient.from('edital').delete().eq('id', action.id);
-                }
-            }
-
-            localStorage.removeItem('sync_queue');
-            loadData();
-        }
-
-        function updateOnlineStatus() {
-            const banner = document.getElementById('offline-banner');
-            if (navigator.onLine) {
-                banner.style.display = 'none';
-                syncOfflineData();
-            } else {
-                banner.style.display = 'block';
-            }
-        }
-
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-        window.addEventListener('load', updateOnlineStatus);
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => console.log('Service Worker Registrado'))
-                    .catch(err => console.error('Falha ao registrar Service Worker:', err));
-            });
-        }
-
-        // --- GRÁFICO (CHART.JS) ---
-        function renderChart() {
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            const counts = {};
-
-            editalItems.forEach(item => {
-                if (!counts[item.materia]) counts[item.materia] = { total: 0, concluido: 0 };
-                counts[item.materia].total += 5;
-                if (item.teoria) counts[item.materia].concluido++;
-                if (item.questoes) counts[item.materia].concluido++;
-                if (item.rev_24h) counts[item.materia].concluido++;
-                if (item.rev_7d) counts[item.materia].concluido++;
-                if (item.rev_30d) counts[item.materia].concluido++;
-            });
-
-            const labels = Object.keys(counts);
-            const dataConcluidos = labels.map(l => counts[l].concluido);
-
-            if (myChart) myChart.destroy();
-
-            myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Etapas Concluídas',
-                        data: dataConcluidos,
-                        backgroundColor: '#2563eb'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
-
-        // --- POMODORO EDITÁVEL ---
-        let timerInterval = null;
-        let isFocusTime = true;
-        let timeLeft = 25 * 60;
-
-        function updateTimerSettings() {
-            if (!timerInterval) {
-                const foco = parseInt(document.getElementById('focoMin').value) || 25;
-                timeLeft = foco * 60;
-                updateDisplay();
-            }
-        }
-
-        function updateDisplay() {
-            const min = Math.floor(timeLeft / 60);
-            const sec = timeLeft % 60;
-            document.getElementById('timer').innerText = 
-                `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-        }
-
-        function startTimer() {
-            if (timerInterval) return;
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    updateDisplay();
-                } else {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    isFocusTime = !isFocusTime;
-                    alert(isFocusTime ? 'Hora de focar!' : 'Hora da pausa!');
-                    const nextMin = isFocusTime ? document.getElementById('focoMin').value : document.getElementById('pausaMin').value;
-                    timeLeft = (parseInt(nextMin) || 5) * 60;
-                    updateDisplay();
-                }
-            }, 1000);
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            isFocusTime = true;
-            updateTimerSettings();
-        }
-
-        // Globais
-        window.handleSignUp = handleSignUp;
-        window.handleLogin = handleLogin;
-        window.handleLogout = handleLogout;
-        window.toggleDarkMode = toggleDarkMode;
-        window.importJSON = importJSON;
-        window.clearData = clearData;
-        window.addManualItem = addManualItem;
-        window.toggleCheck = toggleCheck;
-        window.deleteItem = deleteItem;
-        window.toggleMateria = toggleMateria;
-        window.toggleAllAccordions = toggleAllAccordions;
-        window.updateMateriaPriority = updateMateriaPriority;
-        window.changeConcurso = changeConcurso;
-        window.addNovoConcurso = addNovoConcurso;
-        window.startTimer = startTimer;
-        window.resetTimer = resetTimer;
-        window.updateTimerSettings = updateTimerSettings;
-    </script>
+  function removerSlot(dia, index) {
+    const concurso = dadosAppState.concursos[dadosAppState.concursoAtual];
+    if (concurso && concurso.gradeEstudos && concurso.gradeEstudos[dia]) {
+      concurso.gradeEstudos[dia].splice(index, 1);
+      salvarState();
+      carregarConcursoAtual();
+    }
+  }
+</script>
 </body>
 </html>
