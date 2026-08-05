@@ -232,7 +232,6 @@
             letter-spacing: 2px;
         }
 
-        /* CORREÇÃO DO LAYOUT DO NUMERAL POMODORO */
         .timer-settings {
             display: flex;
             justify-content: center;
@@ -465,7 +464,6 @@
                 <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">➕ Novo</button>
                 <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">🗑️ Excluir</button>
                 
-                <!-- BADGE EDITÁVEL DE DATA DA PROVA -->
                 <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
                     Sem data de prova
                 </div>
@@ -495,7 +493,7 @@
         <!-- ABA 1: EDITAL VERTICALIZADO + TIMER + GRÁFICO -->
         <div id="tab-edital" class="tab-content active">
             <div class="grid-top">
-                <!-- TIMER POMODORO COM LARGURA CORRIGIDA -->
+                <!-- TIMER POMODORO -->
                 <div class="card">
                     <h3>⏱️ Relógio Pomodoro</h3>
                     <div class="timer-display" id="timer">25:00</div>
@@ -1045,24 +1043,34 @@
             }
         }
 
-        // --- DADOS LOCAL-FIRST ---
+        // --- CARREGAMENTO LOCAL FIRST CORRIGIDO ---
         async function loadData() {
+            loadLocalData(); // Carrega primeiro os dados salvos localmente
+            
             if (navigator.onLine) {
                 try {
                     const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
-                    if (!error && data) {
+                    if (!error && data && data.length > 0) {
                         allEditalItems = data;
                         localStorage.setItem('edital_offline_data', JSON.stringify(data));
-                    } else loadLocalData();
-                } catch (e) { loadLocalData(); }
-            } else loadLocalData();
+                    }
+                } catch (e) {
+                    console.log('Utilizando dados do localStorage');
+                }
+            }
 
             filterDataByConcurso();
         }
 
         function loadLocalData() {
             const local = localStorage.getItem('edital_offline_data');
-            if (local) allEditalItems = JSON.parse(local);
+            if (local) {
+                try {
+                    allEditalItems = JSON.parse(local);
+                } catch(e) {
+                    allEditalItems = [];
+                }
+            }
         }
 
         // --- RENDERIZAÇÃO TABELA EXPANSÍVEL POR MATÉRIA ---
@@ -1158,23 +1166,27 @@
             }
         }
 
+        // REGISTRA E PERSISTE O STATUS DE CADA MARCAÇÃO
         async function toggleCheck(id, field, currentValue) {
             const item = allEditalItems.find(i => i.id === id);
-            if (item) item[field] = !currentValue;
-            
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            filterDataByConcurso();
+            if (item) {
+                item[field] = !currentValue;
+                
+                // Salva localmente de imediato
+                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                filterDataByConcurso();
 
-            if (navigator.onLine) {
-                const updateObj = {};
-                updateObj[field] = !currentValue;
-                await supabaseClient.from('edital').update(updateObj).eq('id', id);
-            } else {
-                addToSyncQueue({ type: 'UPDATE', id, field, value: !currentValue });
+                if (navigator.onLine) {
+                    const updateObj = {};
+                    updateObj[field] = !currentValue;
+                    await supabaseClient.from('edital').update(updateObj).eq('id', id);
+                } else {
+                    addToSyncQueue({ type: 'UPDATE', id, field, value: !currentValue });
+                }
             }
         }
 
-        // LIMPAR TODAS AS MARCAÇÕES DA LINHA DO ASSUNTO
+        // LIMPA VISUALMENTE E PERSISTE O APAGAMENTO DAS MARCAÇÕES
         async function clearRowCheckboxes(id) {
             const item = allEditalItems.find(i => i.id === id);
             if (item) {
@@ -1184,6 +1196,7 @@
                 item.rev_7d = false;
                 item.rev_30d = false;
 
+                // Força salvamento local e atualiza visualmente no mesmo instante
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
                 filterDataByConcurso();
 
@@ -1227,7 +1240,6 @@
             if (navigator.onLine && user) {
                 delete newItem.id;
                 await supabaseClient.from('edital').insert([newItem]);
-                loadData();
             } else {
                 addToSyncQueue({ type: 'INSERT', item: newItem });
             }
@@ -1313,7 +1325,6 @@
                     if (navigator.onLine && user) {
                         const dataToInsert = formattedData.map(d => { const copy = {...d}; delete copy.id; return copy; });
                         await supabaseClient.from('edital').insert(dataToInsert);
-                        loadData();
                     } else {
                         formattedData.forEach(item => addToSyncQueue({ type: 'INSERT', item }));
                     }
@@ -1368,7 +1379,6 @@
             }
 
             localStorage.removeItem('sync_queue');
-            loadData();
         }
 
         function updateOnlineStatus() {
