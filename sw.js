@@ -1,33 +1,36 @@
-const CACHE_NAME = 'estudos-app-v1';
+// No seu arquivo sw.js:
+const CACHE_NAME = 'edital-dashboard-v3'; // <--- mude a versão aqui
+
 const ASSETS_TO_CACHE = [
-    '/',
-    '/index.html',
-    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-    'https://cdn.jsdelivr.net/npm/chart.js'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
-// Instalação do Service Worker e gravação do Cache
+// Forçar a ativação do novo Service Worker e apagar caches antigos
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS_TO_CACHE);
-        })
-    );
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+  );
 });
 
-// Intercepta as requisições para carregar do Cache se estiver offline
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            return fetch(event.request).catch(() => {
-                // Se falhar o fetch e for uma navegação, retorna o index.html em cache
-                if (event.request.mode === 'navigate') {
-                    return caches.match('/index.html');
-                }
-            });
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache); // Apaga a versão antiga da memória do navegador
+          }
         })
-    );
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
 });
