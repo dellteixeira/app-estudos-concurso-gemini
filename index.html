@@ -232,16 +232,29 @@
             letter-spacing: 2px;
         }
 
+        /* CORREÇÃO DO LAYOUT DO NUMERAL POMODORO */
         .timer-settings {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 1rem;
+            gap: 1.2rem;
             margin-top: 1rem;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            flex-wrap: wrap;
         }
 
-        .timer-settings input { width: 60px; text-align: center; }
+        .timer-settings label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .timer-settings input {
+            width: 80px;
+            text-align: center;
+            padding: 0.5rem 0.4rem;
+            font-weight: 600;
+        }
 
         /* CALENDÁRIO SEMANAL & BLOCOS DE ESTUDO */
         .weekly-hours-banner {
@@ -310,7 +323,6 @@
             transform: translateY(-1px);
         }
 
-        /* ESTILO DO BLOCO CONCLUÍDO/ESTUDADO */
         .schedule-item.completed {
             background: var(--completed-bg);
             border-color: var(--completed-border);
@@ -483,7 +495,7 @@
         <!-- ABA 1: EDITAL VERTICALIZADO + TIMER + GRÁFICO -->
         <div id="tab-edital" class="tab-content active">
             <div class="grid-top">
-                <!-- TIMER POMODORO -->
+                <!-- TIMER POMODORO COM LARGURA CORRIGIDA -->
                 <div class="card">
                     <h3>⏱️ Relógio Pomodoro</h3>
                     <div class="timer-display" id="timer">25:00</div>
@@ -565,7 +577,7 @@
 
     </div>
 
-    <!-- MODAL: CADASTRAR NOVO CONCURSO (COM OPÇÃO DE COPIAR OUTRO CONCURSO) -->
+    <!-- MODAL: CADASTRAR NOVO CONCURSO -->
     <div class="modal-overlay" id="modalNovoConcurso">
         <div class="modal">
             <h3>Cadastrar Novo Concurso</h3>
@@ -584,7 +596,6 @@
                 <label for="selectCopyConcurso">Copiar Estrutura de Concurso Existente (Opcional)</label>
                 <select id="selectCopyConcurso">
                     <option value="">-- Criar concurso em branco --</option>
-                    <!-- Preenchido via JS com os concursos cadastrados -->
                 </select>
             </div>
 
@@ -756,10 +767,8 @@
 
             if (!nome) return alert('Digite o nome do concurso.');
 
-            // Criar a entrada nos metadados
             let newSchedule = {};
             if (concursoParaCopiar && concursosMetadata[concursoParaCopiar]?.schedule) {
-                // Copia profunda da grade horária
                 newSchedule = JSON.parse(JSON.stringify(concursosMetadata[concursoParaCopiar].schedule));
             }
 
@@ -769,7 +778,6 @@
             };
             saveConcursosMetadata();
 
-            // Copiar os tópicos do edital caso tenha sido selecionado um concurso para copiar
             if (concursoParaCopiar) {
                 const user = (await supabaseClient.auth.getUser())?.data?.user;
                 const itemsParaCopiar = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === concursoParaCopiar);
@@ -866,7 +874,7 @@
             renderCalendar();
         }
 
-        // --- UTILITÁRIO DE CÁLCULO DE HORAS ---
+        // --- CÁLCULO DE HORAS ---
         function parseTimeIntervalToMinutes(timeIntervalStr) {
             if (!timeIntervalStr) return 0;
             const parts = timeIntervalStr.split('-').map(s => s.trim());
@@ -1108,7 +1116,9 @@
                                 <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_24h', ${item.rev_24h})"></td>
                                 <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_7d', ${item.rev_7d})"></td>
                                 <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_30d', ${item.rev_30d})"></td>
-                                <td><button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id})">✕</button></td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes(${item.id})" title="Limpar todas as marcações desta linha">✕</button>
+                                </td>
                             </tr>
                         `;
                     });
@@ -1164,6 +1174,33 @@
             }
         }
 
+        // LIMPAR TODAS AS MARCAÇÕES DA LINHA DO ASSUNTO
+        async function clearRowCheckboxes(id) {
+            const item = allEditalItems.find(i => i.id === id);
+            if (item) {
+                item.teoria = false;
+                item.questoes = false;
+                item.rev_24h = false;
+                item.rev_7d = false;
+                item.rev_30d = false;
+
+                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                filterDataByConcurso();
+
+                if (navigator.onLine) {
+                    await supabaseClient.from('edital').update({
+                        teoria: false,
+                        questoes: false,
+                        rev_24h: false,
+                        rev_7d: false,
+                        rev_30d: false
+                    }).eq('id', id);
+                } else {
+                    addToSyncQueue({ type: 'CLEAR_ROW', id });
+                }
+            }
+        }
+
         async function addManualItem(e) {
             e.preventDefault();
             const materia = document.getElementById('materia').value.trim();
@@ -1193,18 +1230,6 @@
                 loadData();
             } else {
                 addToSyncQueue({ type: 'INSERT', item: newItem });
-            }
-        }
-
-        async function deleteItem(id) {
-            allEditalItems = allEditalItems.filter(i => i.id !== id);
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            filterDataByConcurso();
-
-            if (navigator.onLine) {
-                await supabaseClient.from('edital').delete().eq('id', id);
-            } else {
-                addToSyncQueue({ type: 'DELETE', id });
             }
         }
 
@@ -1326,13 +1351,19 @@
                         .update({ prioridade: action.prioridade })
                         .eq('materia', action.materia)
                         .eq('concurso', action.concurso);
+                } else if (action.type === 'CLEAR_ROW') {
+                    await supabaseClient.from('edital').update({
+                        teoria: false,
+                        questoes: false,
+                        rev_24h: false,
+                        rev_7d: false,
+                        rev_30d: false
+                    }).eq('id', action.id);
                 } else if (action.type === 'INSERT') {
                     const item = action.item;
                     delete item.id;
                     item.user_id = user.id;
                     await supabaseClient.from('edital').insert([item]);
-                } else if (action.type === 'DELETE') {
-                    await supabaseClient.from('edital').delete().eq('id', action.id);
                 }
             }
 
@@ -1454,7 +1485,7 @@
         window.clearData = clearData;
         window.addManualItem = addManualItem;
         window.toggleCheck = toggleCheck;
-        window.deleteItem = deleteItem;
+        window.clearRowCheckboxes = clearRowCheckboxes;
         window.toggleMateria = toggleMateria;
         window.toggleAllAccordions = toggleAllAccordions;
         window.updateMateriaPriority = updateMateriaPriority;
