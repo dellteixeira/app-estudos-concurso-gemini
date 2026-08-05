@@ -3,12 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Estudos Concurso</title>
+    <title>Meu Painel de Estudos</title>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Chart.js para Gráficos -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e2e8f0;
+            --primary-blue: #2563eb;
+        }
+
+        body.dark-mode {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --border-color: #334155;
+            --primary-blue: #3b82f6;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -17,12 +33,13 @@
         }
 
         body {
-            background-color: #f4f6f9;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* TELA DE AUTH */
+        /* AUTH SCREEN */
         .auth-container {
             display: flex;
             justify-content: center;
@@ -31,7 +48,7 @@
         }
 
         .auth-card {
-            background: #ffffff;
+            background: var(--card-bg);
             padding: 2.5rem;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
@@ -40,207 +57,247 @@
             text-align: center;
         }
 
-        .auth-card h2 {
-            margin-bottom: 1.5rem;
-            color: #2563eb;
-        }
+        .auth-card h2 { margin-bottom: 1.5rem; color: var(--primary-blue); }
 
-        .form-group {
-            margin-bottom: 1.2rem;
-            text-align: left;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .btn {
-            padding: 0.75rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .btn:hover { opacity: 0.9; }
-        .btn-primary { background-color: #2563eb; color: white; }
-        .btn-secondary { background-color: #64748b; color: white; }
-        .btn-danger { background-color: #ef4444; color: white; }
-
-        /* DASHBOARD PRINCIPAL */
+        /* DASHBOARD LAYOUT */
         #app-dashboard {
             display: none;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-            background: white;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            margin-bottom: 1rem;
         }
 
-        .grid-layout {
+        .action-bar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .grid-top {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         @media (max-width: 768px) {
-            .grid-layout { grid-template-columns: 1fr; }
+            .grid-top { grid-template-columns: 1fr; }
         }
 
         .card {
-            background: white;
+            background: var(--card-bg);
             padding: 1.5rem;
             border-radius: 12px;
+            border: 1px solid var(--border-color);
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            margin-bottom: 2rem;
         }
 
         .card h3 {
             margin-bottom: 1rem;
-            color: #1e293b;
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* BUTTONS & INPUTS */
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background-color: var(--primary-blue); color: white; }
+        .btn-secondary { background-color: #64748b; color: white; }
+        .btn-success { background-color: #10b981; color: white; }
+        .btn-danger { background-color: #ef4444; color: white; }
+
+        input, select {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
         }
 
         /* POMODORO */
         .timer-display {
-            font-size: 3.5rem;
+            font-size: 4rem;
             font-weight: bold;
             text-align: center;
-            margin: 1rem 0;
-            color: #2563eb;
+            margin: 0.5rem 0;
+            letter-spacing: 2px;
         }
 
-        .timer-controls {
+        .timer-settings {
             display: flex;
             justify-content: center;
+            align-items: center;
             gap: 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
         }
 
+        .timer-settings input { width: 60px; text-align: center; }
+
         /* EDITAL TABLE */
+        .form-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .form-row input[type="text"] { flex: 2; }
+        .form-row input[type="number"] { width: 80px; }
+
+        .table-responsive { overflow-x: auto; }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
         }
 
         th, td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        th { background-color: #f8fafc; }
+        th {
+            background-color: rgba(0,0,0,0.03);
+            font-weight: 600;
+        }
+
+        body.dark-mode th { background-color: rgba(255,255,255,0.05); }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE AUTENTICAÇÃO -->
+    <!-- AUTH SCREEN -->
     <div id="auth-screen" class="auth-container">
         <div class="auth-card">
             <h2>🔑 Entrar no Sistema</h2>
-            <div class="form-group">
-                <input type="email" id="email" placeholder="seu@email.com" required>
+            <div style="margin-bottom: 1rem;">
+                <input type="email" id="email" placeholder="seu@email.com" style="width:100%; margin-bottom: 0.5rem;" required>
+                <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" style="width:100%;" required>
             </div>
-            <div class="form-group">
-                <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" required>
-            </div>
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="handleLogin()">Entrar</button>
-                <button class="btn btn-secondary" onclick="handleSignUp()">Cadastrar</button>
+            <div style="display:flex; gap:0.5rem;">
+                <button class="btn btn-primary" style="flex:1;" onclick="handleLogin()">Entrar</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="handleSignUp()">Cadastrar</button>
             </div>
         </div>
     </div>
 
-    <!-- PAINEL PRINCIPAL (APÓS LOGIN) -->
+    <!-- MAIN DASHBOARD -->
     <div id="app-dashboard">
         <header>
-            <h2>📚 Painel de Estudos</h2>
+            <h2>🎯 Meu Painel de Estudos</h2>
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
         </header>
 
-        <div class="grid-layout">
-            <!-- COLUNA ESQUERDA: TIMER POMODORO & GRÁFICO -->
-            <div>
-                <!-- TIMER POMODORO -->
-                <div class="card">
-                    <h3>⏱️ Timer Pomodoro</h3>
-                    <div class="timer-display" id="timer">25:00</div>
-                    <div class="timer-controls">
-                        <button class="btn btn-primary" onclick="startTimer()">Iniciar</button>
-                        <button class="btn btn-secondary" onclick="pauseTimer()">Pausar</button>
-                        <button class="btn btn-danger" onclick="resetTimer()">Resetar</button>
-                    </div>
-                </div>
+        <!-- BARRA DE AÇÕES -->
+        <div class="action-bar">
+            <button class="btn btn-secondary" onclick="toggleDarkMode()">🌙 Modo Escuro</button>
+            
+            <label class="btn btn-success" style="cursor: pointer;">
+                📥 Importar JSON
+                <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="importJSON(event)">
+            </label>
 
-                <!-- GRÁFICO DE PROGRESSO -->
-                <div class="card">
-                    <h3>📊 Progresso por Matéria</h3>
-                    <canvas id="progressChart"></canvas>
+            <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Dados</button>
+        </div>
+
+        <!-- SEÇÃO SUPERIOR: POMODORO & PROGRESSO -->
+        <div class="grid-top">
+            <!-- TIMER POMODORO -->
+            <div class="card">
+                <h3>⏱️ Relógio Pomodoro</h3>
+                <div class="timer-display" id="timer">25:00</div>
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <button class="btn btn-primary" onclick="startTimer()">Iniciar</button>
+                    <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
+                </div>
+                <div class="timer-settings">
+                    <label>Foco (min): <input type="number" id="focoMin" value="25" min="1" onchange="updateTimerSettings()"></label>
+                    <label>Pausa (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
                 </div>
             </div>
 
-            <!-- COLUNA DIREITA: EDITAL VERTICALIZADO -->
-            <div>
-                <div class="card">
-                    <h3>📝 Edital Verticalizado</h3>
-                    <form id="edital-form" onsubmit="addEditalItem(event)">
-                        <div class="form-group">
-                            <input type="text" id="materia" placeholder="Matéria (ex: Direito Constitucional)" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" id="assunto" placeholder="Assunto (ex: Artigo 5º)" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Adicionar Tópico</button>
-                    </form>
+            <!-- GRÁFICO -->
+            <div class="card">
+                <h3>📊 Progresso Geral de Estudo</h3>
+                <canvas id="progressChart" height="160"></canvas>
+            </div>
+        </div>
 
-                    <table id="edital-table">
-                        <thead>
-                            <tr>
-                                <th>Status</th>
-                                <th>Matéria</th>
-                                <th>Assunto</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="edital-list">
-                            <!-- Itens carregados do Supabase -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- SEÇÃO INFERIOR: EDITAL COM PRIORIDADES E REVISÕES -->
+        <div class="card">
+            <h3>📚 Edital por Ordem de Prioridade (24h / 7d / 30d)</h3>
+            
+            <form class="form-row" onsubmit="addManualItem(event)">
+                <input type="text" id="materia" placeholder="Matéria (ex: Direito Administrativo)" required>
+                <input type="text" id="assunto" placeholder="Assunto (ex: Atos Administrativos)" required>
+                <input type="number" id="prioridade" placeholder="Prioridade" value="1" min="1" title="Prioridade/Peso">
+                <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
+            </form>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prioridade</th>
+                            <th>Matéria</th>
+                            <th>Assunto</th>
+                            <th>Teoria</th>
+                            <th>Questões</th>
+                            <th>Rev. 24h</th>
+                            <th>Rev. 7d</th>
+                            <th>Rev. 30d</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="edital-list">
+                        <!-- Linhas geradas dinamicamente -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO DO SUPABASE
+        // CONFIGURAÇÃO SUPABASE
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let myChart = null;
+        let editalItems = [];
 
-        // --- AUTENTICAÇÃO ---
+        // --- AUTHENTICATION ---
         async function handleSignUp() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -248,7 +305,7 @@
 
             const { error } = await supabaseClient.auth.signUp({ email, password });
             if (error) alert('Erro ao cadastrar: ' + error.message);
-            else alert('Cadastro realizado com sucesso! Agora clique em Entrar.');
+            else alert('Cadastro realizado com sucesso! Clique em Entrar.');
         }
 
         async function handleLogin() {
@@ -256,12 +313,9 @@
             const password = document.getElementById('password').value.trim();
             if (!email || !password) return alert('Preencha e-mail e senha.');
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                alert('Erro ao entrar: ' + error.message);
-            } else {
-                showDashboard();
-            }
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) alert('Erro ao entrar: ' + error.message);
+            else showDashboard();
         }
 
         async function handleLogout() {
@@ -273,88 +327,132 @@
         function showDashboard() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-dashboard').style.display = 'block';
-            loadEditalData();
+            loadData();
         }
 
-        // Check sessão ativa
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) showDashboard();
         });
 
-        // --- GERENCIAMENTO DE EDITAL & SUPABASE ---
-        async function loadEditalData() {
-            const { data, error } = await supabaseClient.from('edital').select('*');
-            if (error) console.error('Erro ao buscar dados:', error);
-            else {
-                renderEditalTable(data || []);
-                renderChart(data || []);
+        // --- MODO ESCURO ---
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        // --- CARREGAR & RENDERIZAR DADOS ---
+        async function loadData() {
+            const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
+            if (!error && data) {
+                editalItems = data;
+                renderTable();
+                renderChart();
             }
         }
 
-        async function addEditalItem(e) {
-            e.preventDefault();
-            const materia = document.getElementById('materia').value;
-            const assunto = document.getElementById('assunto').value;
-            const user = (await supabaseClient.auth.getUser()).data.user;
+        function renderTable() {
+            const tbody = document.getElementById('edital-list');
+            tbody.innerHTML = '';
 
-            const { error } = await supabaseClient.from('edital').insert([
-                { materia, assunto, status: false, user_id: user.id }
-            ]);
-
-            if (error) alert('Erro ao salvar: ' + error.message);
-            else {
-                document.getElementById('edital-form').reset();
-                loadEditalData();
-            }
-        }
-
-        async function toggleStatus(id, currentStatus) {
-            const { error } = await supabaseClient
-                .from('edital')
-                .update({ status: !currentStatus })
-                .eq('id', id);
-
-            if (!error) loadEditalData();
-        }
-
-        async function deleteItem(id) {
-            const { error } = await supabaseClient.from('edital').delete().eq('id', id);
-            if (!error) loadEditalData();
-        }
-
-        function renderEditalTable(items) {
-            const list = document.getElementById('edital-list');
-            list.innerHTML = '';
-            items.forEach(item => {
-                list.innerHTML += `
+            editalItems.forEach((item) => {
+                tbody.innerHTML += `
                     <tr>
-                        <td>
-                            <input type="checkbox" ${item.status ? 'checked' : ''} onchange="toggleStatus(${item.id}, ${item.status})">
-                        </td>
+                        <td><strong>${item.prioridade || 1}</strong></td>
                         <td>${item.materia}</td>
                         <td>${item.assunto}</td>
-                        <td>
-                            <button class="btn btn-danger" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="deleteItem(${item.id})">x</button>
-                        </td>
+                        <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'teoria', ${item.teoria})"></td>
+                        <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'questoes', ${item.questoes})"></td>
+                        <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_24h', ${item.rev_24h})"></td>
+                        <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_7d', ${item.rev_7d})"></td>
+                        <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_30d', ${item.rev_30d})"></td>
+                        <td><button class="btn btn-danger" style="padding:0.2rem 0.5rem; font-size:0.8rem;" onclick="deleteItem(${item.id})">✕</button></td>
                     </tr>
                 `;
             });
         }
 
-        // --- GRÁFICOS (CHART.JS) ---
-        function renderChart(items) {
+        async function toggleCheck(id, field, currentValue) {
+            const updateObj = {};
+            updateObj[field] = !currentValue;
+            await supabaseClient.from('edital').update(updateObj).eq('id', id);
+            loadData();
+        }
+
+        async function addManualItem(e) {
+            e.preventDefault();
+            const materia = document.getElementById('materia').value;
+            const assunto = document.getElementById('assunto').value;
+            const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
+            const user = (await supabaseClient.auth.getUser()).data.user;
+
+            await supabaseClient.from('edital').insert([{
+                materia, assunto, prioridade, user_id: user.id,
+                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
+            }]);
+
+            document.getElementById('materia').value = '';
+            document.getElementById('assunto').value = '';
+            loadData();
+        }
+
+        async function deleteItem(id) {
+            await supabaseClient.from('edital').delete().eq('id', id);
+            loadData();
+        }
+
+        async function clearData() {
+            if (confirm('Tem certeza que deseja apagar todos os tópicos do edital?')) {
+                const user = (await supabaseClient.auth.getUser()).data.user;
+                await supabaseClient.from('edital').delete().eq('user_id', user.id);
+                loadData();
+            }
+        }
+
+        // --- IMPORTAR JSON ---
+        async function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const user = (await supabaseClient.auth.getUser()).data.user;
+
+                    const formattedData = data.map(item => ({
+                        materia: item.materia || item.disciplina || 'Geral',
+                        assunto: item.assunto || item.topico || 'Geral',
+                        prioridade: item.prioridade || item.peso || 1,
+                        teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
+                        user_id: user.id
+                    }));
+
+                    await supabaseClient.from('edital').insert(formattedData);
+                    alert('Edital importado com sucesso!');
+                    loadData();
+                } catch (err) {
+                    alert('Erro ao ler arquivo JSON. Verifique a estrutura do arquivo.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- GRÁFICO (CHART.JS) ---
+        function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
-            
-            // Agrupar por matéria
             const counts = {};
-            items.forEach(item => {
+
+            editalItems.forEach(item => {
                 if (!counts[item.materia]) counts[item.materia] = { total: 0, concluido: 0 };
-                counts[item.materia].total++;
-                if (item.status) counts[item.materia].concluido++;
+                counts[item.materia].total += 5; // 5 checkpoints (Teoria, Questões, 3 Revs)
+                if (item.teoria) counts[item.materia].concluido++;
+                if (item.questoes) counts[item.materia].concluido++;
+                if (item.rev_24h) counts[item.materia].concluido++;
+                if (item.rev_7d) counts[item.materia].concluido++;
+                if (item.rev_30d) counts[item.materia].concluido++;
             });
 
             const labels = Object.keys(counts);
-            const dataConcluido = labels.map(l => counts[l].concluido);
+            const dataConcluidos = labels.map(l => counts[l].concluido);
 
             if (myChart) myChart.destroy();
 
@@ -363,27 +461,36 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Tópicos Concluídos',
-                        data: dataConcluido,
+                        label: 'Etapas Concluídas',
+                        data: dataConcluidos,
                         backgroundColor: '#2563eb'
                     }]
                 },
                 options: {
                     responsive: true,
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         }
 
-        // --- TIMER POMODORO ---
+        // --- POMODORO EDITÁVEL ---
         let timerInterval = null;
+        let isFocusTime = true;
         let timeLeft = 25 * 60;
 
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
+        function updateTimerSettings() {
+            if (!timerInterval) {
+                const foco = parseInt(document.getElementById('focoMin').value) || 25;
+                timeLeft = foco * 60;
+                updateDisplay();
+            }
+        }
+
+        function updateDisplay() {
+            const min = Math.floor(timeLeft / 60);
+            const sec = timeLeft % 60;
             document.getElementById('timer').innerText = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
         }
 
         function startTimer() {
@@ -391,36 +498,39 @@
             timerInterval = setInterval(() => {
                 if (timeLeft > 0) {
                     timeLeft--;
-                    updateTimerDisplay();
+                    updateDisplay();
                 } else {
                     clearInterval(timerInterval);
                     timerInterval = null;
-                    alert('Tempo esgotado! Faça uma pausa.');
+                    isFocusTime = !isFocusTime;
+                    alert(isFocusTime ? 'Hora de focar!' : 'Hora da pausa!');
+                    const nextMin = isFocusTime ? document.getElementById('focoMin').value : document.getElementById('pausaMin').value;
+                    timeLeft = (parseInt(nextMin) || 5) * 60;
+                    updateDisplay();
                 }
             }, 1000);
         }
 
-        function pauseTimer() {
+        function resetTimer() {
             clearInterval(timerInterval);
             timerInterval = null;
+            isFocusTime = true;
+            updateTimerSettings();
         }
 
-        function resetTimer() {
-            pauseTimer();
-            timeLeft = 25 * 60;
-            updateTimerDisplay();
-        }
-
-        // Tornando funções acessíveis globalmente
+        // Expor para acesso global
         window.handleSignUp = handleSignUp;
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
-        window.addEditalItem = addEditalItem;
-        window.toggleStatus = toggleStatus;
+        window.toggleDarkMode = toggleDarkMode;
+        window.importJSON = importJSON;
+        window.clearData = clearData;
+        window.addManualItem = addManualItem;
+        window.toggleCheck = toggleCheck;
         window.deleteItem = deleteItem;
         window.startTimer = startTimer;
-        window.pauseTimer = pauseTimer;
         window.resetTimer = resetTimer;
+        window.updateTimerSettings = updateTimerSettings;
     </script>
 </body>
 </html>
