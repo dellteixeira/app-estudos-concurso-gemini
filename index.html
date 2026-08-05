@@ -232,6 +232,7 @@
             letter-spacing: 2px;
         }
 
+        /* CORREÇÃO DO NUMERAL POMODORO */
         .timer-settings {
             display: flex;
             justify-content: center;
@@ -249,7 +250,7 @@
         }
 
         .timer-settings input {
-            width: 80px;
+            width: 85px !important;
             text-align: center;
             padding: 0.5rem 0.4rem;
             font-weight: 600;
@@ -651,6 +652,15 @@
         
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
+        // --- UNREGISTER SERVICE WORKERS ANTIGOS QUE POSSAM ESTAR FAZENDO CACHE DA TELA ANTIGA ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+
         // --- AUTH ---
         async function handleSignUp() {
             const email = document.getElementById('email').value.trim();
@@ -864,7 +874,12 @@
         }
 
         function filterDataByConcurso() {
-            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+            // Garante que todo item sem a propriedade concurso caia em "Concurso Geral"
+            editalItems = allEditalItems.filter(i => {
+                const concursoItem = i.concurso || 'Concurso Geral';
+                return concursoItem === currentConcurso;
+            });
+
             renderConcursoSelector();
             document.getElementById('edital-title').innerText = `📚 Edital: ${currentConcurso}`;
             renderTable();
@@ -1046,13 +1061,13 @@
         // --- CARREGAMENTO LOCAL FIRST CORRIGIDO ---
         async function loadData() {
             loadLocalData();
-            filterDataByConcurso(); // Renderiza instantaneamente com os dados locais
+            filterDataByConcurso(); // Renderiza dados do localStorage na tela na hora
             
             if (navigator.onLine) {
                 try {
                     const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
                     if (!error && data && data.length > 0) {
-                        // Garante a presença do nome do concurso nos dados vindos do Supabase
+                        // Atribui 'Concurso Geral' caso a propriedade venha vazia do banco
                         allEditalItems = data.map(item => ({
                             ...item,
                             concurso: item.concurso || 'Concurso Geral'
@@ -1061,7 +1076,7 @@
                         filterDataByConcurso();
                     }
                 } catch (e) {
-                    console.log('Utilizando dados do localStorage');
+                    console.log('Mantendo exibição offline.');
                 }
             }
         }
@@ -1071,7 +1086,6 @@
             if (local) {
                 try {
                     const parsed = JSON.parse(local);
-                    // Garante que todo item possua ao menos um concurso associado
                     allEditalItems = parsed.map(item => ({
                         ...item,
                         concurso: item.concurso || 'Concurso Geral'
@@ -1194,7 +1208,7 @@
             }
         }
 
-        // LIMPA VISUALMENTE E PERSISTE O APAGAMENTO DAS MARCAÇÕES
+        // LIMPA AS 5 MARCAÇÕES DA LINHA
         async function clearRowCheckboxes(id) {
             const item = allEditalItems.find(i => i.id === id);
             if (item) {
@@ -1401,17 +1415,6 @@
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
         window.addEventListener('load', updateOnlineStatus);
-
-        // REGISTRO DE SERVICE WORKER COM DESATUALIZAÇÃO DE CACHE
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.getRegistrations().then(registrations => {
-                    for (let registration of registrations) {
-                        registration.update();
-                    }
-                });
-            });
-        }
 
         // --- GRÁFICO (CHART.JS) ---
         function renderChart() {
