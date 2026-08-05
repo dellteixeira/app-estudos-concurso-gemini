@@ -1045,28 +1045,37 @@
 
         // --- CARREGAMENTO LOCAL FIRST CORRIGIDO ---
         async function loadData() {
-            loadLocalData(); // Carrega primeiro os dados salvos localmente
+            loadLocalData();
+            filterDataByConcurso(); // Renderiza instantaneamente com os dados locais
             
             if (navigator.onLine) {
                 try {
                     const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
                     if (!error && data && data.length > 0) {
-                        allEditalItems = data;
-                        localStorage.setItem('edital_offline_data', JSON.stringify(data));
+                        // Garante a presença do nome do concurso nos dados vindos do Supabase
+                        allEditalItems = data.map(item => ({
+                            ...item,
+                            concurso: item.concurso || 'Concurso Geral'
+                        }));
+                        localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                        filterDataByConcurso();
                     }
                 } catch (e) {
                     console.log('Utilizando dados do localStorage');
                 }
             }
-
-            filterDataByConcurso();
         }
 
         function loadLocalData() {
             const local = localStorage.getItem('edital_offline_data');
             if (local) {
                 try {
-                    allEditalItems = JSON.parse(local);
+                    const parsed = JSON.parse(local);
+                    // Garante que todo item possua ao menos um concurso associado
+                    allEditalItems = parsed.map(item => ({
+                        ...item,
+                        concurso: item.concurso || 'Concurso Geral'
+                    }));
                 } catch(e) {
                     allEditalItems = [];
                 }
@@ -1172,7 +1181,6 @@
             if (item) {
                 item[field] = !currentValue;
                 
-                // Salva localmente de imediato
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
                 filterDataByConcurso();
 
@@ -1196,7 +1204,6 @@
                 item.rev_7d = false;
                 item.rev_30d = false;
 
-                // Força salvamento local e atualiza visualmente no mesmo instante
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
                 filterDataByConcurso();
 
@@ -1395,11 +1402,14 @@
         window.addEventListener('offline', updateOnlineStatus);
         window.addEventListener('load', updateOnlineStatus);
 
+        // REGISTRO DE SERVICE WORKER COM DESATUALIZAÇÃO DE CACHE
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => console.log('Service Worker Registrado'))
-                    .catch(err => console.error('Falha ao registrar Service Worker:', err));
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let registration of registrations) {
+                        registration.update();
+                    }
+                });
             });
         }
 
