@@ -126,12 +126,15 @@
             text-decoration: underline;
         }
 
+        /* BARRA DE AÇÕES EM LINHA ÚNICA */
         .action-bar {
             display: flex;
             align-items: center;
             gap: 0.75rem;
             margin-bottom: 1.5rem;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 4px;
         }
 
         .nav-tabs {
@@ -207,6 +210,7 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
+            white-space: nowrap;
             transition: opacity 0.2s;
         }
         .btn:hover { opacity: 0.9; }
@@ -561,22 +565,27 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES -->
+        <!-- BARRA DE AÇÕES (REORDENADA E ALINHADA EM LINHA ÚNICA) -->
         <div class="action-bar">
+            <!-- 1. VER / ANEXAR EDITAL PDF -->
+            <button class="btn btn-warning" onclick="openModalViewEdital()">📄 Ver / Anexar Edital PDF</button>
+
+            <!-- 2. IMPORTAR JSON -->
             <label class="btn btn-success" style="cursor: pointer;">
                 📥 Importar JSON
                 <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="importJSON(event)">
             </label>
 
-            <!-- NOVO BOTÃO DE UPLOAD / DOWNLOAD / VISUALIZAÇÃO DE EDITAL ORIGINAL -->
-            <button class="btn btn-warning" onclick="openModalViewEdital()">📄 Ver / Anexar Edital PDF</button>
-
+            <!-- 3. COMO GERAR JSON COM IA -->
             <button class="btn btn-info" onclick="openModalPromptIA()">🤖 Como Gerar JSON com IA</button>
 
+            <!-- 4. LIMPAR EDITAL ATUAL -->
             <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Edital Atual</button>
 
+            <!-- 5. MODO CLARO / ESCURO -->
             <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
 
+            <!-- 6. SAIR (ALINHADO NA MESMA LINHA) -->
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
         </div>
 
