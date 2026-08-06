@@ -385,6 +385,16 @@
         .form-group label { font-size: 0.85rem; font-weight: 600; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
+        .shift-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background: rgba(255,255,255,0.03);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
         .form-row {
             display: flex;
             gap: 0.5rem;
@@ -597,32 +607,53 @@
 
     </div>
 
-    <!-- MODAL: DEFINIR DISPONIBILIDADE DIÁRIA PARA PREENCHIMENTO AUTOMÁTICO -->
+    <!-- MODAL: DEFINIR DISPONIBILIDADE E HORÁRIOS INICIAIS DIÁRIOS -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
-            <h3>⏱️ Configurar Horários Disponíveis por Dia</h3>
+            <h3>⏱️ Configurar Horários e Turnos de Estudo</h3>
             <p style="font-size: 0.85rem; opacity: 0.85;">
-                Informe quantas horas diárias você pode estudar em cada período. O sistema distribuirá os assuntos pendentes por ordem de prioridade.
+                Informe a quantidade de horas e o horário de início para cada turno. O cronograma será gerado sem ultrapassar estes limites.
             </p>
 
-            <div class="form-group">
-                <label for="horasManha">🌅 Manhã (Horas diárias, a partir das 08:00)</label>
-                <input type="number" id="horasManha" value="2" min="0" max="6">
+            <div class="shift-row">
+                <strong style="width: 80px;">🌅 Manhã:</strong>
+                <div class="form-group" style="flex:1;">
+                    <label>Início:</label>
+                    <input type="time" id="inicioManha" value="08:00">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Qtd Horas:</label>
+                    <input type="number" id="horasManha" value="2" min="0" max="8">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="horasTarde">☀️ Tarde (Horas diárias, a partir das 14:00)</label>
-                <input type="number" id="horasTarde" value="2" min="0" max="6">
+            <div class="shift-row">
+                <strong style="width: 80px;">☀️ Tarde:</strong>
+                <div class="form-group" style="flex:1;">
+                    <label>Início:</label>
+                    <input type="time" id="inicioTarde" value="14:00">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Qtd Horas:</label>
+                    <input type="number" id="horasTarde" value="2" min="0" max="8">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="horasNoite">🌙 Noite (Horas diárias, a partir das 19:00)</label>
-                <input type="number" id="horasNoite" value="1" min="0" max="6">
+            <div class="shift-row">
+                <strong style="width: 80px;">🌙 Noite:</strong>
+                <div class="form-group" style="flex:1;">
+                    <label>Início:</label>
+                    <input type="time" id="inicioNoite" value="19:00">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Qtd Horas:</label>
+                    <input type="number" id="horasNoite" value="1" min="0" max="8">
+                </div>
             </div>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalDisponibilidade()">Cancelar</button>
-                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">⚡ Gerar Cronograma Valido</button>
+                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">⚡ Gerar Cronograma Correto</button>
             </div>
         </div>
     </div>
@@ -1048,24 +1079,44 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             return `${h}h ${m}min`;
         }
 
-        // --- NOVO GERADOR AUTOMÁTICO BASEADO EM DISPONIBILIDADE E CONTEÚDOS PENDENTES ---
+        function formatHourSlot(startHourStr, offsetHours) {
+            const [h, m] = startHourStr.split(':').map(Number);
+            const totalStartMinutes = (h * 60) + m + (offsetHours * 60);
+            const totalEndMinutes = totalStartMinutes + 60;
+
+            const formatHM = (mins) => {
+                const hh = Math.floor(mins / 60) % 24;
+                const mm = mins % 60;
+                return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+            };
+
+            return `${formatHM(totalStartMinutes)} - ${formatHM(totalEndMinutes)}`;
+        }
+
+        // --- PREENCHIMENTO AUTOMÁTICO RESTRINGIDO E CORRETO POR DISPONIBILIDADE ---
         function confirmarAutoFillDisponibilidade() {
+            const incManha = document.getElementById('inicioManha').value || '08:00';
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
+
+            const incTarde = document.getElementById('inicioTarde').value || '14:00';
             const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
+
+            const incNoite = document.getElementById('inicioNoite').value || '19:00';
             const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
 
-            if (hManha + hTarde + hNoite === 0) {
+            const horasPorDia = hManha + hTarde + hNoite;
+            if (horasPorDia === 0) {
                 return alert('Por favor, informe ao menos 1 hora de estudo diária.');
             }
 
-            // 1. Filtrar apenas assuntos PENDENTES (que ainda não foram totalmente concluídos)
+            // 1. Filtrar apenas assuntos pendentes (não concluídos) por prioridade
             const pendentes = editalItems.filter(item => {
                 const isComplete = item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d;
                 return !isComplete;
             }).sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
 
             if (pendentes.length === 0) {
-                alert('Parabéns! Todos os assuntos do edital já foram concluídos.');
+                alert('Parabéns! Todos os assuntos do edital já foram totalmente concluídos.');
                 closeModalDisponibilidade();
                 return;
             }
@@ -1075,35 +1126,29 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             let pendentesIndex = 0;
 
-            // 2. Preenchimento diário estruturado nos turnos válidos
+            // 2. Distribuir rigorosamente apenas as horas configuradas para cada dia da semana
             DIAS_SEMANA.forEach(dia => {
                 if (pendentesIndex >= pendentes.length) return;
 
-                // Turno Manhã (08:00 em diante)
-                let startM = 8;
+                // Turno Manhã
                 for (let i = 0; i < hManha && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
-                    const hStr = `${String(startM).padStart(2, '0')}:00 - ${String(startM + 1).padStart(2, '0')}:00`;
+                    const hStr = formatHourSlot(incManha, i);
                     newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
-                    startM++;
                 }
 
-                // Turno Tarde (14:00 em diante)
-                let startT = 14;
+                // Turno Tarde
                 for (let i = 0; i < hTarde && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
-                    const hStr = `${String(startT).padStart(2, '0')}:00 - ${String(startT + 1).padStart(2, '0')}:00`;
+                    const hStr = formatHourSlot(incTarde, i);
                     newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
-                    startT++;
                 }
 
-                // Turno Noite (19:00 em diante)
-                let startN = 19;
+                // Turno Noite
                 for (let i = 0; i < hNoite && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
-                    const hStr = `${String(startN).padStart(2, '0')}:00 - ${String(startN + 1).padStart(2, '0')}:00`;
+                    const hStr = formatHourSlot(incNoite, i);
                     newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
-                    startN++;
                 }
             });
 
@@ -1114,19 +1159,17 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             saveConcursosMetadata();
             renderCalendar();
             closeModalDisponibilidade();
-            alert('Cronograma gerado com sucesso respeitando seus horários e a prioridade dos assuntos pendentes!');
+            alert('Cronograma gerado com sucesso respeitando seus horários exatos!');
         }
 
-        // --- INICIAR NOVA SEMANA (LIMPANDO VISTOS E ENCAIXANDO NOVOS ASSUNTOS) ---
+        // --- INICIAR NOVA SEMANA (MARCA VISTOS E GERA O PRÓXIMO CICLO) ---
         function avancarSemanaSiguiente() {
             const currentSchedule = concursosMetadata[currentConcurso]?.schedule || {};
-            let countConcluidosSemana = 0;
 
-            // Marca no edital geral os tópicos concluídos nesta semana
+            // Registra no edital verticalizado os tópicos concluídos durante a semana
             DIAS_SEMANA.forEach(dia => {
                 (currentSchedule[dia] || []).forEach(slot => {
                     if (slot.completed && slot.materia && slot.assunto) {
-                        countConcluidosSemana++;
                         const match = allEditalItems.find(i => 
                             (i.concurso || 'Concurso Geral') === currentConcurso && 
                             i.materia === slot.materia && 
