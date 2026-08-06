@@ -576,12 +576,14 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                     <h3>📅 Cronograma Semanal de Estudos</h3>
-                    <!-- BOTÃO PREENCHER AUTOMATICAMENTE POR PRIORIDADE -->
-                    <button class="btn btn-purple" onclick="autoFillScheduleByPriority()">⚡ Preencher Cronograma Automaticamente</button>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-purple" onclick="openModalDisponibilidade()">⚡ Preencher Cronograma Automaticamente</button>
+                        <button class="btn btn-secondary" onclick="avancarSemanaSiguiente()">🔄 Iniciar Nova Semana (Filtrar não estudados)</button>
+                    </div>
                 </div>
 
                 <p style="margin-bottom: 1rem; font-size: 0.85rem; opacity: 0.8;">
-                    💡 <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcar como <strong>concluído</strong> ou clique no ícone ✏️ para <strong>editar o conteúdo/horário</strong>.
+                    💡 <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcar como <strong>concluído</strong> ou no ícone ✏️ para <strong>editar o conteúdo/horário</strong>.
                 </p>
                 
                 <div class="weekly-hours-banner">
@@ -593,6 +595,36 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- MODAL: DEFINIR DISPONIBILIDADE DIÁRIA PARA PREENCHIMENTO AUTOMÁTICO -->
+    <div class="modal-overlay" id="modalDisponibilidade">
+        <div class="modal">
+            <h3>⏱️ Configurar Horários Disponíveis por Dia</h3>
+            <p style="font-size: 0.85rem; opacity: 0.85;">
+                Informe quantas horas diárias você pode estudar em cada período. O sistema distribuirá os assuntos pendentes por ordem de prioridade.
+            </p>
+
+            <div class="form-group">
+                <label for="horasManha">🌅 Manhã (Horas diárias, a partir das 08:00)</label>
+                <input type="number" id="horasManha" value="2" min="0" max="6">
+            </div>
+
+            <div class="form-group">
+                <label for="horasTarde">☀️ Tarde (Horas diárias, a partir das 14:00)</label>
+                <input type="number" id="horasTarde" value="2" min="0" max="6">
+            </div>
+
+            <div class="form-group">
+                <label for="horasNoite">🌙 Noite (Horas diárias, a partir das 19:00)</label>
+                <input type="number" id="horasNoite" value="1" min="0" max="6">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalDisponibilidade()">Cancelar</button>
+                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">⚡ Gerar Cronograma Valido</button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL: PROMPT PARA COLAR NA IA -->
@@ -668,8 +700,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             <input type="hidden" id="slotIndex" value="-1">
             
             <div class="form-group">
-                <label for="slotHorario">Horário (ex: 08:00 - 10:00 ou 10 - 11)</label>
-                <input type="text" id="slotHorario" placeholder="08:00 - 10:00">
+                <label for="slotHorario">Horário (ex: 08:00 - 09:00 ou 14:00 - 15:00)</label>
+                <input type="text" id="slotHorario" placeholder="08:00 - 09:00">
             </div>
 
             <div class="form-group">
@@ -723,6 +755,17 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
         function closeModalPromptIA() {
             document.getElementById('modalPromptIA').style.display = 'none';
+        }
+
+        function openModalDisponibilidade() {
+            if (editalItems.length === 0) {
+                return alert('Nenhum edital cadastrado para este concurso. Importe um JSON ou adicione matérias manualmente primeiro.');
+            }
+            document.getElementById('modalDisponibilidade').style.display = 'flex';
+        }
+
+        function closeModalDisponibilidade() {
+            document.getElementById('modalDisponibilidade').style.display = 'none';
         }
 
         function copyPromptToClipboard() {
@@ -1005,46 +1048,102 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             return `${h}h ${m}min`;
         }
 
-        // --- PREENCHIMENTO AUTOMÁTICO DO CRONOGRAMA POR PRIORIDADE ---
-        function autoFillScheduleByPriority() {
-            if (editalItems.length === 0) {
-                return alert('Nenhum edital cadastrado para este concurso. Importe um JSON ou adicione matérias manualmente primeiro.');
+        // --- NOVO GERADOR AUTOMÁTICO BASEADO EM DISPONIBILIDADE E CONTEÚDOS PENDENTES ---
+        function confirmarAutoFillDisponibilidade() {
+            const hManha = parseInt(document.getElementById('horasManha').value) || 0;
+            const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
+            const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
+
+            if (hManha + hTarde + hNoite === 0) {
+                return alert('Por favor, informe ao menos 1 hora de estudo diária.');
             }
 
-            if (confirm('Deseja preencher automaticamente o cronograma semanal baseado na ordem de prioridade do edital?')) {
-                const sortedItems = [...editalItems].sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
+            // 1. Filtrar apenas assuntos PENDENTES (que ainda não foram totalmente concluídos)
+            const pendentes = editalItems.filter(item => {
+                const isComplete = item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d;
+                return !isComplete;
+            }).sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
 
-                const schedule = {};
-                DIAS_SEMANA.forEach(d => schedule[d] = []);
+            if (pendentes.length === 0) {
+                alert('Parabéns! Todos os assuntos do edital já foram concluídos.');
+                closeModalDisponibilidade();
+                return;
+            }
 
-                let dayIndex = 0;
-                let startHour = 8;
+            const newSchedule = {};
+            DIAS_SEMANA.forEach(d => newSchedule[d] = []);
 
-                sortedItems.forEach(item => {
-                    const dia = DIAS_SEMANA[dayIndex];
-                    const horarioStr = `${String(startHour).padStart(2, '0')}:00 - ${String(startHour + 1).padStart(2, '0')}:00`;
+            let pendentesIndex = 0;
 
-                    schedule[dia].push({
-                        horario: horarioStr,
-                        materia: item.materia,
-                        assunto: item.assunto,
-                        completed: false
-                    });
+            // 2. Preenchimento diário estruturado nos turnos válidos
+            DIAS_SEMANA.forEach(dia => {
+                if (pendentesIndex >= pendentes.length) return;
 
-                    dayIndex = (dayIndex + 1) % DIAS_SEMANA.length;
-                    if (dayIndex === 0) {
-                        startHour += 2; 
+                // Turno Manhã (08:00 em diante)
+                let startM = 8;
+                for (let i = 0; i < hManha && pendentesIndex < pendentes.length; i++) {
+                    const item = pendentes[pendentesIndex++];
+                    const hStr = `${String(startM).padStart(2, '0')}:00 - ${String(startM + 1).padStart(2, '0')}:00`;
+                    newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
+                    startM++;
+                }
+
+                // Turno Tarde (14:00 em diante)
+                let startT = 14;
+                for (let i = 0; i < hTarde && pendentesIndex < pendentes.length; i++) {
+                    const item = pendentes[pendentesIndex++];
+                    const hStr = `${String(startT).padStart(2, '0')}:00 - ${String(startT + 1).padStart(2, '0')}:00`;
+                    newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
+                    startT++;
+                }
+
+                // Turno Noite (19:00 em diante)
+                let startN = 19;
+                for (let i = 0; i < hNoite && pendentesIndex < pendentes.length; i++) {
+                    const item = pendentes[pendentesIndex++];
+                    const hStr = `${String(startN).padStart(2, '0')}:00 - ${String(startN + 1).padStart(2, '0')}:00`;
+                    newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
+                    startN++;
+                }
+            });
+
+            if (!concursosMetadata[currentConcurso]) {
+                concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
+            }
+            concursosMetadata[currentConcurso].schedule = newSchedule;
+            saveConcursosMetadata();
+            renderCalendar();
+            closeModalDisponibilidade();
+            alert('Cronograma gerado com sucesso respeitando seus horários e a prioridade dos assuntos pendentes!');
+        }
+
+        // --- INICIAR NOVA SEMANA (LIMPANDO VISTOS E ENCAIXANDO NOVOS ASSUNTOS) ---
+        function avancarSemanaSiguiente() {
+            const currentSchedule = concursosMetadata[currentConcurso]?.schedule || {};
+            let countConcluidosSemana = 0;
+
+            // Marca no edital geral os tópicos concluídos nesta semana
+            DIAS_SEMANA.forEach(dia => {
+                (currentSchedule[dia] || []).forEach(slot => {
+                    if (slot.completed && slot.materia && slot.assunto) {
+                        countConcluidosSemana++;
+                        const match = allEditalItems.find(i => 
+                            (i.concurso || 'Concurso Geral') === currentConcurso && 
+                            i.materia === slot.materia && 
+                            i.assunto === slot.assunto
+                        );
+                        if (match) {
+                            match.teoria = true;
+                            match.questoes = true;
+                        }
                     }
                 });
+            });
 
-                if (!concursosMetadata[currentConcurso]) {
-                    concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
-                }
-                concursosMetadata[currentConcurso].schedule = schedule;
-                saveConcursosMetadata();
-                renderCalendar();
-                alert('Cronograma gerado com sucesso respeitando a prioridade de estudo!');
-            }
+            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+            filterDataByConcurso();
+
+            openModalDisponibilidade();
         }
 
         function renderCalendar() {
@@ -1205,7 +1304,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const assunto = document.getElementById('slotAssuntoSelect').value || '';
             const completed = document.getElementById('slotCompletedCheckbox').checked;
 
-            if (!horario) return alert('Informe o horário de estudo (ex: 08:00 - 10:00).');
+            if (!horario) return alert('Informe o horário de estudo (ex: 08:00 - 09:00).');
 
             if (!concursosMetadata[currentConcurso]) {
                 concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
@@ -1712,7 +1811,10 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.salvarSlot = salvarSlot;
         window.removerSlot = removerSlot;
         window.toggleSlotCompleted = toggleSlotCompleted;
-        window.autoFillScheduleByPriority = autoFillScheduleByPriority;
+        window.openModalDisponibilidade = openModalDisponibilidade;
+        window.closeModalDisponibilidade = closeModalDisponibilidade;
+        window.confirmarAutoFillDisponibilidade = confirmarAutoFillDisponibilidade;
+        window.avancarSemanaSiguiente = avancarSemanaSiguiente;
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
