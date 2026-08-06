@@ -460,17 +460,20 @@
         }
 
         .materia-header-row {
-            background-color: var(--header-materia-bg);
-            color: var(--header-materia-text);
             font-weight: bold;
             cursor: pointer;
             text-align: left !important;
             user-select: none;
+            transition: filter 0.2s;
+        }
+        .materia-header-row:hover {
+            filter: brightness(1.15);
         }
 
         .materia-header-row td {
             padding: 0.8rem 1rem;
             font-size: 1rem;
+            color: #ffffff;
         }
 
         .materia-header-content {
@@ -483,6 +486,9 @@
             width: 55px;
             text-align: center;
             padding: 0.2rem 0.4rem;
+            background: rgba(0,0,0,0.25);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
         }
 
         input[type="checkbox"] {
@@ -878,6 +884,26 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
         const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
+        // Paleta de Cores Harmônicas e Distintas para as Matérias
+        const PALETA_CORES_MATERIAS = [
+            'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', // Azul
+            'linear-gradient(135deg, #14532d 0%, #22c55e 100%)', // Verde
+            'linear-gradient(135deg, #701a75 0%, #c084fc 100%)', // Roxo / Violeta
+            'linear-gradient(135deg, #7c2d12 0%, #f97316 100%)', // Laranja
+            'linear-gradient(135deg, #831843 0%, #ec4899 100%)', // Rosa
+            'linear-gradient(135deg, #164e63 0%, #06b6d4 100%)', // Ciano / Turquesa
+            'linear-gradient(135deg, #713f12 0%, #eab308 100%)', // Amarelo
+            'linear-gradient(135deg, #312e81 0%, #6366f1 100%)', // Índigo
+            'linear-gradient(135deg, #881337 0%, #f43f5e 100%)', // Vermelho Rubi
+            'linear-gradient(135deg, #134e4a 0%, #14b8a6 100%)'  // Teal
+        ];
+
+        const PALETA_SOLIDAS = [
+            '#3b82f6', '#22c55e', '#c084fc', '#f97316', 
+            '#ec4899', '#06b6d4', '#eab308', '#6366f1', 
+            '#f43f5e', '#14b8a6'
+        ];
+
         let myChart = null;
         let allEditalItems = [];
         let editalItems = [];
@@ -892,6 +918,11 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     registration.unregister();
                 }
             });
+        }
+
+        function getMateriaColorIndex(materiaName, sortedMaterias) {
+            const idx = sortedMaterias.indexOf(materiaName);
+            return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
         }
 
         function openModalPromptIA() {
@@ -1616,9 +1647,13 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
                 const isOpen = !!openMaterias[materiaName];
+                
+                const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
+                const bgGradient = PALETA_CORES_MATERIAS[colorIdx];
+                const solidColor = PALETA_SOLIDAS[colorIdx];
 
                 tbody.innerHTML += `
-                    <tr class="materia-header-row" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
+                    <tr class="materia-header-row" style="background: ${bgGradient};" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
                         <td onclick="event.stopPropagation()">
                             <input type="number" class="priority-input" value="${group.prioridade}" min="1" 
                                 onchange="updateMateriaPriority('${materiaName.replace(/'/g, "\\'")}', this.value)">
@@ -1636,9 +1671,9 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     group.items.forEach(item => {
                         const safeId = String(item.id);
                         tbody.innerHTML += `
-                            <tr>
+                            <tr style="border-left: 4px solid ${solidColor};">
                                 <td></td>
-                                <td style="text-align: left; padding-left: 2rem;">📌 ${item.assunto}</td>
+                                <td style="text-align: left; padding-left: 1.5rem;">📌 ${item.assunto}</td>
                                 <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'teoria', ${item.teoria})"></td>
                                 <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'questoes', ${item.questoes})"></td>
                                 <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_24h', ${item.rev_24h})"></td>
@@ -1933,22 +1968,30 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.addEventListener('offline', updateOnlineStatus);
         window.addEventListener('load', updateOnlineStatus);
 
+        // --- RENDERIZAR GRÁFICO COM ANIMAÇÃO GRADUAL E CORES DEDICADAS ---
         function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
             const counts = {};
 
             editalItems.forEach(item => {
-                if (!counts[item.materia]) counts[item.materia] = { total: 0, concluido: 0 };
-                counts[item.materia].total += 5;
-                if (item.teoria) counts[item.materia].concluido++;
-                if (item.questoes) counts[item.materia].concluido++;
-                if (item.rev_24h) counts[item.materia].concluido++;
-                if (item.rev_7d) counts[item.materia].concluido++;
-                if (item.rev_30d) counts[item.materia].concluido++;
+                const mat = item.materia || 'Geral';
+                if (!counts[mat]) counts[mat] = { total: 0, concluido: 0, prioridade: item.prioridade || 1 };
+                counts[mat].total += 5;
+                if (item.teoria) counts[mat].concluido++;
+                if (item.questoes) counts[mat].concluido++;
+                if (item.rev_24h) counts[mat].concluido++;
+                if (item.rev_7d) counts[mat].concluido++;
+                if (item.rev_30d) counts[mat].concluido++;
             });
 
-            const labels = Object.keys(counts);
+            const labels = Object.keys(counts).sort((a, b) => counts[a].prioridade - counts[b].prioridade);
             const dataConcluidos = labels.map(l => counts[l].concluido);
+            
+            // Atribuir cores das matérias do gráfico em conformidade com o edital
+            const backgroundColors = labels.map(l => {
+                const idx = getMateriaColorIndex(l, labels);
+                return PALETA_SOLIDAS[idx];
+            });
 
             if (myChart) myChart.destroy();
 
@@ -1959,12 +2002,26 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     datasets: [{
                         label: 'Etapas Concluídas',
                         data: dataConcluidos,
-                        backgroundColor: '#3b82f6'
+                        backgroundColor: backgroundColors,
+                        borderRadius: 6,
+                        borderSkipped: false
                     }]
                 },
                 options: {
                     responsive: true,
-                    scales: { y: { beginAtZero: true } }
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        } 
+                    }
                 }
             });
         }
