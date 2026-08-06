@@ -126,15 +126,23 @@
             text-decoration: underline;
         }
 
-        /* BARRA DE AÇÕES EM LINHA ÚNICA */
+        /* BARRA DE AÇÕES SEM ROLAGEM E COMPACTA */
         .action-bar {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            justify-content: space-between;
+            gap: 0.4rem;
             margin-bottom: 1.5rem;
             flex-wrap: nowrap;
-            overflow-x: auto;
-            padding-bottom: 4px;
+            width: 100%;
+        }
+
+        .action-bar .btn {
+            padding: 0.5rem 0.8rem;
+            font-size: 0.88rem;
+            flex: 1;
+            justify-content: center;
+            text-align: center;
         }
 
         .nav-tabs {
@@ -181,6 +189,9 @@
 
         @media (max-width: 768px) {
             .grid-top { grid-template-columns: 1fr; }
+            .action-bar {
+                flex-wrap: wrap;
+            }
         }
 
         .card {
@@ -565,7 +576,7 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES (REORDENADA E ALINHADA EM LINHA ÚNICA) -->
+        <!-- BARRA DE AÇÕES COMPACTA (ENCAIXE PERFEITO EM LINHA ÚNICA) -->
         <div class="action-bar">
             <!-- 1. VER / ANEXAR EDITAL PDF -->
             <button class="btn btn-warning" onclick="openModalViewEdital()">📄 Ver / Anexar Edital PDF</button>
@@ -585,7 +596,7 @@
             <!-- 5. MODO CLARO / ESCURO -->
             <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
 
-            <!-- 6. SAIR (ALINHADO NA MESMA LINHA) -->
+            <!-- 6. SAIR -->
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
         </div>
 
