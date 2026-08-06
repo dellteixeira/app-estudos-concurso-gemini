@@ -1490,7 +1490,9 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         }
 
         async function updateMateriaPriority(materiaName, newPriority) {
+            const currentScroll = window.scrollY;
             const val = parseInt(newPriority) || 1;
+
             allEditalItems.forEach(item => {
                 if (item.materia === materiaName && (item.concurso || 'Concurso Geral') === currentConcurso) {
                     item.prioridade = val;
@@ -1498,7 +1500,12 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
 
             localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            filterDataByConcurso();
+
+            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+            renderTable();
+            renderChart();
+
+            window.scrollTo(0, currentScroll);
 
             if (navigator.onLine) {
                 await supabaseClient
@@ -1512,12 +1519,18 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         }
 
         async function toggleCheck(id, field, currentValue) {
+            const currentScroll = window.scrollY;
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item[field] = !currentValue;
                 
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-                filterDataByConcurso();
+                
+                editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+                renderTable();
+                renderChart();
+
+                window.scrollTo(0, currentScroll);
 
                 if (navigator.onLine) {
                     const updateObj = {};
@@ -1530,6 +1543,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         }
 
         async function clearRowCheckboxes(id) {
+            const currentScroll = window.scrollY;
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item.teoria = false;
@@ -1539,7 +1553,12 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 item.rev_30d = false;
 
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-                filterDataByConcurso();
+                
+                editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+                renderTable();
+                renderChart();
+
+                window.scrollTo(0, currentScroll);
 
                 if (navigator.onLine) {
                     await supabaseClient.from('edital').update({
