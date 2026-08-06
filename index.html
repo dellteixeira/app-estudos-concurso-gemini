@@ -973,6 +973,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         let editalItems = [];
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
+        let globalAudioCtx = null;
         
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
@@ -1172,42 +1173,52 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
-        // --- ALARME INTENSO E MARCANTE PARA O POMODORO ---
+        // --- SISTEMA DE ALARME DE SINO/CHIME (E4-B4-E5 CHIME ACÚSTICO DE ALTA QUALIDADE) ---
+        function getAudioContext() {
+            if (!globalAudioCtx) {
+                globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (globalAudioCtx.state === 'suspended') {
+                globalAudioCtx.resume();
+            }
+            return globalAudioCtx;
+        }
+
         function playAlarmSound() {
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
 
-                // Função para emitir um pulso de som alto com tom marcante
-                function emitBeep(startTime, freq, duration, waveType = 'sawtooth') {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
+                // Frequências harmoniosas de um sino/chime em acorde (E4 = 329.63Hz, B4 = 493.88Hz, E5 = 659.25Hz)
+                const freqs = [329.63, 493.88, 659.25];
+                
+                // 3 badaladas limpas com intervalo de 0.8s entre elas
+                const strokeTimes = [0.0, 0.8, 1.6];
 
-                    osc.type = waveType;
-                    osc.frequency.setValueAtTime(freq, startTime);
+                strokeTimes.forEach(offset => {
+                    const strokeStart = now + offset;
+                    
+                    freqs.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
 
-                    // Ataque rápido e volume forte
-                    gain.gain.setValueAtTime(0.6, startTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, strokeStart);
 
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
+                        // Ataque instantâneo e decaimento acústico prolongado
+                        const initialGain = idx === 2 ? 0.5 : 0.3;
+                        gain.gain.setValueAtTime(initialGain, strokeStart);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, strokeStart + 1.4);
 
-                    osc.start(startTime);
-                    osc.stop(startTime + duration);
-                }
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
 
-                const now = audioCtx.currentTime;
-
-                // Sequência de 3 disparos duplos de alarme chamativo (Bip-Bip ... Bip-Bip ... Bip-Bip)
-                const bursts = [0.0, 0.4, 0.8];
-
-                bursts.forEach(offset => {
-                    emitBeep(now + offset, 1050, 0.12, 'sawtooth');
-                    emitBeep(now + offset + 0.14, 1350, 0.18, 'square');
+                        osc.start(strokeStart);
+                        osc.stop(strokeStart + 1.4);
+                    });
                 });
-
             } catch (e) {
-                console.log("Áudio bloqueado ou não suportado:", e);
+                console.log("Falha ao emitir áudio do alarme:", e);
             }
         }
 
@@ -2271,7 +2282,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
-        // --- POMODORO ---
+        // --- POMODORO SINCRO DE ÁUDIO NO TEMPO 0 ---
         let timerInterval = null;
         let isFocusTime = true;
         let timeLeft = 25 * 60;
@@ -2292,23 +2303,29 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         }
 
         function startTimer() {
+            // Inicializa contexto de áudio na interação do usuário
+            getAudioContext();
+
             if (timerInterval) return;
             timerInterval = setInterval(() => {
                 if (timeLeft > 0) {
                     timeLeft--;
                     updateDisplay();
+
+                    // Dispara o som no exato momento que zera o contador
+                    if (timeLeft === 0) {
+                        playAlarmSound();
+                    }
                 } else {
                     clearInterval(timerInterval);
                     timerInterval = null;
 
-                    // Toca o alarme imediatamente no tempo 00:00
-                    playAlarmSound();
-
                     isFocusTime = !isFocusTime;
                     
+                    const msg = isFocusTime ? '🔔 Hora de focar!' : '☕ Hora da pausa!';
                     setTimeout(() => {
-                        alert(isFocusTime ? '🔔 Hora de focar!' : '☕ Hora da pausa!');
-                    }, 100);
+                        alert(msg);
+                    }, 200);
 
                     const nextMin = isFocusTime ? document.getElementById('focoMin').value : document.getElementById('pausaMin').value;
                     timeLeft = (parseInt(nextMin) || 5) * 60;
