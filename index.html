@@ -584,7 +584,7 @@
                 </div>
 
                 <div class="card">
-                    <h3>📊 Progresso Geral de Estudo</h3>
+                    <h3>📊 Progresso Geral de Estudo (%)</h3>
                     <canvas id="progressChart" height="160"></canvas>
                 </div>
             </div>
@@ -1968,7 +1968,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.addEventListener('offline', updateOnlineStatus);
         window.addEventListener('load', updateOnlineStatus);
 
-        // --- RENDERIZAR GRÁFICO COM ANIMAÇÃO GRADUAL E CORES DEDICADAS ---
+        // --- RENDERIZAR GRÁFICO EM PORCENTAGEM (0% A 100%) COM CRESCIMENTO GRADUAL ---
         function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
             const counts = {};
@@ -1976,7 +1976,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             editalItems.forEach(item => {
                 const mat = item.materia || 'Geral';
                 if (!counts[mat]) counts[mat] = { total: 0, concluido: 0, prioridade: item.prioridade || 1 };
-                counts[mat].total += 5;
+                counts[mat].total += 5; // 5 etapas por assunto
                 if (item.teoria) counts[mat].concluido++;
                 if (item.questoes) counts[mat].concluido++;
                 if (item.rev_24h) counts[mat].concluido++;
@@ -1985,9 +1985,15 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
 
             const labels = Object.keys(counts).sort((a, b) => counts[a].prioridade - counts[b].prioridade);
-            const dataConcluidos = labels.map(l => counts[l].concluido);
             
-            // Atribuir cores das matérias do gráfico em conformidade com o edital
+            // Calcula a PORCENTAGEM REAL de progresso (0% a 100%)
+            const percentData = labels.map(l => {
+                const total = counts[l].total;
+                if (total === 0) return 0;
+                return Math.round((counts[l].concluido / total) * 100);
+            });
+            
+            // Cores das barras do gráfico vinculadas às matérias
             const backgroundColors = labels.map(l => {
                 const idx = getMateriaColorIndex(l, labels);
                 return PALETA_SOLIDAS[idx];
@@ -2000,8 +2006,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Etapas Concluídas',
-                        data: dataConcluidos,
+                        label: 'Progresso %',
+                        data: percentData,
                         backgroundColor: backgroundColors,
                         borderRadius: 6,
                         borderSkipped: false
@@ -2010,16 +2016,28 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 options: {
                     responsive: true,
                     animation: {
-                        duration: 1500,
+                        duration: 1200,
                         easing: 'easeOutQuart'
                     },
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Progresso: ${context.raw}%`;
+                                }
+                            }
+                        }
                     },
                     scales: { 
                         y: { 
                             beginAtZero: true,
-                            ticks: { precision: 0 }
+                            max: 100, // FIXO EM 100% PARA TODAS AS MATÉRIAS
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
                         } 
                     }
                 }
