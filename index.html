@@ -589,6 +589,7 @@
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="openModalDisponibilidade()">⚡ Preencher Cronograma Automaticamente</button>
                         <button class="btn btn-secondary" onclick="avancarSemanaSiguiente()">🔄 Iniciar Nova Semana (Filtrar não estudados)</button>
+                        <button class="btn btn-danger" onclick="limparCronogramaSemanal()">🗑️ Limpar Cronograma</button>
                     </div>
                 </div>
 
@@ -1091,6 +1092,22 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             };
 
             return `${formatHM(totalStartMinutes)} - ${formatHM(totalEndMinutes)}`;
+        }
+
+        // --- FUNÇÃO PARA LIMPAR O CRONOGRAMA SEMANAL ---
+        function limparCronogramaSemanal() {
+            if (confirm(`Tem certeza que deseja apagar todo o cronograma semanal do concurso "${currentConcurso}"?`)) {
+                if (!concursosMetadata[currentConcurso]) {
+                    concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
+                }
+                
+                const newSchedule = {};
+                DIAS_SEMANA.forEach(d => newSchedule[d] = []);
+                concursosMetadata[currentConcurso].schedule = newSchedule;
+                
+                saveConcursosMetadata();
+                renderCalendar();
+            }
         }
 
         // --- PREENCHIMENTO AUTOMÁTICO RESTRINGIDO E CORRETO POR DISPONIBILIDADE ---
@@ -1877,6 +1894,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.closeModalDisponibilidade = closeModalDisponibilidade;
         window.confirmarAutoFillDisponibilidade = confirmarAutoFillDisponibilidade;
         window.avancarSemanaSiguiente = avancarSemanaSiguiente;
+        window.limparCronogramaSemanal = limparCronogramaSemanal;
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
