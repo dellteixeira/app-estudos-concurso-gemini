@@ -395,6 +395,31 @@
             border: 1px solid var(--border-color);
         }
 
+        .days-selection-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .day-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
         .form-row {
             display: flex;
             gap: 0.5rem;
@@ -608,12 +633,12 @@
 
     </div>
 
-    <!-- MODAL: DEFINIR DISPONIBILIDADE E HORÁRIOS INICIAIS DIÁRIOS -->
+    <!-- MODAL: DEFINIR DISPONIBILIDADE E DIAS DA SEMANA PARA ESTUDO -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
-            <h3>⏱️ Configurar Horários e Turnos de Estudo</h3>
+            <h3>⏱️ Configurar Horários e Dias de Estudo</h3>
             <p style="font-size: 0.85rem; opacity: 0.85;">
-                Informe a quantidade de horas e o horário de início para cada turno. O cronograma será gerado sem ultrapassar estes limites.
+                Informe a quantidade de horas e horários por turno, e selecione os dias da semana em que deseja estudar.
             </p>
 
             <div class="shift-row">
@@ -649,6 +674,36 @@
                 <div class="form-group" style="flex:1;">
                     <label>Qtd Horas:</label>
                     <input type="number" id="horasNoite" value="1" min="0" max="8">
+                </div>
+            </div>
+
+            <!-- OPÇÕES DE DIAS DE ESTUDO -->
+            <div class="days-selection-box">
+                <strong style="font-size: 0.9rem;">📅 Dias da Semana para Estudo:</strong>
+                
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <label class="day-checkbox-label">
+                        <input type="checkbox" id="chkSabado" checked> Incluir Sábado
+                    </label>
+                    <label class="day-checkbox-label">
+                        <input type="checkbox" id="chkDomingo" checked> Incluir Domingo
+                    </label>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
+
+                <label class="day-checkbox-label" style="font-weight: 600; color: var(--primary-blue);">
+                    <input type="checkbox" id="chkCustomDays" onchange="toggleCustomDaysDisplay()"> ⚙️ Personalizar dias individualmente
+                </label>
+
+                <div id="customDaysContainer" class="days-grid" style="display: none;">
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Segunda" checked> Segunda</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Terça" checked> Terça</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Quarta" checked> Quarta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Quinta" checked> Quinta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Sexta" checked> Sexta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Sábado" checked> Sábado</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Domingo" checked> Domingo</label>
                 </div>
             </div>
 
@@ -798,6 +853,11 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
         function closeModalDisponibilidade() {
             document.getElementById('modalDisponibilidade').style.display = 'none';
+        }
+
+        function toggleCustomDaysDisplay() {
+            const isCustom = document.getElementById('chkCustomDays').checked;
+            document.getElementById('customDaysContainer').style.display = isCustom ? 'grid' : 'none';
         }
 
         function copyPromptToClipboard() {
@@ -1094,7 +1154,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             return `${formatHM(totalStartMinutes)} - ${formatHM(totalEndMinutes)}`;
         }
 
-        // --- FUNÇÃO PARA LIMPAR O CRONOGRAMA SEMANAL ---
         function limparCronogramaSemanal() {
             if (confirm(`Tem certeza que deseja apagar todo o cronograma semanal do concurso "${currentConcurso}"?`)) {
                 if (!concursosMetadata[currentConcurso]) {
@@ -1110,7 +1169,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             }
         }
 
-        // --- PREENCHIMENTO AUTOMÁTICO RESTRINGIDO E CORRETO POR DISPONIBILIDADE ---
+        // --- PREENCHIMENTO AUTOMÁTICO SELEÇÃO DE DIAS ---
         function confirmarAutoFillDisponibilidade() {
             const incManha = document.getElementById('inicioManha').value || '08:00';
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
@@ -1124,6 +1183,23 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const horasPorDia = hManha + hTarde + hNoite;
             if (horasPorDia === 0) {
                 return alert('Por favor, informe ao menos 1 hora de estudo diária.');
+            }
+
+            // Identificar dias ativos de estudo
+            let diasAtivos = [];
+            const isCustom = document.getElementById('chkCustomDays').checked;
+
+            if (isCustom) {
+                const chks = document.querySelectorAll('.chk-day-custom:checked');
+                diasAtivos = Array.from(chks).map(c => c.value);
+            } else {
+                diasAtivos = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+                if (document.getElementById('chkSabado').checked) diasAtivos.push("Sábado");
+                if (document.getElementById('chkDomingo').checked) diasAtivos.push("Domingo");
+            }
+
+            if (diasAtivos.length === 0) {
+                return alert('Por favor, selecione ao menos um dia da semana para estudar.');
             }
 
             // 1. Filtrar apenas assuntos pendentes (não concluídos) por prioridade
@@ -1143,9 +1219,9 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             let pendentesIndex = 0;
 
-            // 2. Distribuir rigorosamente apenas as horas configuradas para cada dia da semana
+            // 2. Distribuir conteúdos apenas nos dias ativos selecionados
             DIAS_SEMANA.forEach(dia => {
-                if (pendentesIndex >= pendentes.length) return;
+                if (!diasAtivos.includes(dia) || pendentesIndex >= pendentes.length) return;
 
                 // Turno Manhã
                 for (let i = 0; i < hManha && pendentesIndex < pendentes.length; i++) {
@@ -1176,7 +1252,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             saveConcursosMetadata();
             renderCalendar();
             closeModalDisponibilidade();
-            alert('Cronograma gerado com sucesso respeitando seus horários exatos!');
+            alert('Cronograma gerado com sucesso respeitando seus dias e horários escolhidos!');
         }
 
         // --- INICIAR NOVA SEMANA (MARCA VISTOS E GERA O PRÓXIMO CICLO) ---
@@ -1892,6 +1968,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.toggleSlotCompleted = toggleSlotCompleted;
         window.openModalDisponibilidade = openModalDisponibilidade;
         window.closeModalDisponibilidade = closeModalDisponibilidade;
+        window.toggleCustomDaysDisplay = toggleCustomDaysDisplay;
         window.confirmarAutoFillDisponibilidade = confirmarAutoFillDisponibilidade;
         window.avancarSemanaSiguiente = avancarSemanaSiguiente;
         window.limparCronogramaSemanal = limparCronogramaSemanal;
