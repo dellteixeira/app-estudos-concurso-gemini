@@ -993,7 +993,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 event.preventDefault();
                 closeAllModals();
             } else if (event.key === 'Enter') {
-                // Previne envio acidental de forms ou comportamentos indesejados
                 if (event.target.tagName === 'TEXTAREA') return;
                 event.preventDefault();
                 confirmActiveModal(activeModal.id);
@@ -1067,7 +1066,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             btnRemove.style.display = 'inline-flex';
 
             if (fileData.type && fileData.type.includes('pdf')) {
-                // Força visualização inline do PDF
                 const pdfDataUri = fileData.base64.startsWith('data:application/pdf') 
                     ? fileData.base64 
                     : `data:application/pdf;base64,${fileData.base64.split(',')[1] || fileData.base64}`;
@@ -1174,25 +1172,42 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
+        // --- SOM DO POMODORO: SINO TOCANDO 3 VEZES ---
         function playAlarmSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                [0, 0.25].forEach(delay => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
 
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + delay);
+                function triggerBellStroke(timeOffset) {
+                    const now = audioCtx.currentTime + timeOffset;
 
-                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime + delay);
-                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + delay + 0.2);
+                    // Frequência base e harmônicos característicos de um sino metálico
+                    const freqs = [659.25, 1318.5, 1977.75]; // Nota E5 e harmônicos
+                    const gains = [0.4, 0.2, 0.1];
 
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
+                    freqs.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
 
-                    osc.start(audioCtx.currentTime + delay);
-                    osc.stop(audioCtx.currentTime + delay + 0.2);
-                });
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now);
+
+                        // Decaimento suave com efeito de ressonância de sino
+                        gain.gain.setValueAtTime(gains[idx], now);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+
+                        osc.start(now);
+                        osc.stop(now + 1.2);
+                    });
+                }
+
+                // Toca o sino 3 vezes em intervalos de 0.8 segundos
+                triggerBellStroke(0.0);
+                triggerBellStroke(0.8);
+                triggerBellStroke(1.6);
+
             } catch (e) {
                 console.log("Áudio bloqueado ou não suportado:", e);
             }
