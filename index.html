@@ -126,7 +126,7 @@
             text-decoration: underline;
         }
 
-        /* BARRA DE AÇÕES SEM ROLAGEM E COMPACTA */
+        /* BARRA DE AÇÕES COMPACTA */
         .action-bar {
             display: flex;
             align-items: center;
@@ -189,9 +189,7 @@
 
         @media (max-width: 768px) {
             .grid-top { grid-template-columns: 1fr; }
-            .action-bar {
-                flex-wrap: wrap;
-            }
+            .action-bar { flex-wrap: wrap; }
         }
 
         .card {
@@ -576,7 +574,7 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES COMPACTA (ENCAIXE PERFEITO EM LINHA ÚNICA) -->
+        <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
             <!-- 1. VER / ANEXAR EDITAL PDF -->
             <button class="btn btn-warning" onclick="openModalViewEdital()">📄 Ver / Anexar Edital PDF</button>
@@ -711,7 +709,7 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar</button>
+                <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -838,8 +836,8 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalDisponibilidade()">Cancelar</button>
-                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">⚡ Gerar Cronograma Correto</button>
+                <button class="btn btn-secondary" onclick="closeModalDisponibilidade()">Cancelar (ESC)</button>
+                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">⚡ Gerar Cronograma (ENTER)</button>
             </div>
         </div>
     </div>
@@ -874,8 +872,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 }"</div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="copyPromptToClipboard()">📋 Copiar Prompt</button>
-                <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar</button>
+                <button class="btn btn-primary" onclick="copyPromptToClipboard()">📋 Copiar Prompt (ENTER)</button>
+                <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -903,8 +901,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar</button>
-                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar</button>
+                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
+                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
             </div>
         </div>
     </div>
@@ -937,8 +935,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalSlot()">Cancelar</button>
-                <button class="btn btn-primary" onclick="salvarSlot()">Salvar</button>
+                <button class="btn btn-secondary" onclick="closeModalSlot()">Cancelar (ESC)</button>
+                <button class="btn btn-primary" onclick="salvarSlot()">Salvar (ENTER)</button>
             </div>
         </div>
     </div>
@@ -986,6 +984,50 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
+        // --- ATALHOS DE TECLADO (ESC E ENTER) PARA MODAIS ---
+        window.addEventListener('keydown', function(event) {
+            const activeModal = document.querySelector('.modal-overlay[style*="display: flex"]');
+            if (!activeModal) return;
+
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeAllModals();
+            } else if (event.key === 'Enter') {
+                // Previne envio acidental de forms ou comportamentos indesejados
+                if (event.target.tagName === 'TEXTAREA') return;
+                event.preventDefault();
+                confirmActiveModal(activeModal.id);
+            }
+        });
+
+        function closeAllModals() {
+            closeModalViewEdital();
+            closeModalDisponibilidade();
+            closeModalPromptIA();
+            closeModalNovoConcurso();
+            closeModalSlot();
+        }
+
+        function confirmActiveModal(modalId) {
+            switch (modalId) {
+                case 'modalNovoConcurso':
+                    confirmarNovoConcurso();
+                    break;
+                case 'modalSlot':
+                    salvarSlot();
+                    break;
+                case 'modalDisponibilidade':
+                    confirmarAutoFillDisponibilidade();
+                    break;
+                case 'modalPromptIA':
+                    copyPromptToClipboard();
+                    break;
+                case 'modalViewEdital':
+                    closeModalViewEdital();
+                    break;
+            }
+        }
+
         function getMateriaColorIndex(materiaName, sortedMaterias) {
             const idx = sortedMaterias.indexOf(materiaName);
             return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
@@ -1025,7 +1067,16 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             btnRemove.style.display = 'inline-flex';
 
             if (fileData.type && fileData.type.includes('pdf')) {
-                container.innerHTML = `<iframe class="pdf-viewer-iframe" src="${fileData.base64}"></iframe>`;
+                // Força visualização inline do PDF
+                const pdfDataUri = fileData.base64.startsWith('data:application/pdf') 
+                    ? fileData.base64 
+                    : `data:application/pdf;base64,${fileData.base64.split(',')[1] || fileData.base64}`;
+
+                container.innerHTML = `
+                    <object class="pdf-viewer-iframe" data="${pdfDataUri}#toolbar=1&navpanes=0&scrollbar=1" type="application/pdf">
+                        <iframe class="pdf-viewer-iframe" src="${pdfDataUri}"></iframe>
+                    </object>
+                `;
             } else {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 2rem;">
@@ -1242,6 +1293,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
 
             document.getElementById('modalNovoConcurso').style.display = 'flex';
+            setTimeout(() => document.getElementById('inputNomeConcurso').focus(), 100);
         }
 
         function closeModalNovoConcurso() {
@@ -1641,6 +1693,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             }
 
             document.getElementById('modalSlot').style.display = 'flex';
+            setTimeout(() => document.getElementById('slotHorario').focus(), 100);
         }
 
         function openEditSlotModal(dia, index) {
@@ -1668,6 +1721,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             onMateriaSelectChange(slot.materia, slot.assunto);
             document.getElementById('modalSlot').style.display = 'flex';
+            setTimeout(() => document.getElementById('slotHorario').focus(), 100);
         }
 
         function onMateriaSelectChange(selectedMateria, preSelectedAssunto = '') {
