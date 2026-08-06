@@ -974,6 +974,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
         let globalAudioCtx = null;
+        let currentPdfBlobUrl = null;
         
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
@@ -1033,7 +1034,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
         }
 
-        // --- LÓGICA DE UPLOAD / VISUALIZAÇÃO DE EDITAL ORIGINAL ---
+        // --- LÓGICA DE UPLOAD / VISUALIZAÇÃO DE EDITAL ORIGINAL COM BLOB URL ---
         function openModalViewEdital() {
             document.getElementById('editalModalTitle').innerText = `📄 Edital Oficial: ${currentConcurso}`;
             renderEditalViewer();
@@ -1042,6 +1043,10 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
         function closeModalViewEdital() {
             document.getElementById('modalViewEdital').style.display = 'none';
+            if (currentPdfBlobUrl) {
+                URL.revokeObjectURL(currentPdfBlobUrl);
+                currentPdfBlobUrl = null;
+            }
         }
 
         function renderEditalViewer() {
@@ -1049,6 +1054,12 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const btnDownload = document.getElementById('btnDownloadEdital');
             const btnRemove = document.getElementById('btnRemoveEdital');
             const fileData = concursosMetadata[currentConcurso]?.editalFile;
+
+            // Revoga URL temporária anterior se existir para economizar memória
+            if (currentPdfBlobUrl) {
+                URL.revokeObjectURL(currentPdfBlobUrl);
+                currentPdfBlobUrl = null;
+            }
 
             if (!fileData) {
                 btnDownload.style.display = 'none';
@@ -1067,15 +1078,32 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             btnRemove.style.display = 'inline-flex';
 
             if (fileData.type && fileData.type.includes('pdf')) {
-                const pdfDataUri = fileData.base64.startsWith('data:application/pdf') 
-                    ? fileData.base64 
-                    : `data:application/pdf;base64,${fileData.base64.split(',')[1] || fileData.base64}`;
+                try {
+                    // Converte Base64 para ArrayBuffer e cria um Blob PDF nativo sem forçar download
+                    const base64Clean = fileData.base64.includes(',') ? fileData.base64.split(',')[1] : fileData.base64;
+                    const byteCharacters = atob(base64Clean);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: 'application/pdf' });
 
-                container.innerHTML = `
-                    <object class="pdf-viewer-iframe" data="${pdfDataUri}#toolbar=1&navpanes=0&scrollbar=1" type="application/pdf">
-                        <iframe class="pdf-viewer-iframe" src="${pdfDataUri}"></iframe>
-                    </object>
-                `;
+                    currentPdfBlobUrl = URL.createObjectURL(blob);
+
+                    container.innerHTML = `
+                        <iframe class="pdf-viewer-iframe" src="${currentPdfBlobUrl}#toolbar=1&navpanes=0&scrollbar=1"></iframe>
+                    `;
+                } catch (e) {
+                    console.error("Erro ao processar PDF:", e);
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <h4>📑 Arquivo Anexado: ${fileData.name}</h4>
+                            <p style="opacity:0.8; margin: 1rem 0;">Não foi possível pré-visualizar diretamente.</p>
+                            <button class="btn btn-primary" onclick="downloadEditalFile()">📥 Baixar Arquivo</button>
+                        </div>
+                    `;
+                }
             } else {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 2rem;">
