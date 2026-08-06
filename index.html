@@ -1172,41 +1172,39 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
-        // --- SOM DO POMODORO: SINO TOCANDO 3 VEZES ---
+        // --- ALARME INTENSO E MARCANTE PARA O POMODORO ---
         function playAlarmSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-                function triggerBellStroke(timeOffset) {
-                    const now = audioCtx.currentTime + timeOffset;
+                // Função para emitir um pulso de som alto com tom marcante
+                function emitBeep(startTime, freq, duration, waveType = 'sawtooth') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
 
-                    // Frequência base e harmônicos característicos de um sino metálico
-                    const freqs = [659.25, 1318.5, 1977.75]; // Nota E5 e harmônicos
-                    const gains = [0.4, 0.2, 0.1];
+                    osc.type = waveType;
+                    osc.frequency.setValueAtTime(freq, startTime);
 
-                    freqs.forEach((freq, idx) => {
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
+                    // Ataque rápido e volume forte
+                    gain.gain.setValueAtTime(0.6, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(freq, now);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
 
-                        // Decaimento suave com efeito de ressonância de sino
-                        gain.gain.setValueAtTime(gains[idx], now);
-                        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
-
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-
-                        osc.start(now);
-                        osc.stop(now + 1.2);
-                    });
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
                 }
 
-                // Toca o sino 3 vezes em intervalos de 0.8 segundos
-                triggerBellStroke(0.0);
-                triggerBellStroke(0.8);
-                triggerBellStroke(1.6);
+                const now = audioCtx.currentTime;
+
+                // Sequência de 3 disparos duplos de alarme chamativo (Bip-Bip ... Bip-Bip ... Bip-Bip)
+                const bursts = [0.0, 0.4, 0.8];
+
+                bursts.forEach(offset => {
+                    emitBeep(now + offset, 1050, 0.12, 'sawtooth');
+                    emitBeep(now + offset + 0.14, 1350, 0.18, 'square');
+                });
 
             } catch (e) {
                 console.log("Áudio bloqueado ou não suportado:", e);
@@ -2303,6 +2301,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     clearInterval(timerInterval);
                     timerInterval = null;
 
+                    // Toca o alarme imediatamente no tempo 00:00
                     playAlarmSound();
 
                     isFocusTime = !isFocusTime;
