@@ -232,7 +232,6 @@
             letter-spacing: 2px;
         }
 
-        /* CORREÇÃO DO NUMERAL POMODORO */
         .timer-settings {
             display: flex;
             justify-content: center;
@@ -652,7 +651,7 @@
         
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
-        // --- UNREGISTER SERVICE WORKERS ANTIGOS QUE POSSAM ESTAR FAZENDO CACHE DA TELA ANTIGA ---
+        // DESREGISTRAR SERVICE WORKERS ANTIGOS (EVITAR TELA ANTIGA EM CACHE)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(registrations => {
                 for (let registration of registrations) {
@@ -790,9 +789,9 @@
                 const user = (await supabaseClient.auth.getUser())?.data?.user;
                 const itemsParaCopiar = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === concursoParaCopiar);
 
-                const novosItems = itemsParaCopiar.map((item, idx) => ({
+                const novosItems = itemsParaCopiar.map((item) => ({
                     ...item,
-                    id: Date.now() + idx,
+                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                     concurso: nome,
                     teoria: false,
                     questoes: false,
@@ -874,7 +873,6 @@
         }
 
         function filterDataByConcurso() {
-            // Garante que todo item sem a propriedade concurso caia em "Concurso Geral"
             editalItems = allEditalItems.filter(i => {
                 const concursoItem = i.concurso || 'Concurso Geral';
                 return concursoItem === currentConcurso;
@@ -1058,18 +1056,18 @@
             }
         }
 
-        // --- CARREGAMENTO LOCAL FIRST CORRIGIDO ---
+        // --- CARREGAMENTO LOCAL FIRST COM TRATAMENTO DE UUID ---
         async function loadData() {
             loadLocalData();
-            filterDataByConcurso(); // Renderiza dados do localStorage na tela na hora
+            filterDataByConcurso();
             
             if (navigator.onLine) {
                 try {
                     const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
                     if (!error && data && data.length > 0) {
-                        // Atribui 'Concurso Geral' caso a propriedade venha vazia do banco
                         allEditalItems = data.map(item => ({
                             ...item,
+                            id: String(item.id), // Força a conversão do ID para String UUID
                             concurso: item.concurso || 'Concurso Geral'
                         }));
                         localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
@@ -1088,6 +1086,7 @@
                     const parsed = JSON.parse(local);
                     allEditalItems = parsed.map(item => ({
                         ...item,
+                        id: String(item.id),
                         concurso: item.concurso || 'Concurso Geral'
                     }));
                 } catch(e) {
@@ -1138,17 +1137,18 @@
 
                 if (isOpen) {
                     group.items.forEach(item => {
+                        const safeId = String(item.id);
                         tbody.innerHTML += `
                             <tr>
                                 <td></td>
                                 <td style="text-align: left; padding-left: 2rem;">📌 ${item.assunto}</td>
-                                <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'teoria', ${item.teoria})"></td>
-                                <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'questoes', ${item.questoes})"></td>
-                                <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_24h', ${item.rev_24h})"></td>
-                                <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_7d', ${item.rev_7d})"></td>
-                                <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck(${item.id}, 'rev_30d', ${item.rev_30d})"></td>
+                                <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'teoria', ${item.teoria})"></td>
+                                <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'questoes', ${item.questoes})"></td>
+                                <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_24h', ${item.rev_24h})"></td>
+                                <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_7d', ${item.rev_7d})"></td>
+                                <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_30d', ${item.rev_30d})"></td>
                                 <td>
-                                    <button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes(${item.id})" title="Limpar todas as marcações desta linha">✕</button>
+                                    <button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes('${safeId}')" title="Limpar todas as marcações desta linha">✕</button>
                                 </td>
                             </tr>
                         `;
@@ -1191,7 +1191,7 @@
 
         // REGISTRA E PERSISTE O STATUS DE CADA MARCAÇÃO
         async function toggleCheck(id, field, currentValue) {
-            const item = allEditalItems.find(i => i.id === id);
+            const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item[field] = !currentValue;
                 
@@ -1210,7 +1210,7 @@
 
         // LIMPA AS 5 MARCAÇÕES DA LINHA
         async function clearRowCheckboxes(id) {
-            const item = allEditalItems.find(i => i.id === id);
+            const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item.teoria = false;
                 item.questoes = false;
@@ -1243,7 +1243,7 @@
             const user = (await supabaseClient.auth.getUser())?.data?.user;
 
             const newItem = {
-                id: Date.now(),
+                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
                 materia, assunto, prioridade,
                 concurso: currentConcurso,
                 user_id: user ? user.id : null,
@@ -1261,6 +1261,7 @@
             if (navigator.onLine && user) {
                 delete newItem.id;
                 await supabaseClient.from('edital').insert([newItem]);
+                loadData();
             } else {
                 addToSyncQueue({ type: 'INSERT', item: newItem });
             }
@@ -1297,12 +1298,12 @@
                     if (rawData.data) rawData = rawData.data;
 
                     if (Array.isArray(rawData)) {
-                        formattedData = rawData.map((item, idx) => {
+                        formattedData = rawData.map((item) => {
                             let mName = item.materia || item.disciplina || item.subject;
                             if (!mName || mName === 'payload_public_edital') mName = 'Matéria Importada';
 
                             return {
-                                id: Date.now() + idx,
+                                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                                 materia: mName,
                                 assunto: item.assunto || item.topico || item.nome || item.descricao || 'Tópico de Estudo',
                                 prioridade: parseInt(item.prioridade || item.peso || 1),
@@ -1312,14 +1313,12 @@
                             };
                         });
                     } else if (typeof rawData === 'object' && rawData !== null) {
-                        let count = 0;
                         Object.keys(rawData).forEach((materiaKey, index) => {
                             const assuntos = rawData[materiaKey];
                             if (Array.isArray(assuntos)) {
                                 assuntos.forEach(assuntoItem => {
-                                    count++;
                                     formattedData.push({
-                                        id: Date.now() + count,
+                                        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                                         materia: materiaKey,
                                         assunto: typeof assuntoItem === 'string' ? assuntoItem : (assuntoItem.nome || assuntoItem.assunto || 'Tópico'),
                                         prioridade: typeof assuntoItem === 'object' ? parseInt(assuntoItem.prioridade || assuntoItem.peso || index + 1) : index + 1,
@@ -1346,6 +1345,7 @@
                     if (navigator.onLine && user) {
                         const dataToInsert = formattedData.map(d => { const copy = {...d}; delete copy.id; return copy; });
                         await supabaseClient.from('edital').insert(dataToInsert);
+                        loadData();
                     } else {
                         formattedData.forEach(item => addToSyncQueue({ type: 'INSERT', item }));
                     }
