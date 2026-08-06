@@ -131,7 +131,6 @@
             flex-wrap: wrap;
         }
 
-        /* NAVEGAÇÃO POR ABAS */
         .nav-tabs {
             display: flex;
             gap: 0.5rem;
@@ -255,7 +254,6 @@
             font-weight: 600;
         }
 
-        /* CALENDÁRIO SEMANAL & BLOCOS DE ESTUDO */
         .weekly-hours-banner {
             background: rgba(59, 130, 246, 0.15);
             border: 1px solid var(--primary-blue);
@@ -355,7 +353,6 @@
         }
         .btn-add-slot:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
 
-        /* MODAIS */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -397,7 +394,6 @@
             font-weight: 600;
         }
 
-        /* ACCORDION */
         .materia-header-row {
             background-color: var(--header-materia-bg);
             color: var(--header-materia-text);
@@ -455,12 +451,9 @@
         <header>
             <h2>🎯 Painel de Estudos</h2>
             
-            <!-- SELETOR E GERENCIADOR DE CONCURSOS -->
             <div class="concurso-selector-bar">
                 <label>📌 <strong>Concurso:</strong></label>
-                <select id="concursoSelect" onchange="changeConcurso(this.value)">
-                    <!-- Preenchido via JS -->
-                </select>
+                <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
                 <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">➕ Novo</button>
                 <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">🗑️ Excluir</button>
                 
@@ -472,7 +465,6 @@
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
         </header>
 
-        <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
             <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
             
@@ -484,16 +476,13 @@
             <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Edital Atual</button>
         </div>
 
-        <!-- NAVEGAÇÃO POR ABAS -->
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('tab-edital', this)">📚 Edital Verticalizado</button>
             <button class="tab-btn" onclick="switchTab('tab-calendario', this)">📅 Calendário Semanal</button>
         </div>
 
-        <!-- ABA 1: EDITAL VERTICALIZADO + TIMER + GRÁFICO -->
         <div id="tab-edital" class="tab-content active">
             <div class="grid-top">
-                <!-- TIMER POMODORO -->
                 <div class="card">
                     <h3>⏱️ Relógio Pomodoro</h3>
                     <div class="timer-display" id="timer">25:00</div>
@@ -507,14 +496,12 @@
                     </div>
                 </div>
 
-                <!-- GRÁFICO -->
                 <div class="card">
                     <h3>📊 Progresso Geral de Estudo</h3>
                     <canvas id="progressChart" height="160"></canvas>
                 </div>
             </div>
 
-            <!-- TABELA DO EDITAL AGRUPADA POR MATÉRIA (ACCORDION) -->
             <div class="card">
                 <h3 id="edital-title">📚 Edital Agrupado por Matéria</h3>
                 
@@ -525,7 +512,6 @@
                     <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
                 </form>
 
-                <!-- CONTROLES DE EXPANSÃO GLOBAL DE GUIAS -->
                 <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">📖 Expandir Todas as Guias</button>
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">📕 Recolher Todas as Guias</button>
@@ -545,15 +531,12 @@
                                 <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="edital-list">
-                            <!-- Linhas agrupadas por Matéria geradas via JS -->
-                        </tbody>
+                        <tbody id="edital-list"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- ABA 2: CALENDÁRIO SEMANAL DE ESTUDOS COM CONTABILIZAÇÃO DE HORAS -->
         <div id="tab-calendario" class="tab-content">
             <div class="card">
                 <h3>📅 Cronograma Semanal de Estudos</h3>
@@ -561,15 +544,12 @@
                     💡 <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcá-lo como <strong>concluído/estudado</strong> (ficando verde). Clique novamente para desfazer a ação.
                 </p>
                 
-                <!-- BANNER DE HORAS SEMANAIS -->
                 <div class="weekly-hours-banner">
                     <span>⏱️ Total Planejado para a Semana:</span>
                     <span id="weeklyHoursTotal">0h 00min</span>
                 </div>
 
-                <div class="calendar-grid" id="calendarGrid">
-                    <!-- Dias da semana preenchidos via JS -->
-                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
             </div>
         </div>
 
@@ -617,16 +597,12 @@
 
             <div class="form-group">
                 <label for="slotMateriaSelect">Matéria (Vinculada ao Edital Importado)</label>
-                <select id="slotMateriaSelect" onchange="onMateriaSelectChange(this.value)">
-                    <!-- Preenchido dinamicamente -->
-                </select>
+                <select id="slotMateriaSelect" onchange="onMateriaSelectChange(this.value)"></select>
             </div>
 
             <div class="form-group">
                 <label for="slotAssuntoSelect">Assunto (Vinculado à Matéria Escolhida)</label>
-                <select id="slotAssuntoSelect">
-                    <!-- Preenchido dinamicamente -->
-                </select>
+                <select id="slotAssuntoSelect"></select>
             </div>
 
             <div class="modal-actions">
@@ -651,13 +627,37 @@
         
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
-        // DESREGISTRAR SERVICE WORKERS ANTIGOS (EVITAR TELA ANTIGA EM CACHE)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(registrations => {
                 for (let registration of registrations) {
                     registration.unregister();
                 }
             });
+        }
+
+        // --- EMISSÃO DE SOM NATIVO (WEB AUDIO API) ---
+        function playAlarmSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                [0, 0.25].forEach(delay => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + delay); // Nota Lá (880Hz)
+
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + delay + 0.2);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(audioCtx.currentTime + delay);
+                    osc.stop(audioCtx.currentTime + delay + 0.2);
+                });
+            } catch (e) {
+                console.log("Áudio bloqueado ou não suportado:", e);
+            }
         }
 
         // --- AUTH ---
@@ -701,7 +701,6 @@
             document.body.classList.toggle('light-mode');
         }
 
-        // --- CONTROLE DE ABAS ---
         function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
@@ -714,7 +713,6 @@
             }
         }
 
-        // --- GERENCIAMENTO DE CONCURSOS ---
         function saveConcursosMetadata() {
             localStorage.setItem('concursos_metadata', JSON.stringify(concursosMetadata));
         }
@@ -885,7 +883,6 @@
             renderCalendar();
         }
 
-        // --- CÁLCULO DE HORAS ---
         function parseTimeIntervalToMinutes(timeIntervalStr) {
             if (!timeIntervalStr) return 0;
             const parts = timeIntervalStr.split('-').map(s => s.trim());
@@ -911,7 +908,6 @@
             return `${h}h ${m}min`;
         }
 
-        // --- CALENDÁRIO SEMANAL DE ESTUDOS ---
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
             grid.innerHTML = '';
@@ -1056,7 +1052,6 @@
             }
         }
 
-        // --- CARREGAMENTO LOCAL FIRST COM TRATAMENTO DE UUID ---
         async function loadData() {
             loadLocalData();
             filterDataByConcurso();
@@ -1067,7 +1062,7 @@
                     if (!error && data && data.length > 0) {
                         allEditalItems = data.map(item => ({
                             ...item,
-                            id: String(item.id), // Força a conversão do ID para String UUID
+                            id: String(item.id),
                             concurso: item.concurso || 'Concurso Geral'
                         }));
                         localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
@@ -1095,7 +1090,6 @@
             }
         }
 
-        // --- RENDERIZAÇÃO TABELA EXPANSÍVEL POR MATÉRIA ---
         function renderTable() {
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
@@ -1189,7 +1183,6 @@
             }
         }
 
-        // REGISTRA E PERSISTE O STATUS DE CADA MARCAÇÃO
         async function toggleCheck(id, field, currentValue) {
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
@@ -1208,7 +1201,6 @@
             }
         }
 
-        // LIMPA AS 5 MARCAÇÕES DA LINHA
         async function clearRowCheckboxes(id) {
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
@@ -1281,7 +1273,6 @@
             }
         }
 
-        // --- PARSER JSON AVANÇADO ---
         async function importJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1359,7 +1350,6 @@
             event.target.value = '';
         }
 
-        // --- FILA DE SINCRONIZAÇÃO OFFLINE ---
         function addToSyncQueue(action) {
             const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
             queue.push(action);
@@ -1416,7 +1406,6 @@
         window.addEventListener('offline', updateOnlineStatus);
         window.addEventListener('load', updateOnlineStatus);
 
-        // --- GRÁFICO (CHART.JS) ---
         function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
             const counts = {};
@@ -1453,7 +1442,7 @@
             });
         }
 
-        // --- POMODORO ---
+        // --- POMODORO COM ALARME INTEGRADO ---
         let timerInterval = null;
         let isFocusTime = true;
         let timeLeft = 25 * 60;
@@ -1482,8 +1471,16 @@
                 } else {
                     clearInterval(timerInterval);
                     timerInterval = null;
+
+                    // 🔔 Executa o alarme sonoro
+                    playAlarmSound();
+
                     isFocusTime = !isFocusTime;
-                    alert(isFocusTime ? 'Hora de focar!' : 'Hora da pausa!');
+                    
+                    setTimeout(() => {
+                        alert(isFocusTime ? '🔔 Hora de focar!' : '☕ Hora da pausa!');
+                    }, 100);
+
                     const nextMin = isFocusTime ? document.getElementById('focoMin').value : document.getElementById('pausaMin').value;
                     timeLeft = (parseInt(nextMin) || 5) * 60;
                     updateDisplay();
