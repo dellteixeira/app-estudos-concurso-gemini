@@ -99,14 +99,7 @@
             gap: 1rem;
         }
 
-        /* GRUPO ESQUERDO: TÍTULO + BOTÕES MODO CLARO & SAIR */
-        .header-left-group {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
+        /* BARRA DO CONCURSO NO CENTRO OU ACOMPANHANDO O TÍTULO */
         .concurso-selector-bar {
             display: flex;
             align-items: center;
@@ -116,6 +109,14 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             flex-wrap: wrap;
+        }
+
+        /* GRUPO DIREITO: MODO CLARO/ESCURO + SAIR */
+        .header-right-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: auto;
         }
 
         .countdown-badge {
@@ -474,14 +475,9 @@
     <!-- MAIN DASHBOARD -->
     <div id="app-dashboard">
         <header>
-            <!-- LADO ESQUERDO: TÍTULO + MODO CLARO + BOTÃO SAIR -->
-            <div class="header-left-group">
-                <h2>🎯 Painel de Estudos</h2>
-                <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
-                <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
-            </div>
+            <h2>🎯 Painel de Estudos</h2>
             
-            <!-- LADO DIREITO: BARRA DE SELEÇÃO DO CONCURSO -->
+            <!-- SELETOR DE CONCURSO NO CENTRO -->
             <div class="concurso-selector-bar">
                 <label>📌 <strong>Concurso:</strong></label>
                 <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
@@ -491,6 +487,12 @@
                 <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
                     Sem data de prova
                 </div>
+            </div>
+
+            <!-- BOTÕES MODO CLARO/ESCURO E SAIR NO LADO DIREITO -->
+            <div class="header-right-actions">
+                <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
+                <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
             </div>
         </header>
 
