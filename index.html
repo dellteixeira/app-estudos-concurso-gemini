@@ -99,10 +99,12 @@
             gap: 1rem;
         }
 
-        .header-right-actions {
+        /* GRUPO ESQUERDO: TÍTULO + BOTÕES MODO CLARO & SAIR */
+        .header-left-group {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
 
         .concurso-selector-bar {
@@ -436,7 +438,6 @@
             cursor: pointer;
         }
 
-        /* ESTILOS DA CAIXA DE PROMPT IA */
         .prompt-code-box {
             background-color: var(--code-bg);
             border: 1px solid var(--border-color);
@@ -473,8 +474,14 @@
     <!-- MAIN DASHBOARD -->
     <div id="app-dashboard">
         <header>
-            <h2>🎯 Painel de Estudos</h2>
+            <!-- LADO ESQUERDO: TÍTULO + MODO CLARO + BOTÃO SAIR -->
+            <div class="header-left-group">
+                <h2>🎯 Painel de Estudos</h2>
+                <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
+                <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
+            </div>
             
+            <!-- LADO DIREITO: BARRA DE SELEÇÃO DO CONCURSO -->
             <div class="concurso-selector-bar">
                 <label>📌 <strong>Concurso:</strong></label>
                 <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
@@ -485,15 +492,9 @@
                     Sem data de prova
                 </div>
             </div>
-
-            <!-- BOTÃO MODO CLARO/ESCURO ALINHADO COM BOTÃO SAIR -->
-            <div class="header-right-actions">
-                <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
-                <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
-            </div>
         </header>
 
-        <!-- BARRA DE AÇÕES: IMPORTAR JSON EMPRIMEIRO LUGAR -->
+        <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
             <label class="btn btn-success" style="cursor: pointer;">
                 📥 Importar JSON
@@ -584,7 +585,7 @@
 
     </div>
 
-    <!-- MODAL: PROMPT PARA COLAR NA IA (CHATGPT / CLAUDE / GEMINI) -->
+    <!-- MODAL: PROMPT PARA COLAR NA IA -->
     <div class="modal-overlay" id="modalPromptIA">
         <div class="modal">
             <h3>🤖 Prompt para Colar na IA (ChatGPT / Claude / Gemini)</h3>
@@ -700,7 +701,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
-        // --- FUNÇÕES DO MODAL DE PROMPT DA IA ---
         function openModalPromptIA() {
             document.getElementById('modalPromptIA').style.display = 'flex';
         }
@@ -718,7 +718,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
-        // --- EMISSÃO DE SOM NATIVO (WEB AUDIO API) ---
         function playAlarmSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -743,7 +742,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             }
         }
 
-        // --- AUTH ---
         async function handleSignUp() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -1356,7 +1354,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             }
         }
 
-        // --- PARSER JSON (COMPATÍVEL COM O FORMATO DA IA DA IMAGEM) ---
         async function importJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1372,7 +1369,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     if (rawData.payload) rawData = rawData.payload;
                     if (rawData.data) rawData = rawData.data;
 
-                    // Se a IA gerou um JSON com a raiz { concurso: "...", materias: [...] }
                     if (rawData.materias && Array.isArray(rawData.materias)) {
                         if (rawData.concurso) {
                             currentConcurso = rawData.concurso;
@@ -1395,7 +1391,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                             }
                         });
                     } 
-                    // Se for uma lista simples
                     else if (Array.isArray(rawData)) {
                         formattedData = rawData.map((item) => {
                             let mName = item.materia || item.disciplina || item.subject;
