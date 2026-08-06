@@ -215,6 +215,7 @@
         .btn-success { background-color: #10b981; color: white; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-info { background-color: #0284c7; color: white; }
+        .btn-purple { background-color: #8b5cf6; color: white; }
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
         input, select {
@@ -345,11 +346,24 @@
         .schedule-item .check-icon { display: none; font-size: 0.8rem; margin-left: 4px; }
         .schedule-item.completed .check-icon { display: inline; }
 
-        .schedule-item .btn-del-slot {
-            position: absolute; top: 2px; right: 4px; background: none; border: none;
-            color: #94a3b8; cursor: pointer; font-size: 0.85rem; z-index: 2;
+        .schedule-item .slot-controls {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            display: flex;
+            gap: 4px;
+            z-index: 2;
         }
-        .schedule-item .btn-del-slot:hover { color: #ef4444; }
+
+        .schedule-item .btn-action-slot {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .schedule-item .btn-action-slot:hover { color: var(--primary-blue); }
+        .schedule-item .btn-action-slot.danger:hover { color: #ef4444; }
 
         .btn-add-slot {
             width: 100%; border: 1px dashed var(--border-color); background: transparent;
@@ -481,7 +495,7 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES COM TODOS OS BOTÕES ALINHADOS NA MESMA LINHA -->
+        <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
             <label class="btn btn-success" style="cursor: pointer;">
                 📥 Importar JSON
@@ -560,9 +574,14 @@
 
         <div id="tab-calendario" class="tab-content">
             <div class="card">
-                <h3>📅 Cronograma Semanal de Estudos</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <h3>📅 Cronograma Semanal de Estudos</h3>
+                    <!-- BOTÃO PREENCHER AUTOMATICAMENTE POR PRIORIDADE -->
+                    <button class="btn btn-purple" onclick="autoFillScheduleByPriority()">⚡ Preencher Cronograma Automaticamente</button>
+                </div>
+
                 <p style="margin-bottom: 1rem; font-size: 0.85rem; opacity: 0.8;">
-                    💡 <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcá-lo como <strong>concluído/estudado</strong> (ficando verde). Clique novamente para desfazer a ação.
+                    💡 <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcar como <strong>concluído</strong> ou clique no ícone ✏️ para <strong>editar o conteúdo/horário</strong>.
                 </p>
                 
                 <div class="weekly-hours-banner">
@@ -641,14 +660,15 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         </div>
     </div>
 
-    <!-- MODAL: ADICIONAR HORÁRIO AO CALENDÁRIO -->
+    <!-- MODAL: ADICIONAR / EDITAR HORÁRIO AO CALENDÁRIO -->
     <div class="modal-overlay" id="modalSlot">
         <div class="modal">
-            <h3>Adicionar Horário de Estudo</h3>
+            <h3 id="modalSlotTitle">Adicionar Horário de Estudo</h3>
             <input type="hidden" id="slotDiaSemana">
+            <input type="hidden" id="slotIndex" value="-1">
             
             <div class="form-group">
-                <label for="slotHorario">Horário (ex: 08:00 - 10:00)</label>
+                <label for="slotHorario">Horário (ex: 08:00 - 10:00 ou 10 - 11)</label>
                 <input type="text" id="slotHorario" placeholder="08:00 - 10:00">
             </div>
 
@@ -662,9 +682,14 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 <select id="slotAssuntoSelect"></select>
             </div>
 
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
+                <input type="checkbox" id="slotCompletedCheckbox">
+                <label for="slotCompletedCheckbox" style="cursor: pointer;">Marcar como Estudado/Concluído</label>
+            </div>
+
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalSlot()">Cancelar</button>
-                <button class="btn btn-primary" onclick="salvarSlot()">Adicionar</button>
+                <button class="btn btn-primary" onclick="salvarSlot()">Salvar</button>
             </div>
         </div>
     </div>
@@ -980,6 +1005,48 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             return `${h}h ${m}min`;
         }
 
+        // --- PREENCHIMENTO AUTOMÁTICO DO CRONOGRAMA POR PRIORIDADE ---
+        function autoFillScheduleByPriority() {
+            if (editalItems.length === 0) {
+                return alert('Nenhum edital cadastrado para este concurso. Importe um JSON ou adicione matérias manualmente primeiro.');
+            }
+
+            if (confirm('Deseja preencher automaticamente o cronograma semanal baseado na ordem de prioridade do edital?')) {
+                const sortedItems = [...editalItems].sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
+
+                const schedule = {};
+                DIAS_SEMANA.forEach(d => schedule[d] = []);
+
+                let dayIndex = 0;
+                let startHour = 8;
+
+                sortedItems.forEach(item => {
+                    const dia = DIAS_SEMANA[dayIndex];
+                    const horarioStr = `${String(startHour).padStart(2, '0')}:00 - ${String(startHour + 1).padStart(2, '0')}:00`;
+
+                    schedule[dia].push({
+                        horario: horarioStr,
+                        materia: item.materia,
+                        assunto: item.assunto,
+                        completed: false
+                    });
+
+                    dayIndex = (dayIndex + 1) % DIAS_SEMANA.length;
+                    if (dayIndex === 0) {
+                        startHour += 2; 
+                    }
+                });
+
+                if (!concursosMetadata[currentConcurso]) {
+                    concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
+                }
+                concursosMetadata[currentConcurso].schedule = schedule;
+                saveConcursosMetadata();
+                renderCalendar();
+                alert('Cronograma gerado com sucesso respeitando a prioridade de estudo!');
+            }
+        }
+
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
             grid.innerHTML = '';
@@ -1006,7 +1073,10 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
                     htmlSlots += `
                         <div class="schedule-item ${isCompleted}" onclick="toggleSlotCompleted('${dia}', ${index})">
-                            <button class="btn-del-slot" onclick="event.stopPropagation(); removerSlot('${dia}', ${index})">✕</button>
+                            <div class="slot-controls">
+                                <button class="btn-action-slot" onclick="event.stopPropagation(); openEditSlotModal('${dia}', ${index})" title="Editar Conteúdo">✏️</button>
+                                <button class="btn-action-slot danger" onclick="event.stopPropagation(); removerSlot('${dia}', ${index})" title="Excluir Horário">✕</button>
+                            </div>
                             <span class="time">${item.horario} <span class="check-icon">✅</span></span>
                             <span class="subject">${item.materia}</span>
                             ${assuntoHtml}
@@ -1042,7 +1112,10 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         }
 
         function openModalSlot(dia) {
+            document.getElementById('modalSlotTitle').innerText = "Adicionar Horário de Estudo";
             document.getElementById('slotDiaSemana').value = dia;
+            document.getElementById('slotIndex').value = "-1";
+            document.getElementById('slotCompletedCheckbox').checked = false;
             
             const selectMat = document.getElementById('slotMateriaSelect');
             selectMat.innerHTML = '';
@@ -1062,7 +1135,34 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             document.getElementById('modalSlot').style.display = 'flex';
         }
 
-        function onMateriaSelectChange(selectedMateria) {
+        function openEditSlotModal(dia, index) {
+            const slot = concursosMetadata[currentConcurso]?.schedule?.[dia]?.[index];
+            if (!slot) return;
+
+            document.getElementById('modalSlotTitle').innerText = "Editar Horário / Conteúdo";
+            document.getElementById('slotDiaSemana').value = dia;
+            document.getElementById('slotIndex').value = index;
+            document.getElementById('slotHorario').value = slot.horario;
+            document.getElementById('slotCompletedCheckbox').checked = !!slot.completed;
+
+            const selectMat = document.getElementById('slotMateriaSelect');
+            selectMat.innerHTML = '';
+
+            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+            
+            if (!materiasValidas.includes(slot.materia) && slot.materia) {
+                materiasValidas.unshift(slot.materia);
+            }
+
+            materiasValidas.forEach(m => {
+                selectMat.innerHTML += `<option value="${m}" ${m === slot.materia ? 'selected' : ''}>${m}</option>`;
+            });
+
+            onMateriaSelectChange(slot.materia, slot.assunto);
+            document.getElementById('modalSlot').style.display = 'flex';
+        }
+
+        function onMateriaSelectChange(selectedMateria, preSelectedAssunto = '') {
             const selectAssunto = document.getElementById('slotAssuntoSelect');
             selectAssunto.innerHTML = '';
 
@@ -1077,12 +1177,16 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             const uniqueAssuntos = Array.from(new Set(assuntos));
 
+            if (preSelectedAssunto && !uniqueAssuntos.includes(preSelectedAssunto)) {
+                uniqueAssuntos.unshift(preSelectedAssunto);
+            }
+
             if (uniqueAssuntos.length === 0) {
                 selectAssunto.innerHTML = '<option value="">Revisão Geral da Matéria</option>';
             } else {
                 selectAssunto.innerHTML = '<option value="">-- Todos ou Geral --</option>';
                 uniqueAssuntos.forEach(a => {
-                    selectAssunto.innerHTML += `<option value="${a}">${a}</option>`;
+                    selectAssunto.innerHTML += `<option value="${a}" ${a === preSelectedAssunto ? 'selected' : ''}>${a}</option>`;
                 });
             }
         }
@@ -1090,13 +1194,16 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         function closeModalSlot() {
             document.getElementById('modalSlot').style.display = 'none';
             document.getElementById('slotHorario').value = '';
+            document.getElementById('slotIndex').value = "-1";
         }
 
         function salvarSlot() {
             const dia = document.getElementById('slotDiaSemana').value;
+            const index = parseInt(document.getElementById('slotIndex').value);
             const horario = document.getElementById('slotHorario').value.trim();
             const materia = document.getElementById('slotMateriaSelect').value || 'Estudo Geral';
             const assunto = document.getElementById('slotAssuntoSelect').value || '';
+            const completed = document.getElementById('slotCompletedCheckbox').checked;
 
             if (!horario) return alert('Informe o horário de estudo (ex: 08:00 - 10:00).');
 
@@ -1110,7 +1217,14 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 concursosMetadata[currentConcurso].schedule[dia] = [];
             }
 
-            concursosMetadata[currentConcurso].schedule[dia].push({ horario, materia, assunto, completed: false });
+            const slotObj = { horario, materia, assunto, completed };
+
+            if (index >= 0 && concursosMetadata[currentConcurso].schedule[dia][index]) {
+                concursosMetadata[currentConcurso].schedule[dia][index] = slotObj;
+            } else {
+                concursosMetadata[currentConcurso].schedule[dia].push(slotObj);
+            }
+
             saveConcursosMetadata();
             renderCalendar();
             closeModalSlot();
@@ -1592,11 +1706,13 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.removerConcursoAtual = removerConcursoAtual;
         window.editarDataProva = editarDataProva;
         window.openModalSlot = openModalSlot;
+        window.openEditSlotModal = openEditSlotModal;
         window.onMateriaSelectChange = onMateriaSelectChange;
         window.closeModalSlot = closeModalSlot;
         window.salvarSlot = salvarSlot;
         window.removerSlot = removerSlot;
         window.toggleSlotCompleted = toggleSlotCompleted;
+        window.autoFillScheduleByPriority = autoFillScheduleByPriority;
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
