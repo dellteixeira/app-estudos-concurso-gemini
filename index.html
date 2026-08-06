@@ -377,7 +377,7 @@
         }
         .modal {
             background: var(--card-bg); color: var(--text-color); padding: 24px;
-            border-radius: 12px; width: 100%; max-width: 550px; display: flex; flex-direction: column; gap: 16px;
+            border-radius: 12px; width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 16px;
             border: 1px solid var(--border-color);
             max-height: 90vh; overflow-y: auto;
         }
@@ -390,7 +390,7 @@
             gap: 0.5rem;
             align-items: center;
             background: rgba(255,255,255,0.03);
-            padding: 10px;
+            padding: 8px 12px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
         }
@@ -403,6 +403,17 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+        }
+
+        .weekend-config-box {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px dashed var(--primary-blue);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 6px;
         }
 
         .days-grid {
@@ -636,10 +647,12 @@
     <!-- MODAL: DEFINIR DISPONIBILIDADE E DIAS DA SEMANA PARA ESTUDO -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
-            <h3>⏱️ Configurar Horários e Dias de Estudo</h3>
+            <h3>⏱️ Configurar Horários e Turnos de Estudo</h3>
             <p style="font-size: 0.85rem; opacity: 0.85;">
-                Informe a quantidade de horas e horários por turno, e selecione os dias da semana em que deseja estudar.
+                Configure seus horários de segunda a sexta e personalize o fim de semana com horários diferenciados se desejar.
             </p>
+
+            <strong style="font-size: 0.9rem; color: var(--primary-blue);">💼 Horários Padrão (Segunda a Sexta):</strong>
 
             <div class="shift-row">
                 <strong style="width: 80px;">🌅 Manhã:</strong>
@@ -677,23 +690,68 @@
                 </div>
             </div>
 
-            <!-- OPÇÕES DE DIAS DE ESTUDO -->
+            <!-- OPÇÕES DE DIAS E PERSONALIZAÇÃO DE FIM DE SEMANA -->
             <div class="days-selection-box">
-                <strong style="font-size: 0.9rem;">📅 Dias da Semana para Estudo:</strong>
+                <strong style="font-size: 0.9rem;">📅 Dias de Estudo no Fim de Semana:</strong>
                 
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <label class="day-checkbox-label">
-                        <input type="checkbox" id="chkSabado" checked> Incluir Sábado
+                        <input type="checkbox" id="chkSabado" checked onchange="toggleWeekendBox()"> Incluir Sábado
                     </label>
                     <label class="day-checkbox-label">
-                        <input type="checkbox" id="chkDomingo" checked> Incluir Domingo
+                        <input type="checkbox" id="chkDomingo" checked onchange="toggleWeekendBox()"> Incluir Domingo
                     </label>
+                </div>
+
+                <label class="day-checkbox-label" style="font-weight: 600; color: #38bdf8; margin-top: 4px;">
+                    <input type="checkbox" id="chkCustomWeekendHours" onchange="toggleWeekendBox()"> ⚙️ Personalizar horários específicos para Sábado / Domingo
+                </label>
+
+                <!-- CONFIGURAÇÃO DEDICADA DE FIM DE SEMANA -->
+                <div id="weekendConfigBox" class="weekend-config-box" style="display: none;">
+                    <strong style="font-size: 0.85rem; color: #93c5fd;">🎈 Horários do Fim de Semana (Sáb/Dom):</strong>
+
+                    <div class="shift-row">
+                        <strong style="width: 80px;">🌅 Manhã:</strong>
+                        <div class="form-group" style="flex:1;">
+                            <label>Início:</label>
+                            <input type="time" id="inicioManhaFimSemana" value="08:00">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Qtd Horas:</label>
+                            <input type="number" id="horasManhaFimSemana" value="3" min="0" max="8">
+                        </div>
+                    </div>
+
+                    <div class="shift-row">
+                        <strong style="width: 80px;">☀️ Tarde:</strong>
+                        <div class="form-group" style="flex:1;">
+                            <label>Início:</label>
+                            <input type="time" id="inicioTardeFimSemana" value="14:00">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Qtd Horas:</label>
+                            <input type="number" id="horasTardeFimSemana" value="0" min="0" max="8">
+                        </div>
+                    </div>
+
+                    <div class="shift-row">
+                        <strong style="width: 80px;">🌙 Noite:</strong>
+                        <div class="form-group" style="flex:1;">
+                            <label>Início:</label>
+                            <input type="time" id="inicioNoiteFimSemana" value="19:00">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Qtd Horas:</label>
+                            <input type="number" id="horasNoiteFimSemana" value="0" min="0" max="8">
+                        </div>
+                    </div>
                 </div>
 
                 <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
 
                 <label class="day-checkbox-label" style="font-weight: 600; color: var(--primary-blue);">
-                    <input type="checkbox" id="chkCustomDays" onchange="toggleCustomDaysDisplay()"> ⚙️ Personalizar dias individualmente
+                    <input type="checkbox" id="chkCustomDays" onchange="toggleCustomDaysDisplay()"> 🗓️ Selecionar dias da semana manualmente
                 </label>
 
                 <div id="customDaysContainer" class="days-grid" style="display: none;">
@@ -858,6 +916,11 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         function toggleCustomDaysDisplay() {
             const isCustom = document.getElementById('chkCustomDays').checked;
             document.getElementById('customDaysContainer').style.display = isCustom ? 'grid' : 'none';
+        }
+
+        function toggleWeekendBox() {
+            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
+            document.getElementById('weekendConfigBox').style.display = isCustomWeekend ? 'flex' : 'none';
         }
 
         function copyPromptToClipboard() {
@@ -1169,8 +1232,9 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             }
         }
 
-        // --- PREENCHIMENTO AUTOMÁTICO SELEÇÃO DE DIAS ---
+        // --- PREENCHIMENTO AUTOMÁTICO FLEXÍVEL (DIAS ÚTEIS E FIM DE SEMANA DEDICADO) ---
         function confirmarAutoFillDisponibilidade() {
+            // Horários Padrão (Segunda a Sexta)
             const incManha = document.getElementById('inicioManha').value || '08:00';
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
 
@@ -1180,16 +1244,22 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const incNoite = document.getElementById('inicioNoite').value || '19:00';
             const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
 
-            const horasPorDia = hManha + hTarde + hNoite;
-            if (horasPorDia === 0) {
-                return alert('Por favor, informe ao menos 1 hora de estudo diária.');
-            }
+            // Horários de Fim de Semana
+            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
+            const incManhaFim = document.getElementById('inicioManhaFimSemana').value || '08:00';
+            const hManhaFim = parseInt(document.getElementById('horasManhaFimSemana').value) || 0;
+
+            const incTardeFim = document.getElementById('inicioTardeFimSemana').value || '14:00';
+            const hTardeFim = parseInt(document.getElementById('horasTardeFimSemana').value) || 0;
+
+            const incNoiteFim = document.getElementById('inicioNoiteFimSemana').value || '19:00';
+            const hNoiteFim = parseInt(document.getElementById('horasNoiteFimSemana').value) || 0;
 
             // Identificar dias ativos de estudo
             let diasAtivos = [];
-            const isCustom = document.getElementById('chkCustomDays').checked;
+            const isCustomDays = document.getElementById('chkCustomDays').checked;
 
-            if (isCustom) {
+            if (isCustomDays) {
                 const chks = document.querySelectorAll('.chk-day-custom:checked');
                 diasAtivos = Array.from(chks).map(c => c.value);
             } else {
@@ -1219,28 +1289,40 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             let pendentesIndex = 0;
 
-            // 2. Distribuir conteúdos apenas nos dias ativos selecionados
+            // 2. Distribuir conteúdos respeitando os horários de cada dia (dia útil vs fim de semana)
             DIAS_SEMANA.forEach(dia => {
                 if (!diasAtivos.includes(dia) || pendentesIndex >= pendentes.length) return;
 
+                const isWeekend = (dia === "Sábado" || dia === "Domingo");
+                const useWeekendRules = isWeekend && isCustomWeekend;
+
+                const curIncManha = useWeekendRules ? incManhaFim : incManha;
+                const curHManha = useWeekendRules ? hManhaFim : hManha;
+
+                const curIncTarde = useWeekendRules ? incTardeFim : incTarde;
+                const curHTarde = useWeekendRules ? hTardeFim : hTarde;
+
+                const curIncNoite = useWeekendRules ? incNoiteFim : incNoite;
+                const curHNoite = useWeekendRules ? hNoiteFim : hNoite;
+
                 // Turno Manhã
-                for (let i = 0; i < hManha && pendentesIndex < pendentes.length; i++) {
+                for (let i = 0; i < curHManha && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
-                    const hStr = formatHourSlot(incManha, i);
+                    const hStr = formatHourSlot(curIncManha, i);
                     newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
                 }
 
                 // Turno Tarde
-                for (let i = 0; i < hTarde && pendentesIndex < pendentes.length; i++) {
+                for (let i = 0; i < curHTarde && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
-                    const hStr = formatHourSlot(incTarde, i);
+                    const hStr = formatHourSlot(curIncTarde, i);
                     newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
                 }
 
                 // Turno Noite
-                for (let i = 0; i < hNoite && pendentesIndex < pendentes.length; i++) {
+                for (let i = 0; i < curHNoite && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
-                    const hStr = formatHourSlot(incNoite, i);
+                    const hStr = formatHourSlot(curIncNoite, i);
                     newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
                 }
             });
@@ -1252,7 +1334,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             saveConcursosMetadata();
             renderCalendar();
             closeModalDisponibilidade();
-            alert('Cronograma gerado com sucesso respeitando seus dias e horários escolhidos!');
+            alert('Cronograma gerado com sucesso respeitando a sua rotina personalizada!');
         }
 
         // --- INICIAR NOVA SEMANA (MARCA VISTOS E GERA O PRÓXIMO CICLO) ---
@@ -1969,6 +2051,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.openModalDisponibilidade = openModalDisponibilidade;
         window.closeModalDisponibilidade = closeModalDisponibilidade;
         window.toggleCustomDaysDisplay = toggleCustomDaysDisplay;
+        window.toggleWeekendBox = toggleWeekendBox;
         window.confirmarAutoFillDisponibilidade = confirmarAutoFillDisponibilidade;
         window.avancarSemanaSiguiente = avancarSemanaSiguiente;
         window.limparCronogramaSemanal = limparCronogramaSemanal;
