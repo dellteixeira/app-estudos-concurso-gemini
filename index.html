@@ -8,6 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PDF.js para renderização nativa em canvas sem downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -396,8 +398,8 @@
             max-height: 90vh; overflow-y: auto;
         }
         .modal-large {
-            max-width: 850px;
-            height: 85vh;
+            max-width: 900px;
+            height: 88vh;
         }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 0.85rem; font-weight: 600; }
@@ -528,13 +530,36 @@
             position: relative;
         }
 
-        .pdf-viewer-iframe {
+        /* CONTAINER PDF CANVAS NATIVO */
+        .pdf-canvas-wrapper {
             width: 100%;
             height: 100%;
-            min-height: 480px;
-            border: 1px solid var(--border-color);
+            overflow-y: auto;
+            background: #525659;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
             border-radius: 8px;
-            background: #ffffff;
+        }
+
+        .pdf-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            background: #1e293b;
+            padding: 6px 12px;
+            border-radius: 6px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        #pdfCanvas {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            max-width: 100%;
+            background: #fff;
         }
     </style>
 </head>
@@ -700,7 +725,7 @@
                 </div>
             </div>
 
-            <div id="editalViewerContainer" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 20px; text-align: center;">
+            <div id="editalViewerContainer" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden;">
                 <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
                 <label class="btn btn-primary" style="cursor: pointer;">
                     📤 Selecionar PDF / Documento
@@ -946,6 +971,11 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Configuração do PDF.js Worker
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
         const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
         // Paleta de Cores Harmônicas e Distintas para as Matérias
@@ -974,8 +1004,12 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
         let globalAudioCtx = null;
-        let currentPdfBlobUrl = null;
         
+        // Estado do PDF.js
+        let pdfDoc = null;
+        let pdfPageNum = 1;
+        let pdfScale = 1.2;
+
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
         if ('serviceWorker' in navigator) {
@@ -1034,32 +1068,23 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
         }
 
-        // --- LÓGICA DE UPLOAD / VISUALIZAÇÃO DE EDITAL ORIGINAL COM BLOB URL ---
+        // --- VISUALIZADOR PDF NATIVO COM CANAVAS (PDF.JS) ---
         function openModalViewEdital() {
             document.getElementById('editalModalTitle').innerText = `📄 Edital Oficial: ${currentConcurso}`;
-            renderEditalViewer();
             document.getElementById('modalViewEdital').style.display = 'flex';
+            renderEditalViewer();
         }
 
         function closeModalViewEdital() {
             document.getElementById('modalViewEdital').style.display = 'none';
-            if (currentPdfBlobUrl) {
-                URL.revokeObjectURL(currentPdfBlobUrl);
-                currentPdfBlobUrl = null;
-            }
+            pdfDoc = null;
         }
 
-        function renderEditalViewer() {
+        async function renderEditalViewer() {
             const container = document.getElementById('editalViewerContainer');
             const btnDownload = document.getElementById('btnDownloadEdital');
             const btnRemove = document.getElementById('btnRemoveEdital');
             const fileData = concursosMetadata[currentConcurso]?.editalFile;
-
-            // Revoga URL temporária anterior se existir para economizar memória
-            if (currentPdfBlobUrl) {
-                URL.revokeObjectURL(currentPdfBlobUrl);
-                currentPdfBlobUrl = null;
-            }
 
             if (!fileData) {
                 btnDownload.style.display = 'none';
@@ -1078,28 +1103,38 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             btnRemove.style.display = 'inline-flex';
 
             if (fileData.type && fileData.type.includes('pdf')) {
+                container.innerHTML = `
+                    <div class="pdf-toolbar">
+                        <button class="btn btn-secondary btn-sm" onclick="changePdfPage(-1)">◀ Anterior</button>
+                        <span style="font-size: 0.85rem; font-weight:600;">Página <span id="pdfPageNum">1</span> / <span id="pdfPageCount">--</span></span>
+                        <button class="btn btn-secondary btn-sm" onclick="changePdfPage(1)">Próxima ▶</button>
+                        <span style="margin: 0 10px;">|</span>
+                        <button class="btn btn-secondary btn-sm" onclick="zoomPdf(0.2)">🔍 +</button>
+                        <button class="btn btn-secondary btn-sm" onclick="zoomPdf(-0.2)">🔍 -</button>
+                    </div>
+                    <div class="pdf-canvas-wrapper" id="pdfWrapper">
+                        <canvas id="pdfCanvas"></canvas>
+                    </div>
+                `;
+
                 try {
-                    // Converte Base64 para ArrayBuffer e cria um Blob PDF nativo sem forçar download
                     const base64Clean = fileData.base64.includes(',') ? fileData.base64.split(',')[1] : fileData.base64;
-                    const byteCharacters = atob(base64Clean);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    const rawData = atob(base64Clean);
+                    const uint8Array = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; i++) {
+                        uint8Array[i] = rawData.charCodeAt(i);
                     }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    const blob = new Blob([byteArray], { type: 'application/pdf' });
 
-                    currentPdfBlobUrl = URL.createObjectURL(blob);
-
-                    container.innerHTML = `
-                        <iframe class="pdf-viewer-iframe" src="${currentPdfBlobUrl}#toolbar=1&navpanes=0&scrollbar=1"></iframe>
-                    `;
+                    pdfDoc = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+                    document.getElementById('pdfPageCount').innerText = pdfDoc.numPages;
+                    pdfPageNum = 1;
+                    renderPdfPage(pdfPageNum);
                 } catch (e) {
-                    console.error("Erro ao processar PDF:", e);
+                    console.error("Erro PDF.js:", e);
                     container.innerHTML = `
                         <div style="text-align: center; padding: 2rem;">
                             <h4>📑 Arquivo Anexado: ${fileData.name}</h4>
-                            <p style="opacity:0.8; margin: 1rem 0;">Não foi possível pré-visualizar diretamente.</p>
+                            <p style="opacity:0.8; margin: 1rem 0;">Falha ao pré-visualizar o PDF.</p>
                             <button class="btn btn-primary" onclick="downloadEditalFile()">📥 Baixar Arquivo</button>
                         </div>
                     `;
@@ -1113,6 +1148,44 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     </div>
                 `;
             }
+        }
+
+        async function renderPdfPage(num) {
+            if (!pdfDoc) return;
+            try {
+                const page = await pdfDoc.getPage(num);
+                const viewport = page.getViewport({ scale: pdfScale });
+                const canvas = document.getElementById('pdfCanvas');
+                if (!canvas) return;
+
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                await page.render(renderContext).promise;
+                document.getElementById('pdfPageNum').innerText = num;
+            } catch(e) {
+                console.error("Erro ao renderizar página:", e);
+            }
+        }
+
+        function changePdfPage(delta) {
+            if (!pdfDoc) return;
+            const newPage = pdfPageNum + delta;
+            if (newPage >= 1 && newPage <= pdfDoc.numPages) {
+                pdfPageNum = newPage;
+                renderPdfPage(pdfPageNum);
+            }
+        }
+
+        function zoomPdf(delta) {
+            if (!pdfDoc) return;
+            pdfScale = Math.max(0.6, Math.min(3.0, pdfScale + delta));
+            renderPdfPage(pdfPageNum);
         }
 
         function uploadEditalFile(event) {
@@ -1217,10 +1290,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 const ctx = getAudioContext();
                 const now = ctx.currentTime;
 
-                // Frequências harmoniosas de um sino/chime em acorde (E4 = 329.63Hz, B4 = 493.88Hz, E5 = 659.25Hz)
                 const freqs = [329.63, 493.88, 659.25];
-                
-                // 3 badaladas limpas com intervalo de 0.8s entre elas
                 const strokeTimes = [0.0, 0.8, 1.6];
 
                 strokeTimes.forEach(offset => {
@@ -1233,7 +1303,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                         osc.type = 'sine';
                         osc.frequency.setValueAtTime(freq, strokeStart);
 
-                        // Ataque instantâneo e decaimento acústico prolongado
                         const initialGain = idx === 2 ? 0.5 : 0.3;
                         gain.gain.setValueAtTime(initialGain, strokeStart);
                         gain.gain.exponentialRampToValueAtTime(0.0001, strokeStart + 1.4);
@@ -1527,9 +1596,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             }
         }
 
-        // --- PREENCHIMENTO AUTOMÁTICO FLEXÍVEL (DIAS ÚTEIS E FIM DE SEMANA DEDICADO) ---
+        // --- PREENCHIMENTO AUTOMÁTICO FLEXÍVEL ---
         function confirmarAutoFillDisponibilidade() {
-            // Horários Padrão (Segunda a Sexta)
             const incManha = document.getElementById('inicioManha').value || '08:00';
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
 
@@ -1539,7 +1607,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const incNoite = document.getElementById('inicioNoite').value || '19:00';
             const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
 
-            // Horários de Fim de Semana
             const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
             const incManhaFim = document.getElementById('inicioManhaFimSemana').value || '08:00';
             const hManhaFim = parseInt(document.getElementById('horasManhaFimSemana').value) || 0;
@@ -1550,7 +1617,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const incNoiteFim = document.getElementById('inicioNoiteFimSemana').value || '19:00';
             const hNoiteFim = parseInt(document.getElementById('horasNoiteFimSemana').value) || 0;
 
-            // Identificar dias ativos de estudo
             let diasAtivos = [];
             const isCustomDays = document.getElementById('chkCustomDays').checked;
 
@@ -1567,7 +1633,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 return alert('Por favor, selecione ao menos um dia da semana para estudar.');
             }
 
-            // 1. Filtrar apenas assuntos pendentes (não concluídos) por prioridade
             const pendentes = editalItems.filter(item => {
                 const isComplete = item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d;
                 return !isComplete;
@@ -1584,7 +1649,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             let pendentesIndex = 0;
 
-            // 2. Distribuir conteúdos respeitando os horários de cada dia (dia útil vs fim de semana)
             DIAS_SEMANA.forEach(dia => {
                 if (!diasAtivos.includes(dia) || pendentesIndex >= pendentes.length) return;
 
@@ -1600,21 +1664,18 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 const curIncNoite = useWeekendRules ? incNoiteFim : incNoite;
                 const curHNoite = useWeekendRules ? hNoiteFim : hNoite;
 
-                // Turno Manhã
                 for (let i = 0; i < curHManha && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
                     const hStr = formatHourSlot(curIncManha, i);
                     newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
                 }
 
-                // Turno Tarde
                 for (let i = 0; i < curHTarde && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
                     const hStr = formatHourSlot(curIncTarde, i);
                     newSchedule[dia].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
                 }
 
-                // Turno Noite
                 for (let i = 0; i < curHNoite && pendentesIndex < pendentes.length; i++) {
                     const item = pendentes[pendentesIndex++];
                     const hStr = formatHourSlot(curIncNoite, i);
@@ -1632,11 +1693,9 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             alert('Cronograma gerado com sucesso respeitando a sua rotina personalizada!');
         }
 
-        // --- INICIAR NOVA SEMANA (MARCA VISTOS E GERA O PRÓXIMO CICLO) ---
         function avancarSemanaSiguiente() {
             const currentSchedule = concursosMetadata[currentConcurso]?.schedule || {};
 
-            // Registra no edital verticalizado os tópicos concluídos durante a semana
             DIAS_SEMANA.forEach(dia => {
                 (currentSchedule[dia] || []).forEach(slot => {
                     if (slot.completed && slot.materia && slot.assunto) {
@@ -1655,7 +1714,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
             filterDataByConcurso();
-
             openModalDisponibilidade();
         }
 
@@ -2234,7 +2292,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.addEventListener('offline', updateOnlineStatus);
         window.addEventListener('load', updateOnlineStatus);
 
-        // --- RENDERIZAR GRÁFICO EM PORCENTAGEM (0% A 100%) COM CRESCIMENTO GRADUAL ---
+        // --- RENDERIZAR GRÁFICO EM PORCENTAGEM (0% A 100%) ---
         function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
             const counts = {};
@@ -2242,7 +2300,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             editalItems.forEach(item => {
                 const mat = item.materia || 'Geral';
                 if (!counts[mat]) counts[mat] = { total: 0, concluido: 0, prioridade: item.prioridade || 1 };
-                counts[mat].total += 5; // 5 etapas por assunto
+                counts[mat].total += 5;
                 if (item.teoria) counts[mat].concluido++;
                 if (item.questoes) counts[mat].concluido++;
                 if (item.rev_24h) counts[mat].concluido++;
@@ -2251,15 +2309,13 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
 
             const labels = Object.keys(counts).sort((a, b) => counts[a].prioridade - counts[b].prioridade);
-            
-            // Calcula a PORCENTAGEM REAL de progresso (0% a 100%)
+
             const percentData = labels.map(l => {
                 const total = counts[l].total;
                 if (total === 0) return 0;
                 return Math.round((counts[l].concluido / total) * 100);
             });
             
-            // Cores das barras do gráfico vinculadas às matérias
             const backgroundColors = labels.map(l => {
                 const idx = getMateriaColorIndex(l, labels);
                 return PALETA_SOLIDAS[idx];
@@ -2298,7 +2354,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     scales: { 
                         y: { 
                             beginAtZero: true,
-                            max: 100, // FIXO EM 100% PARA TODAS AS MATÉRIAS
+                            max: 100,
                             ticks: {
                                 callback: function(value) {
                                     return value + '%';
@@ -2331,7 +2387,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         }
 
         function startTimer() {
-            // Inicializa contexto de áudio na interação do usuário
             getAudioContext();
 
             if (timerInterval) return;
@@ -2340,7 +2395,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     timeLeft--;
                     updateDisplay();
 
-                    // Dispara o som no exato momento que zera o contador
                     if (timeLeft === 0) {
                         playAlarmSound();
                     }
@@ -2414,6 +2468,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.uploadEditalFile = uploadEditalFile;
         window.downloadEditalFile = downloadEditalFile;
         window.removerEditalFile = removerEditalFile;
+        window.changePdfPage = changePdfPage;
+        window.zoomPdf = zoomPdf;
     </script>
 </body>
 </html>
