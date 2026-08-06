@@ -94,12 +94,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
             gap: 1rem;
         }
 
-        /* BARRA DO CONCURSO NO CENTRO OU ACOMPANHANDO O TÍTULO */
         .concurso-selector-bar {
             display: flex;
             align-items: center;
@@ -109,14 +108,6 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             flex-wrap: wrap;
-        }
-
-        /* GRUPO DIREITO: MODO CLARO/ESCURO + SAIR */
-        .header-right-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-left: auto;
         }
 
         .countdown-badge {
@@ -137,6 +128,7 @@
 
         .action-bar {
             display: flex;
+            align-items: center;
             gap: 0.75rem;
             margin-bottom: 1.5rem;
             flex-wrap: wrap;
@@ -477,7 +469,6 @@
         <header>
             <h2>🎯 Painel de Estudos</h2>
             
-            <!-- SELETOR DE CONCURSO NO CENTRO -->
             <div class="concurso-selector-bar">
                 <label>📌 <strong>Concurso:</strong></label>
                 <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
@@ -488,15 +479,9 @@
                     Sem data de prova
                 </div>
             </div>
-
-            <!-- BOTÕES MODO CLARO/ESCURO E SAIR NO LADO DIREITO -->
-            <div class="header-right-actions">
-                <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
-                <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
-            </div>
         </header>
 
-        <!-- BARRA DE AÇÕES -->
+        <!-- BARRA DE AÇÕES COM TODOS OS BOTÕES ALINHADOS NA MESMA LINHA -->
         <div class="action-bar">
             <label class="btn btn-success" style="cursor: pointer;">
                 📥 Importar JSON
@@ -506,6 +491,10 @@
             <button class="btn btn-info" onclick="openModalPromptIA()">🤖 Como Gerar JSON com IA</button>
 
             <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Edital Atual</button>
+
+            <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
+
+            <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
         </div>
 
         <div class="nav-tabs">
