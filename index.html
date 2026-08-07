@@ -259,7 +259,6 @@
         .btn-warning { background-color: #f59e0b; color: white; }
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
-        /* FIX CORREÇÃO DE ESTOURO DO SELECT */
         input, select, textarea {
             padding: 0.6rem 0.8rem;
             border: 1px solid var(--border-color);
@@ -885,7 +884,7 @@
                     </div>
                 </div>
 
-                <!-- SELETORES DE FILTRO (GRID COM LARGURA MÁXIMA) -->
+                <!-- SELETORES DE FILTRO -->
                 <div class="flashcard-grid-filter">
                     <div class="form-group">
                         <label for="flashcardMateriaSelect"><strong>Matéria:</strong></label>
@@ -908,7 +907,10 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <button class="btn btn-secondary" onclick="prevFlashcard()">← Anterior</button>
                         <span id="flashcardCounter" style="font-weight: 700; font-size: 0.95rem;">Card 1 de 1</span>
-                        <div style="display: flex; gap: 6px;">
+                        
+                        <!-- BOTOES EDITAR / EXCLUIR / PROXIMO -->
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <button class="btn btn-warning btn-sm" onclick="editCurrentFlashcard()">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteCurrentFlashcard()">Excluir</button>
                             <button class="btn btn-primary" onclick="nextFlashcard()">Próximo →</button>
                         </div>
@@ -2176,6 +2178,30 @@ R: É a declaração do Estado..."></textarea>
             updateFlashcardCardDisplay();
         }
 
+        function editCurrentFlashcard() {
+            if (activeFlashcardsList.length === 0) return;
+            const card = activeFlashcardsList[currentFcIndex];
+
+            const selectMat = document.getElementById('manualFcMateriaSelect');
+            selectMat.innerHTML = '';
+            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            if (!materias.includes(card.materia)) materias.unshift(card.materia);
+
+            materias.forEach(m => {
+                selectMat.innerHTML += `<option value="${m}" ${m === card.materia ? 'selected' : ''}>${m}</option>`;
+            });
+
+            onManualFcMateriaChange(card.materia, card.assunto);
+
+            document.getElementById('modalFcManualTitle').innerText = 'Editar Flashcard';
+            document.getElementById('fcManualId').value = card.id;
+            document.getElementById('inputFcPergunta').value = card.pergunta;
+            document.getElementById('inputFcResposta').value = card.resposta;
+
+            document.getElementById('modalFcManual').style.display = 'flex';
+        }
+
         function deleteCurrentFlashcard() {
             if (activeFlashcardsList.length === 0) return;
             const card = activeFlashcardsList[currentFcIndex];
@@ -2237,7 +2263,6 @@ R: É a declaração do Estado..."></textarea>
 
             tempGeneratedFcList = [];
 
-            // TESTA SE É FORMATO ESTRUTURADO (P: / R:) OU (Pergunta: / Resposta:)
             const regexPair = /(?:P|Pergunta|Q|Questão)\s*:\s*([\s\S]*?)(?=(?:R|Resposta)\s*:)\s*(?:R|Resposta)\s*:\s*([\s\S]*?)(?=(?:P|Pergunta|Q|Questão)\s*:|$)/gi;
             let match;
             let countMatches = 0;
@@ -2252,7 +2277,6 @@ R: É a declaração do Estado..."></textarea>
                 });
             }
 
-            // SE NÃO ENCONTROU P: / R:, PROCESSA LINHA A LINHA OU POR SEPARADOR QUESTAO? RESPOSTA
             if (countMatches === 0) {
                 const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 5);
                 
@@ -2326,6 +2350,7 @@ R: É a declaração do Estado..."></textarea>
             else materias.forEach(m => selectMat.innerHTML += `<option value="${m}">${m}</option>`);
 
             onManualFcMateriaChange(materias[0] || '');
+            document.getElementById('modalFcManualTitle').innerText = 'Novo Flashcard';
             document.getElementById('fcManualId').value = '';
             document.getElementById('inputFcPergunta').value = '';
             document.getElementById('inputFcResposta').value = '';
@@ -2335,17 +2360,22 @@ R: É a declaração do Estado..."></textarea>
 
         function closeModalFcManual() { document.getElementById('modalFcManual').style.display = 'none'; }
 
-        function onManualFcMateriaChange(materiaName) {
+        function onManualFcMateriaChange(materiaName, preSelectedAssunto = '') {
             const selectAssunto = document.getElementById('manualFcAssuntoSelect');
             selectAssunto.innerHTML = '';
             const assuntos = editalItems.filter(i => (i.materia || 'Geral') === materiaName).map(i => i.assunto);
             const uniqueAssuntos = Array.from(new Set(assuntos));
 
+            if (preSelectedAssunto && !uniqueAssuntos.includes(preSelectedAssunto)) {
+                uniqueAssuntos.unshift(preSelectedAssunto);
+            }
+
             if (uniqueAssuntos.length === 0) selectAssunto.innerHTML = '<option value="">Assunto Geral</option>';
-            else uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}">${a}</option>`);
+            else uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}" ${a === preSelectedAssunto ? 'selected' : ''}>${a}</option>`);
         }
 
         function salvarFlashcardManual() {
+            const fcId = document.getElementById('fcManualId').value;
             const materia = document.getElementById('manualFcMateriaSelect').value || 'Geral';
             const assunto = document.getElementById('manualFcAssuntoSelect').value || 'Geral';
             const pergunta = document.getElementById('inputFcPergunta').value.trim();
@@ -2354,10 +2384,21 @@ R: É a declaração do Estado..."></textarea>
             if (!pergunta || !resposta) return alert('Preencha a pergunta e a resposta.');
 
             let allFc = getAllFlashcards();
-            allFc.push({
-                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-                materia, assunto, pergunta, resposta
-            });
+
+            if (fcId) {
+                const target = allFc.find(f => String(f.id) === String(fcId));
+                if (target) {
+                    target.materia = materia;
+                    target.assunto = assunto;
+                    target.pergunta = pergunta;
+                    target.resposta = resposta;
+                }
+            } else {
+                allFc.push({
+                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+                    materia, assunto, pergunta, resposta
+                });
+            }
 
             saveAllFlashcards(allFc);
             closeModalFcManual();
@@ -2821,6 +2862,7 @@ R: É a declaração do Estado..."></textarea>
         window.flipCurrentFlashcard = flipCurrentFlashcard;
         window.nextFlashcard = nextFlashcard;
         window.prevFlashcard = prevFlashcard;
+        window.editCurrentFlashcard = editCurrentFlashcard;
         window.deleteCurrentFlashcard = deleteCurrentFlashcard;
         window.openModalGerarFlashcardsTexto = openModalGerarFlashcardsTexto;
         window.closeModalGerarFlashcards = closeModalGerarFlashcards;
