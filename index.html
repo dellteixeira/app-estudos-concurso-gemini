@@ -258,7 +258,7 @@
         .btn-warning { background-color: #f59e0b; color: white; }
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
-        input, select {
+        input, select, textarea {
             padding: 0.6rem 0.8rem;
             border: 1px solid var(--border-color);
             border-radius: 6px;
@@ -266,6 +266,13 @@
             color: var(--text-color);
             font-size: 0.95rem;
             outline: none;
+        }
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+            line-height: 1.5;
+            font-family: inherit;
         }
 
         .timer-display {
@@ -626,6 +633,7 @@
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
             <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
+            <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
         </div>
 
         <!-- TAB: EDITAL VERTICALIZADO -->
@@ -714,7 +722,7 @@
 
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="openModalDisponibilidade()">Preencher Cronograma Automaticamente</button>
-                        <button class="btn btn-danger" onclick="limparCronogramaSemanal()">Limpar Cronograma</button>
+                        <button class="btn btn-danger" onclick="limparCronogramaSemanal()">Limpar Mês Atual</button>
                     </div>
                 </div>
 
@@ -734,9 +742,34 @@
             </div>
         </div>
 
+        <!-- TAB: ANOTAÇÕES -->
+        <div id="tab-anotacoes" class="tab-content">
+            <div class="card">
+                <h3>Anotações e Caderno de Resumos</h3>
+                <p style="margin-bottom: 1.2rem; font-size: 0.9rem; opacity: 0.85;">
+                    Selecione uma matéria do seu edital abaixo para visualizar, registrar ou alterar suas anotações pessoais.
+                </p>
+
+                <div class="form-group" style="margin-bottom: 1.2rem;">
+                    <label for="anotacoesMateriaSelect"><strong>Selecione a Matéria:</strong></label>
+                    <select id="anotacoesMateriaSelect" onchange="carregarAnotacaoMateria(this.value)"></select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="anotacoesTextarea"><strong>Conteúdo / Resumo / Jurisprudências:</strong></label>
+                    <textarea id="anotacoesTextarea" rows="16" placeholder="Digite aqui suas anotações de estudo para esta matéria..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span id="anotacaoSaveStatus" style="font-size: 0.85rem; color: #10b981; font-weight: 600;"></span>
+                    <button class="btn btn-success" onclick="salvarAnotacaoAtual()">Salvar Anotação</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- MODAL DE CONFIGURAÇÃO COM REVISÕES 24H, 7D E 30D -->
+    <!-- MODAL DE CONFIGURAÇÃO MENSAL -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
             <h3>Configurar Horários e Turnos de Estudo</h3>
@@ -1014,7 +1047,6 @@
             if (event.key === 'Escape') {
                 closeAllModals();
             } else if (event.key === 'Enter') {
-                // Executa a ação do modal que estiver visível
                 if (isModalVisible('modalDisponibilidade')) {
                     confirmarAutoFillDisponibilidade();
                 } else if (isModalVisible('modalSlot')) {
@@ -1104,7 +1136,6 @@
             const dailyHours = hManha + hTarde + hNoite;
 
             const pendentesCount = editalItems.filter(item => !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d)).length;
-            // Considerando o volume adicional das 3 revisões (24h, 7d, 30d)
             const totalWorkUnits = pendentesCount * 2; 
             const neededDays = dailyHours > 0 ? Math.ceil(totalWorkUnits / dailyHours) : 0;
 
@@ -1200,7 +1231,6 @@
                             const item = pendentes[pendentesIndex++];
                             const timeSlot = formatHourSlot(startHourStr, i);
 
-                            // 1. Teoria/Estudo Principal
                             addSlotToDate(isoKey, {
                                 horario: timeSlot,
                                 materia: item.materia,
@@ -1208,7 +1238,6 @@
                                 completed: false
                             });
 
-                            // 2. Agendar automáticos de Revisão (24h, 7d e 30d)
                             const date24h = new Date(currDate); date24h.setDate(date24h.getDate() + 1);
                             const date7d = new Date(currDate); date7d.setDate(date7d.getDate() + 7);
                             const date30d = new Date(currDate); date30d.setDate(date30d.getDate() + 30);
@@ -1545,6 +1574,57 @@
             }
         }
 
+        /* SISTEMA DE ANOTAÇÕES POR MATÉRIA */
+        function renderAnotacoesMateriaSelector() {
+            const select = document.getElementById('anotacoesMateriaSelect');
+            if (!select) return;
+
+            select.innerHTML = '';
+            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            if (materias.length === 0) {
+                select.innerHTML = '<option value="">Nenhuma matéria disponível</option>';
+                document.getElementById('anotacoesTextarea').value = '';
+                return;
+            }
+
+            materias.forEach(mat => {
+                select.innerHTML += `<option value="${mat}">${mat}</option>`;
+            });
+
+            carregarAnotacaoMateria(materias[0]);
+        }
+
+        function getAnotacaoStorageKey(materiaName) {
+            return `anotacao_${currentConcurso}_${materiaName}`;
+        }
+
+        function carregarAnotacaoMateria(materiaName) {
+            const textarea = document.getElementById('anotacoesTextarea');
+            const status = document.getElementById('anotacaoSaveStatus');
+            if (status) status.innerText = '';
+            if (!textarea || !materiaName) return;
+
+            const key = getAnotacaoStorageKey(materiaName);
+            textarea.value = localStorage.getItem(key) || '';
+        }
+
+        function salvarAnotacaoAtual() {
+            const select = document.getElementById('anotacoesMateriaSelect');
+            const textarea = document.getElementById('anotacoesTextarea');
+            const status = document.getElementById('anotacaoSaveStatus');
+
+            if (!select || !select.value) return alert('Selecione uma matéria válida.');
+
+            const key = getAnotacaoStorageKey(select.value);
+            localStorage.setItem(key, textarea.value);
+
+            if (status) {
+                status.innerText = '✓ Anotação salva com sucesso!';
+                setTimeout(() => { status.innerText = ''; }, 3000);
+            }
+        }
+
         function formatHourSlot(startHourStr, offsetHours) {
             const [h, m] = startHourStr.split(':').map(Number);
             const totalStartMinutes = (h * 60) + m + (offsetHours * 60);
@@ -1561,7 +1641,7 @@
         function parseTimeIntervalToMinutes(timeIntervalStr) {
             if (!timeIntervalStr) return 0;
             const parts = timeIntervalStr.split('-').map(s => s.trim());
-            if (parts.length !== 2) return 30; // 30m padrão para slots de revisão sem horário fixo
+            if (parts.length !== 2) return 30;
             const parseMinutes = (str) => {
                 const [h, m] = str.split(':').map(Number);
                 if (isNaN(h)) return 0;
@@ -1656,6 +1736,8 @@
             if (tabId === 'tab-calendario') {
                 renderMonthCalendar();
                 renderDelayedPanel();
+            } else if (tabId === 'tab-anotacoes') {
+                renderAnotacoesMateriaSelector();
             }
         }
 
@@ -1685,6 +1767,7 @@
             renderChart();
             renderMonthCalendar();
             renderDelayedPanel();
+            renderAnotacoesMateriaSelector();
         }
 
         async function loadData() {
@@ -1981,6 +2064,8 @@
         window.openModalDayDetails = openModalDayDetails;
         window.closeModalDayDetails = closeModalDayDetails;
         window.openAddSlotForSelectedDay = openAddSlotForSelectedDay;
+        window.carregarAnotacaoMateria = carregarAnotacaoMateria;
+        window.salvarAnotacaoAtual = salvarAnotacaoAtual;
     </script>
 </body>
 </html>
