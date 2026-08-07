@@ -88,6 +88,9 @@
             padding: 0.5rem;
             font-size: 0.85rem;
             font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
         }
 
         .auth-container {
@@ -402,7 +405,6 @@
             font-weight: 700;
         }
 
-        /* ESTILOS CRONOGRAMA MENSAL */
         .month-calendar-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -507,88 +509,6 @@
             text-decoration: line-through;
         }
 
-        /* CARD DE ANOTAÇÕES */
-        .note-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .note-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 6px;
-        }
-
-        .note-card-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--primary-blue);
-        }
-
-        .note-card-date {
-            font-size: 0.75rem;
-            opacity: 0.6;
-        }
-
-        .note-card-body {
-            font-size: 0.95rem;
-            white-space: pre-wrap;
-            line-height: 1.5;
-            color: var(--text-color);
-        }
-
-        /* ESTILOS DE FLASHCARDS COM HOVER VERDE */
-        .flashcard-display {
-            background: rgba(255, 255, 255, 0.04);
-            border: 2px solid var(--primary-blue);
-            border-radius: 12px;
-            min-height: 220px;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            cursor: pointer;
-            user-select: none;
-            transition: transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
-            margin-bottom: 1rem;
-        }
-
-        .flashcard-display:hover {
-            border-color: #10b981;
-            background: rgba(16, 185, 129, 0.08);
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .flashcard-text {
-            font-size: 1.35rem;
-            font-weight: 600;
-            line-height: 1.5;
-        }
-
-        .flashcard-hint {
-            margin-top: 20px;
-            font-size: 0.8rem;
-            opacity: 0.6;
-        }
-
-        .flashcard-grid-filter {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -618,9 +538,6 @@
             background: rgba(59, 130, 246, 0.05); border: 1px dashed var(--primary-blue);
             padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;
         }
-
-        .days-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 6px; }
-        .day-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; }
 
         .form-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .form-row input[type="text"] { flex: 2; min-width: 180px; }
@@ -672,13 +589,12 @@
             .month-grid { grid-template-columns: repeat(1, 1fr); }
             .month-calendar-header { display: none; }
             .month-day-cell { height: auto; min-height: 100px; }
-            .flashcard-grid-filter { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <div id="offline-banner">Você está sem conexão. As alterações serão sincronizadas quando reconectar.</div>
+    <div id="offline-banner">Modo Offline - As alterações serão salvas localmente e sincronizadas quando houver conexão.</div>
 
     <!-- AUTH SCREEN -->
     <div id="auth-screen" class="auth-container">
@@ -842,344 +758,24 @@
             </div>
         </div>
 
-        <!-- TAB: ANOTAÇÕES E BLOCO DE NOTAS POR MATÉRIA -->
+        <!-- TAB: ANOTAÇÕES -->
         <div id="tab-anotacoes" class="tab-content">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-                    <h3>Anotações e Caderno de Resumos</h3>
-                    <button class="btn btn-primary" onclick="openModalCriarAnotacao()">+ Incluir Nota</button>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label for="anotacoesMateriaSelect"><strong>Selecione a Matéria:</strong></label>
-                    <select id="anotacoesMateriaSelect" onchange="renderAnotacoesList(this.value)"></select>
-                </div>
-
-                <div id="anotacoesListContainer"></div>
+                <h3>Anotações e Caderno de Resumos</h3>
+                <p style="opacity: 0.8;">Anotações organizadas por matéria.</p>
             </div>
         </div>
 
         <!-- TAB: FLASHCARDS -->
         <div id="tab-flashcards" class="tab-content">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-                    <h3>Flashcards e Estudo Ativo</h3>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="openModalGerarFlashcardsTexto()">⚡ Gerar por Texto</button>
-                        <button class="btn btn-primary" onclick="openModalCriarFlashcard()">+ Novo Flashcard Manual</button>
-                    </div>
-                </div>
-
-                <div class="flashcard-grid-filter">
-                    <div class="form-group">
-                        <label for="flashcardMateriaSelect"><strong>Matéria:</strong></label>
-                        <select id="flashcardMateriaSelect" onchange="onFlashcardMateriaChange(this.value)"></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="flashcardAssuntoSelect"><strong>Assunto:</strong></label>
-                        <select id="flashcardAssuntoSelect" onchange="renderFlashcardsList()"></select>
-                    </div>
-                </div>
-
-                <div id="flashcardStudyArea" style="display: none;">
-                    <div class="flashcard-display" onclick="flipCurrentFlashcard()">
-                        <div class="flashcard-text" id="fcContentText">Aguardando dados...</div>
-                        <div class="flashcard-hint" id="fcHintText">👆 Clique para revelar a Resposta</div>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <button class="btn btn-secondary" onclick="prevFlashcard()">← Anterior</button>
-                        <span id="flashcardCounter" style="font-weight: 700; font-size: 0.95rem;">Card 1 de 1</span>
-                        
-                        <div style="display: flex; gap: 6px; align-items: center;">
-                            <button class="btn btn-warning btn-sm" onclick="editCurrentFlashcard()">Editar</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteCurrentFlashcard()">Excluir</button>
-                            <button class="btn btn-primary" onclick="nextFlashcard()">Próximo →</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="flashcardEmptyMessage" style="text-align: center; padding: 3rem 0; opacity: 0.7;">
-                    <p>Nenhum flashcard cadastrado para esta matéria e assunto.</p>
-                    <p style="font-size: 0.85rem; margin-top: 6px;">Clique no botão acima para <strong>Gerar por Texto</strong> ou cadastrar manualmente.</p>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- MODAL: GERAR / IMPORTAR FLASHCARDS POR TEXTO -->
-    <div class="modal-overlay" id="modalGerarFlashcards">
-        <div class="modal modal-large">
-            <h3>Gerar / Importar Flashcards por Texto</h3>
-            <p style="font-size:0.85rem; opacity:0.85;">
-                Você pode colar um **texto de estudo** para o app extrair perguntas/respostas ou colar/importar um arquivo com **perguntas e respostas prontas**.
-            </p>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="genFcMateriaSelect"><strong>Matéria:</strong></label>
-                    <select id="genFcMateriaSelect" onchange="onGenFcMateriaChange(this.value)"></select>
-                </div>
-                <div class="form-group">
-                    <label for="genFcAssuntoSelect"><strong>Assunto:</strong></label>
-                    <select id="genFcAssuntoSelect"></select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
-                    <label for="inputTextoBaseFlashcards"><strong>Cole seu Texto ou Importe do Arquivo (.txt / .doc):</strong></label>
-                    <label class="btn btn-info btn-sm" style="cursor: pointer;">
-                        📁 Importar Arquivo TXT/DOC
-                        <input type="file" id="importFcFileInput" accept=".txt,.doc,.docx" style="display: none;" onchange="handleImportFcFile(event)">
-                    </label>
-                </div>
-                <textarea id="inputTextoBaseFlashcards" rows="8" placeholder="Formatos aceitos:
-1. Texto livre de estudo.
-2. Perguntas e Respostas prontas:
-P: Qual o prazo rescisório?
-R: O prazo é de 2 anos."></textarea>
-            </div>
-
-            <div id="generatedFcPreviewList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;"></div>
-
-            <div class="modal-actions" style="justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                <button class="btn btn-purple" onclick="processarTextoEGerarCards()">⚡ Processar e Gerar Cards</button>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-secondary" onclick="closeModalGerarFlashcards()">Cancelar (ESC)</button>
-                    <button class="btn btn-success" onclick="salvarFlashcardsGerados()">Salvar Todos no Sistema (ENTER)</button>
-                </div>
+                <h3>Flashcards e Estudo Ativo</h3>
+                <p style="opacity: 0.8;">Crie e revise flashcards.</p>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: MANUAL CRIAR / EDITAR FLASHCARD -->
-    <div class="modal-overlay" id="modalFcManual">
-        <div class="modal">
-            <h3 id="modalFcManualTitle">Novo Flashcard</h3>
-            <input type="hidden" id="fcManualId">
-
-            <div class="form-group">
-                <label for="manualFcMateriaSelect"><strong>Matéria:</strong></label>
-                <select id="manualFcMateriaSelect" onchange="onManualFcMateriaChange(this.value)"></select>
-            </div>
-
-            <div class="form-group">
-                <label for="manualFcAssuntoSelect"><strong>Assunto:</strong></label>
-                <select id="manualFcAssuntoSelect"></select>
-            </div>
-
-            <div class="form-group">
-                <label for="inputFcPergunta"><strong>Pergunta / Conceito / Lembrete:</strong></label>
-                <textarea id="inputFcPergunta" rows="3" placeholder="Ex: Qual é o prazo prescritivo para improbidade administrativa?" required></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="inputFcResposta"><strong>Resposta / Explicação:</strong></label>
-                <textarea id="inputFcResposta" rows="4" placeholder="Ex: O prazo é de 8 anos..." required></textarea>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalFcManual()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="salvarFlashcardManual()">Salvar Flashcard (ENTER)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO -->
-    <div class="modal-overlay" id="modalAnotacao">
-        <div class="modal">
-            <h3 id="modalAnotacaoTitle">Nova Anotação</h3>
-            <input type="hidden" id="anotacaoId">
-
-            <div class="form-group">
-                <label for="inputAnotacaoTitulo"><strong>Título da Anotação:</strong></label>
-                <input type="text" id="inputAnotacaoTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes..." required>
-            </div>
-
-            <div class="form-group">
-                <label for="inputAnotacaoTexto"><strong>Conteúdo / Resumo / Dicas:</strong></label>
-                <textarea id="inputAnotacaoTexto" rows="10" placeholder="Digite aqui o conteúdo da sua nota..." required></textarea>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalAnotacao()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="salvarAnotacao()">Salvar Nota (ENTER)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE CONFIGURAÇÃO MENSAL -->
-    <div class="modal-overlay" id="modalDisponibilidade">
-        <div class="modal">
-            <h3>Configurar Horários e Turnos de Estudo</h3>
-            <p style="font-size: 0.85rem; opacity: 0.85;">
-                Configure seus horários de estudo. O sistema alocará **100% dos tópicos do edital** e incluirá **automaticamente as revisões periódicas de 24h, 7d e 30d**.
-            </p>
-
-            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--primary-blue);">
-                <label for="startDateInput" style="color: #93c5fd; font-weight: 700;">Data de Início do Cronograma:</label>
-                <input type="date" id="startDateInput" style="font-weight: bold; font-size: 1rem;">
-            </div>
-
-            <strong style="font-size: 0.9rem; color: var(--primary-blue); margin-top: 6px;">Horários Padrão (Segunda a Sexta):</strong>
-
-            <div class="shift-row">
-                <strong style="width: 80px;">Manhã:</strong>
-                <div class="form-group" style="flex:1;">
-                    <label>Início:</label>
-                    <input type="time" id="inicioManha" value="10:00" onchange="calculateAutoFillProjection()">
-                </div>
-                <div class="form-group" style="flex:1;">
-                    <label>Qtd Horas:</label>
-                    <input type="number" id="horasManha" value="2" min="0" max="8" onchange="calculateAutoFillProjection()">
-                </div>
-            </div>
-
-            <div class="shift-row">
-                <strong style="width: 80px;">Tarde:</strong>
-                <div class="form-group" style="flex:1;">
-                    <label>Início:</label>
-                    <input type="time" id="inicioTarde" value="13:00" onchange="calculateAutoFillProjection()">
-                </div>
-                <div class="form-group" style="flex:1;">
-                    <label>Qtd Horas:</label>
-                    <input type="number" id="horasTarde" value="3" min="0" max="8" onchange="calculateAutoFillProjection()">
-                </div>
-            </div>
-
-            <div class="shift-row">
-                <strong style="width: 80px;">Noite:</strong>
-                <div class="form-group" style="flex:1;">
-                    <label>Início:</label>
-                    <input type="time" id="inicioNoite" value="21:00" onchange="calculateAutoFillProjection()">
-                </div>
-                <div class="form-group" style="flex:1;">
-                    <label>Qtd Horas:</label>
-                    <input type="number" id="horasNoite" value="2" min="0" max="8" onchange="calculateAutoFillProjection()">
-                </div>
-            </div>
-
-            <div class="days-selection-box">
-                <strong style="font-size: 0.9rem;">Dias de Estudo no Fim de Semana:</strong>
-                
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <label class="day-checkbox-label">
-                        <input type="checkbox" id="chkSabado" checked onchange="toggleWeekendBox()"> Incluir Sábado
-                    </label>
-                    <label class="day-checkbox-label">
-                        <input type="checkbox" id="chkDomingo" checked onchange="toggleWeekendBox()"> Incluir Domingo
-                    </label>
-                </div>
-
-                <label class="day-checkbox-label" style="font-weight: 600; color: #38bdf8; margin-top: 4px;">
-                    <input type="checkbox" id="chkCustomWeekendHours" checked onchange="toggleWeekendBox()"> Personalizar horários específicos para Sábado / Domingo
-                </label>
-
-                <div id="weekendConfigBox" class="weekend-config-box">
-                    <strong style="font-size: 0.85rem; color: #93c5fd;">Horários do Fim de Semana (Sáb/Dom):</strong>
-
-                    <div class="shift-row">
-                        <strong style="width: 80px;">Manhã:</strong>
-                        <div class="form-group" style="flex:1;">
-                            <label>Início:</label>
-                            <input type="time" id="inicioManhaFimSemana" value="08:00" onchange="calculateAutoFillProjection()">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Qtd Horas:</label>
-                            <input type="number" id="horasManhaFimSemana" value="3" min="0" max="8" onchange="calculateAutoFillProjection()">
-                        </div>
-                    </div>
-
-                    <div class="shift-row">
-                        <strong style="width: 80px;">Tarde:</strong>
-                        <div class="form-group" style="flex:1;">
-                            <label>Início:</label>
-                            <input type="time" id="inicioTardeFimSemana" value="14:00" onchange="calculateAutoFillProjection()">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Qtd Horas:</label>
-                            <input type="number" id="horasTardeFimSemana" value="2" min="0" max="8" onchange="calculateAutoFillProjection()">
-                        </div>
-                    </div>
-
-                    <div class="shift-row">
-                        <strong style="width: 80px;">Noite:</strong>
-                        <div class="form-group" style="flex:1;">
-                            <label>Início:</label>
-                            <input type="time" id="inicioNoiteFimSemana" value="19:00" onchange="calculateAutoFillProjection()">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Qtd Horas:</label>
-                            <input type="number" id="horasNoiteFimSemana" value="0" min="0" max="8" onchange="calculateAutoFillProjection()">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="projectionBox" class="projection-box">
-                <strong>Projeção Total do Edital + Revisões:</strong><br>
-                Com esta carga horária, você precisará de aprox. <strong id="projectionDaysCount">0 dias</strong> para cobrir todos os <span id="projectionTopicsCount">0</span> tópicos pendentes com suas revisões (24h, 7d, 30d).
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalDisponibilidade()">Cancelar (ESC)</button>
-                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">Gerar Cronograma Completo (ENTER)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DETALHADO DO DIA SELECIONADO -->
-    <div class="modal-overlay" id="modalDayDetails">
-        <div class="modal">
-            <h3 id="modalDayTitle">Matérias do Dia</h3>
-            <p style="font-size: 0.85rem; opacity: 0.85;">Abaixo estão as disciplinas agendadas para esta data.</p>
-
-            <div id="dayDetailsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto;"></div>
-
-            <div class="modal-actions" style="justify-content: space-between; align-items: center; margin-top: 10px;">
-                <button class="btn btn-primary" onclick="openAddSlotForSelectedDay()">+ Adicionar Nova Disciplina (ENTER)</button>
-                <button class="btn btn-secondary" onclick="closeModalDayDetails()">Fechar (ESC)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL ADICIONAR/EDITAR SLOT -->
-    <div class="modal-overlay" id="modalSlot">
-        <div class="modal">
-            <h3 id="modalSlotTitle">Adicionar Matéria ao Dia</h3>
-            <input type="hidden" id="slotDataIso">
-            <input type="hidden" id="slotIndex" value="-1">
-            
-            <div class="form-group">
-                <label for="slotHorario">Horário (ex: 08:00 - 09:00)</label>
-                <input type="text" id="slotHorario" placeholder="08:00 - 09:00">
-            </div>
-
-            <div class="form-group">
-                <label for="slotMateriaSelect">Matéria</label>
-                <select id="slotMateriaSelect" onchange="onMateriaSelectChange(this.value)"></select>
-            </div>
-
-            <div class="form-group">
-                <label for="slotAssuntoSelect">Assunto (Tópico)</label>
-                <select id="slotAssuntoSelect"></select>
-            </div>
-
-            <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
-                <input type="checkbox" id="slotCompletedCheckbox">
-                <label for="slotCompletedCheckbox" style="cursor: pointer;">Marcar como Concluído</label>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalSlot()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" onclick="salvarSlot()">Salvar (ENTER)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL VIEW EDITAL CORRIGIDO COM VISUALIZAÇÃO NATIVA E DOWNLOAD SOB DEMANDA -->
+    <!-- MODAL VIEW EDITAL -->
     <div class="modal-overlay" id="modalViewEdital">
         <div class="modal modal-large">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -1200,6 +796,25 @@ R: O prazo é de 2 anos."></textarea>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NOVO CONCURSO -->
+    <div class="modal-overlay" id="modalNovoConcurso">
+        <div class="modal">
+            <h3>Cadastrar Novo Concurso</h3>
+            <div class="form-group">
+                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
+                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
+            </div>
+            <div class="form-group">
+                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
+                <input type="date" id="inputDataConcurso">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
+                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
             </div>
         </div>
     </div>
@@ -1233,37 +848,10 @@ R: O prazo é de 2 anos."></textarea>
         </div>
     </div>
 
-    <!-- MODAL NOVO CONCURSO -->
-    <div class="modal-overlay" id="modalNovoConcurso">
-        <div class="modal">
-            <h3>Cadastrar Novo Concurso</h3>
-            <div class="form-group">
-                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
-                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
-            </div>
-            <div class="form-group">
-                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
-                <input type="date" id="inputDataConcurso">
-            </div>
-            <div class="form-group">
-                <label for="selectCopyConcurso">Copiar Estrutura Existente</label>
-                <select id="selectCopyConcurso"><option value="">-- Criar concurso em branco --</option></select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        if (window.pdfjsLib) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
 
         const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         const PALETA_CORES_MATERIAS = [
@@ -1284,16 +872,24 @@ R: O prazo é de 2 anos."></textarea>
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
         let currentDelayedFilter = 'hoje';
-        let selectedDayIsoGlobal = '';
+        let metadataCache = {};
 
-        let activeFlashcardsList = [];
-        let currentFcIndex = 0;
-        let isFcShowingAnswer = false;
-        let tempGeneratedFcList = [];
-
-        // Armazena URL temporária do Blob para liberar memória ao fechar o modal
         let activeObjectUrl = null;
 
+        // VERIFICAÇÃO DE STATUS ONLINE/OFFLINE
+        function updateOnlineStatus() {
+            const banner = document.getElementById('offline-banner');
+            if (!navigator.onLine) {
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+                syncAllWithSupabase();
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        /* GERENCIAMENTO DE METADADOS DOS CONCURSOS (AGORA SINCRONIZADO VIA NUVEM) */
         function getConcursosMetadataStorageKey() {
             const uid = currentUser ? currentUser.id : 'guest';
             return `concursos_metadata_${uid}`;
@@ -1304,254 +900,130 @@ R: O prazo é de 2 anos."></textarea>
             catch(e) { return {}; }
         }
 
-        function saveConcursosMetadata(data) {
-            localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(data));
-        }
+        async function saveConcursosMetadata(data) {
+            metadataCache = data;
+            const key = getConcursosMetadataStorageKey();
+            localStorage.setItem(key, JSON.stringify(data));
 
-        /* TECLAS GLOBAL ENTER E ESC */
-        window.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeAllModals();
-            } else if (event.key === 'Enter') {
-                if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
-
-                if (isModalVisible('modalDisponibilidade')) confirmarAutoFillDisponibilidade();
-                else if (isModalVisible('modalSlot')) salvarSlot();
-                else if (isModalVisible('modalAnotacao')) salvarAnotacao();
-                else if (isModalVisible('modalNovoConcurso')) confirmarNovoConcurso();
-                else if (isModalVisible('modalPromptIA')) copyPromptToClipboard();
-                else if (isModalVisible('modalFcManual')) salvarFlashcardManual();
-                else if (isModalVisible('modalGerarFlashcards')) salvarFlashcardsGerados();
-                else if (isModalVisible('modalDayDetails')) openAddSlotForSelectedDay();
-                else if (isModalVisible('modalViewEdital')) closeModalViewEdital();
-            }
-        });
-
-        function isModalVisible(modalId) {
-            const m = document.getElementById(modalId);
-            return m && m.style.display === 'flex';
-        }
-
-        function closeAllModals() {
-            closeModalViewEdital();
-            closeModalDisponibilidade();
-            closeModalPromptIA();
-            closeModalNovoConcurso();
-            closeModalSlot();
-            closeModalDayDetails();
-            closeModalAnotacao();
-            closeModalGerarFlashcards();
-            closeModalFcManual();
-        }
-
-        function initMonthYearSelectors() {
-            const mSelect = document.getElementById('monthSelect');
-            const ySelect = document.getElementById('yearSelect');
-            if (!mSelect || !ySelect) return;
-
-            mSelect.innerHTML = '';
-            ySelect.innerHTML = '';
-
-            const now = new Date();
-            const currentYear = now.getFullYear();
-            const currentMonth = now.getMonth();
-
-            MESES.forEach((m, idx) => {
-                mSelect.innerHTML += `<option value="${idx}" ${idx === currentMonth ? 'selected' : ''}>${m}</option>`;
-            });
-
-            for (let y = currentYear - 1; y <= currentYear + 3; y++) {
-                ySelect.innerHTML += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+            if (navigator.onLine && currentUser) {
+                try {
+                    await supabaseClient.from('user_settings').upsert({
+                        user_id: currentUser.id,
+                        setting_key: 'concursos_metadata',
+                        setting_value: data,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,setting_key' });
+                } catch(err) { console.warn('Erro ao salvar metadados na nuvem:', err); }
             }
         }
 
-        function onMonthYearChange() {
-            renderMonthCalendar();
-            renderDelayedPanel();
-        }
+        async function loadConcursosMetadata() {
+            loadLocalMetadata();
+            if (navigator.onLine && currentUser) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('user_settings')
+                        .select('setting_value')
+                        .eq('user_id', currentUser.id)
+                        .eq('setting_key', 'concursos_metadata')
+                        .single();
 
-        function getMateriaColorIndex(materiaName, sortedMaterias) {
-            const idx = sortedMaterias.indexOf(materiaName);
-            return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
-        }
-
-        function toggleWeekendBox() {
-            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
-            document.getElementById('weekendConfigBox').style.display = isCustomWeekend ? 'flex' : 'none';
-            calculateAutoFillProjection();
-        }
-
-        function openModalDisponibilidade() {
-            if (editalItems.length === 0) return alert('Nenhum edital cadastrado para este concurso.');
-
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            document.getElementById('startDateInput').value = `${yyyy}-${mm}-${dd}`;
-
-            document.getElementById('modalDisponibilidade').style.display = 'flex';
-            toggleWeekendBox();
-        }
-
-        function closeModalDisponibilidade() { document.getElementById('modalDisponibilidade').style.display = 'none'; }
-
-        function calculateAutoFillProjection() {
-            const hManha = parseInt(document.getElementById('horasManha').value) || 0;
-            const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
-            const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
-            const dailyHours = hManha + hTarde + hNoite;
-
-            const pendentesCount = editalItems.filter(item => !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d)).length;
-            const neededDays = dailyHours > 0 ? Math.ceil((pendentesCount * 2) / dailyHours) : 0;
-
-            document.getElementById('projectionDaysCount').innerText = `${neededDays} dias`;
-            document.getElementById('projectionTopicsCount').innerText = pendentesCount;
-        }
-
-        function formatDateIso(dateObj) {
-            const yyyy = dateObj.getFullYear();
-            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const dd = String(dateObj.getDate()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd}`;
-        }
-
-        /* CONVERSOR DE DATA URL PARA BLOB (Evita Downloads Involuntários) */
-        function dataURLtoBlob(dataurl) {
-            const arr = dataurl.split(',');
-            const mime = arr[0].match(/:(.*?);/)[1];
-            const bstr = atob(arr[1]);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) {
-                u8arr[n] = bstr.charCodeAt(n);
+                    if (!error && data && data.setting_value) {
+                        metadataCache = data.setting_value;
+                        localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadataCache));
+                    }
+                } catch(e) { console.log('Metadata carregado offline'); }
             }
-            return new Blob([u8arr], { type: mime });
         }
 
-        /* ANEXAR E GERENCIAR DOCUMENTO DO EDITAL */
-        function openModalViewEdital() {
-            document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
-            renderEditalFileViewer();
-            document.getElementById('modalViewEdital').style.display = 'flex';
+        function loadLocalMetadata() {
+            metadataCache = getConcursosMetadata();
         }
 
-        function closeModalViewEdital() {
-            if (activeObjectUrl) {
-                URL.revokeObjectURL(activeObjectUrl);
-                activeObjectUrl = null;
+        /* TELA MAIN DE CARREGAMENTO E SINCRONIZAÇÃO TOTAL */
+        async function loadData() {
+            await loadConcursosMetadata();
+            loadLocalEditalData();
+            filterDataByConcurso();
+
+            if (navigator.onLine && currentUser) {
+                await syncAllWithSupabase();
             }
-            document.getElementById('modalViewEdital').style.display = 'none';
         }
 
-        function getEditalFileStorageKey() {
-            const uid = currentUser ? currentUser.id : 'guest';
-            return `edital_file_${uid}_${currentConcurso}`;
-        }
-
-        function renderEditalFileViewer() {
-            const container = document.getElementById('editalViewerContainer');
-            const btnDownload = document.getElementById('btnDownloadEdital');
-            const btnRemove = document.getElementById('btnRemoveEdital');
-
-            if (activeObjectUrl) {
-                URL.revokeObjectURL(activeObjectUrl);
-                activeObjectUrl = null;
-            }
-
-            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
-
-            if (!fileDataRaw) {
-                container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${currentConcurso}</strong>.</p>`;
-                btnDownload.style.display = 'none';
-                btnRemove.style.display = 'none';
-                return;
-            }
-
+        async function syncAllWithSupabase() {
+            if (!currentUser) return;
             try {
-                const fileObj = JSON.parse(fileDataRaw);
-                btnDownload.style.display = 'inline-flex';
-                btnRemove.style.display = 'inline-flex';
+                const { data, error } = await supabaseClient
+                    .from('edital')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('prioridade', { ascending: true });
 
-                if (fileObj.type.includes('pdf')) {
-                    const blob = dataURLtoBlob(fileObj.data);
-                    activeObjectUrl = URL.createObjectURL(blob);
-                    
-                    // Utiliza <embed> com Object URL para forçar renderização nativa inline sem disparar o download no Chrome/Safari
-                    container.innerHTML = `<embed src="${activeObjectUrl}#toolbar=1" type="application/pdf" style="width:100%; height:100%; min-height:500px; border:none; border-radius:6px;"></embed>`;
-                } else if (fileObj.type.includes('image')) {
-                    container.innerHTML = `<img src="${fileObj.data}" style="max-width:100%; max-height:480px; border-radius:6px; object-fit:contain;">`;
-                } else if (fileObj.type.includes('text')) {
-                    container.innerHTML = `<textarea readonly style="width:100%; height:450px; font-family:monospace; padding:10px;">${fileObj.text || ''}</textarea>`;
-                } else {
-                    container.innerHTML = `
-                        <div style="padding:2rem; text-align:center;">
-                            <p style="font-size:1.1rem; font-weight:700; color:var(--primary-blue);">${fileObj.name}</p>
-                            <p style="font-size:0.85rem; opacity:0.8; margin-top:8px;">Arquivo do edital anexado com sucesso.</p>
-                        </div>
-                    `;
+                if (!error && data) {
+                    allEditalItems = data.map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
+                    saveEditalToLocalStorage();
+                    filterDataByConcurso();
                 }
-            } catch (e) {
-                container.innerHTML = `<p style="color:#ef4444;">Erro ao carregar o arquivo do edital.</p>`;
+            } catch(e) { console.log('Sem acesso ao banco no momento.'); }
+        }
+
+        function loadLocalEditalData() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            const local = localStorage.getItem(`edital_offline_data_${uid}`);
+            if (local) {
+                try {
+                    allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
+                } catch(e) { allEditalItems = []; }
             }
         }
 
-        function uploadEditalFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-
-            if (file.type.includes('text')) {
-                reader.onload = function(e) {
-                    const fileObj = { name: file.name, type: file.type, text: e.target.result, data: null };
-                    localStorage.setItem(getEditalFileStorageKey(), JSON.stringify(fileObj));
-                    renderEditalFileViewer();
-                    alert('Arquivo do edital anexado!');
-                };
-                reader.readAsText(file);
-            } else {
-                reader.onload = function(e) {
-                    const fileObj = { name: file.name, type: file.type || 'application/pdf', data: e.target.result };
-                    localStorage.setItem(getEditalFileStorageKey(), JSON.stringify(fileObj));
-                    renderEditalFileViewer();
-                    alert('Arquivo do edital anexado!');
-                };
-                reader.readAsDataURL(file);
-            }
-            event.target.value = '';
+        function saveEditalToLocalStorage() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            localStorage.setItem(`edital_offline_data_${uid}`, JSON.stringify(allEditalItems));
         }
 
-        function downloadEditalFile() {
-            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
-            if (!fileDataRaw) return;
-
-            const fileObj = JSON.parse(fileDataRaw);
-            const a = document.createElement('a');
-
-            if (fileObj.data) {
-                a.href = fileObj.data;
-            } else if (fileObj.text) {
-                a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(fileObj.text);
-            }
-            a.download = fileObj.name || 'Edital.pdf';
-            a.click();
-        }
-
-        function removerEditalFile() {
-            if (confirm(`Deseja realmente apagar o edital anexado do concurso "${currentConcurso}"?`)) {
-                localStorage.removeItem(getEditalFileStorageKey());
-                renderEditalFileViewer();
-                alert('Documento do edital removido com sucesso!');
+        async function saveEditalItemToCloud(item) {
+            saveEditalToLocalStorage();
+            if (navigator.onLine && currentUser) {
+                try {
+                    const payload = {
+                        id: item.id,
+                        user_id: currentUser.id,
+                        materia: item.materia,
+                        assunto: item.assunto,
+                        prioridade: item.prioridade,
+                        concurso: item.concurso,
+                        teoria: !!item.teoria,
+                        questoes: !!item.questoes,
+                        rev_24h: !!item.rev_24h,
+                        rev_7d: !!item.rev_7d,
+                        rev_30d: !!item.rev_30d
+                    };
+                    await supabaseClient.from('edital').upsert(payload);
+                } catch(e) { console.warn('Erro sync nuvem item:', e); }
             }
         }
 
+        async function deleteEditalItemFromCloud(id) {
+            allEditalItems = allEditalItems.filter(i => String(i.id) !== String(id));
+            saveEditalToLocalStorage();
+            if (navigator.onLine && currentUser) {
+                try {
+                    await supabaseClient.from('edital').delete().eq('id', id);
+                } catch(e) { console.warn('Erro delete nuvem:', e); }
+            }
+            filterDataByConcurso();
+        }
+
+        /* CONCURSOS SELECTOR & CADASTRO SINCRONIZADO */
         function renderConcursoSelector() {
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
             const metadata = getConcursosMetadata();
             const set = new Set(Object.keys(metadata));
             set.add('Concurso Geral');
+            
             allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
             const list = Array.from(set);
 
@@ -1573,46 +1045,45 @@ R: O prazo é de 2 anos."></textarea>
             renderChart();
             renderMonthCalendar();
             renderDelayedPanel();
-            renderAnotacoesMateriaSelector();
-            renderFlashcardMateriaSelector();
         }
 
-        async function loadData() {
-            loadLocalData();
+        function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
+        function closeModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'none'; }
+
+        async function confirmarNovoConcurso() {
+            const nome = document.getElementById('inputNomeConcurso').value.trim();
+            const dataProva = document.getElementById('inputDataConcurso').value;
+            if (!nome) return alert('Informe o nome do concurso.');
+
+            let metadata = getConcursosMetadata();
+            metadata[nome] = { dataProva: dataProva || null, dateSchedule: {} };
+            await saveConcursosMetadata(metadata);
+
+            currentConcurso = nome;
+            document.getElementById('inputNomeConcurso').value = '';
+            document.getElementById('inputDataConcurso').value = '';
+            closeModalNovoConcurso();
             filterDataByConcurso();
-            if (navigator.onLine && currentUser) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('edital')
-                        .select('*')
-                        .eq('user_id', currentUser.id)
-                        .order('prioridade', { ascending: true });
+        }
 
-                    if (!error && data && data.length > 0) {
-                        allEditalItems = data.map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
-                        const uid = currentUser.id;
-                        localStorage.setItem(`edital_offline_data_${uid}`, JSON.stringify(allEditalItems));
-                        filterDataByConcurso();
-                    }
-                } catch (e) { console.log('Modo offline.'); }
+        async function removerConcursoAtual() {
+            if (currentConcurso === 'Concurso Geral') return alert('O Concurso Geral padrão não pode ser excluído.');
+            if (confirm(`Deseja remover o concurso "${currentConcurso}" e todos os seus itens?`)) {
+                let metadata = getConcursosMetadata();
+                delete metadata[currentConcurso];
+                await saveConcursosMetadata(metadata);
+
+                const itemsToDelete = allEditalItems.filter(i => i.concurso === currentConcurso);
+                for (let item of itemsToDelete) {
+                    await deleteEditalItemFromCloud(item.id);
+                }
+
+                currentConcurso = 'Concurso Geral';
+                filterDataByConcurso();
             }
         }
 
-        function loadLocalData() {
-            const uid = currentUser ? currentUser.id : 'guest';
-            const local = localStorage.getItem(`edital_offline_data_${uid}`);
-            if (local) {
-                try {
-                    allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
-                } catch(e) { allEditalItems = []; }
-            }
-        }
-
-        function saveEditalToStorage() {
-            const uid = currentUser ? currentUser.id : 'guest';
-            localStorage.setItem(`edital_offline_data_${uid}`, JSON.stringify(allEditalItems));
-        }
-
+        /* CONTRADOMINIO DA TABELA DE EDITAL */
         function renderTable() {
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
@@ -1669,8 +1140,12 @@ R: O prazo é de 2 anos."></textarea>
 
         async function updateMateriaPriority(materiaName, newPriority) {
             const val = parseInt(newPriority) || 1;
-            allEditalItems.forEach(item => { if (item.materia === materiaName) item.prioridade = val; });
-            saveEditalToStorage();
+            editalItems.forEach(item => {
+                if (item.materia === materiaName) {
+                    item.prioridade = val;
+                    saveEditalItemToCloud(item);
+                }
+            });
             filterDataByConcurso();
         }
 
@@ -1678,7 +1153,7 @@ R: O prazo é de 2 anos."></textarea>
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item[field] = !currentValue;
-                saveEditalToStorage();
+                await saveEditalItemToCloud(item);
                 filterDataByConcurso();
             }
         }
@@ -1687,7 +1162,7 @@ R: O prazo é de 2 anos."></textarea>
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item.teoria = false; item.questoes = false; item.rev_24h = false; item.rev_7d = false; item.rev_30d = false;
-                saveEditalToStorage();
+                await saveEditalItemToCloud(item);
                 filterDataByConcurso();
             }
         }
@@ -1698,23 +1173,27 @@ R: O prazo é de 2 anos."></textarea>
             const assunto = document.getElementById('assunto').value.trim();
             const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
 
-            allEditalItems.push({
+            const newItem = {
                 id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
                 materia, assunto, prioridade, concurso: currentConcurso,
                 user_id: currentUser ? currentUser.id : null,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
-            });
+            };
+
+            allEditalItems.push(newItem);
             openMaterias[materia] = true;
-            saveEditalToStorage();
+            await saveEditalItemToCloud(newItem);
             document.getElementById('materia').value = '';
             document.getElementById('assunto').value = '';
             filterDataByConcurso();
         }
 
-        function clearData() {
+        async function clearData() {
             if (confirm(`Apagar todos os tópicos do edital "${currentConcurso}"?`)) {
-                allEditalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') !== currentConcurso);
-                saveEditalToStorage();
+                const toRemove = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+                for (let i of toRemove) {
+                    await deleteEditalItemFromCloud(i.id);
+                }
                 filterDataByConcurso();
             }
         }
@@ -1724,7 +1203,7 @@ R: O prazo é de 2 anos."></textarea>
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     let rawData = JSON.parse(e.target.result);
                     let formattedData = [];
@@ -1736,21 +1215,22 @@ R: O prazo é de 2 anos."></textarea>
                             const prio = parseInt(matObj.prioridade || 1);
                             if (Array.isArray(matObj.assuntos)) {
                                 matObj.assuntos.forEach(assuntoStr => {
-                                    formattedData.push({
+                                    const itemObj = {
                                         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                                         materia: mName, assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
                                         prioridade: prio, concurso: currentConcurso,
                                         user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
-                                    });
+                                    };
+                                    formattedData.push(itemObj);
+                                    allEditalItems.push(itemObj);
+                                    saveEditalItemToCloud(itemObj);
                                 });
                             }
                         });
                     }
-                    allEditalItems = [...allEditalItems, ...formattedData];
-                    saveEditalToStorage();
                     filterDataByConcurso();
-                    alert(`Sucesso! ${formattedData.length} tópicos foram importados.`);
+                    alert(`Sucesso! ${formattedData.length} tópicos foram importados e sincronizados.`);
                 } catch(err) { alert('Erro no arquivo JSON.'); }
             };
             reader.readAsText(file);
@@ -1765,13 +1245,13 @@ R: O prazo é de 2 anos."></textarea>
             badge.textContent = diffDias < 0 ? "Prova realizada" : (diffDias === 0 ? "Prova HOJE!" : `Faltam ${diffDias} dias`);
         }
 
-        function editarDataProva() {
+        async function editarDataProva() {
             let metadata = getConcursosMetadata();
             const novaData = prompt(`Data da prova (AAAA-MM-DD):`, metadata[currentConcurso]?.dataProva || '');
             if (novaData !== null) {
                 if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
                 metadata[currentConcurso].dataProva = novaData.trim() || null;
-                saveConcursosMetadata(metadata);
+                await saveConcursosMetadata(metadata);
                 updateCountdownBadge();
             }
         }
@@ -1805,6 +1285,12 @@ R: O prazo é de 2 anos."></textarea>
             });
         }
 
+        function getMateriaColorIndex(materiaName, sortedMaterias) {
+            const idx = sortedMaterias.indexOf(materiaName);
+            return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
+        }
+
+        /* POMODORO */
         let timerInterval = null;
         let timeLeft = 25 * 60;
 
@@ -1831,354 +1317,7 @@ R: O prazo é de 2 anos."></textarea>
 
         function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
 
-        function openModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'flex'; }
-        function closeModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'none'; }
-        function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
-        function closeModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'none'; }
-
-        function copyPromptToClipboard() {
-            navigator.clipboard.writeText(document.getElementById('promptTextToCopy').innerText);
-            alert('Prompt copiado!');
-        }
-
-        /* CRONOGRAMA MENSAL FUNCTIONS */
-        function renderMonthCalendar() {
-            const grid = document.getElementById('monthCalendarGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-
-            const mSelect = parseInt(document.getElementById('monthSelect').value);
-            const ySelect = parseInt(document.getElementById('yearSelect').value);
-
-            const firstDay = new Date(ySelect, mSelect, 1);
-            const lastDay = new Date(ySelect, mSelect + 1, 0);
-
-            const startDayOfWeek = firstDay.getDay(); 
-            const totalDays = lastDay.getDate();
-
-            const metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-            let monthTotalMinutes = 0;
-
-            const todayIso = formatDateIso(new Date());
-
-            for (let i = 0; i < startDayOfWeek; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.className = 'month-day-cell other-month';
-                grid.appendChild(emptyCell);
-            }
-
-            for (let day = 1; day <= totalDays; day++) {
-                const mm = String(mSelect + 1).padStart(2, '0');
-                const dd = String(day).padStart(2, '0');
-                const isoKey = `${ySelect}-${mm}-${dd}`;
-
-                const cell = document.createElement('div');
-                cell.className = `month-day-cell ${isoKey === todayIso ? 'today' : ''}`;
-
-                const daySlots = dateSchedule[isoKey] || [];
-                daySlots.forEach(slot => { monthTotalMinutes += parseTimeIntervalToMinutes(slot.horario); });
-
-                const materiasUnicas = [];
-                daySlots.forEach(slot => {
-                    if (!materiasUnicas.some(m => m.name === slot.materia && m.isRev === !!slot.isRev)) {
-                        materiasUnicas.push({ name: slot.materia, isRev: !!slot.isRev, allCompleted: true });
-                    }
-                });
-
-                daySlots.forEach(slot => {
-                    const match = materiasUnicas.find(m => m.name === slot.materia && m.isRev === !!slot.isRev);
-                    if (match && !slot.completed) match.allCompleted = false;
-                });
-
-                let badgesHtml = '';
-                materiasUnicas.forEach(m => {
-                    const statusClass = m.allCompleted ? 'completed' : '';
-                    const revClass = m.isRev ? 'rev' : '';
-                    const labelPrefix = m.isRev ? '↻ ' : '';
-                    badgesHtml += `<div class="clean-subject-badge ${revClass} ${statusClass}"><span>${labelPrefix}${m.name}</span></div>`;
-                });
-
-                cell.innerHTML = `
-                    <div class="day-num-header">
-                        <span>${day}</span>
-                        <button class="btn-add-mini" onclick="event.stopPropagation(); openModalDayDetails('${isoKey}')">+</button>
-                    </div>
-                    <div class="day-badges-scroll">${badgesHtml}</div>
-                `;
-
-                cell.onclick = () => openModalDayDetails(isoKey);
-                grid.appendChild(cell);
-            }
-
-            document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(monthTotalMinutes);
-        }
-
-        function openModalDayDetails(isoDate) {
-            selectedDayIsoGlobal = isoDate;
-            const formattedDate = isoDate.split('-').reverse().join('/');
-            document.getElementById('modalDayTitle').innerText = `Disciplinas de ${formattedDate}`;
-
-            const container = document.getElementById('dayDetailsContainer');
-            const metadata = getConcursosMetadata();
-            const daySlots = metadata[currentConcurso]?.dateSchedule?.[isoDate] || [];
-
-            if (daySlots.length === 0) {
-                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding:1.5rem 0;">Nenhuma disciplina cadastrada nesta data.</p>`;
-            } else {
-                container.innerHTML = '';
-                daySlots.forEach((slot, index) => {
-                    const isCompleted = slot.completed ? 'completed' : '';
-                    const tagPrefix = slot.isRev ? '↻ REVISÃO: ' : '';
-                    container.innerHTML += `
-                        <div class="day-detail-item ${isCompleted}">
-                            <div style="flex:1; cursor:pointer;" onclick="toggleSlotCompletedByDate('${isoDate}', ${index})">
-                                <div style="font-weight:700; color:var(--primary-blue); font-size:0.85rem;">${slot.horario} - ${slot.materia}</div>
-                                <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">${tagPrefix}${slot.assunto || 'Tópico Geral'}</div>
-                            </div>
-                            <div style="display:flex; gap:6px;">
-                                <button class="btn btn-secondary btn-sm" onclick="openEditSlotModalByDate('${isoDate}', ${index})">Editar</button>
-                                <button class="btn btn-danger btn-sm" onclick="removerSlotByDate('${isoDate}', ${index})">Excluir</button>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-
-            document.getElementById('modalDayDetails').style.display = 'flex';
-        }
-
-        function closeModalDayDetails() { document.getElementById('modalDayDetails').style.display = 'none'; }
-        function openAddSlotForSelectedDay() { closeModalDayDetails(); openModalSlotForDate(selectedDayIsoGlobal); }
-
-        function openModalSlotForDate(isoDate) {
-            document.getElementById('modalSlotTitle').innerText = `Adicionar Matéria (${isoDate.split('-').reverse().join('/')})`;
-            document.getElementById('slotDataIso').value = isoDate;
-            document.getElementById('slotIndex').value = "-1";
-            document.getElementById('slotCompletedCheckbox').checked = false;
-
-            const selectMat = document.getElementById('slotMateriaSelect');
-            selectMat.innerHTML = '';
-            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            if (materiasValidas.length === 0) {
-                selectMat.innerHTML = '<option value="">Estudo Geral</option>';
-                onMateriaSelectChange('');
-            } else {
-                materiasValidas.forEach(m => selectMat.innerHTML += `<option value="${m}">${m}</option>`);
-                onMateriaSelectChange(materiasValidas[0]);
-            }
-
-            document.getElementById('modalSlot').style.display = 'flex';
-        }
-
-        function openEditSlotModalByDate(isoDate, index) {
-            closeModalDayDetails();
-            const metadata = getConcursosMetadata();
-            const slot = metadata[currentConcurso]?.dateSchedule?.[isoDate]?.[index];
-            if (!slot) return;
-
-            document.getElementById('modalSlotTitle').innerText = `Editar (${isoDate.split('-').reverse().join('/')})`;
-            document.getElementById('slotDataIso').value = isoDate;
-            document.getElementById('slotIndex').value = index;
-            document.getElementById('slotHorario').value = slot.horario;
-            document.getElementById('slotCompletedCheckbox').checked = !!slot.completed;
-
-            const selectMat = document.getElementById('slotMateriaSelect');
-            selectMat.innerHTML = '';
-            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            materiasValidas.forEach(m => selectMat.innerHTML += `<option value="${m}" ${m === slot.materia ? 'selected' : ''}>${m}</option>`);
-            onMateriaSelectChange(slot.materia, slot.assunto);
-            document.getElementById('modalSlot').style.display = 'flex';
-        }
-
-        function salvarSlot() {
-            const isoDate = document.getElementById('slotDataIso').value;
-            const index = parseInt(document.getElementById('slotIndex').value);
-            const horario = document.getElementById('slotHorario').value.trim();
-            const materia = document.getElementById('slotMateriaSelect').value || 'Estudo Geral';
-            const assunto = document.getElementById('slotAssuntoSelect').value || '';
-            const completed = document.getElementById('slotCompletedCheckbox').checked;
-
-            if (!horario) return alert('Informe o horário.');
-
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = { dateSchedule: {} };
-            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-
-            const dateSchedule = metadata[currentConcurso].dateSchedule;
-            if (!dateSchedule[isoDate]) dateSchedule[isoDate] = [];
-
-            const slotObj = { horario, materia, assunto, completed };
-
-            if (index >= 0 && dateSchedule[isoDate][index]) dateSchedule[isoDate][index] = slotObj;
-            else dateSchedule[isoDate].push(slotObj);
-
-            saveConcursosMetadata(metadata);
-            renderMonthCalendar();
-            renderDelayedPanel();
-            closeModalSlot();
-        }
-
-        function toggleSlotCompletedByDate(isoDate, index) {
-            let metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
-            if (dateSchedule && dateSchedule[isoDate] && dateSchedule[isoDate][index]) {
-                dateSchedule[isoDate][index].completed = !dateSchedule[isoDate][index].completed;
-                saveConcursosMetadata(metadata);
-                renderMonthCalendar();
-                renderDelayedPanel();
-                openModalDayDetails(isoDate);
-            }
-        }
-
-        function removerSlotByDate(isoDate, index) {
-            let metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
-            if (dateSchedule && dateSchedule[isoDate]) {
-                dateSchedule[isoDate].splice(index, 1);
-                saveConcursosMetadata(metadata);
-                renderMonthCalendar();
-                renderDelayedPanel();
-                openModalDayDetails(isoDate);
-            }
-        }
-
-        function limparCronogramaSemanal() {
-            if (confirm(`Deseja limpar todo o cronograma do concurso "${currentConcurso}"?`)) {
-                let metadata = getConcursosMetadata();
-                if (metadata[currentConcurso]) {
-                    metadata[currentConcurso].dateSchedule = {};
-                    saveConcursosMetadata(metadata);
-                    renderMonthCalendar();
-                    renderDelayedPanel();
-                }
-            }
-        }
-
-        function renderDelayedPanel() {
-            const container = document.getElementById('delayedItemsContainer');
-            const badgeCount = document.getElementById('delayedBadgeCount');
-            if (!container || !badgeCount) return;
-
-            const metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-            const todayIso = formatDateIso(new Date());
-
-            let delayedList = [], todayList = [], nextList = [];
-
-            Object.keys(dateSchedule).forEach(isoDate => {
-                const slots = dateSchedule[isoDate] || [];
-                slots.forEach(slot => {
-                    if (!slot.completed && slot.materia) {
-                        const itemObj = { isoDate, materia: slot.materia, assunto: slot.assunto || 'Tópico de Estudo', horario: slot.horario, isRev: slot.isRev };
-                        if (isoDate < todayIso) delayedList.push(itemObj);
-                        else if (isoDate === todayIso) todayList.push(itemObj);
-                        else nextList.push(itemObj);
-                    }
-                });
-            });
-
-            badgeCount.innerText = `${delayedList.length} atrasadas`;
-
-            let displayList = [];
-            if (currentDelayedFilter === 'hoje') displayList = todayList;
-            else if (currentDelayedFilter === 'atrasadas') displayList = delayedList;
-            else if (currentDelayedFilter === 'proximas') displayList = nextList;
-
-            if (displayList.length === 0) {
-                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding: 1rem 0;">Nenhuma matéria ou revisão pendente aqui.</p>`;
-                return;
-            }
-
-            container.innerHTML = '';
-            displayList.forEach(item => {
-                const dateFmt = item.isoDate.split('-').reverse().join('/');
-                const revTag = item.isRev ? '[REVISÃO] ' : '';
-                container.innerHTML += `
-                    <div class="delayed-card">
-                        <div class="delayed-card-info">
-                            <h4>${revTag}${item.materia}</h4>
-                            <p>${item.assunto}</p>
-                            <span class="delayed-tag">${dateFmt} - ${item.horario}</span>
-                        </div>
-                        <button class="btn btn-success btn-sm" onclick="concluirDelayedItemByDate('${item.isoDate}', '${item.materia}', '${item.assunto}')">
-                            Iniciar / Concluir
-                        </button>
-                    </div>
-                `;
-            });
-        }
-
-        function filterDelayedList(filterType, btn) {
-            currentDelayedFilter = filterType;
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderDelayedPanel();
-        }
-
-        function concluirDelayedItemByDate(isoDate, materia, assunto) {
-            let metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
-            if (dateSchedule && dateSchedule[isoDate]) {
-                const slot = dateSchedule[isoDate].find(s => s.materia === materia && s.assunto === assunto);
-                if (slot) {
-                    slot.completed = true;
-                    saveConcursosMetadata(metadata);
-                    renderMonthCalendar();
-                    renderDelayedPanel();
-                }
-            }
-        }
-
-        /* AUXILIARES DE TEMPO E EXPORTAÇÕES GLOBAIS */
-        function parseTimeIntervalToMinutes(timeIntervalStr) {
-            if (!timeIntervalStr) return 0;
-            const parts = timeIntervalStr.split('-').map(s => s.trim());
-            if (parts.length !== 2) return 30;
-            const parseMinutes = (str) => {
-                const [h, m] = str.split(':').map(Number);
-                if (isNaN(h)) return 0;
-                return (h * 60) + (isNaN(m) ? 0 : m);
-            };
-            const start = parseMinutes(parts[0]);
-            const end = parseMinutes(parts[1]);
-            return (end > start) ? (end - start) : 60;
-        }
-
-        function formatMinutesToHours(totalMinutes) {
-            const h = Math.floor(totalMinutes / 60);
-            const m = totalMinutes % 60;
-            return m === 0 ? `${h}h` : `${h}h ${m}min`;
-        }
-
-        function closeModalSlot() { document.getElementById('modalSlot').style.display = 'none'; }
-
-        function onMateriaSelectChange(selectedMateria, preSelectedAssunto = '') {
-            const selectAssunto = document.getElementById('slotAssuntoSelect');
-            selectAssunto.innerHTML = '';
-
-            if (!selectedMateria) {
-                selectAssunto.innerHTML = '<option value="">Revisão Geral / Livre</option>';
-                return;
-            }
-
-            const assuntos = editalItems.filter(i => (i.materia || 'Geral') === selectedMateria).map(i => i.assunto);
-            const uniqueAssuntos = Array.from(new Set(assuntos));
-
-            if (preSelectedAssunto && !uniqueAssuntos.includes(preSelectedAssunto)) {
-                uniqueAssuntos.unshift(preSelectedAssunto);
-            }
-
-            if (uniqueAssuntos.length === 0) {
-                selectAssunto.innerHTML = '<option value="">Revisão Geral da Matéria</option>';
-            } else {
-                selectAssunto.innerHTML = '<option value="">-- Todos ou Geral --</option>';
-                uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}" ${a === preSelectedAssunto ? 'selected' : ''}>${a}</option>`);
-            }
-        }
-
+        /* AUTH & INITIALIZATION */
         async function handleLogin() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -2215,7 +1354,7 @@ R: O prazo é de 2 anos."></textarea>
         function showDashboard() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-dashboard').style.display = 'block';
-            initMonthYearSelectors();
+            updateOnlineStatus();
             loadData();
         }
 
@@ -2231,10 +1370,13 @@ R: O prazo é de 2 anos."></textarea>
 
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
+        }
 
-            if (tabId === 'tab-calendario') { renderMonthCalendar(); renderDelayedPanel(); }
-            else if (tabId === 'tab-anotacoes') renderAnotacoesMateriaSelector();
-            else if (tabId === 'tab-flashcards') renderFlashcardMateriaSelector();
+        function openModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'flex'; }
+        function closeModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'none'; }
+        function copyPromptToClipboard() {
+            navigator.clipboard.writeText(document.getElementById('promptTextToCopy').innerText);
+            alert('Prompt copiado!');
         }
 
         window.handleSignUp = handleSignUp;
@@ -2253,37 +1395,15 @@ R: O prazo é de 2 anos."></textarea>
         window.changeConcurso = changeConcurso;
         window.openModalNovoConcurso = openModalNovoConcurso;
         window.closeModalNovoConcurso = closeModalNovoConcurso;
+        window.confirmarNovoConcurso = confirmarNovoConcurso;
+        window.removerConcursoAtual = removerConcursoAtual;
         window.editarDataProva = editarDataProva;
-        window.onMateriaSelectChange = onMateriaSelectChange;
-        window.closeModalSlot = closeModalSlot;
-        window.salvarSlot = salvarSlot;
-        window.openModalDisponibilidade = openModalDisponibilidade;
-        window.closeModalDisponibilidade = closeModalDisponibilidade;
-        window.toggleWeekendBox = toggleWeekendBox;
-        window.confirmarAutoFillDisponibilidade = confirmarAutoFillDisponibilidade;
-        window.limparCronogramaSemanal = limparCronogramaSemanal;
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
         window.openModalPromptIA = openModalPromptIA;
         window.closeModalPromptIA = closeModalPromptIA;
         window.copyPromptToClipboard = copyPromptToClipboard;
-        window.openModalViewEdital = openModalViewEdital;
-        window.closeModalViewEdital = closeModalViewEdital;
-        window.uploadEditalFile = uploadEditalFile;
-        window.downloadEditalFile = downloadEditalFile;
-        window.removerEditalFile = removerEditalFile;
-        window.filterDelayedList = filterDelayedList;
-        window.calculateAutoFillProjection = calculateAutoFillProjection;
-        window.onMonthYearChange = onMonthYearChange;
-        window.openModalSlotForDate = openModalSlotForDate;
-        window.openEditSlotModalByDate = openEditSlotModalByDate;
-        window.removerSlotByDate = removerSlotByDate;
-        window.toggleSlotCompletedByDate = toggleSlotCompletedByDate;
-        window.concluirDelayedItemByDate = concluirDelayedItemByDate;
-        window.openModalDayDetails = openModalDayDetails;
-        window.closeModalDayDetails = closeModalDayDetails;
-        window.openAddSlotForSelectedDay = openAddSlotForSelectedDay;
     </script>
 </body>
 </html>
