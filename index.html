@@ -375,7 +375,7 @@
             font-weight: 700;
         }
 
-        /* ESTILOS DA GRADE MENSAL DE ESTUDOS (LAYOUT LIMPO) */
+        /* ESTILOS DA GRADE MENSAL DE ESTUDOS COM CONTROLE DE OVERFLOW */
         .month-calendar-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -396,13 +396,14 @@
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            min-height: 110px;
+            height: 140px; /* Altura fixa controlada */
             padding: 8px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             position: relative;
             cursor: pointer;
+            overflow: hidden; /* Evita vazamento */
             transition: background-color 0.2s, border-color 0.2s;
         }
 
@@ -422,6 +423,8 @@
             font-size: 0.85rem;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 4px;
+            margin-bottom: 2px;
+            flex-shrink: 0;
         }
 
         .day-num-header .btn-add-mini {
@@ -438,21 +441,36 @@
             cursor: pointer;
         }
 
-        /* TAG LIMPA APENAS COM NOME DA DISCIPLINA NO CALENDÁRIO */
+        /* CONTAINER COM ROLAGEM INTERNA PARA MATÉRIAS NÃO EXTRAPOLAREM */
+        .day-badges-scroll {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 2px;
+        }
+
+        .day-badges-scroll::-webkit-scrollbar {
+            width: 3px;
+        }
+        .day-badges-scroll::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
         .clean-subject-badge {
             background: rgba(59, 130, 246, 0.15);
             border: 1px solid var(--primary-blue);
             color: #93c5fd;
-            padding: 4px 6px;
+            padding: 3px 6px;
             border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 700;
+            font-size: 0.72rem;
+            font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-shrink: 0;
         }
 
         .clean-subject-badge.completed {
@@ -524,7 +542,6 @@
             padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; color: #34d399;
         }
 
-        /* CARD DE CADA ITEM DENTRO DO MODAL DO DIA */
         .day-detail-item {
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--border-color);
@@ -545,7 +562,7 @@
             .grid-top { grid-template-columns: 1fr; }
             .month-grid { grid-template-columns: repeat(1, 1fr); }
             .month-calendar-header { display: none; }
-            .month-day-cell { min-height: auto; }
+            .month-day-cell { height: auto; min-height: 100px; }
         }
     </style>
 </head>
@@ -714,12 +731,12 @@
 
     </div>
 
-    <!-- MODAL DE CONFIGURAÇÃO (RESTURADO EXATAMENTE COMO NA FIGURA 4) -->
+    <!-- MODAL DE CONFIGURAÇÃO MENSAL -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
             <h3>Configurar Horários e Turnos de Estudo</h3>
             <p style="font-size: 0.85rem; opacity: 0.85;">
-                Configure seus horários de estudo e a data em que pretende iniciar para gerar a distribuição automática de tópicos.
+                Configure seus horários de estudo e a data em que pretende iniciar. O sistema alocará **100% dos tópicos pendentes do edital**, estendendo o cronograma pelos meses seguintes até concluir todo o conteúdo.
             </p>
 
             <div class="form-group" style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--primary-blue);">
@@ -823,22 +840,22 @@
             </div>
 
             <div id="projectionBox" class="projection-box">
-                <strong>Projeção:</strong><br>
-                Com esta carga horária, você precisará de aprox. <strong id="projectionDaysCount">0 dias</strong> para cobrir os <span id="projectionTopicsCount">0</span> tópicos pendentes.
+                <strong>Projeção Total do Edital:</strong><br>
+                Com esta carga horária, você precisará de aprox. <strong id="projectionDaysCount">0 dias</strong> para cobrir todos os <span id="projectionTopicsCount">0</span> tópicos pendentes.
             </div>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalDisponibilidade()">Cancelar (ESC)</button>
-                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">Gerar no Calendário (ENTER)</button>
+                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">Gerar Cronograma Completo (ENTER)</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL NOVO: CAIXA DETALHADA DO DIA SELECIONADO -->
+    <!-- MODAL DETALHADO DO DIA SELECIONADO -->
     <div class="modal-overlay" id="modalDayDetails">
         <div class="modal">
             <h3 id="modalDayTitle">Matérias do Dia</h3>
-            <p style="font-size: 0.85rem; opacity: 0.85;">Abaixo estão as disciplinas agendadas para esta data. Clique em uma matéria para alternar status ou use as ações para editar/remover.</p>
+            <p style="font-size: 0.85rem; opacity: 0.85;">Abaixo estão as disciplinas agendadas para esta data. Clique em uma matéria para alternar status de concluído ou utilize as opções de editar/excluir.</p>
 
             <div id="dayDetailsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto;"></div>
 
@@ -849,7 +866,7 @@
         </div>
     </div>
 
-    <!-- MODAL: ADICIONAR / EDITAR DISCIPLINA EM DATA ESPECÍFICA -->
+    <!-- MODAL ADICIONAR/EDITAR SLOT -->
     <div class="modal-overlay" id="modalSlot">
         <div class="modal">
             <h3 id="modalSlotTitle">Adicionar Matéria ao Dia</h3>
@@ -883,7 +900,7 @@
         </div>
     </div>
 
-    <!-- DEMAIS MODAIS -->
+    <!-- MODAL VIEW EDITAL -->
     <div class="modal-overlay" id="modalViewEdital">
         <div class="modal modal-large">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -906,6 +923,7 @@
         </div>
     </div>
 
+    <!-- MODAL PROMPT IA -->
     <div class="modal-overlay" id="modalPromptIA">
         <div class="modal">
             <h3>Prompt para Colar na IA</h3>
@@ -934,6 +952,7 @@
         </div>
     </div>
 
+    <!-- MODAL NOVO CONCURSO -->
     <div class="modal-overlay" id="modalNovoConcurso">
         <div class="modal">
             <h3>Cadastrar Novo Concurso</h3>
@@ -1067,7 +1086,7 @@
             document.getElementById('projectionTopicsCount').innerText = pendentesCount;
         }
 
-        /* GERAR CRONOGRAMA POR DATAS REAIS COM SUPORTE COMPLETO A FIM DE SEMANA */
+        /* GERAR CRONOGRAMA AUTOMÁTICO MULTIMÊS ATÉ COBRIR 100% DO EDITAL */
         function confirmarAutoFillDisponibilidade() {
             const startDateVal = document.getElementById('startDateInput').value;
             if (!startDateVal) return alert('Selecione a data de início.');
@@ -1100,7 +1119,7 @@
                 .sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
 
             if (pendentes.length === 0) {
-                alert('Todos os assuntos já foram totalmente concluídos!');
+                alert('Todos os assuntos do edital já foram totalmente concluídos!');
                 closeModalDisponibilidade();
                 return;
             }
@@ -1108,13 +1127,14 @@
             if (!concursosMetadata[currentConcurso]) {
                 concursosMetadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
             }
-            if (!concursosMetadata[currentConcurso].dateSchedule) {
-                concursosMetadata[currentConcurso].dateSchedule = {};
-            }
-
+            
+            // Limpa o cronograma existente para recalcular tudo de forma contínua
+            concursosMetadata[currentConcurso].dateSchedule = {};
             const dateSchedule = concursosMetadata[currentConcurso].dateSchedule;
+
             let pendentesIndex = 0;
             let currDate = new Date(startDate);
+            let totalDiasGerados = 0;
 
             while (pendentesIndex < pendentes.length) {
                 const dayOfWeek = currDate.getDay(); 
@@ -1155,19 +1175,25 @@
                         const item = pendentes[pendentesIndex++];
                         dateSchedule[isoKey].push({ horario: formatHourSlot(curIncNoite, i), materia: item.materia, assunto: item.assunto, completed: false });
                     }
+
+                    if (dateSchedule[isoKey].length > 0) totalDiasGerados++;
                 }
 
                 currDate.setDate(currDate.getDate() + 1);
             }
 
+            // Ajusta os seletores para o mês de início
+            document.getElementById('monthSelect').value = startDate.getMonth();
+            document.getElementById('yearSelect').value = startDate.getFullYear();
+
             saveConcursosMetadata();
             renderMonthCalendar();
             renderDelayedPanel();
             closeModalDisponibilidade();
-            alert('Cronograma mensal gerado com sucesso!');
+            alert(`Cronograma gerado com sucesso! Foram alocados 100% dos tópicos (${pendentes.length} tópicos) ao longo de ${totalDiasGerados} dias de estudo (avançando pelos meses necessários).`);
         }
 
-        /* RENDERIZAÇÃO DA GRADE MENSAL COM VISUAL LIMPO (APENAS DISCIPLINAS) */
+        /* RENDERIZAÇÃO DA GRADE MENSAL COM CAIXA FIXA E ROLAGEM INTERNA */
         function renderMonthCalendar() {
             const grid = document.getElementById('monthCalendarGrid');
             if (!grid) return;
@@ -1203,12 +1229,15 @@
                 cell.className = `month-day-cell ${isoKey === todayIso ? 'today' : ''}`;
 
                 const daySlots = dateSchedule[isoKey] || [];
-                let htmlSlots = '';
 
-                // Agrupa para exibir apenas os nomes das disciplinas limpos na célula do dia
-                const materiasUnicas = [];
+                // Somar minutos apenas do mês visível
                 daySlots.forEach(slot => {
                     monthTotalMinutes += parseTimeIntervalToMinutes(slot.horario);
+                });
+
+                // Agrupa matérias do dia para exibição limpa
+                const materiasUnicas = [];
+                daySlots.forEach(slot => {
                     if (!materiasUnicas.some(m => m.name === slot.materia)) {
                         materiasUnicas.push({ name: slot.materia, allCompleted: true });
                     }
@@ -1219,9 +1248,10 @@
                     if (match && !slot.completed) match.allCompleted = false;
                 });
 
+                let badgesHtml = '';
                 materiasUnicas.forEach(m => {
                     const statusClass = m.allCompleted ? 'completed' : '';
-                    htmlSlots += `<div class="clean-subject-badge ${statusClass}"><span>${m.name}</span></div>`;
+                    badgesHtml += `<div class="clean-subject-badge ${statusClass}"><span>${m.name}</span></div>`;
                 });
 
                 cell.innerHTML = `
@@ -1229,7 +1259,9 @@
                         <span>${day}</span>
                         <button class="btn-add-mini" onclick="event.stopPropagation(); openModalDayDetails('${isoKey}')">+</button>
                     </div>
-                    ${htmlSlots}
+                    <div class="day-badges-scroll">
+                        ${badgesHtml}
+                    </div>
                 `;
 
                 cell.onclick = () => openModalDayDetails(isoKey);
@@ -1239,7 +1271,7 @@
             document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(monthTotalMinutes);
         }
 
-        /* CAIXA/MODAL DETALHADA QUE ABRE AO CLICAR NO DIA */
+        /* CAIXA DETALHADA AO CLICAR NO DIA */
         function openModalDayDetails(isoDate) {
             selectedDayIsoGlobal = isoDate;
             const formattedDate = isoDate.split('-').reverse().join('/');
@@ -1256,7 +1288,7 @@
                     const isCompleted = slot.completed ? 'completed' : '';
                     container.innerHTML += `
                         <div class="day-detail-item ${isCompleted}">
-                            <div style="flex:1;" onclick="toggleSlotCompletedByDate('${isoDate}', ${index})" style="cursor:pointer;">
+                            <div style="flex:1; cursor:pointer;" onclick="toggleSlotCompletedByDate('${isoDate}', ${index})">
                                 <div style="font-weight:700; color:var(--primary-blue); font-size:0.85rem;">${slot.horario} - ${slot.materia}</div>
                                 <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">${slot.assunto || 'Tópico Geral'}</div>
                             </div>
@@ -1484,9 +1516,12 @@
             if (parts.length !== 2) return 0;
             const parseMinutes = (str) => {
                 const [h, m] = str.split(':').map(Number);
+                if (isNaN(h)) return 0;
                 return (h * 60) + (isNaN(m) ? 0 : m);
             };
-            return parseMinutes(parts[1]) - parseMinutes(parts[0]);
+            const start = parseMinutes(parts[0]);
+            const end = parseMinutes(parts[1]);
+            return (end > start) ? (end - start) : 60; // 1h padrão se parse falhar
         }
 
         function formatMinutesToHours(totalMinutes) {
