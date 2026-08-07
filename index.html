@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meu Painel de Estudos</title>
 
-    <!-- Configurações PWA e Instalação em Celular -->
+    <!-- Configurações PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,17 +18,16 @@
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('Service Worker registrado:', reg))
-            .catch(err => console.error('Erro ao registrar Service Worker:', err));
+            .catch(err => console.error('Erro no Service Worker:', err));
         });
       }
     </script>
 
-    <!-- Supabase JS Client -->
+    <!-- Supabase, Chart.js e PDF.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
     <style>
         :root {
             --bg-color: #0f172a;
@@ -113,7 +112,7 @@
 
         #app-dashboard {
             display: none;
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             padding: 1.5rem;
             width: 100%;
@@ -161,11 +160,6 @@
             font-size: 0.85rem;
             border: 1px solid #1e40af;
             cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .countdown-badge:hover {
-            opacity: 0.85;
-            text-decoration: underline;
         }
 
         .action-bar {
@@ -214,13 +208,8 @@
             opacity: 1;
         }
 
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
         .grid-top {
             display: grid;
@@ -297,18 +286,8 @@
             flex-wrap: wrap;
         }
 
-        .timer-settings label {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .timer-settings input {
-            width: 85px !important;
-            text-align: center;
-            padding: 0.5rem 0.4rem;
-            font-weight: 600;
-        }
+        .timer-settings label { display: flex; align-items: center; gap: 0.5rem; }
+        .timer-settings input { width: 85px !important; text-align: center; padding: 0.5rem 0.4rem; font-weight: 600; }
 
         .weekly-hours-banner {
             background: rgba(59, 130, 246, 0.15);
@@ -334,17 +313,8 @@
             margin-bottom: 1.5rem;
         }
 
-        .delayed-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 1rem;
-        }
-
-        .delayed-title {
-            font-size: 1.4rem;
-            font-weight: 800;
-        }
+        .delayed-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+        .delayed-title { font-size: 1.4rem; font-weight: 800; }
 
         .badge-delayed {
             background: #ef4444;
@@ -376,10 +346,7 @@
             font-size: 0.9rem;
         }
 
-        .filter-tab.active {
-            background: var(--card-bg);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+        .filter-tab.active { background: var(--card-bg); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
         .delayed-card {
             background: var(--card-bg);
@@ -395,19 +362,8 @@
             flex-wrap: wrap;
         }
 
-        .delayed-card-info h4 {
-            color: #ef4444;
-            font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-
-        .delayed-card-info p {
-            font-weight: 700;
-            font-size: 0.95rem;
-            margin-bottom: 6px;
-        }
+        .delayed-card-info h4 { color: #ef4444; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 4px; }
+        .delayed-card-info p { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
 
         .delayed-tag {
             display: inline-block;
@@ -426,64 +382,88 @@
             border-radius: 12px;
             font-size: 0.8rem;
             font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
         }
 
-        .calendar-grid {
+        /* ESTILOS DA GRADE MENSAL DE ESTUDOS */
+        .month-calendar-header {
             display: grid;
-            grid-template-columns: repeat(7, minmax(130px, 1fr));
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 10px;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 8px;
         }
 
-        .day-column {
-            background: rgba(255,255,255,0.03);
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .month-day-cell {
+            background: rgba(255,255,255,0.02);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 10px;
-            min-width: 130px;
+            min-height: 120px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
         }
 
-        .day-header {
-            font-weight: 700;
-            text-align: center;
+        .month-day-cell:hover {
+            border-color: var(--primary-blue);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .month-day-cell.other-month {
+            opacity: 0.35;
+        }
+
+        .month-day-cell.today {
+            border: 2px solid var(--primary-blue);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .day-num-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 4px;
-            border-bottom: 2px solid var(--border-color);
-            font-size: 0.9rem;
-            color: var(--header-materia-text);
         }
 
-        .day-hours-total {
-            font-size: 0.75rem;
-            text-align: center;
-            color: #10b981;
-            font-weight: 600;
-            margin-top: -6px;
+        .day-num-header .btn-add-mini {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
 
         .schedule-item {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.82rem;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 0.78rem;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            user-select: none;
-        }
-
-        .schedule-item:hover {
-            border-color: var(--primary-blue);
-            transform: translateY(-1px);
+            transition: all 0.2s;
         }
 
         .schedule-item.completed {
@@ -491,13 +471,8 @@
             border-color: var(--completed-border);
         }
 
-        .schedule-item.completed .time {
-            color: var(--completed-text);
-        }
-
         .schedule-item.completed .subject {
             text-decoration: line-through;
-            opacity: 0.85;
             color: var(--completed-text);
         }
 
@@ -505,51 +480,24 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 6px;
             border-bottom: 1px dashed var(--border-color);
-            padding-bottom: 4px;
+            padding-bottom: 2px;
         }
 
-        .slot-header .time {
-            font-weight: 700;
-            color: var(--primary-blue);
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-
-        .slot-controls-inline {
-            display: flex;
-            gap: 6px;
-        }
+        .slot-header .time { font-weight: 700; color: var(--primary-blue); font-size: 0.75rem; }
+        .slot-controls-inline { display: flex; gap: 4px; }
 
         .btn-action-inline {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--border-color);
             color: #94a3b8;
             cursor: pointer;
-            font-size: 0.72rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            transition: all 0.15s ease;
+            font-size: 0.68rem;
+            padding: 1px 4px;
+            border-radius: 3px;
         }
-        .btn-action-inline:hover {
-            color: #ffffff;
-            background: var(--primary-blue);
-            border-color: var(--primary-blue);
-        }
-        .btn-action-inline.danger:hover {
-            background: #ef4444;
-            border-color: #ef4444;
-        }
-
-        .schedule-item .subject { word-break: break-word; font-weight: 700; display: block; font-size: 0.88rem; }
-        .schedule-item .topic { word-break: break-word; opacity: 0.85; font-size: 0.78rem; display: block; }
-
-        .btn-add-slot {
-            width: 100%; border: 1px dashed var(--border-color); background: transparent;
-            color: var(--text-color); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 0.8rem;
-        }
-        .btn-add-slot:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+        .btn-action-inline:hover { color: #ffffff; background: var(--primary-blue); }
+        .btn-action-inline.danger:hover { background: #ef4444; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -559,215 +507,65 @@
         .modal {
             background: var(--card-bg); color: var(--text-color); padding: 24px;
             border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px;
-            border: 1px solid var(--border-color);
-            max-height: 90vh; overflow-y: auto;
+            border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto;
         }
-        .modal-large {
-            max-width: 900px;
-            height: 88vh;
-        }
+        .modal-large { max-width: 900px; height: 88vh; }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 0.85rem; font-weight: 600; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
         .shift-row {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            background: rgba(255,255,255,0.03);
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            flex-wrap: wrap;
+            display: flex; gap: 0.5rem; align-items: center; background: rgba(255,255,255,0.03);
+            padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap;
         }
 
         .days-selection-box {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
+            padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;
         }
 
         .weekend-config-box {
-            background: rgba(59, 130, 246, 0.05);
-            border: 1px dashed var(--primary-blue);
-            padding: 12px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 6px;
+            background: rgba(59, 130, 246, 0.05); border: 1px dashed var(--primary-blue);
+            padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;
         }
 
-        .days-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 8px;
-            margin-top: 6px;
-        }
+        .days-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 6px; }
+        .day-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; }
 
-        .day-checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
+        .form-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .form-row input[type="text"] { flex: 2; min-width: 180px; }
         .form-row input[type="number"] { width: 90px; }
 
         .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 0.5rem; border-bottom: 1px solid var(--border-color); }
+        th { background-color: rgba(0,0,0,0.15); font-weight: 600; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-
-        th, td {
-            padding: 0.75rem 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            background-color: rgba(0,0,0,0.15);
-            font-weight: 600;
-        }
-
-        .materia-header-row {
-            font-weight: bold;
-            cursor: pointer;
-            text-align: left !important;
-            user-select: none;
-            transition: filter 0.2s;
-        }
-        .materia-header-row:hover {
-            filter: brightness(1.15);
-        }
-
-        .materia-header-row td {
-            padding: 0.8rem 1rem;
-            font-size: 1rem;
-            color: #ffffff;
-        }
-
-        .materia-header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .materia-header-row { font-weight: bold; cursor: pointer; text-align: left !important; user-select: none; }
+        .materia-header-row td { padding: 0.8rem 1rem; font-size: 1rem; color: #ffffff; }
+        .materia-header-content { display: flex; justify-content: space-between; align-items: center; }
 
         .priority-input {
-            width: 55px;
-            text-align: center;
-            padding: 0.2rem 0.4rem;
-            background: rgba(0,0,0,0.25);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
+            width: 55px; text-align: center; padding: 0.2rem 0.4rem;
+            background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.3);
         }
 
         .prompt-code-box {
-            background-color: var(--code-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 0.85rem;
-            color: #38bdf8;
-            white-space: pre-wrap;
-            word-break: break-word;
-            position: relative;
-        }
-
-        .pdf-canvas-wrapper {
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            background: #525659;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .pdf-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            background: #1e293b;
-            padding: 6px 12px;
-            border-radius: 6px;
-            width: 100%;
-            max-width: 600px;
-            flex-wrap: wrap;
-        }
-
-        #pdfCanvas {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            max-width: 100%;
-            background: #fff;
+            background-color: var(--code-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: #38bdf8;
+            white-space: pre-wrap; word-break: break-word;
         }
 
         .projection-box {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid #10b981;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: #34d399;
+            background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981;
+            padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; color: #34d399;
         }
 
-        /* REGRAS CSS RESPONSIVAS PARA DISPOSITIVOS MÓVEIS E MODO HORIZONTAL (LANDSCAPE) */
         @media (max-width: 768px) {
             .grid-top { grid-template-columns: 1fr; }
-            #app-dashboard { padding: 0.8rem; }
-            header { flex-direction: column; align-items: stretch; }
-            .concurso-selector-bar { justify-content: space-between; }
-        }
-
-        @media screen and (orientation: landscape) {
-            #app-dashboard {
-                max-width: 100% !important;
-                padding: 1rem !important;
-            }
-
-            .grid-top {
-                grid-template-columns: 1fr 1fr !important;
-            }
-
-            .action-bar {
-                flex-wrap: wrap !important;
-            }
-
-            .action-bar .btn {
-                flex: 1 1 auto !important;
-                min-width: 140px;
-            }
-
-            .calendar-grid {
-                grid-template-columns: repeat(7, minmax(130px, 1fr)) !important;
-            }
+            .month-grid { grid-template-columns: repeat(1, 1fr); }
+            .month-calendar-header { display: none; }
+            .month-day-cell { min-height: auto; }
         }
     </style>
 </head>
@@ -812,33 +610,23 @@
 
         <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
-            <!-- 1. VER / ANEXAR EDITAL PDF -->
             <button class="btn btn-warning" onclick="openModalViewEdital()">Ver / Anexar Edital PDF</button>
-
-            <!-- 2. IMPORTAR JSON -->
             <label class="btn btn-success" style="cursor: pointer;">
                 Importar JSON
                 <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="importJSON(event)">
             </label>
-
-            <!-- 3. COMO GERAR JSON COM IA -->
             <button class="btn btn-info" onclick="openModalPromptIA()">Como Gerar JSON com IA</button>
-
-            <!-- 4. LIMPAR EDITAL ATUAL -->
             <button class="btn btn-danger" onclick="clearData()">Limpar Edital Atual</button>
-
-            <!-- 5. MODO CLARO / ESCURO -->
             <button class="btn btn-secondary" onclick="toggleDarkMode()">Modo Claro/Escuro</button>
-
-            <!-- 6. SAIR -->
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
         </div>
 
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
-            <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Calendário Semanal</button>
+            <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
         </div>
 
+        <!-- TAB: EDITAL VERTICALIZADO -->
         <div id="tab-edital" class="tab-content active">
             <div class="grid-top">
                 <div class="card">
@@ -895,9 +683,8 @@
             </div>
         </div>
 
+        <!-- TAB: CRONOGRAMA MENSAL -->
         <div id="tab-calendario" class="tab-content">
-
-            <!-- PAINEL DE AVISO DE MATÉRIAS E REVISÕES ATRASADAS -->
             <div class="delayed-panel">
                 <div class="delayed-header">
                     <span class="delayed-title">Revisões / Matérias</span>
@@ -915,9 +702,8 @@
 
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-                    <h3>Cronograma Semanal de Estudos</h3>
+                    <h3>Cronograma Mensal de Estudos</h3>
 
-                    <!-- SELETOR DE MÊS E ANO -->
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <label><strong>Mês/Ano:</strong></label>
                         <select id="monthSelect" onchange="onMonthYearChange()"></select>
@@ -925,66 +711,39 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="openModalDisponibilidade()">Preencher Cronograma Automaticamente</button>
-                        <button class="btn btn-secondary" onclick="avancarSemanaSiguiente()">Iniciar Nova Semana (Filtrar não estudados)</button>
-                        <button class="btn btn-danger" onclick="limparCronogramaSemanal()">Limpar Cronograma</button>
+                        <button class="btn btn-purple" onclick="openModalDisponibilidade()">Gerar Cronograma Automático</button>
+                        <button class="btn btn-danger" onclick="limparCronogramaSemanal()">Limpar Mês Atual</button>
                     </div>
                 </div>
 
                 <p style="margin-bottom: 1rem; font-size: 0.85rem; opacity: 0.8;">
-                    <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcar como <strong>concluído</strong> ou utilize as opções de edição para ajustar o horário.
+                    <strong>Dica:</strong> Clique em qualquer dia para adicionar/editar matérias diretamente na data desejada.
                 </p>
                 
                 <div class="weekly-hours-banner">
-                    <span>Total Planejado para a Semana:</span>
+                    <span>Total Planejado para o Mês Selecionado:</span>
                     <span id="weeklyHoursTotal">0h 00min</span>
                 </div>
 
-                <div class="calendar-grid" id="calendarGrid"></div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- MODAL: VISUALIZAR / UPLOAD DE EDITAL EM PDF OU OUTRO FORMATO -->
-    <div class="modal-overlay" id="modalViewEdital">
-        <div class="modal modal-large">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <h3 id="editalModalTitle">Documento do Edital</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <label class="btn btn-success btn-sm" style="cursor: pointer;">
-                        Anexar Novo Arquivo
-                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
-                    </label>
-                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">Baixar Arquivo</button>
-                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Remover</button>
+                <div class="month-calendar-header">
+                    <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
                 </div>
-            </div>
-
-            <div id="editalViewerContainer" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden;">
-                <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
-                <label class="btn btn-primary" style="cursor: pointer;">
-                    Selecionar PDF / Documento
-                    <input type="file" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
-                </label>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
+                <div class="month-grid" id="monthCalendarGrid"></div>
             </div>
         </div>
+
     </div>
 
-    <!-- MODAL: DEFINIR DISPONIBILIDADE E DIAS DA SEMANA PARA ESTUDO -->
+    <!-- MODAL: DEFINIR DISPONIBILIDADE E DATA DE INÍCIO REAL -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
-            <h3>Configurar Horários e Turnos de Estudo</h3>
+            <h3>Gerar Cronograma por Data Real</h3>
             <p style="font-size: 0.85rem; opacity: 0.85;">
-                Configure seus horários de estudo e a data em que pretende iniciar para gerar a distribuição automática de tópicos.
+                O cronograma iniciará exatamente na data definida abaixo e distribuirá as matérias pendentes dia a dia.
             </p>
 
-            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--primary-blue);">
-                <label for="startDateInput" style="color: #93c5fd; font-weight: 700;">Data de Início do Cronograma:</label>
+            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--primary-blue);">
+                <label for="startDateInput" style="color: #93c5fd; font-weight: 700;">Data Exata de Início:</label>
                 <input type="date" id="startDateInput" style="font-weight: bold; font-size: 1rem;">
             </div>
 
@@ -1027,7 +786,7 @@
             </div>
 
             <div class="days-selection-box">
-                <strong style="font-size: 0.9rem;">Dias de Estudo no Fim de Semana:</strong>
+                <strong style="font-size: 0.9rem;">Dias da Semana Permitidos para Estudo:</strong>
                 
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <label class="day-checkbox-label">
@@ -1037,150 +796,25 @@
                         <input type="checkbox" id="chkDomingo" checked onchange="toggleWeekendBox()"> Incluir Domingo
                     </label>
                 </div>
-
-                <label class="day-checkbox-label" style="font-weight: 600; color: #38bdf8; margin-top: 4px;">
-                    <input type="checkbox" id="chkCustomWeekendHours" onchange="toggleWeekendBox()"> Personalizar horários específicos para Sábado / Domingo
-                </label>
-
-                <div id="weekendConfigBox" class="weekend-config-box" style="display: none;">
-                    <strong style="font-size: 0.85rem; color: #93c5fd;">Horários do Fim de Semana (Sáb/Dom):</strong>
-
-                    <div class="shift-row">
-                        <strong style="width: 80px;">Manhã:</strong>
-                        <div class="form-group" style="flex:1;">
-                            <label>Início:</label>
-                            <input type="time" id="inicioManhaFimSemana" value="08:00" onchange="calculateAutoFillProjection()">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Qtd Horas:</label>
-                            <input type="number" id="horasManhaFimSemana" value="3" min="0" max="8" onchange="calculateAutoFillProjection()">
-                        </div>
-                    </div>
-
-                    <div class="shift-row">
-                        <strong style="width: 80px;">Tarde:</strong>
-                        <div class="form-group" style="flex:1;">
-                            <label>Início:</label>
-                            <input type="time" id="inicioTardeFimSemana" value="14:00" onchange="calculateAutoFillProjection()">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Qtd Horas:</label>
-                            <input type="number" id="horasTardeFimSemana" value="0" min="0" max="8" onchange="calculateAutoFillProjection()">
-                        </div>
-                    </div>
-
-                    <div class="shift-row">
-                        <strong style="width: 80px;">Noite:</strong>
-                        <div class="form-group" style="flex:1;">
-                            <label>Início:</label>
-                            <input type="time" id="inicioNoiteFimSemana" value="19:00" onchange="calculateAutoFillProjection()">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Qtd Horas:</label>
-                            <input type="number" id="horasNoiteFimSemana" value="0" min="0" max="8" onchange="calculateAutoFillProjection()">
-                        </div>
-                    </div>
-                </div>
-
-                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
-
-                <label class="day-checkbox-label" style="font-weight: 600; color: var(--primary-blue);">
-                    <input type="checkbox" id="chkCustomDays" onchange="toggleCustomDaysDisplay()"> Selecionar dias da semana manualmente
-                </label>
-
-                <div id="customDaysContainer" class="days-grid" style="display: none;">
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Segunda" checked onchange="calculateAutoFillProjection()"> Segunda</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Terça" checked onchange="calculateAutoFillProjection()"> Terça</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Quarta" checked onchange="calculateAutoFillProjection()"> Quarta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Quinta" checked onchange="calculateAutoFillProjection()"> Quinta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Sexta" checked onchange="calculateAutoFillProjection()"> Sexta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Sábado" checked onchange="calculateAutoFillProjection()"> Sábado</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Domingo" checked onchange="calculateAutoFillProjection()"> Domingo</label>
-                </div>
             </div>
 
             <div id="projectionBox" class="projection-box">
-                <strong>Cálculo Automático de Projeção:</strong><br>
-                Com esta carga horária, você precisará de aproximadamente <strong id="projectionDaysCount">0 dias</strong> (<span id="projectionWeeksCount">0 semanas</span>) para cobrir os <span id="projectionTopicsCount">0</span> tópicos pendentes do edital.
+                <strong>Projeção:</strong><br>
+                Com esta carga horária, você precisará de aprox. <strong id="projectionDaysCount">0 dias</strong> para cobrir os <span id="projectionTopicsCount">0</span> tópicos pendentes.
             </div>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalDisponibilidade()">Cancelar (ESC)</button>
-                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">Gerar Cronograma (ENTER)</button>
+                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">Gerar no Calendário (ENTER)</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: PROMPT PARA COLAR NA IA -->
-    <div class="modal-overlay" id="modalPromptIA">
-        <div class="modal">
-            <h3>Prompt para Colar na IA (ChatGPT / Claude / Gemini)</h3>
-            <p style="font-size: 0.85rem; opacity: 0.9;">
-                Se você quiser que uma IA analise <strong>qualquer edital</strong> (em PDF ou texto) e preencha automaticamente a estrutura no formato compatível com o seu aplicativo, copie e envie o comando abaixo junto com o texto do edital:
-            </p>
-
-            <div class="prompt-code-box" id="promptTextToCopy">Prompt:
-
-"Analise o edital/conteúdo programático em anexo e o histórico da banca examinadora [Insira o nome da Banca, ex: Cebraspe, FGV, FCC]. Gere como resposta apenas um código JSON válido seguindo estritamente o formato abaixo.
-
-Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior prioridade), levando em consideração o peso da matéria, número de questões, incidência histórica da banca e facilidade de ganho de pontos:
-
-{
-  "concurso": "Nome do Concurso",
-  "materias": [
-    {
-      "materia": "Nome da Matéria",
-      "prioridade": 1,
-      "peso": 2.0,
-      "assuntos": [
-        "Assunto 1 mais cobrado",
-        "Assunto 2 mais cobrado"
-      ]
-    }
-  ]
-}"</div>
-
-            <div class="modal-actions">
-                <button class="btn btn-primary" onclick="copyPromptToClipboard()">Copiar Prompt (ENTER)</button>
-                <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar (ESC)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: CADASTRAR NOVO CONCURSO -->
-    <div class="modal-overlay" id="modalNovoConcurso">
-        <div class="modal">
-            <h3>Cadastrar Novo Concurso</h3>
-            
-            <div class="form-group">
-                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
-                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
-            </div>
-
-            <div class="form-group">
-                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
-                <input type="date" id="inputDataConcurso">
-            </div>
-
-            <div class="form-group">
-                <label for="selectCopyConcurso">Copiar Estrutura de Concurso Existente (Opcional)</label>
-                <select id="selectCopyConcurso">
-                    <option value="">-- Criar concurso em branco --</option>
-                </select>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: ADICIONAR / EDITAR HORÁRIO AO CALENDÁRIO -->
+    <!-- MODAL: ADICIONAR OU EDITAR HORÁRIO EM UMA DATA ESPECÍFICA -->
     <div class="modal-overlay" id="modalSlot">
         <div class="modal">
-            <h3 id="modalSlotTitle">Adicionar Horário de Estudo</h3>
-            <input type="hidden" id="slotDiaSemana">
+            <h3 id="modalSlotTitle">Adicionar Matéria ao Dia</h3>
+            <input type="hidden" id="slotDataIso">
             <input type="hidden" id="slotIndex" value="-1">
             
             <div class="form-group">
@@ -1200,12 +834,85 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
                 <input type="checkbox" id="slotCompletedCheckbox">
-                <label for="slotCompletedCheckbox" style="cursor: pointer;">Marcar como Estudado/Concluído</label>
+                <label for="slotCompletedCheckbox" style="cursor: pointer;">Marcar como Concluído</label>
             </div>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalSlot()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" onclick="salvarSlot()">Salvar (ENTER)</button>
+                <button class="btn btn-primary" onclick="salvarSlot()">Salvar na Data (ENTER)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEMAIS MODAIS MAN TIDOS -->
+    <div class="modal-overlay" id="modalViewEdital">
+        <div class="modal modal-large">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <h3 id="editalModalTitle">Documento do Edital</h3>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <label class="btn btn-success btn-sm" style="cursor: pointer;">
+                        Anexar Novo Arquivo
+                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
+                    </label>
+                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">Baixar Arquivo</button>
+                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Remover</button>
+                </div>
+            </div>
+            <div id="editalViewerContainer" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden;">
+                <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalPromptIA">
+        <div class="modal">
+            <h3>Prompt para Colar na IA (ChatGPT / Claude / Gemini)</h3>
+            <div class="prompt-code-box" id="promptTextToCopy">Prompt:
+
+"Analise o edital/conteúdo programático em anexo e o histórico da banca examinadora [Insira o nome da Banca, ex: Cebraspe, FGV, FCC]. Gere como resposta apenas um código JSON válido seguindo estritamente o formato abaixo:
+
+{
+  "concurso": "Nome do Concurso",
+  "materias": [
+    {
+      "materia": "Nome da Matéria",
+      "prioridade": 1,
+      "peso": 2.0,
+      "assuntos": [
+        "Assunto 1 mais cobrado",
+        "Assunto 2 mais cobrado"
+      ]
+    }
+  ]
+}"</div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="copyPromptToClipboard()">Copiar Prompt (ENTER)</button>
+                <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalNovoConcurso">
+        <div class="modal">
+            <h3>Cadastrar Novo Concurso</h3>
+            <div class="form-group">
+                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
+                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
+            </div>
+            <div class="form-group">
+                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
+                <input type="date" id="inputDataConcurso">
+            </div>
+            <div class="form-group">
+                <label for="selectCopyConcurso">Copiar Estrutura Existente</label>
+                <select id="selectCopyConcurso"><option value="">-- Criar concurso em branco --</option></select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
+                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
             </div>
         </div>
     </div>
@@ -1219,34 +926,21 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
 
-        const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
         const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
         const PALETA_CORES_MATERIAS = [
             'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
             'linear-gradient(135deg, #14532d 0%, #22c55e 100%)',
             'linear-gradient(135deg, #701a75 0%, #c084fc 100%)',
             'linear-gradient(135deg, #7c2d12 0%, #f97316 100%)',
-            'linear-gradient(135deg, #831843 0%, #ec4899 100%)',
-            'linear-gradient(135deg, #164e63 0%, #06b6d4 100%)',
-            'linear-gradient(135deg, #713f12 0%, #eab308 100%)',
-            'linear-gradient(135deg, #312e81 0%, #6366f1 100%)',
-            'linear-gradient(135deg, #881337 0%, #f43f5e 100%)',
-            'linear-gradient(135deg, #134e4a 0%, #14b8a6 100%)'
+            'linear-gradient(135deg, #831843 0%, #ec4899 100%)'
         ];
-
-        const PALETA_SOLIDAS = [
-            '#3b82f6', '#22c55e', '#c084fc', '#f97316', 
-            '#ec4899', '#06b6d4', '#eab308', '#6366f1', 
-            '#f43f5e', '#14b8a6'
-        ];
+        const PALETA_SOLIDAS = ['#3b82f6', '#22c55e', '#c084fc', '#f97316', '#ec4899'];
 
         let myChart = null;
         let allEditalItems = [];
         let editalItems = [];
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
-        let globalAudioCtx = null;
         let currentDelayedFilter = 'hoje';
 
         let pdfDoc = null;
@@ -1258,7 +952,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         function initMonthYearSelectors() {
             const mSelect = document.getElementById('monthSelect');
             const ySelect = document.getElementById('yearSelect');
-
             if (!mSelect || !ySelect) return;
 
             mSelect.innerHTML = '';
@@ -1278,23 +971,9 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         }
 
         function onMonthYearChange() {
-            renderCalendar();
+            renderMonthCalendar();
             renderDelayedPanel();
         }
-
-        window.addEventListener('keydown', function(event) {
-            const activeModal = document.querySelector('.modal-overlay[style*="display: flex"]');
-            if (!activeModal) return;
-
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                closeAllModals();
-            } else if (event.key === 'Enter') {
-                if (event.target.tagName === 'TEXTAREA') return;
-                event.preventDefault();
-                confirmActiveModal(activeModal.id);
-            }
-        });
 
         function closeAllModals() {
             closeModalViewEdital();
@@ -1304,216 +983,20 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             closeModalSlot();
         }
 
-        function confirmActiveModal(modalId) {
-            switch (modalId) {
-                case 'modalNovoConcurso':
-                    confirmarNovoConcurso();
-                    break;
-                case 'modalSlot':
-                    salvarSlot();
-                    break;
-                case 'modalDisponibilidade':
-                    confirmarAutoFillDisponibilidade();
-                    break;
-                case 'modalPromptIA':
-                    copyPromptToClipboard();
-                    break;
-                case 'modalViewEdital':
-                    closeModalViewEdital();
-                    break;
-            }
-        }
-
         function getMateriaColorIndex(materiaName, sortedMaterias) {
             const idx = sortedMaterias.indexOf(materiaName);
             return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
         }
 
-        function openModalViewEdital() {
-            document.getElementById('editalModalTitle').innerText = `Documento do Edital: ${currentConcurso}`;
-            document.getElementById('modalViewEdital').style.display = 'flex';
-            renderEditalViewer();
-        }
-
-        function closeModalViewEdital() {
-            document.getElementById('modalViewEdital').style.display = 'none';
-            pdfDoc = null;
-        }
-
-        async function renderEditalViewer() {
-            const container = document.getElementById('editalViewerContainer');
-            const btnDownload = document.getElementById('btnDownloadEdital');
-            const btnRemove = document.getElementById('btnRemoveEdital');
-            const fileData = concursosMetadata[currentConcurso]?.editalFile;
-
-            if (!fileData) {
-                btnDownload.style.display = 'none';
-                btnRemove.style.display = 'none';
-                container.innerHTML = `
-                    <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento do edital anexado para <strong>"${currentConcurso}"</strong>.</p>
-                    <label class="btn btn-primary" style="cursor: pointer;">
-                        Selecionar PDF / Documento
-                        <input type="file" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
-                    </label>
-                `;
-                return;
-            }
-
-            btnDownload.style.display = 'inline-flex';
-            btnRemove.style.display = 'inline-flex';
-
-            if (fileData.type && fileData.type.includes('pdf')) {
-                container.innerHTML = `
-                    <div class="pdf-toolbar">
-                        <button class="btn btn-secondary btn-sm" onclick="changePdfPage(-1)">Anterior</button>
-                        <span style="font-size: 0.85rem; font-weight:600;">Página <span id="pdfPageNum">1</span> / <span id="pdfPageCount">--</span></span>
-                        <button class="btn btn-secondary btn-sm" onclick="changePdfPage(1)">Próxima</button>
-                        <span style="margin: 0 10px;">|</span>
-                        <button class="btn btn-secondary btn-sm" onclick="zoomPdf(0.2)">Zoom +</button>
-                        <button class="btn btn-secondary btn-sm" onclick="zoomPdf(-0.2)">Zoom -</button>
-                    </div>
-                    <div class="pdf-canvas-wrapper" id="pdfWrapper">
-                        <canvas id="pdfCanvas"></canvas>
-                    </div>
-                `;
-
-                try {
-                    const base64Clean = fileData.base64.includes(',') ? fileData.base64.split(',')[1] : fileData.base64;
-                    const rawData = atob(base64Clean);
-                    const uint8Array = new Uint8Array(rawData.length);
-                    for (let i = 0; i < rawData.length; i++) {
-                        uint8Array[i] = rawData.charCodeAt(i);
-                    }
-
-                    pdfDoc = await pdfjsLib.getDocument({ data: uint8Array }).promise;
-                    document.getElementById('pdfPageCount').innerText = pdfDoc.numPages;
-                    pdfPageNum = 1;
-                    renderPdfPage(pdfPageNum);
-                } catch (e) {
-                    console.error("Erro PDF.js:", e);
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 2rem;">
-                            <h4>Arquivo Anexado: ${fileData.name}</h4>
-                            <p style="opacity:0.8; margin: 1rem 0;">Falha ao pré-visualizar o PDF.</p>
-                            <button class="btn btn-primary" onclick="downloadEditalFile()">Baixar Arquivo</button>
-                        </div>
-                    `;
-                }
-            } else {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 2rem;">
-                        <h4 style="margin-bottom: 1rem;">Arquivo Anexado: ${fileData.name}</h4>
-                        <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 1.5rem;">Este formato de arquivo não possui pré-visualização direta, mas está armazenado em seu painel.</p>
-                        <button class="btn btn-primary" onclick="downloadEditalFile()">Baixar / Abrir Arquivo</button>
-                    </div>
-                `;
-            }
-        }
-
-        async function renderPdfPage(num) {
-            if (!pdfDoc) return;
-            try {
-                const page = await pdfDoc.getPage(num);
-                const viewport = page.getViewport({ scale: pdfScale });
-                const canvas = document.getElementById('pdfCanvas');
-                if (!canvas) return;
-
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                };
-                await page.render(renderContext).promise;
-                document.getElementById('pdfPageNum').innerText = num;
-            } catch(e) {
-                console.error("Erro ao renderizar página:", e);
-            }
-        }
-
-        function changePdfPage(delta) {
-            if (!pdfDoc) return;
-            const newPage = pdfPageNum + delta;
-            if (newPage >= 1 && newPage <= pdfDoc.numPages) {
-                pdfPageNum = newPage;
-                renderPdfPage(pdfPageNum);
-            }
-        }
-
-        function zoomPdf(delta) {
-            if (!pdfDoc) return;
-            pdfScale = Math.max(0.6, Math.min(3.0, pdfScale + delta));
-            renderPdfPage(pdfPageNum);
-        }
-
-        function uploadEditalFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (file.size > 15 * 1024 * 1024) {
-                return alert('O arquivo selecionado é muito grande. Por favor selecione um arquivo menor que 15MB.');
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                if (!concursosMetadata[currentConcurso]) {
-                    concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
-                }
-                concursosMetadata[currentConcurso].editalFile = {
-                    name: file.name,
-                    type: file.type,
-                    base64: e.target.result
-                };
-                saveConcursosMetadata();
-                renderEditalViewer();
-                alert(`Edital "${file.name}" anexado com sucesso ao concurso "${currentConcurso}"!`);
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
-        }
-
-        function downloadEditalFile() {
-            const fileData = concursosMetadata[currentConcurso]?.editalFile;
-            if (!fileData) return;
-
-            const a = document.createElement('a');
-            a.href = fileData.base64;
-            a.download = fileData.name || `Edital_${currentConcurso}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        function removerEditalFile() {
-            if (confirm(`Tem certeza que deseja remover o arquivo do edital do concurso "${currentConcurso}"?`)) {
-                if (concursosMetadata[currentConcurso]) {
-                    delete concursosMetadata[currentConcurso].editalFile;
-                    saveConcursosMetadata();
-                    renderEditalViewer();
-                }
-            }
-        }
-
-        function openModalPromptIA() {
-            document.getElementById('modalPromptIA').style.display = 'flex';
-        }
-
-        function closeModalPromptIA() {
-            document.getElementById('modalPromptIA').style.display = 'none';
-        }
-
         function openModalDisponibilidade() {
             if (editalItems.length === 0) {
-                return alert('Nenhum edital cadastrado para este concurso. Importe um JSON ou adicione matérias manualmente primeiro.');
+                return alert('Nenhum edital cadastrado para este concurso. Importe um JSON ou adicione matérias primeiro.');
             }
 
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const yyyy = tomorrow.getFullYear();
-            const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
-            const dd = String(tomorrow.getDate()).padStart(2, '0');
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
             document.getElementById('startDateInput').value = `${yyyy}-${mm}-${dd}`;
 
             document.getElementById('modalDisponibilidade').style.display = 'flex';
@@ -1524,119 +1007,412 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             document.getElementById('modalDisponibilidade').style.display = 'none';
         }
 
-        function toggleCustomDaysDisplay() {
-            const isCustom = document.getElementById('chkCustomDays').checked;
-            document.getElementById('customDaysContainer').style.display = isCustom ? 'grid' : 'none';
-            calculateAutoFillProjection();
-        }
-
-        function toggleWeekendBox() {
-            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
-            document.getElementById('weekendConfigBox').style.display = isCustomWeekend ? 'flex' : 'none';
-            calculateAutoFillProjection();
-        }
+        function toggleWeekendBox() { calculateAutoFillProjection(); }
 
         function calculateAutoFillProjection() {
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
             const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
             const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
+            const dailyHours = hManha + hTarde + hNoite;
 
-            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
-            const hManhaFim = parseInt(document.getElementById('horasManhaFimSemana').value) || 0;
-            const hTardeFim = parseInt(document.getElementById('horasTardeFimSemana').value) || 0;
-            const hNoiteFim = parseInt(document.getElementById('horasNoiteFimSemana').value) || 0;
-
-            let diasAtivosCount = 5;
-            let weekendDaysCount = 0;
-
-            const isCustomDays = document.getElementById('chkCustomDays').checked;
-            if (isCustomDays) {
-                const chks = document.querySelectorAll('.chk-day-custom:checked');
-                diasAtivosCount = chks.length;
-            } else {
-                if (document.getElementById('chkSabado').checked) weekendDaysCount++;
-                if (document.getElementById('chkDomingo').checked) weekendDaysCount++;
-            }
-
-            const dailyHoursWeekdays = hManha + hTarde + hNoite;
-            const dailyHoursWeekend = isCustomWeekend ? (hManhaFim + hTardeFim + hNoiteFim) : dailyHoursWeekdays;
-
-            const totalWeeklyHours = (dailyHoursWeekdays * (diasAtivosCount - weekendDaysCount)) + (dailyHoursWeekend * weekendDaysCount);
-
-            const pendentesCount = editalItems.filter(item => {
-                return !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d);
-            }).length;
-
-            const slotsPerWeek = Math.max(1, totalWeeklyHours);
-            const neededWeeks = Math.ceil(pendentesCount / slotsPerWeek);
-            const neededDays = Math.ceil((pendentesCount / Math.max(1, (totalWeeklyHours / 7))));
+            const pendentesCount = editalItems.filter(item => !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d)).length;
+            const neededDays = dailyHours > 0 ? Math.ceil(pendentesCount / dailyHours) : 0;
 
             document.getElementById('projectionDaysCount').innerText = `${neededDays} dias`;
-            document.getElementById('projectionWeeksCount').innerText = `${neededWeeks} semanas`;
             document.getElementById('projectionTopicsCount').innerText = pendentesCount;
         }
 
-        function copyPromptToClipboard() {
-            const promptText = document.getElementById('promptTextToCopy').innerText;
-            navigator.clipboard.writeText(promptText).then(() => {
-                alert('Prompt copiado para a área de transferência! Agora cole no ChatGPT, Claude ou Gemini junto com o seu edital.');
-            }).catch(() => {
-                alert('Falha ao copiar automaticamente. Por favor selecione o texto e copie manualmente.');
+        /* GERAÇÃO DO CRONOGRAMA BASEADO EM DATAS REAIS */
+        function confirmarAutoFillDisponibilidade() {
+            const startDateVal = document.getElementById('startDateInput').value;
+            if (!startDateVal) return alert('Selecione a data de início.');
+
+            const startDate = new Date(startDateVal + "T00:00:00");
+
+            const incManha = document.getElementById('inicioManha').value || '08:00';
+            const hManha = parseInt(document.getElementById('horasManha').value) || 0;
+
+            const incTarde = document.getElementById('inicioTarde').value || '14:00';
+            const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
+
+            const incNoite = document.getElementById('inicioNoite').value || '19:00';
+            const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
+
+            const incSab = document.getElementById('chkSabado').checked;
+            const incDom = document.getElementById('chkDomingo').checked;
+
+            const pendentes = editalItems.filter(item => !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d))
+                .sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
+
+            if (pendentes.length === 0) {
+                alert('Todos os assuntos já foram totalmente concluídos!');
+                closeModalDisponibilidade();
+                return;
+            }
+
+            if (!concursosMetadata[currentConcurso]) {
+                concursosMetadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
+            }
+            if (!concursosMetadata[currentConcurso].dateSchedule) {
+                concursosMetadata[currentConcurso].dateSchedule = {};
+            }
+
+            const dateSchedule = concursosMetadata[currentConcurso].dateSchedule;
+            let pendentesIndex = 0;
+            let currDate = new Date(startDate);
+
+            while (pendentesIndex < pendentes.length) {
+                const dayOfWeek = currDate.getDay(); 
+                let allowStudy = true;
+
+                if (dayOfWeek === 6 && !incSab) allowStudy = false;
+                if (dayOfWeek === 0 && !incDom) allowStudy = false;
+
+                if (allowStudy) {
+                    const yyyy = currDate.getFullYear();
+                    const mm = String(currDate.getMonth() + 1).padStart(2, '0');
+                    const dd = String(currDate.getDate()).padStart(2, '0');
+                    const isoKey = `${yyyy}-${mm}-${dd}`;
+
+                    if (!dateSchedule[isoKey]) dateSchedule[isoKey] = [];
+
+                    for (let i = 0; i < hManha && pendentesIndex < pendentes.length; i++) {
+                        const item = pendentes[pendentesIndex++];
+                        dateSchedule[isoKey].push({ horario: formatHourSlot(incManha, i), materia: item.materia, assunto: item.assunto, completed: false });
+                    }
+                    for (let i = 0; i < hTarde && pendentesIndex < pendentes.length; i++) {
+                        const item = pendentes[pendentesIndex++];
+                        dateSchedule[isoKey].push({ horario: formatHourSlot(incTarde, i), materia: item.materia, assunto: item.assunto, completed: false });
+                    }
+                    for (let i = 0; i < hNoite && pendentesIndex < pendentes.length; i++) {
+                        const item = pendentes[pendentesIndex++];
+                        dateSchedule[isoKey].push({ horario: formatHourSlot(incNoite, i), materia: item.materia, assunto: item.assunto, completed: false });
+                    }
+                }
+
+                currDate.setDate(currDate.getDate() + 1);
+            }
+
+            saveConcursosMetadata();
+            renderMonthCalendar();
+            renderDelayedPanel();
+            closeModalDisponibilidade();
+            alert('Cronograma mensal gerado com sucesso baseando-se na sua data de início!');
+        }
+
+        /* RENDERIZAÇÃO DA GRADE MENSAL DE DIAS (1 A 31) */
+        function renderMonthCalendar() {
+            const grid = document.getElementById('monthCalendarGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const mSelect = parseInt(document.getElementById('monthSelect').value);
+            const ySelect = parseInt(document.getElementById('yearSelect').value);
+
+            const firstDay = new Date(ySelect, mSelect, 1);
+            const lastDay = new Date(ySelect, mSelect + 1, 0);
+
+            const startDayOfWeek = firstDay.getDay(); 
+            const totalDays = lastDay.getDate();
+
+            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule || {};
+            let monthTotalMinutes = 0;
+
+            const today = new Date();
+            const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            // Preenche células vazias do início do mês
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'month-day-cell other-month';
+                grid.appendChild(emptyCell);
+            }
+
+            // Preenche os dias do mês real
+            for (let day = 1; day <= totalDays; day++) {
+                const mm = String(mSelect + 1).padStart(2, '0');
+                const dd = String(day).padStart(2, '0');
+                const isoKey = `${ySelect}-${mm}-${dd}`;
+
+                const cell = document.createElement('div');
+                cell.className = `month-day-cell ${isoKey === todayIso ? 'today' : ''}`;
+
+                const daySlots = dateSchedule[isoKey] || [];
+                let htmlSlots = '';
+
+                daySlots.forEach((slot, index) => {
+                    monthTotalMinutes += parseTimeIntervalToMinutes(slot.horario);
+                    const isCompleted = slot.completed ? 'completed' : '';
+
+                    htmlSlots += `
+                        <div class="schedule-item ${isCompleted}" onclick="event.stopPropagation(); toggleSlotCompletedByDate('${isoKey}', ${index})">
+                            <div class="slot-header">
+                                <span class="time">${slot.horario}</span>
+                                <div class="slot-controls-inline">
+                                    <button class="btn-action-inline" onclick="event.stopPropagation(); openEditSlotModalByDate('${isoKey}', ${index})">E</button>
+                                    <button class="btn-action-inline danger" onclick="event.stopPropagation(); removerSlotByDate('${isoKey}', ${index})">X</button>
+                                </div>
+                            </div>
+                            <span class="subject"><strong>${slot.materia}</strong></span>
+                            <span style="font-size:0.7rem; opacity:0.8; word-break:break-word;">${slot.assunto || ''}</span>
+                        </div>
+                    `;
+                });
+
+                cell.innerHTML = `
+                    <div class="day-num-header">
+                        <span>${day}</span>
+                        <button class="btn-add-mini" onclick="event.stopPropagation(); openModalSlotForDate('${isoKey}')">+</button>
+                    </div>
+                    ${htmlSlots}
+                `;
+
+                cell.onclick = () => openModalSlotForDate(isoKey);
+                grid.appendChild(cell);
+            }
+
+            document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(monthTotalMinutes);
+        }
+
+        function openModalSlotForDate(isoDate) {
+            document.getElementById('modalSlotTitle').innerText = `Adicionar Matéria ao Dia (${isoDate.split('-').reverse().join('/')})`;
+            document.getElementById('slotDataIso').value = isoDate;
+            document.getElementById('slotIndex').value = "-1";
+            document.getElementById('slotCompletedCheckbox').checked = false;
+
+            const selectMat = document.getElementById('slotMateriaSelect');
+            selectMat.innerHTML = '';
+            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            if (materiasValidas.length === 0) {
+                selectMat.innerHTML = '<option value="">Estudo Geral</option>';
+                onMateriaSelectChange('');
+            } else {
+                materiasValidas.forEach(m => {
+                    selectMat.innerHTML += `<option value="${m}">${m}</option>`;
+                });
+                onMateriaSelectChange(materiasValidas[0]);
+            }
+
+            document.getElementById('modalSlot').style.display = 'flex';
+        }
+
+        function openEditSlotModalByDate(isoDate, index) {
+            const slot = concursosMetadata[currentConcurso]?.dateSchedule?.[isoDate]?.[index];
+            if (!slot) return;
+
+            document.getElementById('modalSlotTitle').innerText = `Editar (${isoDate.split('-').reverse().join('/')})`;
+            document.getElementById('slotDataIso').value = isoDate;
+            document.getElementById('slotIndex').value = index;
+            document.getElementById('slotHorario').value = slot.horario;
+            document.getElementById('slotCompletedCheckbox').checked = !!slot.completed;
+
+            const selectMat = document.getElementById('slotMateriaSelect');
+            selectMat.innerHTML = '';
+            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            materiasValidas.forEach(m => {
+                selectMat.innerHTML += `<option value="${m}" ${m === slot.materia ? 'selected' : ''}>${m}</option>`;
+            });
+
+            onMateriaSelectChange(slot.materia, slot.assunto);
+            document.getElementById('modalSlot').style.display = 'flex';
+        }
+
+        function salvarSlot() {
+            const isoDate = document.getElementById('slotDataIso').value;
+            const index = parseInt(document.getElementById('slotIndex').value);
+            const horario = document.getElementById('slotHorario').value.trim();
+            const materia = document.getElementById('slotMateriaSelect').value || 'Estudo Geral';
+            const assunto = document.getElementById('slotAssuntoSelect').value || '';
+            const completed = document.getElementById('slotCompletedCheckbox').checked;
+
+            if (!horario) return alert('Informe o horário.');
+
+            if (!concursosMetadata[currentConcurso]) concursosMetadata[currentConcurso] = { dateSchedule: {} };
+            if (!concursosMetadata[currentConcurso].dateSchedule) concursosMetadata[currentConcurso].dateSchedule = {};
+
+            const dateSchedule = concursosMetadata[currentConcurso].dateSchedule;
+            if (!dateSchedule[isoDate]) dateSchedule[isoDate] = [];
+
+            const slotObj = { horario, materia, assunto, completed };
+
+            if (index >= 0 && dateSchedule[isoDate][index]) {
+                dateSchedule[isoDate][index] = slotObj;
+            } else {
+                dateSchedule[isoDate].push(slotObj);
+            }
+
+            saveConcursosMetadata();
+            renderMonthCalendar();
+            renderDelayedPanel();
+            closeModalSlot();
+        }
+
+        function toggleSlotCompletedByDate(isoDate, index) {
+            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule;
+            if (dateSchedule && dateSchedule[isoDate] && dateSchedule[isoDate][index]) {
+                dateSchedule[isoDate][index].completed = !dateSchedule[isoDate][index].completed;
+                saveConcursosMetadata();
+                renderMonthCalendar();
+                renderDelayedPanel();
+            }
+        }
+
+        function removerSlotByDate(isoDate, index) {
+            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule;
+            if (dateSchedule && dateSchedule[isoDate]) {
+                dateSchedule[isoDate].splice(index, 1);
+                saveConcursosMetadata();
+                renderMonthCalendar();
+                renderDelayedPanel();
+            }
+        }
+
+        function limparCronogramaSemanal() {
+            if (confirm(`Deseja limpar todo o cronograma do concurso "${currentConcurso}"?`)) {
+                if (concursosMetadata[currentConcurso]) {
+                    concursosMetadata[currentConcurso].dateSchedule = {};
+                    saveConcursosMetadata();
+                    renderMonthCalendar();
+                    renderDelayedPanel();
+                }
+            }
+        }
+
+        function renderDelayedPanel() {
+            const container = document.getElementById('delayedItemsContainer');
+            const badgeCount = document.getElementById('delayedBadgeCount');
+            if (!container || !badgeCount) return;
+
+            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule || {};
+            const today = new Date();
+            const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            let delayedList = [];
+            let todayList = [];
+            let nextList = [];
+
+            Object.keys(dateSchedule).forEach(isoDate => {
+                const slots = dateSchedule[isoDate] || [];
+                slots.forEach(slot => {
+                    if (!slot.completed && slot.materia) {
+                        const itemObj = { isoDate, materia: slot.materia, assunto: slot.assunto || 'Tópico de Estudo', horario: slot.horario };
+                        if (isoDate < todayIso) delayedList.push(itemObj);
+                        else if (isoDate === todayIso) todayList.push(itemObj);
+                        else nextList.push(itemObj);
+                    }
+                });
+            });
+
+            badgeCount.innerText = `${delayedList.length} atrasadas`;
+
+            let displayList = [];
+            if (currentDelayedFilter === 'hoje') displayList = todayList;
+            else if (currentDelayedFilter === 'atrasadas') displayList = delayedList;
+            else if (currentDelayedFilter === 'proximas') displayList = nextList;
+
+            if (displayList.length === 0) {
+                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding: 1rem 0;">Nenhuma matéria ou revisão pendente aqui.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            displayList.forEach(item => {
+                const dateFmt = item.isoDate.split('-').reverse().join('/');
+                container.innerHTML += `
+                    <div class="delayed-card">
+                        <div class="delayed-card-info">
+                            <h4>${item.materia}</h4>
+                            <p>${item.assunto}</p>
+                            <span class="delayed-tag">${dateFmt} - ${item.horario}</span>
+                        </div>
+                        <button class="btn btn-success btn-sm" onclick="concluirDelayedItemByDate('${item.isoDate}', '${item.materia}', '${item.assunto}')">
+                            Iniciar / Concluir
+                        </button>
+                    </div>
+                `;
             });
         }
 
-        function getAudioContext() {
-            if (!globalAudioCtx) {
-                globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (globalAudioCtx.state === 'suspended') {
-                globalAudioCtx.resume();
-            }
-            return globalAudioCtx;
+        function filterDelayedList(filterType, btn) {
+            currentDelayedFilter = filterType;
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderDelayedPanel();
         }
 
-        function playAlarmSound() {
-            try {
-                const ctx = getAudioContext();
-                const now = ctx.currentTime;
+        function concluirDelayedItemByDate(isoDate, materia, assunto) {
+            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule;
+            if (dateSchedule && dateSchedule[isoDate]) {
+                const slot = dateSchedule[isoDate].find(s => s.materia === materia && s.assunto === assunto);
+                if (slot) {
+                    slot.completed = true;
+                    saveConcursosMetadata();
+                    renderMonthCalendar();
+                    renderDelayedPanel();
+                }
+            }
+        }
 
-                const freqs = [329.63, 493.88, 659.25];
-                const strokeTimes = [0.0, 0.8, 1.6];
+        /* FUNÇÕES AUXILIARES MAN TIDAS */
+        function formatHourSlot(startHourStr, offsetHours) {
+            const [h, m] = startHourStr.split(':').map(Number);
+            const totalStartMinutes = (h * 60) + m + (offsetHours * 60);
+            const totalEndMinutes = totalStartMinutes + 60;
 
-                strokeTimes.forEach(offset => {
-                    const strokeStart = now + offset;
-                    
-                    freqs.forEach((freq, idx) => {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
+            const formatHM = (mins) => {
+                const hh = Math.floor(mins / 60) % 24;
+                const mm = mins % 60;
+                return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+            };
+            return `${formatHM(totalStartMinutes)} - ${formatHM(totalEndMinutes)}`;
+        }
 
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(freq, strokeStart);
+        function parseTimeIntervalToMinutes(timeIntervalStr) {
+            if (!timeIntervalStr) return 0;
+            const parts = timeIntervalStr.split('-').map(s => s.trim());
+            if (parts.length !== 2) return 0;
+            const parseMinutes = (str) => {
+                const [h, m] = str.split(':').map(Number);
+                return (h * 60) + (isNaN(m) ? 0 : m);
+            };
+            return parseMinutes(parts[1]) - parseMinutes(parts[0]);
+        }
 
-                        const initialGain = idx === 2 ? 0.5 : 0.3;
-                        gain.gain.setValueAtTime(initialGain, strokeStart);
-                        gain.gain.exponentialRampToValueAtTime(0.0001, strokeStart + 1.4);
+        function formatMinutesToHours(totalMinutes) {
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            return m === 0 ? `${h}h` : `${h}h ${m}min`;
+        }
 
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
+        function closeModalSlot() { document.getElementById('modalSlot').style.display = 'none'; }
+        function saveConcursosMetadata() { localStorage.setItem('concursos_metadata', JSON.stringify(concursosMetadata)); }
 
-                        osc.start(strokeStart);
-                        osc.stop(strokeStart + 1.4);
-                    });
+        function onMateriaSelectChange(selectedMateria, preSelectedAssunto = '') {
+            const selectAssunto = document.getElementById('slotAssuntoSelect');
+            selectAssunto.innerHTML = '';
+
+            if (!selectedMateria) {
+                selectAssunto.innerHTML = '<option value="">Revisão Geral / Livre</option>';
+                return;
+            }
+
+            const assuntos = editalItems.filter(i => (i.materia || 'Geral') === selectedMateria).map(i => i.assunto);
+            const uniqueAssuntos = Array.from(new Set(assuntos));
+
+            if (preSelectedAssunto && !uniqueAssuntos.includes(preSelectedAssunto)) {
+                uniqueAssuntos.unshift(preSelectedAssunto);
+            }
+
+            if (uniqueAssuntos.length === 0) {
+                selectAssunto.innerHTML = '<option value="">Revisão Geral da Matéria</option>';
+            } else {
+                selectAssunto.innerHTML = '<option value="">-- Todos ou Geral --</option>';
+                uniqueAssuntos.forEach(a => {
+                    selectAssunto.innerHTML += `<option value="${a}" ${a === preSelectedAssunto ? 'selected' : ''}>${a}</option>`;
                 });
-            } catch (e) {
-                console.log("Falha ao emitir áudio do alarme:", e);
             }
-        }
-
-        async function handleSignUp() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if (!email || !password) return alert('Preencha e-mail e senha.');
-
-            const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) alert('Erro ao cadastrar: ' + error.message);
-            else alert('Cadastro realizado com sucesso! Clique em Entrar.');
         }
 
         async function handleLogin() {
@@ -1647,6 +1423,16 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) alert('Erro ao entrar: ' + error.message);
             else showDashboard();
+        }
+
+        async function handleSignUp() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            if (!email || !password) return alert('Preencha e-mail e senha.');
+
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) alert('Erro ao cadastrar: ' + error.message);
+            else alert('Cadastro realizado com sucesso! Clique em Entrar.');
         }
 
         async function handleLogout() {
@@ -1666,9 +1452,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             if (session) showDashboard();
         });
 
-        function toggleDarkMode() {
-            document.body.classList.toggle('light-mode');
-        }
+        function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
 
         function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
@@ -1678,689 +1462,51 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             btn.classList.add('active');
 
             if (tabId === 'tab-calendario') {
-                renderCalendar();
+                renderMonthCalendar();
                 renderDelayedPanel();
             }
-        }
-
-        function saveConcursosMetadata() {
-            localStorage.setItem('concursos_metadata', JSON.stringify(concursosMetadata));
         }
 
         function renderConcursoSelector() {
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
-            
             const set = new Set(Object.keys(concursosMetadata));
             set.add('Concurso Geral');
             allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
-            
             const list = Array.from(set);
 
-            if (!list.includes(currentConcurso)) {
-                currentConcurso = list[0] || 'Concurso Geral';
-            }
+            if (!list.includes(currentConcurso)) currentConcurso = list[0] || 'Concurso Geral';
 
             list.forEach(c => {
                 select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`;
             });
-
             updateCountdownBadge();
         }
 
-        function changeConcurso(val) {
-            currentConcurso = val;
-            filterDataByConcurso();
-        }
-
-        function openModalNovoConcurso() {
-            const selectCopy = document.getElementById('selectCopyConcurso');
-            selectCopy.innerHTML = '<option value="">-- Criar concurso em branco --</option>';
-
-            const set = new Set(Object.keys(concursosMetadata));
-            set.add('Concurso Geral');
-            allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
-
-            Array.from(set).forEach(c => {
-                selectCopy.innerHTML += `<option value="${c}">${c}</option>`;
-            });
-
-            document.getElementById('modalNovoConcurso').style.display = 'flex';
-            setTimeout(() => document.getElementById('inputNomeConcurso').focus(), 100);
-        }
-
-        function closeModalNovoConcurso() {
-            document.getElementById('modalNovoConcurso').style.display = 'none';
-            document.getElementById('inputNomeConcurso').value = '';
-            document.getElementById('inputDataConcurso').value = '';
-            document.getElementById('selectCopyConcurso').value = '';
-        }
-
-        async function confirmarNovoConcurso() {
-            const nome = document.getElementById('inputNomeConcurso').value.trim();
-            const dataProva = document.getElementById('inputDataConcurso').value;
-            const concursoParaCopiar = document.getElementById('selectCopyConcurso').value;
-
-            if (!nome) return alert('Digite o nome do concurso.');
-
-            let newSchedule = {};
-            if (concursoParaCopiar && concursosMetadata[concursoParaCopiar]?.schedule) {
-                newSchedule = JSON.parse(JSON.stringify(concursosMetadata[concursoParaCopiar].schedule));
-            }
-
-            concursosMetadata[nome] = { 
-                dataProva: dataProva || null, 
-                schedule: newSchedule 
-            };
-            saveConcursosMetadata();
-
-            if (concursoParaCopiar) {
-                const user = (await supabaseClient.auth.getUser())?.data?.user;
-                const itemsParaCopiar = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === concursoParaCopiar);
-
-                const novosItems = itemsParaCopiar.map((item) => ({
-                    ...item,
-                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                    concurso: nome,
-                    teoria: false,
-                    questoes: false,
-                    rev_24h: false,
-                    rev_7d: false,
-                    rev_30d: false,
-                    user_id: user ? user.id : null
-                }));
-
-                allEditalItems = [...allEditalItems, ...novosItems];
-                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-
-                if (navigator.onLine && user && novosItems.length > 0) {
-                    const toInsert = novosItems.map(d => { const copy = {...d}; delete copy.id; return copy; });
-                    await supabaseClient.from('edital').insert(toInsert);
-                }
-            }
-
-            currentConcurso = nome;
-            closeModalNovoConcurso();
-            filterDataByConcurso();
-        }
-
-        function removerConcursoAtual() {
-            if (currentConcurso === 'Concurso Geral') {
-                return alert('O "Concurso Geral" padrão não pode ser removido.');
-            }
-
-            if (confirm(`Tem certeza que deseja apagar o concurso "${currentConcurso}"?`)) {
-                allEditalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') !== currentConcurso);
-                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-
-                delete concursosMetadata[currentConcurso];
-                saveConcursosMetadata();
-
-                if (navigator.onLine) {
-                    supabaseClient.auth.getUser().then(({ data }) => {
-                        if (data?.user) {
-                            supabaseClient.from('edital').delete().eq('concurso', currentConcurso).eq('user_id', data.user.id);
-                        }
-                    });
-                }
-
-                currentConcurso = 'Concurso Geral';
-                filterDataByConcurso();
-            }
-        }
-
-        function updateCountdownBadge() {
-            const badge = document.getElementById('countdownBadge');
-            const dataStr = concursosMetadata[currentConcurso]?.dataProva;
-
-            if (!dataStr) {
-                badge.textContent = "Data da prova não definida (clique para definir)";
-                return;
-            }
-
-            const dataProva = new Date(dataStr + "T00:00:00");
-            const hoje = new Date();
-            const diffDias = Math.ceil((dataProva - hoje) / (1000 * 60 * 60 * 24));
-
-            if (diffDias < 0) badge.textContent = "Prova realizada (clique para alterar)";
-            else if (diffDias === 0) badge.textContent = "Prova HOJE! (clique para alterar)";
-            else badge.textContent = `Faltam ${diffDias} dias (clique para alterar)`;
-        }
-
-        function editarDataProva() {
-            const dataAtual = concursosMetadata[currentConcurso]?.dataProva || '';
-            const novaData = prompt(`Digite a data da prova para o concurso "${currentConcurso}" (no formato AAAA-MM-DD):`, dataAtual);
-            
-            if (novaData !== null) {
-                if (!concursosMetadata[currentConcurso]) {
-                    concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
-                }
-                concursosMetadata[currentConcurso].dataProva = novaData.trim() || null;
-                saveConcursosMetadata();
-                updateCountdownBadge();
-            }
-        }
+        function changeConcurso(val) { currentConcurso = val; filterDataByConcurso(); }
 
         function filterDataByConcurso() {
-            editalItems = allEditalItems.filter(i => {
-                const concursoItem = i.concurso || 'Concurso Geral';
-                return concursoItem === currentConcurso;
-            });
-
+            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
             renderConcursoSelector();
             document.getElementById('edital-title').innerText = `Edital: ${currentConcurso}`;
             renderTable();
             renderChart();
-            renderCalendar();
+            renderMonthCalendar();
             renderDelayedPanel();
-        }
-
-        function parseTimeIntervalToMinutes(timeIntervalStr) {
-            if (!timeIntervalStr) return 0;
-            const parts = timeIntervalStr.split('-').map(s => s.trim());
-            if (parts.length !== 2) return 0;
-
-            const parseMinutes = (str) => {
-                const [h, m] = str.split(':').map(Number);
-                if (isNaN(h)) return null;
-                return (h * 60) + (isNaN(m) ? 0 : m);
-            };
-
-            const start = parseMinutes(parts[0]);
-            const end = parseMinutes(parts[1]);
-
-            if (start === null || end === null || end <= start) return 0;
-            return end - start;
-        }
-
-        function formatMinutesToHours(totalMinutes) {
-            const h = Math.floor(totalMinutes / 60);
-            const m = totalMinutes % 60;
-            if (m === 0) return `${h}h`;
-            return `${h}h ${m}min`;
-        }
-
-        function formatHourSlot(startHourStr, offsetHours) {
-            const [h, m] = startHourStr.split(':').map(Number);
-            const totalStartMinutes = (h * 60) + m + (offsetHours * 60);
-            const totalEndMinutes = totalStartMinutes + 60;
-
-            const formatHM = (mins) => {
-                const hh = Math.floor(mins / 60) % 24;
-                const mm = mins % 60;
-                return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-            };
-
-            return `${formatHM(totalStartMinutes)} - ${formatHM(totalEndMinutes)}`;
-        }
-
-        function limparCronogramaSemanal() {
-            if (confirm(`Tem certeza que deseja apagar todo o cronograma semanal do concurso "${currentConcurso}"?`)) {
-                if (!concursosMetadata[currentConcurso]) {
-                    concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
-                }
-                
-                const newSchedule = {};
-                DIAS_SEMANA.forEach(d => newSchedule[d] = []);
-                concursosMetadata[currentConcurso].schedule = newSchedule;
-                
-                saveConcursosMetadata();
-                renderCalendar();
-                renderDelayedPanel();
-            }
-        }
-
-        function renderDelayedPanel() {
-            const container = document.getElementById('delayedItemsContainer');
-            const badgeCount = document.getElementById('delayedBadgeCount');
-
-            if (!container || !badgeCount) return;
-
-            const schedule = concursosMetadata[currentConcurso]?.schedule || {};
-            const todayDayIndex = new Date().getDay(); 
-            const mapDayIndex = [6, 0, 1, 2, 3, 4, 5]; 
-
-            let delayedList = [];
-            let todayList = [];
-            let nextList = [];
-
-            DIAS_SEMANA.forEach((dia, dIdx) => {
-                const slots = schedule[dia] || [];
-                slots.forEach(slot => {
-                    if (!slot.materia) return;
-
-                    const itemObj = {
-                        dia,
-                        materia: slot.materia,
-                        assunto: slot.assunto || 'Revisão Geral do Tópico',
-                        completed: !!slot.completed,
-                        horario: slot.horario
-                    };
-
-                    if (!slot.completed) {
-                        if (dIdx < mapDayIndex[todayDayIndex]) {
-                            const delayDays = mapDayIndex[todayDayIndex] - dIdx;
-                            delayedList.push({ ...itemObj, delayDays });
-                        } else if (dIdx === mapDayIndex[todayDayIndex]) {
-                            todayList.push(itemObj);
-                        } else {
-                            nextList.push(itemObj);
-                        }
-                    }
-                });
-            });
-
-            badgeCount.innerText = `${delayedList.length} atrasada${delayedList.length !== 1 ? 's' : ''}`;
-
-            let displayList = [];
-            if (currentDelayedFilter === 'hoje') displayList = todayList;
-            else if (currentDelayedFilter === 'atrasadas') displayList = delayedList;
-            else if (currentDelayedFilter === 'proximas') displayList = nextList;
-
-            if (displayList.length === 0) {
-                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding: 1rem 0;">Nenhuma matéria ou revisão pendente para esta categoria.</p>`;
-                return;
-            }
-
-            container.innerHTML = '';
-            displayList.forEach(item => {
-                const delayBadgeHtml = item.delayDays 
-                    ? `<span class="delayed-badge-days">${item.delayDays} dia${item.delayDays > 1 ? 's' : ''} de atraso</span>` 
-                    : `<span class="delayed-tag">${item.dia} - ${item.horario}</span>`;
-
-                container.innerHTML += `
-                    <div class="delayed-card">
-                        <div class="delayed-card-info">
-                            <h4>${item.materia}</h4>
-                            <p>${item.assunto}</p>
-                            <span class="delayed-tag">TEORIA / REVISÃO</span>
-                        </div>
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-                            ${delayBadgeHtml}
-                            <button class="btn btn-success btn-sm" onclick="concluirDelayedItem('${item.dia}', '${item.materia}', '${item.assunto}')">
-                                Iniciar / Concluir
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function filterDelayedList(filterType, btn) {
-            currentDelayedFilter = filterType;
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderDelayedPanel();
-        }
-
-        function concluirDelayedItem(dia, materia, assunto) {
-            const schedule = concursosMetadata[currentConcurso]?.schedule || {};
-            if (schedule[dia]) {
-                const slot = schedule[dia].find(s => s.materia === materia && s.assunto === assunto);
-                if (slot) {
-                    slot.completed = true;
-                    saveConcursosMetadata();
-                    renderCalendar();
-                    renderDelayedPanel();
-                }
-            }
-        }
-
-        function confirmarAutoFillDisponibilidade() {
-            const startDateVal = document.getElementById('startDateInput').value;
-            if (!startDateVal) {
-                return alert('Por favor, selecione a data de início do cronograma.');
-            }
-
-            const startDate = new Date(startDateVal + "T00:00:00");
-            
-            document.getElementById('monthSelect').value = startDate.getMonth();
-            document.getElementById('yearSelect').value = startDate.getFullYear();
-
-            const incManha = document.getElementById('inicioManha').value || '08:00';
-            const hManha = parseInt(document.getElementById('horasManha').value) || 0;
-
-            const incTarde = document.getElementById('inicioTarde').value || '14:00';
-            const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
-
-            const incNoite = document.getElementById('inicioNoite').value || '19:00';
-            const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
-
-            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
-            const incManhaFim = document.getElementById('inicioManhaFimSemana').value || '08:00';
-            const hManhaFim = parseInt(document.getElementById('horasManhaFimSemana').value) || 0;
-
-            const incTardeFim = document.getElementById('inicioTardeFimSemana').value || '14:00';
-            const hTardeFim = parseInt(document.getElementById('horasTardeFimSemana').value) || 0;
-
-            const incNoiteFim = document.getElementById('inicioNoiteFimSemana').value || '19:00';
-            const hNoiteFim = parseInt(document.getElementById('horasNoiteFimSemana').value) || 0;
-
-            let diasAtivosNames = [];
-            const isCustomDays = document.getElementById('chkCustomDays').checked;
-
-            if (isCustomDays) {
-                const chks = document.querySelectorAll('.chk-day-custom:checked');
-                diasAtivosNames = Array.from(chks).map(c => c.value);
-            } else {
-                diasAtivosNames = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
-                if (document.getElementById('chkSabado').checked) diasAtivosNames.push("Sábado");
-                if (document.getElementById('chkDomingo').checked) diasAtivosNames.push("Domingo");
-            }
-
-            if (diasAtivosNames.length === 0) {
-                return alert('Por favor, selecione ao menos um dia da semana para estudar.');
-            }
-
-            const pendentes = editalItems.filter(item => {
-                const isComplete = item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d;
-                return !isComplete;
-            }).sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
-
-            if (pendentes.length === 0) {
-                alert('Parabéns! Todos os assuntos do edital já foram totalmente concluídos.');
-                closeModalDisponibilidade();
-                return;
-            }
-
-            const newSchedule = {};
-            DIAS_SEMANA.forEach(d => newSchedule[d] = []);
-
-            let pendentesIndex = 0;
-            const mapDayIndexToName = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-
-            for (let dayOffset = 0; dayOffset < 7 && pendentesIndex < pendentes.length; dayOffset++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + dayOffset);
-
-                const dayName = mapDayIndexToName[currentDate.getDay()];
-
-                if (!diasAtivosNames.includes(dayName)) continue;
-
-                const isWeekend = (dayName === "Sábado" || dayName === "Domingo");
-                const useWeekendRules = isWeekend && isCustomWeekend;
-
-                const curIncManha = useWeekendRules ? incManhaFim : incManha;
-                const curHManha = useWeekendRules ? hManhaFim : hManha;
-
-                const curIncTarde = useWeekendRules ? incTardeFim : incTarde;
-                const curHTarde = useWeekendRules ? hTardeFim : hTarde;
-
-                const curIncNoite = useWeekendRules ? incNoiteFim : incNoite;
-                const curHNoite = useWeekendRules ? hNoiteFim : hNoite;
-
-                for (let i = 0; i < curHManha && pendentesIndex < pendentes.length; i++) {
-                    const item = pendentes[pendentesIndex++];
-                    const hStr = formatHourSlot(curIncManha, i);
-                    newSchedule[dayName].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
-                }
-
-                for (let i = 0; i < curHTarde && pendentesIndex < pendentes.length; i++) {
-                    const item = pendentes[pendentesIndex++];
-                    const hStr = formatHourSlot(curIncTarde, i);
-                    newSchedule[dayName].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
-                }
-
-                for (let i = 0; i < curHNoite && pendentesIndex < pendentes.length; i++) {
-                    const item = pendentes[pendentesIndex++];
-                    const hStr = formatHourSlot(curIncNoite, i);
-                    newSchedule[dayName].push({ horario: hStr, materia: item.materia, assunto: item.assunto, completed: false });
-                }
-            }
-
-            if (!concursosMetadata[currentConcurso]) {
-                concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
-            }
-            concursosMetadata[currentConcurso].schedule = newSchedule;
-            saveConcursosMetadata();
-            renderCalendar();
-            renderDelayedPanel();
-            closeModalDisponibilidade();
-            alert(`Cronograma gerado com sucesso a partir do dia ${startDate.toLocaleDateString('pt-BR')}!`);
-        }
-
-        function avancarSemanaSiguiente() {
-            const currentSchedule = concursosMetadata[currentConcurso]?.schedule || {};
-
-            DIAS_SEMANA.forEach(dia => {
-                (currentSchedule[dia] || []).forEach(slot => {
-                    if (slot.completed && slot.materia && slot.assunto) {
-                        const match = allEditalItems.find(i => 
-                            (i.concurso || 'Concurso Geral') === currentConcurso && 
-                            i.materia === slot.materia && 
-                            i.assunto === slot.assunto
-                        );
-                        if (match) {
-                            match.teoria = true;
-                            match.questoes = true;
-                        }
-                    }
-                });
-            });
-
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            filterDataByConcurso();
-            openModalDisponibilidade();
-        }
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendarGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-
-            const currentMeta = concursosMetadata[currentConcurso] || {};
-            const schedule = currentMeta.schedule || {};
-
-            let grandTotalMinutes = 0;
-
-            DIAS_SEMANA.forEach(dia => {
-                const col = document.createElement('div');
-                col.className = 'day-column';
-
-                let htmlSlots = '';
-                const slots = schedule[dia] || [];
-                let dayTotalMinutes = 0;
-
-                slots.forEach((item, index) => {
-                    const mins = parseTimeIntervalToMinutes(item.horario);
-                    dayTotalMinutes += mins;
-
-                    const isCompleted = item.completed ? 'completed' : '';
-                    const assuntoHtml = item.assunto ? `<span class="topic">${item.assunto}</span>` : '';
-
-                    htmlSlots += `
-                        <div class="schedule-item ${isCompleted}" onclick="toggleSlotCompleted('${dia}', ${index})">
-                            <div class="slot-header">
-                                <span class="time">${item.horario}</span>
-                                <div class="slot-controls-inline">
-                                    <button class="btn-action-inline" onclick="event.stopPropagation(); openEditSlotModal('${dia}', ${index})" title="Editar Conteúdo">Editar</button>
-                                    <button class="btn-action-inline danger" onclick="event.stopPropagation(); removerSlot('${dia}', ${index})" title="Excluir Horário">Excluir</button>
-                                </div>
-                            </div>
-                            <span class="subject">${item.materia}</span>
-                            ${assuntoHtml}
-                        </div>
-                    `;
-                });
-
-                grandTotalMinutes += dayTotalMinutes;
-
-                const dayHoursText = dayTotalMinutes > 0 ? `Total: ${formatMinutesToHours(dayTotalMinutes)}` : '0h';
-
-                col.innerHTML = `
-                    <div class="day-header">${dia}</div>
-                    <div class="day-hours-total">${dayHoursText}</div>
-                    ${htmlSlots}
-                    <button class="btn-add-slot" onclick="openModalSlot('${dia}')">+ Adicionar</button>
-                `;
-
-                grid.appendChild(col);
-            });
-
-            document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(grandTotalMinutes);
-        }
-
-        function toggleSlotCompleted(dia, index) {
-            const currentMeta = concursosMetadata[currentConcurso];
-            if (currentMeta && currentMeta.schedule && currentMeta.schedule[dia] && currentMeta.schedule[dia][index]) {
-                const slot = currentMeta.schedule[dia][index];
-                slot.completed = !slot.completed;
-                saveConcursosMetadata();
-                renderCalendar();
-                renderDelayedPanel();
-            }
-        }
-
-        function openModalSlot(dia) {
-            document.getElementById('modalSlotTitle').innerText = "Adicionar Horário de Estudo";
-            document.getElementById('slotDiaSemana').value = dia;
-            document.getElementById('slotIndex').value = "-1";
-            document.getElementById('slotCompletedCheckbox').checked = false;
-            
-            const selectMat = document.getElementById('slotMateriaSelect');
-            selectMat.innerHTML = '';
-
-            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            if (materiasValidas.length === 0) {
-                selectMat.innerHTML = '<option value="">Estudo Geral</option>';
-                onMateriaSelectChange('');
-            } else {
-                materiasValidas.forEach(m => {
-                    selectMat.innerHTML += `<option value="${m}">${m}</option>`;
-                });
-                onMateriaSelectChange(materiasValidas[0]);
-            }
-
-            document.getElementById('modalSlot').style.display = 'flex';
-            setTimeout(() => document.getElementById('slotHorario').focus(), 100);
-        }
-
-        function openEditSlotModal(dia, index) {
-            const slot = concursosMetadata[currentConcurso]?.schedule?.[dia]?.[index];
-            if (!slot) return;
-
-            document.getElementById('modalSlotTitle').innerText = "Editar Horário / Conteúdo";
-            document.getElementById('slotDiaSemana').value = dia;
-            document.getElementById('slotIndex').value = index;
-            document.getElementById('slotHorario').value = slot.horario;
-            document.getElementById('slotCompletedCheckbox').checked = !!slot.completed;
-
-            const selectMat = document.getElementById('slotMateriaSelect');
-            selectMat.innerHTML = '';
-
-            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-            
-            if (!materiasValidas.includes(slot.materia) && slot.materia) {
-                materiasValidas.unshift(slot.materia);
-            }
-
-            materiasValidas.forEach(m => {
-                selectMat.innerHTML += `<option value="${m}" ${m === slot.materia ? 'selected' : ''}>${m}</option>`;
-            });
-
-            onMateriaSelectChange(slot.materia, slot.assunto);
-            document.getElementById('modalSlot').style.display = 'flex';
-            setTimeout(() => document.getElementById('slotHorario').focus(), 100);
-        }
-
-        function onMateriaSelectChange(selectedMateria, preSelectedAssunto = '') {
-            const selectAssunto = document.getElementById('slotAssuntoSelect');
-            selectAssunto.innerHTML = '';
-
-            if (!selectedMateria) {
-                selectAssunto.innerHTML = '<option value="">Revisão Geral / Livre</option>';
-                return;
-            }
-
-            const assuntos = editalItems
-                .filter(i => (i.materia || 'Geral') === selectedMateria)
-                .map(i => i.assunto);
-
-            const uniqueAssuntos = Array.from(new Set(assuntos));
-
-            if (preSelectedAssunto && !uniqueAssuntos.includes(preSelectedAssunto)) {
-                uniqueAssuntos.unshift(preSelectedAssunto);
-            }
-
-            if (uniqueAssuntos.length === 0) {
-                selectAssunto.innerHTML = '<option value="">Revisão Geral da Matéria</option>';
-            } else {
-                selectAssunto.innerHTML = '<option value="">-- Todos ou Geral --</option>';
-                uniqueAssuntos.forEach(a => {
-                    selectAssunto.innerHTML += `<option value="${a}" ${a === preSelectedAssunto ? 'selected' : ''}>${a}</option>`;
-                });
-            }
-        }
-
-        function closeModalSlot() {
-            document.getElementById('modalSlot').style.display = 'none';
-            document.getElementById('slotHorario').value = '';
-            document.getElementById('slotIndex').value = "-1";
-        }
-
-        function salvarSlot() {
-            const dia = document.getElementById('slotDiaSemana').value;
-            const index = parseInt(document.getElementById('slotIndex').value);
-            const horario = document.getElementById('slotHorario').value.trim();
-            const materia = document.getElementById('slotMateriaSelect').value || 'Estudo Geral';
-            const assunto = document.getElementById('slotAssuntoSelect').value || '';
-            const completed = document.getElementById('slotCompletedCheckbox').checked;
-
-            if (!horario) return alert('Informe o horário de estudo (ex: 08:00 - 09:00).');
-
-            if (!concursosMetadata[currentConcurso]) {
-                concursosMetadata[currentConcurso] = { dataProva: null, schedule: {} };
-            }
-            if (!concursosMetadata[currentConcurso].schedule) {
-                concursosMetadata[currentConcurso].schedule = {};
-            }
-            if (!concursosMetadata[currentConcurso].schedule[dia]) {
-                concursosMetadata[currentConcurso].schedule[dia] = [];
-            }
-
-            const slotObj = { horario, materia, assunto, completed };
-
-            if (index >= 0 && concursosMetadata[currentConcurso].schedule[dia][index]) {
-                concursosMetadata[currentConcurso].schedule[dia][index] = slotObj;
-            } else {
-                concursosMetadata[currentConcurso].schedule[dia].push(slotObj);
-            }
-
-            saveConcursosMetadata();
-            renderCalendar();
-            renderDelayedPanel();
-            closeModalSlot();
-        }
-
-        function removerSlot(dia, index) {
-            if (concursosMetadata[currentConcurso]?.schedule?.[dia]) {
-                concursosMetadata[currentConcurso].schedule[dia].splice(index, 1);
-                saveConcursosMetadata();
-                renderCalendar();
-                renderDelayedPanel();
-            }
         }
 
         async function loadData() {
             loadLocalData();
             filterDataByConcurso();
-            
             if (navigator.onLine) {
                 try {
                     const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
                     if (!error && data && data.length > 0) {
-                        allEditalItems = data.map(item => ({
-                            ...item,
-                            id: String(item.id),
-                            concurso: item.concurso || 'Concurso Geral'
-                        }));
+                        allEditalItems = data.map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
                         localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
                         filterDataByConcurso();
                     }
-                } catch (e) {
-                    console.log('Mantendo exibição offline.');
-                }
+                } catch (e) { console.log('Modo offline.'); }
             }
         }
 
@@ -2368,56 +1514,37 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const local = localStorage.getItem('edital_offline_data');
             if (local) {
                 try {
-                    const parsed = JSON.parse(local);
-                    allEditalItems = parsed.map(item => ({
-                        ...item,
-                        id: String(item.id),
-                        concurso: item.concurso || 'Concurso Geral'
-                    }));
-                } catch(e) {
-                    allEditalItems = [];
-                }
+                    allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
+                } catch(e) { allEditalItems = []; }
             }
         }
 
         function renderTable() {
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
-
             const materiasMap = {};
             editalItems.forEach(item => {
                 const mat = item.materia || 'Geral';
-                if (!materiasMap[mat]) {
-                    materiasMap[mat] = {
-                        items: [],
-                        prioridade: item.prioridade || 1
-                    };
-                }
+                if (!materiasMap[mat]) materiasMap[mat] = { items: [], prioridade: item.prioridade || 1 };
                 materiasMap[mat].items.push(item);
             });
 
-            const sortedMaterias = Object.keys(materiasMap).sort((a, b) => {
-                return (materiasMap[a].prioridade || 1) - (materiasMap[b].prioridade || 1);
-            });
+            const sortedMaterias = Object.keys(materiasMap).sort((a, b) => (materiasMap[a].prioridade || 1) - (materiasMap[b].prioridade || 1));
 
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
                 const isOpen = !!openMaterias[materiaName];
-                
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
-                const bgGradient = PALETA_CORES_MATERIAS[colorIdx];
-                const solidColor = PALETA_SOLIDAS[colorIdx];
 
                 tbody.innerHTML += `
-                    <tr class="materia-header-row" style="background: ${bgGradient};" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
+                    <tr class="materia-header-row" style="background: ${PALETA_CORES_MATERIAS[colorIdx]};" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
                         <td onclick="event.stopPropagation()">
-                            <input type="number" class="priority-input" value="${group.prioridade}" min="1" 
-                                onchange="updateMateriaPriority('${materiaName.replace(/'/g, "\\'")}', this.value)">
+                            <input type="number" class="priority-input" value="${group.prioridade}" min="1" onchange="updateMateriaPriority('${materiaName.replace(/'/g, "\\'")}', this.value)">
                         </td>
                         <td colspan="7">
                             <div class="materia-header-content">
                                 <span><strong>${materiaName}</strong> (${group.items.length} assuntos)</span>
-                                <span>${isOpen ? 'Recolher Guias' : 'Expandir Guias'}</span>
+                                <span>${isOpen ? 'Recolher' : 'Expandir'}</span>
                             </div>
                         </td>
                     </tr>
@@ -2427,7 +1554,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     group.items.forEach(item => {
                         const safeId = String(item.id);
                         tbody.innerHTML += `
-                            <tr style="border-left: 4px solid ${solidColor};">
+                            <tr style="border-left: 4px solid ${PALETA_SOLIDAS[colorIdx]};">
                                 <td></td>
                                 <td style="text-align: left; padding-left: 1.5rem;">${item.assunto}</td>
                                 <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'teoria', ${item.teoria})"></td>
@@ -2435,9 +1562,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                                 <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_24h', ${item.rev_24h})"></td>
                                 <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_7d', ${item.rev_7d})"></td>
                                 <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_30d', ${item.rev_30d})"></td>
-                                <td>
-                                    <button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes('${safeId}')" title="Limpar todas as marcações desta linha">Limpar</button>
-                                </td>
+                                <td><button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes('${safeId}')">Limpar</button></td>
                             </tr>
                         `;
                     });
@@ -2445,98 +1570,31 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
-        function toggleMateria(materiaName) {
-            openMaterias[materiaName] = !openMaterias[materiaName];
-            renderTable();
-        }
-
-        function toggleAllAccordions(open) {
-            editalItems.forEach(i => openMaterias[i.materia] = open);
-            renderTable();
-        }
+        function toggleMateria(materiaName) { openMaterias[materiaName] = !openMaterias[materiaName]; renderTable(); }
+        function toggleAllAccordions(open) { editalItems.forEach(i => openMaterias[i.materia] = open); renderTable(); }
 
         async function updateMateriaPriority(materiaName, newPriority) {
-            const currentScroll = window.scrollY;
             const val = parseInt(newPriority) || 1;
-
-            allEditalItems.forEach(item => {
-                if (item.materia === materiaName && (item.concurso || 'Concurso Geral') === currentConcurso) {
-                    item.prioridade = val;
-                }
-            });
-
+            allEditalItems.forEach(item => { if (item.materia === materiaName) item.prioridade = val; });
             localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-
-            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-            renderTable();
-            renderChart();
-
-            window.scrollTo(0, currentScroll);
-
-            if (navigator.onLine) {
-                await supabaseClient
-                    .from('edital')
-                    .update({ prioridade: val })
-                    .eq('materia', materiaName)
-                    .eq('concurso', currentConcurso);
-            } else {
-                addToSyncQueue({ type: 'UPDATE_PRIORITY', materia: materiaName, prioridade: val, concurso: currentConcurso });
-            }
+            filterDataByConcurso();
         }
 
         async function toggleCheck(id, field, currentValue) {
-            const currentScroll = window.scrollY;
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item[field] = !currentValue;
-                
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-                
-                editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-                renderTable();
-                renderChart();
-
-                window.scrollTo(0, currentScroll);
-
-                if (navigator.onLine) {
-                    const updateObj = {};
-                    updateObj[field] = !currentValue;
-                    await supabaseClient.from('edital').update(updateObj).eq('id', id);
-                } else {
-                    addToSyncQueue({ type: 'UPDATE', id, field, value: !currentValue });
-                }
+                filterDataByConcurso();
             }
         }
 
         async function clearRowCheckboxes(id) {
-            const currentScroll = window.scrollY;
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
-                item.teoria = false;
-                item.questoes = false;
-                item.rev_24h = false;
-                item.rev_7d = false;
-                item.rev_30d = false;
-
+                item.teoria = false; item.questoes = false; item.rev_24h = false; item.rev_7d = false; item.rev_30d = false;
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-                
-                editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-                renderTable();
-                renderChart();
-
-                window.scrollTo(0, currentScroll);
-
-                if (navigator.onLine) {
-                    await supabaseClient.from('edital').update({
-                        teoria: false,
-                        questoes: false,
-                        rev_24h: false,
-                        rev_7d: false,
-                        rev_30d: false
-                    }).eq('id', id);
-                } else {
-                    addToSyncQueue({ type: 'CLEAR_ROW', id });
-                }
+                filterDataByConcurso();
             }
         }
 
@@ -2545,44 +1603,24 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const materia = document.getElementById('materia').value.trim();
             const assunto = document.getElementById('assunto').value.trim();
             const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
-            const user = (await supabaseClient.auth.getUser())?.data?.user;
 
-            const newItem = {
+            allEditalItems.push({
                 id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-                materia, assunto, prioridade,
-                concurso: currentConcurso,
-                user_id: user ? user.id : null,
+                materia, assunto, prioridade, concurso: currentConcurso,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
-            };
-
+            });
             openMaterias[materia] = true;
-            allEditalItems.push(newItem);
             localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
-            
             document.getElementById('materia').value = '';
             document.getElementById('assunto').value = '';
             filterDataByConcurso();
-
-            if (navigator.onLine && user) {
-                delete newItem.id;
-                await supabaseClient.from('edital').insert([newItem]);
-                loadData();
-            } else {
-                addToSyncQueue({ type: 'INSERT', item: newItem });
-            }
         }
 
-        async function clearData() {
-            if (confirm(`Tem certeza que deseja apagar todos os tópicos do edital "${currentConcurso}"?`)) {
+        function clearData() {
+            if (confirm(`Apagar todos os tópicos do edital "${currentConcurso}"?`)) {
                 allEditalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') !== currentConcurso);
-                openMaterias = {};
                 localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
                 filterDataByConcurso();
-
-                if (navigator.onLine) {
-                    const user = (await supabaseClient.auth.getUser())?.data?.user;
-                    if (user) await supabaseClient.from('edital').delete().eq('concurso', currentConcurso).eq('user_id', user.id);
-                }
             }
         }
 
@@ -2591,20 +1629,13 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = async function(e) {
+            reader.onload = function(e) {
                 try {
                     let rawData = JSON.parse(e.target.result);
-                    const user = (await supabaseClient.auth.getUser())?.data?.user;
                     let formattedData = [];
 
-                    if (rawData.payload_public_edital) rawData = rawData.payload_public_edital;
-                    if (rawData.payload) rawData = rawData.payload;
-                    if (rawData.data) rawData = rawData.data;
-
                     if (rawData.materias && Array.isArray(rawData.materias)) {
-                        if (rawData.concurso) {
-                            currentConcurso = rawData.concurso;
-                        }
+                        if (rawData.concurso) currentConcurso = rawData.concurso;
                         rawData.materias.forEach(matObj => {
                             const mName = matObj.materia || 'Matéria Importada';
                             const prio = parseInt(matObj.prioridade || 1);
@@ -2612,117 +1643,40 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                                 matObj.assuntos.forEach(assuntoStr => {
                                     formattedData.push({
                                         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                                        materia: mName,
-                                        assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
-                                        prioridade: prio,
-                                        concurso: currentConcurso,
-                                        teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
-                                        user_id: user ? user.id : null
+                                        materia: mName, assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
+                                        prioridade: prio, concurso: currentConcurso,
+                                        teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
                                     });
                                 });
                             }
                         });
-                    } 
-                    else if (Array.isArray(rawData)) {
-                        formattedData = rawData.map((item) => {
-                            let mName = item.materia || item.disciplina || item.subject;
-                            if (!mName || mName === 'payload_public_edital') mName = 'Matéria Importada';
-
-                            return {
-                                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                                materia: mName,
-                                assunto: item.assunto || item.topico || item.nome || item.descricao || 'Tópico de Estudo',
-                                prioridade: parseInt(item.prioridade || item.peso || 1),
-                                concurso: currentConcurso,
-                                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false,
-                                user_id: user ? user.id : null
-                            };
-                        });
                     }
-
-                    if (formattedData.length === 0) {
-                        alert('Nenhum tópico válido encontrado no arquivo JSON.');
-                        return;
-                    }
-
-                    formattedData.forEach(d => openMaterias[d.materia] = true);
-
                     allEditalItems = [...allEditalItems, ...formattedData];
                     localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
                     filterDataByConcurso();
-
-                    if (navigator.onLine && user) {
-                        const dataToInsert = formattedData.map(d => { const copy = {...d}; delete copy.id; return copy; });
-                        await supabaseClient.from('edital').insert(dataToInsert);
-                        loadData();
-                    } else {
-                        formattedData.forEach(item => addToSyncQueue({ type: 'INSERT', item }));
-                    }
-
-                    alert(`Sucesso! ${formattedData.length} tópicos foram importados para o concurso "${currentConcurso}".`);
-                } catch (err) {
-                    alert('Erro na leitura do JSON: Verifique a formatação do arquivo.');
-                }
+                    alert(`Sucesso! ${formattedData.length} tópicos foram importados.`);
+                } catch(err) { alert('Erro no arquivo JSON.'); }
             };
             reader.readAsText(file);
-            event.target.value = '';
         }
 
-        function addToSyncQueue(action) {
-            const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
-            queue.push(action);
-            localStorage.setItem('sync_queue', JSON.stringify(queue));
+        function updateCountdownBadge() {
+            const badge = document.getElementById('countdownBadge');
+            const dataStr = concursosMetadata[currentConcurso]?.dataProva;
+            if (!dataStr) { badge.textContent = "Data da prova não definida"; return; }
+            const diffDias = Math.ceil((new Date(dataStr + "T00:00:00") - new Date()) / (1000 * 60 * 60 * 24));
+            badge.textContent = diffDias < 0 ? "Prova realizada" : (diffDias === 0 ? "Prova HOJE!" : `Faltam ${diffDias} dias`);
         }
 
-        async function syncOfflineData() {
-            const queue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
-            if (queue.length === 0) return;
-
-            const user = (await supabaseClient.auth.getUser())?.data?.user;
-            if (!user) return;
-
-            for (const action of queue) {
-                if (action.type === 'UPDATE') {
-                    const updateObj = {};
-                    updateObj[action.field] = action.value;
-                    await supabaseClient.from('edital').update(updateObj).eq('id', action.id);
-                } else if (action.type === 'UPDATE_PRIORITY') {
-                    await supabaseClient.from('edital')
-                        .update({ prioridade: action.prioridade })
-                        .eq('materia', action.materia)
-                        .eq('concurso', action.concurso);
-                } else if (action.type === 'CLEAR_ROW') {
-                    await supabaseClient.from('edital').update({
-                        teoria: false,
-                        questoes: false,
-                        rev_24h: false,
-                        rev_7d: false,
-                        rev_30d: false
-                    }).eq('id', action.id);
-                } else if (action.type === 'INSERT') {
-                    const item = action.item;
-                    delete item.id;
-                    item.user_id = user.id;
-                    await supabaseClient.from('edital').insert([item]);
-                }
-            }
-
-            localStorage.removeItem('sync_queue');
-        }
-
-        function updateOnlineStatus() {
-            const banner = document.getElementById('offline-banner');
-            if (navigator.onLine) {
-                banner.style.display = 'none';
-                syncOfflineData();
-            } else {
-                banner.style.display = 'block';
+        function editarDataProva() {
+            const novaData = prompt(`Data da prova (AAAA-MM-DD):`, concursosMetadata[currentConcurso]?.dataProva || '');
+            if (novaData !== null) {
+                if (!concursosMetadata[currentConcurso]) concursosMetadata[currentConcurso] = {};
+                concursosMetadata[currentConcurso].dataProva = novaData.trim() || null;
+                saveConcursosMetadata();
+                updateCountdownBadge();
             }
         }
-
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-        window.addEventListener('load', updateOnlineStatus);
 
         function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
@@ -2730,7 +1684,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             editalItems.forEach(item => {
                 const mat = item.materia || 'Geral';
-                if (!counts[mat]) counts[mat] = { total: 0, concluido: 0, prioridade: item.prioridade || 1 };
+                if (!counts[mat]) counts[mat] = { total: 0, concluido: 0 };
                 counts[mat].total += 5;
                 if (item.teoria) counts[mat].concluido++;
                 if (item.questoes) counts[mat].concluido++;
@@ -2739,72 +1693,26 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 if (item.rev_30d) counts[mat].concluido++;
             });
 
-            const labels = Object.keys(counts).sort((a, b) => counts[a].prioridade - counts[b].prioridade);
-
-            const percentData = labels.map(l => {
-                const total = counts[l].total;
-                if (total === 0) return 0;
-                return Math.round((counts[l].concluido / total) * 100);
-            });
-            
-            const backgroundColors = labels.map(l => {
-                const idx = getMateriaColorIndex(l, labels);
-                return PALETA_SOLIDAS[idx];
-            });
+            const labels = Object.keys(counts);
+            const percentData = labels.map(l => Math.round((counts[l].concluido / (counts[l].total || 1)) * 100));
 
             if (myChart) myChart.destroy();
-
             myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Progresso %',
-                        data: percentData,
-                        backgroundColor: backgroundColors,
-                        borderRadius: 6,
-                        borderSkipped: false
-                    }]
+                    datasets: [{ label: 'Progresso %', data: percentData, backgroundColor: PALETA_SOLIDAS }]
                 },
-                options: {
-                    responsive: true,
-                    animation: {
-                        duration: 1200,
-                        easing: 'easeOutQuart'
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ` Progresso: ${context.raw}%`;
-                                }
-                            }
-                        }
-                    },
-                    scales: { 
-                        y: { 
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        } 
-                    }
-                }
+                options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
             });
         }
 
         let timerInterval = null;
-        let isFocusTime = true;
         let timeLeft = 25 * 60;
 
         function updateTimerSettings() {
             if (!timerInterval) {
-                const foco = parseInt(document.getElementById('focoMin').value) || 25;
-                timeLeft = foco * 60;
+                timeLeft = (parseInt(document.getElementById('focoMin').value) || 25) * 60;
                 updateDisplay();
             }
         }
@@ -2812,48 +1720,34 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         function updateDisplay() {
             const min = Math.floor(timeLeft / 60);
             const sec = timeLeft % 60;
-            document.getElementById('timer').innerText = 
-                `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+            document.getElementById('timer').innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
         }
 
         function startTimer() {
-            getAudioContext();
-
             if (timerInterval) return;
             timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    updateDisplay();
-
-                    if (timeLeft === 0) {
-                        playAlarmSound();
-                    }
-                } else {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-
-                    isFocusTime = !isFocusTime;
-                    
-                    const msg = isFocusTime ? 'Hora de focar!' : 'Hora da pausa!';
-                    setTimeout(() => {
-                        alert(msg);
-                    }, 200);
-
-                    const nextMin = isFocusTime ? document.getElementById('focoMin').value : document.getElementById('pausaMin').value;
-                    timeLeft = (parseInt(nextMin) || 5) * 60;
-                    updateDisplay();
-                }
+                if (timeLeft > 0) { timeLeft--; updateDisplay(); }
+                else { clearInterval(timerInterval); timerInterval = null; alert('Pomodoro Finalizado!'); }
             }, 1000);
         }
 
-        function resetTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            isFocusTime = true;
-            updateTimerSettings();
+        function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
+
+        function openModalViewEdital() { document.getElementById('modalViewEdital').style.display = 'flex'; }
+        function closeModalViewEdital() { document.getElementById('modalViewEdital').style.display = 'none'; }
+        function openModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'flex'; }
+        function closeModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'none'; }
+        function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
+        function closeModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'none'; }
+
+        function copyPromptToClipboard() {
+            navigator.clipboard.writeText(document.getElementById('promptTextToCopy').innerText);
+            alert('Prompt copiado!');
         }
 
-        // Globais
+        function openModalSlot(dia) { openModalSlotForDate(dia); }
+        function openEditSlotModal(dia, index) { openEditSlotModalByDate(dia, index); }
+
         window.handleSignUp = handleSignUp;
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
@@ -2870,22 +1764,16 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.changeConcurso = changeConcurso;
         window.openModalNovoConcurso = openModalNovoConcurso;
         window.closeModalNovoConcurso = closeModalNovoConcurso;
-        window.confirmarNovoConcurso = confirmarNovoConcurso;
-        window.removerConcursoAtual = removerConcursoAtual;
         window.editarDataProva = editarDataProva;
         window.openModalSlot = openModalSlot;
         window.openEditSlotModal = openEditSlotModal;
         window.onMateriaSelectChange = onMateriaSelectChange;
         window.closeModalSlot = closeModalSlot;
         window.salvarSlot = salvarSlot;
-        window.removerSlot = removerSlot;
-        window.toggleSlotCompleted = toggleSlotCompleted;
         window.openModalDisponibilidade = openModalDisponibilidade;
         window.closeModalDisponibilidade = closeModalDisponibilidade;
-        window.toggleCustomDaysDisplay = toggleCustomDaysDisplay;
         window.toggleWeekendBox = toggleWeekendBox;
         window.confirmarAutoFillDisponibilidade = confirmarAutoFillDisponibilidade;
-        window.avancarSemanaSiguiente = avancarSemanaSiguiente;
         window.limparCronogramaSemanal = limparCronogramaSemanal;
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
@@ -2895,15 +1783,14 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.copyPromptToClipboard = copyPromptToClipboard;
         window.openModalViewEdital = openModalViewEdital;
         window.closeModalViewEdital = closeModalViewEdital;
-        window.uploadEditalFile = uploadEditalFile;
-        window.downloadEditalFile = downloadEditalFile;
-        window.removerEditalFile = removerEditalFile;
-        window.changePdfPage = changePdfPage;
-        window.zoomPdf = zoomPdf;
         window.filterDelayedList = filterDelayedList;
-        window.concluirDelayedItem = concluirDelayedItem;
         window.calculateAutoFillProjection = calculateAutoFillProjection;
         window.onMonthYearChange = onMonthYearChange;
+        window.openModalSlotForDate = openModalSlotForDate;
+        window.openEditSlotModalByDate = openEditSlotModalByDate;
+        window.removerSlotByDate = removerSlotByDate;
+        window.toggleSlotCompletedByDate = toggleSlotCompletedByDate;
+        window.concluirDelayedItemByDate = concluirDelayedItemByDate;
     </script>
 </body>
 </html>
