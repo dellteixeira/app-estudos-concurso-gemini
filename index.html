@@ -123,6 +123,19 @@
             gap: 1rem;
         }
 
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-brand img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
         .concurso-selector-bar {
             display: flex;
             align-items: center;
@@ -488,8 +501,6 @@
         .schedule-item .time { font-weight: 700; color: var(--primary-blue); display: block; margin-bottom: 2px; }
         .schedule-item .subject { word-break: break-word; font-weight: 700; display: block; }
         .schedule-item .topic { word-break: break-word; opacity: 0.85; font-size: 0.78rem; margin-top: 2px; display: block; }
-        .schedule-item .check-icon { display: none; font-size: 0.8rem; margin-left: 4px; }
-        .schedule-item.completed .check-icon { display: inline; }
 
         .schedule-item .slot-controls {
             position: absolute;
@@ -703,12 +714,12 @@
 </head>
 <body>
 
-    <div id="offline-banner">⚠️ Você está sem conexão. As alterações serão sincronizadas quando reconectar.</div>
+    <div id="offline-banner">Você está sem conexão. As alterações serão sincronizadas quando reconectar.</div>
 
     <!-- AUTH SCREEN -->
     <div id="auth-screen" class="auth-container">
         <div class="auth-card">
-            <h2>🔑 Entrar no Sistema</h2>
+            <h2>Entrar no Sistema</h2>
             <div style="margin-bottom: 1rem;">
                 <input type="email" id="email" placeholder="seu@email.com" style="width:100%; margin-bottom: 0.5rem;" required>
                 <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" style="width:100%;" required>
@@ -723,13 +734,16 @@
     <!-- MAIN DASHBOARD -->
     <div id="app-dashboard">
         <header>
-            <h2>🎯 Painel de Estudos</h2>
+            <div class="header-brand">
+                <img src="icon-192.png" alt="Símbolo Estudos">
+                <h2>Painel de Estudos</h2>
+            </div>
             
             <div class="concurso-selector-bar">
-                <label>📌 <strong>Concurso:</strong></label>
+                <label><strong>Concurso:</strong></label>
                 <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
-                <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">➕ Novo</button>
-                <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">🗑️ Excluir</button>
+                <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
+                <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">Excluir</button>
                 
                 <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
                     Sem data de prova
@@ -740,36 +754,36 @@
         <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
             <!-- 1. VER / ANEXAR EDITAL PDF -->
-            <button class="btn btn-warning" onclick="openModalViewEdital()">📄 Ver / Anexar Edital PDF</button>
+            <button class="btn btn-warning" onclick="openModalViewEdital()">Ver / Anexar Edital PDF</button>
 
             <!-- 2. IMPORTAR JSON -->
             <label class="btn btn-success" style="cursor: pointer;">
-                📥 Importar JSON
+                Importar JSON
                 <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="importJSON(event)">
             </label>
 
             <!-- 3. COMO GERAR JSON COM IA -->
-            <button class="btn btn-info" onclick="openModalPromptIA()">🤖 Como Gerar JSON com IA</button>
+            <button class="btn btn-info" onclick="openModalPromptIA()">Como Gerar JSON com IA</button>
 
             <!-- 4. LIMPAR EDITAL ATUAL -->
-            <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Edital Atual</button>
+            <button class="btn btn-danger" onclick="clearData()">Limpar Edital Atual</button>
 
             <!-- 5. MODO CLARO / ESCURO -->
-            <button class="btn btn-secondary" onclick="toggleDarkMode()">☀️ / 🌙 Modo Claro/Escuro</button>
+            <button class="btn btn-secondary" onclick="toggleDarkMode()">Modo Claro/Escuro</button>
 
             <!-- 6. SAIR -->
             <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
         </div>
 
         <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('tab-edital', this)">📚 Edital Verticalizado</button>
-            <button class="tab-btn" onclick="switchTab('tab-calendario', this)">📅 Calendário Semanal</button>
+            <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
+            <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Calendário Semanal</button>
         </div>
 
         <div id="tab-edital" class="tab-content active">
             <div class="grid-top">
                 <div class="card">
-                    <h3>⏱️ Relógio Pomodoro</h3>
+                    <h3>Relógio Pomodoro</h3>
                     <div class="timer-display" id="timer">25:00</div>
                     <div style="text-align: center; margin-bottom: 1rem;">
                         <button class="btn btn-primary" onclick="startTimer()">Iniciar</button>
@@ -782,13 +796,13 @@
                 </div>
 
                 <div class="card">
-                    <h3>📊 Progresso Geral de Estudo (%)</h3>
+                    <h3>Progresso Geral de Estudo (%)</h3>
                     <canvas id="progressChart" height="160"></canvas>
                 </div>
             </div>
 
             <div class="card">
-                <h3 id="edital-title">📚 Edital Agrupado por Matéria</h3>
+                <h3 id="edital-title">Edital Agrupado por Matéria</h3>
                 
                 <form class="form-row" onsubmit="addManualItem(event)">
                     <input type="text" id="materia" placeholder="Matéria (ex: Direito Administrativo)" required>
@@ -798,8 +812,8 @@
                 </form>
 
                 <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
-                    <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">📖 Expandir Todas as Guias</button>
-                    <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">📕 Recolher Todas as Guias</button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">Expandir Todas as Guias</button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">Recolher Todas as Guias</button>
                 </div>
 
                 <div class="table-responsive">
@@ -842,28 +856,28 @@
 
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-                    <h3>📅 Cronograma Semanal de Estudos</h3>
+                    <h3>Cronograma Semanal de Estudos</h3>
 
                     <!-- SELETOR DE MÊS E ANO -->
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <label>🗓️ <strong>Mês/Ano:</strong></label>
+                        <label><strong>Mês/Ano:</strong></label>
                         <select id="monthSelect" onchange="onMonthYearChange()"></select>
                         <select id="yearSelect" onchange="onMonthYearChange()"></select>
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="openModalDisponibilidade()">⚡ Preencher Cronograma Automaticamente</button>
-                        <button class="btn btn-secondary" onclick="avancarSemanaSiguiente()">🔄 Iniciar Nova Semana (Filtrar não estudados)</button>
-                        <button class="btn btn-danger" onclick="limparCronogramaSemanal()">🗑️ Limpar Cronograma</button>
+                        <button class="btn btn-purple" onclick="openModalDisponibilidade()">Preencher Cronograma Automaticamente</button>
+                        <button class="btn btn-secondary" onclick="avancarSemanaSiguiente()">Iniciar Nova Semana (Filtrar não estudados)</button>
+                        <button class="btn btn-danger" onclick="limparCronogramaSemanal()">Limpar Cronograma</button>
                     </div>
                 </div>
 
                 <p style="margin-bottom: 1rem; font-size: 0.85rem; opacity: 0.8;">
-                    💡 <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcar como <strong>concluído</strong> ou no ícone ✏️ para <strong>editar o conteúdo/horário</strong>.
+                    <strong>Dica:</strong> Clique em qualquer bloco de estudo para marcar como <strong>concluído</strong> ou no botão de edição para <strong>editar o conteúdo/horário</strong>.
                 </p>
                 
                 <div class="weekly-hours-banner">
-                    <span>⏱️ Total Planejado para a Semana:</span>
+                    <span>Total Planejado para a Semana:</span>
                     <span id="weeklyHoursTotal">0h 00min</span>
                 </div>
 
@@ -877,21 +891,21 @@
     <div class="modal-overlay" id="modalViewEdital">
         <div class="modal modal-large">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                <h3 id="editalModalTitle">📄 Documento do Edital</h3>
+                <h3 id="editalModalTitle">Documento do Edital</h3>
                 <div style="display: flex; gap: 8px;">
                     <label class="btn btn-success btn-sm" style="cursor: pointer;">
-                        📤 Anexar Novo Arquivo
+                        Anexar Novo Arquivo
                         <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
                     </label>
-                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">📥 Baixar Arquivo</button>
-                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">🗑️ Remover</button>
+                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">Baixar Arquivo</button>
+                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Remover</button>
                 </div>
             </div>
 
             <div id="editalViewerContainer" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden;">
                 <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
                 <label class="btn btn-primary" style="cursor: pointer;">
-                    📤 Selecionar PDF / Documento
+                    Selecionar PDF / Documento
                     <input type="file" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
                 </label>
             </div>
@@ -905,15 +919,15 @@
     <!-- MODAL: DEFINIR DISPONIBILIDADE E DIAS DA SEMANA PARA ESTUDO -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
-            <h3>⏱️ Configurar Horários e Turnos de Estudo</h3>
+            <h3>Configurar Horários e Turnos de Estudo</h3>
             <p style="font-size: 0.85rem; opacity: 0.85;">
                 Configure seus horários de segunda a sexta e personalize o fim de semana com horários diferenciados se desejar.
             </p>
 
-            <strong style="font-size: 0.9rem; color: var(--primary-blue);">💼 Horários Padrão (Segunda a Sexta):</strong>
+            <strong style="font-size: 0.9rem; color: var(--primary-blue);">Horários Padrão (Segunda a Sexta):</strong>
 
             <div class="shift-row">
-                <strong style="width: 80px;">🌅 Manhã:</strong>
+                <strong style="width: 80px;">Manhã:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
                     <input type="time" id="inicioManha" value="08:00" onchange="calculateAutoFillProjection()">
@@ -925,7 +939,7 @@
             </div>
 
             <div class="shift-row">
-                <strong style="width: 80px;">☀️ Tarde:</strong>
+                <strong style="width: 80px;">Tarde:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
                     <input type="time" id="inicioTarde" value="14:00" onchange="calculateAutoFillProjection()">
@@ -937,7 +951,7 @@
             </div>
 
             <div class="shift-row">
-                <strong style="width: 80px;">🌙 Noite:</strong>
+                <strong style="width: 80px;">Noite:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
                     <input type="time" id="inicioNoite" value="19:00" onchange="calculateAutoFillProjection()">
@@ -950,7 +964,7 @@
 
             <!-- OPÇÕES DE DIAS E PERSONALIZAÇÃO DE FIM DE SEMANA -->
             <div class="days-selection-box">
-                <strong style="font-size: 0.9rem;">📅 Dias de Estudo no Fim de Semana:</strong>
+                <strong style="font-size: 0.9rem;">Dias de Estudo no Fim de Semana:</strong>
                 
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <label class="day-checkbox-label">
@@ -962,15 +976,15 @@
                 </div>
 
                 <label class="day-checkbox-label" style="font-weight: 600; color: #38bdf8; margin-top: 4px;">
-                    <input type="checkbox" id="chkCustomWeekendHours" onchange="toggleWeekendBox()"> ⚙️ Personalizar horários específicos para Sábado / Domingo
+                    <input type="checkbox" id="chkCustomWeekendHours" onchange="toggleWeekendBox()"> Personalizar horários específicos para Sábado / Domingo
                 </label>
 
                 <!-- CONFIGURAÇÃO DEDICADA DE FIM DE SEMANA -->
                 <div id="weekendConfigBox" class="weekend-config-box" style="display: none;">
-                    <strong style="font-size: 0.85rem; color: #93c5fd;">🎈 Horários do Fim de Semana (Sáb/Dom):</strong>
+                    <strong style="font-size: 0.85rem; color: #93c5fd;">Horários do Fim de Semana (Sáb/Dom):</strong>
 
                     <div class="shift-row">
-                        <strong style="width: 80px;">🌅 Manhã:</strong>
+                        <strong style="width: 80px;">Manhã:</strong>
                         <div class="form-group" style="flex:1;">
                             <label>Início:</label>
                             <input type="time" id="inicioManhaFimSemana" value="08:00" onchange="calculateAutoFillProjection()">
@@ -982,7 +996,7 @@
                     </div>
 
                     <div class="shift-row">
-                        <strong style="width: 80px;">☀️ Tarde:</strong>
+                        <strong style="width: 80px;">Tarde:</strong>
                         <div class="form-group" style="flex:1;">
                             <label>Início:</label>
                             <input type="time" id="inicioTardeFimSemana" value="14:00" onchange="calculateAutoFillProjection()">
@@ -994,7 +1008,7 @@
                     </div>
 
                     <div class="shift-row">
-                        <strong style="width: 80px;">🌙 Noite:</strong>
+                        <strong style="width: 80px;">Noite:</strong>
                         <div class="form-group" style="flex:1;">
                             <label>Início:</label>
                             <input type="time" id="inicioNoiteFimSemana" value="19:00" onchange="calculateAutoFillProjection()">
@@ -1009,7 +1023,7 @@
                 <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
 
                 <label class="day-checkbox-label" style="font-weight: 600; color: var(--primary-blue);">
-                    <input type="checkbox" id="chkCustomDays" onchange="toggleCustomDaysDisplay()"> 🗓️ Selecionar dias da semana manualmente
+                    <input type="checkbox" id="chkCustomDays" onchange="toggleCustomDaysDisplay()"> Selecionar dias da semana manualmente
                 </label>
 
                 <div id="customDaysContainer" class="days-grid" style="display: none;">
@@ -1025,13 +1039,13 @@
 
             <!-- PROJEÇÃO AUTOMÁTICA DE DIAS DE ESTUDO -->
             <div id="projectionBox" class="projection-box">
-                📊 <strong>Cálculo Automático de Projeção:</strong><br>
+                <strong>Cálculo Automático de Projeção:</strong><br>
                 Com esta carga horária, você precisará de aproximadamente <strong id="projectionDaysCount">0 dias</strong> (<span id="projectionWeeksCount">0 semanas</span>) para cobrir os <span id="projectionTopicsCount">0</span> tópicos pendentes do edital.
             </div>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalDisponibilidade()">Cancelar (ESC)</button>
-                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">⚡ Gerar Cronograma (ENTER)</button>
+                <button class="btn btn-purple" onclick="confirmarAutoFillDisponibilidade()">Gerar Cronograma (ENTER)</button>
             </div>
         </div>
     </div>
@@ -1039,7 +1053,7 @@
     <!-- MODAL: PROMPT PARA COLAR NA IA -->
     <div class="modal-overlay" id="modalPromptIA">
         <div class="modal">
-            <h3>🤖 Prompt para Colar na IA (ChatGPT / Claude / Gemini)</h3>
+            <h3>Prompt para Colar na IA (ChatGPT / Claude / Gemini)</h3>
             <p style="font-size: 0.85rem; opacity: 0.9;">
                 Se você quiser que uma IA analise <strong>qualquer edital</strong> (em PDF ou texto) e preencha automaticamente a estrutura no formato compatível com o seu aplicativo, copie e envie o comando abaixo junto com o texto do edital:
             </p>
@@ -1066,7 +1080,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 }"</div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="copyPromptToClipboard()">📋 Copiar Prompt (ENTER)</button>
+                <button class="btn btn-primary" onclick="copyPromptToClipboard()">Copiar Prompt (ENTER)</button>
                 <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar (ESC)</button>
             </div>
         </div>
@@ -1256,7 +1270,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         }
 
         function openModalViewEdital() {
-            document.getElementById('editalModalTitle').innerText = `📄 Edital Oficial: ${currentConcurso}`;
+            document.getElementById('editalModalTitle').innerText = `Documento do Edital: ${currentConcurso}`;
             document.getElementById('modalViewEdital').style.display = 'flex';
             renderEditalViewer();
         }
@@ -1278,7 +1292,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 container.innerHTML = `
                     <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento do edital anexado para <strong>"${currentConcurso}"</strong>.</p>
                     <label class="btn btn-primary" style="cursor: pointer;">
-                        📤 Selecionar PDF / Documento
+                        Selecionar PDF / Documento
                         <input type="file" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
                     </label>
                 `;
@@ -1291,12 +1305,12 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             if (fileData.type && fileData.type.includes('pdf')) {
                 container.innerHTML = `
                     <div class="pdf-toolbar">
-                        <button class="btn btn-secondary btn-sm" onclick="changePdfPage(-1)">◀ Anterior</button>
+                        <button class="btn btn-secondary btn-sm" onclick="changePdfPage(-1)">Anterior</button>
                         <span style="font-size: 0.85rem; font-weight:600;">Página <span id="pdfPageNum">1</span> / <span id="pdfPageCount">--</span></span>
-                        <button class="btn btn-secondary btn-sm" onclick="changePdfPage(1)">Próxima ▶</button>
+                        <button class="btn btn-secondary btn-sm" onclick="changePdfPage(1)">Próxima</button>
                         <span style="margin: 0 10px;">|</span>
-                        <button class="btn btn-secondary btn-sm" onclick="zoomPdf(0.2)">🔍 +</button>
-                        <button class="btn btn-secondary btn-sm" onclick="zoomPdf(-0.2)">🔍 -</button>
+                        <button class="btn btn-secondary btn-sm" onclick="zoomPdf(0.2)">Zoom +</button>
+                        <button class="btn btn-secondary btn-sm" onclick="zoomPdf(-0.2)">Zoom -</button>
                     </div>
                     <div class="pdf-canvas-wrapper" id="pdfWrapper">
                         <canvas id="pdfCanvas"></canvas>
@@ -1319,18 +1333,18 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     console.error("Erro PDF.js:", e);
                     container.innerHTML = `
                         <div style="text-align: center; padding: 2rem;">
-                            <h4>📑 Arquivo Anexado: ${fileData.name}</h4>
+                            <h4>Arquivo Anexado: ${fileData.name}</h4>
                             <p style="opacity:0.8; margin: 1rem 0;">Falha ao pré-visualizar o PDF.</p>
-                            <button class="btn btn-primary" onclick="downloadEditalFile()">📥 Baixar Arquivo</button>
+                            <button class="btn btn-primary" onclick="downloadEditalFile()">Baixar Arquivo</button>
                         </div>
                     `;
                 }
             } else {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 2rem;">
-                        <h4 style="margin-bottom: 1rem;">📑 Arquivo Anexado: ${fileData.name}</h4>
+                        <h4 style="margin-bottom: 1rem;">Arquivo Anexado: ${fileData.name}</h4>
                         <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 1.5rem;">Este formato de arquivo não possui pré-visualização direta, mas está armazenado em seu painel.</p>
-                        <button class="btn btn-primary" onclick="downloadEditalFile()">📥 Baixar / Abrir Arquivo</button>
+                        <button class="btn btn-primary" onclick="downloadEditalFile()">Baixar / Abrir Arquivo</button>
                     </div>
                 `;
             }
@@ -1742,8 +1756,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const diffDias = Math.ceil((dataProva - hoje) / (1000 * 60 * 60 * 24));
 
             if (diffDias < 0) badge.textContent = "Prova realizada (clique para alterar)";
-            else if (diffDias === 0) badge.textContent = "🚨 Prova HOJE! (clique para alterar)";
-            else badge.textContent = `⏳ Faltam ${diffDias} dias (clique para alterar)`;
+            else if (diffDias === 0) badge.textContent = "Prova HOJE! (clique para alterar)";
+            else badge.textContent = `Faltam ${diffDias} dias (clique para alterar)`;
         }
 
         function editarDataProva() {
@@ -1767,7 +1781,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
 
             renderConcursoSelector();
-            document.getElementById('edital-title').innerText = `📚 Edital: ${currentConcurso}`;
+            document.getElementById('edital-title').innerText = `Edital: ${currentConcurso}`;
             renderTable();
             renderChart();
             renderCalendar();
@@ -1829,7 +1843,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             }
         }
 
-        // --- PAINEL DE MATÉRIAS E REVISÕES ATRASADAS DA SUA IMAGEM ---
+        // --- PAINEL DE MATÉRIAS E REVISÕES ATRASADAS ---
         function renderDelayedPanel() {
             const container = document.getElementById('delayedItemsContainer');
             const badgeCount = document.getElementById('delayedBadgeCount');
@@ -1839,7 +1853,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             const schedule = concursosMetadata[currentConcurso]?.schedule || {};
             const todayDayIndex = new Date().getDay(); // 0 = Dom, 1 = Seg...
             const mapDayIndex = [6, 0, 1, 2, 3, 4, 5]; // Transforma para DIAS_SEMANA
-            const todayStr = DIAS_SEMANA[mapDayIndex[todayDayIndex]];
 
             let delayedList = [];
             let todayList = [];
@@ -1886,7 +1899,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             container.innerHTML = '';
             displayList.forEach(item => {
                 const delayBadgeHtml = item.delayDays 
-                    ? `<span class="delayed-badge-days">🕒 ${item.delayDays} dia${item.delayDays > 1 ? 's' : ''} de atraso</span>` 
+                    ? `<span class="delayed-badge-days">${item.delayDays} dia${item.delayDays > 1 ? 's' : ''} de atraso</span>` 
                     : `<span class="delayed-tag">${item.dia} - ${item.horario}</span>`;
 
                 container.innerHTML += `
@@ -1899,7 +1912,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
                             ${delayBadgeHtml}
                             <button class="btn btn-success btn-sm" onclick="concluirDelayedItem('${item.dia}', '${item.materia}', '${item.assunto}')">
-                                ▶ Iniciar / Concluir
+                                Iniciar / Concluir
                             </button>
                         </div>
                     </div>
@@ -2071,15 +2084,15 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                     dayTotalMinutes += mins;
 
                     const isCompleted = item.completed ? 'completed' : '';
-                    const assuntoHtml = item.assunto ? `<span class="topic">📌 ${item.assunto}</span>` : '';
+                    const assuntoHtml = item.assunto ? `<span class="topic">${item.assunto}</span>` : '';
 
                     htmlSlots += `
                         <div class="schedule-item ${isCompleted}" onclick="toggleSlotCompleted('${dia}', ${index})">
                             <div class="slot-controls">
-                                <button class="btn-action-slot" onclick="event.stopPropagation(); openEditSlotModal('${dia}', ${index})" title="Editar Conteúdo">✏️</button>
-                                <button class="btn-action-slot danger" onclick="event.stopPropagation(); removerSlot('${dia}', ${index})" title="Excluir Horário">✕</button>
+                                <button class="btn-action-slot" onclick="event.stopPropagation(); openEditSlotModal('${dia}', ${index})" title="Editar Conteúdo">Editar</button>
+                                <button class="btn-action-slot danger" onclick="event.stopPropagation(); removerSlot('${dia}', ${index})" title="Excluir Horário">Excluir</button>
                             </div>
-                            <span class="time">${item.horario} <span class="check-icon">✅</span></span>
+                            <span class="time">${item.horario}</span>
                             <span class="subject">${item.materia}</span>
                             ${assuntoHtml}
                         </div>
@@ -2319,8 +2332,8 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                         </td>
                         <td colspan="7">
                             <div class="materia-header-content">
-                                <span>${isOpen ? '📂' : '📁'} <strong>${materiaName}</strong> (${group.items.length} assuntos)</span>
-                                <span>${isOpen ? '▲ Recolher Guias' : '▼ Expandir Guias'}</span>
+                                <span><strong>${materiaName}</strong> (${group.items.length} assuntos)</span>
+                                <span>${isOpen ? 'Recolher Guias' : 'Expandir Guias'}</span>
                             </div>
                         </td>
                     </tr>
@@ -2332,14 +2345,14 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                         tbody.innerHTML += `
                             <tr style="border-left: 4px solid ${solidColor};">
                                 <td></td>
-                                <td style="text-align: left; padding-left: 1.5rem;">📌 ${item.assunto}</td>
+                                <td style="text-align: left; padding-left: 1.5rem;">${item.assunto}</td>
                                 <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'teoria', ${item.teoria})"></td>
                                 <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'questoes', ${item.questoes})"></td>
                                 <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_24h', ${item.rev_24h})"></td>
                                 <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_7d', ${item.rev_7d})"></td>
                                 <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_30d', ${item.rev_30d})"></td>
                                 <td>
-                                    <button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes('${safeId}')" title="Limpar todas as marcações desta linha">✕</button>
+                                    <button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes('${safeId}')" title="Limpar todas as marcações desta linha">Limpar</button>
                                 </td>
                             </tr>
                         `;
@@ -2737,7 +2750,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
                     isFocusTime = !isFocusTime;
                     
-                    const msg = isFocusTime ? '🔔 Hora de focar!' : '☕ Hora da pausa!';
+                    const msg = isFocusTime ? 'Hora de focar!' : 'Hora da pausa!';
                     setTimeout(() => {
                         alert(msg);
                     }, 200);
