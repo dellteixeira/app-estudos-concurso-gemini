@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meu Painel de Estudos</title>
 
     <!-- Configurações PWA e Instalação em Celular -->
@@ -77,6 +77,8 @@
             color: var(--text-color);
             min-height: 100vh;
             transition: background-color 0.3s, color 0.3s;
+            width: 100%;
+            overflow-x: hidden;
         }
 
         #offline-banner {
@@ -94,6 +96,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            padding: 1rem;
         }
 
         .auth-card {
@@ -113,6 +116,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 1.5rem;
+            width: 100%;
         }
 
         header {
@@ -170,16 +174,17 @@
             justify-content: space-between;
             gap: 0.4rem;
             margin-bottom: 1.5rem;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;
             width: 100%;
         }
 
         .action-bar .btn {
             padding: 0.5rem 0.8rem;
             font-size: 0.88rem;
-            flex: 1;
+            flex: 1 1 auto;
             justify-content: center;
             text-align: center;
+            min-width: 130px;
         }
 
         .nav-tabs {
@@ -222,11 +227,6 @@
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
             margin-bottom: 1.5rem;
-        }
-
-        @media (max-width: 768px) {
-            .grid-top { grid-template-columns: 1fr; }
-            .action-bar { flex-wrap: wrap; }
         }
 
         .card {
@@ -326,7 +326,6 @@
             gap: 10px;
         }
 
-        /* PAINEL DE MATÉRIAS E REVISÕES ATRASADAS */
         .delayed-panel {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -434,9 +433,10 @@
 
         .calendar-grid {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(130px, 1fr));
             gap: 10px;
             overflow-x: auto;
+            padding-bottom: 10px;
         }
 
         .day-column {
@@ -444,7 +444,7 @@
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 10px;
-            min-width: 140px;
+            min-width: 130px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -467,7 +467,6 @@
             margin-top: -6px;
         }
 
-        /* CARD DO CRONOGRAMA CORRIGIDO (SEM OVERLAP) */
         .schedule-item {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -502,7 +501,6 @@
             color: var(--completed-text);
         }
 
-        /* CABEÇALHO INTERNO DO ITEM (HORÁRIO + AÇÕES LADO A LADO) */
         .slot-header {
             display: flex;
             justify-content: space-between;
@@ -556,6 +554,7 @@
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
+            padding: 1rem;
         }
         .modal {
             background: var(--card-bg); color: var(--text-color); padding: 24px;
@@ -579,6 +578,7 @@
             padding: 8px 12px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
+            flex-wrap: wrap;
         }
 
         .days-selection-box {
@@ -623,7 +623,7 @@
             margin-bottom: 1rem;
             flex-wrap: wrap;
         }
-        .form-row input[type="text"] { flex: 2; }
+        .form-row input[type="text"] { flex: 2; min-width: 180px; }
         .form-row input[type="number"] { width: 90px; }
 
         .table-responsive { overflow-x: auto; }
@@ -719,6 +719,7 @@
             border-radius: 6px;
             width: 100%;
             max-width: 600px;
+            flex-wrap: wrap;
         }
 
         #pdfCanvas {
@@ -735,6 +736,38 @@
             margin-top: 10px;
             font-size: 0.9rem;
             color: #34d399;
+        }
+
+        /* REGRAS CSS RESPONSIVAS PARA DISPOSITIVOS MÓVEIS E MODO HORIZONTAL (LANDSCAPE) */
+        @media (max-width: 768px) {
+            .grid-top { grid-template-columns: 1fr; }
+            #app-dashboard { padding: 0.8rem; }
+            header { flex-direction: column; align-items: stretch; }
+            .concurso-selector-bar { justify-content: space-between; }
+        }
+
+        @media screen and (orientation: landscape) {
+            #app-dashboard {
+                max-width: 100% !important;
+                padding: 1rem !important;
+            }
+
+            .grid-top {
+                grid-template-columns: 1fr 1fr !important;
+            }
+
+            .action-bar {
+                flex-wrap: wrap !important;
+            }
+
+            .action-bar .btn {
+                flex: 1 1 auto !important;
+                min-width: 140px;
+            }
+
+            .calendar-grid {
+                grid-template-columns: repeat(7, minmax(130px, 1fr)) !important;
+            }
         }
     </style>
 </head>
@@ -837,7 +870,7 @@
                     <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
                 </form>
 
-                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">Expandir Todas as Guias</button>
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">Recolher Todas as Guias</button>
                 </div>
@@ -916,9 +949,9 @@
     <!-- MODAL: VISUALIZAR / UPLOAD DE EDITAL EM PDF OU OUTRO FORMATO -->
     <div class="modal-overlay" id="modalViewEdital">
         <div class="modal modal-large">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <h3 id="editalModalTitle">Documento do Edital</h3>
-                <div style="display: flex; gap: 8px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <label class="btn btn-success btn-sm" style="cursor: pointer;">
                         Anexar Novo Arquivo
                         <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
@@ -950,7 +983,6 @@
                 Configure seus horários de estudo e a data em que pretende iniciar para gerar a distribuição automática de tópicos.
             </p>
 
-            <!-- NOVO CAMPO: SELEÇÃO DA DATA DE INÍCIO -->
             <div class="form-group" style="background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--primary-blue);">
                 <label for="startDateInput" style="color: #93c5fd; font-weight: 700;">Data de Início do Cronograma:</label>
                 <input type="date" id="startDateInput" style="font-weight: bold; font-size: 1rem;">
@@ -994,7 +1026,6 @@
                 </div>
             </div>
 
-            <!-- OPÇÕES DE DIAS E PERSONALIZAÇÃO DE FIM DE SEMANA -->
             <div class="days-selection-box">
                 <strong style="font-size: 0.9rem;">Dias de Estudo no Fim de Semana:</strong>
                 
@@ -1011,7 +1042,6 @@
                     <input type="checkbox" id="chkCustomWeekendHours" onchange="toggleWeekendBox()"> Personalizar horários específicos para Sábado / Domingo
                 </label>
 
-                <!-- CONFIGURAÇÃO DEDICADA DE FIM DE SEMANA -->
                 <div id="weekendConfigBox" class="weekend-config-box" style="display: none;">
                     <strong style="font-size: 0.85rem; color: #93c5fd;">Horários do Fim de Semana (Sáb/Dom):</strong>
 
@@ -1069,7 +1099,6 @@
                 </div>
             </div>
 
-            <!-- PROJEÇÃO AUTOMÁTICA DE DIAS DE ESTUDO -->
             <div id="projectionBox" class="projection-box">
                 <strong>Cálculo Automático de Projeção:</strong><br>
                 Com esta carga horária, você precisará de aproximadamente <strong id="projectionDaysCount">0 dias</strong> (<span id="projectionWeeksCount">0 semanas</span>) para cobrir os <span id="projectionTopicsCount">0</span> tópicos pendentes do edital.
@@ -1480,7 +1509,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 return alert('Nenhum edital cadastrado para este concurso. Importe um JSON ou adicione matérias manualmente primeiro.');
             }
 
-            // Preenche o campo de data padrão para amanhã
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const yyyy = tomorrow.getFullYear();
@@ -1978,7 +2006,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             }
         }
 
-        /* LÓGICA ATUALIZADA DO AUTO-FILL COM DATA DE INÍCIO PERSONALIZADA */
         function confirmarAutoFillDisponibilidade() {
             const startDateVal = document.getElementById('startDateInput').value;
             if (!startDateVal) {
@@ -1987,7 +2014,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             const startDate = new Date(startDateVal + "T00:00:00");
             
-            // Sincroniza o seletor de mês e ano superior do painel com a data de início
             document.getElementById('monthSelect').value = startDate.getMonth();
             document.getElementById('yearSelect').value = startDate.getFullYear();
 
@@ -2043,7 +2069,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             let pendentesIndex = 0;
             const mapDayIndexToName = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
-            // Mapeia até 7 dias a partir da data de início escolhida pelo usuário
             for (let dayOffset = 0; dayOffset < 7 && pendentesIndex < pendentes.length; dayOffset++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + dayOffset);
@@ -2118,7 +2143,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             openModalDisponibilidade();
         }
 
-        /* RENDERIZADOR DO CRONOGRAMA CORRIGIDO (SEM SOBREPOSIÇÃO) */
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
             if (!grid) return;
