@@ -578,21 +578,22 @@
         }
 
         .flashcard-tag {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 700;
             color: #38bdf8;
             text-transform: uppercase;
             margin-bottom: 12px;
+            display: none; /* OCULTADO PARA FICAR MAIS LIMPO */
         }
 
         .flashcard-text {
-            font-size: 1.25rem;
+            font-size: 1.35rem;
             font-weight: 600;
             line-height: 1.5;
         }
 
         .flashcard-hint {
-            margin-top: 16px;
+            margin-top: 20px;
             font-size: 0.8rem;
             opacity: 0.6;
         }
@@ -899,9 +900,8 @@
                 <!-- ÁREA INTERATIVA DO FLASHCARD -->
                 <div id="flashcardStudyArea" style="display: none;">
                     <div class="flashcard-display" onclick="flipCurrentFlashcard()">
-                        <div class="flashcard-tag" id="fcTagText">Pergunta</div>
                         <div class="flashcard-text" id="fcContentText">Aguardando dados...</div>
-                        <div class="flashcard-hint" id="fcHintText">👆 Clique no card para revelar a Resposta</div>
+                        <div class="flashcard-hint" id="fcHintText">👆 Clique para revelar a Resposta</div>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -2134,11 +2134,11 @@ R: É a declaração do Estado..."></textarea>
             }
         }
 
+        /* ATUALIZAÇÃO SEM O RÓTULO DA MATÉRIA/ASSUNTO NO CARD */
         function updateFlashcardCardDisplay() {
             if (activeFlashcardsList.length === 0) return;
             const card = activeFlashcardsList[currentFcIndex];
 
-            const tagText = document.getElementById('fcTagText');
             const contentText = document.getElementById('fcContentText');
             const hintText = document.getElementById('fcHintText');
             const counter = document.getElementById('flashcardCounter');
@@ -2146,13 +2146,9 @@ R: É a declaração do Estado..."></textarea>
             counter.innerText = `Card ${currentFcIndex + 1} de ${activeFlashcardsList.length}`;
 
             if (isFcShowingAnswer) {
-                tagText.innerText = "Resposta / Explicação";
-                tagText.style.color = "#10b981";
                 contentText.innerText = card.resposta;
                 hintText.innerText = "👆 Clique para voltar à Pergunta";
             } else {
-                tagText.innerText = `Pergunta (${card.assunto || card.materia})`;
-                tagText.style.color = "#38bdf8";
                 contentText.innerText = card.pergunta;
                 hintText.innerText = "👆 Clique para revelar a Resposta";
             }
