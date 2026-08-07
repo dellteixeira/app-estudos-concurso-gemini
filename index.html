@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- PDF.js para renderização nativa em canvas sem downloads -->
+    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         :root {
@@ -25,6 +25,8 @@
             --completed-border: #10b981;
             --completed-text: #34d399;
             --code-bg: #090d16;
+            --atrasado-bg: rgba(239, 68, 68, 0.1);
+            --atrasado-border: #ef4444;
         }
 
         body.light-mode {
@@ -40,6 +42,8 @@
             --completed-border: #10b981;
             --completed-text: #065f46;
             --code-bg: #f1f5f9;
+            --atrasado-bg: #fee2e2;
+            --atrasado-border: #ef4444;
         }
 
         * {
@@ -128,7 +132,6 @@
             text-decoration: underline;
         }
 
-        /* BARRA DE AÇÕES COMPACTA */
         .action-bar {
             display: flex;
             align-items: center;
@@ -287,6 +290,114 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* PAINEL DE MATÉRIAS E REVISÕES ATRASADAS */
+        .delayed-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .delayed-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .delayed-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .badge-delayed {
+            background: #ef4444;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1rem;
+            background: rgba(255,255,255,0.05);
+            padding: 4px;
+            border-radius: 8px;
+            width: fit-content;
+        }
+
+        .filter-tab {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .filter-tab.active {
+            background: var(--card-bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .delayed-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-left: 5px solid #ef4444;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .delayed-card-info h4 {
+            color: #ef4444;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .delayed-card-info p {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .delayed-tag {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.2);
+            color: #38bdf8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .delayed-badge-days {
+            background: #ef4444;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .calendar-grid {
@@ -530,7 +641,6 @@
             position: relative;
         }
 
-        /* CONTAINER PDF CANVAS NATIVO */
         .pdf-canvas-wrapper {
             width: 100%;
             height: 100%;
@@ -560,6 +670,16 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             max-width: 100%;
             background: #fff;
+        }
+
+        .projection-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #34d399;
         }
     </style>
 </head>
@@ -685,9 +805,34 @@
         </div>
 
         <div id="tab-calendario" class="tab-content">
+
+            <!-- PAINEL DE AVISO DE MATÉRIAS E REVISÕES ATRASADAS -->
+            <div class="delayed-panel">
+                <div class="delayed-header">
+                    <span class="delayed-title">Revisões / Matérias</span>
+                    <span class="badge-delayed" id="delayedBadgeCount">0 atrasadas</span>
+                </div>
+
+                <div class="filter-tabs">
+                    <button class="filter-tab active" onclick="filterDelayedList('hoje', this)">Hoje</button>
+                    <button class="filter-tab" onclick="filterDelayedList('atrasadas', this)">Atrasadas</button>
+                    <button class="filter-tab" onclick="filterDelayedList('proximas', this)">Próximas</button>
+                </div>
+
+                <div id="delayedItemsContainer"></div>
+            </div>
+
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                     <h3>📅 Cronograma Semanal de Estudos</h3>
+
+                    <!-- SELETOR DE MÊS E ANO -->
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <label>🗓️ <strong>Mês/Ano:</strong></label>
+                        <select id="monthSelect" onchange="onMonthYearChange()"></select>
+                        <select id="yearSelect" onchange="onMonthYearChange()"></select>
+                    </div>
+
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="openModalDisponibilidade()">⚡ Preencher Cronograma Automaticamente</button>
                         <button class="btn btn-secondary" onclick="avancarSemanaSiguiente()">🔄 Iniciar Nova Semana (Filtrar não estudados)</button>
@@ -753,11 +898,11 @@
                 <strong style="width: 80px;">🌅 Manhã:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
-                    <input type="time" id="inicioManha" value="08:00">
+                    <input type="time" id="inicioManha" value="08:00" onchange="calculateAutoFillProjection()">
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>Qtd Horas:</label>
-                    <input type="number" id="horasManha" value="2" min="0" max="8">
+                    <input type="number" id="horasManha" value="2" min="0" max="8" onchange="calculateAutoFillProjection()">
                 </div>
             </div>
 
@@ -765,11 +910,11 @@
                 <strong style="width: 80px;">☀️ Tarde:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
-                    <input type="time" id="inicioTarde" value="14:00">
+                    <input type="time" id="inicioTarde" value="14:00" onchange="calculateAutoFillProjection()">
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>Qtd Horas:</label>
-                    <input type="number" id="horasTarde" value="2" min="0" max="8">
+                    <input type="number" id="horasTarde" value="2" min="0" max="8" onchange="calculateAutoFillProjection()">
                 </div>
             </div>
 
@@ -777,11 +922,11 @@
                 <strong style="width: 80px;">🌙 Noite:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
-                    <input type="time" id="inicioNoite" value="19:00">
+                    <input type="time" id="inicioNoite" value="19:00" onchange="calculateAutoFillProjection()">
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>Qtd Horas:</label>
-                    <input type="number" id="horasNoite" value="1" min="0" max="8">
+                    <input type="number" id="horasNoite" value="1" min="0" max="8" onchange="calculateAutoFillProjection()">
                 </div>
             </div>
 
@@ -810,11 +955,11 @@
                         <strong style="width: 80px;">🌅 Manhã:</strong>
                         <div class="form-group" style="flex:1;">
                             <label>Início:</label>
-                            <input type="time" id="inicioManhaFimSemana" value="08:00">
+                            <input type="time" id="inicioManhaFimSemana" value="08:00" onchange="calculateAutoFillProjection()">
                         </div>
                         <div class="form-group" style="flex:1;">
                             <label>Qtd Horas:</label>
-                            <input type="number" id="horasManhaFimSemana" value="3" min="0" max="8">
+                            <input type="number" id="horasManhaFimSemana" value="3" min="0" max="8" onchange="calculateAutoFillProjection()">
                         </div>
                     </div>
 
@@ -822,11 +967,11 @@
                         <strong style="width: 80px;">☀️ Tarde:</strong>
                         <div class="form-group" style="flex:1;">
                             <label>Início:</label>
-                            <input type="time" id="inicioTardeFimSemana" value="14:00">
+                            <input type="time" id="inicioTardeFimSemana" value="14:00" onchange="calculateAutoFillProjection()">
                         </div>
                         <div class="form-group" style="flex:1;">
                             <label>Qtd Horas:</label>
-                            <input type="number" id="horasTardeFimSemana" value="0" min="0" max="8">
+                            <input type="number" id="horasTardeFimSemana" value="0" min="0" max="8" onchange="calculateAutoFillProjection()">
                         </div>
                     </div>
 
@@ -834,11 +979,11 @@
                         <strong style="width: 80px;">🌙 Noite:</strong>
                         <div class="form-group" style="flex:1;">
                             <label>Início:</label>
-                            <input type="time" id="inicioNoiteFimSemana" value="19:00">
+                            <input type="time" id="inicioNoiteFimSemana" value="19:00" onchange="calculateAutoFillProjection()">
                         </div>
                         <div class="form-group" style="flex:1;">
                             <label>Qtd Horas:</label>
-                            <input type="number" id="horasNoiteFimSemana" value="0" min="0" max="8">
+                            <input type="number" id="horasNoiteFimSemana" value="0" min="0" max="8" onchange="calculateAutoFillProjection()">
                         </div>
                     </div>
                 </div>
@@ -850,14 +995,20 @@
                 </label>
 
                 <div id="customDaysContainer" class="days-grid" style="display: none;">
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Segunda" checked> Segunda</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Terça" checked> Terça</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Quarta" checked> Quarta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Quinta" checked> Quinta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Sexta" checked> Sexta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Sábado" checked> Sábado</label>
-                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Domingo" checked> Domingo</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Segunda" checked onchange="calculateAutoFillProjection()"> Segunda</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Terça" checked onchange="calculateAutoFillProjection()"> Terça</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Quarta" checked onchange="calculateAutoFillProjection()"> Quarta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Quinta" checked onchange="calculateAutoFillProjection()"> Quinta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Sexta" checked onchange="calculateAutoFillProjection()"> Sexta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Sábado" checked onchange="calculateAutoFillProjection()"> Sábado</label>
+                    <label class="day-checkbox-label"><input type="checkbox" class="chk-day-custom" value="Domingo" checked onchange="calculateAutoFillProjection()"> Domingo</label>
                 </div>
+            </div>
+
+            <!-- PROJEÇÃO AUTOMÁTICA DE DIAS DE ESTUDO -->
+            <div id="projectionBox" class="projection-box">
+                📊 <strong>Cálculo Automático de Projeção:</strong><br>
+                Com esta carga horária, você precisará de aproximadamente <strong id="projectionDaysCount">0 dias</strong> (<span id="projectionWeeksCount">0 semanas</span>) para cobrir os <span id="projectionTopicsCount">0</span> tópicos pendentes do edital.
             </div>
 
             <div class="modal-actions">
@@ -971,25 +1122,24 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Configuração do PDF.js Worker
         if (window.pdfjsLib) {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
 
         const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+        const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        // Paleta de Cores Harmônicas e Distintas para as Matérias
         const PALETA_CORES_MATERIAS = [
-            'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', // Azul
-            'linear-gradient(135deg, #14532d 0%, #22c55e 100%)', // Verde
-            'linear-gradient(135deg, #701a75 0%, #c084fc 100%)', // Roxo / Violeta
-            'linear-gradient(135deg, #7c2d12 0%, #f97316 100%)', // Laranja
-            'linear-gradient(135deg, #831843 0%, #ec4899 100%)', // Rosa
-            'linear-gradient(135deg, #164e63 0%, #06b6d4 100%)', // Ciano / Turquesa
-            'linear-gradient(135deg, #713f12 0%, #eab308 100%)', // Amarelo
-            'linear-gradient(135deg, #312e81 0%, #6366f1 100%)', // Índigo
-            'linear-gradient(135deg, #881337 0%, #f43f5e 100%)', // Vermelho Rubi
-            'linear-gradient(135deg, #134e4a 0%, #14b8a6 100%)'  // Teal
+            'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+            'linear-gradient(135deg, #14532d 0%, #22c55e 100%)',
+            'linear-gradient(135deg, #701a75 0%, #c084fc 100%)',
+            'linear-gradient(135deg, #7c2d12 0%, #f97316 100%)',
+            'linear-gradient(135deg, #831843 0%, #ec4899 100%)',
+            'linear-gradient(135deg, #164e63 0%, #06b6d4 100%)',
+            'linear-gradient(135deg, #713f12 0%, #eab308 100%)',
+            'linear-gradient(135deg, #312e81 0%, #6366f1 100%)',
+            'linear-gradient(135deg, #881337 0%, #f43f5e 100%)',
+            'linear-gradient(135deg, #134e4a 0%, #14b8a6 100%)'
         ];
 
         const PALETA_SOLIDAS = [
@@ -1004,23 +1154,42 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
         let globalAudioCtx = null;
-        
-        // Estado do PDF.js
+        let currentDelayedFilter = 'hoje';
+
         let pdfDoc = null;
         let pdfPageNum = 1;
         let pdfScale = 1.2;
 
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                for (let registration of registrations) {
-                    registration.unregister();
-                }
+        // Inicializador de Meses e Anos
+        function initMonthYearSelectors() {
+            const mSelect = document.getElementById('monthSelect');
+            const ySelect = document.getElementById('yearSelect');
+
+            if (!mSelect || !ySelect) return;
+
+            mSelect.innerHTML = '';
+            ySelect.innerHTML = '';
+
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+
+            MESES.forEach((m, idx) => {
+                mSelect.innerHTML += `<option value="${idx}" ${idx === currentMonth ? 'selected' : ''}>${m}</option>`;
             });
+
+            for (let y = currentYear - 1; y <= currentYear + 3; y++) {
+                ySelect.innerHTML += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+            }
         }
 
-        // --- ATALHOS DE TECLADO (ESC E ENTER) PARA MODAIS ---
+        function onMonthYearChange() {
+            renderCalendar();
+            renderDelayedPanel();
+        }
+
         window.addEventListener('keydown', function(event) {
             const activeModal = document.querySelector('.modal-overlay[style*="display: flex"]');
             if (!activeModal) return;
@@ -1068,7 +1237,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
         }
 
-        // --- VISUALIZADOR PDF NATIVO COM CANAVAS (PDF.JS) ---
         function openModalViewEdital() {
             document.getElementById('editalModalTitle').innerText = `📄 Edital Oficial: ${currentConcurso}`;
             document.getElementById('modalViewEdital').style.display = 'flex';
@@ -1249,6 +1417,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 return alert('Nenhum edital cadastrado para este concurso. Importe um JSON ou adicione matérias manualmente primeiro.');
             }
             document.getElementById('modalDisponibilidade').style.display = 'flex';
+            calculateAutoFillProjection();
         }
 
         function closeModalDisponibilidade() {
@@ -1258,11 +1427,54 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         function toggleCustomDaysDisplay() {
             const isCustom = document.getElementById('chkCustomDays').checked;
             document.getElementById('customDaysContainer').style.display = isCustom ? 'grid' : 'none';
+            calculateAutoFillProjection();
         }
 
         function toggleWeekendBox() {
             const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
             document.getElementById('weekendConfigBox').style.display = isCustomWeekend ? 'flex' : 'none';
+            calculateAutoFillProjection();
+        }
+
+        // --- CÁLCULO AUTOMÁTICO DE DIAS PARA FECHAR O CRONOGRAMA ---
+        function calculateAutoFillProjection() {
+            const hManha = parseInt(document.getElementById('horasManha').value) || 0;
+            const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
+            const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
+
+            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
+            const hManhaFim = parseInt(document.getElementById('horasManhaFimSemana').value) || 0;
+            const hTardeFim = parseInt(document.getElementById('horasTardeFimSemana').value) || 0;
+            const hNoiteFim = parseInt(document.getElementById('horasNoiteFimSemana').value) || 0;
+
+            let diasAtivosCount = 5;
+            let weekendDaysCount = 0;
+
+            const isCustomDays = document.getElementById('chkCustomDays').checked;
+            if (isCustomDays) {
+                const chks = document.querySelectorAll('.chk-day-custom:checked');
+                diasAtivosCount = chks.length;
+            } else {
+                if (document.getElementById('chkSabado').checked) weekendDaysCount++;
+                if (document.getElementById('chkDomingo').checked) weekendDaysCount++;
+            }
+
+            const dailyHoursWeekdays = hManha + hTarde + hNoite;
+            const dailyHoursWeekend = isCustomWeekend ? (hManhaFim + hTardeFim + hNoiteFim) : dailyHoursWeekdays;
+
+            const totalWeeklyHours = (dailyHoursWeekdays * (diasAtivosCount - weekendDaysCount)) + (dailyHoursWeekend * weekendDaysCount);
+
+            const pendentesCount = editalItems.filter(item => {
+                return !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d);
+            }).length;
+
+            const slotsPerWeek = Math.max(1, totalWeeklyHours);
+            const neededWeeks = Math.ceil(pendentesCount / slotsPerWeek);
+            const neededDays = Math.ceil((pendentesCount / Math.max(1, (totalWeeklyHours / 7))));
+
+            document.getElementById('projectionDaysCount').innerText = `${neededDays} dias`;
+            document.getElementById('projectionWeeksCount').innerText = `${neededWeeks} semanas`;
+            document.getElementById('projectionTopicsCount').innerText = pendentesCount;
         }
 
         function copyPromptToClipboard() {
@@ -1274,7 +1486,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
-        // --- SISTEMA DE ALARME DE SINO/CHIME (E4-B4-E5 CHIME ACÚSTICO DE ALTA QUALIDADE) ---
         function getAudioContext() {
             if (!globalAudioCtx) {
                 globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1348,6 +1559,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         function showDashboard() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-dashboard').style.display = 'block';
+            initMonthYearSelectors();
             loadData();
         }
 
@@ -1368,6 +1580,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             if (tabId === 'tab-calendario') {
                 renderCalendar();
+                renderDelayedPanel();
             }
         }
 
@@ -1540,6 +1753,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             renderTable();
             renderChart();
             renderCalendar();
+            renderDelayedPanel();
         }
 
         function parseTimeIntervalToMinutes(timeIntervalStr) {
@@ -1593,10 +1807,108 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 
                 saveConcursosMetadata();
                 renderCalendar();
+                renderDelayedPanel();
             }
         }
 
-        // --- PREENCHIMENTO AUTOMÁTICO FLEXÍVEL ---
+        // --- PAINEL DE MATÉRIAS E REVISÕES ATRASADAS DA SUA IMAGEM ---
+        function renderDelayedPanel() {
+            const container = document.getElementById('delayedItemsContainer');
+            const badgeCount = document.getElementById('delayedBadgeCount');
+
+            if (!container || !badgeCount) return;
+
+            const schedule = concursosMetadata[currentConcurso]?.schedule || {};
+            const todayDayIndex = new Date().getDay(); // 0 = Dom, 1 = Seg...
+            const mapDayIndex = [6, 0, 1, 2, 3, 4, 5]; // Transforma para DIAS_SEMANA
+            const todayStr = DIAS_SEMANA[mapDayIndex[todayDayIndex]];
+
+            let delayedList = [];
+            let todayList = [];
+            let nextList = [];
+
+            DIAS_SEMANA.forEach((dia, dIdx) => {
+                const slots = schedule[dia] || [];
+                slots.forEach(slot => {
+                    if (!slot.materia) return;
+
+                    const itemObj = {
+                        dia,
+                        materia: slot.materia,
+                        assunto: slot.assunto || 'Revisão Geral do Tópico',
+                        completed: !!slot.completed,
+                        horario: slot.horario
+                    };
+
+                    if (!slot.completed) {
+                        if (dIdx < mapDayIndex[todayDayIndex]) {
+                            const delayDays = mapDayIndex[todayDayIndex] - dIdx;
+                            delayedList.push({ ...itemObj, delayDays });
+                        } else if (dIdx === mapDayIndex[todayDayIndex]) {
+                            todayList.push(itemObj);
+                        } else {
+                            nextList.push(itemObj);
+                        }
+                    }
+                });
+            });
+
+            badgeCount.innerText = `${delayedList.length} atrasada${delayedList.length !== 1 ? 's' : ''}`;
+
+            let displayList = [];
+            if (currentDelayedFilter === 'hoje') displayList = todayList;
+            else if (currentDelayedFilter === 'atrasadas') displayList = delayedList;
+            else if (currentDelayedFilter === 'proximas') displayList = nextList;
+
+            if (displayList.length === 0) {
+                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding: 1rem 0;">Nenhuma matéria ou revisão pendente para esta categoria.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            displayList.forEach(item => {
+                const delayBadgeHtml = item.delayDays 
+                    ? `<span class="delayed-badge-days">🕒 ${item.delayDays} dia${item.delayDays > 1 ? 's' : ''} de atraso</span>` 
+                    : `<span class="delayed-tag">${item.dia} - ${item.horario}</span>`;
+
+                container.innerHTML += `
+                    <div class="delayed-card">
+                        <div class="delayed-card-info">
+                            <h4>${item.materia}</h4>
+                            <p>${item.assunto}</p>
+                            <span class="delayed-tag">TEORIA / REVISÃO</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                            ${delayBadgeHtml}
+                            <button class="btn btn-success btn-sm" onclick="concluirDelayedItem('${item.dia}', '${item.materia}', '${item.assunto}')">
+                                ▶ Iniciar / Concluir
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterDelayedList(filterType, btn) {
+            currentDelayedFilter = filterType;
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderDelayedPanel();
+        }
+
+        function concluirDelayedItem(dia, materia, assunto) {
+            const schedule = concursosMetadata[currentConcurso]?.schedule || {};
+            if (schedule[dia]) {
+                const slot = schedule[dia].find(s => s.materia === materia && s.assunto === assunto);
+                if (slot) {
+                    slot.completed = true;
+                    saveConcursosMetadata();
+                    renderCalendar();
+                    renderDelayedPanel();
+                }
+            }
+        }
+
         function confirmarAutoFillDisponibilidade() {
             const incManha = document.getElementById('inicioManha').value || '08:00';
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
@@ -1689,6 +2001,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             concursosMetadata[currentConcurso].schedule = newSchedule;
             saveConcursosMetadata();
             renderCalendar();
+            renderDelayedPanel();
             closeModalDisponibilidade();
             alert('Cronograma gerado com sucesso respeitando a sua rotina personalizada!');
         }
@@ -1719,6 +2032,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
+            if (!grid) return;
             grid.innerHTML = '';
 
             const currentMeta = concursosMetadata[currentConcurso] || {};
@@ -1778,6 +2092,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 slot.completed = !slot.completed;
                 saveConcursosMetadata();
                 renderCalendar();
+                renderDelayedPanel();
             }
         }
 
@@ -1899,6 +2214,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
 
             saveConcursosMetadata();
             renderCalendar();
+            renderDelayedPanel();
             closeModalSlot();
         }
 
@@ -1907,6 +2223,7 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
                 concursosMetadata[currentConcurso].schedule[dia].splice(index, 1);
                 saveConcursosMetadata();
                 renderCalendar();
+                renderDelayedPanel();
             }
         }
 
@@ -2292,7 +2609,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.addEventListener('offline', updateOnlineStatus);
         window.addEventListener('load', updateOnlineStatus);
 
-        // --- RENDERIZAR GRÁFICO EM PORCENTAGEM (0% A 100%) ---
         function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
             const counts = {};
@@ -2366,7 +2682,6 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
             });
         }
 
-        // --- POMODORO SINCRO DE ÁUDIO NO TEMPO 0 ---
         let timerInterval = null;
         let isFocusTime = true;
         let timeLeft = 25 * 60;
@@ -2470,6 +2785,10 @@ Ordene as matérias e os assuntos por ordem de prioridade de estudo (1 = maior p
         window.removerEditalFile = removerEditalFile;
         window.changePdfPage = changePdfPage;
         window.zoomPdf = zoomPdf;
+        window.filterDelayedList = filterDelayedList;
+        window.concluirDelayedItem = concluirDelayedItem;
+        window.calculateAutoFillProjection = calculateAutoFillProjection;
+        window.onMonthYearChange = onMonthYearChange;
     </script>
 </body>
 </html>
