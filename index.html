@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meu Painel de Estudos</title>
 
-    <!-- Configurações PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,7 +22,6 @@
       }
     </script>
 
-    <!-- Supabase, Chart.js e PDF.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -43,8 +41,6 @@
             --completed-border: #10b981;
             --completed-text: #34d399;
             --code-bg: #090d16;
-            --atrasado-bg: rgba(239, 68, 68, 0.1);
-            --atrasado-border: #ef4444;
         }
 
         body.light-mode {
@@ -60,209 +56,56 @@
             --completed-border: #10b981;
             --completed-text: #065f46;
             --code-bg: #f1f5f9;
-            --atrasado-bg: #fee2e2;
-            --atrasado-border: #ef4444;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s;
-            width: 100%;
-            overflow-x: hidden;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; transition: background-color 0.3s, color 0.3s; width: 100%; overflow-x: hidden; }
 
         #offline-banner {
-            display: none;
-            background-color: #f59e0b;
-            color: #ffffff;
-            text-align: center;
-            padding: 0.5rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 2000;
+            display: none; background-color: #f59e0b; color: #ffffff; text-align: center; padding: 0.5rem;
+            font-size: 0.85rem; font-weight: 600; position: sticky; top: 0; z-index: 2000;
         }
 
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 1rem;
-        }
-
-        .auth-card {
-            background: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-
+        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1rem; }
+        .auth-card { background: var(--card-bg); padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
         .auth-card h2 { margin-bottom: 1.5rem; color: var(--primary-blue); }
 
-        #app-dashboard {
-            display: none;
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 1.5rem;
-            width: 100%;
-        }
+        #app-dashboard { display: none; max-width: 1300px; margin: 0 auto; padding: 1.5rem; width: 100%; }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .header-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header-brand img {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-brand img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
 
         .super-user-badge {
-            background: linear-gradient(135deg, #f59e0b, #ef4444);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 800;
-            padding: 3px 8px;
-            border-radius: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.75rem;
+            font-weight: 800; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
         .concurso-selector-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--card-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            flex-wrap: wrap;
+            display: flex; align-items: center; gap: 0.5rem; background: var(--card-bg);
+            padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap;
         }
 
         .countdown-badge {
-            background: #1e3a8a;
-            color: #93c5fd;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            border: 1px solid #1e40af;
-            cursor: pointer;
+            background: #1e3a8a; color: #93c5fd; padding: 6px 14px; border-radius: 20px;
+            font-weight: 600; font-size: 0.85rem; border: 1px solid #1e40af; cursor: pointer;
         }
 
-        .action-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.4rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            width: 100%;
-        }
+        .action-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 1.5rem; flex-wrap: wrap; width: 100%; }
+        .action-bar .btn { padding: 0.5rem 0.8rem; font-size: 0.88rem; flex: 1 1 auto; justify-content: center; text-align: center; min-width: 130px; }
 
-        .action-bar .btn {
-            padding: 0.5rem 0.8rem;
-            font-size: 0.88rem;
-            flex: 1 1 auto;
-            justify-content: center;
-            text-align: center;
-            min-width: 130px;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-color);
-            padding: 0.6rem 1.2rem;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            border-radius: 6px;
-            opacity: 0.6;
-            transition: 0.2s;
-        }
-
-        .tab-btn.active {
-            background-color: var(--primary-blue);
-            color: #ffffff;
-            opacity: 1;
-        }
+        .nav-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; flex-wrap: wrap; }
+        .tab-btn { background: transparent; border: none; color: var(--text-color); padding: 0.6rem 1.2rem; font-weight: 700; font-size: 1rem; cursor: pointer; border-radius: 6px; opacity: 0.6; transition: 0.2s; }
+        .tab-btn.active { background-color: var(--primary-blue); color: #ffffff; opacity: 1; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        .grid-top {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
+        .grid-top { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+        .card h3 { margin-bottom: 1rem; color: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem; }
 
-        .card {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-        }
-
-        .card h3 {
-            margin-bottom: 1rem;
-            color: var(--primary-blue);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            white-space: nowrap;
-            transition: opacity 0.2s;
-        }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; transition: opacity 0.2s; }
         .btn:hover { opacity: 0.9; }
         .btn-primary { background-color: var(--primary-blue); color: white; }
         .btn-secondary { background-color: #64748b; color: white; }
@@ -273,62 +116,15 @@
         .btn-warning { background-color: #f59e0b; color: white; }
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
-        input, select, textarea {
-            padding: 0.6rem 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            font-size: 0.95rem;
-            outline: none;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
+        input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--card-bg); color: var(--text-color); font-size: 0.95rem; outline: none; max-width: 100%; box-sizing: border-box; }
 
-        select {
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        textarea {
-            width: 100%;
-            resize: vertical;
-            line-height: 1.5;
-            font-family: inherit;
-        }
-
-        .timer-display {
-            font-size: 4rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 0.5rem 0;
-            letter-spacing: 2px;
-        }
-
-        .timer-settings {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1.2rem;
-            margin-top: 1rem;
-            font-size: 0.95rem;
-            flex-wrap: wrap;
-        }
-
+        .timer-display { font-size: 4rem; font-weight: bold; text-align: center; margin: 0.5rem 0; letter-spacing: 2px; }
+        .timer-settings { display: flex; justify-content: center; align-items: center; gap: 1.2rem; margin-top: 1rem; font-size: 0.95rem; flex-wrap: wrap; }
         .timer-settings label { display: flex; align-items: center; gap: 0.5rem; }
         .timer-settings input { width: 85px !important; text-align: center; padding: 0.5rem 0.4rem; font-weight: 600; }
 
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
-            padding: 1rem;
-        }
-        .modal {
-            background: var(--card-bg); color: var(--text-color); padding: 24px;
-            border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px;
-            border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
+        .modal { background: var(--card-bg); color: var(--text-color); padding: 24px; border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
         .modal-large { max-width: 900px; height: 88vh; }
         .form-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
         .form-group label { font-size: 0.85rem; font-weight: 600; }
@@ -347,14 +143,9 @@
         .materia-header-row td { padding: 0.8rem 1rem; font-size: 1rem; color: #ffffff; }
         .materia-header-content { display: flex; justify-content: space-between; align-items: center; }
 
-        .priority-input {
-            width: 55px; text-align: center; padding: 0.2rem 0.4rem;
-            background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.3);
-        }
+        .priority-input { width: 55px; text-align: center; padding: 0.2rem 0.4rem; background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.3); }
 
-        @media (max-width: 768px) {
-            .grid-top { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 768px) { .grid-top { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -474,27 +265,9 @@
             </div>
         </div>
 
-        <!-- TAB: CRONOGRAMA MENSAL -->
-        <div id="tab-calendario" class="tab-content">
-            <div class="card">
-                <h3>Cronograma Mensal de Estudos</h3>
-                <p style="opacity: 0.8;">Acesse os planos gerados automaticamente.</p>
-            </div>
-        </div>
-
-        <!-- TAB: ANOTAÇÕES -->
-        <div id="tab-anotacoes" class="tab-content">
-            <div class="card">
-                <h3>Anotações</h3>
-            </div>
-        </div>
-
-        <!-- TAB: FLASHCARDS -->
-        <div id="tab-flashcards" class="tab-content">
-            <div class="card">
-                <h3>Flashcards</h3>
-            </div>
-        </div>
+        <div id="tab-calendario" class="tab-content"><div class="card"><h3>Cronograma Mensal</h3></div></div>
+        <div id="tab-anotacoes" class="tab-content"><div class="card"><h3>Anotações</h3></div></div>
+        <div id="tab-flashcards" class="tab-content"><div class="card"><h3>Flashcards</h3></div></div>
     </div>
 
     <!-- MODAL NOVO CONCURSO -->
@@ -532,7 +305,6 @@
 
         let currentUser = null;
         let isSuperUser = false;
-
         let myChart = null;
         let allEditalItems = [];
         let editalItems = [];
@@ -588,7 +360,7 @@
                         .select('setting_value')
                         .eq('user_id', currentUser.id)
                         .eq('setting_key', 'concursos_metadata')
-                        .single();
+                        .maybeSingle();
 
                     if (!error && data && data.setting_value) {
                         metadataCache = data.setting_value;
@@ -598,9 +370,7 @@
             }
         }
 
-        function loadLocalMetadata() {
-            metadataCache = getConcursosMetadata();
-        }
+        function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
 
         async function loadData() {
             await loadConcursosMetadata();
@@ -615,6 +385,7 @@
         async function syncAllWithSupabase() {
             if (!currentUser) return;
             try {
+                // Puxa edital
                 const { data, error } = await supabaseClient
                     .from('edital')
                     .select('*')
@@ -624,9 +395,13 @@
                 if (!error && data) {
                     allEditalItems = data.map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
                     saveEditalToLocalStorage();
-                    filterDataByConcurso();
                 }
-            } catch(e) { console.log('Sincronização pendente...'); }
+
+                // Puxa concursos_metadata
+                await loadConcursosMetadata();
+
+                filterDataByConcurso();
+            } catch(e) { console.log('Sincronização em segundo plano...'); }
         }
 
         function loadLocalEditalData() {
@@ -981,7 +756,7 @@
 
         function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
 
-        /* AUTH & RECEPTOR DE EVENTO EM TEMPO REAL */
+        /* AUTENTICAÇÃO E RECEPTOR DE EVENTO EM TEMPO REAL */
         async function handleLogin() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -1022,7 +797,6 @@
             loadData();
         }
 
-        // ESCUTA EVENTOS DE AUTENTICAÇÃO DO SUPABASE
         supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session) {
                 currentUser = session.user;
