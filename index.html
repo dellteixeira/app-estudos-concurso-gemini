@@ -487,7 +487,7 @@
             text-decoration: line-through;
         }
 
-        /* ESTILOS DO CARD DE ANOTAÇÃO */
+        /* CARD DE ANOTAÇÕES & ANEXOS */
         .note-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
@@ -523,6 +523,26 @@
             white-space: pre-wrap;
             line-height: 1.5;
             color: var(--text-color);
+        }
+
+        .note-attachments-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .attachment-item {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid var(--primary-blue);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .modal-overlay {
@@ -788,15 +808,13 @@
                     <select id="anotacoesMateriaSelect" onchange="renderAnotacoesList(this.value)"></select>
                 </div>
 
-                <div id="anotacoesListContainer">
-                    <!-- As notas da matéria serão carregadas aqui -->
-                </div>
+                <div id="anotacoesListContainer"></div>
             </div>
         </div>
 
     </div>
 
-    <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO MANUALLY -->
+    <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO COM UPLOAD DE ARQUIVOS -->
     <div class="modal-overlay" id="modalAnotacao">
         <div class="modal">
             <h3 id="modalAnotacaoTitle">Nova Anotação</h3>
@@ -809,7 +827,22 @@
 
             <div class="form-group">
                 <label for="inputAnotacaoTexto"><strong>Conteúdo / Resumo / Dicas:</strong></label>
-                <textarea id="inputAnotacaoTexto" rows="10" placeholder="Digite aqui o conteúdo da sua nota..." required></textarea>
+                <textarea id="inputAnotacaoTexto" rows="8" placeholder="Digite aqui o conteúdo da sua nota..." required></textarea>
+            </div>
+
+            <!-- SEÇÃO DE ANEXOS DA NOTA -->
+            <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                    <label><strong>Arquivos Anexados (PDF, Imagens, TXT):</strong></label>
+                    <label class="btn btn-info btn-sm" style="cursor: pointer;">
+                        + Upload de Arquivo
+                        <input type="file" id="anotacaoFileInput" accept="image/*,.pdf,.txt,.doc,.docx" style="display: none;" onchange="uploadAnotacaoFile(event)">
+                    </label>
+                </div>
+
+                <div id="anotacaoModalFilesList" style="display: flex; flex-direction: column; gap: 6px; max-height: 120px; overflow-y: auto;">
+                    <p style="font-size: 0.8rem; opacity: 0.6;">Nenhum arquivo anexado a esta nota.</p>
+                </div>
             </div>
 
             <div class="modal-actions">
@@ -1089,6 +1122,7 @@
         let currentConcurso = 'Concurso Geral';
         let currentDelayedFilter = 'hoje';
         let selectedDayIsoGlobal = '';
+        let currentAnotacaoFilesTemp = []; 
 
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
@@ -1627,7 +1661,7 @@
             }
         }
 
-        /* GERENCIADOR DE ANOTAÇÕES MÚLTIPLAS POR MATÉRIA */
+        /* GERENCIADOR DE ANOTAÇÕES & ARQUIVOS ANEXADOS */
         function renderAnotacoesMateriaSelector() {
             const select = document.getElementById('anotacoesMateriaSelect');
             if (!select) return;
@@ -1654,11 +1688,7 @@
 
         function getAnotacoesListByMateria(materiaName) {
             const key = getAnotacoesStorageKey(materiaName);
-            try {
-                return JSON.parse(localStorage.getItem(key) || '[]');
-            } catch(e) {
-                return [];
-            }
+            try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; }
         }
 
         function saveAnotacoesListByMateria(materiaName, list) {
@@ -1679,6 +1709,20 @@
 
             container.innerHTML = '';
             list.forEach(item => {
+                let filesHtml = '';
+                if (item.files && item.files.length > 0) {
+                    filesHtml = '<div class="note-attachments-list">';
+                    item.files.forEach((f, idx) => {
+                        filesHtml += `
+                            <div class="attachment-item">
+                                <span>📎 ${f.name}</span>
+                                <button class="btn btn-primary btn-sm" style="padding:1px 5px;" onclick="downloadAnotacaoFile('${materiaName}', '${item.id}', ${idx})">Baixar</button>
+                            </div>
+                        `;
+                    });
+                    filesHtml += '</div>';
+                }
+
                 container.innerHTML += `
                     <div class="note-card">
                         <div class="note-card-header">
@@ -1686,7 +1730,8 @@
                             <span class="note-card-date">${item.data}</span>
                         </div>
                         <div class="note-card-body">${item.texto}</div>
-                        <div style="display:flex; justify-flex-end; gap:6px; margin-top:6px;">
+                        ${filesHtml}
+                        <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
                             <button class="btn btn-secondary btn-sm" onclick="editarAnotacao('${materiaName}', '${item.id}')">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="excluirAnotacao('${materiaName}', '${item.id}')">Excluir</button>
                         </div>
@@ -1697,19 +1742,88 @@
 
         function openModalCriarAnotacao() {
             const materiaSelect = document.getElementById('anotacoesMateriaSelect');
-            if (!materiaSelect || !materiaSelect.value) {
-                return alert('Selecione uma matéria primeiro.');
-            }
+            if (!materiaSelect || !materiaSelect.value) return alert('Selecione uma matéria primeiro.');
 
             document.getElementById('modalAnotacaoTitle').innerText = `Nova Nota (${materiaSelect.value})`;
             document.getElementById('anotacaoId').value = '';
             document.getElementById('inputAnotacaoTitulo').value = '';
             document.getElementById('inputAnotacaoTexto').value = '';
+            currentAnotacaoFilesTemp = [];
+            renderAnotacaoModalFilesList();
             document.getElementById('modalAnotacao').style.display = 'flex';
         }
 
         function closeModalAnotacao() {
             document.getElementById('modalAnotacao').style.display = 'none';
+        }
+
+        function renderAnotacaoModalFilesList() {
+            const container = document.getElementById('anotacaoModalFilesList');
+            if (!container) return;
+
+            if (currentAnotacaoFilesTemp.length === 0) {
+                container.innerHTML = `<p style="font-size:0.8rem; opacity:0.6;">Nenhum arquivo anexado a esta nota.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            currentAnotacaoFilesTemp.forEach((f, idx) => {
+                container.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:4px 8px; border-radius:4px; font-size:0.85rem;">
+                        <span>📎 ${f.name}</span>
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn btn-primary btn-sm" onclick="downloadTempAnotacaoFile(${idx})">Baixar</button>
+                            <button class="btn btn-danger btn-sm" onclick="removeTempAnotacaoFile(${idx})">Remover</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function uploadAnotacaoFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 10 * 1024 * 1024) {
+                return alert('O arquivo deve ter no máximo 10MB.');
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentAnotacaoFilesTemp.push({
+                    name: file.name,
+                    data: e.target.result
+                });
+                renderAnotacaoModalFilesList();
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function removeTempAnotacaoFile(index) {
+            currentAnotacaoFilesTemp.splice(index, 1);
+            renderAnotacaoModalFilesList();
+        }
+
+        function downloadTempAnotacaoFile(index) {
+            const f = currentAnotacaoFilesTemp[index];
+            if (!f) return;
+            const a = document.createElement('a');
+            a.href = f.data;
+            a.download = f.name;
+            a.click();
+        }
+
+        function downloadAnotacaoFile(materiaName, noteId, fileIdx) {
+            const list = getAnotacoesListByMateria(materiaName);
+            const note = list.find(n => String(n.id) === String(noteId));
+            if (note && note.files && note.files[fileIdx]) {
+                const f = note.files[fileIdx];
+                const a = document.createElement('a');
+                a.href = f.data;
+                a.download = f.name;
+                a.click();
+            }
         }
 
         function salvarAnotacao() {
@@ -1719,28 +1833,26 @@
             const titulo = document.getElementById('inputAnotacaoTitulo').value.trim();
             const texto = document.getElementById('inputAnotacaoTexto').value.trim();
 
-            if (!titulo || !texto) {
-                return alert('Preencha o título e o conteúdo da anotação.');
-            }
+            if (!titulo || !texto) return alert('Preencha o título e o conteúdo da anotação.');
 
             let list = getAnotacoesListByMateria(materiaName);
             const nowStr = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
             if (noteId) {
-                // Editar nota existente
                 const note = list.find(n => String(n.id) === String(noteId));
                 if (note) {
                     note.titulo = titulo;
                     note.texto = texto;
                     note.data = `Editado em ${nowStr}`;
+                    note.files = [...currentAnotacaoFilesTemp];
                 }
             } else {
-                // Criar nova nota
                 list.unshift({
                     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
                     titulo: titulo,
                     texto: texto,
-                    data: `Criado em ${nowStr}`
+                    data: `Criado em ${nowStr}`,
+                    files: [...currentAnotacaoFilesTemp]
                 });
             }
 
@@ -1758,6 +1870,8 @@
             document.getElementById('anotacaoId').value = note.id;
             document.getElementById('inputAnotacaoTitulo').value = note.titulo;
             document.getElementById('inputAnotacaoTexto').value = note.texto;
+            currentAnotacaoFilesTemp = note.files ? [...note.files] : [];
+            renderAnotacaoModalFilesList();
             document.getElementById('modalAnotacao').style.display = 'flex';
         }
 
@@ -2215,6 +2329,10 @@
         window.salvarAnotacao = salvarAnotacao;
         window.editarAnotacao = editarAnotacao;
         window.excluirAnotacao = excluirAnotacao;
+        window.uploadAnotacaoFile = uploadAnotacaoFile;
+        window.removeTempAnotacaoFile = removeTempAnotacaoFile;
+        window.downloadTempAnotacaoFile = downloadTempAnotacaoFile;
+        window.downloadAnotacaoFile = downloadAnotacaoFile;
     </script>
 </body>
 </html>
