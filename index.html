@@ -259,6 +259,7 @@
         .btn-warning { background-color: #f59e0b; color: white; }
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
+        /* FIX CORREÇÃO DE ESTOURO DO SELECT */
         input, select, textarea {
             padding: 0.6rem 0.8rem;
             border: 1px solid var(--border-color);
@@ -267,6 +268,14 @@
             color: var(--text-color);
             font-size: 0.95rem;
             outline: none;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        select {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
         }
 
         textarea {
@@ -589,6 +598,13 @@
             opacity: 0.6;
         }
 
+        .flashcard-grid-filter {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -600,7 +616,7 @@
             border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto;
         }
         .modal-large { max-width: 900px; height: 88vh; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
         .form-group label { font-size: 0.85rem; font-weight: 600; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
@@ -672,6 +688,7 @@
             .month-grid { grid-template-columns: repeat(1, 1fr); }
             .month-calendar-header { display: none; }
             .month-day-cell { height: auto; min-height: 100px; }
+            .flashcard-grid-filter { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -857,19 +874,19 @@
             </div>
         </div>
 
-        <!-- TAB: FLASHCARDS COM GERADOR AUTOMÁTICO -->
+        <!-- TAB: FLASHCARDS -->
         <div id="tab-flashcards" class="tab-content">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                     <h3>Flashcards e Estudo Ativo</h3>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="openModalGerarFlashcardsTexto()">⚡ Gerar por Texto / IA</button>
+                        <button class="btn btn-purple" onclick="openModalGerarFlashcardsTexto()">⚡ Gerar por Texto</button>
                         <button class="btn btn-primary" onclick="openModalCriarFlashcard()">+ Novo Flashcard Manual</button>
                     </div>
                 </div>
 
-                <!-- SELETORES DE FILTRO -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <!-- SELETORES DE FILTRO (GRID COM LARGURA MÁXIMA) -->
+                <div class="flashcard-grid-filter">
                     <div class="form-group">
                         <label for="flashcardMateriaSelect"><strong>Matéria:</strong></label>
                         <select id="flashcardMateriaSelect" onchange="onFlashcardMateriaChange(this.value)"></select>
@@ -907,11 +924,13 @@
 
     </div>
 
-    <!-- MODAL: GERAR FLASHCARDS A PARTIR DE TEXTO -->
+    <!-- MODAL: GERAR / IMPORTAR FLASHCARDS POR TEXTO -->
     <div class="modal-overlay" id="modalGerarFlashcards">
         <div class="modal modal-large">
-            <h3>Gerador Automático de Flashcards por Texto</h3>
-            <p style="font-size:0.85rem; opacity:0.85;">Cole o texto de estudo, lei seca ou resumo abaixo. O aplicativo irá extrair conceitos e criar perguntas e respostas automaticamente!</p>
+            <h3>Gerar / Importar Flashcards por Texto</h3>
+            <p style="font-size:0.85rem; opacity:0.85;">
+                Você pode colar um **texto de estudo** para o app extrair perguntas/respostas ou colar/importar um arquivo com **perguntas e respostas prontas** (ex: P: Pergunta / R: Resposta).
+            </p>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
@@ -925,14 +944,27 @@
             </div>
 
             <div class="form-group">
-                <label for="inputTextoBaseFlashcards"><strong>Cole aqui seu Texto de Estudo / Artigo de Lei:</strong></label>
-                <textarea id="inputTextoBaseFlashcards" rows="8" placeholder="Exemplo: De acordo com o artigo 5º da CF, todos são iguais perante a lei. A inviolabilidade do direito à vida é garantida a todos os brasileiros e estrangeiros residentes. O prazo prescritivo para ações de ressarcimento por ato de improbidade doloso é de 8 anos..."></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <label for="inputTextoBaseFlashcards"><strong>Cole seu Texto ou Importe do Arquivo (.txt / .doc):</strong></label>
+                    <label class="btn btn-info btn-sm" style="cursor: pointer;">
+                        📁 Importar Arquivo TXT/DOC
+                        <input type="file" id="importFcFileInput" accept=".txt,.doc,.docx" style="display: none;" onchange="handleImportFcFile(event)">
+                    </label>
+                </div>
+                <textarea id="inputTextoBaseFlashcards" rows="8" placeholder="Formatos aceitos:
+1. Texto livre de estudo (o app extrairá os conceitos).
+2. Perguntas e Respostas prontas:
+P: Qual o prazo rescisório?
+R: O prazo é de 2 anos.
+
+P: O que é ato administrativo?
+R: É a declaração do Estado..."></textarea>
             </div>
 
             <div id="generatedFcPreviewList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;"></div>
 
-            <div class="modal-actions" style="justify-content: space-between; align-items: center;">
-                <button class="btn btn-purple" onclick="processarTextoEGerarCards()">⚡ Processar Texto e Gerar Cards</button>
+            <div class="modal-actions" style="justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <button class="btn btn-purple" onclick="processarTextoEGerarCards()">⚡ Processar e Gerar Cards</button>
                 <div style="display: flex; gap: 8px;">
                     <button class="btn btn-secondary" onclick="closeModalGerarFlashcards()">Cancelar (ESC)</button>
                     <button class="btn btn-success" onclick="salvarFlashcardsGerados()">Salvar Todos no Sistema</button>
@@ -2155,7 +2187,7 @@
             }
         }
 
-        /* GERADOR AUTOMÁTICO DE FLASHCARDS POR TEXTO */
+        /* GERADOR E IMPORTADOR DE FLASHCARDS */
         function openModalGerarFlashcardsTexto() {
             const selectMat = document.getElementById('genFcMateriaSelect');
             selectMat.innerHTML = '';
@@ -2184,41 +2216,70 @@
             else uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}">${a}</option>`);
         }
 
+        function handleImportFcFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('inputTextoBaseFlashcards').value = e.target.result;
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
         function processarTextoEGerarCards() {
             const rawText = document.getElementById('inputTextoBaseFlashcards').value.trim();
-            if (!rawText) return alert('Cole um texto para que o app gere os flashcards.');
+            if (!rawText) return alert('Cole um texto ou importe um arquivo.');
 
             const materia = document.getElementById('genFcMateriaSelect').value || 'Geral';
             const assunto = document.getElementById('genFcAssuntoSelect').value || 'Geral';
 
-            const sentences = rawText.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 15);
             tempGeneratedFcList = [];
 
-            sentences.forEach((sentence, idx) => {
-                let question = "";
-                let answer = sentence.trim();
+            // TESTA SE É FORMATO ESTRUTURADO (P: / R:) OU (Pergunta: / Resposta:)
+            const regexPair = /(?:P|Pergunta|Q|Questão)\s*:\s*([\s\S]*?)(?=(?:R|Resposta)\s*:)\s*(?:R|Resposta)\s*:\s*([\s\S]*?)(?=(?:P|Pergunta|Q|Questão)\s*:|$)/gi;
+            let match;
+            let countMatches = 0;
 
-                if (/artigo|art\.|parágrafo|inciso|lei/i.test(sentence)) {
-                    question = `O que prevê a legislação no seguinte trecho (Item ${idx + 1})?`;
-                } else if (/prazo|dias|meses|anos|prescreve/i.test(sentence)) {
-                    question = `Qual é o prazo / regra temporal mencionada neste trecho?`;
-                } else if (/é|são|consiste|entende-se|significa/i.test(sentence)) {
-                    const parts = sentence.split(/é|são|consiste|entende-se|significa/i);
-                    if (parts.length >= 2) {
-                        question = `O que significa / qual a definição de: "${parts[0].trim()}"?`;
-                        answer = sentence.trim();
-                    } else {
-                        question = `Qual é a regra geral / conceito do trecho abaixo?`;
-                    }
-                } else {
-                    question = `Qual o ponto principal do trecho ${idx + 1}?`;
-                }
-
+            while ((match = regexPair.exec(rawText)) !== null) {
+                countMatches++;
                 tempGeneratedFcList.push({
                     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                    materia, assunto, pergunta: question, resposta: answer
+                    materia, assunto,
+                    pergunta: match[1].trim(),
+                    resposta: match[2].trim()
                 });
-            });
+            }
+
+            // SE NÃO ENCONTROU P: / R:, PROCESSA LINHA A LINHA OU POR SEPARADOR QUESTAO? RESPOSTA
+            if (countMatches === 0) {
+                const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+                
+                lines.forEach((line, idx) => {
+                    let q = "", a = "";
+
+                    if (line.includes('?')) {
+                        const parts = line.split('?');
+                        q = parts[0].trim() + '?';
+                        a = parts.slice(1).join('?').trim() || line;
+                    } else if (line.includes('-')) {
+                        const parts = line.split('-');
+                        q = parts[0].trim();
+                        a = parts.slice(1).join('-').trim();
+                    } else {
+                        q = `Conceito / Ponto ${idx + 1}`;
+                        a = line;
+                    }
+
+                    if (q && a) {
+                        tempGeneratedFcList.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                            materia, assunto, pergunta: q, resposta: a
+                        });
+                    }
+                });
+            }
 
             renderGeneratedFcPreview();
         }
@@ -2232,7 +2293,7 @@
                 return;
             }
 
-            container.innerHTML = `<strong style="font-size:0.9rem; color:var(--primary-blue); margin-bottom:4px;">${tempGeneratedFcList.length} Flashcards Gerados (Preview):</strong>`;
+            container.innerHTML = `<strong style="font-size:0.9rem; color:var(--primary-blue); margin-bottom:4px;">${tempGeneratedFcList.length} Flashcards Processados (Preview):</strong>`;
             tempGeneratedFcList.forEach((fc, idx) => {
                 container.innerHTML += `
                     <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px; font-size:0.85rem;">
@@ -2244,7 +2305,7 @@
         }
 
         function salvarFlashcardsGerados() {
-            if (tempGeneratedFcList.length === 0) return alert('Gere os flashcards antes de salvar.');
+            if (tempGeneratedFcList.length === 0) return alert('Gere ou processe os flashcards antes de salvar.');
 
             let allFc = getAllFlashcards();
             allFc = [...allFc, ...tempGeneratedFcList];
@@ -2764,6 +2825,7 @@
         window.openModalGerarFlashcardsTexto = openModalGerarFlashcardsTexto;
         window.closeModalGerarFlashcards = closeModalGerarFlashcards;
         window.onGenFcMateriaChange = onGenFcMateriaChange;
+        window.handleImportFcFile = handleImportFcFile;
         window.processarTextoEGerarCards = processarTextoEGerarCards;
         window.salvarFlashcardsGerados = salvarFlashcardsGerados;
         window.openModalCriarFlashcard = openModalCriarFlashcard;
