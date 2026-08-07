@@ -375,7 +375,7 @@
             font-weight: 700;
         }
 
-        /* ESTILOS DA GRADE MENSAL DE ESTUDOS COM CONTROLE DE OVERFLOW */
+        /* ESTILOS MENSAL */
         .month-calendar-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -396,14 +396,14 @@
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            height: 140px; /* Altura fixa controlada */
+            height: 140px;
             padding: 8px;
             display: flex;
             flex-direction: column;
             gap: 4px;
             position: relative;
             cursor: pointer;
-            overflow: hidden; /* Evita vazamento */
+            overflow: hidden;
             transition: background-color 0.2s, border-color 0.2s;
         }
 
@@ -441,7 +441,6 @@
             cursor: pointer;
         }
 
-        /* CONTAINER COM ROLAGEM INTERNA PARA MATÉRIAS NÃO EXTRAPOLAREM */
         .day-badges-scroll {
             display: flex;
             flex-direction: column;
@@ -471,6 +470,12 @@
             overflow: hidden;
             text-overflow: ellipsis;
             flex-shrink: 0;
+        }
+
+        .clean-subject-badge.rev {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: #f59e0b;
+            color: #fcd34d;
         }
 
         .clean-subject-badge.completed {
@@ -731,12 +736,12 @@
 
     </div>
 
-    <!-- MODAL DE CONFIGURAÇÃO MENSAL -->
+    <!-- MODAL DE CONFIGURAÇÃO COM REVISÕES 24H, 7D E 30D -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
             <h3>Configurar Horários e Turnos de Estudo</h3>
             <p style="font-size: 0.85rem; opacity: 0.85;">
-                Configure seus horários de estudo e a data em que pretende iniciar. O sistema alocará **100% dos tópicos pendentes do edital**, estendendo o cronograma pelos meses seguintes até concluir todo o conteúdo.
+                Configure seus horários de estudo. O sistema alocará **100% dos tópicos do edital** e incluirá **automaticamente as revisões periódicas de 24h, 7d e 30d**.
             </p>
 
             <div class="form-group" style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--primary-blue);">
@@ -840,8 +845,8 @@
             </div>
 
             <div id="projectionBox" class="projection-box">
-                <strong>Projeção Total do Edital:</strong><br>
-                Com esta carga horária, você precisará de aprox. <strong id="projectionDaysCount">0 dias</strong> para cobrir todos os <span id="projectionTopicsCount">0</span> tópicos pendentes.
+                <strong>Projeção Total do Edital + Revisões:</strong><br>
+                Com esta carga horária, você precisará de aprox. <strong id="projectionDaysCount">0 dias</strong> para cobrir todos os <span id="projectionTopicsCount">0</span> tópicos pendentes com suas revisões (24h, 7d, 30d).
             </div>
 
             <div class="modal-actions">
@@ -1002,11 +1007,39 @@
         let currentDelayedFilter = 'hoje';
         let selectedDayIsoGlobal = '';
 
-        let pdfDoc = null;
-        let pdfPageNum = 1;
-        let pdfScale = 1.2;
-
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
+
+        // ATALHOS DE TECLADO ESC E ENTER GLOBAIS
+        window.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeAllModals();
+            } else if (event.key === 'Enter') {
+                // Executa a ação do modal que estiver visível
+                if (isModalVisible('modalDisponibilidade')) {
+                    confirmarAutoFillDisponibilidade();
+                } else if (isModalVisible('modalSlot')) {
+                    salvarSlot();
+                } else if (isModalVisible('modalNovoConcurso')) {
+                    confirmarNovoConcurso();
+                } else if (isModalVisible('modalPromptIA')) {
+                    copyPromptToClipboard();
+                }
+            }
+        });
+
+        function isModalVisible(modalId) {
+            const m = document.getElementById(modalId);
+            return m && m.style.display === 'flex';
+        }
+
+        function closeAllModals() {
+            closeModalViewEdital();
+            closeModalDisponibilidade();
+            closeModalPromptIA();
+            closeModalNovoConcurso();
+            closeModalSlot();
+            closeModalDayDetails();
+        }
 
         function initMonthYearSelectors() {
             const mSelect = document.getElementById('monthSelect');
@@ -1032,15 +1065,6 @@
         function onMonthYearChange() {
             renderMonthCalendar();
             renderDelayedPanel();
-        }
-
-        function closeAllModals() {
-            closeModalViewEdital();
-            closeModalDisponibilidade();
-            closeModalPromptIA();
-            closeModalNovoConcurso();
-            closeModalSlot();
-            closeModalDayDetails();
         }
 
         function getMateriaColorIndex(materiaName, sortedMaterias) {
@@ -1080,13 +1104,22 @@
             const dailyHours = hManha + hTarde + hNoite;
 
             const pendentesCount = editalItems.filter(item => !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d)).length;
-            const neededDays = dailyHours > 0 ? Math.ceil(pendentesCount / dailyHours) : 0;
+            // Considerando o volume adicional das 3 revisões (24h, 7d, 30d)
+            const totalWorkUnits = pendentesCount * 2; 
+            const neededDays = dailyHours > 0 ? Math.ceil(totalWorkUnits / dailyHours) : 0;
 
             document.getElementById('projectionDaysCount').innerText = `${neededDays} dias`;
             document.getElementById('projectionTopicsCount').innerText = pendentesCount;
         }
 
-        /* GERAR CRONOGRAMA AUTOMÁTICO MULTIMÊS ATÉ COBRIR 100% DO EDITAL */
+        function formatDateIso(dateObj) {
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        /* GERAR CRONOGRAMA AUTOMÁTICO COM REVISÕES 24H, 7D E 30D INCLUÍDAS */
         function confirmarAutoFillDisponibilidade() {
             const startDateVal = document.getElementById('startDateInput').value;
             if (!startDateVal) return alert('Selecione a data de início.');
@@ -1128,9 +1161,13 @@
                 concursosMetadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
             }
             
-            // Limpa o cronograma existente para recalcular tudo de forma contínua
             concursosMetadata[currentConcurso].dateSchedule = {};
             const dateSchedule = concursosMetadata[currentConcurso].dateSchedule;
+
+            const addSlotToDate = (isoKey, slotData) => {
+                if (!dateSchedule[isoKey]) dateSchedule[isoKey] = [];
+                dateSchedule[isoKey].push(slotData);
+            };
 
             let pendentesIndex = 0;
             let currDate = new Date(startDate);
@@ -1144,12 +1181,7 @@
                 if (dayOfWeek === 0 && !incDom) allowStudy = false;
 
                 if (allowStudy) {
-                    const yyyy = currDate.getFullYear();
-                    const mm = String(currDate.getMonth() + 1).padStart(2, '0');
-                    const dd = String(currDate.getDate()).padStart(2, '0');
-                    const isoKey = `${yyyy}-${mm}-${dd}`;
-
-                    if (!dateSchedule[isoKey]) dateSchedule[isoKey] = [];
+                    const isoKey = formatDateIso(currDate);
 
                     const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
                     const useWeekendRules = isWeekend && isCustomWeekend;
@@ -1163,26 +1195,40 @@
                     const curIncNoite = useWeekendRules ? incNoiteFim : incNoite;
                     const curHNoite = useWeekendRules ? hNoiteFim : hNoite;
 
-                    for (let i = 0; i < curHManha && pendentesIndex < pendentes.length; i++) {
-                        const item = pendentes[pendentesIndex++];
-                        dateSchedule[isoKey].push({ horario: formatHourSlot(curIncManha, i), materia: item.materia, assunto: item.assunto, completed: false });
-                    }
-                    for (let i = 0; i < curHTarde && pendentesIndex < pendentes.length; i++) {
-                        const item = pendentes[pendentesIndex++];
-                        dateSchedule[isoKey].push({ horario: formatHourSlot(curIncTarde, i), materia: item.materia, assunto: item.assunto, completed: false });
-                    }
-                    for (let i = 0; i < curHNoite && pendentesIndex < pendentes.length; i++) {
-                        const item = pendentes[pendentesIndex++];
-                        dateSchedule[isoKey].push({ horario: formatHourSlot(curIncNoite, i), materia: item.materia, assunto: item.assunto, completed: false });
-                    }
+                    const allocateItemsForShift = (startHourStr, countHours) => {
+                        for (let i = 0; i < countHours && pendentesIndex < pendentes.length; i++) {
+                            const item = pendentes[pendentesIndex++];
+                            const timeSlot = formatHourSlot(startHourStr, i);
 
-                    if (dateSchedule[isoKey].length > 0) totalDiasGerados++;
+                            // 1. Teoria/Estudo Principal
+                            addSlotToDate(isoKey, {
+                                horario: timeSlot,
+                                materia: item.materia,
+                                assunto: `${item.assunto} (Teoria)`,
+                                completed: false
+                            });
+
+                            // 2. Agendar automáticos de Revisão (24h, 7d e 30d)
+                            const date24h = new Date(currDate); date24h.setDate(date24h.getDate() + 1);
+                            const date7d = new Date(currDate); date7d.setDate(date7d.getDate() + 7);
+                            const date30d = new Date(currDate); date30d.setDate(date30d.getDate() + 30);
+
+                            addSlotToDate(formatDateIso(date24h), { horario: 'Revisão 24h', materia: item.materia, assunto: `Rev 24h: ${item.assunto}`, completed: false, isRev: true });
+                            addSlotToDate(formatDateIso(date7d), { horario: 'Revisão 7d', materia: item.materia, assunto: `Rev 7d: ${item.assunto}`, completed: false, isRev: true });
+                            addSlotToDate(formatDateIso(date30d), { horario: 'Revisão 30d', materia: item.materia, assunto: `Rev 30d: ${item.assunto}`, completed: false, isRev: true });
+                        }
+                    };
+
+                    allocateItemsForShift(curIncManha, curHManha);
+                    allocateItemsForShift(curIncTarde, curHTarde);
+                    allocateItemsForShift(curIncNoite, curHNoite);
+
+                    if (dateSchedule[isoKey] && dateSchedule[isoKey].length > 0) totalDiasGerados++;
                 }
 
                 currDate.setDate(currDate.getDate() + 1);
             }
 
-            // Ajusta os seletores para o mês de início
             document.getElementById('monthSelect').value = startDate.getMonth();
             document.getElementById('yearSelect').value = startDate.getFullYear();
 
@@ -1190,10 +1236,10 @@
             renderMonthCalendar();
             renderDelayedPanel();
             closeModalDisponibilidade();
-            alert(`Cronograma gerado com sucesso! Foram alocados 100% dos tópicos (${pendentes.length} tópicos) ao longo de ${totalDiasGerados} dias de estudo (avançando pelos meses necessários).`);
+            alert(`Cronograma gerado com sucesso com REVISÕES (24h, 7d e 30d)! ${pendentes.length} tópicos alocados.`);
         }
 
-        /* RENDERIZAÇÃO DA GRADE MENSAL COM CAIXA FIXA E ROLAGEM INTERNA */
+        /* RENDERIZAÇÃO DA GRADE MENSAL COM DISTINÇÃO VISUAL DE REVISÕES */
         function renderMonthCalendar() {
             const grid = document.getElementById('monthCalendarGrid');
             if (!grid) return;
@@ -1212,7 +1258,7 @@
             let monthTotalMinutes = 0;
 
             const today = new Date();
-            const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const todayIso = formatDateIso(today);
 
             for (let i = 0; i < startDayOfWeek; i++) {
                 const emptyCell = document.createElement('div');
@@ -1230,28 +1276,28 @@
 
                 const daySlots = dateSchedule[isoKey] || [];
 
-                // Somar minutos apenas do mês visível
                 daySlots.forEach(slot => {
                     monthTotalMinutes += parseTimeIntervalToMinutes(slot.horario);
                 });
 
-                // Agrupa matérias do dia para exibição limpa
                 const materiasUnicas = [];
                 daySlots.forEach(slot => {
-                    if (!materiasUnicas.some(m => m.name === slot.materia)) {
-                        materiasUnicas.push({ name: slot.materia, allCompleted: true });
+                    if (!materiasUnicas.some(m => m.name === slot.materia && m.isRev === !!slot.isRev)) {
+                        materiasUnicas.push({ name: slot.materia, isRev: !!slot.isRev, allCompleted: true });
                     }
                 });
 
                 daySlots.forEach(slot => {
-                    const match = materiasUnicas.find(m => m.name === slot.materia);
+                    const match = materiasUnicas.find(m => m.name === slot.materia && m.isRev === !!slot.isRev);
                     if (match && !slot.completed) match.allCompleted = false;
                 });
 
                 let badgesHtml = '';
                 materiasUnicas.forEach(m => {
                     const statusClass = m.allCompleted ? 'completed' : '';
-                    badgesHtml += `<div class="clean-subject-badge ${statusClass}"><span>${m.name}</span></div>`;
+                    const revClass = m.isRev ? 'rev' : '';
+                    const labelPrefix = m.isRev ? '↻ ' : '';
+                    badgesHtml += `<div class="clean-subject-badge ${revClass} ${statusClass}"><span>${labelPrefix}${m.name}</span></div>`;
                 });
 
                 cell.innerHTML = `
@@ -1286,11 +1332,12 @@
                 container.innerHTML = '';
                 daySlots.forEach((slot, index) => {
                     const isCompleted = slot.completed ? 'completed' : '';
+                    const tagPrefix = slot.isRev ? '↻ REVISÃO: ' : '';
                     container.innerHTML += `
                         <div class="day-detail-item ${isCompleted}">
                             <div style="flex:1; cursor:pointer;" onclick="toggleSlotCompletedByDate('${isoDate}', ${index})">
                                 <div style="font-weight:700; color:var(--primary-blue); font-size:0.85rem;">${slot.horario} - ${slot.materia}</div>
-                                <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">${slot.assunto || 'Tópico Geral'}</div>
+                                <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">${tagPrefix}${slot.assunto || 'Tópico Geral'}</div>
                             </div>
                             <div style="display:flex; gap:6px;">
                                 <button class="btn btn-secondary btn-sm" onclick="openEditSlotModalByDate('${isoDate}', ${index})">Editar</button>
@@ -1429,7 +1476,7 @@
 
             const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule || {};
             const today = new Date();
-            const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const todayIso = formatDateIso(today);
 
             let delayedList = [];
             let todayList = [];
@@ -1439,7 +1486,7 @@
                 const slots = dateSchedule[isoDate] || [];
                 slots.forEach(slot => {
                     if (!slot.completed && slot.materia) {
-                        const itemObj = { isoDate, materia: slot.materia, assunto: slot.assunto || 'Tópico de Estudo', horario: slot.horario };
+                        const itemObj = { isoDate, materia: slot.materia, assunto: slot.assunto || 'Tópico de Estudo', horario: slot.horario, isRev: slot.isRev };
                         if (isoDate < todayIso) delayedList.push(itemObj);
                         else if (isoDate === todayIso) todayList.push(itemObj);
                         else nextList.push(itemObj);
@@ -1462,10 +1509,11 @@
             container.innerHTML = '';
             displayList.forEach(item => {
                 const dateFmt = item.isoDate.split('-').reverse().join('/');
+                const revTag = item.isRev ? '[REVISÃO] ' : '';
                 container.innerHTML += `
                     <div class="delayed-card">
                         <div class="delayed-card-info">
-                            <h4>${item.materia}</h4>
+                            <h4>${revTag}${item.materia}</h4>
                             <p>${item.assunto}</p>
                             <span class="delayed-tag">${dateFmt} - ${item.horario}</span>
                         </div>
@@ -1513,7 +1561,7 @@
         function parseTimeIntervalToMinutes(timeIntervalStr) {
             if (!timeIntervalStr) return 0;
             const parts = timeIntervalStr.split('-').map(s => s.trim());
-            if (parts.length !== 2) return 0;
+            if (parts.length !== 2) return 30; // 30m padrão para slots de revisão sem horário fixo
             const parseMinutes = (str) => {
                 const [h, m] = str.split(':').map(Number);
                 if (isNaN(h)) return 0;
@@ -1521,7 +1569,7 @@
             };
             const start = parseMinutes(parts[0]);
             const end = parseMinutes(parts[1]);
-            return (end > start) ? (end - start) : 60; // 1h padrão se parse falhar
+            return (end > start) ? (end - start) : 60;
         }
 
         function formatMinutesToHours(totalMinutes) {
