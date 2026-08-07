@@ -140,6 +140,17 @@
             object-fit: cover;
         }
 
+        .super-user-badge {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .concurso-selector-bar {
             display: flex;
             align-items: center;
@@ -496,7 +507,7 @@
             text-decoration: line-through;
         }
 
-        /* CARD DE ANOTAÇÕES & ANEXOS */
+        /* CARD DE ANOTAÇÕES */
         .note-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
@@ -534,26 +545,6 @@
             color: var(--text-color);
         }
 
-        .note-attachments-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 6px;
-            padding-top: 6px;
-            border-top: 1px dashed var(--border-color);
-        }
-
-        .attachment-item {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid var(--primary-blue);
-            border-radius: 6px;
-            padding: 4px 8px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
         /* ESTILOS DE FLASHCARDS */
         .flashcard-display {
             background: rgba(255, 255, 255, 0.04);
@@ -575,15 +566,6 @@
         .flashcard-display:hover {
             background: rgba(59, 130, 246, 0.08);
             transform: translateY(-2px);
-        }
-
-        .flashcard-tag {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: #38bdf8;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            display: none; /* OCULTADO PARA FICAR MAIS LIMPO */
         }
 
         .flashcard-text {
@@ -717,6 +699,7 @@
             <div class="header-brand">
                 <img src="icon-192.png" alt="Símbolo Estudos">
                 <h2>Painel de Estudos</h2>
+                <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
             </div>
             
             <div class="concurso-selector-bar">
@@ -1008,7 +991,7 @@ R: É a declaração do Estado..."></textarea>
         </div>
     </div>
 
-    <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO COM UPLOAD DE ARQUIVOS -->
+    <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO (SEM SEÇÃO DE UPLOAD) -->
     <div class="modal-overlay" id="modalAnotacao">
         <div class="modal">
             <h3 id="modalAnotacaoTitle">Nova Anotação</h3>
@@ -1021,22 +1004,7 @@ R: É a declaração do Estado..."></textarea>
 
             <div class="form-group">
                 <label for="inputAnotacaoTexto"><strong>Conteúdo / Resumo / Dicas:</strong></label>
-                <textarea id="inputAnotacaoTexto" rows="8" placeholder="Digite aqui o conteúdo da sua nota..." required></textarea>
-            </div>
-
-            <!-- SEÇÃO DE ANEXOS DA NOTA -->
-            <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-                    <label><strong>Arquivos Anexados (PDF, Imagens, TXT):</strong></label>
-                    <label class="btn btn-info btn-sm" style="cursor: pointer;">
-                        + Upload de Arquivo
-                        <input type="file" id="anotacaoFileInput" accept="image/*,.pdf,.txt,.doc,.docx" style="display: none;" onchange="uploadAnotacaoFile(event)">
-                    </label>
-                </div>
-
-                <div id="anotacaoModalFilesList" style="display: flex; flex-direction: column; gap: 6px; max-height: 120px; overflow-y: auto;">
-                    <p style="font-size: 0.8rem; opacity: 0.6;">Nenhum arquivo anexado a esta nota.</p>
-                </div>
+                <textarea id="inputAnotacaoTexto" rows="10" placeholder="Digite aqui o conteúdo da sua nota..." required></textarea>
             </div>
 
             <div class="modal-actions">
@@ -1309,6 +1277,9 @@ R: É a declaração do Estado..."></textarea>
         ];
         const PALETA_SOLIDAS = ['#3b82f6', '#22c55e', '#c084fc', '#f97316', '#ec4899'];
 
+        let currentUser = null;
+        let isSuperUser = false;
+
         let myChart = null;
         let allEditalItems = [];
         let editalItems = [];
@@ -1316,7 +1287,6 @@ R: É a declaração do Estado..."></textarea>
         let currentConcurso = 'Concurso Geral';
         let currentDelayedFilter = 'hoje';
         let selectedDayIsoGlobal = '';
-        let currentAnotacaoFilesTemp = []; 
 
         // ESTADOS DE FLASHCARDS
         let activeFlashcardsList = [];
@@ -1324,7 +1294,19 @@ R: É a declaração do Estado..."></textarea>
         let isFcShowingAnswer = false;
         let tempGeneratedFcList = [];
 
-        let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
+        function getConcursosMetadataStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `concursos_metadata_${uid}`;
+        }
+
+        function getConcursosMetadata() {
+            try { return JSON.parse(localStorage.getItem(getConcursosMetadataStorageKey()) || '{}'); }
+            catch(e) { return {}; }
+        }
+
+        function saveConcursosMetadata(data) {
+            localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(data));
+        }
 
         // ATALHOS DE TECLADO ESC E ENTER GLOBAIS
         window.addEventListener('keydown', function(event) {
@@ -1477,12 +1459,13 @@ R: É a declaração do Estado..."></textarea>
                 return;
             }
 
-            if (!concursosMetadata[currentConcurso]) {
-                concursosMetadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) {
+                metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
             }
             
-            concursosMetadata[currentConcurso].dateSchedule = {};
-            const dateSchedule = concursosMetadata[currentConcurso].dateSchedule;
+            metadata[currentConcurso].dateSchedule = {};
+            const dateSchedule = metadata[currentConcurso].dateSchedule;
 
             const addSlotToDate = (isoKey, slotData) => {
                 if (!dateSchedule[isoKey]) dateSchedule[isoKey] = [];
@@ -1550,7 +1533,7 @@ R: É a declaração do Estado..."></textarea>
             document.getElementById('monthSelect').value = startDate.getMonth();
             document.getElementById('yearSelect').value = startDate.getFullYear();
 
-            saveConcursosMetadata();
+            saveConcursosMetadata(metadata);
             renderMonthCalendar();
             renderDelayedPanel();
             closeModalDisponibilidade();
@@ -1572,7 +1555,8 @@ R: É a declaração do Estado..."></textarea>
             const startDayOfWeek = firstDay.getDay(); 
             const totalDays = lastDay.getDate();
 
-            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule || {};
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
             let monthTotalMinutes = 0;
 
             const today = new Date();
@@ -1642,7 +1626,8 @@ R: É a declaração do Estado..."></textarea>
             document.getElementById('modalDayTitle').innerText = `Disciplinas de ${formattedDate}`;
 
             const container = document.getElementById('dayDetailsContainer');
-            const daySlots = concursosMetadata[currentConcurso]?.dateSchedule?.[isoDate] || [];
+            const metadata = getConcursosMetadata();
+            const daySlots = metadata[currentConcurso]?.dateSchedule?.[isoDate] || [];
 
             if (daySlots.length === 0) {
                 container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding:1.5rem 0;">Nenhuma disciplina cadastrada nesta data.</p>`;
@@ -1703,7 +1688,8 @@ R: É a declaração do Estado..."></textarea>
 
         function openEditSlotModalByDate(isoDate, index) {
             closeModalDayDetails();
-            const slot = concursosMetadata[currentConcurso]?.dateSchedule?.[isoDate]?.[index];
+            const metadata = getConcursosMetadata();
+            const slot = metadata[currentConcurso]?.dateSchedule?.[isoDate]?.[index];
             if (!slot) return;
 
             document.getElementById('modalSlotTitle').innerText = `Editar (${isoDate.split('-').reverse().join('/')})`;
@@ -1734,10 +1720,11 @@ R: É a declaração do Estado..."></textarea>
 
             if (!horario) return alert('Informe o horário.');
 
-            if (!concursosMetadata[currentConcurso]) concursosMetadata[currentConcurso] = { dateSchedule: {} };
-            if (!concursosMetadata[currentConcurso].dateSchedule) concursosMetadata[currentConcurso].dateSchedule = {};
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = { dateSchedule: {} };
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
 
-            const dateSchedule = concursosMetadata[currentConcurso].dateSchedule;
+            const dateSchedule = metadata[currentConcurso].dateSchedule;
             if (!dateSchedule[isoDate]) dateSchedule[isoDate] = [];
 
             const slotObj = { horario, materia, assunto, completed };
@@ -1748,17 +1735,18 @@ R: É a declaração do Estado..."></textarea>
                 dateSchedule[isoDate].push(slotObj);
             }
 
-            saveConcursosMetadata();
+            saveConcursosMetadata(metadata);
             renderMonthCalendar();
             renderDelayedPanel();
             closeModalSlot();
         }
 
         function toggleSlotCompletedByDate(isoDate, index) {
-            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule;
+            let metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
             if (dateSchedule && dateSchedule[isoDate] && dateSchedule[isoDate][index]) {
                 dateSchedule[isoDate][index].completed = !dateSchedule[isoDate][index].completed;
-                saveConcursosMetadata();
+                saveConcursosMetadata(metadata);
                 renderMonthCalendar();
                 renderDelayedPanel();
                 openModalDayDetails(isoDate);
@@ -1766,10 +1754,11 @@ R: É a declaração do Estado..."></textarea>
         }
 
         function removerSlotByDate(isoDate, index) {
-            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule;
+            let metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
             if (dateSchedule && dateSchedule[isoDate]) {
                 dateSchedule[isoDate].splice(index, 1);
-                saveConcursosMetadata();
+                saveConcursosMetadata(metadata);
                 renderMonthCalendar();
                 renderDelayedPanel();
                 openModalDayDetails(isoDate);
@@ -1778,9 +1767,10 @@ R: É a declaração do Estado..."></textarea>
 
         function limparCronogramaSemanal() {
             if (confirm(`Deseja limpar todo o cronograma do concurso "${currentConcurso}"?`)) {
-                if (concursosMetadata[currentConcurso]) {
-                    concursosMetadata[currentConcurso].dateSchedule = {};
-                    saveConcursosMetadata();
+                let metadata = getConcursosMetadata();
+                if (metadata[currentConcurso]) {
+                    metadata[currentConcurso].dateSchedule = {};
+                    saveConcursosMetadata(metadata);
                     renderMonthCalendar();
                     renderDelayedPanel();
                 }
@@ -1792,7 +1782,8 @@ R: É a declaração do Estado..."></textarea>
             const badgeCount = document.getElementById('delayedBadgeCount');
             if (!container || !badgeCount) return;
 
-            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule || {};
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
             const today = new Date();
             const todayIso = formatDateIso(today);
 
@@ -1851,19 +1842,20 @@ R: É a declaração do Estado..."></textarea>
         }
 
         function concluirDelayedItemByDate(isoDate, materia, assunto) {
-            const dateSchedule = concursosMetadata[currentConcurso]?.dateSchedule;
+            let metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
             if (dateSchedule && dateSchedule[isoDate]) {
                 const slot = dateSchedule[isoDate].find(s => s.materia === materia && s.assunto === assunto);
                 if (slot) {
                     slot.completed = true;
-                    saveConcursosMetadata();
+                    saveConcursosMetadata(metadata);
                     renderMonthCalendar();
                     renderDelayedPanel();
                 }
             }
         }
 
-        /* GERENCIADOR DE ANOTAÇÕES */
+        /* GERENCIADOR DE ANOTAÇÕES (SEM ANEXOS) */
         function renderAnotacoesMateriaSelector() {
             const select = document.getElementById('anotacoesMateriaSelect');
             if (!select) return;
@@ -1884,7 +1876,10 @@ R: É a declaração do Estado..."></textarea>
             renderAnotacoesList(materias[0]);
         }
 
-        function getAnotacoesStorageKey(materiaName) { return `anotacoes_list_${currentConcurso}_${materiaName}`; }
+        function getAnotacoesStorageKey(materiaName) {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `anotacoes_list_${uid}_${currentConcurso}_${materiaName}`;
+        }
 
         function getAnotacoesListByMateria(materiaName) {
             const key = getAnotacoesStorageKey(materiaName);
@@ -1909,20 +1904,6 @@ R: É a declaração do Estado..."></textarea>
 
             container.innerHTML = '';
             list.forEach(item => {
-                let filesHtml = '';
-                if (item.files && item.files.length > 0) {
-                    filesHtml = '<div class="note-attachments-list">';
-                    item.files.forEach((f, idx) => {
-                        filesHtml += `
-                            <div class="attachment-item">
-                                <span>📎 ${f.name}</span>
-                                <button class="btn btn-primary btn-sm" style="padding:1px 5px;" onclick="downloadAnotacaoFile('${materiaName}', '${item.id}', ${idx})">Baixar</button>
-                            </div>
-                        `;
-                    });
-                    filesHtml += '</div>';
-                }
-
                 container.innerHTML += `
                     <div class="note-card">
                         <div class="note-card-header">
@@ -1930,7 +1911,6 @@ R: É a declaração do Estado..."></textarea>
                             <span class="note-card-date">${item.data}</span>
                         </div>
                         <div class="note-card-body">${item.texto}</div>
-                        ${filesHtml}
                         <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
                             <button class="btn btn-secondary btn-sm" onclick="editarAnotacao('${materiaName}', '${item.id}')">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="excluirAnotacao('${materiaName}', '${item.id}')">Excluir</button>
@@ -1948,66 +1928,10 @@ R: É a declaração do Estado..."></textarea>
             document.getElementById('anotacaoId').value = '';
             document.getElementById('inputAnotacaoTitulo').value = '';
             document.getElementById('inputAnotacaoTexto').value = '';
-            currentAnotacaoFilesTemp = [];
-            renderAnotacaoModalFilesList();
             document.getElementById('modalAnotacao').style.display = 'flex';
         }
 
         function closeModalAnotacao() { document.getElementById('modalAnotacao').style.display = 'none'; }
-
-        function renderAnotacaoModalFilesList() {
-            const container = document.getElementById('anotacaoModalFilesList');
-            if (!container) return;
-
-            if (currentAnotacaoFilesTemp.length === 0) {
-                container.innerHTML = `<p style="font-size:0.8rem; opacity:0.6;">Nenhum arquivo anexado a esta nota.</p>`;
-                return;
-            }
-
-            container.innerHTML = '';
-            currentAnotacaoFilesTemp.forEach((f, idx) => {
-                container.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:4px 8px; border-radius:4px; font-size:0.85rem;">
-                        <span>📎 ${f.name}</span>
-                        <div style="display:flex; gap:4px;">
-                            <button class="btn btn-primary btn-sm" onclick="downloadTempAnotacaoFile(${idx})">Baixar</button>
-                            <button class="btn btn-danger btn-sm" onclick="removeTempAnotacaoFile(${idx})">Remover</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function uploadAnotacaoFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (file.size > 10 * 1024 * 1024) return alert('O arquivo deve ter no máximo 10MB.');
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                currentAnotacaoFilesTemp.push({ name: file.name, data: e.target.result });
-                renderAnotacaoModalFilesList();
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
-        }
-
-        function removeTempAnotacaoFile(index) { currentAnotacaoFilesTemp.splice(index, 1); renderAnotacaoModalFilesList(); }
-        function downloadTempAnotacaoFile(index) {
-            const f = currentAnotacaoFilesTemp[index];
-            if (!f) return;
-            const a = document.createElement('a'); a.href = f.data; a.download = f.name; a.click();
-        }
-
-        function downloadAnotacaoFile(materiaName, noteId, fileIdx) {
-            const list = getAnotacoesListByMateria(materiaName);
-            const note = list.find(n => String(n.id) === String(noteId));
-            if (note && note.files && note.files[fileIdx]) {
-                const f = note.files[fileIdx];
-                const a = document.createElement('a'); a.href = f.data; a.download = f.name; a.click();
-            }
-        }
 
         function salvarAnotacao() {
             const materiaSelect = document.getElementById('anotacoesMateriaSelect');
@@ -2027,15 +1951,13 @@ R: É a declaração do Estado..."></textarea>
                     note.titulo = titulo;
                     note.texto = texto;
                     note.data = `Editado em ${nowStr}`;
-                    note.files = [...currentAnotacaoFilesTemp];
                 }
             } else {
                 list.unshift({
                     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
                     titulo: titulo,
                     texto: texto,
-                    data: `Criado em ${nowStr}`,
-                    files: [...currentAnotacaoFilesTemp]
+                    data: `Criado em ${nowStr}`
                 });
             }
 
@@ -2053,8 +1975,6 @@ R: É a declaração do Estado..."></textarea>
             document.getElementById('anotacaoId').value = note.id;
             document.getElementById('inputAnotacaoTitulo').value = note.titulo;
             document.getElementById('inputAnotacaoTexto').value = note.texto;
-            currentAnotacaoFilesTemp = note.files ? [...note.files] : [];
-            renderAnotacaoModalFilesList();
             document.getElementById('modalAnotacao').style.display = 'flex';
         }
 
@@ -2068,7 +1988,10 @@ R: É a declaração do Estado..."></textarea>
         }
 
         /* GERENCIADOR DE FLASHCARDS */
-        function getFlashcardsStorageKey() { return `flashcards_data_${currentConcurso}`; }
+        function getFlashcardsStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `flashcards_data_${uid}_${currentConcurso}`;
+        }
 
         function getAllFlashcards() {
             try { return JSON.parse(localStorage.getItem(getFlashcardsStorageKey()) || '[]'); } catch(e) { return []; }
@@ -2134,7 +2057,6 @@ R: É a declaração do Estado..."></textarea>
             }
         }
 
-        /* ATUALIZAÇÃO SEM O RÓTULO DA MATÉRIA/ASSUNTO NO CARD */
         function updateFlashcardCardDisplay() {
             if (activeFlashcardsList.length === 0) return;
             const card = activeFlashcardsList[currentFcIndex];
@@ -2435,7 +2357,6 @@ R: É a declaração do Estado..."></textarea>
         }
 
         function closeModalSlot() { document.getElementById('modalSlot').style.display = 'none'; }
-        function saveConcursosMetadata() { localStorage.setItem('concursos_metadata', JSON.stringify(concursosMetadata)); }
 
         function onMateriaSelectChange(selectedMateria, preSelectedAssunto = '') {
             const selectAssunto = document.getElementById('slotAssuntoSelect');
@@ -2468,9 +2389,14 @@ R: É a declaração do Estado..."></textarea>
             const password = document.getElementById('password').value.trim();
             if (!email || !password) return alert('Preencha e-mail e senha.');
 
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert('Erro ao entrar: ' + error.message);
-            else showDashboard();
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert('Erro ao entrar: ' + error.message);
+            } else {
+                currentUser = data.user;
+                checkSuperUserStatus();
+                showDashboard();
+            }
         }
 
         async function handleSignUp() {
@@ -2485,8 +2411,17 @@ R: É a declaração do Estado..."></textarea>
 
         async function handleLogout() {
             await supabaseClient.auth.signOut();
+            currentUser = null;
+            isSuperUser = false;
             document.getElementById('app-dashboard').style.display = 'none';
             document.getElementById('auth-screen').style.display = 'flex';
+        }
+
+        function checkSuperUserStatus() {
+            // DEFINE SEU PERFIL COMO SUPER USUÁRIO
+            isSuperUser = true; 
+            const badge = document.getElementById('superUserBadge');
+            if (badge) badge.style.display = isSuperUser ? 'inline-block' : 'none';
         }
 
         function showDashboard() {
@@ -2497,7 +2432,11 @@ R: É a declaração do Estado..."></textarea>
         }
 
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) showDashboard();
+            if (session) {
+                currentUser = session.user;
+                checkSuperUserStatus();
+                showDashboard();
+            }
         });
 
         function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
@@ -2522,7 +2461,8 @@ R: É a declaração do Estado..."></textarea>
         function renderConcursoSelector() {
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
-            const set = new Set(Object.keys(concursosMetadata));
+            const metadata = getConcursosMetadata();
+            const set = new Set(Object.keys(metadata));
             set.add('Concurso Geral');
             allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
             const list = Array.from(set);
@@ -2552,12 +2492,18 @@ R: É a declaração do Estado..."></textarea>
         async function loadData() {
             loadLocalData();
             filterDataByConcurso();
-            if (navigator.onLine) {
+            if (navigator.onLine && currentUser) {
                 try {
-                    const { data, error } = await supabaseClient.from('edital').select('*').order('prioridade', { ascending: true });
+                    const { data, error } = await supabaseClient
+                        .from('edital')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .order('prioridade', { ascending: true });
+
                     if (!error && data && data.length > 0) {
                         allEditalItems = data.map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
-                        localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                        const uid = currentUser.id;
+                        localStorage.setItem(`edital_offline_data_${uid}`, JSON.stringify(allEditalItems));
                         filterDataByConcurso();
                     }
                 } catch (e) { console.log('Modo offline.'); }
@@ -2565,12 +2511,18 @@ R: É a declaração do Estado..."></textarea>
         }
 
         function loadLocalData() {
-            const local = localStorage.getItem('edital_offline_data');
+            const uid = currentUser ? currentUser.id : 'guest';
+            const local = localStorage.getItem(`edital_offline_data_${uid}`);
             if (local) {
                 try {
                     allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
                 } catch(e) { allEditalItems = []; }
             }
+        }
+
+        function saveEditalToStorage() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            localStorage.setItem(`edital_offline_data_${uid}`, JSON.stringify(allEditalItems));
         }
 
         function renderTable() {
@@ -2630,7 +2582,7 @@ R: É a declaração do Estado..."></textarea>
         async function updateMateriaPriority(materiaName, newPriority) {
             const val = parseInt(newPriority) || 1;
             allEditalItems.forEach(item => { if (item.materia === materiaName) item.prioridade = val; });
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+            saveEditalToStorage();
             filterDataByConcurso();
         }
 
@@ -2638,7 +2590,7 @@ R: É a declaração do Estado..."></textarea>
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item[field] = !currentValue;
-                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                saveEditalToStorage();
                 filterDataByConcurso();
             }
         }
@@ -2647,7 +2599,7 @@ R: É a declaração do Estado..."></textarea>
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item.teoria = false; item.questoes = false; item.rev_24h = false; item.rev_7d = false; item.rev_30d = false;
-                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                saveEditalToStorage();
                 filterDataByConcurso();
             }
         }
@@ -2661,10 +2613,11 @@ R: É a declaração do Estado..."></textarea>
             allEditalItems.push({
                 id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
                 materia, assunto, prioridade, concurso: currentConcurso,
+                user_id: currentUser ? currentUser.id : null,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
             });
             openMaterias[materia] = true;
-            localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+            saveEditalToStorage();
             document.getElementById('materia').value = '';
             document.getElementById('assunto').value = '';
             filterDataByConcurso();
@@ -2673,7 +2626,7 @@ R: É a declaração do Estado..."></textarea>
         function clearData() {
             if (confirm(`Apagar todos os tópicos do edital "${currentConcurso}"?`)) {
                 allEditalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') !== currentConcurso);
-                localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                saveEditalToStorage();
                 filterDataByConcurso();
             }
         }
@@ -2699,6 +2652,7 @@ R: É a declaração do Estado..."></textarea>
                                         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                                         materia: mName, assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
                                         prioridade: prio, concurso: currentConcurso,
+                                        user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
                                     });
                                 });
@@ -2706,7 +2660,7 @@ R: É a declaração do Estado..."></textarea>
                         });
                     }
                     allEditalItems = [...allEditalItems, ...formattedData];
-                    localStorage.setItem('edital_offline_data', JSON.stringify(allEditalItems));
+                    saveEditalToStorage();
                     filterDataByConcurso();
                     alert(`Sucesso! ${formattedData.length} tópicos foram importados.`);
                 } catch(err) { alert('Erro no arquivo JSON.'); }
@@ -2716,18 +2670,20 @@ R: É a declaração do Estado..."></textarea>
 
         function updateCountdownBadge() {
             const badge = document.getElementById('countdownBadge');
-            const dataStr = concursosMetadata[currentConcurso]?.dataProva;
+            const metadata = getConcursosMetadata();
+            const dataStr = metadata[currentConcurso]?.dataProva;
             if (!dataStr) { badge.textContent = "Data da prova não definida"; return; }
             const diffDias = Math.ceil((new Date(dataStr + "T00:00:00") - new Date()) / (1000 * 60 * 60 * 24));
             badge.textContent = diffDias < 0 ? "Prova realizada" : (diffDias === 0 ? "Prova HOJE!" : `Faltam ${diffDias} dias`);
         }
 
         function editarDataProva() {
-            const novaData = prompt(`Data da prova (AAAA-MM-DD):`, concursosMetadata[currentConcurso]?.dataProva || '');
+            let metadata = getConcursosMetadata();
+            const novaData = prompt(`Data da prova (AAAA-MM-DD):`, metadata[currentConcurso]?.dataProva || '');
             if (novaData !== null) {
-                if (!concursosMetadata[currentConcurso]) concursosMetadata[currentConcurso] = {};
-                concursosMetadata[currentConcurso].dataProva = novaData.trim() || null;
-                saveConcursosMetadata();
+                if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+                metadata[currentConcurso].dataProva = novaData.trim() || null;
+                saveConcursosMetadata(metadata);
                 updateCountdownBadge();
             }
         }
@@ -2849,10 +2805,6 @@ R: É a declaração do Estado..."></textarea>
         window.salvarAnotacao = salvarAnotacao;
         window.editarAnotacao = editarAnotacao;
         window.excluirAnotacao = excluirAnotacao;
-        window.uploadAnotacaoFile = uploadAnotacaoFile;
-        window.removeTempAnotacaoFile = removeTempAnotacaoFile;
-        window.downloadTempAnotacaoFile = downloadTempAnotacaoFile;
-        window.downloadAnotacaoFile = downloadAnotacaoFile;
         window.onFlashcardMateriaChange = onFlashcardMateriaChange;
         window.renderFlashcardsList = renderFlashcardsList;
         window.flipCurrentFlashcard = flipCurrentFlashcard;
