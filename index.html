@@ -545,7 +545,7 @@
             color: var(--text-color);
         }
 
-        /* ESTILOS DE FLASHCARDS */
+        /* ESTILOS DE FLASHCARDS COM HOVER VERDE */
         .flashcard-display {
             background: rgba(255, 255, 255, 0.04);
             border: 2px solid var(--primary-blue);
@@ -559,12 +559,14 @@
             text-align: center;
             cursor: pointer;
             user-select: none;
-            transition: transform 0.2s, background-color 0.2s;
+            transition: transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
             margin-bottom: 1rem;
         }
 
         .flashcard-display:hover {
-            background: rgba(59, 130, 246, 0.08);
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.08);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
             transform: translateY(-2px);
         }
 
@@ -868,7 +870,6 @@
                     </div>
                 </div>
 
-                <!-- SELETORES DE FILTRO -->
                 <div class="flashcard-grid-filter">
                     <div class="form-group">
                         <label for="flashcardMateriaSelect"><strong>Matéria:</strong></label>
@@ -880,7 +881,6 @@
                     </div>
                 </div>
 
-                <!-- ÁREA INTERATIVA DO FLASHCARD -->
                 <div id="flashcardStudyArea" style="display: none;">
                     <div class="flashcard-display" onclick="flipCurrentFlashcard()">
                         <div class="flashcard-text" id="fcContentText">Aguardando dados...</div>
@@ -891,7 +891,6 @@
                         <button class="btn btn-secondary" onclick="prevFlashcard()">← Anterior</button>
                         <span id="flashcardCounter" style="font-weight: 700; font-size: 0.95rem;">Card 1 de 1</span>
                         
-                        <!-- BOTOES EDITAR / EXCLUIR / PROXIMO -->
                         <div style="display: flex; gap: 6px; align-items: center;">
                             <button class="btn btn-warning btn-sm" onclick="editCurrentFlashcard()">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteCurrentFlashcard()">Excluir</button>
@@ -914,7 +913,7 @@
         <div class="modal modal-large">
             <h3>Gerar / Importar Flashcards por Texto</h3>
             <p style="font-size:0.85rem; opacity:0.85;">
-                Você pode colar um **texto de estudo** para o app extrair perguntas/respostas ou colar/importar um arquivo com **perguntas e respostas prontas** (ex: P: Pergunta / R: Resposta).
+                Você pode colar um **texto de estudo** para o app extrair perguntas/respostas ou colar/importar um arquivo com **perguntas e respostas prontas**.
             </p>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -937,13 +936,10 @@
                     </label>
                 </div>
                 <textarea id="inputTextoBaseFlashcards" rows="8" placeholder="Formatos aceitos:
-1. Texto livre de estudo (o app extrairá os conceitos).
+1. Texto livre de estudo.
 2. Perguntas e Respostas prontas:
 P: Qual o prazo rescisório?
-R: O prazo é de 2 anos.
-
-P: O que é ato administrativo?
-R: É a declaração do Estado..."></textarea>
+R: O prazo é de 2 anos."></textarea>
             </div>
 
             <div id="generatedFcPreviewList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;"></div>
@@ -952,7 +948,7 @@ R: É a declaração do Estado..."></textarea>
                 <button class="btn btn-purple" onclick="processarTextoEGerarCards()">⚡ Processar e Gerar Cards</button>
                 <div style="display: flex; gap: 8px;">
                     <button class="btn btn-secondary" onclick="closeModalGerarFlashcards()">Cancelar (ESC)</button>
-                    <button class="btn btn-success" onclick="salvarFlashcardsGerados()">Salvar Todos no Sistema</button>
+                    <button class="btn btn-success" onclick="salvarFlashcardsGerados()">Salvar Todos no Sistema (ENTER)</button>
                 </div>
             </div>
         </div>
@@ -981,17 +977,17 @@ R: É a declaração do Estado..."></textarea>
 
             <div class="form-group">
                 <label for="inputFcResposta"><strong>Resposta / Explicação:</strong></label>
-                <textarea id="inputFcResposta" rows="4" placeholder="Ex: O prazo é de 8 anos, contados a partir da ocorrência do fato ou da cessação da permanência." required></textarea>
+                <textarea id="inputFcResposta" rows="4" placeholder="Ex: O prazo é de 8 anos..." required></textarea>
             </div>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalFcManual()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="salvarFlashcardManual()">Salvar Flashcard</button>
+                <button class="btn btn-success" onclick="salvarFlashcardManual()">Salvar Flashcard (ENTER)</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO (SEM SEÇÃO DE UPLOAD) -->
+    <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO -->
     <div class="modal-overlay" id="modalAnotacao">
         <div class="modal">
             <h3 id="modalAnotacaoTitle">Nova Anotação</h3>
@@ -999,7 +995,7 @@ R: É a declaração do Estado..."></textarea>
 
             <div class="form-group">
                 <label for="inputAnotacaoTitulo"><strong>Título da Anotação:</strong></label>
-                <input type="text" id="inputAnotacaoTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes, Resumo Cap. 2..." required>
+                <input type="text" id="inputAnotacaoTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes..." required>
             </div>
 
             <div class="form-group">
@@ -1138,12 +1134,12 @@ R: É a declaração do Estado..."></textarea>
     <div class="modal-overlay" id="modalDayDetails">
         <div class="modal">
             <h3 id="modalDayTitle">Matérias do Dia</h3>
-            <p style="font-size: 0.85rem; opacity: 0.85;">Abaixo estão as disciplinas agendadas para esta data. Clique em uma matéria para alternar status de concluído ou utilize as opções de editar/excluir.</p>
+            <p style="font-size: 0.85rem; opacity: 0.85;">Abaixo estão as disciplinas agendadas para esta data.</p>
 
             <div id="dayDetailsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto;"></div>
 
             <div class="modal-actions" style="justify-content: space-between; align-items: center; margin-top: 10px;">
-                <button class="btn btn-primary" onclick="openAddSlotForSelectedDay()">+ Adicionar Nova Disciplina</button>
+                <button class="btn btn-primary" onclick="openAddSlotForSelectedDay()">+ Adicionar Nova Disciplina (ENTER)</button>
                 <button class="btn btn-secondary" onclick="closeModalDayDetails()">Fechar (ESC)</button>
             </div>
         </div>
@@ -1183,7 +1179,7 @@ R: É a declaração do Estado..."></textarea>
         </div>
     </div>
 
-    <!-- MODAL VIEW EDITAL -->
+    <!-- MODAL VIEW EDITAL FUNCIONAL COM UPLOAD E OPÇÃO DE REMOVER -->
     <div class="modal-overlay" id="modalViewEdital">
         <div class="modal modal-large">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -1191,15 +1187,17 @@ R: É a declaração do Estado..."></textarea>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <label class="btn btn-success btn-sm" style="cursor: pointer;">
                         Anexar Novo Arquivo
-                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt" style="display: none;" onchange="uploadEditalFile(event)">
+                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" style="display: none;" onchange="uploadEditalFile(event)">
                     </label>
                     <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">Baixar Arquivo</button>
-                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Remover</button>
+                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Apagar Edital</button>
                 </div>
             </div>
-            <div id="editalViewerContainer" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden;">
+
+            <div id="editalViewerContainer" style="flex: 1; min-height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
                 <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
             </div>
+
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
             </div>
@@ -1288,7 +1286,6 @@ R: É a declaração do Estado..."></textarea>
         let currentDelayedFilter = 'hoje';
         let selectedDayIsoGlobal = '';
 
-        // ESTADOS DE FLASHCARDS
         let activeFlashcardsList = [];
         let currentFcIndex = 0;
         let isFcShowingAnswer = false;
@@ -1308,22 +1305,22 @@ R: É a declaração do Estado..."></textarea>
             localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(data));
         }
 
-        // ATALHOS DE TECLADO ESC E ENTER GLOBAIS
+        /* TECLAS GLOBAL ENTER E ESC */
         window.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closeAllModals();
             } else if (event.key === 'Enter') {
-                if (isModalVisible('modalDisponibilidade')) {
-                    confirmarAutoFillDisponibilidade();
-                } else if (isModalVisible('modalSlot')) {
-                    salvarSlot();
-                } else if (isModalVisible('modalAnotacao')) {
-                    salvarAnotacao();
-                } else if (isModalVisible('modalNovoConcurso')) {
-                    confirmarNovoConcurso();
-                } else if (isModalVisible('modalPromptIA')) {
-                    copyPromptToClipboard();
-                }
+                if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
+
+                if (isModalVisible('modalDisponibilidade')) confirmarAutoFillDisponibilidade();
+                else if (isModalVisible('modalSlot')) salvarSlot();
+                else if (isModalVisible('modalAnotacao')) salvarAnotacao();
+                else if (isModalVisible('modalNovoConcurso')) confirmarNovoConcurso();
+                else if (isModalVisible('modalPromptIA')) copyPromptToClipboard();
+                else if (isModalVisible('modalFcManual')) salvarFlashcardManual();
+                else if (isModalVisible('modalGerarFlashcards')) salvarFlashcardsGerados();
+                else if (isModalVisible('modalDayDetails')) openAddSlotForSelectedDay();
+                else if (isModalVisible('modalViewEdital')) closeModalViewEdital();
             }
         });
 
@@ -1382,9 +1379,7 @@ R: É a declaração do Estado..."></textarea>
         }
 
         function openModalDisponibilidade() {
-            if (editalItems.length === 0) {
-                return alert('Nenhum edital cadastrado para este concurso. Importe um JSON ou adicione matérias primeiro.');
-            }
+            if (editalItems.length === 0) return alert('Nenhum edital cadastrado para este concurso.');
 
             const today = new Date();
             const yyyy = today.getFullYear();
@@ -1396,9 +1391,7 @@ R: É a declaração do Estado..."></textarea>
             toggleWeekendBox();
         }
 
-        function closeModalDisponibilidade() {
-            document.getElementById('modalDisponibilidade').style.display = 'none';
-        }
+        function closeModalDisponibilidade() { document.getElementById('modalDisponibilidade').style.display = 'none'; }
 
         function calculateAutoFillProjection() {
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
@@ -1407,8 +1400,7 @@ R: É a declaração do Estado..."></textarea>
             const dailyHours = hManha + hTarde + hNoite;
 
             const pendentesCount = editalItems.filter(item => !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d)).length;
-            const totalWorkUnits = pendentesCount * 2; 
-            const neededDays = dailyHours > 0 ? Math.ceil(totalWorkUnits / dailyHours) : 0;
+            const neededDays = dailyHours > 0 ? Math.ceil((pendentesCount * 2) / dailyHours) : 0;
 
             document.getElementById('projectionDaysCount').innerText = `${neededDays} dias`;
             document.getElementById('projectionTopicsCount').innerText = pendentesCount;
@@ -1421,1040 +1413,107 @@ R: É a declaração do Estado..."></textarea>
             return `${yyyy}-${mm}-${dd}`;
         }
 
-        /* GERAR CRONOGRAMA AUTOMÁTICO */
-        function confirmarAutoFillDisponibilidade() {
-            const startDateVal = document.getElementById('startDateInput').value;
-            if (!startDateVal) return alert('Selecione a data de início.');
+        /* ANEXAR E GERENCIAR DOCUMENTO DO EDITAL */
+        function openModalViewEdital() {
+            document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
+            renderEditalFileViewer();
+            document.getElementById('modalViewEdital').style.display = 'flex';
+        }
 
-            const startDate = new Date(startDateVal + "T00:00:00");
+        function closeModalViewEdital() {
+            document.getElementById('modalViewEdital').style.display = 'none';
+        }
 
-            const incManha = document.getElementById('inicioManha').value || '10:00';
-            const hManha = parseInt(document.getElementById('horasManha').value) || 0;
+        function getEditalFileStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `edital_file_${uid}_${currentConcurso}`;
+        }
 
-            const incTarde = document.getElementById('inicioTarde').value || '13:00';
-            const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
+        function renderEditalFileViewer() {
+            const container = document.getElementById('editalViewerContainer');
+            const btnDownload = document.getElementById('btnDownloadEdital');
+            const btnRemove = document.getElementById('btnRemoveEdital');
 
-            const incNoite = document.getElementById('inicioNoite').value || '21:00';
-            const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
+            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
 
-            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
-            const incManhaFim = document.getElementById('inicioManhaFimSemana').value || '08:00';
-            const hManhaFim = parseInt(document.getElementById('horasManhaFimSemana').value) || 0;
-
-            const incTardeFim = document.getElementById('inicioTardeFimSemana').value || '14:00';
-            const hTardeFim = parseInt(document.getElementById('horasTardeFimSemana').value) || 0;
-
-            const incNoiteFim = document.getElementById('inicioNoiteFimSemana').value || '19:00';
-            const hNoiteFim = parseInt(document.getElementById('horasNoiteFimSemana').value) || 0;
-
-            const incSab = document.getElementById('chkSabado').checked;
-            const incDom = document.getElementById('chkDomingo').checked;
-
-            const pendentes = editalItems.filter(item => !(item.teoria && item.questoes && item.rev_24h && item.rev_7d && item.rev_30d))
-                .sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
-
-            if (pendentes.length === 0) {
-                alert('Todos os assuntos do edital já foram totalmente concluídos!');
-                closeModalDisponibilidade();
+            if (!fileDataRaw) {
+                container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${currentConcurso}</strong>.</p>`;
+                btnDownload.style.display = 'none';
+                btnRemove.style.display = 'none';
                 return;
             }
 
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) {
-                metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
-            }
-            
-            metadata[currentConcurso].dateSchedule = {};
-            const dateSchedule = metadata[currentConcurso].dateSchedule;
+            try {
+                const fileObj = JSON.parse(fileDataRaw);
+                btnDownload.style.display = 'inline-flex';
+                btnRemove.style.display = 'inline-flex';
 
-            const addSlotToDate = (isoKey, slotData) => {
-                if (!dateSchedule[isoKey]) dateSchedule[isoKey] = [];
-                dateSchedule[isoKey].push(slotData);
-            };
-
-            let pendentesIndex = 0;
-            let currDate = new Date(startDate);
-            let totalDiasGerados = 0;
-
-            while (pendentesIndex < pendentes.length) {
-                const dayOfWeek = currDate.getDay(); 
-                let allowStudy = true;
-
-                if (dayOfWeek === 6 && !incSab) allowStudy = false;
-                if (dayOfWeek === 0 && !incDom) allowStudy = false;
-
-                if (allowStudy) {
-                    const isoKey = formatDateIso(currDate);
-
-                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-                    const useWeekendRules = isWeekend && isCustomWeekend;
-
-                    const curIncManha = useWeekendRules ? incManhaFim : incManha;
-                    const curHManha = useWeekendRules ? hManhaFim : hManha;
-
-                    const curIncTarde = useWeekendRules ? incTardeFim : incTarde;
-                    const curHTarde = useWeekendRules ? hTardeFim : hTarde;
-
-                    const curIncNoite = useWeekendRules ? incNoiteFim : incNoite;
-                    const curHNoite = useWeekendRules ? hNoiteFim : hNoite;
-
-                    const allocateItemsForShift = (startHourStr, countHours) => {
-                        for (let i = 0; i < countHours && pendentesIndex < pendentes.length; i++) {
-                            const item = pendentes[pendentesIndex++];
-                            const timeSlot = formatHourSlot(startHourStr, i);
-
-                            addSlotToDate(isoKey, {
-                                horario: timeSlot,
-                                materia: item.materia,
-                                assunto: `${item.assunto} (Teoria)`,
-                                completed: false
-                            });
-
-                            const date24h = new Date(currDate); date24h.setDate(date24h.getDate() + 1);
-                            const date7d = new Date(currDate); date7d.setDate(date7d.getDate() + 7);
-                            const date30d = new Date(currDate); date30d.setDate(date30d.getDate() + 30);
-
-                            addSlotToDate(formatDateIso(date24h), { horario: 'Revisão 24h', materia: item.materia, assunto: `Rev 24h: ${item.assunto}`, completed: false, isRev: true });
-                            addSlotToDate(formatDateIso(date7d), { horario: 'Revisão 7d', materia: item.materia, assunto: `Rev 7d: ${item.assunto}`, completed: false, isRev: true });
-                            addSlotToDate(formatDateIso(date30d), { horario: 'Revisão 30d', materia: item.materia, assunto: `Rev 30d: ${item.assunto}`, completed: false, isRev: true });
-                        }
-                    };
-
-                    allocateItemsForShift(curIncManha, curHManha);
-                    allocateItemsForShift(curIncTarde, curHTarde);
-                    allocateItemsForShift(curIncNoite, curHNoite);
-
-                    if (dateSchedule[isoKey] && dateSchedule[isoKey].length > 0) totalDiasGerados++;
-                }
-
-                currDate.setDate(currDate.getDate() + 1);
-            }
-
-            document.getElementById('monthSelect').value = startDate.getMonth();
-            document.getElementById('yearSelect').value = startDate.getFullYear();
-
-            saveConcursosMetadata(metadata);
-            renderMonthCalendar();
-            renderDelayedPanel();
-            closeModalDisponibilidade();
-            alert(`Cronograma gerado com sucesso com REVISÕES (24h, 7d e 30d)! ${pendentes.length} tópicos alocados.`);
-        }
-
-        /* RENDERIZAÇÃO DA GRADE MENSAL */
-        function renderMonthCalendar() {
-            const grid = document.getElementById('monthCalendarGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-
-            const mSelect = parseInt(document.getElementById('monthSelect').value);
-            const ySelect = parseInt(document.getElementById('yearSelect').value);
-
-            const firstDay = new Date(ySelect, mSelect, 1);
-            const lastDay = new Date(ySelect, mSelect + 1, 0);
-
-            const startDayOfWeek = firstDay.getDay(); 
-            const totalDays = lastDay.getDate();
-
-            const metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-            let monthTotalMinutes = 0;
-
-            const today = new Date();
-            const todayIso = formatDateIso(today);
-
-            for (let i = 0; i < startDayOfWeek; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.className = 'month-day-cell other-month';
-                grid.appendChild(emptyCell);
-            }
-
-            for (let day = 1; day <= totalDays; day++) {
-                const mm = String(mSelect + 1).padStart(2, '0');
-                const dd = String(day).padStart(2, '0');
-                const isoKey = `${ySelect}-${mm}-${dd}`;
-
-                const cell = document.createElement('div');
-                cell.className = `month-day-cell ${isoKey === todayIso ? 'today' : ''}`;
-
-                const daySlots = dateSchedule[isoKey] || [];
-
-                daySlots.forEach(slot => {
-                    monthTotalMinutes += parseTimeIntervalToMinutes(slot.horario);
-                });
-
-                const materiasUnicas = [];
-                daySlots.forEach(slot => {
-                    if (!materiasUnicas.some(m => m.name === slot.materia && m.isRev === !!slot.isRev)) {
-                        materiasUnicas.push({ name: slot.materia, isRev: !!slot.isRev, allCompleted: true });
-                    }
-                });
-
-                daySlots.forEach(slot => {
-                    const match = materiasUnicas.find(m => m.name === slot.materia && m.isRev === !!slot.isRev);
-                    if (match && !slot.completed) match.allCompleted = false;
-                });
-
-                let badgesHtml = '';
-                materiasUnicas.forEach(m => {
-                    const statusClass = m.allCompleted ? 'completed' : '';
-                    const revClass = m.isRev ? 'rev' : '';
-                    const labelPrefix = m.isRev ? '↻ ' : '';
-                    badgesHtml += `<div class="clean-subject-badge ${revClass} ${statusClass}"><span>${labelPrefix}${m.name}</span></div>`;
-                });
-
-                cell.innerHTML = `
-                    <div class="day-num-header">
-                        <span>${day}</span>
-                        <button class="btn-add-mini" onclick="event.stopPropagation(); openModalDayDetails('${isoKey}')">+</button>
-                    </div>
-                    <div class="day-badges-scroll">
-                        ${badgesHtml}
-                    </div>
-                `;
-
-                cell.onclick = () => openModalDayDetails(isoKey);
-                grid.appendChild(cell);
-            }
-
-            document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(monthTotalMinutes);
-        }
-
-        /* CAIXA DETALHADA AO CLICAR NO DIA */
-        function openModalDayDetails(isoDate) {
-            selectedDayIsoGlobal = isoDate;
-            const formattedDate = isoDate.split('-').reverse().join('/');
-            document.getElementById('modalDayTitle').innerText = `Disciplinas de ${formattedDate}`;
-
-            const container = document.getElementById('dayDetailsContainer');
-            const metadata = getConcursosMetadata();
-            const daySlots = metadata[currentConcurso]?.dateSchedule?.[isoDate] || [];
-
-            if (daySlots.length === 0) {
-                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding:1.5rem 0;">Nenhuma disciplina cadastrada nesta data.</p>`;
-            } else {
-                container.innerHTML = '';
-                daySlots.forEach((slot, index) => {
-                    const isCompleted = slot.completed ? 'completed' : '';
-                    const tagPrefix = slot.isRev ? '↻ REVISÃO: ' : '';
-                    container.innerHTML += `
-                        <div class="day-detail-item ${isCompleted}">
-                            <div style="flex:1; cursor:pointer;" onclick="toggleSlotCompletedByDate('${isoDate}', ${index})">
-                                <div style="font-weight:700; color:var(--primary-blue); font-size:0.85rem;">${slot.horario} - ${slot.materia}</div>
-                                <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">${tagPrefix}${slot.assunto || 'Tópico Geral'}</div>
-                            </div>
-                            <div style="display:flex; gap:6px;">
-                                <button class="btn btn-secondary btn-sm" onclick="openEditSlotModalByDate('${isoDate}', ${index})">Editar</button>
-                                <button class="btn btn-danger btn-sm" onclick="removerSlotByDate('${isoDate}', ${index})">Excluir</button>
-                            </div>
+                if (fileObj.type.includes('pdf')) {
+                    container.innerHTML = `<iframe src="${fileObj.data}" style="width:100%; height:100%; min-height:480px; border:none; border-radius:6px;"></iframe>`;
+                } else if (fileObj.type.includes('image')) {
+                    container.innerHTML = `<img src="${fileObj.data}" style="max-width:100%; max-height:480px; border-radius:6px; object-fit:contain;">`;
+                } else if (fileObj.type.includes('text')) {
+                    container.innerHTML = `<textarea readonly style="width:100%; height:450px; font-family:monospace;">${fileObj.text || ''}</textarea>`;
+                } else {
+                    container.innerHTML = `
+                        <div style="padding:2rem; text-align:center;">
+                            <p style="font-size:1.1rem; font-weight:700; color:var(--primary-blue);">${fileObj.name}</p>
+                            <p style="font-size:0.85rem; opacity:0.8; margin-top:8px;">Arquivo do edital anexado com sucesso.</p>
                         </div>
                     `;
-                });
-            }
-
-            document.getElementById('modalDayDetails').style.display = 'flex';
-        }
-
-        function closeModalDayDetails() {
-            document.getElementById('modalDayDetails').style.display = 'none';
-        }
-
-        function openAddSlotForSelectedDay() {
-            closeModalDayDetails();
-            openModalSlotForDate(selectedDayIsoGlobal);
-        }
-
-        function openModalSlotForDate(isoDate) {
-            document.getElementById('modalSlotTitle').innerText = `Adicionar Matéria (${isoDate.split('-').reverse().join('/')})`;
-            document.getElementById('slotDataIso').value = isoDate;
-            document.getElementById('slotIndex').value = "-1";
-            document.getElementById('slotCompletedCheckbox').checked = false;
-
-            const selectMat = document.getElementById('slotMateriaSelect');
-            selectMat.innerHTML = '';
-            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            if (materiasValidas.length === 0) {
-                selectMat.innerHTML = '<option value="">Estudo Geral</option>';
-                onMateriaSelectChange('');
-            } else {
-                materiasValidas.forEach(m => {
-                    selectMat.innerHTML += `<option value="${m}">${m}</option>`;
-                });
-                onMateriaSelectChange(materiasValidas[0]);
-            }
-
-            document.getElementById('modalSlot').style.display = 'flex';
-        }
-
-        function openEditSlotModalByDate(isoDate, index) {
-            closeModalDayDetails();
-            const metadata = getConcursosMetadata();
-            const slot = metadata[currentConcurso]?.dateSchedule?.[isoDate]?.[index];
-            if (!slot) return;
-
-            document.getElementById('modalSlotTitle').innerText = `Editar (${isoDate.split('-').reverse().join('/')})`;
-            document.getElementById('slotDataIso').value = isoDate;
-            document.getElementById('slotIndex').value = index;
-            document.getElementById('slotHorario').value = slot.horario;
-            document.getElementById('slotCompletedCheckbox').checked = !!slot.completed;
-
-            const selectMat = document.getElementById('slotMateriaSelect');
-            selectMat.innerHTML = '';
-            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            materiasValidas.forEach(m => {
-                selectMat.innerHTML += `<option value="${m}" ${m === slot.materia ? 'selected' : ''}>${m}</option>`;
-            });
-
-            onMateriaSelectChange(slot.materia, slot.assunto);
-            document.getElementById('modalSlot').style.display = 'flex';
-        }
-
-        function salvarSlot() {
-            const isoDate = document.getElementById('slotDataIso').value;
-            const index = parseInt(document.getElementById('slotIndex').value);
-            const horario = document.getElementById('slotHorario').value.trim();
-            const materia = document.getElementById('slotMateriaSelect').value || 'Estudo Geral';
-            const assunto = document.getElementById('slotAssuntoSelect').value || '';
-            const completed = document.getElementById('slotCompletedCheckbox').checked;
-
-            if (!horario) return alert('Informe o horário.');
-
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = { dateSchedule: {} };
-            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-
-            const dateSchedule = metadata[currentConcurso].dateSchedule;
-            if (!dateSchedule[isoDate]) dateSchedule[isoDate] = [];
-
-            const slotObj = { horario, materia, assunto, completed };
-
-            if (index >= 0 && dateSchedule[isoDate][index]) {
-                dateSchedule[isoDate][index] = slotObj;
-            } else {
-                dateSchedule[isoDate].push(slotObj);
-            }
-
-            saveConcursosMetadata(metadata);
-            renderMonthCalendar();
-            renderDelayedPanel();
-            closeModalSlot();
-        }
-
-        function toggleSlotCompletedByDate(isoDate, index) {
-            let metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
-            if (dateSchedule && dateSchedule[isoDate] && dateSchedule[isoDate][index]) {
-                dateSchedule[isoDate][index].completed = !dateSchedule[isoDate][index].completed;
-                saveConcursosMetadata(metadata);
-                renderMonthCalendar();
-                renderDelayedPanel();
-                openModalDayDetails(isoDate);
-            }
-        }
-
-        function removerSlotByDate(isoDate, index) {
-            let metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
-            if (dateSchedule && dateSchedule[isoDate]) {
-                dateSchedule[isoDate].splice(index, 1);
-                saveConcursosMetadata(metadata);
-                renderMonthCalendar();
-                renderDelayedPanel();
-                openModalDayDetails(isoDate);
-            }
-        }
-
-        function limparCronogramaSemanal() {
-            if (confirm(`Deseja limpar todo o cronograma do concurso "${currentConcurso}"?`)) {
-                let metadata = getConcursosMetadata();
-                if (metadata[currentConcurso]) {
-                    metadata[currentConcurso].dateSchedule = {};
-                    saveConcursosMetadata(metadata);
-                    renderMonthCalendar();
-                    renderDelayedPanel();
                 }
+            } catch (e) {
+                container.innerHTML = `<p style="color:#ef4444;">Erro ao carregar o arquivo do edital.</p>`;
             }
         }
 
-        function renderDelayedPanel() {
-            const container = document.getElementById('delayedItemsContainer');
-            const badgeCount = document.getElementById('delayedBadgeCount');
-            if (!container || !badgeCount) return;
-
-            const metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-            const today = new Date();
-            const todayIso = formatDateIso(today);
-
-            let delayedList = [];
-            let todayList = [];
-            let nextList = [];
-
-            Object.keys(dateSchedule).forEach(isoDate => {
-                const slots = dateSchedule[isoDate] || [];
-                slots.forEach(slot => {
-                    if (!slot.completed && slot.materia) {
-                        const itemObj = { isoDate, materia: slot.materia, assunto: slot.assunto || 'Tópico de Estudo', horario: slot.horario, isRev: slot.isRev };
-                        if (isoDate < todayIso) delayedList.push(itemObj);
-                        else if (isoDate === todayIso) todayList.push(itemObj);
-                        else nextList.push(itemObj);
-                    }
-                });
-            });
-
-            badgeCount.innerText = `${delayedList.length} atrasadas`;
-
-            let displayList = [];
-            if (currentDelayedFilter === 'hoje') displayList = todayList;
-            else if (currentDelayedFilter === 'atrasadas') displayList = delayedList;
-            else if (currentDelayedFilter === 'proximas') displayList = nextList;
-
-            if (displayList.length === 0) {
-                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding: 1rem 0;">Nenhuma matéria ou revisão pendente aqui.</p>`;
-                return;
-            }
-
-            container.innerHTML = '';
-            displayList.forEach(item => {
-                const dateFmt = item.isoDate.split('-').reverse().join('/');
-                const revTag = item.isRev ? '[REVISÃO] ' : '';
-                container.innerHTML += `
-                    <div class="delayed-card">
-                        <div class="delayed-card-info">
-                            <h4>${revTag}${item.materia}</h4>
-                            <p>${item.assunto}</p>
-                            <span class="delayed-tag">${dateFmt} - ${item.horario}</span>
-                        </div>
-                        <button class="btn btn-success btn-sm" onclick="concluirDelayedItemByDate('${item.isoDate}', '${item.materia}', '${item.assunto}')">
-                            Iniciar / Concluir
-                        </button>
-                    </div>
-                `;
-            });
-        }
-
-        function filterDelayedList(filterType, btn) {
-            currentDelayedFilter = filterType;
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderDelayedPanel();
-        }
-
-        function concluirDelayedItemByDate(isoDate, materia, assunto) {
-            let metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
-            if (dateSchedule && dateSchedule[isoDate]) {
-                const slot = dateSchedule[isoDate].find(s => s.materia === materia && s.assunto === assunto);
-                if (slot) {
-                    slot.completed = true;
-                    saveConcursosMetadata(metadata);
-                    renderMonthCalendar();
-                    renderDelayedPanel();
-                }
-            }
-        }
-
-        /* GERENCIADOR DE ANOTAÇÕES (SEM ANEXOS) */
-        function renderAnotacoesMateriaSelector() {
-            const select = document.getElementById('anotacoesMateriaSelect');
-            if (!select) return;
-
-            select.innerHTML = '';
-            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            if (materias.length === 0) {
-                select.innerHTML = '<option value="">Nenhuma matéria disponível</option>';
-                document.getElementById('anotacoesListContainer').innerHTML = '<p style="opacity:0.7; text-align:center; padding: 2rem;">Adicione matérias ao edital para registrar anotações.</p>';
-                return;
-            }
-
-            materias.forEach(mat => {
-                select.innerHTML += `<option value="${mat}">${mat}</option>`;
-            });
-
-            renderAnotacoesList(materias[0]);
-        }
-
-        function getAnotacoesStorageKey(materiaName) {
-            const uid = currentUser ? currentUser.id : 'guest';
-            return `anotacoes_list_${uid}_${currentConcurso}_${materiaName}`;
-        }
-
-        function getAnotacoesListByMateria(materiaName) {
-            const key = getAnotacoesStorageKey(materiaName);
-            try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; }
-        }
-
-        function saveAnotacoesListByMateria(materiaName, list) {
-            const key = getAnotacoesStorageKey(materiaName);
-            localStorage.setItem(key, JSON.stringify(list));
-        }
-
-        function renderAnotacoesList(materiaName) {
-            const container = document.getElementById('anotacoesListContainer');
-            if (!container || !materiaName) return;
-
-            const list = getAnotacoesListByMateria(materiaName);
-
-            if (list.length === 0) {
-                container.innerHTML = `<p style="opacity:0.7; text-align:center; padding:2rem 0;">Nenhuma anotação registrada para <strong>${materiaName}</strong>. Clique em <strong>"+ Incluir Nota"</strong> para criar a primeira.</p>`;
-                return;
-            }
-
-            container.innerHTML = '';
-            list.forEach(item => {
-                container.innerHTML += `
-                    <div class="note-card">
-                        <div class="note-card-header">
-                            <span class="note-card-title">${item.titulo}</span>
-                            <span class="note-card-date">${item.data}</span>
-                        </div>
-                        <div class="note-card-body">${item.texto}</div>
-                        <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
-                            <button class="btn btn-secondary btn-sm" onclick="editarAnotacao('${materiaName}', '${item.id}')">Editar</button>
-                            <button class="btn btn-danger btn-sm" onclick="excluirAnotacao('${materiaName}', '${item.id}')">Excluir</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function openModalCriarAnotacao() {
-            const materiaSelect = document.getElementById('anotacoesMateriaSelect');
-            if (!materiaSelect || !materiaSelect.value) return alert('Selecione uma matéria primeiro.');
-
-            document.getElementById('modalAnotacaoTitle').innerText = `Nova Nota (${materiaSelect.value})`;
-            document.getElementById('anotacaoId').value = '';
-            document.getElementById('inputAnotacaoTitulo').value = '';
-            document.getElementById('inputAnotacaoTexto').value = '';
-            document.getElementById('modalAnotacao').style.display = 'flex';
-        }
-
-        function closeModalAnotacao() { document.getElementById('modalAnotacao').style.display = 'none'; }
-
-        function salvarAnotacao() {
-            const materiaSelect = document.getElementById('anotacoesMateriaSelect');
-            const materiaName = materiaSelect.value;
-            const noteId = document.getElementById('anotacaoId').value;
-            const titulo = document.getElementById('inputAnotacaoTitulo').value.trim();
-            const texto = document.getElementById('inputAnotacaoTexto').value.trim();
-
-            if (!titulo || !texto) return alert('Preencha o título e o conteúdo da anotação.');
-
-            let list = getAnotacoesListByMateria(materiaName);
-            const nowStr = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-
-            if (noteId) {
-                const note = list.find(n => String(n.id) === String(noteId));
-                if (note) {
-                    note.titulo = titulo;
-                    note.texto = texto;
-                    note.data = `Editado em ${nowStr}`;
-                }
-            } else {
-                list.unshift({
-                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-                    titulo: titulo,
-                    texto: texto,
-                    data: `Criado em ${nowStr}`
-                });
-            }
-
-            saveAnotacoesListByMateria(materiaName, list);
-            closeModalAnotacao();
-            renderAnotacoesList(materiaName);
-        }
-
-        function editarAnotacao(materiaName, noteId) {
-            const list = getAnotacoesListByMateria(materiaName);
-            const note = list.find(n => String(n.id) === String(noteId));
-            if (!note) return;
-
-            document.getElementById('modalAnotacaoTitle').innerText = `Editar Nota (${materiaName})`;
-            document.getElementById('anotacaoId').value = note.id;
-            document.getElementById('inputAnotacaoTitulo').value = note.titulo;
-            document.getElementById('inputAnotacaoTexto').value = note.texto;
-            document.getElementById('modalAnotacao').style.display = 'flex';
-        }
-
-        function excluirAnotacao(materiaName, noteId) {
-            if (confirm('Deseja realmente excluir esta anotação?')) {
-                let list = getAnotacoesListByMateria(materiaName);
-                list = list.filter(n => String(n.id) !== String(noteId));
-                saveAnotacoesListByMateria(materiaName, list);
-                renderAnotacoesList(materiaName);
-            }
-        }
-
-        /* GERENCIADOR DE FLASHCARDS */
-        function getFlashcardsStorageKey() {
-            const uid = currentUser ? currentUser.id : 'guest';
-            return `flashcards_data_${uid}_${currentConcurso}`;
-        }
-
-        function getAllFlashcards() {
-            try { return JSON.parse(localStorage.getItem(getFlashcardsStorageKey()) || '[]'); } catch(e) { return []; }
-        }
-
-        function saveAllFlashcards(list) { localStorage.setItem(getFlashcardsStorageKey(), JSON.stringify(list)); }
-
-        function renderFlashcardMateriaSelector() {
-            const selectMat = document.getElementById('flashcardMateriaSelect');
-            if (!selectMat) return;
-
-            selectMat.innerHTML = '';
-            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            if (materias.length === 0) {
-                selectMat.innerHTML = '<option value="">Nenhuma matéria</option>';
-                onFlashcardMateriaChange('');
-                return;
-            }
-
-            materias.forEach(m => { selectMat.innerHTML += `<option value="${m}">${m}</option>`; });
-            onFlashcardMateriaChange(materias[0]);
-        }
-
-        function onFlashcardMateriaChange(materiaName) {
-            const selectAssunto = document.getElementById('flashcardAssuntoSelect');
-            selectAssunto.innerHTML = '<option value="">-- Todos os Assuntos --</option>';
-
-            if (materiaName) {
-                const assuntos = editalItems.filter(i => (i.materia || 'Geral') === materiaName).map(i => i.assunto);
-                Array.from(new Set(assuntos)).forEach(a => {
-                    selectAssunto.innerHTML += `<option value="${a}">${a}</option>`;
-                });
-            }
-
-            renderFlashcardsList();
-        }
-
-        function renderFlashcardsList() {
-            const matSel = document.getElementById('flashcardMateriaSelect').value;
-            const assSel = document.getElementById('flashcardAssuntoSelect').value;
-
-            const allFc = getAllFlashcards();
-            activeFlashcardsList = allFc.filter(fc => {
-                if (matSel && fc.materia !== matSel) return false;
-                if (assSel && fc.assunto !== assSel) return false;
-                return true;
-            });
-
-            currentFcIndex = 0;
-            isFcShowingAnswer = false;
-
-            const studyArea = document.getElementById('flashcardStudyArea');
-            const emptyMsg = document.getElementById('flashcardEmptyMessage');
-
-            if (activeFlashcardsList.length === 0) {
-                studyArea.style.display = 'none';
-                emptyMsg.style.display = 'block';
-            } else {
-                studyArea.style.display = 'block';
-                emptyMsg.style.display = 'none';
-                updateFlashcardCardDisplay();
-            }
-        }
-
-        function updateFlashcardCardDisplay() {
-            if (activeFlashcardsList.length === 0) return;
-            const card = activeFlashcardsList[currentFcIndex];
-
-            const contentText = document.getElementById('fcContentText');
-            const hintText = document.getElementById('fcHintText');
-            const counter = document.getElementById('flashcardCounter');
-
-            counter.innerText = `Card ${currentFcIndex + 1} de ${activeFlashcardsList.length}`;
-
-            if (isFcShowingAnswer) {
-                contentText.innerText = card.resposta;
-                hintText.innerText = "👆 Clique para voltar à Pergunta";
-            } else {
-                contentText.innerText = card.pergunta;
-                hintText.innerText = "👆 Clique para revelar a Resposta";
-            }
-        }
-
-        function flipCurrentFlashcard() {
-            if (activeFlashcardsList.length === 0) return;
-            isFcShowingAnswer = !isFcShowingAnswer;
-            updateFlashcardCardDisplay();
-        }
-
-        function nextFlashcard() {
-            if (activeFlashcardsList.length === 0) return;
-            currentFcIndex = (currentFcIndex + 1) % activeFlashcardsList.length;
-            isFcShowingAnswer = false;
-            updateFlashcardCardDisplay();
-        }
-
-        function prevFlashcard() {
-            if (activeFlashcardsList.length === 0) return;
-            currentFcIndex = (currentFcIndex - 1 + activeFlashcardsList.length) % activeFlashcardsList.length;
-            isFcShowingAnswer = false;
-            updateFlashcardCardDisplay();
-        }
-
-        function editCurrentFlashcard() {
-            if (activeFlashcardsList.length === 0) return;
-            const card = activeFlashcardsList[currentFcIndex];
-
-            const selectMat = document.getElementById('manualFcMateriaSelect');
-            selectMat.innerHTML = '';
-            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            if (!materias.includes(card.materia)) materias.unshift(card.materia);
-
-            materias.forEach(m => {
-                selectMat.innerHTML += `<option value="${m}" ${m === card.materia ? 'selected' : ''}>${m}</option>`;
-            });
-
-            onManualFcMateriaChange(card.materia, card.assunto);
-
-            document.getElementById('modalFcManualTitle').innerText = 'Editar Flashcard';
-            document.getElementById('fcManualId').value = card.id;
-            document.getElementById('inputFcPergunta').value = card.pergunta;
-            document.getElementById('inputFcResposta').value = card.resposta;
-
-            document.getElementById('modalFcManual').style.display = 'flex';
-        }
-
-        function deleteCurrentFlashcard() {
-            if (activeFlashcardsList.length === 0) return;
-            const card = activeFlashcardsList[currentFcIndex];
-            if (confirm('Deseja excluir este flashcard?')) {
-                let allFc = getAllFlashcards();
-                allFc = allFc.filter(f => String(f.id) !== String(card.id));
-                saveAllFlashcards(allFc);
-                renderFlashcardsList();
-            }
-        }
-
-        /* GERADOR E IMPORTADOR DE FLASHCARDS */
-        function openModalGerarFlashcardsTexto() {
-            const selectMat = document.getElementById('genFcMateriaSelect');
-            selectMat.innerHTML = '';
-            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            if (materias.length === 0) selectMat.innerHTML = '<option value="">Geral</option>';
-            else materias.forEach(m => selectMat.innerHTML += `<option value="${m}">${m}</option>`);
-
-            onGenFcMateriaChange(materias[0] || '');
-            document.getElementById('inputTextoBaseFlashcards').value = '';
-            document.getElementById('generatedFcPreviewList').innerHTML = '';
-            tempGeneratedFcList = [];
-
-            document.getElementById('modalGerarFlashcards').style.display = 'flex';
-        }
-
-        function closeModalGerarFlashcards() { document.getElementById('modalGerarFlashcards').style.display = 'none'; }
-
-        function onGenFcMateriaChange(materiaName) {
-            const selectAssunto = document.getElementById('genFcAssuntoSelect');
-            selectAssunto.innerHTML = '';
-            const assuntos = editalItems.filter(i => (i.materia || 'Geral') === materiaName).map(i => i.assunto);
-            const uniqueAssuntos = Array.from(new Set(assuntos));
-
-            if (uniqueAssuntos.length === 0) selectAssunto.innerHTML = '<option value="">Assunto Geral</option>';
-            else uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}">${a}</option>`);
-        }
-
-        function handleImportFcFile(event) {
+        function uploadEditalFile(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('inputTextoBaseFlashcards').value = e.target.result;
-            };
-            reader.readAsText(file);
+
+            if (file.type.includes('text')) {
+                reader.onload = function(e) {
+                    const fileObj = { name: file.name, type: file.type, text: e.target.result, data: null };
+                    localStorage.setItem(getEditalFileStorageKey(), JSON.stringify(fileObj));
+                    renderEditalFileViewer();
+                    alert('Arquivo do edital anexado!');
+                };
+                reader.readAsText(file);
+            } else {
+                reader.onload = function(e) {
+                    const fileObj = { name: file.name, type: file.type, data: e.target.result };
+                    localStorage.setItem(getEditalFileStorageKey(), JSON.stringify(fileObj));
+                    renderEditalFileViewer();
+                    alert('Arquivo do edital anexado!');
+                };
+                reader.readAsDataURL(file);
+            }
             event.target.value = '';
         }
 
-        function processarTextoEGerarCards() {
-            const rawText = document.getElementById('inputTextoBaseFlashcards').value.trim();
-            if (!rawText) return alert('Cole um texto ou importe um arquivo.');
+        function downloadEditalFile() {
+            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
+            if (!fileDataRaw) return;
 
-            const materia = document.getElementById('genFcMateriaSelect').value || 'Geral';
-            const assunto = document.getElementById('genFcAssuntoSelect').value || 'Geral';
+            const fileObj = JSON.parse(fileDataRaw);
+            const a = document.createElement('a');
 
-            tempGeneratedFcList = [];
-
-            const regexPair = /(?:P|Pergunta|Q|Questão)\s*:\s*([\s\S]*?)(?=(?:R|Resposta)\s*:)\s*(?:R|Resposta)\s*:\s*([\s\S]*?)(?=(?:P|Pergunta|Q|Questão)\s*:|$)/gi;
-            let match;
-            let countMatches = 0;
-
-            while ((match = regexPair.exec(rawText)) !== null) {
-                countMatches++;
-                tempGeneratedFcList.push({
-                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                    materia, assunto,
-                    pergunta: match[1].trim(),
-                    resposta: match[2].trim()
-                });
+            if (fileObj.data) {
+                a.href = fileObj.data;
+            } else if (fileObj.text) {
+                a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(fileObj.text);
             }
-
-            if (countMatches === 0) {
-                const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 5);
-                
-                lines.forEach((line, idx) => {
-                    let q = "", a = "";
-
-                    if (line.includes('?')) {
-                        const parts = line.split('?');
-                        q = parts[0].trim() + '?';
-                        a = parts.slice(1).join('?').trim() || line;
-                    } else if (line.includes('-')) {
-                        const parts = line.split('-');
-                        q = parts[0].trim();
-                        a = parts.slice(1).join('-').trim();
-                    } else {
-                        q = `Conceito / Ponto ${idx + 1}`;
-                        a = line;
-                    }
-
-                    if (q && a) {
-                        tempGeneratedFcList.push({
-                            id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                            materia, assunto, pergunta: q, resposta: a
-                        });
-                    }
-                });
-            }
-
-            renderGeneratedFcPreview();
+            a.download = fileObj.name || 'Edital.pdf';
+            a.click();
         }
 
-        function renderGeneratedFcPreview() {
-            const container = document.getElementById('generatedFcPreviewList');
-            if (!container) return;
-
-            if (tempGeneratedFcList.length === 0) {
-                container.innerHTML = '<p style="font-size:0.85rem; opacity:0.6;">Nenhum card gerado ainda.</p>';
-                return;
-            }
-
-            container.innerHTML = `<strong style="font-size:0.9rem; color:var(--primary-blue); margin-bottom:4px;">${tempGeneratedFcList.length} Flashcards Processados (Preview):</strong>`;
-            tempGeneratedFcList.forEach((fc, idx) => {
-                container.innerHTML += `
-                    <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px; font-size:0.85rem;">
-                        <strong style="color:#38bdf8;">P${idx+1}: ${fc.pergunta}</strong><br>
-                        <span style="opacity:0.9;">R: ${fc.resposta}</span>
-                    </div>
-                `;
-            });
-        }
-
-        function salvarFlashcardsGerados() {
-            if (tempGeneratedFcList.length === 0) return alert('Gere ou processe os flashcards antes de salvar.');
-
-            let allFc = getAllFlashcards();
-            allFc = [...allFc, ...tempGeneratedFcList];
-            saveAllFlashcards(allFc);
-
-            closeModalGerarFlashcards();
-            renderFlashcardMateriaSelector();
-            alert(`${tempGeneratedFcList.length} Flashcards salvos com sucesso!`);
-        }
-
-        /* MODAL MANUAL FLASHCARD */
-        function openModalCriarFlashcard() {
-            const selectMat = document.getElementById('manualFcMateriaSelect');
-            selectMat.innerHTML = '';
-            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
-
-            if (materias.length === 0) selectMat.innerHTML = '<option value="">Geral</option>';
-            else materias.forEach(m => selectMat.innerHTML += `<option value="${m}">${m}</option>`);
-
-            onManualFcMateriaChange(materias[0] || '');
-            document.getElementById('modalFcManualTitle').innerText = 'Novo Flashcard';
-            document.getElementById('fcManualId').value = '';
-            document.getElementById('inputFcPergunta').value = '';
-            document.getElementById('inputFcResposta').value = '';
-
-            document.getElementById('modalFcManual').style.display = 'flex';
-        }
-
-        function closeModalFcManual() { document.getElementById('modalFcManual').style.display = 'none'; }
-
-        function onManualFcMateriaChange(materiaName, preSelectedAssunto = '') {
-            const selectAssunto = document.getElementById('manualFcAssuntoSelect');
-            selectAssunto.innerHTML = '';
-            const assuntos = editalItems.filter(i => (i.materia || 'Geral') === materiaName).map(i => i.assunto);
-            const uniqueAssuntos = Array.from(new Set(assuntos));
-
-            if (preSelectedAssunto && !uniqueAssuntos.includes(preSelectedAssunto)) {
-                uniqueAssuntos.unshift(preSelectedAssunto);
-            }
-
-            if (uniqueAssuntos.length === 0) selectAssunto.innerHTML = '<option value="">Assunto Geral</option>';
-            else uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}" ${a === preSelectedAssunto ? 'selected' : ''}>${a}</option>`);
-        }
-
-        function salvarFlashcardManual() {
-            const fcId = document.getElementById('fcManualId').value;
-            const materia = document.getElementById('manualFcMateriaSelect').value || 'Geral';
-            const assunto = document.getElementById('manualFcAssuntoSelect').value || 'Geral';
-            const pergunta = document.getElementById('inputFcPergunta').value.trim();
-            const resposta = document.getElementById('inputFcResposta').value.trim();
-
-            if (!pergunta || !resposta) return alert('Preencha a pergunta e a resposta.');
-
-            let allFc = getAllFlashcards();
-
-            if (fcId) {
-                const target = allFc.find(f => String(f.id) === String(fcId));
-                if (target) {
-                    target.materia = materia;
-                    target.assunto = assunto;
-                    target.pergunta = pergunta;
-                    target.resposta = resposta;
-                }
-            } else {
-                allFc.push({
-                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-                    materia, assunto, pergunta, resposta
-                });
-            }
-
-            saveAllFlashcards(allFc);
-            closeModalFcManual();
-            renderFlashcardMateriaSelector();
-        }
-
-        function formatHourSlot(startHourStr, offsetHours) {
-            const [h, m] = startHourStr.split(':').map(Number);
-            const totalStartMinutes = (h * 60) + m + (offsetHours * 60);
-            const totalEndMinutes = totalStartMinutes + 60;
-
-            const formatHM = (mins) => {
-                const hh = Math.floor(mins / 60) % 24;
-                const mm = mins % 60;
-                return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-            };
-            return `${formatHM(totalStartMinutes)} - ${formatHM(totalEndMinutes)}`;
-        }
-
-        function parseTimeIntervalToMinutes(timeIntervalStr) {
-            if (!timeIntervalStr) return 0;
-            const parts = timeIntervalStr.split('-').map(s => s.trim());
-            if (parts.length !== 2) return 30;
-            const parseMinutes = (str) => {
-                const [h, m] = str.split(':').map(Number);
-                if (isNaN(h)) return 0;
-                return (h * 60) + (isNaN(m) ? 0 : m);
-            };
-            const start = parseMinutes(parts[0]);
-            const end = parseMinutes(parts[1]);
-            return (end > start) ? (end - start) : 60;
-        }
-
-        function formatMinutesToHours(totalMinutes) {
-            const h = Math.floor(totalMinutes / 60);
-            const m = totalMinutes % 60;
-            return m === 0 ? `${h}h` : `${h}h ${m}min`;
-        }
-
-        function closeModalSlot() { document.getElementById('modalSlot').style.display = 'none'; }
-
-        function onMateriaSelectChange(selectedMateria, preSelectedAssunto = '') {
-            const selectAssunto = document.getElementById('slotAssuntoSelect');
-            selectAssunto.innerHTML = '';
-
-            if (!selectedMateria) {
-                selectAssunto.innerHTML = '<option value="">Revisão Geral / Livre</option>';
-                return;
-            }
-
-            const assuntos = editalItems.filter(i => (i.materia || 'Geral') === selectedMateria).map(i => i.assunto);
-            const uniqueAssuntos = Array.from(new Set(assuntos));
-
-            if (preSelectedAssunto && !uniqueAssuntos.includes(preSelectedAssunto)) {
-                uniqueAssuntos.unshift(preSelectedAssunto);
-            }
-
-            if (uniqueAssuntos.length === 0) {
-                selectAssunto.innerHTML = '<option value="">Revisão Geral da Matéria</option>';
-            } else {
-                selectAssunto.innerHTML = '<option value="">-- Todos ou Geral --</option>';
-                uniqueAssuntos.forEach(a => {
-                    selectAssunto.innerHTML += `<option value="${a}" ${a === preSelectedAssunto ? 'selected' : ''}>${a}</option>`;
-                });
-            }
-        }
-
-        async function handleLogin() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if (!email || !password) return alert('Preencha e-mail e senha.');
-
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                alert('Erro ao entrar: ' + error.message);
-            } else {
-                currentUser = data.user;
-                checkSuperUserStatus();
-                showDashboard();
-            }
-        }
-
-        async function handleSignUp() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if (!email || !password) return alert('Preencha e-mail e senha.');
-
-            const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) alert('Erro ao cadastrar: ' + error.message);
-            else alert('Cadastro realizado com sucesso! Clique em Entrar.');
-        }
-
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            currentUser = null;
-            isSuperUser = false;
-            document.getElementById('app-dashboard').style.display = 'none';
-            document.getElementById('auth-screen').style.display = 'flex';
-        }
-
-        function checkSuperUserStatus() {
-            // DEFINE SEU PERFIL COMO SUPER USUÁRIO
-            isSuperUser = true; 
-            const badge = document.getElementById('superUserBadge');
-            if (badge) badge.style.display = isSuperUser ? 'inline-block' : 'none';
-        }
-
-        function showDashboard() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('app-dashboard').style.display = 'block';
-            initMonthYearSelectors();
-            loadData();
-        }
-
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                currentUser = session.user;
-                checkSuperUserStatus();
-                showDashboard();
-            }
-        });
-
-        function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
-
-        function switchTab(tabId, btn) {
-            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
-
-            document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
-
-            if (tabId === 'tab-calendario') {
-                renderMonthCalendar();
-                renderDelayedPanel();
-            } else if (tabId === 'tab-anotacoes') {
-                renderAnotacoesMateriaSelector();
-            } else if (tabId === 'tab-flashcards') {
-                renderFlashcardMateriaSelector();
+        function removerEditalFile() {
+            if (confirm(`Deseja realmente apagar o edital anexado do concurso "${currentConcurso}"?`)) {
+                localStorage.removeItem(getEditalFileStorageKey());
+                renderEditalFileViewer();
+                alert('Documento do edital removido com sucesso!');
             }
         }
 
@@ -2743,8 +1802,6 @@ R: É a declaração do Estado..."></textarea>
 
         function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
 
-        function openModalViewEdital() { document.getElementById('modalViewEdital').style.display = 'flex'; }
-        function closeModalViewEdital() { document.getElementById('modalViewEdital').style.display = 'none'; }
         function openModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'flex'; }
         function closeModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'none'; }
         function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
@@ -2753,6 +1810,402 @@ R: É a declaração do Estado..."></textarea>
         function copyPromptToClipboard() {
             navigator.clipboard.writeText(document.getElementById('promptTextToCopy').innerText);
             alert('Prompt copiado!');
+        }
+
+        /* CRONOGRAMA MENSAL FUNCTIONS */
+        function renderMonthCalendar() {
+            const grid = document.getElementById('monthCalendarGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const mSelect = parseInt(document.getElementById('monthSelect').value);
+            const ySelect = parseInt(document.getElementById('yearSelect').value);
+
+            const firstDay = new Date(ySelect, mSelect, 1);
+            const lastDay = new Date(ySelect, mSelect + 1, 0);
+
+            const startDayOfWeek = firstDay.getDay(); 
+            const totalDays = lastDay.getDate();
+
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
+            let monthTotalMinutes = 0;
+
+            const todayIso = formatDateIso(new Date());
+
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'month-day-cell other-month';
+                grid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const mm = String(mSelect + 1).padStart(2, '0');
+                const dd = String(day).padStart(2, '0');
+                const isoKey = `${ySelect}-${mm}-${dd}`;
+
+                const cell = document.createElement('div');
+                cell.className = `month-day-cell ${isoKey === todayIso ? 'today' : ''}`;
+
+                const daySlots = dateSchedule[isoKey] || [];
+                daySlots.forEach(slot => { monthTotalMinutes += parseTimeIntervalToMinutes(slot.horario); });
+
+                const materiasUnicas = [];
+                daySlots.forEach(slot => {
+                    if (!materiasUnicas.some(m => m.name === slot.materia && m.isRev === !!slot.isRev)) {
+                        materiasUnicas.push({ name: slot.materia, isRev: !!slot.isRev, allCompleted: true });
+                    }
+                });
+
+                daySlots.forEach(slot => {
+                    const match = materiasUnicas.find(m => m.name === slot.materia && m.isRev === !!slot.isRev);
+                    if (match && !slot.completed) match.allCompleted = false;
+                });
+
+                let badgesHtml = '';
+                materiasUnicas.forEach(m => {
+                    const statusClass = m.allCompleted ? 'completed' : '';
+                    const revClass = m.isRev ? 'rev' : '';
+                    const labelPrefix = m.isRev ? '↻ ' : '';
+                    badgesHtml += `<div class="clean-subject-badge ${revClass} ${statusClass}"><span>${labelPrefix}${m.name}</span></div>`;
+                });
+
+                cell.innerHTML = `
+                    <div class="day-num-header">
+                        <span>${day}</span>
+                        <button class="btn-add-mini" onclick="event.stopPropagation(); openModalDayDetails('${isoKey}')">+</button>
+                    </div>
+                    <div class="day-badges-scroll">${badgesHtml}</div>
+                `;
+
+                cell.onclick = () => openModalDayDetails(isoKey);
+                grid.appendChild(cell);
+            }
+
+            document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(monthTotalMinutes);
+        }
+
+        function openModalDayDetails(isoDate) {
+            selectedDayIsoGlobal = isoDate;
+            const formattedDate = isoDate.split('-').reverse().join('/');
+            document.getElementById('modalDayTitle').innerText = `Disciplinas de ${formattedDate}`;
+
+            const container = document.getElementById('dayDetailsContainer');
+            const metadata = getConcursosMetadata();
+            const daySlots = metadata[currentConcurso]?.dateSchedule?.[isoDate] || [];
+
+            if (daySlots.length === 0) {
+                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding:1.5rem 0;">Nenhuma disciplina cadastrada nesta data.</p>`;
+            } else {
+                container.innerHTML = '';
+                daySlots.forEach((slot, index) => {
+                    const isCompleted = slot.completed ? 'completed' : '';
+                    const tagPrefix = slot.isRev ? '↻ REVISÃO: ' : '';
+                    container.innerHTML += `
+                        <div class="day-detail-item ${isCompleted}">
+                            <div style="flex:1; cursor:pointer;" onclick="toggleSlotCompletedByDate('${isoDate}', ${index})">
+                                <div style="font-weight:700; color:var(--primary-blue); font-size:0.85rem;">${slot.horario} - ${slot.materia}</div>
+                                <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">${tagPrefix}${slot.assunto || 'Tópico Geral'}</div>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <button class="btn btn-secondary btn-sm" onclick="openEditSlotModalByDate('${isoDate}', ${index})">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="removerSlotByDate('${isoDate}', ${index})">Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('modalDayDetails').style.display = 'flex';
+        }
+
+        function closeModalDayDetails() { document.getElementById('modalDayDetails').style.display = 'none'; }
+        function openAddSlotForSelectedDay() { closeModalDayDetails(); openModalSlotForDate(selectedDayIsoGlobal); }
+
+        function openModalSlotForDate(isoDate) {
+            document.getElementById('modalSlotTitle').innerText = `Adicionar Matéria (${isoDate.split('-').reverse().join('/')})`;
+            document.getElementById('slotDataIso').value = isoDate;
+            document.getElementById('slotIndex').value = "-1";
+            document.getElementById('slotCompletedCheckbox').checked = false;
+
+            const selectMat = document.getElementById('slotMateriaSelect');
+            selectMat.innerHTML = '';
+            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            if (materiasValidas.length === 0) {
+                selectMat.innerHTML = '<option value="">Estudo Geral</option>';
+                onMateriaSelectChange('');
+            } else {
+                materiasValidas.forEach(m => selectMat.innerHTML += `<option value="${m}">${m}</option>`);
+                onMateriaSelectChange(materiasValidas[0]);
+            }
+
+            document.getElementById('modalSlot').style.display = 'flex';
+        }
+
+        function openEditSlotModalByDate(isoDate, index) {
+            closeModalDayDetails();
+            const metadata = getConcursosMetadata();
+            const slot = metadata[currentConcurso]?.dateSchedule?.[isoDate]?.[index];
+            if (!slot) return;
+
+            document.getElementById('modalSlotTitle').innerText = `Editar (${isoDate.split('-').reverse().join('/')})`;
+            document.getElementById('slotDataIso').value = isoDate;
+            document.getElementById('slotIndex').value = index;
+            document.getElementById('slotHorario').value = slot.horario;
+            document.getElementById('slotCompletedCheckbox').checked = !!slot.completed;
+
+            const selectMat = document.getElementById('slotMateriaSelect');
+            selectMat.innerHTML = '';
+            const materiasValidas = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            materiasValidas.forEach(m => selectMat.innerHTML += `<option value="${m}" ${m === slot.materia ? 'selected' : ''}>${m}</option>`);
+            onMateriaSelectChange(slot.materia, slot.assunto);
+            document.getElementById('modalSlot').style.display = 'flex';
+        }
+
+        function salvarSlot() {
+            const isoDate = document.getElementById('slotDataIso').value;
+            const index = parseInt(document.getElementById('slotIndex').value);
+            const horario = document.getElementById('slotHorario').value.trim();
+            const materia = document.getElementById('slotMateriaSelect').value || 'Estudo Geral';
+            const assunto = document.getElementById('slotAssuntoSelect').value || '';
+            const completed = document.getElementById('slotCompletedCheckbox').checked;
+
+            if (!horario) return alert('Informe o horário.');
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = { dateSchedule: {} };
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+
+            const dateSchedule = metadata[currentConcurso].dateSchedule;
+            if (!dateSchedule[isoDate]) dateSchedule[isoDate] = [];
+
+            const slotObj = { horario, materia, assunto, completed };
+
+            if (index >= 0 && dateSchedule[isoDate][index]) dateSchedule[isoDate][index] = slotObj;
+            else dateSchedule[isoDate].push(slotObj);
+
+            saveConcursosMetadata(metadata);
+            renderMonthCalendar();
+            renderDelayedPanel();
+            closeModalSlot();
+        }
+
+        function toggleSlotCompletedByDate(isoDate, index) {
+            let metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
+            if (dateSchedule && dateSchedule[isoDate] && dateSchedule[isoDate][index]) {
+                dateSchedule[isoDate][index].completed = !dateSchedule[isoDate][index].completed;
+                saveConcursosMetadata(metadata);
+                renderMonthCalendar();
+                renderDelayedPanel();
+                openModalDayDetails(isoDate);
+            }
+        }
+
+        function removerSlotByDate(isoDate, index) {
+            let metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
+            if (dateSchedule && dateSchedule[isoDate]) {
+                dateSchedule[isoDate].splice(index, 1);
+                saveConcursosMetadata(metadata);
+                renderMonthCalendar();
+                renderDelayedPanel();
+                openModalDayDetails(isoDate);
+            }
+        }
+
+        function limparCronogramaSemanal() {
+            if (confirm(`Deseja limpar todo o cronograma do concurso "${currentConcurso}"?`)) {
+                let metadata = getConcursosMetadata();
+                if (metadata[currentConcurso]) {
+                    metadata[currentConcurso].dateSchedule = {};
+                    saveConcursosMetadata(metadata);
+                    renderMonthCalendar();
+                    renderDelayedPanel();
+                }
+            }
+        }
+
+        function renderDelayedPanel() {
+            const container = document.getElementById('delayedItemsContainer');
+            const badgeCount = document.getElementById('delayedBadgeCount');
+            if (!container || !badgeCount) return;
+
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
+            const todayIso = formatDateIso(new Date());
+
+            let delayedList = [], todayList = [], nextList = [];
+
+            Object.keys(dateSchedule).forEach(isoDate => {
+                const slots = dateSchedule[isoDate] || [];
+                slots.forEach(slot => {
+                    if (!slot.completed && slot.materia) {
+                        const itemObj = { isoDate, materia: slot.materia, assunto: slot.assunto || 'Tópico de Estudo', horario: slot.horario, isRev: slot.isRev };
+                        if (isoDate < todayIso) delayedList.push(itemObj);
+                        else if (isoDate === todayIso) todayList.push(itemObj);
+                        else nextList.push(itemObj);
+                    }
+                });
+            });
+
+            badgeCount.innerText = `${delayedList.length} atrasadas`;
+
+            let displayList = [];
+            if (currentDelayedFilter === 'hoje') displayList = todayList;
+            else if (currentDelayedFilter === 'atrasadas') displayList = delayedList;
+            else if (currentDelayedFilter === 'proximas') displayList = nextList;
+
+            if (displayList.length === 0) {
+                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding: 1rem 0;">Nenhuma matéria ou revisão pendente aqui.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            displayList.forEach(item => {
+                const dateFmt = item.isoDate.split('-').reverse().join('/');
+                const revTag = item.isRev ? '[REVISÃO] ' : '';
+                container.innerHTML += `
+                    <div class="delayed-card">
+                        <div class="delayed-card-info">
+                            <h4>${revTag}${item.materia}</h4>
+                            <p>${item.assunto}</p>
+                            <span class="delayed-tag">${dateFmt} - ${item.horario}</span>
+                        </div>
+                        <button class="btn btn-success btn-sm" onclick="concluirDelayedItemByDate('${item.isoDate}', '${item.materia}', '${item.assunto}')">
+                            Iniciar / Concluir
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function filterDelayedList(filterType, btn) {
+            currentDelayedFilter = filterType;
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderDelayedPanel();
+        }
+
+        function concluirDelayedItemByDate(isoDate, materia, assunto) {
+            let metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule;
+            if (dateSchedule && dateSchedule[isoDate]) {
+                const slot = dateSchedule[isoDate].find(s => s.materia === materia && s.assunto === assunto);
+                if (slot) {
+                    slot.completed = true;
+                    saveConcursosMetadata(metadata);
+                    renderMonthCalendar();
+                    renderDelayedPanel();
+                }
+            }
+        }
+
+        /* AUXILIARES DE TEMPO E EXPORTAÇÕES GLOBAIS */
+        function parseTimeIntervalToMinutes(timeIntervalStr) {
+            if (!timeIntervalStr) return 0;
+            const parts = timeIntervalStr.split('-').map(s => s.trim());
+            if (parts.length !== 2) return 30;
+            const parseMinutes = (str) => {
+                const [h, m] = str.split(':').map(Number);
+                if (isNaN(h)) return 0;
+                return (h * 60) + (isNaN(m) ? 0 : m);
+            };
+            const start = parseMinutes(parts[0]);
+            const end = parseMinutes(parts[1]);
+            return (end > start) ? (end - start) : 60;
+        }
+
+        function formatMinutesToHours(totalMinutes) {
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            return m === 0 ? `${h}h` : `${h}h ${m}min`;
+        }
+
+        function closeModalSlot() { document.getElementById('modalSlot').style.display = 'none'; }
+
+        function onMateriaSelectChange(selectedMateria, preSelectedAssunto = '') {
+            const selectAssunto = document.getElementById('slotAssuntoSelect');
+            selectAssunto.innerHTML = '';
+
+            if (!selectedMateria) {
+                selectAssunto.innerHTML = '<option value="">Revisão Geral / Livre</option>';
+                return;
+            }
+
+            const assuntos = editalItems.filter(i => (i.materia || 'Geral') === selectedMateria).map(i => i.assunto);
+            const uniqueAssuntos = Array.from(new Set(assuntos));
+
+            if (preSelectedAssunto && !uniqueAssuntos.includes(preSelectedAssunto)) {
+                uniqueAssuntos.unshift(preSelectedAssunto);
+            }
+
+            if (uniqueAssuntos.length === 0) {
+                selectAssunto.innerHTML = '<option value="">Revisão Geral da Matéria</option>';
+            } else {
+                selectAssunto.innerHTML = '<option value="">-- Todos ou Geral --</option>';
+                uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}" ${a === preSelectedAssunto ? 'selected' : ''}>${a}</option>`);
+            }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            if (!email || !password) return alert('Preencha e-mail e senha.');
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) alert('Erro ao entrar: ' + error.message);
+            else { currentUser = data.user; checkSuperUserStatus(); showDashboard(); }
+        }
+
+        async function handleSignUp() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            if (!email || !password) return alert('Preencha e-mail e senha.');
+
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) alert('Erro ao cadastrar: ' + error.message);
+            else alert('Cadastro realizado com sucesso! Clique em Entrar.');
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            currentUser = null; isSuperUser = false;
+            document.getElementById('app-dashboard').style.display = 'none';
+            document.getElementById('auth-screen').style.display = 'flex';
+        }
+
+        function checkSuperUserStatus() {
+            isSuperUser = true; 
+            const badge = document.getElementById('superUserBadge');
+            if (badge) badge.style.display = isSuperUser ? 'inline-block' : 'none';
+        }
+
+        function showDashboard() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-dashboard').style.display = 'block';
+            initMonthYearSelectors();
+            loadData();
+        }
+
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session) { currentUser = session.user; checkSuperUserStatus(); showDashboard(); }
+        });
+
+        function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+
+            if (tabId === 'tab-calendario') { renderMonthCalendar(); renderDelayedPanel(); }
+            else if (tabId === 'tab-anotacoes') renderAnotacoesMateriaSelector();
+            else if (tabId === 'tab-flashcards') renderFlashcardMateriaSelector();
         }
 
         window.handleSignUp = handleSignUp;
@@ -2788,6 +2241,9 @@ R: É a declaração do Estado..."></textarea>
         window.copyPromptToClipboard = copyPromptToClipboard;
         window.openModalViewEdital = openModalViewEdital;
         window.closeModalViewEdital = closeModalViewEdital;
+        window.uploadEditalFile = uploadEditalFile;
+        window.downloadEditalFile = downloadEditalFile;
+        window.removerEditalFile = removerEditalFile;
         window.filterDelayedList = filterDelayedList;
         window.calculateAutoFillProjection = calculateAutoFillProjection;
         window.onMonthYearChange = onMonthYearChange;
@@ -2799,29 +2255,6 @@ R: É a declaração do Estado..."></textarea>
         window.openModalDayDetails = openModalDayDetails;
         window.closeModalDayDetails = closeModalDayDetails;
         window.openAddSlotForSelectedDay = openAddSlotForSelectedDay;
-        window.renderAnotacoesList = renderAnotacoesList;
-        window.openModalCriarAnotacao = openModalCriarAnotacao;
-        window.closeModalAnotacao = closeModalAnotacao;
-        window.salvarAnotacao = salvarAnotacao;
-        window.editarAnotacao = editarAnotacao;
-        window.excluirAnotacao = excluirAnotacao;
-        window.onFlashcardMateriaChange = onFlashcardMateriaChange;
-        window.renderFlashcardsList = renderFlashcardsList;
-        window.flipCurrentFlashcard = flipCurrentFlashcard;
-        window.nextFlashcard = nextFlashcard;
-        window.prevFlashcard = prevFlashcard;
-        window.editCurrentFlashcard = editCurrentFlashcard;
-        window.deleteCurrentFlashcard = deleteCurrentFlashcard;
-        window.openModalGerarFlashcardsTexto = openModalGerarFlashcardsTexto;
-        window.closeModalGerarFlashcards = closeModalGerarFlashcards;
-        window.onGenFcMateriaChange = onGenFcMateriaChange;
-        window.handleImportFcFile = handleImportFcFile;
-        window.processarTextoEGerarCards = processarTextoEGerarCards;
-        window.salvarFlashcardsGerados = salvarFlashcardsGerados;
-        window.openModalCriarFlashcard = openModalCriarFlashcard;
-        window.closeModalFcManual = closeModalFcManual;
-        window.onManualFcMateriaChange = onManualFcMateriaChange;
-        window.salvarFlashcardManual = salvarFlashcardManual;
     </script>
 </body>
 </html>
