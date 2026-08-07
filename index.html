@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meu Painel de Estudos</title>
 
+    <!-- Configurações PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,6 +23,7 @@
       }
     </script>
 
+    <!-- Supabase, Chart.js e PDF.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -144,6 +146,12 @@
         .materia-header-content { display: flex; justify-content: space-between; align-items: center; }
 
         .priority-input { width: 55px; text-align: center; padding: 0.2rem 0.4rem; background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.3); }
+
+        .prompt-code-box {
+            background-color: var(--code-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: #38bdf8;
+            white-space: pre-wrap; word-break: break-word;
+        }
 
         @media (max-width: 768px) { .grid-top { grid-template-columns: 1fr; } }
     </style>
@@ -270,6 +278,60 @@
         <div id="tab-flashcards" class="tab-content"><div class="card"><h3>Flashcards</h3></div></div>
     </div>
 
+    <!-- MODAL VIEW EDITAL -->
+    <div class="modal-overlay" id="modalViewEdital">
+        <div class="modal modal-large">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <h3 id="editalModalTitle">Documento do Edital</h3>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <label class="btn btn-success btn-sm" style="cursor: pointer;">
+                        Anexar Novo Arquivo
+                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" style="display: none;" onchange="uploadEditalFile(event)">
+                    </label>
+                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">Baixar Arquivo</button>
+                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Apagar Edital</button>
+                </div>
+            </div>
+
+            <div id="editalViewerContainer" style="flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
+                <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PROMPT IA -->
+    <div class="modal-overlay" id="modalPromptIA">
+        <div class="modal">
+            <h3>Prompt para Colar na IA</h3>
+            <div class="prompt-code-box" id="promptTextToCopy">Prompt:
+
+"Analise o edital/conteúdo programático em anexo e o histórico da banca examinadora [Insira a Banca]. Gere como resposta apenas um código JSON válido seguindo estritamente o formato:
+
+{
+  "concurso": "Nome do Concurso",
+  "materias": [
+    {
+      "materia": "Nome da Matéria",
+      "prioridade": 1,
+      "peso": 2.0,
+      "assuntos": [
+        "Assunto 1 mais cobrado",
+        "Assunto 2 mais cobrado"
+      ]
+    }
+  ]
+}"</div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="copyPromptToClipboard()">Copiar Prompt (ENTER)</button>
+                <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL NOVO CONCURSO -->
     <div class="modal-overlay" id="modalNovoConcurso">
         <div class="modal">
@@ -290,9 +352,18 @@
     </div>
 
     <script>
+        // Configuração Otimizada para Persistência no Chrome Android
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                storage: window.localStorage
+            }
+        });
 
         const PALETA_CORES_MATERIAS = [
             'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
@@ -311,6 +382,7 @@
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
         let metadataCache = {};
+        let activeObjectUrl = null;
 
         function updateOnlineStatus() {
             const banner = document.getElementById('offline-banner');
@@ -385,7 +457,6 @@
         async function syncAllWithSupabase() {
             if (!currentUser) return;
             try {
-                // Puxa edital
                 const { data, error } = await supabaseClient
                     .from('edital')
                     .select('*')
@@ -397,9 +468,7 @@
                     saveEditalToLocalStorage();
                 }
 
-                // Puxa concursos_metadata
                 await loadConcursosMetadata();
-
                 filterDataByConcurso();
             } catch(e) { console.log('Sincronização em segundo plano...'); }
         }
@@ -756,7 +825,126 @@
 
         function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
 
+        /* VISUALIZAÇÃO DE EDITAL PDF EM EMBED (INLINE) */
+        function openModalViewEdital() {
+            document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
+            renderEditalFileViewer();
+            document.getElementById('modalViewEdital').style.display = 'flex';
+        }
+
+        function closeModalViewEdital() {
+            if (activeObjectUrl) {
+                URL.revokeObjectURL(activeObjectUrl);
+                activeObjectUrl = null;
+            }
+            document.getElementById('modalViewEdital').style.display = 'none';
+        }
+
+        function getEditalFileStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `edital_file_${uid}_${currentConcurso}`;
+        }
+
+        function dataURLtoBlob(dataurl) {
+            const arr = dataurl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+            return new Blob([u8arr], { type: mime });
+        }
+
+        function renderEditalFileViewer() {
+            const container = document.getElementById('editalViewerContainer');
+            const btnDownload = document.getElementById('btnDownloadEdital');
+            const btnRemove = document.getElementById('btnRemoveEdital');
+
+            if (activeObjectUrl) {
+                URL.revokeObjectURL(activeObjectUrl);
+                activeObjectUrl = null;
+            }
+
+            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
+
+            if (!fileDataRaw) {
+                container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${currentConcurso}</strong>.</p>`;
+                btnDownload.style.display = 'none';
+                btnRemove.style.display = 'none';
+                return;
+            }
+
+            try {
+                const fileObj = JSON.parse(fileDataRaw);
+                btnDownload.style.display = 'inline-flex';
+                btnRemove.style.display = 'inline-flex';
+
+                if (fileObj.type.includes('pdf')) {
+                    const blob = dataURLtoBlob(fileObj.data);
+                    activeObjectUrl = URL.createObjectURL(blob);
+                    container.innerHTML = `<embed src="${activeObjectUrl}#toolbar=1" type="application/pdf" style="width:100%; height:100%; min-height:500px; border:none; border-radius:6px;"></embed>`;
+                } else if (fileObj.type.includes('image')) {
+                    container.innerHTML = `<img src="${fileObj.data}" style="max-width:100%; max-height:480px; border-radius:6px; object-fit:contain;">`;
+                } else {
+                    container.innerHTML = `<p style="font-size:1.1rem; font-weight:700; color:var(--primary-blue);">${fileObj.name}</p>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<p style="color:#ef4444;">Erro ao carregar o arquivo do edital.</p>`;
+            }
+        }
+
+        function uploadEditalFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileObj = { name: file.name, type: file.type || 'application/pdf', data: e.target.result };
+                localStorage.setItem(getEditalFileStorageKey(), JSON.stringify(fileObj));
+                renderEditalFileViewer();
+                alert('Arquivo anexado com sucesso!');
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function downloadEditalFile() {
+            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
+            if (!fileDataRaw) return;
+            const fileObj = JSON.parse(fileDataRaw);
+            const a = document.createElement('a');
+            a.href = fileObj.data;
+            a.download = fileObj.name || 'Edital.pdf';
+            a.click();
+        }
+
+        function removerEditalFile() {
+            if (confirm(`Remover o edital do concurso "${currentConcurso}"?`)) {
+                localStorage.removeItem(getEditalFileStorageKey());
+                renderEditalFileViewer();
+            }
+        }
+
+        function openModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'flex'; }
+        function closeModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'none'; }
+        function copyPromptToClipboard() {
+            navigator.clipboard.writeText(document.getElementById('promptTextToCopy').innerText);
+            alert('Prompt copiado!');
+        }
+
         /* AUTENTICAÇÃO E RECEPTOR DE EVENTO EM TEMPO REAL */
+        async function checkAuthAndSync() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session && session.user) {
+                currentUser = session.user;
+                checkSuperUserStatus();
+                showDashboard();
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('app-dashboard').style.display = 'none';
+            }
+        }
+
         async function handleLogin() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -798,11 +986,15 @@
         }
 
         supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (session) {
+            if (session && session.user) {
                 currentUser = session.user;
                 checkSuperUserStatus();
                 showDashboard();
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthAndSync();
         });
 
         function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
@@ -837,6 +1029,14 @@
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
+        window.openModalPromptIA = openModalPromptIA;
+        window.closeModalPromptIA = closeModalPromptIA;
+        window.copyPromptToClipboard = copyPromptToClipboard;
+        window.openModalViewEdital = openModalViewEdital;
+        window.closeModalViewEdital = closeModalViewEdital;
+        window.uploadEditalFile = uploadEditalFile;
+        window.downloadEditalFile = downloadEditalFile;
+        window.removerEditalFile = removerEditalFile;
     </script>
 </body>
 </html>
