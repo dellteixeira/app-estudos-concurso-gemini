@@ -457,13 +457,8 @@
             padding-right: 2px;
         }
 
-        .day-badges-scroll::-webkit-scrollbar {
-            width: 3px;
-        }
-        .day-badges-scroll::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
+        .day-badges-scroll::-webkit-scrollbar { width: 3px; }
+        .day-badges-scroll::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 
         .clean-subject-badge {
             background: rgba(59, 130, 246, 0.15);
@@ -490,6 +485,44 @@
             border-color: var(--completed-border);
             color: var(--completed-text);
             text-decoration: line-through;
+        }
+
+        /* ESTILOS DO CARD DE ANOTAÇÃO */
+        .note-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .note-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+        }
+
+        .note-card-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary-blue);
+        }
+
+        .note-card-date {
+            font-size: 0.75rem;
+            opacity: 0.6;
+        }
+
+        .note-card-body {
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            color: var(--text-color);
         }
 
         .modal-overlay {
@@ -742,31 +775,48 @@
             </div>
         </div>
 
-        <!-- TAB: ANOTAÇÕES -->
+        <!-- TAB: ANOTAÇÕES E BLOCO DE NOTAS POR MATÉRIA -->
         <div id="tab-anotacoes" class="tab-content">
             <div class="card">
-                <h3>Anotações e Caderno de Resumos</h3>
-                <p style="margin-bottom: 1.2rem; font-size: 0.9rem; opacity: 0.85;">
-                    Selecione uma matéria do seu edital abaixo para visualizar, registrar ou alterar suas anotações pessoais.
-                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <h3>Anotações e Caderno de Resumos</h3>
+                    <button class="btn btn-primary" onclick="openModalCriarAnotacao()">+ Incluir Nota</button>
+                </div>
 
-                <div class="form-group" style="margin-bottom: 1.2rem;">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label for="anotacoesMateriaSelect"><strong>Selecione a Matéria:</strong></label>
-                    <select id="anotacoesMateriaSelect" onchange="carregarAnotacaoMateria(this.value)"></select>
+                    <select id="anotacoesMateriaSelect" onchange="renderAnotacoesList(this.value)"></select>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="anotacoesTextarea"><strong>Conteúdo / Resumo / Jurisprudências:</strong></label>
-                    <textarea id="anotacoesTextarea" rows="16" placeholder="Digite aqui suas anotações de estudo para esta matéria..."></textarea>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <span id="anotacaoSaveStatus" style="font-size: 0.85rem; color: #10b981; font-weight: 600;"></span>
-                    <button class="btn btn-success" onclick="salvarAnotacaoAtual()">Salvar Anotação</button>
+                <div id="anotacoesListContainer">
+                    <!-- As notas da matéria serão carregadas aqui -->
                 </div>
             </div>
         </div>
 
+    </div>
+
+    <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO MANUALLY -->
+    <div class="modal-overlay" id="modalAnotacao">
+        <div class="modal">
+            <h3 id="modalAnotacaoTitle">Nova Anotação</h3>
+            <input type="hidden" id="anotacaoId">
+
+            <div class="form-group">
+                <label for="inputAnotacaoTitulo"><strong>Título da Anotação:</strong></label>
+                <input type="text" id="inputAnotacaoTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes, Resumo Cap. 2..." required>
+            </div>
+
+            <div class="form-group">
+                <label for="inputAnotacaoTexto"><strong>Conteúdo / Resumo / Dicas:</strong></label>
+                <textarea id="inputAnotacaoTexto" rows="10" placeholder="Digite aqui o conteúdo da sua nota..." required></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalAnotacao()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="salvarAnotacao()">Salvar Nota (ENTER)</button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL DE CONFIGURAÇÃO MENSAL -->
@@ -1051,6 +1101,8 @@
                     confirmarAutoFillDisponibilidade();
                 } else if (isModalVisible('modalSlot')) {
                     salvarSlot();
+                } else if (isModalVisible('modalAnotacao')) {
+                    salvarAnotacao();
                 } else if (isModalVisible('modalNovoConcurso')) {
                     confirmarNovoConcurso();
                 } else if (isModalVisible('modalPromptIA')) {
@@ -1071,6 +1123,7 @@
             closeModalNovoConcurso();
             closeModalSlot();
             closeModalDayDetails();
+            closeModalAnotacao();
         }
 
         function initMonthYearSelectors() {
@@ -1268,7 +1321,7 @@
             alert(`Cronograma gerado com sucesso com REVISÕES (24h, 7d e 30d)! ${pendentes.length} tópicos alocados.`);
         }
 
-        /* RENDERIZAÇÃO DA GRADE MENSAL COM DISTINÇÃO VISUAL DE REVISÕES */
+        /* RENDERIZAÇÃO DA GRADE MENSAL */
         function renderMonthCalendar() {
             const grid = document.getElementById('monthCalendarGrid');
             if (!grid) return;
@@ -1574,7 +1627,7 @@
             }
         }
 
-        /* SISTEMA DE ANOTAÇÕES POR MATÉRIA */
+        /* GERENCIADOR DE ANOTAÇÕES MÚLTIPLAS POR MATÉRIA */
         function renderAnotacoesMateriaSelector() {
             const select = document.getElementById('anotacoesMateriaSelect');
             if (!select) return;
@@ -1584,7 +1637,7 @@
 
             if (materias.length === 0) {
                 select.innerHTML = '<option value="">Nenhuma matéria disponível</option>';
-                document.getElementById('anotacoesTextarea').value = '';
+                document.getElementById('anotacoesListContainer').innerHTML = '<p style="opacity:0.7; text-align:center; padding: 2rem;">Adicione matérias ao edital para registrar anotações.</p>';
                 return;
             }
 
@@ -1592,36 +1645,128 @@
                 select.innerHTML += `<option value="${mat}">${mat}</option>`;
             });
 
-            carregarAnotacaoMateria(materias[0]);
+            renderAnotacoesList(materias[0]);
         }
 
-        function getAnotacaoStorageKey(materiaName) {
-            return `anotacao_${currentConcurso}_${materiaName}`;
+        function getAnotacoesStorageKey(materiaName) {
+            return `anotacoes_list_${currentConcurso}_${materiaName}`;
         }
 
-        function carregarAnotacaoMateria(materiaName) {
-            const textarea = document.getElementById('anotacoesTextarea');
-            const status = document.getElementById('anotacaoSaveStatus');
-            if (status) status.innerText = '';
-            if (!textarea || !materiaName) return;
-
-            const key = getAnotacaoStorageKey(materiaName);
-            textarea.value = localStorage.getItem(key) || '';
+        function getAnotacoesListByMateria(materiaName) {
+            const key = getAnotacoesStorageKey(materiaName);
+            try {
+                return JSON.parse(localStorage.getItem(key) || '[]');
+            } catch(e) {
+                return [];
+            }
         }
 
-        function salvarAnotacaoAtual() {
-            const select = document.getElementById('anotacoesMateriaSelect');
-            const textarea = document.getElementById('anotacoesTextarea');
-            const status = document.getElementById('anotacaoSaveStatus');
+        function saveAnotacoesListByMateria(materiaName, list) {
+            const key = getAnotacoesStorageKey(materiaName);
+            localStorage.setItem(key, JSON.stringify(list));
+        }
 
-            if (!select || !select.value) return alert('Selecione uma matéria válida.');
+        function renderAnotacoesList(materiaName) {
+            const container = document.getElementById('anotacoesListContainer');
+            if (!container || !materiaName) return;
 
-            const key = getAnotacaoStorageKey(select.value);
-            localStorage.setItem(key, textarea.value);
+            const list = getAnotacoesListByMateria(materiaName);
 
-            if (status) {
-                status.innerText = '✓ Anotação salva com sucesso!';
-                setTimeout(() => { status.innerText = ''; }, 3000);
+            if (list.length === 0) {
+                container.innerHTML = `<p style="opacity:0.7; text-align:center; padding:2rem 0;">Nenhuma anotação registrada para <strong>${materiaName}</strong>. Clique em <strong>"+ Incluir Nota"</strong> para criar a primeira.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            list.forEach(item => {
+                container.innerHTML += `
+                    <div class="note-card">
+                        <div class="note-card-header">
+                            <span class="note-card-title">${item.titulo}</span>
+                            <span class="note-card-date">${item.data}</span>
+                        </div>
+                        <div class="note-card-body">${item.texto}</div>
+                        <div style="display:flex; justify-flex-end; gap:6px; margin-top:6px;">
+                            <button class="btn btn-secondary btn-sm" onclick="editarAnotacao('${materiaName}', '${item.id}')">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="excluirAnotacao('${materiaName}', '${item.id}')">Excluir</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openModalCriarAnotacao() {
+            const materiaSelect = document.getElementById('anotacoesMateriaSelect');
+            if (!materiaSelect || !materiaSelect.value) {
+                return alert('Selecione uma matéria primeiro.');
+            }
+
+            document.getElementById('modalAnotacaoTitle').innerText = `Nova Nota (${materiaSelect.value})`;
+            document.getElementById('anotacaoId').value = '';
+            document.getElementById('inputAnotacaoTitulo').value = '';
+            document.getElementById('inputAnotacaoTexto').value = '';
+            document.getElementById('modalAnotacao').style.display = 'flex';
+        }
+
+        function closeModalAnotacao() {
+            document.getElementById('modalAnotacao').style.display = 'none';
+        }
+
+        function salvarAnotacao() {
+            const materiaSelect = document.getElementById('anotacoesMateriaSelect');
+            const materiaName = materiaSelect.value;
+            const noteId = document.getElementById('anotacaoId').value;
+            const titulo = document.getElementById('inputAnotacaoTitulo').value.trim();
+            const texto = document.getElementById('inputAnotacaoTexto').value.trim();
+
+            if (!titulo || !texto) {
+                return alert('Preencha o título e o conteúdo da anotação.');
+            }
+
+            let list = getAnotacoesListByMateria(materiaName);
+            const nowStr = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+            if (noteId) {
+                // Editar nota existente
+                const note = list.find(n => String(n.id) === String(noteId));
+                if (note) {
+                    note.titulo = titulo;
+                    note.texto = texto;
+                    note.data = `Editado em ${nowStr}`;
+                }
+            } else {
+                // Criar nova nota
+                list.unshift({
+                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+                    titulo: titulo,
+                    texto: texto,
+                    data: `Criado em ${nowStr}`
+                });
+            }
+
+            saveAnotacoesListByMateria(materiaName, list);
+            closeModalAnotacao();
+            renderAnotacoesList(materiaName);
+        }
+
+        function editarAnotacao(materiaName, noteId) {
+            const list = getAnotacoesListByMateria(materiaName);
+            const note = list.find(n => String(n.id) === String(noteId));
+            if (!note) return;
+
+            document.getElementById('modalAnotacaoTitle').innerText = `Editar Nota (${materiaName})`;
+            document.getElementById('anotacaoId').value = note.id;
+            document.getElementById('inputAnotacaoTitulo').value = note.titulo;
+            document.getElementById('inputAnotacaoTexto').value = note.texto;
+            document.getElementById('modalAnotacao').style.display = 'flex';
+        }
+
+        function excluirAnotacao(materiaName, noteId) {
+            if (confirm('Deseja realmente excluir esta anotação?')) {
+                let list = getAnotacoesListByMateria(materiaName);
+                list = list.filter(n => String(n.id) !== String(noteId));
+                saveAnotacoesListByMateria(materiaName, list);
+                renderAnotacoesList(materiaName);
             }
         }
 
@@ -2064,8 +2209,12 @@
         window.openModalDayDetails = openModalDayDetails;
         window.closeModalDayDetails = closeModalDayDetails;
         window.openAddSlotForSelectedDay = openAddSlotForSelectedDay;
-        window.carregarAnotacaoMateria = carregarAnotacaoMateria;
-        window.salvarAnotacaoAtual = salvarAnotacaoAtual;
+        window.renderAnotacoesList = renderAnotacoesList;
+        window.openModalCriarAnotacao = openModalCriarAnotacao;
+        window.closeModalAnotacao = closeModalAnotacao;
+        window.salvarAnotacao = salvarAnotacao;
+        window.editarAnotacao = editarAnotacao;
+        window.excluirAnotacao = excluirAnotacao;
     </script>
 </body>
 </html>
