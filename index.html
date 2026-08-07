@@ -375,16 +375,7 @@
             font-weight: 700;
         }
 
-        .delayed-badge-days {
-            background: #ef4444;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        /* ESTILOS DA GRADE MENSAL DE ESTUDOS */
+        /* ESTILOS DA GRADE MENSAL DE ESTUDOS (LAYOUT LIMPO) */
         .month-calendar-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -405,7 +396,7 @@
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            min-height: 120px;
+            min-height: 110px;
             padding: 8px;
             display: flex;
             flex-direction: column;
@@ -420,14 +411,8 @@
             background: rgba(59, 130, 246, 0.05);
         }
 
-        .month-day-cell.other-month {
-            opacity: 0.35;
-        }
-
-        .month-day-cell.today {
-            border: 2px solid var(--primary-blue);
-            background: rgba(59, 130, 246, 0.1);
-        }
+        .month-day-cell.other-month { opacity: 0.35; }
+        .month-day-cell.today { border: 2px solid var(--primary-blue); background: rgba(59, 130, 246, 0.1); }
 
         .day-num-header {
             display: flex;
@@ -453,51 +438,29 @@
             cursor: pointer;
         }
 
-        .schedule-item {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 6px 8px;
-            border-radius: 6px;
-            font-size: 0.78rem;
+        /* TAG LIMPA APENAS COM NOME DA DISCIPLINA NO CALENDÁRIO */
+        .clean-subject-badge {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid var(--primary-blue);
+            color: #93c5fd;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             display: flex;
-            flex-direction: column;
-            gap: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .schedule-item.completed {
+        .clean-subject-badge.completed {
             background: var(--completed-bg);
             border-color: var(--completed-border);
-        }
-
-        .schedule-item.completed .subject {
-            text-decoration: line-through;
             color: var(--completed-text);
+            text-decoration: line-through;
         }
-
-        .slot-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px dashed var(--border-color);
-            padding-bottom: 2px;
-        }
-
-        .slot-header .time { font-weight: 700; color: var(--primary-blue); font-size: 0.75rem; }
-        .slot-controls-inline { display: flex; gap: 4px; }
-
-        .btn-action-inline {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border-color);
-            color: #94a3b8;
-            cursor: pointer;
-            font-size: 0.68rem;
-            padding: 1px 4px;
-            border-radius: 3px;
-        }
-        .btn-action-inline:hover { color: #ffffff; background: var(--primary-blue); }
-        .btn-action-inline.danger:hover { background: #ef4444; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -559,6 +522,23 @@
         .projection-box {
             background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981;
             padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; color: #34d399;
+        }
+
+        /* CARD DE CADA ITEM DENTRO DO MODAL DO DIA */
+        .day-detail-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .day-detail-item.completed {
+            background: var(--completed-bg);
+            border-color: var(--completed-border);
         }
 
         @media (max-width: 768px) {
@@ -711,13 +691,13 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="openModalDisponibilidade()">Gerar Cronograma Automático</button>
+                        <button class="btn btn-purple" onclick="openModalDisponibilidade()">Preencher Cronograma Automaticamente</button>
                         <button class="btn btn-danger" onclick="limparCronogramaSemanal()">Limpar Mês Atual</button>
                     </div>
                 </div>
 
                 <p style="margin-bottom: 1rem; font-size: 0.85rem; opacity: 0.8;">
-                    <strong>Dica:</strong> Clique em qualquer dia para adicionar/editar matérias diretamente na data desejada.
+                    <strong>Dica:</strong> Clique em qualquer dia para abrir a caixa e gerenciar/personalizar todas as disciplinas agendadas.
                 </p>
                 
                 <div class="weekly-hours-banner">
@@ -734,16 +714,16 @@
 
     </div>
 
-    <!-- MODAL: DEFINIR DISPONIBILIDADE E DATA DE INÍCIO REAL -->
+    <!-- MODAL DE CONFIGURAÇÃO (RESTURADO EXATAMENTE COMO NA FIGURA 4) -->
     <div class="modal-overlay" id="modalDisponibilidade">
         <div class="modal">
-            <h3>Gerar Cronograma por Data Real</h3>
+            <h3>Configurar Horários e Turnos de Estudo</h3>
             <p style="font-size: 0.85rem; opacity: 0.85;">
-                O cronograma iniciará exatamente na data definida abaixo e distribuirá as matérias pendentes dia a dia.
+                Configure seus horários de estudo e a data em que pretende iniciar para gerar a distribuição automática de tópicos.
             </p>
 
             <div class="form-group" style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--primary-blue);">
-                <label for="startDateInput" style="color: #93c5fd; font-weight: 700;">Data Exata de Início:</label>
+                <label for="startDateInput" style="color: #93c5fd; font-weight: 700;">Data de Início do Cronograma:</label>
                 <input type="date" id="startDateInput" style="font-weight: bold; font-size: 1rem;">
             </div>
 
@@ -753,7 +733,7 @@
                 <strong style="width: 80px;">Manhã:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
-                    <input type="time" id="inicioManha" value="08:00" onchange="calculateAutoFillProjection()">
+                    <input type="time" id="inicioManha" value="10:00" onchange="calculateAutoFillProjection()">
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>Qtd Horas:</label>
@@ -765,11 +745,11 @@
                 <strong style="width: 80px;">Tarde:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
-                    <input type="time" id="inicioTarde" value="14:00" onchange="calculateAutoFillProjection()">
+                    <input type="time" id="inicioTarde" value="13:00" onchange="calculateAutoFillProjection()">
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>Qtd Horas:</label>
-                    <input type="number" id="horasTarde" value="2" min="0" max="8" onchange="calculateAutoFillProjection()">
+                    <input type="number" id="horasTarde" value="3" min="0" max="8" onchange="calculateAutoFillProjection()">
                 </div>
             </div>
 
@@ -777,16 +757,16 @@
                 <strong style="width: 80px;">Noite:</strong>
                 <div class="form-group" style="flex:1;">
                     <label>Início:</label>
-                    <input type="time" id="inicioNoite" value="19:00" onchange="calculateAutoFillProjection()">
+                    <input type="time" id="inicioNoite" value="21:00" onchange="calculateAutoFillProjection()">
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>Qtd Horas:</label>
-                    <input type="number" id="horasNoite" value="1" min="0" max="8" onchange="calculateAutoFillProjection()">
+                    <input type="number" id="horasNoite" value="2" min="0" max="8" onchange="calculateAutoFillProjection()">
                 </div>
             </div>
 
             <div class="days-selection-box">
-                <strong style="font-size: 0.9rem;">Dias da Semana Permitidos para Estudo:</strong>
+                <strong style="font-size: 0.9rem;">Dias de Estudo no Fim de Semana:</strong>
                 
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <label class="day-checkbox-label">
@@ -795,6 +775,50 @@
                     <label class="day-checkbox-label">
                         <input type="checkbox" id="chkDomingo" checked onchange="toggleWeekendBox()"> Incluir Domingo
                     </label>
+                </div>
+
+                <label class="day-checkbox-label" style="font-weight: 600; color: #38bdf8; margin-top: 4px;">
+                    <input type="checkbox" id="chkCustomWeekendHours" checked onchange="toggleWeekendBox()"> Personalizar horários específicos para Sábado / Domingo
+                </label>
+
+                <div id="weekendConfigBox" class="weekend-config-box">
+                    <strong style="font-size: 0.85rem; color: #93c5fd;">Horários do Fim de Semana (Sáb/Dom):</strong>
+
+                    <div class="shift-row">
+                        <strong style="width: 80px;">Manhã:</strong>
+                        <div class="form-group" style="flex:1;">
+                            <label>Início:</label>
+                            <input type="time" id="inicioManhaFimSemana" value="08:00" onchange="calculateAutoFillProjection()">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Qtd Horas:</label>
+                            <input type="number" id="horasManhaFimSemana" value="3" min="0" max="8" onchange="calculateAutoFillProjection()">
+                        </div>
+                    </div>
+
+                    <div class="shift-row">
+                        <strong style="width: 80px;">Tarde:</strong>
+                        <div class="form-group" style="flex:1;">
+                            <label>Início:</label>
+                            <input type="time" id="inicioTardeFimSemana" value="14:00" onchange="calculateAutoFillProjection()">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Qtd Horas:</label>
+                            <input type="number" id="horasTardeFimSemana" value="2" min="0" max="8" onchange="calculateAutoFillProjection()">
+                        </div>
+                    </div>
+
+                    <div class="shift-row">
+                        <strong style="width: 80px;">Noite:</strong>
+                        <div class="form-group" style="flex:1;">
+                            <label>Início:</label>
+                            <input type="time" id="inicioNoiteFimSemana" value="19:00" onchange="calculateAutoFillProjection()">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Qtd Horas:</label>
+                            <input type="number" id="horasNoiteFimSemana" value="0" min="0" max="8" onchange="calculateAutoFillProjection()">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -810,7 +834,22 @@
         </div>
     </div>
 
-    <!-- MODAL: ADICIONAR OU EDITAR HORÁRIO EM UMA DATA ESPECÍFICA -->
+    <!-- MODAL NOVO: CAIXA DETALHADA DO DIA SELECIONADO -->
+    <div class="modal-overlay" id="modalDayDetails">
+        <div class="modal">
+            <h3 id="modalDayTitle">Matérias do Dia</h3>
+            <p style="font-size: 0.85rem; opacity: 0.85;">Abaixo estão as disciplinas agendadas para esta data. Clique em uma matéria para alternar status ou use as ações para editar/remover.</p>
+
+            <div id="dayDetailsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto;"></div>
+
+            <div class="modal-actions" style="justify-content: space-between; align-items: center; margin-top: 10px;">
+                <button class="btn btn-primary" onclick="openAddSlotForSelectedDay()">+ Adicionar Nova Disciplina</button>
+                <button class="btn btn-secondary" onclick="closeModalDayDetails()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADICIONAR / EDITAR DISCIPLINA EM DATA ESPECÍFICA -->
     <div class="modal-overlay" id="modalSlot">
         <div class="modal">
             <h3 id="modalSlotTitle">Adicionar Matéria ao Dia</h3>
@@ -818,17 +857,17 @@
             <input type="hidden" id="slotIndex" value="-1">
             
             <div class="form-group">
-                <label for="slotHorario">Horário (ex: 08:00 - 09:00 ou 14:00 - 15:00)</label>
+                <label for="slotHorario">Horário (ex: 08:00 - 09:00)</label>
                 <input type="text" id="slotHorario" placeholder="08:00 - 09:00">
             </div>
 
             <div class="form-group">
-                <label for="slotMateriaSelect">Matéria (Vinculada ao Edital Importado)</label>
+                <label for="slotMateriaSelect">Matéria</label>
                 <select id="slotMateriaSelect" onchange="onMateriaSelectChange(this.value)"></select>
             </div>
 
             <div class="form-group">
-                <label for="slotAssuntoSelect">Assunto (Vinculado à Matéria Escolhida)</label>
+                <label for="slotAssuntoSelect">Assunto (Tópico)</label>
                 <select id="slotAssuntoSelect"></select>
             </div>
 
@@ -839,12 +878,12 @@
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalSlot()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" onclick="salvarSlot()">Salvar na Data (ENTER)</button>
+                <button class="btn btn-primary" onclick="salvarSlot()">Salvar (ENTER)</button>
             </div>
         </div>
     </div>
 
-    <!-- DEMAIS MODAIS MAN TIDOS -->
+    <!-- DEMAIS MODAIS -->
     <div class="modal-overlay" id="modalViewEdital">
         <div class="modal modal-large">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -869,10 +908,10 @@
 
     <div class="modal-overlay" id="modalPromptIA">
         <div class="modal">
-            <h3>Prompt para Colar na IA (ChatGPT / Claude / Gemini)</h3>
+            <h3>Prompt para Colar na IA</h3>
             <div class="prompt-code-box" id="promptTextToCopy">Prompt:
 
-"Analise o edital/conteúdo programático em anexo e o histórico da banca examinadora [Insira o nome da Banca, ex: Cebraspe, FGV, FCC]. Gere como resposta apenas um código JSON válido seguindo estritamente o formato abaixo:
+"Analise o edital/conteúdo programático em anexo e o histórico da banca examinadora [Insira a Banca]. Gere como resposta apenas um código JSON válido seguindo estritamente o formato:
 
 {
   "concurso": "Nome do Concurso",
@@ -942,6 +981,7 @@
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
         let currentDelayedFilter = 'hoje';
+        let selectedDayIsoGlobal = '';
 
         let pdfDoc = null;
         let pdfPageNum = 1;
@@ -981,11 +1021,18 @@
             closeModalPromptIA();
             closeModalNovoConcurso();
             closeModalSlot();
+            closeModalDayDetails();
         }
 
         function getMateriaColorIndex(materiaName, sortedMaterias) {
             const idx = sortedMaterias.indexOf(materiaName);
             return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
+        }
+
+        function toggleWeekendBox() {
+            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
+            document.getElementById('weekendConfigBox').style.display = isCustomWeekend ? 'flex' : 'none';
+            calculateAutoFillProjection();
         }
 
         function openModalDisponibilidade() {
@@ -1000,14 +1047,12 @@
             document.getElementById('startDateInput').value = `${yyyy}-${mm}-${dd}`;
 
             document.getElementById('modalDisponibilidade').style.display = 'flex';
-            calculateAutoFillProjection();
+            toggleWeekendBox();
         }
 
         function closeModalDisponibilidade() {
             document.getElementById('modalDisponibilidade').style.display = 'none';
         }
-
-        function toggleWeekendBox() { calculateAutoFillProjection(); }
 
         function calculateAutoFillProjection() {
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
@@ -1022,21 +1067,31 @@
             document.getElementById('projectionTopicsCount').innerText = pendentesCount;
         }
 
-        /* GERAÇÃO DO CRONOGRAMA BASEADO EM DATAS REAIS */
+        /* GERAR CRONOGRAMA POR DATAS REAIS COM SUPORTE COMPLETO A FIM DE SEMANA */
         function confirmarAutoFillDisponibilidade() {
             const startDateVal = document.getElementById('startDateInput').value;
             if (!startDateVal) return alert('Selecione a data de início.');
 
             const startDate = new Date(startDateVal + "T00:00:00");
 
-            const incManha = document.getElementById('inicioManha').value || '08:00';
+            const incManha = document.getElementById('inicioManha').value || '10:00';
             const hManha = parseInt(document.getElementById('horasManha').value) || 0;
 
-            const incTarde = document.getElementById('inicioTarde').value || '14:00';
+            const incTarde = document.getElementById('inicioTarde').value || '13:00';
             const hTarde = parseInt(document.getElementById('horasTarde').value) || 0;
 
-            const incNoite = document.getElementById('inicioNoite').value || '19:00';
+            const incNoite = document.getElementById('inicioNoite').value || '21:00';
             const hNoite = parseInt(document.getElementById('horasNoite').value) || 0;
+
+            const isCustomWeekend = document.getElementById('chkCustomWeekendHours').checked;
+            const incManhaFim = document.getElementById('inicioManhaFimSemana').value || '08:00';
+            const hManhaFim = parseInt(document.getElementById('horasManhaFimSemana').value) || 0;
+
+            const incTardeFim = document.getElementById('inicioTardeFimSemana').value || '14:00';
+            const hTardeFim = parseInt(document.getElementById('horasTardeFimSemana').value) || 0;
+
+            const incNoiteFim = document.getElementById('inicioNoiteFimSemana').value || '19:00';
+            const hNoiteFim = parseInt(document.getElementById('horasNoiteFimSemana').value) || 0;
 
             const incSab = document.getElementById('chkSabado').checked;
             const incDom = document.getElementById('chkDomingo').checked;
@@ -1076,17 +1131,29 @@
 
                     if (!dateSchedule[isoKey]) dateSchedule[isoKey] = [];
 
-                    for (let i = 0; i < hManha && pendentesIndex < pendentes.length; i++) {
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    const useWeekendRules = isWeekend && isCustomWeekend;
+
+                    const curIncManha = useWeekendRules ? incManhaFim : incManha;
+                    const curHManha = useWeekendRules ? hManhaFim : hManha;
+
+                    const curIncTarde = useWeekendRules ? incTardeFim : incTarde;
+                    const curHTarde = useWeekendRules ? hTardeFim : hTarde;
+
+                    const curIncNoite = useWeekendRules ? incNoiteFim : incNoite;
+                    const curHNoite = useWeekendRules ? hNoiteFim : hNoite;
+
+                    for (let i = 0; i < curHManha && pendentesIndex < pendentes.length; i++) {
                         const item = pendentes[pendentesIndex++];
-                        dateSchedule[isoKey].push({ horario: formatHourSlot(incManha, i), materia: item.materia, assunto: item.assunto, completed: false });
+                        dateSchedule[isoKey].push({ horario: formatHourSlot(curIncManha, i), materia: item.materia, assunto: item.assunto, completed: false });
                     }
-                    for (let i = 0; i < hTarde && pendentesIndex < pendentes.length; i++) {
+                    for (let i = 0; i < curHTarde && pendentesIndex < pendentes.length; i++) {
                         const item = pendentes[pendentesIndex++];
-                        dateSchedule[isoKey].push({ horario: formatHourSlot(incTarde, i), materia: item.materia, assunto: item.assunto, completed: false });
+                        dateSchedule[isoKey].push({ horario: formatHourSlot(curIncTarde, i), materia: item.materia, assunto: item.assunto, completed: false });
                     }
-                    for (let i = 0; i < hNoite && pendentesIndex < pendentes.length; i++) {
+                    for (let i = 0; i < curHNoite && pendentesIndex < pendentes.length; i++) {
                         const item = pendentes[pendentesIndex++];
-                        dateSchedule[isoKey].push({ horario: formatHourSlot(incNoite, i), materia: item.materia, assunto: item.assunto, completed: false });
+                        dateSchedule[isoKey].push({ horario: formatHourSlot(curIncNoite, i), materia: item.materia, assunto: item.assunto, completed: false });
                     }
                 }
 
@@ -1097,10 +1164,10 @@
             renderMonthCalendar();
             renderDelayedPanel();
             closeModalDisponibilidade();
-            alert('Cronograma mensal gerado com sucesso baseando-se na sua data de início!');
+            alert('Cronograma mensal gerado com sucesso!');
         }
 
-        /* RENDERIZAÇÃO DA GRADE MENSAL DE DIAS (1 A 31) */
+        /* RENDERIZAÇÃO DA GRADE MENSAL COM VISUAL LIMPO (APENAS DISCIPLINAS) */
         function renderMonthCalendar() {
             const grid = document.getElementById('monthCalendarGrid');
             if (!grid) return;
@@ -1121,14 +1188,12 @@
             const today = new Date();
             const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-            // Preenche células vazias do início do mês
             for (let i = 0; i < startDayOfWeek; i++) {
                 const emptyCell = document.createElement('div');
                 emptyCell.className = 'month-day-cell other-month';
                 grid.appendChild(emptyCell);
             }
 
-            // Preenche os dias do mês real
             for (let day = 1; day <= totalDays; day++) {
                 const mm = String(mSelect + 1).padStart(2, '0');
                 const dd = String(day).padStart(2, '0');
@@ -1140,42 +1205,84 @@
                 const daySlots = dateSchedule[isoKey] || [];
                 let htmlSlots = '';
 
-                daySlots.forEach((slot, index) => {
+                // Agrupa para exibir apenas os nomes das disciplinas limpos na célula do dia
+                const materiasUnicas = [];
+                daySlots.forEach(slot => {
                     monthTotalMinutes += parseTimeIntervalToMinutes(slot.horario);
-                    const isCompleted = slot.completed ? 'completed' : '';
+                    if (!materiasUnicas.some(m => m.name === slot.materia)) {
+                        materiasUnicas.push({ name: slot.materia, allCompleted: true });
+                    }
+                });
 
-                    htmlSlots += `
-                        <div class="schedule-item ${isCompleted}" onclick="event.stopPropagation(); toggleSlotCompletedByDate('${isoKey}', ${index})">
-                            <div class="slot-header">
-                                <span class="time">${slot.horario}</span>
-                                <div class="slot-controls-inline">
-                                    <button class="btn-action-inline" onclick="event.stopPropagation(); openEditSlotModalByDate('${isoKey}', ${index})">E</button>
-                                    <button class="btn-action-inline danger" onclick="event.stopPropagation(); removerSlotByDate('${isoKey}', ${index})">X</button>
-                                </div>
-                            </div>
-                            <span class="subject"><strong>${slot.materia}</strong></span>
-                            <span style="font-size:0.7rem; opacity:0.8; word-break:break-word;">${slot.assunto || ''}</span>
-                        </div>
-                    `;
+                daySlots.forEach(slot => {
+                    const match = materiasUnicas.find(m => m.name === slot.materia);
+                    if (match && !slot.completed) match.allCompleted = false;
+                });
+
+                materiasUnicas.forEach(m => {
+                    const statusClass = m.allCompleted ? 'completed' : '';
+                    htmlSlots += `<div class="clean-subject-badge ${statusClass}"><span>${m.name}</span></div>`;
                 });
 
                 cell.innerHTML = `
                     <div class="day-num-header">
                         <span>${day}</span>
-                        <button class="btn-add-mini" onclick="event.stopPropagation(); openModalSlotForDate('${isoKey}')">+</button>
+                        <button class="btn-add-mini" onclick="event.stopPropagation(); openModalDayDetails('${isoKey}')">+</button>
                     </div>
                     ${htmlSlots}
                 `;
 
-                cell.onclick = () => openModalSlotForDate(isoKey);
+                cell.onclick = () => openModalDayDetails(isoKey);
                 grid.appendChild(cell);
             }
 
             document.getElementById('weeklyHoursTotal').innerText = formatMinutesToHours(monthTotalMinutes);
         }
 
+        /* CAIXA/MODAL DETALHADA QUE ABRE AO CLICAR NO DIA */
+        function openModalDayDetails(isoDate) {
+            selectedDayIsoGlobal = isoDate;
+            const formattedDate = isoDate.split('-').reverse().join('/');
+            document.getElementById('modalDayTitle').innerText = `Disciplinas de ${formattedDate}`;
+
+            const container = document.getElementById('dayDetailsContainer');
+            const daySlots = concursosMetadata[currentConcurso]?.dateSchedule?.[isoDate] || [];
+
+            if (daySlots.length === 0) {
+                container.innerHTML = `<p style="opacity:0.7; font-size:0.9rem; text-align:center; padding:1.5rem 0;">Nenhuma disciplina cadastrada nesta data.</p>`;
+            } else {
+                container.innerHTML = '';
+                daySlots.forEach((slot, index) => {
+                    const isCompleted = slot.completed ? 'completed' : '';
+                    container.innerHTML += `
+                        <div class="day-detail-item ${isCompleted}">
+                            <div style="flex:1;" onclick="toggleSlotCompletedByDate('${isoDate}', ${index})" style="cursor:pointer;">
+                                <div style="font-weight:700; color:var(--primary-blue); font-size:0.85rem;">${slot.horario} - ${slot.materia}</div>
+                                <div style="font-size:0.8rem; opacity:0.9; margin-top:2px;">${slot.assunto || 'Tópico Geral'}</div>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <button class="btn btn-secondary btn-sm" onclick="openEditSlotModalByDate('${isoDate}', ${index})">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="removerSlotByDate('${isoDate}', ${index})">Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('modalDayDetails').style.display = 'flex';
+        }
+
+        function closeModalDayDetails() {
+            document.getElementById('modalDayDetails').style.display = 'none';
+        }
+
+        function openAddSlotForSelectedDay() {
+            closeModalDayDetails();
+            openModalSlotForDate(selectedDayIsoGlobal);
+        }
+
         function openModalSlotForDate(isoDate) {
-            document.getElementById('modalSlotTitle').innerText = `Adicionar Matéria ao Dia (${isoDate.split('-').reverse().join('/')})`;
+            document.getElementById('modalSlotTitle').innerText = `Adicionar Matéria (${isoDate.split('-').reverse().join('/')})`;
             document.getElementById('slotDataIso').value = isoDate;
             document.getElementById('slotIndex').value = "-1";
             document.getElementById('slotCompletedCheckbox').checked = false;
@@ -1198,6 +1305,7 @@
         }
 
         function openEditSlotModalByDate(isoDate, index) {
+            closeModalDayDetails();
             const slot = concursosMetadata[currentConcurso]?.dateSchedule?.[isoDate]?.[index];
             if (!slot) return;
 
@@ -1256,6 +1364,7 @@
                 saveConcursosMetadata();
                 renderMonthCalendar();
                 renderDelayedPanel();
+                openModalDayDetails(isoDate);
             }
         }
 
@@ -1266,6 +1375,7 @@
                 saveConcursosMetadata();
                 renderMonthCalendar();
                 renderDelayedPanel();
+                openModalDayDetails(isoDate);
             }
         }
 
@@ -1355,7 +1465,6 @@
             }
         }
 
-        /* FUNÇÕES AUXILIARES MAN TIDAS */
         function formatHourSlot(startHourStr, offsetHours) {
             const [h, m] = startHourStr.split(':').map(Number);
             const totalStartMinutes = (h * 60) + m + (offsetHours * 60);
@@ -1745,9 +1854,6 @@
             alert('Prompt copiado!');
         }
 
-        function openModalSlot(dia) { openModalSlotForDate(dia); }
-        function openEditSlotModal(dia, index) { openEditSlotModalByDate(dia, index); }
-
         window.handleSignUp = handleSignUp;
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
@@ -1765,8 +1871,6 @@
         window.openModalNovoConcurso = openModalNovoConcurso;
         window.closeModalNovoConcurso = closeModalNovoConcurso;
         window.editarDataProva = editarDataProva;
-        window.openModalSlot = openModalSlot;
-        window.openEditSlotModal = openEditSlotModal;
         window.onMateriaSelectChange = onMateriaSelectChange;
         window.closeModalSlot = closeModalSlot;
         window.salvarSlot = salvarSlot;
@@ -1791,6 +1895,9 @@
         window.removerSlotByDate = removerSlotByDate;
         window.toggleSlotCompletedByDate = toggleSlotCompletedByDate;
         window.concluirDelayedItemByDate = concluirDelayedItemByDate;
+        window.openModalDayDetails = openModalDayDetails;
+        window.closeModalDayDetails = closeModalDayDetails;
+        window.openAddSlotForSelectedDay = openAddSlotForSelectedDay;
     </script>
 </body>
 </html>
