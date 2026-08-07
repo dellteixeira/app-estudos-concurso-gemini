@@ -1,17 +1,15 @@
-const CACHE_NAME = 'edital-dashboard-v3'; // Altere essa versão sempre que fizer atualizações grandes no index.html
+const CACHE_NAME = 'edital-dashboard-v4';
 
-// Incluídos os links dos CDNs que o seu index.html consome
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
   './manifest.json',
+  './icon-192.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
   'https://cdn.jsdelivr.net/npm/chart.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
 ];
 
-// Instalação: Salva todos os arquivos essenciais em cache
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -19,7 +17,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Ativação: Limpa os caches de versões antigas da memória do aparelho
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -34,10 +31,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Interceptação de requisições: Tenta servir do cache primeiro para abertura instantânea.
-// Se não encontrar no cache, busca na rede.
 self.addEventListener('fetch', (event) => {
-  // Ignora chamadas diretas de API do Supabase no cache para não travar a sincronização de dados
   if (event.request.url.includes('supabase.co')) {
     return;
   }
@@ -47,7 +41,7 @@ self.addEventListener('fetch', (event) => {
       if (cachedResponse) {
         return cachedResponse;
       }
-      return fetch(event.request);
+      return fetch(event.request).catch(() => caches.match('./'));
     })
   );
 });
