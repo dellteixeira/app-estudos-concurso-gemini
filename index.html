@@ -187,6 +187,7 @@
             margin-bottom: 1.5rem;
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -382,7 +383,7 @@
             font-weight: 700;
         }
 
-        /* ESTILOS MENSAL */
+        /* ESTILOS CRONOGRAMA MENSAL */
         .month-calendar-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -545,6 +546,49 @@
             gap: 6px;
         }
 
+        /* ESTILOS DE FLASHCARDS */
+        .flashcard-display {
+            background: rgba(255, 255, 255, 0.04);
+            border: 2px solid var(--primary-blue);
+            border-radius: 12px;
+            min-height: 220px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .flashcard-display:hover {
+            background: rgba(59, 130, 246, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .flashcard-tag {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #38bdf8;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .flashcard-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .flashcard-hint {
+            margin-top: 16px;
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -687,6 +731,7 @@
             <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
             <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
             <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
+            <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
         </div>
 
         <!-- TAB: EDITAL VERTICALIZADO -->
@@ -812,6 +857,121 @@
             </div>
         </div>
 
+        <!-- TAB: FLASHCARDS COM GERADOR AUTOMÁTICO -->
+        <div id="tab-flashcards" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <h3>Flashcards e Estudo Ativo</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-purple" onclick="openModalGerarFlashcardsTexto()">⚡ Gerar por Texto / IA</button>
+                        <button class="btn btn-primary" onclick="openModalCriarFlashcard()">+ Novo Flashcard Manual</button>
+                    </div>
+                </div>
+
+                <!-- SELETORES DE FILTRO -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label for="flashcardMateriaSelect"><strong>Matéria:</strong></label>
+                        <select id="flashcardMateriaSelect" onchange="onFlashcardMateriaChange(this.value)"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="flashcardAssuntoSelect"><strong>Assunto:</strong></label>
+                        <select id="flashcardAssuntoSelect" onchange="renderFlashcardsList()"></select>
+                    </div>
+                </div>
+
+                <!-- ÁREA INTERATIVA DO FLASHCARD -->
+                <div id="flashcardStudyArea" style="display: none;">
+                    <div class="flashcard-display" onclick="flipCurrentFlashcard()">
+                        <div class="flashcard-tag" id="fcTagText">Pergunta</div>
+                        <div class="flashcard-text" id="fcContentText">Aguardando dados...</div>
+                        <div class="flashcard-hint" id="fcHintText">👆 Clique no card para revelar a Resposta</div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="prevFlashcard()">← Anterior</button>
+                        <span id="flashcardCounter" style="font-weight: 700; font-size: 0.95rem;">Card 1 de 1</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-danger btn-sm" onclick="deleteCurrentFlashcard()">Excluir</button>
+                            <button class="btn btn-primary" onclick="nextFlashcard()">Próximo →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="flashcardEmptyMessage" style="text-align: center; padding: 3rem 0; opacity: 0.7;">
+                    <p>Nenhum flashcard cadastrado para esta matéria e assunto.</p>
+                    <p style="font-size: 0.85rem; margin-top: 6px;">Clique no botão acima para <strong>Gerar por Texto</strong> ou cadastrar manualmente.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL: GERAR FLASHCARDS A PARTIR DE TEXTO -->
+    <div class="modal-overlay" id="modalGerarFlashcards">
+        <div class="modal modal-large">
+            <h3>Gerador Automático de Flashcards por Texto</h3>
+            <p style="font-size:0.85rem; opacity:0.85;">Cole o texto de estudo, lei seca ou resumo abaixo. O aplicativo irá extrair conceitos e criar perguntas e respostas automaticamente!</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="genFcMateriaSelect"><strong>Matéria:</strong></label>
+                    <select id="genFcMateriaSelect" onchange="onGenFcMateriaChange(this.value)"></select>
+                </div>
+                <div class="form-group">
+                    <label for="genFcAssuntoSelect"><strong>Assunto:</strong></label>
+                    <select id="genFcAssuntoSelect"></select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="inputTextoBaseFlashcards"><strong>Cole aqui seu Texto de Estudo / Artigo de Lei:</strong></label>
+                <textarea id="inputTextoBaseFlashcards" rows="8" placeholder="Exemplo: De acordo com o artigo 5º da CF, todos são iguais perante a lei. A inviolabilidade do direito à vida é garantida a todos os brasileiros e estrangeiros residentes. O prazo prescritivo para ações de ressarcimento por ato de improbidade doloso é de 8 anos..."></textarea>
+            </div>
+
+            <div id="generatedFcPreviewList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;"></div>
+
+            <div class="modal-actions" style="justify-content: space-between; align-items: center;">
+                <button class="btn btn-purple" onclick="processarTextoEGerarCards()">⚡ Processar Texto e Gerar Cards</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary" onclick="closeModalGerarFlashcards()">Cancelar (ESC)</button>
+                    <button class="btn btn-success" onclick="salvarFlashcardsGerados()">Salvar Todos no Sistema</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: MANUAL CRIAR / EDITAR FLASHCARD -->
+    <div class="modal-overlay" id="modalFcManual">
+        <div class="modal">
+            <h3 id="modalFcManualTitle">Novo Flashcard</h3>
+            <input type="hidden" id="fcManualId">
+
+            <div class="form-group">
+                <label for="manualFcMateriaSelect"><strong>Matéria:</strong></label>
+                <select id="manualFcMateriaSelect" onchange="onManualFcMateriaChange(this.value)"></select>
+            </div>
+
+            <div class="form-group">
+                <label for="manualFcAssuntoSelect"><strong>Assunto:</strong></label>
+                <select id="manualFcAssuntoSelect"></select>
+            </div>
+
+            <div class="form-group">
+                <label for="inputFcPergunta"><strong>Pergunta / Conceito / Lembrete:</strong></label>
+                <textarea id="inputFcPergunta" rows="3" placeholder="Ex: Qual é o prazo prescritivo para improbidade administrativa?" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="inputFcResposta"><strong>Resposta / Explicação:</strong></label>
+                <textarea id="inputFcResposta" rows="4" placeholder="Ex: O prazo é de 8 anos, contados a partir da ocorrência do fato ou da cessação da permanência." required></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalFcManual()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="salvarFlashcardManual()">Salvar Flashcard</button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL: INCLUIR / EDITAR ANOTAÇÃO COM UPLOAD DE ARQUIVOS -->
@@ -1124,6 +1284,12 @@
         let selectedDayIsoGlobal = '';
         let currentAnotacaoFilesTemp = []; 
 
+        // ESTADOS DE FLASHCARDS
+        let activeFlashcardsList = [];
+        let currentFcIndex = 0;
+        let isFcShowingAnswer = false;
+        let tempGeneratedFcList = [];
+
         let concursosMetadata = JSON.parse(localStorage.getItem('concursos_metadata') || '{}');
 
         // ATALHOS DE TECLADO ESC E ENTER GLOBAIS
@@ -1158,6 +1324,8 @@
             closeModalSlot();
             closeModalDayDetails();
             closeModalAnotacao();
+            closeModalGerarFlashcards();
+            closeModalFcManual();
         }
 
         function initMonthYearSelectors() {
@@ -1237,7 +1405,7 @@
             return `${yyyy}-${mm}-${dd}`;
         }
 
-        /* GERAR CRONOGRAMA AUTOMÁTICO COM REVISÕES 24H, 7D E 30D INCLUÍDAS */
+        /* GERAR CRONOGRAMA AUTOMÁTICO */
         function confirmarAutoFillDisponibilidade() {
             const startDateVal = document.getElementById('startDateInput').value;
             if (!startDateVal) return alert('Selecione a data de início.');
@@ -1661,7 +1829,7 @@
             }
         }
 
-        /* GERENCIADOR DE ANOTAÇÕES & ARQUIVOS ANEXADOS */
+        /* GERENCIADOR DE ANOTAÇÕES */
         function renderAnotacoesMateriaSelector() {
             const select = document.getElementById('anotacoesMateriaSelect');
             if (!select) return;
@@ -1682,9 +1850,7 @@
             renderAnotacoesList(materias[0]);
         }
 
-        function getAnotacoesStorageKey(materiaName) {
-            return `anotacoes_list_${currentConcurso}_${materiaName}`;
-        }
+        function getAnotacoesStorageKey(materiaName) { return `anotacoes_list_${currentConcurso}_${materiaName}`; }
 
         function getAnotacoesListByMateria(materiaName) {
             const key = getAnotacoesStorageKey(materiaName);
@@ -1753,9 +1919,7 @@
             document.getElementById('modalAnotacao').style.display = 'flex';
         }
 
-        function closeModalAnotacao() {
-            document.getElementById('modalAnotacao').style.display = 'none';
-        }
+        function closeModalAnotacao() { document.getElementById('modalAnotacao').style.display = 'none'; }
 
         function renderAnotacaoModalFilesList() {
             const container = document.getElementById('anotacaoModalFilesList');
@@ -1784,34 +1948,22 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            if (file.size > 10 * 1024 * 1024) {
-                return alert('O arquivo deve ter no máximo 10MB.');
-            }
+            if (file.size > 10 * 1024 * 1024) return alert('O arquivo deve ter no máximo 10MB.');
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                currentAnotacaoFilesTemp.push({
-                    name: file.name,
-                    data: e.target.result
-                });
+                currentAnotacaoFilesTemp.push({ name: file.name, data: e.target.result });
                 renderAnotacaoModalFilesList();
             };
             reader.readAsDataURL(file);
             event.target.value = '';
         }
 
-        function removeTempAnotacaoFile(index) {
-            currentAnotacaoFilesTemp.splice(index, 1);
-            renderAnotacaoModalFilesList();
-        }
-
+        function removeTempAnotacaoFile(index) { currentAnotacaoFilesTemp.splice(index, 1); renderAnotacaoModalFilesList(); }
         function downloadTempAnotacaoFile(index) {
             const f = currentAnotacaoFilesTemp[index];
             if (!f) return;
-            const a = document.createElement('a');
-            a.href = f.data;
-            a.download = f.name;
-            a.click();
+            const a = document.createElement('a'); a.href = f.data; a.download = f.name; a.click();
         }
 
         function downloadAnotacaoFile(materiaName, noteId, fileIdx) {
@@ -1819,10 +1971,7 @@
             const note = list.find(n => String(n.id) === String(noteId));
             if (note && note.files && note.files[fileIdx]) {
                 const f = note.files[fileIdx];
-                const a = document.createElement('a');
-                a.href = f.data;
-                a.download = f.name;
-                a.click();
+                const a = document.createElement('a'); a.href = f.data; a.download = f.name; a.click();
             }
         }
 
@@ -1882,6 +2031,276 @@
                 saveAnotacoesListByMateria(materiaName, list);
                 renderAnotacoesList(materiaName);
             }
+        }
+
+        /* GERENCIADOR DE FLASHCARDS */
+        function getFlashcardsStorageKey() { return `flashcards_data_${currentConcurso}`; }
+
+        function getAllFlashcards() {
+            try { return JSON.parse(localStorage.getItem(getFlashcardsStorageKey()) || '[]'); } catch(e) { return []; }
+        }
+
+        function saveAllFlashcards(list) { localStorage.setItem(getFlashcardsStorageKey(), JSON.stringify(list)); }
+
+        function renderFlashcardMateriaSelector() {
+            const selectMat = document.getElementById('flashcardMateriaSelect');
+            if (!selectMat) return;
+
+            selectMat.innerHTML = '';
+            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            if (materias.length === 0) {
+                selectMat.innerHTML = '<option value="">Nenhuma matéria</option>';
+                onFlashcardMateriaChange('');
+                return;
+            }
+
+            materias.forEach(m => { selectMat.innerHTML += `<option value="${m}">${m}</option>`; });
+            onFlashcardMateriaChange(materias[0]);
+        }
+
+        function onFlashcardMateriaChange(materiaName) {
+            const selectAssunto = document.getElementById('flashcardAssuntoSelect');
+            selectAssunto.innerHTML = '<option value="">-- Todos os Assuntos --</option>';
+
+            if (materiaName) {
+                const assuntos = editalItems.filter(i => (i.materia || 'Geral') === materiaName).map(i => i.assunto);
+                Array.from(new Set(assuntos)).forEach(a => {
+                    selectAssunto.innerHTML += `<option value="${a}">${a}</option>`;
+                });
+            }
+
+            renderFlashcardsList();
+        }
+
+        function renderFlashcardsList() {
+            const matSel = document.getElementById('flashcardMateriaSelect').value;
+            const assSel = document.getElementById('flashcardAssuntoSelect').value;
+
+            const allFc = getAllFlashcards();
+            activeFlashcardsList = allFc.filter(fc => {
+                if (matSel && fc.materia !== matSel) return false;
+                if (assSel && fc.assunto !== assSel) return false;
+                return true;
+            });
+
+            currentFcIndex = 0;
+            isFcShowingAnswer = false;
+
+            const studyArea = document.getElementById('flashcardStudyArea');
+            const emptyMsg = document.getElementById('flashcardEmptyMessage');
+
+            if (activeFlashcardsList.length === 0) {
+                studyArea.style.display = 'none';
+                emptyMsg.style.display = 'block';
+            } else {
+                studyArea.style.display = 'block';
+                emptyMsg.style.display = 'none';
+                updateFlashcardCardDisplay();
+            }
+        }
+
+        function updateFlashcardCardDisplay() {
+            if (activeFlashcardsList.length === 0) return;
+            const card = activeFlashcardsList[currentFcIndex];
+
+            const tagText = document.getElementById('fcTagText');
+            const contentText = document.getElementById('fcContentText');
+            const hintText = document.getElementById('fcHintText');
+            const counter = document.getElementById('flashcardCounter');
+
+            counter.innerText = `Card ${currentFcIndex + 1} de ${activeFlashcardsList.length}`;
+
+            if (isFcShowingAnswer) {
+                tagText.innerText = "Resposta / Explicação";
+                tagText.style.color = "#10b981";
+                contentText.innerText = card.resposta;
+                hintText.innerText = "👆 Clique para voltar à Pergunta";
+            } else {
+                tagText.innerText = `Pergunta (${card.assunto || card.materia})`;
+                tagText.style.color = "#38bdf8";
+                contentText.innerText = card.pergunta;
+                hintText.innerText = "👆 Clique para revelar a Resposta";
+            }
+        }
+
+        function flipCurrentFlashcard() {
+            if (activeFlashcardsList.length === 0) return;
+            isFcShowingAnswer = !isFcShowingAnswer;
+            updateFlashcardCardDisplay();
+        }
+
+        function nextFlashcard() {
+            if (activeFlashcardsList.length === 0) return;
+            currentFcIndex = (currentFcIndex + 1) % activeFlashcardsList.length;
+            isFcShowingAnswer = false;
+            updateFlashcardCardDisplay();
+        }
+
+        function prevFlashcard() {
+            if (activeFlashcardsList.length === 0) return;
+            currentFcIndex = (currentFcIndex - 1 + activeFlashcardsList.length) % activeFlashcardsList.length;
+            isFcShowingAnswer = false;
+            updateFlashcardCardDisplay();
+        }
+
+        function deleteCurrentFlashcard() {
+            if (activeFlashcardsList.length === 0) return;
+            const card = activeFlashcardsList[currentFcIndex];
+            if (confirm('Deseja excluir este flashcard?')) {
+                let allFc = getAllFlashcards();
+                allFc = allFc.filter(f => String(f.id) !== String(card.id));
+                saveAllFlashcards(allFc);
+                renderFlashcardsList();
+            }
+        }
+
+        /* GERADOR AUTOMÁTICO DE FLASHCARDS POR TEXTO */
+        function openModalGerarFlashcardsTexto() {
+            const selectMat = document.getElementById('genFcMateriaSelect');
+            selectMat.innerHTML = '';
+            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            if (materias.length === 0) selectMat.innerHTML = '<option value="">Geral</option>';
+            else materias.forEach(m => selectMat.innerHTML += `<option value="${m}">${m}</option>`);
+
+            onGenFcMateriaChange(materias[0] || '');
+            document.getElementById('inputTextoBaseFlashcards').value = '';
+            document.getElementById('generatedFcPreviewList').innerHTML = '';
+            tempGeneratedFcList = [];
+
+            document.getElementById('modalGerarFlashcards').style.display = 'flex';
+        }
+
+        function closeModalGerarFlashcards() { document.getElementById('modalGerarFlashcards').style.display = 'none'; }
+
+        function onGenFcMateriaChange(materiaName) {
+            const selectAssunto = document.getElementById('genFcAssuntoSelect');
+            selectAssunto.innerHTML = '';
+            const assuntos = editalItems.filter(i => (i.materia || 'Geral') === materiaName).map(i => i.assunto);
+            const uniqueAssuntos = Array.from(new Set(assuntos));
+
+            if (uniqueAssuntos.length === 0) selectAssunto.innerHTML = '<option value="">Assunto Geral</option>';
+            else uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}">${a}</option>`);
+        }
+
+        function processarTextoEGerarCards() {
+            const rawText = document.getElementById('inputTextoBaseFlashcards').value.trim();
+            if (!rawText) return alert('Cole um texto para que o app gere os flashcards.');
+
+            const materia = document.getElementById('genFcMateriaSelect').value || 'Geral';
+            const assunto = document.getElementById('genFcAssuntoSelect').value || 'Geral';
+
+            const sentences = rawText.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 15);
+            tempGeneratedFcList = [];
+
+            sentences.forEach((sentence, idx) => {
+                let question = "";
+                let answer = sentence.trim();
+
+                if (/artigo|art\.|parágrafo|inciso|lei/i.test(sentence)) {
+                    question = `O que prevê a legislação no seguinte trecho (Item ${idx + 1})?`;
+                } else if (/prazo|dias|meses|anos|prescreve/i.test(sentence)) {
+                    question = `Qual é o prazo / regra temporal mencionada neste trecho?`;
+                } else if (/é|são|consiste|entende-se|significa/i.test(sentence)) {
+                    const parts = sentence.split(/é|são|consiste|entende-se|significa/i);
+                    if (parts.length >= 2) {
+                        question = `O que significa / qual a definição de: "${parts[0].trim()}"?`;
+                        answer = sentence.trim();
+                    } else {
+                        question = `Qual é a regra geral / conceito do trecho abaixo?`;
+                    }
+                } else {
+                    question = `Qual o ponto principal do trecho ${idx + 1}?`;
+                }
+
+                tempGeneratedFcList.push({
+                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                    materia, assunto, pergunta: question, resposta: answer
+                });
+            });
+
+            renderGeneratedFcPreview();
+        }
+
+        function renderGeneratedFcPreview() {
+            const container = document.getElementById('generatedFcPreviewList');
+            if (!container) return;
+
+            if (tempGeneratedFcList.length === 0) {
+                container.innerHTML = '<p style="font-size:0.85rem; opacity:0.6;">Nenhum card gerado ainda.</p>';
+                return;
+            }
+
+            container.innerHTML = `<strong style="font-size:0.9rem; color:var(--primary-blue); margin-bottom:4px;">${tempGeneratedFcList.length} Flashcards Gerados (Preview):</strong>`;
+            tempGeneratedFcList.forEach((fc, idx) => {
+                container.innerHTML += `
+                    <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px; font-size:0.85rem;">
+                        <strong style="color:#38bdf8;">P${idx+1}: ${fc.pergunta}</strong><br>
+                        <span style="opacity:0.9;">R: ${fc.resposta}</span>
+                    </div>
+                `;
+            });
+        }
+
+        function salvarFlashcardsGerados() {
+            if (tempGeneratedFcList.length === 0) return alert('Gere os flashcards antes de salvar.');
+
+            let allFc = getAllFlashcards();
+            allFc = [...allFc, ...tempGeneratedFcList];
+            saveAllFlashcards(allFc);
+
+            closeModalGerarFlashcards();
+            renderFlashcardMateriaSelector();
+            alert(`${tempGeneratedFcList.length} Flashcards salvos com sucesso!`);
+        }
+
+        /* MODAL MANUAL FLASHCARD */
+        function openModalCriarFlashcard() {
+            const selectMat = document.getElementById('manualFcMateriaSelect');
+            selectMat.innerHTML = '';
+            const materias = Array.from(new Set(editalItems.map(i => i.materia || 'Geral')));
+
+            if (materias.length === 0) selectMat.innerHTML = '<option value="">Geral</option>';
+            else materias.forEach(m => selectMat.innerHTML += `<option value="${m}">${m}</option>`);
+
+            onManualFcMateriaChange(materias[0] || '');
+            document.getElementById('fcManualId').value = '';
+            document.getElementById('inputFcPergunta').value = '';
+            document.getElementById('inputFcResposta').value = '';
+
+            document.getElementById('modalFcManual').style.display = 'flex';
+        }
+
+        function closeModalFcManual() { document.getElementById('modalFcManual').style.display = 'none'; }
+
+        function onManualFcMateriaChange(materiaName) {
+            const selectAssunto = document.getElementById('manualFcAssuntoSelect');
+            selectAssunto.innerHTML = '';
+            const assuntos = editalItems.filter(i => (i.materia || 'Geral') === materiaName).map(i => i.assunto);
+            const uniqueAssuntos = Array.from(new Set(assuntos));
+
+            if (uniqueAssuntos.length === 0) selectAssunto.innerHTML = '<option value="">Assunto Geral</option>';
+            else uniqueAssuntos.forEach(a => selectAssunto.innerHTML += `<option value="${a}">${a}</option>`);
+        }
+
+        function salvarFlashcardManual() {
+            const materia = document.getElementById('manualFcMateriaSelect').value || 'Geral';
+            const assunto = document.getElementById('manualFcAssuntoSelect').value || 'Geral';
+            const pergunta = document.getElementById('inputFcPergunta').value.trim();
+            const resposta = document.getElementById('inputFcResposta').value.trim();
+
+            if (!pergunta || !resposta) return alert('Preencha a pergunta e a resposta.');
+
+            let allFc = getAllFlashcards();
+            allFc.push({
+                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+                materia, assunto, pergunta, resposta
+            });
+
+            saveAllFlashcards(allFc);
+            closeModalFcManual();
+            renderFlashcardMateriaSelector();
         }
 
         function formatHourSlot(startHourStr, offsetHours) {
@@ -1997,6 +2416,8 @@
                 renderDelayedPanel();
             } else if (tabId === 'tab-anotacoes') {
                 renderAnotacoesMateriaSelector();
+            } else if (tabId === 'tab-flashcards') {
+                renderFlashcardMateriaSelector();
             }
         }
 
@@ -2027,6 +2448,7 @@
             renderMonthCalendar();
             renderDelayedPanel();
             renderAnotacoesMateriaSelector();
+            renderFlashcardMateriaSelector();
         }
 
         async function loadData() {
@@ -2333,6 +2755,21 @@
         window.removeTempAnotacaoFile = removeTempAnotacaoFile;
         window.downloadTempAnotacaoFile = downloadTempAnotacaoFile;
         window.downloadAnotacaoFile = downloadAnotacaoFile;
+        window.onFlashcardMateriaChange = onFlashcardMateriaChange;
+        window.renderFlashcardsList = renderFlashcardsList;
+        window.flipCurrentFlashcard = flipCurrentFlashcard;
+        window.nextFlashcard = nextFlashcard;
+        window.prevFlashcard = prevFlashcard;
+        window.deleteCurrentFlashcard = deleteCurrentFlashcard;
+        window.openModalGerarFlashcardsTexto = openModalGerarFlashcardsTexto;
+        window.closeModalGerarFlashcards = closeModalGerarFlashcards;
+        window.onGenFcMateriaChange = onGenFcMateriaChange;
+        window.processarTextoEGerarCards = processarTextoEGerarCards;
+        window.salvarFlashcardsGerados = salvarFlashcardsGerados;
+        window.openModalCriarFlashcard = openModalCriarFlashcard;
+        window.closeModalFcManual = closeModalFcManual;
+        window.onManualFcMateriaChange = onManualFcMateriaChange;
+        window.salvarFlashcardManual = salvarFlashcardManual;
     </script>
 </body>
 </html>
