@@ -119,6 +119,7 @@
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
         input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--card-bg); color: var(--text-color); font-size: 0.95rem; outline: none; max-width: 100%; box-sizing: border-box; }
+        textarea { width: 100%; min-height: 120px; resize: vertical; line-height: 1.5; }
 
         .timer-display { font-size: 4rem; font-weight: bold; text-align: center; margin: 0.5rem 0; letter-spacing: 2px; }
         .timer-settings { display: flex; justify-content: center; align-items: center; gap: 1.2rem; margin-top: 1rem; font-size: 0.95rem; flex-wrap: wrap; }
@@ -151,6 +152,11 @@
             background-color: var(--code-bg); border: 1px solid var(--border-color);
             border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: #38bdf8;
             white-space: pre-wrap; word-break: break-word;
+        }
+
+        .flashcard-box {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
         }
 
         @media (max-width: 768px) { .grid-top { grid-template-columns: 1fr; } }
@@ -274,9 +280,43 @@
             </div>
         </div>
 
-        <div id="tab-calendario" class="tab-content"><div class="card"><h3>Cronograma Mensal</h3></div></div>
-        <div id="tab-anotacoes" class="tab-content"><div class="card"><h3>Anotações</h3></div></div>
-        <div id="tab-flashcards" class="tab-content"><div class="card"><h3>Flashcards</h3></div></div>
+        <!-- TAB: CRONOGRAMA MENSAL -->
+        <div id="tab-calendario" class="tab-content">
+            <div class="card">
+                <h3>Cronograma Mensal de Estudos</h3>
+                <p style="opacity: 0.85; margin-bottom: 1rem;">Programe suas metas e visualize os agendamentos das matérias.</p>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Anotações do Planilhado / Metas:</label>
+                    <textarea id="cronogramaText" placeholder="Digite seu plano de estudos para este concurso..." onchange="saveScheduleData()"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveScheduleData()">Salvar Cronograma</button>
+            </div>
+        </div>
+
+        <!-- TAB: ANOTAÇÕES -->
+        <div id="tab-anotacoes" class="tab-content">
+            <div class="card">
+                <h3>Anotações e Caderno de Erros</h3>
+                <p style="opacity: 0.85; margin-bottom: 1rem;">Escreva resumos, pontos importantes e pegadinhas das bancas.</p>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <textarea id="notesText" placeholder="Escreva suas anotações aqui..." style="min-height: 250px;" onchange="saveNotesData()"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveNotesData()">Salvar Anotações</button>
+            </div>
+        </div>
+
+        <!-- TAB: FLASHCARDS -->
+        <div id="tab-flashcards" class="tab-content">
+            <div class="card">
+                <h3>Flashcards</h3>
+                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:8px; margin-bottom:1.5rem;">
+                    <input type="text" id="fcPergunta" placeholder="Frente / Pergunta" required>
+                    <input type="text" id="fcResposta" placeholder="Verso / Resposta" required>
+                    <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard</button>
+                </form>
+                <div id="flashcardsContainer"></div>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL VIEW EDITAL -->
@@ -356,7 +396,6 @@
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
 
-        // CLIENTE SUPABASE COM SUPORTE DEDICADO A PERSISTÊNCIA CHROME/PWA
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
@@ -383,6 +422,7 @@
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
         let metadataCache = {};
+        let flashcardsList = [];
         let activeObjectUrl = null;
 
         function updateOnlineStatus() {
@@ -420,7 +460,7 @@
                         setting_value: data,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'user_id,setting_key' });
-                } catch(err) { console.warn('Erro ao salvar metadados na nuvem:', err); }
+                } catch(err) { console.warn('Erro metadados:', err); }
             }
         }
 
@@ -444,6 +484,122 @@
         }
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
+
+        /* SINCRONIZAÇÃO DAS ABAS CRONOGRAMA, ANOTAÇÕES E FLASHCARDS */
+        async function loadScheduleData() {
+            if (!currentUser) return;
+            try {
+                const { data } = await supabaseClient
+                    .from('user_schedules')
+                    .select('schedule_data')
+                    .eq('user_id', currentUser.id)
+                    .eq('concurso', currentConcurso)
+                    .maybeSingle();
+
+                document.getElementById('cronogramaText').value = data?.schedule_data?.text || '';
+            } catch(e) {}
+        }
+
+        async function saveScheduleData() {
+            const text = document.getElementById('cronogramaText').value;
+            if (navigator.onLine && currentUser) {
+                await supabaseClient.from('user_schedules').upsert({
+                    user_id: currentUser.id,
+                    concurso: currentConcurso,
+                    schedule_data: { text },
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id,concurso' });
+            }
+        }
+
+        async function loadNotesData() {
+            if (!currentUser) return;
+            try {
+                const { data } = await supabaseClient
+                    .from('user_notes')
+                    .select('notes_data')
+                    .eq('user_id', currentUser.id)
+                    .eq('concurso', currentConcurso)
+                    .maybeSingle();
+
+                document.getElementById('notesText').value = data?.notes_data?.text || '';
+            } catch(e) {}
+        }
+
+        async function saveNotesData() {
+            const text = document.getElementById('notesText').value;
+            if (navigator.onLine && currentUser) {
+                await supabaseClient.from('user_notes').upsert({
+                    user_id: currentUser.id,
+                    concurso: currentConcurso,
+                    notes_data: { text },
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id,concurso' });
+            }
+        }
+
+        async function loadFlashcardsData() {
+            if (!currentUser) return;
+            try {
+                const { data } = await supabaseClient
+                    .from('user_flashcards')
+                    .select('flashcards_data')
+                    .eq('user_id', currentUser.id)
+                    .eq('concurso', currentConcurso)
+                    .maybeSingle();
+
+                flashcardsList = data?.flashcards_data?.cards || [];
+                renderFlashcards();
+            } catch(e) {}
+        }
+
+        async function saveFlashcardsData() {
+            if (navigator.onLine && currentUser) {
+                await supabaseClient.from('user_flashcards').upsert({
+                    user_id: currentUser.id,
+                    concurso: currentConcurso,
+                    flashcards_data: { cards: flashcardsList },
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id,concurso' });
+            }
+        }
+
+        function renderFlashcards() {
+            const container = document.getElementById('flashcardsContainer');
+            container.innerHTML = '';
+            if (flashcardsList.length === 0) {
+                container.innerHTML = '<p style="opacity: 0.8;">Nenhum flashcard criado para este concurso.</p>';
+                return;
+            }
+            flashcardsList.forEach((fc, idx) => {
+                container.innerHTML += `
+                    <div class="flashcard-box">
+                        <p><strong>P:</strong> ${fc.pergunta}</p>
+                        <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${fc.resposta}</p>
+                        <button class="btn btn-danger btn-sm" style="margin-top:8px;" onclick="removeFlashcard(${idx})">Excluir</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function addFlashcard(e) {
+            e.preventDefault();
+            const pergunta = document.getElementById('fcPergunta').value.trim();
+            const resposta = document.getElementById('fcResposta').value.trim();
+            if (!pergunta || !resposta) return;
+
+            flashcardsList.push({ pergunta, resposta });
+            document.getElementById('fcPergunta').value = '';
+            document.getElementById('fcResposta').value = '';
+            renderFlashcards();
+            await saveFlashcardsData();
+        }
+
+        async function removeFlashcard(idx) {
+            flashcardsList.splice(idx, 1);
+            renderFlashcards();
+            await saveFlashcardsData();
+        }
 
         async function loadData() {
             await loadConcursosMetadata();
@@ -470,11 +626,14 @@
                 }
 
                 await loadConcursosMetadata();
+                await loadScheduleData();
+                await loadNotesData();
+                await loadFlashcardsData();
+
                 filterDataByConcurso();
             } catch(e) { console.log('Sincronização em segundo plano...'); }
         }
 
-        /* FUNÇÃO DE SINCRONIZAÇÃO MANUALL FORÇADA */
         async function forceFullSync(evt) {
             if (!currentUser) {
                 alert('Você precisa estar logado para sincronizar.');
@@ -484,28 +643,10 @@
             if (btn) btn.innerText = 'Sincronizando...';
 
             try {
-                await loadConcursosMetadata();
-
-                const { data, error } = await supabaseClient
-                    .from('edital')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('prioridade', { ascending: true });
-
-                if (error) throw error;
-
-                if (data) {
-                    allEditalItems = data.map(item => ({
-                        ...item,
-                        id: String(item.id),
-                        concurso: item.concurso || 'Concurso Geral'
-                    }));
-                    saveEditalToLocalStorage();
-                    filterDataByConcurso();
-                    alert('Sincronização concluída com sucesso!');
-                }
+                await syncAllWithSupabase();
+                alert('Sincronização completa realizada com sucesso!');
             } catch (err) {
-                alert('Erro ao sincronizar com a nuvem: ' + err.message);
+                alert('Erro ao sincronizar: ' + err.message);
             } finally {
                 if (btn) btn.innerText = 'Sincronizar Agora 🔄';
             }
@@ -577,7 +718,13 @@
             updateCountdownBadge();
         }
 
-        function changeConcurso(val) { currentConcurso = val; filterDataByConcurso(); }
+        function changeConcurso(val) {
+            currentConcurso = val;
+            filterDataByConcurso();
+            loadScheduleData();
+            loadNotesData();
+            loadFlashcardsData();
+        }
 
         function filterDataByConcurso() {
             editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
@@ -603,7 +750,7 @@
             document.getElementById('inputNomeConcurso').value = '';
             document.getElementById('inputDataConcurso').value = '';
             closeModalNovoConcurso();
-            filterDataByConcurso();
+            changeConcurso(currentConcurso);
         }
 
         async function removerConcursoAtual() {
@@ -619,7 +766,7 @@
                 }
 
                 currentConcurso = 'Concurso Geral';
-                filterDataByConcurso();
+                changeConcurso(currentConcurso);
             }
         }
 
@@ -775,7 +922,7 @@
                             }
                         });
                     }
-                    filterDataByConcurso();
+                    changeConcurso(currentConcurso);
                     alert(`Sucesso! ${formattedData.length} tópicos foram importados e sincronizados.`);
                 } catch(err) { alert('Erro no arquivo JSON.'); }
             };
@@ -970,7 +1117,7 @@
             alert('Prompt copiado!');
         }
 
-        /* INICIALIZAÇÃO DE SESSÃO E CARREGAMENTO */
+        /* INICIALIZAÇÃO DE SESSÃO E CARREGAMENTO EM TEMPO REAL */
         async function checkAuthAndSync() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session && session.user) {
@@ -1076,6 +1223,10 @@
         window.downloadEditalFile = downloadEditalFile;
         window.removerEditalFile = removerEditalFile;
         window.forceFullSync = forceFullSync;
+        window.saveScheduleData = saveScheduleData;
+        window.saveNotesData = saveNotesData;
+        window.addFlashcard = addFlashcard;
+        window.removeFlashcard = removeFlashcard;
     </script>
 </body>
 </html>
