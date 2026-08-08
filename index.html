@@ -43,6 +43,8 @@
             --completed-border: #10b981;
             --completed-text: #34d399;
             --code-bg: #090d16;
+            --atrasado-bg: rgba(239, 68, 68, 0.1);
+            --atrasado-border: #ef4444;
         }
 
         body.light-mode {
@@ -58,6 +60,8 @@
             --completed-border: #10b981;
             --completed-text: #065f46;
             --code-bg: #f1f5f9;
+            --atrasado-bg: #fee2e2;
+            --atrasado-border: #ef4444;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -119,12 +123,61 @@
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
         input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--card-bg); color: var(--text-color); font-size: 0.95rem; outline: none; max-width: 100%; box-sizing: border-box; }
-        textarea { width: 100%; min-height: 120px; resize: vertical; line-height: 1.5; }
+        textarea { width: 100%; min-height: 120px; resize: vertical; line-height: 1.5; font-family: inherit; }
 
         .timer-display { font-size: 4rem; font-weight: bold; text-align: center; margin: 0.5rem 0; letter-spacing: 2px; }
         .timer-settings { display: flex; justify-content: center; align-items: center; gap: 1.2rem; margin-top: 1rem; font-size: 0.95rem; flex-wrap: wrap; }
         .timer-settings label { display: flex; align-items: center; gap: 0.5rem; }
         .timer-settings input { width: 85px !important; text-align: center; padding: 0.5rem 0.4rem; font-weight: 600; }
+
+        .weekly-hours-banner {
+            background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
+            padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 1.05rem;
+            color: var(--header-materia-text); margin-bottom: 1rem; display: flex;
+            justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+        }
+
+        .delayed-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; }
+        .delayed-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+        .delayed-title { font-size: 1.4rem; font-weight: 800; }
+
+        .badge-delayed { background: #ef4444; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
+
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 1rem; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; width: fit-content; }
+        .filter-tab { padding: 6px 16px; border-radius: 6px; border: none; background: transparent; color: var(--text-color); cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+        .filter-tab.active { background: var(--card-bg); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        .delayed-card {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-left: 5px solid #ef4444;
+            border-radius: 10px; padding: 1rem; margin-bottom: 0.8rem; display: flex;
+            justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+        }
+
+        .delayed-card-info h4 { color: #ef4444; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 4px; }
+        .delayed-card-info p { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
+
+        .delayed-tag { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+
+        .month-calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: 700; color: var(--primary-blue); margin-bottom: 8px; }
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+
+        .month-day-cell {
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);
+            border-radius: 8px; height: 140px; padding: 8px; display: flex; flex-direction: column;
+            gap: 4px; position: relative; cursor: pointer; overflow: hidden; transition: 0.2s;
+        }
+        .month-day-cell:hover { border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.05); }
+        .month-day-cell.other-month { opacity: 0.35; }
+        .month-day-cell.today { border: 2px solid var(--primary-blue); background: rgba(59, 130, 246, 0.1); }
+
+        .day-num-header { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 2px; flex-shrink: 0; }
+        .day-badges-scroll { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; padding-right: 2px; }
+
+        .clean-subject-badge {
+            background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
+            color: #93c5fd; padding: 3px 6px; border-radius: 4px; font-size: 0.72rem;
+            font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0;
+        }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
         .modal { background: var(--card-bg); color: var(--text-color); padding: 24px; border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
@@ -159,7 +212,12 @@
             border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
         }
 
-        @media (max-width: 768px) { .grid-top { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .grid-top { grid-template-columns: 1fr; }
+            .month-grid { grid-template-columns: repeat(1, 1fr); }
+            .month-calendar-header { display: none; }
+            .month-day-cell { height: auto; min-height: 100px; }
+        }
     </style>
 </head>
 <body>
@@ -202,7 +260,7 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES COM SINC MANUALL -->
+        <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
             <button class="btn btn-purple" onclick="forceFullSync(event)">Sincronizar Agora 🔄</button>
             <button class="btn btn-warning" onclick="openModalViewEdital()">Ver / Anexar Edital PDF</button>
@@ -280,38 +338,71 @@
             </div>
         </div>
 
-        <!-- TAB: CRONOGRAMA MENSAL -->
+        <!-- TAB: CRONOGRAMA MENSAL (COMPLETO RESTAURADO) -->
         <div id="tab-calendario" class="tab-content">
-            <div class="card">
-                <h3>Cronograma Mensal de Estudos</h3>
-                <p style="opacity: 0.85; margin-bottom: 1rem;">Programe suas metas e visualize os agendamentos das matérias.</p>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label>Anotações do Planilhado / Metas:</label>
-                    <textarea id="cronogramaText" placeholder="Digite seu plano de estudos para este concurso..." onchange="saveScheduleData()"></textarea>
+            <div class="delayed-panel">
+                <div class="delayed-header">
+                    <span class="delayed-title">Revisões / Matérias</span>
+                    <span class="badge-delayed" id="delayedBadgeCount">0 atrasadas</span>
                 </div>
-                <button class="btn btn-primary" onclick="saveScheduleData()">Salvar Cronograma</button>
+
+                <div class="filter-tabs">
+                    <button class="filter-tab active" onclick="filterDelayedList('hoje', this)">Hoje</button>
+                    <button class="filter-tab" onclick="filterDelayedList('atrasadas', this)">Atrasadas</button>
+                    <button class="filter-tab" onclick="filterDelayedList('proximas', this)">Próximas</button>
+                </div>
+
+                <div id="delayedItemsContainer"></div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <h3>Cronograma Mensal de Estudos</h3>
+
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <label><strong>Mês/Ano:</strong></label>
+                        <select id="monthSelect" onchange="onMonthYearChange()"></select>
+                        <select id="yearSelect" onchange="onMonthYearChange()"></select>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-purple" onclick="autoPreencherCronograma()">Preencher Cronograma Automaticamente</button>
+                        <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Mês Atual</button>
+                    </div>
+                </div>
+
+                <div class="weekly-hours-banner">
+                    <span>Planejamento para o Mês Selecionado:</span>
+                    <span id="weeklyHoursTotal">Planejado</span>
+                </div>
+
+                <div class="month-calendar-header">
+                    <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                </div>
+                <div class="month-grid" id="monthCalendarGrid"></div>
             </div>
         </div>
 
-        <!-- TAB: ANOTAÇÕES -->
+        <!-- TAB: ANOTAÇÕES (COMPLETO RESTAURADO) -->
         <div id="tab-anotacoes" class="tab-content">
             <div class="card">
-                <h3>Anotações e Caderno de Erros</h3>
-                <p style="opacity: 0.85; margin-bottom: 1rem;">Escreva resumos, pontos importantes e pegadinhas das bancas.</p>
+                <h3>Anotações e Caderno de Resumos</h3>
+                <p style="opacity: 0.85; margin-bottom: 1rem;">Escreva resumos, pontos importantes e pegadinhas das bancas para este concurso.</p>
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <textarea id="notesText" placeholder="Escreva suas anotações aqui..." style="min-height: 250px;" onchange="saveNotesData()"></textarea>
+                    <textarea id="notesText" placeholder="Escreva suas anotações aqui..." style="min-height: 300px;" onchange="saveNotesData()"></textarea>
                 </div>
                 <button class="btn btn-primary" onclick="saveNotesData()">Salvar Anotações</button>
             </div>
         </div>
 
-        <!-- TAB: FLASHCARDS -->
+        <!-- TAB: FLASHCARDS (COMPLETO RESTAURADO) -->
         <div id="tab-flashcards" class="tab-content">
             <div class="card">
-                <h3>Flashcards</h3>
-                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:8px; margin-bottom:1.5rem;">
-                    <input type="text" id="fcPergunta" placeholder="Frente / Pergunta" required>
-                    <input type="text" id="fcResposta" placeholder="Verso / Resposta" required>
+                <h3>Flashcards e Estudo Ativo</h3>
+                <p style="opacity: 0.85; margin-bottom: 1rem;">Crie e revise flashcards vinculados ao seu edital.</p>
+                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem;">
+                    <input type="text" id="fcPergunta" placeholder="Frente / Pergunta (ex: Qual o prazo do recurso?)" required>
+                    <input type="text" id="fcResposta" placeholder="Verso / Resposta (ex: 15 dias úteis)" required>
                     <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard</button>
                 </form>
                 <div id="flashcardsContainer"></div>
@@ -397,14 +488,10 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true,
-                storage: window.localStorage
-            }
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
 
+        const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         const PALETA_CORES_MATERIAS = [
             'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
             'linear-gradient(135deg, #14532d 0%, #22c55e 100%)',
@@ -424,15 +511,15 @@
         let metadataCache = {};
         let flashcardsList = [];
         let activeObjectUrl = null;
+        let currentDelayedFilter = 'hoje';
+
+        let selectedMonth = new Date().getMonth();
+        let selectedYear = new Date().getFullYear();
 
         function updateOnlineStatus() {
             const banner = document.getElementById('offline-banner');
-            if (!navigator.onLine) {
-                banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
-                syncAllWithSupabase();
-            }
+            if (!navigator.onLine) banner.style.display = 'block';
+            else { banner.style.display = 'none'; syncAllWithSupabase(); }
         }
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
@@ -485,83 +572,31 @@
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
 
-        /* SINCRONIZAÇÃO DAS ABAS CRONOGRAMA, ANOTAÇÕES E FLASHCARDS */
-        async function loadScheduleData() {
-            if (!currentUser) return;
-            try {
-                const { data } = await supabaseClient
-                    .from('user_schedules')
-                    .select('schedule_data')
-                    .eq('user_id', currentUser.id)
-                    .eq('concurso', currentConcurso)
-                    .maybeSingle();
-
-                document.getElementById('cronogramaText').value = data?.schedule_data?.text || '';
-            } catch(e) {}
-        }
-
-        async function saveScheduleData() {
-            const text = document.getElementById('cronogramaText').value;
-            if (navigator.onLine && currentUser) {
-                await supabaseClient.from('user_schedules').upsert({
-                    user_id: currentUser.id,
-                    concurso: currentConcurso,
-                    schedule_data: { text },
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id,concurso' });
-            }
-        }
-
-        async function loadNotesData() {
-            if (!currentUser) return;
-            try {
-                const { data } = await supabaseClient
-                    .from('user_notes')
-                    .select('notes_data')
-                    .eq('user_id', currentUser.id)
-                    .eq('concurso', currentConcurso)
-                    .maybeSingle();
-
-                document.getElementById('notesText').value = data?.notes_data?.text || '';
-            } catch(e) {}
-        }
-
+        /* CRONOGRAMA, ANOTAÇÕES E FLASHCARDS INTEGRADOS */
         async function saveNotesData() {
             const text = document.getElementById('notesText').value;
-            if (navigator.onLine && currentUser) {
-                await supabaseClient.from('user_notes').upsert({
-                    user_id: currentUser.id,
-                    concurso: currentConcurso,
-                    notes_data: { text },
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id,concurso' });
-            }
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].notes = text;
+            await saveConcursosMetadata(metadata);
         }
 
-        async function loadFlashcardsData() {
-            if (!currentUser) return;
-            try {
-                const { data } = await supabaseClient
-                    .from('user_flashcards')
-                    .select('flashcards_data')
-                    .eq('user_id', currentUser.id)
-                    .eq('concurso', currentConcurso)
-                    .maybeSingle();
-
-                flashcardsList = data?.flashcards_data?.cards || [];
-                renderFlashcards();
-            } catch(e) {}
+        function loadNotesData() {
+            const metadata = getConcursosMetadata();
+            document.getElementById('notesText').value = metadata[currentConcurso]?.notes || '';
         }
 
         async function saveFlashcardsData() {
-            if (navigator.onLine && currentUser) {
-                await supabaseClient.from('user_flashcards').upsert({
-                    user_id: currentUser.id,
-                    concurso: currentConcurso,
-                    flashcards_data: { cards: flashcardsList },
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id,concurso' });
-            }
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].flashcards = flashcardsList;
+            await saveConcursosMetadata(metadata);
+        }
+
+        function loadFlashcardsData() {
+            const metadata = getConcursosMetadata();
+            flashcardsList = metadata[currentConcurso]?.flashcards || [];
+            renderFlashcards();
         }
 
         function renderFlashcards() {
@@ -601,10 +636,181 @@
             await saveFlashcardsData();
         }
 
+        /* CALENDÁRIO MENSAL E CRONOGRAMA RESTAURADO */
+        function initMonthYearSelectors() {
+            const mSel = document.getElementById('monthSelect');
+            const ySel = document.getElementById('yearSelect');
+            mSel.innerHTML = ''; ySel.innerHTML = '';
+
+            MESES.forEach((m, idx) => {
+                mSel.innerHTML += `<option value="${idx}" ${idx === selectedMonth ? 'selected' : ''}>${m}</option>`;
+            });
+
+            const yearStart = selectedYear - 1;
+            for (let y = yearStart; y <= yearStart + 5; y++) {
+                ySel.innerHTML += `<option value="${y}" ${y === selectedYear ? 'selected' : ''}>${y}</option>`;
+            }
+        }
+
+        function onMonthYearChange() {
+            selectedMonth = parseInt(document.getElementById('monthSelect').value);
+            selectedYear = parseInt(document.getElementById('yearSelect').value);
+            renderMonthCalendar();
+        }
+
+        function renderMonthCalendar() {
+            const grid = document.getElementById('monthCalendarGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
+
+            const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
+            const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+            const todayObj = new Date();
+            const isCurrentMonth = todayObj.getMonth() === selectedMonth && todayObj.getFullYear() === selectedYear;
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="month-day-cell other-month"></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = isCurrentMonth && todayObj.getDate() === day;
+                const items = dateSchedule[dateKey] || [];
+
+                let badgesHtml = '';
+                items.forEach(it => {
+                    badgesHtml += `<div class="clean-subject-badge">${it}</div>`;
+                });
+
+                grid.innerHTML += `
+                    <div class="month-day-cell ${isToday ? 'today' : ''}" onclick="addTopicToDate('${dateKey}')">
+                        <div class="day-num-header">
+                            <span>${day}</span>
+                            <button class="btn-add-mini" title="Adicionar matéria">+</button>
+                        </div>
+                        <div class="day-badges-scroll">${badgesHtml}</div>
+                    </div>
+                `;
+            }
+            renderDelayedPanel();
+        }
+
+        async function addTopicToDate(dateKey) {
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+
+            const materia = prompt(`Adicionar matéria/tópico para o dia ${dateKey}:`);
+            if (materia && materia.trim()) {
+                if (!metadata[currentConcurso].dateSchedule[dateKey]) {
+                    metadata[currentConcurso].dateSchedule[dateKey] = [];
+                }
+                metadata[currentConcurso].dateSchedule[dateKey].push(materia.trim());
+                await saveConcursosMetadata(metadata);
+                renderMonthCalendar();
+            }
+        }
+
+        async function autoPreencherCronograma() {
+            if (editalItems.length === 0) return alert('Importe um edital para preencher o cronograma.');
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+
+            const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+            let itemIdx = 0;
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (itemIdx < editalItems.length) {
+                    metadata[currentConcurso].dateSchedule[dateKey] = [editalItems[itemIdx].materia];
+                    itemIdx++;
+                }
+            }
+
+            await saveConcursosMetadata(metadata);
+            renderMonthCalendar();
+            alert('Cronograma mensal preenchido com sucesso!');
+        }
+
+        async function limparCronogramaMesAtual() {
+            if (confirm('Deseja limpar todos os agendamentos do mês exibido?')) {
+                let metadata = getConcursosMetadata();
+                if (metadata[currentConcurso]?.dateSchedule) {
+                    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        delete metadata[currentConcurso].dateSchedule[dateKey];
+                    }
+                    await saveConcursosMetadata(metadata);
+                    renderMonthCalendar();
+                }
+            }
+        }
+
+        function filterDelayedList(type, btn) {
+            currentDelayedFilter = type;
+            document.querySelectorAll('.filter-tab').forEach(tb => tb.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderDelayedPanel();
+        }
+
+        function renderDelayedPanel() {
+            const container = document.getElementById('delayedItemsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            let count = 0;
+            Object.keys(dateSchedule).forEach(dKey => {
+                if (dKey < todayStr && dateSchedule[dKey].length > 0) count += dateSchedule[dKey].length;
+            });
+
+            document.getElementById('delayedBadgeCount').textContent = `${count} atrasadas`;
+
+            let displayList = [];
+            Object.keys(dateSchedule).forEach(dKey => {
+                if (currentDelayedFilter === 'hoje' && dKey === todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
+                else if (currentDelayedFilter === 'atrasadas' && dKey < todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
+                else if (currentDelayedFilter === 'proximas' && dKey > todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
+            });
+
+            if (displayList.length === 0) {
+                container.innerHTML = '<p style="opacity: 0.8; font-size:0.9rem;">Nenhum item encontrado nesta categoria.</p>';
+                return;
+            }
+
+            displayList.forEach(group => {
+                group.items.forEach(it => {
+                    container.innerHTML += `
+                        <div class="delayed-card">
+                            <div class="delayed-card-info">
+                                <h4>Data: ${group.date}</h4>
+                                <p>${it}</p>
+                                <span class="delayed-tag">${currentConcurso}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
         async function loadData() {
             await loadConcursosMetadata();
             loadLocalEditalData();
             filterDataByConcurso();
+            initMonthYearSelectors();
+            renderMonthCalendar();
+            loadNotesData();
+            loadFlashcardsData();
 
             if (navigator.onLine && currentUser) {
                 await syncAllWithSupabase();
@@ -626,19 +832,15 @@
                 }
 
                 await loadConcursosMetadata();
-                await loadScheduleData();
-                await loadNotesData();
-                await loadFlashcardsData();
-
                 filterDataByConcurso();
+                renderMonthCalendar();
+                loadNotesData();
+                loadFlashcardsData();
             } catch(e) { console.log('Sincronização em segundo plano...'); }
         }
 
         async function forceFullSync(evt) {
-            if (!currentUser) {
-                alert('Você precisa estar logado para sincronizar.');
-                return;
-            }
+            if (!currentUser) return alert('Você precisa estar logado para sincronizar.');
             const btn = evt ? evt.target : null;
             if (btn) btn.innerText = 'Sincronizando...';
 
@@ -693,9 +895,8 @@
             allEditalItems = allEditalItems.filter(i => String(i.id) !== String(id));
             saveEditalToLocalStorage();
             if (navigator.onLine && currentUser) {
-                try {
-                    await supabaseClient.from('edital').delete().eq('id', id);
-                } catch(e) { console.warn('Erro delete:', e); }
+                try { await supabaseClient.from('edital').delete().eq('id', id); }
+                catch(e) { console.warn('Erro delete:', e); }
             }
             filterDataByConcurso();
         }
@@ -721,7 +922,7 @@
         function changeConcurso(val) {
             currentConcurso = val;
             filterDataByConcurso();
-            loadScheduleData();
+            renderMonthCalendar();
             loadNotesData();
             loadFlashcardsData();
         }
@@ -1223,10 +1424,14 @@
         window.downloadEditalFile = downloadEditalFile;
         window.removerEditalFile = removerEditalFile;
         window.forceFullSync = forceFullSync;
-        window.saveScheduleData = saveScheduleData;
         window.saveNotesData = saveNotesData;
         window.addFlashcard = addFlashcard;
         window.removeFlashcard = removeFlashcard;
+        window.onMonthYearChange = onMonthYearChange;
+        window.addTopicToDate = addTopicToDate;
+        window.autoPreencherCronograma = autoPreencherCronograma;
+        window.limparCronogramaMesAtual = limparCronogramaMesAtual;
+        window.filterDelayedList = filterDelayedList;
     </script>
 </body>
 </html>
