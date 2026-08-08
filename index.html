@@ -196,8 +196,9 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES -->
+        <!-- BARRA DE AÇÕES COM SINC MANUALL -->
         <div class="action-bar">
+            <button class="btn btn-purple" onclick="forceFullSync(event)">Sincronizar Agora 🔄</button>
             <button class="btn btn-warning" onclick="openModalViewEdital()">Ver / Anexar Edital PDF</button>
             <label class="btn btn-success" style="cursor: pointer;">
                 Importar JSON
@@ -352,10 +353,10 @@
     </div>
 
     <script>
-        // Configuração Otimizada para Persistência no Chrome Android
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
 
+        // CLIENTE SUPABASE COM SUPORTE DEDICADO A PERSISTÊNCIA CHROME/PWA
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
@@ -471,6 +472,43 @@
                 await loadConcursosMetadata();
                 filterDataByConcurso();
             } catch(e) { console.log('Sincronização em segundo plano...'); }
+        }
+
+        /* FUNÇÃO DE SINCRONIZAÇÃO MANUALL FORÇADA */
+        async function forceFullSync(evt) {
+            if (!currentUser) {
+                alert('Você precisa estar logado para sincronizar.');
+                return;
+            }
+            const btn = evt ? evt.target : null;
+            if (btn) btn.innerText = 'Sincronizando...';
+
+            try {
+                await loadConcursosMetadata();
+
+                const { data, error } = await supabaseClient
+                    .from('edital')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('prioridade', { ascending: true });
+
+                if (error) throw error;
+
+                if (data) {
+                    allEditalItems = data.map(item => ({
+                        ...item,
+                        id: String(item.id),
+                        concurso: item.concurso || 'Concurso Geral'
+                    }));
+                    saveEditalToLocalStorage();
+                    filterDataByConcurso();
+                    alert('Sincronização concluída com sucesso!');
+                }
+            } catch (err) {
+                alert('Erro ao sincronizar com a nuvem: ' + err.message);
+            } finally {
+                if (btn) btn.innerText = 'Sincronizar Agora 🔄';
+            }
         }
 
         function loadLocalEditalData() {
@@ -932,7 +970,7 @@
             alert('Prompt copiado!');
         }
 
-        /* AUTENTICAÇÃO E RECEPTOR DE EVENTO EM TEMPO REAL */
+        /* INICIALIZAÇÃO DE SESSÃO E CARREGAMENTO */
         async function checkAuthAndSync() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session && session.user) {
@@ -1037,6 +1075,7 @@
         window.uploadEditalFile = uploadEditalFile;
         window.downloadEditalFile = downloadEditalFile;
         window.removerEditalFile = removerEditalFile;
+        window.forceFullSync = forceFullSync;
     </script>
 </body>
 </html>
