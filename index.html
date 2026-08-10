@@ -212,7 +212,7 @@
         .form-group label { font-size: 0.85rem; font-weight: 600; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
-        .form-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .form-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
         .form-row input[type="text"] { flex: 2; min-width: 180px; }
         .form-row input[type="number"] { width: 90px; }
 
@@ -431,7 +431,8 @@
                     <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
                 </form>
 
-                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <button class="btn btn-danger btn-sm" onclick="excluirMateriaEspecifica()">Excluir Matéria</button>
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">Expandir Todas as Guias</button>
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">Recolher Todas as Guias</button>
                 </div>
@@ -1058,6 +1059,19 @@
             });
         }
 
+        /* ORDENAÇÃO DUPLA DO CRONOGRAMA (MATÉRIA E ASSUNTO) */
+        function getSortedEditalItems() {
+            return [...editalItems].sort((a, b) => {
+                const prioMatA = a.prioridade || 1;
+                const prioMatB = b.prioridade || 1;
+                if (prioMatA !== prioMatB) return prioMatA - prioMatB;
+                
+                const prioAssA = a.assunto_prioridade || 1;
+                const prioAssB = b.assunto_prioridade || 1;
+                return prioAssA - prioAssB;
+            });
+        }
+
         /* GERAR CRONOGRAMA MÉTODO 2 */
         async function gerarCronogramaMetodo2() {
             if (editalItems.length === 0) return alert('Sua lista de edital está vazia.');
@@ -1067,7 +1081,7 @@
             if (!dataInicioStr) return alert('Escolha a data de início.');
 
             const strategyKey = document.getElementById('m2RevisionStrategy').value;
-            const sortedByPriority = [...editalItems].sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
+            const sortedByPriority = getSortedEditalItems();
 
             let currDate = new Date(dataInicioStr + "T00:00:00");
             let itemIdx = 0;
@@ -1114,7 +1128,7 @@
             if (!dataInicioStr) return alert('Escolha a data de início.');
 
             const strategyKey = document.getElementById('m1RevisionStrategy').value;
-            const sortedByPriority = [...editalItems].sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
+            const sortedByPriority = getSortedEditalItems();
 
             const incSab = document.getElementById('cfgIncluirSabado').checked;
             const incDom = document.getElementById('cfgIncluirDomingo').checked;
@@ -1977,6 +1991,7 @@
                         materia: item.materia,
                         assunto: item.assunto,
                         prioridade: item.prioridade,
+                        assunto_prioridade: item.assunto_prioridade || 1,
                         concurso: item.concurso,
                         teoria: !!item.teoria,
                         questoes: !!item.questoes,
@@ -2076,6 +2091,36 @@
             }
         }
 
+        async function excluirMateriaEspecifica() {
+            const materias = getUniqueMateriasFromEdital();
+            if (materias.length === 0) return alert('Não há matérias cadastradas para excluir.');
+
+            const listaFormatada = materias.map((m, idx) => `${idx + 1}. ${m}`).join('\n');
+            const resposta = prompt(`Digite o NÚMERO ou o NOME exato da matéria que deseja excluir:\n\n${listaFormatada}`);
+
+            if (!resposta || !resposta.trim()) return;
+
+            let materiaParaExcluir = null;
+            const numIndex = parseInt(resposta.trim()) - 1;
+
+            if (!isNaN(numIndex) && numIndex >= 0 && numIndex < materias.length) {
+                materiaParaExcluir = materias[numIndex];
+            } else {
+                materiaParaExcluir = materias.find(m => m.toLowerCase() === resposta.trim().toLowerCase());
+            }
+
+            if (!materiaParaExcluir) return alert('Matéria não encontrada.');
+
+            if (confirm(`Tem certeza de que deseja excluir a matéria "${materiaParaExcluir}" e TODOS os seus assuntos?`)) {
+                const itemsToDelete = editalItems.filter(i => i.materia === materiaParaExcluir);
+                for (let item of itemsToDelete) {
+                    await deleteEditalItemFromCloud(item.id);
+                }
+                filterDataByConcurso();
+                alert(`A matéria "${materiaParaExcluir}" foi excluída com sucesso!`);
+            }
+        }
+
         function renderTable() {
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
@@ -2108,11 +2153,15 @@
                 `;
 
                 if (isOpen) {
-                    group.items.forEach(item => {
+                    const sortedAssuntos = [...group.items].sort((a, b) => (a.assunto_prioridade || 1) - (b.assunto_prioridade || 1));
+
+                    sortedAssuntos.forEach(item => {
                         const safeId = String(item.id);
                         tbody.innerHTML += `
                             <tr style="border-left: 4px solid ${PALETA_SOLIDAS[colorIdx % PALETA_SOLIDAS.length]};">
-                                <td></td>
+                                <td>
+                                    <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority('${safeId}', this.value)" title="Prioridade do Assunto">
+                                </td>
                                 <td style="text-align: left; padding-left: 1.5rem;">${item.assunto}</td>
                                 <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'teoria', ${item.teoria})"></td>
                                 <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'questoes', ${item.questoes})"></td>
@@ -2139,6 +2188,16 @@
                 }
             });
             filterDataByConcurso();
+        }
+
+        async function updateAssuntoPriority(id, newPriority) {
+            const val = parseInt(newPriority) || 1;
+            const item = allEditalItems.find(i => String(i.id) === String(id));
+            if (item) {
+                item.assunto_prioridade = val;
+                await saveEditalItemToCloud(item);
+                filterDataByConcurso();
+            }
         }
 
         async function toggleCheck(id, field, currentValue) {
@@ -2169,7 +2228,7 @@
 
             const newItem = {
                 id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-                materia, assunto, prioridade, concurso: currentConcurso,
+                materia, assunto, prioridade, assunto_prioridade: 1, concurso: currentConcurso,
                 user_id: currentUser ? currentUser.id : null,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
             };
@@ -2218,11 +2277,11 @@
                             const mName = matObj.materia || 'Matéria Importada';
                             const prio = parseInt(matObj.prioridade || 1);
                             if (Array.isArray(matObj.assuntos)) {
-                                matObj.assuntos.forEach(assuntoStr => {
+                                matObj.assuntos.forEach((assuntoStr, indexAssunto) => {
                                     const itemObj = {
                                         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                                         materia: mName, assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
-                                        prioridade: prio, concurso: currentConcurso,
+                                        prioridade: prio, assunto_prioridade: indexAssunto + 1, concurso: currentConcurso,
                                         user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
                                     };
@@ -2540,6 +2599,8 @@
         window.toggleMateria = toggleMateria;
         window.toggleAllAccordions = toggleAllAccordions;
         window.updateMateriaPriority = updateMateriaPriority;
+        window.updateAssuntoPriority = updateAssuntoPriority;
+        window.excluirMateriaEspecifica = excluirMateriaEspecifica;
         window.changeConcurso = changeConcurso;
         window.openModalNovoConcurso = openModalNovoConcurso;
         window.closeModalNovoConcurso = closeModalNovoConcurso;
