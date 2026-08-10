@@ -369,6 +369,7 @@
                 <label><strong>Concurso:</strong></label>
                 <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
                 <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
+                <button class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
                 <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">Excluir</button>
                 
                 <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
@@ -2071,6 +2072,49 @@
             changeConcurso(currentConcurso);
         }
 
+        async function renomearConcursoAtual() {
+            if (currentConcurso.trim().toLowerCase() === 'concurso geral') {
+                return alert('O Concurso Geral padrão não pode ser renomeado.');
+            }
+
+            const novoNome = prompt(`Digite o novo nome para o concurso "${currentConcurso}":`, currentConcurso);
+            if (!novoNome || !novoNome.trim() || novoNome.trim() === currentConcurso) return;
+
+            const nomeFormatado = novoNome.trim();
+            let metadata = getConcursosMetadata();
+
+            if (metadata[nomeFormatado]) {
+                return alert('Já existe um concurso cadastrado com esse nome.');
+            }
+
+            // Transfere metadados do concurso
+            metadata[nomeFormatado] = metadata[currentConcurso] || { dataProva: null, dateSchedule: {} };
+            delete metadata[currentConcurso];
+            await saveConcursosMetadata(metadata);
+
+            // Transfere arquivo PDF/imagem do edital do LocalStorage
+            const oldFileKey = getEditalFileStorageKey();
+            const fileDataRaw = localStorage.getItem(oldFileKey);
+
+            // Atualiza os itens do edital vinculados a este concurso
+            const itemsToUpdate = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+            for (let item of itemsToUpdate) {
+                item.concurso = nomeFormatado;
+                await saveEditalItemToCloud(item);
+            }
+
+            currentConcurso = nomeFormatado;
+            localStorage.setItem('last_studied_concurso', currentConcurso);
+
+            if (fileDataRaw) {
+                localStorage.setItem(getEditalFileStorageKey(), fileDataRaw);
+                localStorage.removeItem(oldFileKey);
+            }
+
+            changeConcurso(currentConcurso);
+            alert(`Concurso renomeado com sucesso para "${nomeFormatado}".`);
+        }
+
         async function removerConcursoAtual() {
             if (currentConcurso.trim().toLowerCase() === 'concurso geral') {
                 return alert('O Concurso Geral padrão não pode ser excluído.');
@@ -2605,6 +2649,7 @@
         window.openModalNovoConcurso = openModalNovoConcurso;
         window.closeModalNovoConcurso = closeModalNovoConcurso;
         window.confirmarNovoConcurso = confirmarNovoConcurso;
+        window.renomearConcursoAtual = renomearConcursoAtual;
         window.removerConcursoAtual = removerConcursoAtual;
         window.editarDataProva = editarDataProva;
         window.startTimer = startTimer;
