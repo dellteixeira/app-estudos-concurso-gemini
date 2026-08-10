@@ -253,6 +253,28 @@
         .flashcard-badge-materia { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
         .flashcard-badge-assunto { background: rgba(255,255,255,0.1); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
 
+        /* ESTILOS ANKI DECKS / PASTAS DE FLASHCARDS */
+        .anki-folder-card {
+            background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
+            border-radius: 10px; margin-bottom: 1rem; overflow: hidden;
+        }
+        .anki-folder-header {
+            background: rgba(59, 130, 246, 0.12); padding: 0.85rem 1.2rem; display: flex;
+            justify-content: space-between; align-items: center; cursor: pointer;
+            border-bottom: 1px solid var(--border-color); user-select: none;
+        }
+        .anki-folder-header:hover { background: rgba(59, 130, 246, 0.2); }
+        .anki-folder-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; color: #93c5fd; }
+        .anki-folder-count { background: var(--primary-blue); color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; }
+        .anki-subfolder-list { padding: 0.5rem 1rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .anki-subfolder-item {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
+            padding: 0.6rem 1rem; border-radius: 6px; display: flex; justify-content: space-between;
+            align-items: center; cursor: pointer; transition: 0.2s;
+        }
+        .anki-subfolder-item:hover { border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.08); }
+        .anki-subfolder-item.active-filter { border-color: #10b981; background: rgba(16, 185, 129, 0.15); }
+
         .study-card-container {
             perspective: 1000px; width: 100%; min-height: 250px; display: flex;
             justify-content: center; align-items: center; margin: 1rem 0; cursor: pointer;
@@ -536,6 +558,8 @@
                     <h3>Flashcards e Estudo Ativo</h3>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
+                        <!-- BOTÃO SOLICITADO: ESTUDO FOCADO POR MATÉRIA/ASSUNTO -->
+                        <button class="btn btn-info" onclick="openModalFiltroEstudoFlashcards()">🎯 Estudar Matéria / Assunto Específico</button>
                     </div>
                 </div>
 
@@ -577,7 +601,46 @@
                     <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard Individual</button>
                 </form>
 
+                <!-- ÁREA DE DECKS / PASTAS ESTILO ANKI -->
+                <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px;">
+                        📁 Baralhos / Pastas de Flashcards (Estilo Anki)
+                    </h4>
+                    <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" onclick="setFlashcardViewFilter('', '')" style="display: none;">
+                        Mostrar Todos os Baralhos
+                    </button>
+                </div>
+
+                <div id="flashcardFoldersContainer" style="margin-bottom: 1.5rem;"></div>
+
                 <div id="flashcardsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
+    <div class="modal-overlay" id="modalFiltroEstudoFC">
+        <div class="modal">
+            <h3>🎯 Estudo Focado de Flashcards</h3>
+            <p style="font-size:0.88rem; color:#94a3b8;">Escolha a matéria e/ou assunto específico que você deseja revisar agora:</p>
+            
+            <div class="form-group">
+                <label>Matéria para Estudo:</label>
+                <select id="studyFilterMateria" onchange="updateStudyFilterAssuntoOptions()">
+                    <option value="">Todas as Matérias</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Assunto Específico (Opcional):</label>
+                <select id="studyFilterAssunto">
+                    <option value="">Todos os Assuntos</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalFiltroEstudoFlashcards()">Cancelar (ESC)</button>
+                <button class="btn btn-purple" onclick="startFilteredStudyModal()">Iniciar Treino Focado 🚀</button>
             </div>
         </div>
     </div>
@@ -818,7 +881,7 @@
     <!-- MODAL ESTUDO FLASHCARDS EMBARALHADOS -->
     <div class="modal-overlay" id="modalStudyFlashcards">
         <div class="modal">
-            <div style="display:flex; justify-space-between; align-items:center;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3 id="studyModalTitle">Sessão de Estudos</h3>
                 <span id="studyModalProgress" style="font-weight:700; color:var(--primary-blue);">0 / 0</span>
             </div>
@@ -961,6 +1024,10 @@
         let currentEditingNoteIndex = null;
         let editingFcIndex = null;
 
+        let openFcFolders = {};
+        let activeFcMateriaFilter = '';
+        let activeFcAssuntoFilter = '';
+
         let selectedMonth = new Date().getMonth();
         let selectedYear = new Date().getFullYear();
 
@@ -985,6 +1052,7 @@
                 closeModalNovoConcurso();
                 closeModalDayContent();
                 closeModalEditarFlashcard();
+                closeModalFiltroEstudoFlashcards();
             } else if (e.key === 'Enter' && !e.shiftKey) {
                 if (document.getElementById('auth-screen').style.display !== 'none') {
                     handleLogin();
@@ -1648,6 +1716,85 @@
             const metadata = getConcursosMetadata();
             flashcardsList = metadata[currentConcurso]?.flashcards || [];
             populateFcMateriaDropdown();
+            renderFlashcardFolders();
+            renderFlashcards();
+        }
+
+        /* RENDERIZAR PASTAS/BARALHOS ESTILO ANKI */
+        function renderFlashcardFolders() {
+            const folderContainer = document.getElementById('flashcardFoldersContainer');
+            if (!folderContainer) return;
+            folderContainer.innerHTML = '';
+
+            if (flashcardsList.length === 0) {
+                folderContainer.innerHTML = '<p style="opacity: 0.75; font-size:0.9rem;">Nenhum baralho disponível.</p>';
+                return;
+            }
+
+            // Agrupa por Matéria -> Assunto
+            const deckHierarchy = {};
+            flashcardsList.forEach(fc => {
+                const mat = fc.materia || 'Geral / Sem Matéria';
+                const ass = fc.assunto || 'Sem Assunto Específico';
+
+                if (!deckHierarchy[mat]) deckHierarchy[mat] = { total: 0, assuntos: {} };
+                deckHierarchy[mat].total++;
+
+                if (!deckHierarchy[mat].assuntos[ass]) deckHierarchy[mat].assuntos[ass] = 0;
+                deckHierarchy[mat].assuntos[ass]++;
+            });
+
+            Object.keys(deckHierarchy).forEach(matName => {
+                const matData = deckHierarchy[matName];
+                const isOpen = openFcFolders[matName] !== false;
+                const isMatActive = (activeFcMateriaFilter === matName && !activeFcAssuntoFilter);
+
+                let subfoldersHtml = '';
+                Object.keys(matData.assuntos).forEach(assName => {
+                    const count = matData.assuntos[assName];
+                    const isAssActive = (activeFcMateriaFilter === matName && activeFcAssuntoFilter === assName);
+
+                    subfoldersHtml += `
+                        <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '${assName.replace(/'/g, "\\'")}')">
+                            <span style="font-size:0.9rem; font-weight:600;">📑 ${assName}</span>
+                            <span style="font-size:0.8rem; opacity:0.8;">${count} cartões</span>
+                        </div>
+                    `;
+                });
+
+                folderContainer.innerHTML += `
+                    <div class="anki-folder-card">
+                        <div class="anki-folder-header" onclick="toggleFcFolder('${matName.replace(/'/g, "\\'")}')">
+                            <div class="anki-folder-title">
+                                📁 <span>${matName}</span>
+                                ${isMatActive ? '<span style="color:#34d399; font-size:0.75rem;">(Filtrado)</span>' : ''}
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span class="anki-folder-count">${matData.total} cartões</span>
+                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '')" title="Filtrar só esta matéria">Ver Matéria</button>
+                                <span>${isOpen ? '▼' : '►'}</span>
+                            </div>
+                        </div>
+                        ${isOpen ? `<div class="anki-subfolder-list">${subfoldersHtml}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            const btnReset = document.getElementById('btnResetFcFilter');
+            if (btnReset) {
+                btnReset.style.display = (activeFcMateriaFilter || activeFcAssuntoFilter) ? 'inline-flex' : 'none';
+            }
+        }
+
+        function toggleFcFolder(matName) {
+            openFcFolders[matName] = !(openFcFolders[matName] !== false);
+            renderFlashcardFolders();
+        }
+
+        function setFlashcardViewFilter(mat, ass) {
+            activeFcMateriaFilter = mat;
+            activeFcAssuntoFilter = ass;
+            renderFlashcardFolders();
             renderFlashcards();
         }
 
@@ -1655,16 +1802,25 @@
             const container = document.getElementById('flashcardsContainer');
             container.innerHTML = '';
 
-            if (flashcardsList.length === 0) {
-                container.innerHTML = '<p style="opacity: 0.8;">Nenhum flashcard criado para este concurso.</p>';
+            let displayList = flashcardsList.map((fc, idx) => ({ ...fc, originalIndex: idx }));
+
+            if (activeFcMateriaFilter) {
+                displayList = displayList.filter(fc => (fc.materia || 'Geral / Sem Matéria') === activeFcMateriaFilter);
+            }
+            if (activeFcAssuntoFilter) {
+                displayList = displayList.filter(fc => (fc.assunto || 'Sem Assunto Específico') === activeFcAssuntoFilter);
+            }
+
+            if (displayList.length === 0) {
+                container.innerHTML = '<p style="opacity: 0.8; padding:1rem;">Nenhum flashcard encontrado para este filtro.</p>';
                 return;
             }
 
             const grouped = {};
-            flashcardsList.forEach((fc, idx) => {
+            displayList.forEach(fc => {
                 const mKey = fc.materia || 'Geral / Sem Matéria';
                 if (!grouped[mKey]) grouped[mKey] = [];
-                grouped[mKey].push({ ...fc, originalIndex: idx });
+                grouped[mKey].push(fc);
             });
 
             Object.keys(grouped).forEach(mName => {
@@ -1691,7 +1847,7 @@
                 container.innerHTML += `
                     <div style="margin-bottom:1.5rem;">
                         <h4 style="color:var(--primary-blue); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px;">
-                            ${mName} (${grouped[mName].length} cartões)
+                            ${mName} (${grouped[mName].length} cartões exibidos)
                         </h4>
                         ${cardsHtml}
                     </div>
@@ -1735,6 +1891,7 @@
             };
 
             closeModalEditarFlashcard();
+            renderFlashcardFolders();
             renderFlashcards();
             await saveFlashcardsData();
         }
@@ -1751,6 +1908,7 @@
             flashcardsList.push({ materia, assunto, pergunta, resposta });
             document.getElementById('fcPergunta').value = '';
             document.getElementById('fcResposta').value = '';
+            renderFlashcardFolders();
             renderFlashcards();
             await saveFlashcardsData();
         }
@@ -1758,6 +1916,7 @@
         async function removeFlashcard(idx) {
             if (confirm('Deseja apagar este flashcard individualmente?')) {
                 flashcardsList.splice(idx, 1);
+                renderFlashcardFolders();
                 renderFlashcards();
                 await saveFlashcardsData();
             }
@@ -1821,12 +1980,75 @@
 
             if (importedCount > 0) {
                 textArea.value = '';
+                renderFlashcardFolders();
                 renderFlashcards();
                 await saveFlashcardsData();
                 alert(`Sucesso! ${importedCount} flashcards foram gerados e adicionados.`);
             } else {
                 alert('Não foi possível reconhecer o formato das perguntas/respostas. Certifique-se de usar "P:" e "R:" ou separar por ponto e vírgula (;).');
             }
+        }
+
+        /* MODAL DE FILTRO PARA ESTUDAR MATÉRIA/ASSUNTO ESPECÍFICO */
+        function openModalFiltroEstudoFlashcards() {
+            const matSel = document.getElementById('studyFilterMateria');
+            if (!matSel) return;
+            matSel.innerHTML = '<option value="">Todas as Matérias</option>';
+
+            const setMaterias = new Set();
+            flashcardsList.forEach(fc => {
+                if (fc.materia) setMaterias.add(fc.materia);
+            });
+
+            setMaterias.forEach(mat => {
+                matSel.innerHTML += `<option value="${mat}">${mat}</option>`;
+            });
+
+            updateStudyFilterAssuntoOptions();
+            document.getElementById('modalFiltroEstudoFC').style.display = 'flex';
+        }
+
+        function closeModalFiltroEstudoFlashcards() {
+            document.getElementById('modalFiltroEstudoFC').style.display = 'none';
+        }
+
+        function updateStudyFilterAssuntoOptions() {
+            const matVal = document.getElementById('studyFilterMateria').value;
+            const assSel = document.getElementById('studyFilterAssunto');
+            if (!assSel) return;
+            assSel.innerHTML = '<option value="">Todos os Assuntos</option>';
+
+            if (!matVal) return;
+
+            const setAssuntos = new Set();
+            flashcardsList.forEach(fc => {
+                if (fc.materia === matVal && fc.assunto) setAssuntos.add(fc.assunto);
+            });
+
+            setAssuntos.forEach(ass => {
+                assSel.innerHTML += `<option value="${ass}">${ass}</option>`;
+            });
+        }
+
+        function startFilteredStudyModal() {
+            const targetMateria = document.getElementById('studyFilterMateria').value;
+            const targetAssunto = document.getElementById('studyFilterAssunto').value;
+
+            let filteredCards = [...flashcardsList];
+
+            if (targetMateria) {
+                filteredCards = filteredCards.filter(fc => fc.materia === targetMateria);
+            }
+            if (targetAssunto) {
+                filteredCards = filteredCards.filter(fc => fc.assunto === targetAssunto);
+            }
+
+            if (filteredCards.length === 0) {
+                return alert('Nenhum flashcard encontrado para o filtro selecionado.');
+            }
+
+            closeModalFiltroEstudoFlashcards();
+            startStudyModalWithList(filteredCards);
         }
 
         function startShuffleStudyModal() {
@@ -1839,13 +2061,17 @@
                 groupedByMateria[mKey].push(fc);
             });
 
-            studyQueue = [];
-
+            const shuffledList = [];
             Object.keys(groupedByMateria).forEach(mName => {
                 const shuffledMateriaCards = [...groupedByMateria[mName]].sort(() => Math.random() - 0.5);
-                studyQueue.push(...shuffledMateriaCards);
+                shuffledList.push(...shuffledMateriaCards);
             });
 
+            startStudyModalWithList(shuffledList);
+        }
+
+        function startStudyModalWithList(list) {
+            studyQueue = [...list];
             currentStudyIdx = 0;
             showingAnswer = false;
             updateStudyModalCard();
@@ -1854,7 +2080,7 @@
 
         function updateStudyModalCard() {
             if (currentStudyIdx >= studyQueue.length) {
-                alert('Parabéns! Você concluiu a revisão de todos os flashcards.');
+                alert('Parabéns! Você concluiu a revisão de todos os flashcards selecionados.');
                 closeStudyModal();
                 return;
             }
@@ -2108,16 +2334,16 @@
                         user_id: currentUser.id,
                         materia: item.materia,
                         assunto: item.assunto,
-                        prioridade: item.prioridade,
+                        prioridade: item.prioridade || 1,
                         assunto_prioridade: item.assunto_prioridade || 1,
-                        concurso: item.concurso,
+                        concurso: item.concurso || currentConcurso,
                         teoria: !!item.teoria,
                         questoes: !!item.questoes,
                         rev_24h: !!item.rev_24h,
                         rev_7d: !!item.rev_7d,
                         rev_30d: !!item.rev_30d
                     };
-                    await supabaseClient.from('edital').upsert(payload);
+                    await supabaseClient.from('edital').upsert(payload, { onConflict: 'id' });
                 } catch(e) { console.warn('Erro sync item:', e); }
             }
         }
@@ -2497,7 +2723,7 @@
                                     rev_7d: false,
                                     rev_30d: false
                                 }));
-                                await supabaseClient.from('edital').upsert(payloadList);
+                                await supabaseClient.from('edital').upsert(payloadList, { onConflict: 'id' });
                             } catch (errSync) {
                                 console.warn('Erro enviando lote importado para o banco:', errSync);
                             }
@@ -2883,6 +3109,12 @@
         window.updateAddAssuntoDropdown = updateAddAssuntoDropdown;
         window.resetAddTopicArea = resetAddTopicArea;
         window.confirmAddTopicWithSwap = confirmAddTopicWithSwap;
+        window.toggleFcFolder = toggleFcFolder;
+        window.setFlashcardViewFilter = setFlashcardViewFilter;
+        window.openModalFiltroEstudoFlashcards = openModalFiltroEstudoFlashcards;
+        window.closeModalFiltroEstudoFlashcards = closeModalFiltroEstudoFlashcards;
+        window.updateStudyFilterAssuntoOptions = updateStudyFilterAssuntoOptions;
+        window.startFilteredStudyModal = startFilteredStudyModal;
     </script>
 </body>
 </html>
