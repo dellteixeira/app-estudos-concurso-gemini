@@ -1241,12 +1241,33 @@
                     </div>
                     <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
                         <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
+                        <button class="btn btn-info btn-sm" onclick="addManualTopicToDay(${idx})">+ Inserir Manualmente</button>
                         <button class="btn btn-success btn-sm" onclick="confirmEditTopicWithSwap(${idx})">Salvar / Trocar Assunto</button>
                     </div>
                 </div>
             `;
             editArea.style.display = 'block';
             updateEditAssuntoDropdown(idx);
+        }
+
+        async function addManualTopicToDay(targetIdx) {
+            const matSel = document.getElementById(`editMatSel_${targetIdx}`);
+            const selectedMat = matSel ? matSel.value : '';
+
+            const novoAssunto = prompt(`Digite o novo assunto para a matéria "${selectedMat}":`);
+            if (!novoAssunto || !novoAssunto.trim()) return;
+
+            const newFullString = `${selectedMat} - ${novoAssunto.trim()}`;
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+
+            metadata[currentConcurso].dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
+
+            await saveConcursosMetadata(metadata);
+            renderDayTopicsList();
+            renderMonthCalendar();
         }
 
         function updateEditAssuntoDropdown(idx) {
@@ -2551,6 +2572,7 @@
         window.showEditTopicDropdown = showEditTopicDropdown;
         window.updateEditAssuntoDropdown = updateEditAssuntoDropdown;
         window.confirmEditTopicWithSwap = confirmEditTopicWithSwap;
+        window.addManualTopicToDay = addManualTopicToDay;
         window.showAddTopicSelectors = showAddTopicSelectors;
         window.updateAddAssuntoDropdown = updateAddAssuntoDropdown;
         window.resetAddTopicArea = resetAddTopicArea;
