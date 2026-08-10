@@ -1964,21 +1964,32 @@
             filterDataByConcurso();
         }
 
+        /* SELETOR DE CONCURSOS COM OMISSÃO E PROTEÇÃO DO CONCURSO GERAL */
         function renderConcursoSelector() {
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
             const metadata = getConcursosMetadata();
-            const set = new Set(Object.keys(metadata));
-            set.add('Concurso Geral');
             
-            allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
-            const list = Array.from(set);
+            const set = new Set(Object.keys(metadata));
+            allEditalItems.forEach(i => { if (i.concurso) set.add(i.concurso); });
 
-            if (!list.includes(currentConcurso)) currentConcurso = list[0] || 'Concurso Geral';
+            const customConcursos = Array.from(set).filter(c => c !== 'Concurso Geral');
+
+            let list = [];
+            if (customConcursos.length > 0) {
+                list = customConcursos;
+            } else {
+                list = ['Concurso Geral'];
+            }
+
+            if (!list.includes(currentConcurso)) {
+                currentConcurso = list[0];
+            }
 
             list.forEach(c => {
                 select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`;
             });
+
             updateCountdownBadge();
         }
 
@@ -2020,7 +2031,9 @@
         }
 
         async function removerConcursoAtual() {
-            if (currentConcurso === 'Concurso Geral') return alert('O Concurso Geral padrão não pode ser excluído.');
+            if (currentConcurso === 'Concurso Geral') {
+                return alert('Ação bloqueada: O "Concurso Geral" é um registro padrão do sistema para proteção de dados e não pode ser excluído.');
+            }
             if (confirm(`Deseja remover o concurso "${currentConcurso}" e todos os seus itens?`)) {
                 let metadata = getConcursosMetadata();
                 delete metadata[currentConcurso];
