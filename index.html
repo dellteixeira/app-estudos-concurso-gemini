@@ -2262,11 +2262,6 @@
                     let formattedData = [];
 
                     if (rawData.materias && Array.isArray(rawData.materias)) {
-                        if (rawData.concurso) {
-                            currentConcurso = rawData.concurso;
-                            localStorage.setItem('last_studied_concurso', currentConcurso);
-                        }
-                        
                         let metadata = getConcursosMetadata();
                         if (!metadata[currentConcurso]) {
                             metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
@@ -2280,8 +2275,11 @@
                                 matObj.assuntos.forEach((assuntoStr, indexAssunto) => {
                                     const itemObj = {
                                         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                                        materia: mName, assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
-                                        prioridade: prio, assunto_prioridade: indexAssunto + 1, concurso: currentConcurso,
+                                        materia: mName, 
+                                        assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
+                                        prioridade: prio, 
+                                        assunto_prioridade: indexAssunto + 1, 
+                                        concurso: currentConcurso,
                                         user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
                                     };
@@ -2293,10 +2291,11 @@
                         });
                     }
                     changeConcurso(currentConcurso);
-                    alert(`Sucesso! ${formattedData.length} tópicos foram importados e sincronizados.`);
-                } catch(err) { alert('Erro no arquivo JSON.'); }
+                    alert(`Sucesso! ${formattedData.length} tópicos foram importados para "${currentConcurso}" e sincronizados.`);
+                } catch(err) { alert('Erro ao processar o arquivo JSON.'); }
             };
             reader.readAsText(file);
+            event.target.value = '';
         }
 
         function updateCountdownBadge() {
