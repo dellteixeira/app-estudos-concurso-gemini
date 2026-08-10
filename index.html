@@ -64,205 +64,54 @@
             --atrasado-border: #ef4444;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s;
-            width: 100%;
-            overflow-x: hidden;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; transition: background-color 0.3s, color 0.3s; width: 100%; overflow-x: hidden; }
 
         #offline-banner {
-            display: none;
-            background-color: #f59e0b;
-            color: #ffffff;
-            text-align: center;
-            padding: 0.5rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 2000;
+            display: none; background-color: #f59e0b; color: #ffffff; text-align: center; padding: 0.5rem;
+            font-size: 0.85rem; font-weight: 600; position: sticky; top: 0; z-index: 2000;
         }
 
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 1rem;
-        }
-
-        .auth-card {
-            background: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-
+        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1rem; }
+        .auth-card { background: var(--card-bg); padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
         .auth-card h2 { margin-bottom: 1.5rem; color: var(--primary-blue); }
 
-        #app-dashboard {
-            display: none;
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 1.5rem;
-            width: 100%;
-        }
+        #app-dashboard { display: none; max-width: 1300px; margin: 0 auto; padding: 1.5rem; width: 100%; }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .header-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header-brand img {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-brand img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
 
         .super-user-badge {
-            background: linear-gradient(135deg, #f59e0b, #ef4444);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 800;
-            padding: 3px 8px;
-            border-radius: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.75rem;
+            font-weight: 800; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
         .concurso-selector-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--card-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            flex-wrap: wrap;
+            display: flex; align-items: center; gap: 0.5rem; background: var(--card-bg);
+            padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap;
         }
 
         .countdown-badge {
-            background: #1e3a8a;
-            color: #93c5fd;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            border: 1px solid #1e40af;
-            cursor: pointer;
+            background: #1e3a8a; color: #93c5fd; padding: 6px 14px; border-radius: 20px;
+            font-weight: 600; font-size: 0.85rem; border: 1px solid #1e40af; cursor: pointer;
         }
 
-        .action-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.4rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            width: 100%;
-        }
+        .action-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 1.5rem; flex-wrap: wrap; width: 100%; }
+        .action-bar .btn { padding: 0.5rem 0.8rem; font-size: 0.88rem; flex: 1 1 auto; justify-content: center; text-align: center; min-width: 130px; }
 
-        .action-bar .btn {
-            padding: 0.5rem 0.8rem;
-            font-size: 0.88rem;
-            flex: 1 1 auto;
-            justify-content: center;
-            text-align: center;
-            min-width: 130px;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-color);
-            padding: 0.6rem 1.2rem;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            border-radius: 6px;
-            opacity: 0.6;
-            transition: 0.2s;
-        }
-
-        .tab-btn.active {
-            background-color: var(--primary-blue);
-            color: #ffffff;
-            opacity: 1;
-        }
+        .nav-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; flex-wrap: wrap; }
+        .tab-btn { background: transparent; border: none; color: var(--text-color); padding: 0.6rem 1.2rem; font-weight: 700; font-size: 1rem; cursor: pointer; border-radius: 6px; opacity: 0.6; transition: 0.2s; }
+        .tab-btn.active { background-color: var(--primary-blue); color: #ffffff; opacity: 1; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        .grid-top {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
+        .grid-top { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+        .card h3 { margin-bottom: 1rem; color: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem; }
 
-        .card {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-        }
-
-        .card h3 {
-            margin-bottom: 1rem;
-            color: var(--primary-blue);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            white-space: nowrap;
-            transition: opacity 0.2s;
-        }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; transition: opacity 0.2s; }
         .btn:hover { opacity: 0.9; }
         .btn-primary { background-color: var(--primary-blue); color: white; }
         .btn-secondary { background-color: #64748b; color: white; }
@@ -273,271 +122,69 @@
         .btn-warning { background-color: #f59e0b; color: white; }
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
-        input, select, textarea {
-            padding: 0.6rem 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            font-size: 0.95rem;
-            outline: none;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
+        input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--card-bg); color: var(--text-color); font-size: 0.95rem; outline: none; max-width: 100%; box-sizing: border-box; }
+        textarea { width: 100%; min-height: 120px; resize: vertical; line-height: 1.5; font-family: inherit; }
 
-        select {
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        textarea {
-            width: 100%;
-            resize: vertical;
-            line-height: 1.5;
-            font-family: inherit;
-        }
-
-        .timer-display {
-            font-size: 4rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 0.5rem 0;
-            letter-spacing: 2px;
-        }
-
-        .timer-settings {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1.2rem;
-            margin-top: 1rem;
-            font-size: 0.95rem;
-            flex-wrap: wrap;
-        }
-
+        .timer-display { font-size: 4rem; font-weight: bold; text-align: center; margin: 0.5rem 0; letter-spacing: 2px; }
+        .timer-settings { display: flex; justify-content: center; align-items: center; gap: 1.2rem; margin-top: 1rem; font-size: 0.95rem; flex-wrap: wrap; }
         .timer-settings label { display: flex; align-items: center; gap: 0.5rem; }
         .timer-settings input { width: 85px !important; text-align: center; padding: 0.5rem 0.4rem; font-weight: 600; }
 
         .weekly-hours-banner {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid var(--primary-blue);
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1.05rem;
-            color: var(--header-materia-text);
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
+            padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 1.05rem;
+            color: var(--header-materia-text); margin-bottom: 1rem; display: flex;
+            justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
         }
 
-        .delayed-panel {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.2rem;
-            margin-bottom: 1.5rem;
-        }
-
+        .delayed-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; }
         .delayed-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
         .delayed-title { font-size: 1.4rem; font-weight: 800; }
 
-        .badge-delayed {
-            background: #ef4444;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 700;
-        }
+        .badge-delayed { background: #ef4444; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
 
-        .filter-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 1rem;
-            background: rgba(255,255,255,0.05);
-            padding: 4px;
-            border-radius: 8px;
-            width: fit-content;
-        }
-
-        .filter-tab {
-            padding: 6px 16px;
-            border-radius: 6px;
-            border: none;
-            background: transparent;
-            color: var(--text-color);
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 1rem; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; width: fit-content; }
+        .filter-tab { padding: 6px 16px; border-radius: 6px; border: none; background: transparent; color: var(--text-color); cursor: pointer; font-weight: 600; font-size: 0.9rem; }
         .filter-tab.active { background: var(--card-bg); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
         .delayed-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-left: 5px solid #ef4444;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 0.8rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
+            background: var(--card-bg); border: 1px solid var(--border-color); border-left: 5px solid #ef4444;
+            border-radius: 10px; padding: 1rem; margin-bottom: 0.8rem; display: flex;
+            justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
         }
 
         .delayed-card-info h4 { color: #ef4444; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 4px; }
         .delayed-card-info p { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
 
-        .delayed-tag {
-            display: inline-block;
-            background: rgba(59, 130, 246, 0.2);
-            color: #38bdf8;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
+        .delayed-tag { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
 
-        .month-calendar-header {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 6px;
-            text-align: center;
-            font-weight: 700;
-            color: var(--primary-blue);
-            margin-bottom: 8px;
-        }
-
-        .month-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-        }
+        .month-calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: 700; color: var(--primary-blue); margin-bottom: 8px; }
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
 
         .month-day-cell {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            height: 140px;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            position: relative;
-            cursor: pointer;
-            overflow: hidden;
-            transition: background-color 0.2s, border-color 0.2s;
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);
+            border-radius: 8px; height: 140px; padding: 8px; display: flex; flex-direction: column;
+            gap: 4px; position: relative; cursor: pointer; overflow: hidden; transition: 0.2s;
         }
-
-        .month-day-cell:hover {
-            border-color: var(--primary-blue);
-            background: rgba(59, 130, 246, 0.05);
-        }
-
+        .month-day-cell:hover { border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.05); }
         .month-day-cell.other-month { opacity: 0.35; }
         .month-day-cell.today { border: 2px solid var(--primary-blue); background: rgba(59, 130, 246, 0.1); }
 
-        .day-num-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 800;
-            font-size: 0.85rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 4px;
-            margin-bottom: 2px;
-            flex-shrink: 0;
-        }
-
-        .day-num-header .btn-add-mini {
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            width: 20px;
-            height: 20px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .day-badges-scroll {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            overflow-y: auto;
-            flex: 1;
-            padding-right: 2px;
-        }
-
-        .day-badges-scroll::-webkit-scrollbar { width: 3px; }
-        .day-badges-scroll::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        .day-num-header { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 2px; flex-shrink: 0; }
+        .day-badges-scroll { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; padding-right: 2px; }
 
         .clean-subject-badge {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid var(--primary-blue);
-            color: #93c5fd;
-            padding: 3px 6px;
-            border-radius: 4px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex-shrink: 0;
+            background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
+            color: #93c5fd; padding: 3px 6px; border-radius: 4px; font-size: 0.72rem;
+            font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0;
         }
 
-        .clean-subject-badge.rev {
-            background: rgba(245, 158, 11, 0.15);
-            border-color: #f59e0b;
-            color: #fcd34d;
-        }
-
-        .clean-subject-badge.completed {
-            background: var(--completed-bg);
-            border-color: var(--completed-border);
-            color: var(--completed-text);
-            text-decoration: line-through;
-        }
-
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000;
-            padding: 1rem;
-        }
-        .modal {
-            background: var(--card-bg); color: var(--text-color); padding: 24px;
-            border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px;
-            border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
+        .modal { background: var(--card-bg); color: var(--text-color); padding: 24px; border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
         .modal-large { max-width: 900px; height: 88vh; }
         .form-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
         .form-group label { font-size: 0.85rem; font-weight: 600; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
-
-        .shift-row {
-            display: flex; gap: 0.5rem; align-items: center; background: rgba(255,255,255,0.03);
-            padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap;
-        }
-
-        .days-selection-box {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
-            padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;
-        }
-
-        .weekend-config-box {
-            background: rgba(59, 130, 246, 0.05); border: 1px dashed var(--primary-blue);
-            padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;
-        }
 
         .form-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .form-row input[type="text"] { flex: 2; min-width: 180px; }
@@ -552,10 +199,7 @@
         .materia-header-row td { padding: 0.8rem 1rem; font-size: 1rem; color: #ffffff; }
         .materia-header-content { display: flex; justify-content: space-between; align-items: center; }
 
-        .priority-input {
-            width: 55px; text-align: center; padding: 0.2rem 0.4rem;
-            background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.3);
-        }
+        .priority-input { width: 55px; text-align: center; padding: 0.2rem 0.4rem; background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.3); }
 
         .prompt-code-box {
             background-color: var(--code-bg); border: 1px solid var(--border-color);
@@ -563,25 +207,9 @@
             white-space: pre-wrap; word-break: break-word;
         }
 
-        .projection-box {
-            background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981;
-            padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; color: #34d399;
-        }
-
-        .day-detail-item {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .day-detail-item.completed {
-            background: var(--completed-bg);
-            border-color: var(--completed-border);
+        .flashcard-box {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
         }
 
         @media (max-width: 768px) {
@@ -632,8 +260,9 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES -->
+        <!-- BARRA DE AÇÕES DA APLICAÇÃO -->
         <div class="action-bar">
+            <button class="btn btn-purple" onclick="forceFullSync(event)">Sincronizar Agora 🔄</button>
             <button class="btn btn-warning" onclick="openModalViewEdital()">Ver / Anexar Edital PDF</button>
             <label class="btn btn-success" style="cursor: pointer;">
                 Importar JSON
@@ -652,7 +281,7 @@
             <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
         </div>
 
-        <!-- TAB: EDITAL VERTICALIZADO -->
+        <!-- TAB 1: EDITAL VERTICALIZADO -->
         <div id="tab-edital" class="tab-content active">
             <div class="grid-top">
                 <div class="card">
@@ -709,12 +338,12 @@
             </div>
         </div>
 
-        <!-- TAB: CRONOGRAMA MENSAL -->
+        <!-- TAB 2: CRONOGRAMA MENSAL EM GRADE -->
         <div id="tab-calendario" class="tab-content">
             <div class="delayed-panel">
                 <div class="delayed-header">
-                    <span class="delayed-title">Revisões / Matérias</span>
-                    <span class="badge-delayed" id="delayedBadgeCount">0 atrasadas</span>
+                    <span class="delayed-title">Revisões / Matérias Agendadas</span>
+                    <span class="badge-delayed" id="delayedBadgeCount">0 pendentes</span>
                 </div>
 
                 <div class="filter-tabs">
@@ -728,7 +357,7 @@
 
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-                    <h3>Cronograma Mensal de Estudos</h3>
+                    <h3>Cronograma Mensal em Grade</h3>
 
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <label><strong>Mês/Ano:</strong></label>
@@ -737,18 +366,14 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="openModalDisponibilidade()">Preencher Cronograma Automaticamente</button>
-                        <button class="btn btn-danger" onclick="limparCronogramaSemanal()">Limpar Mês Atual</button>
+                        <button class="btn btn-purple" onclick="autoPreencherCronograma()">Preencher Cronograma Automaticamente</button>
+                        <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Mês Atual</button>
                     </div>
                 </div>
 
-                <p style="margin-bottom: 1rem; font-size: 0.85rem; opacity: 0.8;">
-                    <strong>Dica:</strong> Clique em qualquer dia para abrir a caixa e gerenciar/personalizar todas as disciplinas agendadas.
-                </p>
-                
                 <div class="weekly-hours-banner">
-                    <span>Total Planejado para o Mês Selecionado:</span>
-                    <span id="weeklyHoursTotal">0h 00min</span>
+                    <span>Planejamento Visual do Mês:</span>
+                    <span id="weeklyHoursTotal">Sincronizado na Nuvem</span>
                 </div>
 
                 <div class="month-calendar-header">
@@ -758,24 +383,34 @@
             </div>
         </div>
 
-        <!-- TAB: ANOTAÇÕES -->
+        <!-- TAB 3: ANOTAÇÕES -->
         <div id="tab-anotacoes" class="tab-content">
             <div class="card">
                 <h3>Anotações e Caderno de Resumos</h3>
-                <p style="opacity: 0.8;">Anotações organizadas por matéria.</p>
+                <p style="opacity: 0.85; margin-bottom: 1rem;">Escreva resumos, pontos importantes e observações que ficam salvas em tempo real no Supabase.</p>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <textarea id="notesText" placeholder="Escreva suas anotações aqui..." style="min-height: 300px;" oninput="saveNotesData()"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="forceSaveNotes()">Salvar Anotações</button>
             </div>
         </div>
 
-        <!-- TAB: FLASHCARDS -->
+        <!-- TAB 4: FLASHCARDS -->
         <div id="tab-flashcards" class="tab-content">
             <div class="card">
                 <h3>Flashcards e Estudo Ativo</h3>
-                <p style="opacity: 0.8;">Crie e revise flashcards.</p>
+                <p style="opacity: 0.85; margin-bottom: 1rem;">Crie e revise flashcards vinculados ao seu concurso.</p>
+                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem;">
+                    <input type="text" id="fcPergunta" placeholder="Frente / Pergunta (ex: Qual o prazo do recurso?)" required>
+                    <input type="text" id="fcResposta" placeholder="Verso / Resposta (ex: 15 dias úteis)" required>
+                    <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard</button>
+                </form>
+                <div id="flashcardsContainer"></div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL VIEW EDITAL -->
+    <!-- MODAL VIEW EDITAL PDF -->
     <div class="modal-overlay" id="modalViewEdital">
         <div class="modal modal-large">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -796,25 +431,6 @@
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL NOVO CONCURSO -->
-    <div class="modal-overlay" id="modalNovoConcurso">
-        <div class="modal">
-            <h3>Cadastrar Novo Concurso</h3>
-            <div class="form-group">
-                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
-                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
-            </div>
-            <div class="form-group">
-                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
-                <input type="date" id="inputDataConcurso">
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
             </div>
         </div>
     </div>
@@ -848,10 +464,32 @@
         </div>
     </div>
 
+    <!-- MODAL NOVO CONCURSO -->
+    <div class="modal-overlay" id="modalNovoConcurso">
+        <div class="modal">
+            <h3>Cadastrar Novo Concurso</h3>
+            <div class="form-group">
+                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
+                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
+            </div>
+            <div class="form-group">
+                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
+                <input type="date" id="inputDataConcurso">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
+                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
+        });
 
         const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         const PALETA_CORES_MATERIAS = [
@@ -865,31 +503,28 @@
 
         let currentUser = null;
         let isSuperUser = false;
-
         let myChart = null;
         let allEditalItems = [];
         let editalItems = [];
         let openMaterias = {}; 
         let currentConcurso = 'Concurso Geral';
-        let currentDelayedFilter = 'hoje';
         let metadataCache = {};
-
+        let flashcardsList = [];
         let activeObjectUrl = null;
+        let currentDelayedFilter = 'hoje';
+        let saveNotesTimeout = null;
 
-        // VERIFICAÇÃO DE STATUS ONLINE/OFFLINE
+        let selectedMonth = new Date().getMonth();
+        let selectedYear = new Date().getFullYear();
+
         function updateOnlineStatus() {
             const banner = document.getElementById('offline-banner');
-            if (!navigator.onLine) {
-                banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
-                syncAllWithSupabase();
-            }
+            if (!navigator.onLine) banner.style.display = 'block';
+            else { banner.style.display = 'none'; syncAllWithSupabase(); }
         }
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
 
-        /* GERENCIAMENTO DE METADADOS DOS CONCURSOS (AGORA SINCRONIZADO VIA NUVEM) */
         function getConcursosMetadataStorageKey() {
             const uid = currentUser ? currentUser.id : 'guest';
             return `concursos_metadata_${uid}`;
@@ -913,7 +548,7 @@
                         setting_value: data,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'user_id,setting_key' });
-                } catch(err) { console.warn('Erro ao salvar metadados na nuvem:', err); }
+                } catch(err) { console.warn('Erro salvando no Supabase:', err); }
             }
         }
 
@@ -926,25 +561,270 @@
                         .select('setting_value')
                         .eq('user_id', currentUser.id)
                         .eq('setting_key', 'concursos_metadata')
-                        .single();
+                        .maybeSingle();
 
                     if (!error && data && data.setting_value) {
                         metadataCache = data.setting_value;
                         localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadataCache));
                     }
-                } catch(e) { console.log('Metadata carregado offline'); }
+                } catch(e) { console.log('Sincronização offline'); }
             }
         }
 
-        function loadLocalMetadata() {
-            metadataCache = getConcursosMetadata();
+        function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
+
+        /* ANOTAÇÕES E FLASHCARDS SINC */
+        function saveNotesData() {
+            clearTimeout(saveNotesTimeout);
+            saveNotesTimeout = setTimeout(async () => {
+                const text = document.getElementById('notesText').value;
+                let metadata = getConcursosMetadata();
+                if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+                metadata[currentConcurso].notes = text;
+                await saveConcursosMetadata(metadata);
+            }, 800);
         }
 
-        /* TELA MAIN DE CARREGAMENTO E SINCRONIZAÇÃO TOTAL */
+        async function forceSaveNotes() {
+            const text = document.getElementById('notesText').value;
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].notes = text;
+            await saveConcursosMetadata(metadata);
+            alert('Anotações salvas com sucesso na nuvem!');
+        }
+
+        function loadNotesData() {
+            const metadata = getConcursosMetadata();
+            document.getElementById('notesText').value = metadata[currentConcurso]?.notes || '';
+        }
+
+        async function saveFlashcardsData() {
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].flashcards = flashcardsList;
+            await saveConcursosMetadata(metadata);
+        }
+
+        function loadFlashcardsData() {
+            const metadata = getConcursosMetadata();
+            flashcardsList = metadata[currentConcurso]?.flashcards || [];
+            renderFlashcards();
+        }
+
+        function renderFlashcards() {
+            const container = document.getElementById('flashcardsContainer');
+            container.innerHTML = '';
+            if (flashcardsList.length === 0) {
+                container.innerHTML = '<p style="opacity: 0.8;">Nenhum flashcard criado para este concurso.</p>';
+                return;
+            }
+            flashcardsList.forEach((fc, idx) => {
+                container.innerHTML += `
+                    <div class="flashcard-box">
+                        <p><strong>P:</strong> ${fc.pergunta}</p>
+                        <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${fc.resposta}</p>
+                        <button class="btn btn-danger btn-sm" style="margin-top:8px;" onclick="removeFlashcard(${idx})">Excluir</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function addFlashcard(e) {
+            e.preventDefault();
+            const pergunta = document.getElementById('fcPergunta').value.trim();
+            const resposta = document.getElementById('fcResposta').value.trim();
+            if (!pergunta || !resposta) return;
+
+            flashcardsList.push({ pergunta, resposta });
+            document.getElementById('fcPergunta').value = '';
+            document.getElementById('fcResposta').value = '';
+            renderFlashcards();
+            await saveFlashcardsData();
+        }
+
+        async function removeFlashcard(idx) {
+            flashcardsList.splice(idx, 1);
+            renderFlashcards();
+            await saveFlashcardsData();
+        }
+
+        /* CALENDÁRIO MENSAL EM GRADE */
+        function initMonthYearSelectors() {
+            const mSel = document.getElementById('monthSelect');
+            const ySel = document.getElementById('yearSelect');
+            if (!mSel || !ySel) return;
+            mSel.innerHTML = ''; ySel.innerHTML = '';
+
+            MESES.forEach((m, idx) => {
+                mSel.innerHTML += `<option value="${idx}" ${idx === selectedMonth ? 'selected' : ''}>${m}</option>`;
+            });
+
+            const yearStart = selectedYear - 1;
+            for (let y = yearStart; y <= yearStart + 5; y++) {
+                ySel.innerHTML += `<option value="${y}" ${y === selectedYear ? 'selected' : ''}>${y}</option>`;
+            }
+        }
+
+        function onMonthYearChange() {
+            selectedMonth = parseInt(document.getElementById('monthSelect').value);
+            selectedYear = parseInt(document.getElementById('yearSelect').value);
+            renderMonthCalendar();
+        }
+
+        function renderMonthCalendar() {
+            const grid = document.getElementById('monthCalendarGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
+
+            const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
+            const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+            const todayObj = new Date();
+            const isCurrentMonth = todayObj.getMonth() === selectedMonth && todayObj.getFullYear() === selectedYear;
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="month-day-cell other-month"></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = isCurrentMonth && todayObj.getDate() === day;
+                const items = dateSchedule[dateKey] || [];
+
+                let badgesHtml = '';
+                items.forEach(it => {
+                    badgesHtml += `<div class="clean-subject-badge">${it}</div>`;
+                });
+
+                grid.innerHTML += `
+                    <div class="month-day-cell ${isToday ? 'today' : ''}" onclick="addTopicToDate('${dateKey}')">
+                        <div class="day-num-header">
+                            <span>${day}</span>
+                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Adicionar matéria">+</button>
+                        </div>
+                        <div class="day-badges-scroll">${badgesHtml}</div>
+                    </div>
+                `;
+            }
+            renderDelayedPanel();
+        }
+
+        async function addTopicToDate(dateKey) {
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+
+            const materia = prompt(`Adicionar matéria/tópico para o dia ${dateKey}:`);
+            if (materia && materia.trim()) {
+                if (!metadata[currentConcurso].dateSchedule[dateKey]) {
+                    metadata[currentConcurso].dateSchedule[dateKey] = [];
+                }
+                metadata[currentConcurso].dateSchedule[dateKey].push(materia.trim());
+                await saveConcursosMetadata(metadata);
+                renderMonthCalendar();
+            }
+        }
+
+        async function autoPreencherCronograma() {
+            if (editalItems.length === 0) return alert('Adicione tópicos ao edital para preencher o cronograma.');
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+
+            const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+            let itemIdx = 0;
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (itemIdx < editalItems.length) {
+                    metadata[currentConcurso].dateSchedule[dateKey] = [editalItems[itemIdx].materia + ' - ' + editalItems[itemIdx].assunto];
+                    itemIdx++;
+                }
+            }
+
+            await saveConcursosMetadata(metadata);
+            renderMonthCalendar();
+            alert('Cronograma mensal gerado com sucesso!');
+        }
+
+        async function limparCronogramaMesAtual() {
+            if (confirm('Deseja limpar todos os agendamentos do mês exibido?')) {
+                let metadata = getConcursosMetadata();
+                if (metadata[currentConcurso]?.dateSchedule) {
+                    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        delete metadata[currentConcurso].dateSchedule[dateKey];
+                    }
+                    await saveConcursosMetadata(metadata);
+                    renderMonthCalendar();
+                }
+            }
+        }
+
+        function filterDelayedList(type, btn) {
+            currentDelayedFilter = type;
+            document.querySelectorAll('.filter-tab').forEach(tb => tb.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderDelayedPanel();
+        }
+
+        function renderDelayedPanel() {
+            const container = document.getElementById('delayedItemsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            let count = 0;
+            Object.keys(dateSchedule).forEach(dKey => {
+                if (dKey < todayStr && dateSchedule[dKey].length > 0) count += dateSchedule[dKey].length;
+            });
+
+            document.getElementById('delayedBadgeCount').textContent = `${count} atrasadas`;
+
+            let displayList = [];
+            Object.keys(dateSchedule).forEach(dKey => {
+                if (currentDelayedFilter === 'hoje' && dKey === todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
+                else if (currentDelayedFilter === 'atrasadas' && dKey < todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
+                else if (currentDelayedFilter === 'proximas' && dKey > todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
+            });
+
+            if (displayList.length === 0) {
+                container.innerHTML = '<p style="opacity: 0.8; font-size:0.9rem;">Nenhum item agendado para esta aba.</p>';
+                return;
+            }
+
+            displayList.forEach(group => {
+                group.items.forEach(it => {
+                    container.innerHTML += `
+                        <div class="delayed-card">
+                            <div class="delayed-card-info">
+                                <h4>Data: ${group.date}</h4>
+                                <p>${it}</p>
+                                <span class="delayed-tag">${currentConcurso}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
         async function loadData() {
             await loadConcursosMetadata();
             loadLocalEditalData();
             filterDataByConcurso();
+            initMonthYearSelectors();
+            renderMonthCalendar();
+            loadNotesData();
+            loadFlashcardsData();
 
             if (navigator.onLine && currentUser) {
                 await syncAllWithSupabase();
@@ -963,9 +843,29 @@
                 if (!error && data) {
                     allEditalItems = data.map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
                     saveEditalToLocalStorage();
-                    filterDataByConcurso();
                 }
-            } catch(e) { console.log('Sem acesso ao banco no momento.'); }
+
+                await loadConcursosMetadata();
+                filterDataByConcurso();
+                renderMonthCalendar();
+                loadNotesData();
+                loadFlashcardsData();
+            } catch(e) { console.log('Sincronização em segundo plano...'); }
+        }
+
+        async function forceFullSync(evt) {
+            if (!currentUser) return alert('Você precisa estar logado para sincronizar.');
+            const btn = evt ? evt.target : null;
+            if (btn) btn.innerText = 'Sincronizando...';
+
+            try {
+                await syncAllWithSupabase();
+                alert('Sincronização concluída com sucesso em todos os seus dispositivos!');
+            } catch (err) {
+                alert('Erro ao sincronizar: ' + err.message);
+            } finally {
+                if (btn) btn.innerText = 'Sincronizar Agora 🔄';
+            }
         }
 
         function loadLocalEditalData() {
@@ -988,7 +888,7 @@
             if (navigator.onLine && currentUser) {
                 try {
                     const payload = {
-                        id: item.id,
+                        id: String(item.id),
                         user_id: currentUser.id,
                         materia: item.materia,
                         assunto: item.assunto,
@@ -1001,7 +901,7 @@
                         rev_30d: !!item.rev_30d
                     };
                     await supabaseClient.from('edital').upsert(payload);
-                } catch(e) { console.warn('Erro sync nuvem item:', e); }
+                } catch(e) { console.warn('Erro sync item:', e); }
             }
         }
 
@@ -1009,14 +909,12 @@
             allEditalItems = allEditalItems.filter(i => String(i.id) !== String(id));
             saveEditalToLocalStorage();
             if (navigator.onLine && currentUser) {
-                try {
-                    await supabaseClient.from('edital').delete().eq('id', id);
-                } catch(e) { console.warn('Erro delete nuvem:', e); }
+                try { await supabaseClient.from('edital').delete().eq('id', id); }
+                catch(e) { console.warn('Erro delete:', e); }
             }
             filterDataByConcurso();
         }
 
-        /* CONCURSOS SELECTOR & CADASTRO SINCRONIZADO */
         function renderConcursoSelector() {
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
@@ -1035,7 +933,13 @@
             updateCountdownBadge();
         }
 
-        function changeConcurso(val) { currentConcurso = val; filterDataByConcurso(); }
+        function changeConcurso(val) {
+            currentConcurso = val;
+            filterDataByConcurso();
+            renderMonthCalendar();
+            loadNotesData();
+            loadFlashcardsData();
+        }
 
         function filterDataByConcurso() {
             editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
@@ -1043,8 +947,6 @@
             document.getElementById('edital-title').innerText = `Edital: ${currentConcurso}`;
             renderTable();
             renderChart();
-            renderMonthCalendar();
-            renderDelayedPanel();
         }
 
         function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
@@ -1063,7 +965,7 @@
             document.getElementById('inputNomeConcurso').value = '';
             document.getElementById('inputDataConcurso').value = '';
             closeModalNovoConcurso();
-            filterDataByConcurso();
+            changeConcurso(currentConcurso);
         }
 
         async function removerConcursoAtual() {
@@ -1079,11 +981,10 @@
                 }
 
                 currentConcurso = 'Concurso Geral';
-                filterDataByConcurso();
+                changeConcurso(currentConcurso);
             }
         }
 
-        /* CONTRADOMINIO DA TABELA DE EDITAL */
         function renderTable() {
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
@@ -1210,6 +1111,13 @@
 
                     if (rawData.materias && Array.isArray(rawData.materias)) {
                         if (rawData.concurso) currentConcurso = rawData.concurso;
+                        
+                        let metadata = getConcursosMetadata();
+                        if (!metadata[currentConcurso]) {
+                            metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
+                            await saveConcursosMetadata(metadata);
+                        }
+
                         rawData.materias.forEach(matObj => {
                             const mName = matObj.materia || 'Matéria Importada';
                             const prio = parseInt(matObj.prioridade || 1);
@@ -1229,7 +1137,7 @@
                             }
                         });
                     }
-                    filterDataByConcurso();
+                    changeConcurso(currentConcurso);
                     alert(`Sucesso! ${formattedData.length} tópicos foram importados e sincronizados.`);
                 } catch(err) { alert('Erro no arquivo JSON.'); }
             };
@@ -1317,7 +1225,126 @@
 
         function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
 
-        /* AUTH & INITIALIZATION */
+        /* VISUALIZAÇÃO DE EDITAL PDF */
+        function openModalViewEdital() {
+            document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
+            renderEditalFileViewer();
+            document.getElementById('modalViewEdital').style.display = 'flex';
+        }
+
+        function closeModalViewEdital() {
+            if (activeObjectUrl) {
+                URL.revokeObjectURL(activeObjectUrl);
+                activeObjectUrl = null;
+            }
+            document.getElementById('modalViewEdital').style.display = 'none';
+        }
+
+        function getEditalFileStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `edital_file_${uid}_${currentConcurso}`;
+        }
+
+        function dataURLtoBlob(dataurl) {
+            const arr = dataurl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+            return new Blob([u8arr], { type: mime });
+        }
+
+        function renderEditalFileViewer() {
+            const container = document.getElementById('editalViewerContainer');
+            const btnDownload = document.getElementById('btnDownloadEdital');
+            const btnRemove = document.getElementById('btnRemoveEdital');
+
+            if (activeObjectUrl) {
+                URL.revokeObjectURL(activeObjectUrl);
+                activeObjectUrl = null;
+            }
+
+            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
+
+            if (!fileDataRaw) {
+                container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${currentConcurso}</strong>.</p>`;
+                btnDownload.style.display = 'none';
+                btnRemove.style.display = 'none';
+                return;
+            }
+
+            try {
+                const fileObj = JSON.parse(fileDataRaw);
+                btnDownload.style.display = 'inline-flex';
+                btnRemove.style.display = 'inline-flex';
+
+                if (fileObj.type.includes('pdf')) {
+                    const blob = dataURLtoBlob(fileObj.data);
+                    activeObjectUrl = URL.createObjectURL(blob);
+                    container.innerHTML = `<embed src="${activeObjectUrl}#toolbar=1" type="application/pdf" style="width:100%; height:100%; min-height:500px; border:none; border-radius:6px;"></embed>`;
+                } else if (fileObj.type.includes('image')) {
+                    container.innerHTML = `<img src="${fileObj.data}" style="max-width:100%; max-height:480px; border-radius:6px; object-fit:contain;">`;
+                } else {
+                    container.innerHTML = `<p style="font-size:1.1rem; font-weight:700; color:var(--primary-blue);">${fileObj.name}</p>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<p style="color:#ef4444;">Erro ao carregar arquivo do edital.</p>`;
+            }
+        }
+
+        function uploadEditalFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileObj = { name: file.name, type: file.type || 'application/pdf', data: e.target.result };
+                localStorage.setItem(getEditalFileStorageKey(), JSON.stringify(fileObj));
+                renderEditalFileViewer();
+                alert('Arquivo anexado com sucesso!');
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function downloadEditalFile() {
+            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
+            if (!fileDataRaw) return;
+            const fileObj = JSON.parse(fileDataRaw);
+            const a = document.createElement('a');
+            a.href = fileObj.data;
+            a.download = fileObj.name || 'Edital.pdf';
+            a.click();
+        }
+
+        function removerEditalFile() {
+            if (confirm(`Remover o edital do concurso "${currentConcurso}"?`)) {
+                localStorage.removeItem(getEditalFileStorageKey());
+                renderEditalFileViewer();
+            }
+        }
+
+        function openModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'flex'; }
+        function closeModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'none'; }
+        function copyPromptToClipboard() {
+            navigator.clipboard.writeText(document.getElementById('promptTextToCopy').innerText);
+            alert('Prompt copiado!');
+        }
+
+        /* INICIALIZAÇÃO DE SESSÃO */
+        async function checkAuthAndSync() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session && session.user) {
+                currentUser = session.user;
+                checkSuperUserStatus();
+                showDashboard();
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('app-dashboard').style.display = 'none';
+            }
+        }
+
         async function handleLogin() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -1358,8 +1385,16 @@
             loadData();
         }
 
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) { currentUser = session.user; checkSuperUserStatus(); showDashboard(); }
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (session && session.user) {
+                currentUser = session.user;
+                checkSuperUserStatus();
+                showDashboard();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthAndSync();
         });
 
         function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
@@ -1370,13 +1405,6 @@
 
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
-        }
-
-        function openModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'flex'; }
-        function closeModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'none'; }
-        function copyPromptToClipboard() {
-            navigator.clipboard.writeText(document.getElementById('promptTextToCopy').innerText);
-            alert('Prompt copiado!');
         }
 
         window.handleSignUp = handleSignUp;
@@ -1404,6 +1432,21 @@
         window.openModalPromptIA = openModalPromptIA;
         window.closeModalPromptIA = closeModalPromptIA;
         window.copyPromptToClipboard = copyPromptToClipboard;
+        window.openModalViewEdital = openModalViewEdital;
+        window.closeModalViewEdital = closeModalViewEdital;
+        window.uploadEditalFile = uploadEditalFile;
+        window.downloadEditalFile = downloadEditalFile;
+        window.removerEditalFile = removerEditalFile;
+        window.forceFullSync = forceFullSync;
+        window.saveNotesData = saveNotesData;
+        window.forceSaveNotes = forceSaveNotes;
+        window.addFlashcard = addFlashcard;
+        window.removeFlashcard = removeFlashcard;
+        window.onMonthYearChange = onMonthYearChange;
+        window.addTopicToDate = addTopicToDate;
+        window.autoPreencherCronograma = autoPreencherCronograma;
+        window.limparCronogramaMesAtual = limparCronogramaMesAtual;
+        window.filterDelayedList = filterDelayedList;
     </script>
 </body>
 </html>
