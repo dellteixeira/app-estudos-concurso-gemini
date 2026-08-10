@@ -16,20 +16,8 @@
     <meta name="apple-mobile-web-app-title" content="Estudos">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => { reg.update(); })
-            .catch(err => console.error('Erro no Service Worker:', err));
-        });
-      }
-    </script>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     
     <style>
         :root {
@@ -41,13 +29,7 @@
             --primary-hover: #2563eb;
             --header-materia-bg: #1e3a8a;
             --header-materia-text: #93c5fd;
-            --danger-bg: #ef4444;
-            --completed-bg: rgba(16, 185, 129, 0.15);
-            --completed-border: #10b981;
-            --completed-text: #34d399;
             --code-bg: #090d16;
-            --atrasado-bg: rgba(239, 68, 68, 0.1);
-            --atrasado-border: #ef4444;
         }
 
         body.light-mode {
@@ -59,12 +41,7 @@
             --primary-hover: #1d4ed8;
             --header-materia-bg: #e0e7ff;
             --header-materia-text: #1e3a8a;
-            --completed-bg: #d1fae5;
-            --completed-border: #10b981;
-            --completed-text: #065f46;
             --code-bg: #f1f5f9;
-            --atrasado-bg: #fee2e2;
-            --atrasado-border: #ef4444;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -85,11 +62,6 @@
         .header-brand { display: flex; align-items: center; gap: 12px; }
         .header-brand img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
 
-        .super-user-badge {
-            background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.75rem;
-            font-weight: 800; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-
         .concurso-selector-bar {
             display: flex; align-items: center; gap: 0.5rem; background: var(--card-bg);
             padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap;
@@ -107,9 +79,7 @@
             text-align: center; min-width: 130px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;
         }
         .action-bar .btn-action:hover { background-color: #64748b; }
-        .action-bar .btn-action.active-blue { 
-            background-color: var(--primary-blue) !important; border-color: #60a5fa !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); 
-        }
+        .action-bar .btn-action.active-blue { background-color: var(--primary-blue) !important; border-color: #60a5fa !important; }
 
         .nav-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; flex-wrap: wrap; }
         .tab-btn { background: transparent; border: none; color: var(--text-color); padding: 0.6rem 1.2rem; font-weight: 700; font-size: 1rem; cursor: pointer; border-radius: 6px; opacity: 0.6; transition: 0.2s; }
@@ -122,8 +92,7 @@
         .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
         .card h3 { margin-bottom: 1rem; color: var(--primary-blue); display: flex; align-items: center; gap: 0.5rem; }
 
-        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; transition: opacity 0.2s; }
-        .btn:hover { opacity: 0.9; }
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
         .btn-primary { background-color: var(--primary-blue); color: white; }
         .btn-secondary { background-color: #64748b; color: white; }
         .btn-success { background-color: #10b981; color: white; }
@@ -133,214 +102,46 @@
         .btn-warning { background-color: #f59e0b; color: white; }
         .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
-        input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--card-bg); color: var(--text-color); font-size: 0.95rem; outline: none; max-width: 100%; box-sizing: border-box; }
-        textarea { width: 100%; min-height: 120px; resize: vertical; line-height: 1.5; font-family: inherit; }
+        input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--card-bg); color: var(--text-color); font-size: 0.95rem; outline: none; width: 100%; }
+        textarea { resize: vertical; line-height: 1.5; font-family: inherit; }
 
         .timer-display { font-size: 4rem; font-weight: bold; text-align: center; margin: 0.5rem 0; letter-spacing: 2px; }
-        .timer-settings { display: flex; justify-content: center; align-items: center; gap: 1.2rem; margin-top: 1rem; font-size: 0.95rem; flex-wrap: wrap; }
-        .timer-settings label { display: flex; align-items: center; gap: 0.5rem; }
-        .timer-settings input { width: 85px !important; text-align: center; padding: 0.5rem 0.4rem; font-weight: 600; }
-
-        .weekly-hours-banner {
-            background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
-            padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 1.05rem;
-            color: var(--header-materia-text); margin-bottom: 1rem; display: flex;
-            justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
-        }
-
-        .delayed-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; }
-        .delayed-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
-        .delayed-title { font-size: 1.4rem; font-weight: 800; }
-        .badge-delayed { background: #ef4444; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
-
-        .filter-tabs { display: flex; gap: 8px; margin-bottom: 1rem; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; width: fit-content; }
-        .filter-tab { padding: 6px 16px; border-radius: 6px; border: none; background: transparent; color: var(--text-color); cursor: pointer; font-weight: 600; font-size: 0.9rem; }
-        .filter-tab.active { background: var(--card-bg); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
-        .delayed-card {
-            background: var(--card-bg); border: 1px solid var(--border-color); border-left: 5px solid #ef4444;
-            border-radius: 10px; padding: 1rem; margin-bottom: 0.8rem; display: flex;
-            justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
-        }
-        .delayed-card-info h4 { color: #ef4444; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 4px; }
-        .delayed-card-info p { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
-        .delayed-tag { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
-
         .month-calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: 700; color: var(--primary-blue); margin-bottom: 8px; }
         .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-
-        .month-day-cell {
-            background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);
-            border-radius: 8px; height: 140px; padding: 8px; display: flex; flex-direction: column;
-            gap: 4px; position: relative; cursor: pointer; overflow: hidden; transition: 0.2s;
-        }
-        .month-day-cell:hover { border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.05); }
-        .month-day-cell.other-month { opacity: 0.35; }
+        .month-day-cell { background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px; height: 130px; padding: 8px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; overflow: hidden; }
         .month-day-cell.today { border: 2px solid var(--primary-blue); background: rgba(59, 130, 246, 0.1); }
+        .day-num-header { display: flex; justify-content: space-between; font-weight: 800; font-size: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+        .day-badges-scroll { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; }
 
-        .day-num-header { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 2px; flex-shrink: 0; }
-        .day-badges-scroll { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; padding-right: 2px; }
-
-        .clean-subject-badge {
-            background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
-            color: #93c5fd; padding: 3px 6px; border-radius: 4px; font-size: 0.72rem;
-            font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        .clean-subject-badge { background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue); color: #93c5fd; padding: 3px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .clean-subject-badge.done { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #34d399; text-decoration: line-through; }
-        .clean-subject-badge.rev { background: rgba(245, 158, 11, 0.2); border-color: #f59e0b; color: #fcd34d; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
         .modal { background: var(--card-bg); color: var(--text-color); padding: 24px; border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
-        .modal-large { max-width: 900px; height: 88vh; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-        .form-group label { font-size: 0.85rem; font-weight: 600; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
-
-        .form-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
-        .form-row input[type="text"] { flex: 2; min-width: 180px; }
-        .form-row input[type="number"] { width: 90px; }
 
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.9rem; }
         th, td { padding: 0.75rem 0.5rem; border-bottom: 1px solid var(--border-color); }
         th { background-color: rgba(0,0,0,0.15); font-weight: 600; }
+        .materia-header-row td { padding: 0.8rem 1rem; font-size: 1rem; color: #ffffff; text-align: left; font-weight: bold; cursor: pointer; }
+        .priority-input { width: 55px; text-align: center; padding: 0.2rem; background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.3); }
 
-        .materia-header-row { font-weight: bold; cursor: pointer; text-align: left !important; user-select: none; }
-        .materia-header-row td { padding: 0.8rem 1rem; font-size: 1rem; color: #ffffff; }
-        .materia-header-content { display: flex; justify-content: space-between; align-items: center; }
-
-        .priority-input { width: 55px; text-align: center; padding: 0.2rem 0.4rem; background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.3); }
-
-        .prompt-code-box {
-            background-color: var(--code-bg); border: 1px solid var(--border-color);
-            border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: #38bdf8;
-            white-space: pre-wrap; word-break: break-word;
-        }
-
-        .import-info-box {
-            background: rgba(59, 130, 246, 0.08); border: 1px solid var(--primary-blue);
-            border-radius: 8px; padding: 1rem; margin-bottom: 1.2rem; font-size: 0.88rem; line-height: 1.5;
-        }
-        .import-info-box h4 { color: #93c5fd; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px; }
-        .import-info-box ul { margin-left: 1.2rem; margin-top: 0.4rem; }
-        .import-info-box code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #38bdf8; }
-
-        .flashcard-box {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
-            border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: flex;
-            justify-content: space-between; align-items: flex-start; gap: 1rem;
-        }
-        .flashcard-content { flex: 1; word-break: break-word; }
-        .flashcard-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-        .flashcard-badge-materia { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
-        .flashcard-badge-assunto { background: rgba(255,255,255,0.1); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
-
-        .anki-folder-card {
-            background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
-            border-radius: 10px; margin-bottom: 1rem; overflow: hidden;
-        }
-        .anki-folder-header {
-            background: rgba(59, 130, 246, 0.12); padding: 0.85rem 1.2rem; display: flex;
-            justify-content: space-between; align-items: center; cursor: pointer;
-            border-bottom: 1px solid var(--border-color); user-select: none;
-        }
-        .anki-folder-header:hover { background: rgba(59, 130, 246, 0.2); }
-        .anki-folder-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; color: #93c5fd; }
-        .anki-folder-count { background: var(--primary-blue); color: #fff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; }
-        .anki-subfolder-list { padding: 0.5rem 1rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
-        .anki-subfolder-item {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
-            padding: 0.6rem 1rem; border-radius: 6px; display: flex; justify-content: space-between;
-            align-items: center; cursor: pointer; transition: 0.2s;
-        }
-        .anki-subfolder-item:hover { border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.08); }
-        .anki-subfolder-item.active-filter { border-color: #10b981; background: rgba(16, 185, 129, 0.15); }
-
-        .study-card-container {
-            perspective: 1000px; width: 100%; min-height: 250px; display: flex;
-            justify-content: center; align-items: center; margin: 1rem 0; cursor: pointer;
-        }
-        .study-card-inner {
-            background: var(--card-bg); border: 2px solid var(--primary-blue); border-radius: 12px;
-            padding: 2rem; width: 100%; text-align: center; box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-            min-height: 220px; display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-
-        .note-card {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
-            border-radius: 10px; padding: 1.2rem; margin-bottom: 1rem;
-        }
-        .note-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-        .note-card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary-blue); }
-        .note-card-date { font-size: 0.8rem; color: #94a3b8; }
-        .note-card-body { font-size: 0.95rem; line-height: 1.6; white-space: pre-line; margin-bottom: 1rem; color: var(--text-color); }
-        .note-card-actions { display: flex; justify-content: flex-end; gap: 8px; }
-
-        .shift-box {
-            background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
-            padding: 8px 12px; border-radius: 8px; margin-bottom: 8px;
-            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
-        }
-
-        .chart-legend-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 10px; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);
-        }
-        .chart-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--text-color); }
-        .chart-legend-color { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
-
-        .day-topic-row {
-            background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
-            border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex;
-            justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
-        }
-
-        .weekday-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 12px 0; }
-        .weekday-btn {
-            background: var(--card-bg); border: 2px solid var(--border-color);
-            border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s ease;
-        }
-        .weekday-btn strong { display: block; font-size: 1.1rem; color: var(--text-color); }
-        .weekday-btn span { font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; }
-        .weekday-btn.selected {
-            border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.15); box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
-        }
-
-        .hours-option-card {
-            background: rgba(0,0,0,0.2); border: 2px solid var(--border-color);
-            border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;
-        }
-        .hours-option-card:hover { border-color: var(--primary-blue); }
-        .hours-option-card.selected { border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.15); }
-
-        .edit-selector-box {
-            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--primary-blue);
-            padding: 12px; border-radius: 8px; margin-top: 8px; width: 100%;
-            display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        @media (max-width: 768px) {
-            .grid-top { grid-template-columns: 1fr; }
-            .month-grid { grid-template-columns: repeat(1, 1fr); }
-            .month-calendar-header { display: none; }
-            .month-day-cell { height: auto; min-height: 100px; }
-            .weekday-picker { grid-template-columns: repeat(4, 1fr); }
-        }
+        .flashcard-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+        .note-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 1.2rem; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
 
-    <div id="offline-banner">Modo Offline - As alterações serão salvas localmente e sincronizadas quando houver conexão.</div>
+    <div id="offline-banner">Modo Offline - As alterações estão sendo salvas localmente e serão sincronizadas com o Supabase ao reconectar.</div>
 
-    <!-- AUTH SCREEN -->
+    <!-- TELA DE AUTENTICAÇÃO -->
     <div id="auth-screen" class="auth-container">
         <div class="auth-card">
             <h2>Entrar no Sistema</h2>
             <div style="margin-bottom: 1rem;">
-                <input type="email" id="email" placeholder="seu@email.com" style="width:100%; margin-bottom: 0.5rem;" required>
-                <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" style="width:100%;" required>
+                <input type="email" id="email" placeholder="seu@email.com" style="margin-bottom: 0.5rem;" required>
+                <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" required>
             </div>
             <div style="display:flex; gap:0.5rem;">
                 <button class="btn btn-primary" style="flex:1;" onclick="handleLogin()">Entrar</button>
@@ -349,40 +150,32 @@
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD -->
+    <!-- PAINEL PRINCIPAL -->
     <div id="app-dashboard">
         <header>
             <div class="header-brand">
-                <img src="icon-192.png" alt="Símbolo Estudos">
+                <img src="icon-192.png" alt="Símbolo">
                 <h2>Painel de Estudos</h2>
-                <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
             </div>
             
             <div class="concurso-selector-bar">
                 <label><strong>Concurso:</strong></label>
                 <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
                 <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
-                <button class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
                 <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">Excluir</button>
-                
-                <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
-                    Sem data de prova
-                </div>
+                <div id="countdownBadge" class="countdown-badge">Sem data de prova</div>
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
-            <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora</button>
-            <button class="btn-action" onclick="handleActionButton(this, openModalViewEdital)">Ver / Anexar Edital PDF</button>
+            <button class="btn-action" onclick="forceFullSync(event)">Sincronizar Tudo na Nuvem</button>
             <label class="btn-action" style="cursor: pointer;">
                 Importar JSON
-                <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="handleActionButton(this.parentElement, importJSON, event)">
+                <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="importJSON(event)">
             </label>
-            <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
-            <button class="btn-action" onclick="handleActionButton(this, clearData)">Limpar Edital Atual</button>
-            <button class="btn-action" onclick="handleActionButton(this, toggleDarkMode)">Modo Claro/Escuro</button>
-            <button class="btn-action" onclick="handleActionButton(this, handleLogout)">Sair</button>
+            <button class="btn-action" onclick="clearData()">Limpar Edital Atual</button>
+            <button class="btn-action" onclick="toggleDarkMode()">Modo Claro/Escuro</button>
+            <button class="btn-action" onclick="handleLogout()">Sair</button>
         </div>
 
         <div class="nav-tabs">
@@ -398,44 +191,30 @@
                 <div class="card">
                     <h3>Relógio Pomodoro</h3>
                     <div class="timer-display" id="timer">25:00</div>
-                    <div style="text-align: center; margin-bottom: 1rem;">
+                    <div style="text-align: center;">
                         <button class="btn btn-primary" onclick="startTimer()">Iniciar</button>
                         <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
                     </div>
-                    <div class="timer-settings">
-                        <label>Foco (min): <input type="number" id="focoMin" value="25" min="1" onchange="updateTimerSettings()"></label>
-                        <label>Pausa (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
-                    </div>
                 </div>
-
                 <div class="card">
-                    <h3>Progresso Geral de Estudo (%)</h3>
-                    <canvas id="progressChart" height="150"></canvas>
-                    <div class="chart-legend-grid" id="chartLegendGrid"></div>
+                    <h3>Progresso Geral (%)</h3>
+                    <canvas id="progressChart" height="130"></canvas>
                 </div>
             </div>
 
             <div class="card">
                 <h3 id="edital-title">Edital Agrupado por Matéria</h3>
-                
-                <form class="form-row" onsubmit="addManualItem(event)">
-                    <input type="text" id="materia" placeholder="Matéria (ex: Direito Administrativo)" required>
-                    <input type="text" id="assunto" placeholder="Assunto (ex: Atos Administrativos)" required>
-                    <input type="number" id="prioridade" placeholder="Prioridade" value="1" min="1">
-                    <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
+                <form class="action-bar" style="margin-bottom:1rem;" onsubmit="addManualItem(event)">
+                    <input type="text" id="materia" placeholder="Matéria" required style="flex:1;">
+                    <input type="text" id="assunto" placeholder="Assunto" required style="flex:2;">
+                    <input type="number" id="prioridade" placeholder="Prio" value="1" min="1" style="width:80px;">
+                    <button type="submit" class="btn btn-primary">Adicionar</button>
                 </form>
-
-                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                    <button class="btn btn-danger btn-sm" onclick="excluirMateriaEspecifica()">Excluir Matéria</button>
-                    <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">Expandir Todas as Guias</button>
-                    <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">Recolher Todas as Guias</button>
-                </div>
-
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 90px;">Prioridade</th>
+                                <th style="width: 80px;">Prio</th>
                                 <th style="text-align: left; padding-left: 1rem;">Assunto</th>
                                 <th>Teoria</th>
                                 <th>Questões</th>
@@ -451,44 +230,17 @@
             </div>
         </div>
 
-        <!-- TAB 2: CRONOGRAMA MENSAL EM GRADE -->
+        <!-- TAB 2: CRONOGRAMA MENSAL -->
         <div id="tab-calendario" class="tab-content">
-            <div class="delayed-panel">
-                <div class="delayed-header">
-                    <span class="delayed-title">Revisões / Matérias Agendadas</span>
-                    <span class="badge-delayed" id="delayedBadgeCount">0 pendentes</span>
-                </div>
-
-                <div class="filter-tabs">
-                    <button class="filter-tab active" onclick="filterDelayedList('hoje', this)">Hoje</button>
-                    <button class="filter-tab" onclick="filterDelayedList('atrasadas', this)">Atrasadas</button>
-                    <button class="filter-tab" onclick="filterDelayedList('proximas', this)">Próximas</button>
-                </div>
-
-                <div id="delayedItemsContainer"></div>
-            </div>
-
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-                    <h3>Cronograma Mensal em Grade</h3>
-
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap:10px;">
+                    <h3>Cronograma Mensal</h3>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <label><strong>Mês/Ano:</strong></label>
                         <select id="monthSelect" onchange="onMonthYearChange()"></select>
                         <select id="yearSelect" onchange="onMonthYearChange()"></select>
                     </div>
-
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="openModalSelectCronogramaType()">Preencher Cronograma Automaticamente</button>
-                        <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Mês Atual</button>
-                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="limparCronogramaMesAtual()">Limpar Mês Atual</button>
                 </div>
-
-                <div class="weekly-hours-banner">
-                    <span>Planejamento Visual do Mês:</span>
-                    <span id="weeklyHoursTotal">Sincronizado na Nuvem</span>
-                </div>
-
                 <div class="month-calendar-header">
                     <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
                 </div>
@@ -499,16 +251,13 @@
         <!-- TAB 3: ANOTAÇÕES -->
         <div id="tab-anotacoes" class="tab-content">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-                    <h3>Anotações e Caderno de Resumos</h3>
-                    <button class="btn btn-primary" onclick="openModalNovaNota()">+ Incluir Nota</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Caderno de Resumos e Anotações</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openModalNovaNota()">+ Nova Nota</button>
                 </div>
-
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label><strong>Selecione a Matéria:</strong></label>
+                <div style="margin-bottom: 1rem;">
                     <select id="notesMateriaSelect" onchange="renderNotesList()"></select>
                 </div>
-
                 <div id="notesContainer"></div>
             </div>
         </div>
@@ -516,347 +265,30 @@
         <!-- TAB 4: FLASHCARDS -->
         <div id="tab-flashcards" class="tab-content">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-                    <h3>Flashcards e Estudo Ativo</h3>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
-                        <button class="btn btn-info" onclick="openModalFiltroEstudoFlashcards()">🎯 Estudar Matéria / Assunto Específico</button>
+                <h3>Flashcards</h3>
+                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem;">
+                    <div style="display:flex; gap:10px;">
+                        <select id="fcMateriaSelect" style="flex:1;"><option value="">Selecione a Matéria</option></select>
                     </div>
-                </div>
-
-                <div class="import-info-box">
-                    <h4>💡 Como importar suas perguntas sem erros de formatação:</h4>
-                    <p>Você pode colar o texto diretamente na caixa abaixo estruturado assim:</p>
-                    <ul>
-                        <li><strong>Linha a linha (com P: e R:):</strong><br>
-                            <code>P: Qual a capital do Ceará?</code><br>
-                            <code>R: Fortaleza</code>
-                        </li>
-                        <li><strong>Separado por ponto e vírgula ou vírgula:</strong><br>
-                            <code>Qual a capital do Ceará?; Fortaleza</code>
-                        </li>
-                    </ul>
-                </div>
-
-                <div style="background: rgba(0,0,0,0.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem;">
-                    <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">📋 Importação Rápida via Texto (Colar em Lote)</h4>
-                    <p style="font-size: 0.85rem; opacity: 0.85; margin-bottom: 10px;">Cole o bloco de texto com suas perguntas e respostas abaixo e clique no botão para convertê-las automaticamente:</p>
-                    <textarea id="fcPasteTextArea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza" style="min-height: 120px; font-family: monospace; font-size: 0.88rem; margin-bottom: 10px;"></textarea>
-                    <button class="btn btn-success" onclick="processPastedFlashcardsText()">⚡ Converter Texto em Flashcards</button>
-                </div>
-
-                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <select id="fcMateriaSelect" onchange="updateFcAssuntoOptions()" style="flex:1; min-width: 180px;">
-                            <option value="">Selecione a Matéria (Opcional)</option>
-                        </select>
-                        <select id="fcAssuntoSelect" style="flex:1; min-width: 180px;">
-                            <option value="">Selecione o Assunto (Opcional)</option>
-                        </select>
-                    </div>
-                    <input type="text" id="fcPergunta" placeholder="Frente / Pergunta (ex: Qual o prazo do recurso?)" required>
-                    <input type="text" id="fcResposta" placeholder="Verso / Resposta (ex: 15 dias úteis)" required>
-                    <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard Individual</button>
+                    <input type="text" id="fcPergunta" placeholder="Pergunta / Frente" required>
+                    <input type="text" id="fcResposta" placeholder="Resposta / Verso" required>
+                    <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard</button>
                 </form>
-
-                <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                    <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px;">
-                        📁 Baralhos / Pastas de Flashcards (Estilo Anki)
-                    </h4>
-                    <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" onclick="setFlashcardViewFilter('', '')" style="display: none;">
-                        📁 Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
-                    </button>
-                </div>
-
-                <div id="flashcardFoldersContainer" style="margin-bottom: 1.5rem;"></div>
-
                 <div id="flashcardsContainer"></div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
-    <div class="modal-overlay" id="modalFiltroEstudoFC">
-        <div class="modal">
-            <h3>🎯 Estudo Focado de Flashcards</h3>
-            <p style="font-size:0.88rem; color:#94a3b8;">Escolha a matéria e/ou assunto específico que você deseja revisar agora:</p>
-            
-            <div class="form-group">
-                <label>Matéria para Estudo:</label>
-                <select id="studyFilterMateria" onchange="updateStudyFilterAssuntoOptions()">
-                    <option value="">Todas as Matérias</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Assunto Específico (Opcional):</label>
-                <select id="studyFilterAssunto">
-                    <option value="">Todos os Assuntos</option>
-                </select>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalFiltroEstudoFlashcards()">Cancelar (ESC)</button>
-                <button class="btn btn-purple" onclick="startFilteredStudyModal()">Iniciar Treino Focado 🚀</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL EDITAR FLASHCARD -->
-    <div class="modal-overlay" id="modalEditarFlashcard">
-        <div class="modal">
-            <h3>Editar Flashcard</h3>
-            <div class="form-group">
-                <label>Matéria (Opcional)</label>
-                <input type="text" id="editFcMateria">
-            </div>
-            <div class="form-group">
-                <label>Assunto (Opcional)</label>
-                <input type="text" id="editFcAssunto">
-            </div>
-            <div class="form-group">
-                <label>Frente / Pergunta</label>
-                <textarea id="editFcPergunta" style="min-height:80px;"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Verso / Resposta</label>
-                <textarea id="editFcResposta" style="min-height:80px;"></textarea>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalEditarFlashcard()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="salvarEdicaoFlashcard()">Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL SELEÇÃO DO TIPO DE PREENCHIMENTO DO CRONOGRAMA -->
-    <div class="modal-overlay" id="modalSelectCronogramaType">
-        <div class="modal">
-            <h3>Escolha o Método de Preenchimento</h3>
-            <p style="font-size:0.9rem; opacity:0.85;">Selecione como prefere planejar sua rotina de estudos:</p>
-
-            <div style="display:flex; flex-direction:column; gap:12px; margin: 10px 0;">
-                <div class="hours-option-card" onclick="chooseCronogramaType(1)">
-                    <div>
-                        <strong>Preenchimento 1: Horários Definidos por Turnos</strong>
-                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Define início e carga horária exata para Manhã, Tarde e Noite.</p>
-                    </div>
-                    ➔
-                </div>
-
-                <div class="hours-option-card" onclick="chooseCronogramaType(2)">
-                    <div>
-                        <strong>Preenchimento 2: Dias da Semana + Carga Horária Diária</strong>
-                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Selecione os dias ativos e a quantidade de horas gerais disponíveis.</p>
-                    </div>
-                    ➔
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalSelectCronogramaType()">Cancelar (ESC)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL MÉTODO 2: DIAS DA SEMANA E CARGA HORÁRIA -->
-    <div class="modal-overlay" id="modalMentorisMethod">
-        <div class="modal modal-large">
-            <h3>Configurar Rotina Semanal e Revisão Espaçada</h3>
-            
-            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
-                <label><strong>Data de Início do Cronograma:</strong></label>
-                <input type="date" id="m2DataInicio">
-            </div>
-
-            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Quais dias você pode estudar?</h4>
-            <div class="weekday-picker">
-                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 0)"><strong>D</strong><span>DOM</span></div>
-                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 1)"><strong>S</strong><span>SEG</span></div>
-                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 2)"><strong>T</strong><span>TER</span></div>
-                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 3)"><strong>Q</strong><span>QUA</span></div>
-                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 4)"><strong>Q</strong><span>QUI</span></div>
-                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 5)"><strong>S</strong><span>SEX</span></div>
-                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 6)"><strong>S</strong><span>SÁB</span></div>
-            </div>
-
-            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Quanto tempo por dia você consegue estudar?</h4>
-            <div id="hoursSelectionContainer">
-                <div class="hours-option-card" onclick="selectHoursOption(this, 1)"><span>⏱️ Menos de 1h por dia</span></div>
-                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)"><span>⏱️ Entre 1h e 2h por dia</span></div>
-                <div class="hours-option-card" onclick="selectHoursOption(this, 3)"><span>⏱️ Entre 2h a 4h por dia</span></div>
-                <div class="hours-option-card" onclick="selectHoursOption(this, 5)"><span>🔥 Acima de 4h (Modo Hardcore)</span></div>
-            </div>
-
-            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
-            <div class="form-group">
-                <select id="m2RevisionStrategy" style="width:100%;">
-                    <option value="nenhuma">Sem Revisão Espaçada</option>
-                    <option value="classica">Revisão Clássica (Dias: 7, 30, 90)</option>
-                    <option value="bimestral">Revisão Bimestral (Dias: 1, 15, 30, 60)</option>
-                    <option value="curta">Revisão Curta (Dias: 7, 14, 21, 30)</option>
-                    <option value="semestral">Revisão Semestral (Dias: 1, 7, 28, 90, 180)</option>
-                    <option value="intensiva">Revisão Intensiva (Dias: 3, 7, 14, 21, 30, 45, 60)</option>
-                </select>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalMentorisMethod()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="gerarCronogramaMetodo2()">Gerar Cronograma 🚀</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL CONFIGURAR HORÁRIOS E TURNOS (MÉTODO 1) -->
-    <div class="modal-overlay" id="modalConfigHorarios">
-        <div class="modal modal-large">
-            <h3>Configurar Horários e Turnos de Estudo (Método 1)</h3>
-            <p style="font-size:0.9rem; opacity:0.85;">
-                Configure seus horários de estudo. O sistema alocará <strong>100% dos tópicos organizados por PRIORIDADE</strong>.
-            </p>
-
-            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
-                <label><strong>Data de Início do Cronograma:</strong></label>
-                <input type="date" id="cfgDataInicio">
-            </div>
-
-            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Horários Padrão (Segunda a Sexta):</h4>
-            <div class="shift-box">
-                <span><strong>Manhã Início:</strong> <input type="time" id="cfgManhaInicio" value="10:00"></span>
-                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgManhaQtd" value="1" min="0" max="12" style="width:70px;"></span>
-            </div>
-            <div class="shift-box">
-                <span><strong>Tarde Início:</strong> <input type="time" id="cfgTardeInicio" value="13:00"></span>
-                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgTardeQtd" value="1" min="0" max="12" style="width:70px;"></span>
-            </div>
-            <div class="shift-box">
-                <span><strong>Noite Início:</strong> <input type="time" id="cfgNoiteInicio" value="21:00"></span>
-                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgNoiteQtd" value="1" min="0" max="12" style="width:70px;"></span>
-            </div>
-
-            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Dias de Estudo no Fim de Semana:</h4>
-            <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
-                <label><input type="checkbox" id="cfgIncluirSabado" checked> Incluir Sábado</label>
-                <label><input type="checkbox" id="cfgIncluirDomingo" checked> Incluir Domingo</label>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma 🚀</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL GERENCIAR CONTEÚDO DO DIA -->
-    <div class="modal-overlay" id="modalDayContent">
-        <div class="modal">
-            <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
-            <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
-            <div id="dayTopicsContainer"></div>
-            <div id="addNewTopicArea" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
-                <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico a Este Dia</button>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL INCLUIR / EDITAR NOTA -->
+    <!-- MODAL NOVA NOTA -->
     <div class="modal-overlay" id="modalNovaNota">
         <div class="modal">
-            <h3 id="modalNotaTitle">Nova Nota</h3>
-            <div class="form-group">
-                <label><strong>Matéria Vinculada:</strong></label>
-                <select id="inputNotaMateria"></select>
-            </div>
-            <div class="form-group">
-                <label><strong>Título da Anotação:</strong></label>
-                <input type="text" id="inputNotaTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes...">
-            </div>
-            <div class="form-group">
-                <label><strong>Conteúdo / Resumo / Dicas:</strong></label>
-                <textarea id="inputNotaConteudo" placeholder="Digite aqui o conteúdo da sua nota..." style="min-height:180px;"></textarea>
-            </div>
+            <h3>Nova Anotação</h3>
+            <select id="inputNotaMateria"></select>
+            <input type="text" id="inputNotaTitulo" placeholder="Título da Anotação">
+            <textarea id="inputNotaConteudo" placeholder="Conteúdo da nota..." style="min-height:150px;"></textarea>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalNovaNota()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="salvarNota()">Salvar Nota (ENTER)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL ESTUDO FLASHCARDS EMBARALHADOS -->
-    <div class="modal-overlay" id="modalStudyFlashcards">
-        <div class="modal">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 id="studyModalTitle">Sessão de Estudos</h3>
-                <span id="studyModalProgress" style="font-weight:700; color:var(--primary-blue);">0 / 0</span>
-            </div>
-            <div class="flashcard-meta" id="studyCardMeta"></div>
-            <div class="study-card-container" onclick="toggleStudyCardAnswer()">
-                <div class="study-card-inner">
-                    <p style="font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;" id="studyCardLabel">Pergunta (Clique para virar)</p>
-                    <h3 id="studyCardText" style="font-size:1.25rem; font-weight:700;"></h3>
-                </div>
-            </div>
-            <div class="modal-actions" style="justify-content:space-between; width:100%;">
-                <button class="btn btn-secondary" onclick="closeStudyModal()">Sair do Treino</button>
-                <div style="display:flex; gap:8px;">
-                    <button class="btn btn-info" onclick="toggleStudyCardAnswer()">Virar Cartão</button>
-                    <button class="btn btn-primary" onclick="nextStudyCard()">Próximo ➔</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL VIEW EDITAL PDF -->
-    <div class="modal-overlay" id="modalViewEdital">
-        <div class="modal modal-large">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <h3 id="editalModalTitle">Documento do Edital</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <label class="btn btn-success btn-sm" style="cursor: pointer;">
-                        Anexar Novo Arquivo
-                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" style="display: none;" onchange="uploadEditalFile(event)">
-                    </label>
-                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">Baixar Arquivo</button>
-                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Apagar Edital</button>
-                </div>
-            </div>
-            <div id="editalViewerContainer" style="flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
-                <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL PROMPT IA -->
-    <div class="modal-overlay" id="modalPromptIA">
-        <div class="modal">
-            <h3>Prompt para Colar na IA</h3>
-            <div class="prompt-code-box" id="promptTextToCopy">Prompt:
-
-"Analise o edital/conteúdo programático em anexo e o histórico da banca examinadora [Insira a Banca]. Gere como resposta apenas um código JSON válido seguindo estritamente o formato:
-
-{
-  "concurso": "Nome do Concurso",
-  "materias": [
-    {
-      "materia": "Nome da Matéria",
-      "prioridade": 1,
-      "peso": 2.0,
-      "assuntos": [
-        "Assunto 1 mais cobrado",
-        "Assunto 2 mais cobrado"
-      ]
-    }
-  ]
-}"</div>
-            <div class="modal-actions">
-                <button class="btn btn-primary" onclick="copyPromptToClipboard()">Copiar Prompt (ENTER)</button>
-                <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar (ESC)</button>
+                <button class="btn btn-secondary" onclick="closeModalNovaNota()">Cancelar</button>
+                <button class="btn btn-success" onclick="salvarNota()">Salvar</button>
             </div>
         </div>
     </div>
@@ -865,17 +297,11 @@
     <div class="modal-overlay" id="modalNovoConcurso">
         <div class="modal">
             <h3>Cadastrar Novo Concurso</h3>
-            <div class="form-group">
-                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
-                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
-            </div>
-            <div class="form-group">
-                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
-                <input type="date" id="inputDataConcurso">
-            </div>
+            <input type="text" id="inputNomeConcurso" placeholder="Nome do Concurso / Cargo">
+            <input type="date" id="inputDataConcurso">
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
+                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar</button>
             </div>
         </div>
     </div>
@@ -888,514 +314,305 @@
             auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
 
-        const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        const PALETA_CORES_MATERIAS = [
-            'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
-            'linear-gradient(135deg, #14532d 0%, #22c55e 100%)',
-            'linear-gradient(135deg, #701a75 0%, #c084fc 100%)',
-            'linear-gradient(135deg, #7c2d12 0%, #f97316 100%)',
-            'linear-gradient(135deg, #831843 0%, #ec4899 100%)'
-        ];
-        const PALETA_SOLIDAS = ['#3b82f6', '#22c55e', '#c084fc', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
-
-        const STRATEGIES_MAP = {
-            nenhuma: [],
-            classica: [7, 30, 90],
-            bimestral: [1, 15, 30, 60],
-            curta: [7, 14, 21, 30],
-            semestral: [1, 7, 28, 90, 180],
-            intensiva: [3, 7, 14, 21, 30, 45, 60]
-        };
-
         let currentUser = null;
-        let isSuperUser = false;
-        let myChart = null;
         let allEditalItems = [];
         let editalItems = [];
-        let openMaterias = {}; 
-        let currentConcurso = localStorage.getItem('last_studied_concurso') || 'Concurso Geral';
-        let metadataCache = {};
         let flashcardsList = [];
-        let activeObjectUrl = null;
-        let currentDelayedFilter = 'hoje';
-        let activeSelectedDateKey = null;
-
-        let studyQueue = [];
-        let currentStudyIdx = 0;
-        let showingAnswer = false;
-        let currentEditingNoteIndex = null;
-        let editingFcIndex = null;
-
-        let openFcFolders = {};
-        let activeFcMateriaFilter = '';
-        let activeFcAssuntoFilter = '';
-
+        let metadataCache = {};
+        let currentConcurso = localStorage.getItem('last_studied_concurso') || 'Concurso Geral';
+        let myChart = null;
         let selectedMonth = new Date().getMonth();
         let selectedYear = new Date().getFullYear();
-
-        let selectedWeekdays = [0, 1, 2, 3, 4, 5, 6];
-        let selectedDailyHoursSlots = 2;
-
-        function handleActionButton(btnElem, actionFn, eventArg) {
-            document.querySelectorAll('.action-bar .btn-action').forEach(b => b.classList.remove('active-blue'));
-            if (btnElem) btnElem.classList.add('active-blue');
-            if (typeof actionFn === 'function') actionFn(eventArg);
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModalSelectCronogramaType();
-                closeModalMentorisMethod();
-                closeModalConfigHorarios();
-                closeModalNovaNota();
-                closeStudyModal();
-                closeModalViewEdital();
-                closeModalPromptIA();
-                closeModalNovoConcurso();
-                closeModalDayContent();
-                closeModalEditarFlashcard();
-                closeModalFiltroEstudoFlashcards();
-            } else if (e.key === 'Enter' && !e.shiftKey) {
-                if (document.getElementById('auth-screen').style.display !== 'none') {
-                    handleLogin();
-                } else if (document.getElementById('modalNovoConcurso').style.display === 'flex') {
-                    confirmarNovoConcurso();
-                } else if (document.getElementById('modalNovaNota').style.display === 'flex') {
-                    salvarNota();
-                } else if (document.getElementById('modalConfigHorarios').style.display === 'flex') {
-                    gerarCronogramaInteligente();
-                } else if (document.getElementById('modalMentorisMethod').style.display === 'flex') {
-                    gerarCronogramaMetodo2();
-                } else if (document.getElementById('modalPromptIA').style.display === 'flex') {
-                    copyPromptToClipboard();
-                } else if (document.getElementById('modalEditarFlashcard').style.display === 'flex') {
-                    salvarEdicaoFlashcard();
-                }
-            }
-        });
 
         function updateOnlineStatus() {
             const banner = document.getElementById('offline-banner');
             if (!navigator.onLine) banner.style.display = 'block';
-            else { banner.style.display = 'none'; syncAllWithSupabase(); }
+            else { banner.style.display = 'none'; forceFullSync(); }
         }
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
 
-        function getConcursosMetadataStorageKey() {
-            const uid = currentUser ? currentUser.id : 'guest';
-            return `concursos_metadata_${uid}`;
+        // --- GERENCIAMENTO DE METADADOS (CRONOGRAMA E NOTAS) VIA USER_SETTINGS ---
+        function getMetadataKey() { return `metadata_${currentUser ? currentUser.id : 'guest'}`; }
+        function getLocalMetadata() {
+            try { return JSON.parse(localStorage.getItem(getMetadataKey()) || '{}'); } catch(e) { return {}; }
         }
-
-        function getConcursosMetadata() {
-            try { return JSON.parse(localStorage.getItem(getConcursosMetadataStorageKey()) || '{}'); }
-            catch(e) { return {}; }
-        }
-
-        async function saveConcursosMetadata(data) {
+        async function saveMetadata(data) {
             metadataCache = data;
-            const key = getConcursosMetadataStorageKey();
-            localStorage.setItem(key, JSON.stringify(data));
-
+            localStorage.setItem(getMetadataKey(), JSON.stringify(data));
             if (navigator.onLine && currentUser) {
                 try {
                     await supabaseClient.from('user_settings').upsert({
                         user_id: currentUser.id,
-                        setting_key: 'concursos_metadata',
+                        setting_key: 'app_metadata',
                         setting_value: data,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'user_id,setting_key' });
-                } catch(err) { console.warn('Erro salvando no Supabase:', err); }
+                } catch(e) { console.warn('Erro ao salvar metadados na nuvem:', e); }
             }
         }
 
-        async function loadConcursosMetadata() {
-            loadLocalMetadata();
+        async function loadMetadata() {
+            metadataCache = getLocalMetadata();
             if (navigator.onLine && currentUser) {
                 try {
                     const { data, error } = await supabaseClient
                         .from('user_settings')
                         .select('setting_value')
                         .eq('user_id', currentUser.id)
-                        .eq('setting_key', 'concursos_metadata')
+                        .eq('setting_key', 'app_metadata')
                         .maybeSingle();
-
                     if (!error && data && data.setting_value) {
                         metadataCache = data.setting_value;
-                        localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadataCache));
+                        localStorage.setItem(getMetadataKey(), JSON.stringify(metadataCache));
                     }
-                } catch(e) { console.log('Sincronização offline'); }
+                } catch(e) { console.log('Carregado offline'); }
             }
         }
 
-        function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
-
-        function openModalSelectCronogramaType() { document.getElementById('modalSelectCronogramaType').style.display = 'flex'; }
-        function closeModalSelectCronogramaType() { document.getElementById('modalSelectCronogramaType').style.display = 'none'; }
-        function chooseCronogramaType(typeNum) {
-            closeModalSelectCronogramaType();
-            if (typeNum === 1) openModalConfigHorarios();
-            else openModalMentorisMethod();
-        }
-
-        function openModalMentorisMethod() {
-            document.getElementById('m2DataInicio').value = new Date().toISOString().split('T')[0];
-            document.getElementById('modalMentorisMethod').style.display = 'flex';
-        }
-        function closeModalMentorisMethod() { document.getElementById('modalMentorisMethod').style.display = 'none'; }
-
-        function toggleWeekdaySelect(elem, dayIdx) {
-            elem.classList.toggle('selected');
-            if (selectedWeekdays.includes(dayIdx)) selectedWeekdays = selectedWeekdays.filter(d => d !== dayIdx);
-            else selectedWeekdays.push(dayIdx);
-        }
-
-        function selectHoursOption(elem, slots) {
-            document.querySelectorAll('#hoursSelectionContainer .hours-option-card').forEach(c => c.classList.remove('selected'));
-            elem.classList.add('selected');
-            selectedDailyHoursSlots = slots;
-        }
-
-        function applySpacedRevisions(dateSchedule, baseDateObj, topicText, strategyKey) {
-            const daysOffset = STRATEGIES_MAP[strategyKey] || STRATEGIES_MAP.classica;
-            daysOffset.forEach(offset => {
-                let revDate = new Date(baseDateObj);
-                revDate.setDate(revDate.getDate() + offset);
-                const revKey = `${revDate.getFullYear()}-${String(revDate.getMonth() + 1).padStart(2, '0')}-${String(revDate.getDate()).padStart(2, '0')}`;
-                if (!dateSchedule[revKey]) dateSchedule[revKey] = [];
-                const revText = `🔄 Rev (${offset}d): ${topicText}`;
-                if (!dateSchedule[revKey].includes(revText)) dateSchedule[revKey].push(revText);
-            });
-        }
-
-        function getSortedEditalItems() {
-            return [...editalItems].sort((a, b) => {
-                const prioMatA = a.prioridade || 1;
-                const prioMatB = b.prioridade || 1;
-                if (prioMatA !== prioMatB) return prioMatA - prioMatB;
-                const prioAssA = a.assunto_prioridade || 1;
-                const prioAssB = b.assunto_prioridade || 1;
-                return prioAssA - prioAssB;
-            });
-        }
-
-        async function gerarCronogramaMetodo2() {
-            if (editalItems.length === 0) return alert('Sua lista de edital está vazia.');
-            if (selectedWeekdays.length === 0) return alert('Selecione pelo menos um dia de estudo na semana.');
-            const dataInicioStr = document.getElementById('m2DataInicio').value;
-            if (!dataInicioStr) return alert('Escolha a data de início.');
-
-            const strategyKey = document.getElementById('m2RevisionStrategy').value;
-            const sortedByPriority = getSortedEditalItems();
-            let currDate = new Date(dataInicioStr + "T00:00:00");
-            let itemIdx = 0;
-
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            metadata[currentConcurso].dateSchedule = {};
-
-            while (itemIdx < sortedByPriority.length) {
-                const dayOfWeek = currDate.getDay();
-                if (selectedWeekdays.includes(dayOfWeek)) {
-                    const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
-                    if (!metadata[currentConcurso].dateSchedule[dateKey]) metadata[currentConcurso].dateSchedule[dateKey] = [];
-                    for (let s = 0; s < selectedDailyHoursSlots; s++) {
-                        if (itemIdx < sortedByPriority.length) {
-                            const it = sortedByPriority[itemIdx];
-                            const topicText = `${it.materia} - ${it.assunto}`;
-                            metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
-                            applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
-                            itemIdx++;
-                        }
-                    }
+        // --- CARREGAMENTO GERAL E SINCRONIZAÇÃO COMPLETA ---
+        async function forceFullSync() {
+            if (!currentUser) return;
+            try {
+                // 1. Sincronizar Edital
+                const { data: editalData } = await supabaseClient.from('edital').select('*').eq('user_id', currentUser.id);
+                if (editalData) {
+                    allEditalItems = editalData.map(i => ({ ...i, id: String(i.id), concurso: i.concurso || 'Concurso Geral' }));
+                    localStorage.setItem(`edital_${currentUser.id}`, JSON.stringify(allEditalItems));
                 }
-                currDate.setDate(currDate.getDate() + 1);
-            }
 
-            await saveConcursosMetadata(metadata);
-            closeModalMentorisMethod();
-            renderMonthCalendar();
-            alert('Cronograma Método 2 gerado com sucesso!');
-        }
-
-        async function gerarCronogramaInteligente() {
-            if (editalItems.length === 0) return alert('Sua lista de edital está vazia.');
-            const dataInicioStr = document.getElementById('cfgDataInicio').value;
-            if (!dataInicioStr) return alert('Escolha a data de início.');
-
-            const strategyKey = document.getElementById('m1RevisionStrategy').value;
-            const sortedByPriority = getSortedEditalItems();
-            const incSab = document.getElementById('cfgIncluirSabado').checked;
-            const incDom = document.getElementById('cfgIncluirDomingo').checked;
-
-            let currDate = new Date(dataInicioStr + "T00:00:00");
-            let itemIdx = 0;
-
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            metadata[currentConcurso].dateSchedule = {};
-
-            while (itemIdx < sortedByPriority.length) {
-                const dayOfWeek = currDate.getDay();
-                let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-                let canStudy = true;
-                if (dayOfWeek === 6 && !incSab) canStudy = false;
-                if (dayOfWeek === 0 && !incDom) canStudy = false;
-
-                if (canStudy) {
-                    const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
-                    const slots = isWeekend ? 3 : 2;
-                    if (!metadata[currentConcurso].dateSchedule[dateKey]) metadata[currentConcurso].dateSchedule[dateKey] = [];
-                    for (let s = 0; s < slots; s++) {
-                        if (itemIdx < sortedByPriority.length) {
-                            const it = sortedByPriority[itemIdx];
-                            const topicText = `${it.materia} - ${it.assunto}`;
-                            metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
-                            applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
-                            itemIdx++;
-                        }
-                    }
+                // 2. Sincronizar Flashcards
+                const { data: fcData } = await supabaseClient.from('flashcards').select('*').eq('user_id', currentUser.id);
+                if (fcData) {
+                    flashcardsList = fcData.map(f => ({ id: String(f.id), concurso: f.concurso, materia: f.materia, assunto: f.assunto, pergunta: f.pergunta, resposta: f.resposta }));
+                    localStorage.setItem(`fc_${currentUser.id}`, JSON.stringify(flashcardsList));
                 }
-                currDate.setDate(currDate.getDate() + 1);
+
+                // 3. Sincronizar Metadados (Cronograma e Notas)
+                await loadMetadata();
+                filterDataByConcurso();
+                renderMonthCalendar();
+                loadNotesData();
+                renderFlashcards();
+            } catch(e) { console.warn('Erro na sincronização completa:', e); }
+        }
+
+        async function loadData() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            const localEdital = localStorage.getItem(`edital_${uid}`);
+            if (localEdital) {
+                try { allEditalItems = JSON.parse(localEdital); } catch(e) { allEditalItems = []; }
+            }
+            const localFc = localStorage.getItem(`fc_${uid}`);
+            if (localFc) {
+                try { flashcardsList = JSON.parse(localFc); } catch(e) { flashcardsList = []; }
             }
 
-            await saveConcursosMetadata(metadata);
-            closeModalConfigHorarios();
+            await loadMetadata();
+            filterDataByConcurso();
+            initMonthYearSelectors();
             renderMonthCalendar();
-            alert('Cronograma Método 1 gerado com sucesso!');
+            loadNotesData();
+            renderFlashcards();
+
+            if (navigator.onLine && currentUser) await forceFullSync();
         }
 
-        function openModalDayContent(dateKey) {
-            activeSelectedDateKey = dateKey;
-            document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
-            resetAddTopicArea();
-            renderDayTopicsList();
-            document.getElementById('modalDayContent').style.display = 'flex';
+        // --- GERENCIAMENTO DE CONCURSOS E EDITAL ---
+        function filterDataByConcurso() {
+            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+            renderConcursoSelector();
+            document.getElementById('edital-title').innerText = `Edital: ${currentConcurso}`;
+            populateFcMateriaDropdown();
+            populateNotesMateriaDropdowns();
+            renderTable();
+            renderChart();
         }
 
-        function closeModalDayContent() { document.getElementById('modalDayContent').style.display = 'none'; }
+        function renderConcursoSelector() {
+            const select = document.getElementById('concursoSelect');
+            select.innerHTML = '';
+            const set = new Set(Object.keys(metadataCache));
+            set.add('Concurso Geral');
+            allEditalItems.forEach(i => { if (i.concurso) set.add(i.concurso); });
+            const list = Array.from(set);
+            if (!list.includes(currentConcurso)) currentConcurso = list[0] || 'Concurso Geral';
+            list.forEach(c => { select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`; });
+        }
 
-        function renderDayTopicsList() {
-            const container = document.getElementById('dayTopicsContainer');
-            if (!container || !activeSelectedDateKey) return;
+        function changeConcurso(val) {
+            currentConcurso = val;
+            localStorage.setItem('last_studied_concurso', currentConcurso);
+            filterDataByConcurso();
+            renderMonthCalendar();
+            loadNotesData();
+            renderFlashcards();
+        }
+
+        async function saveEditalItemToCloud(item) {
+            localStorage.setItem(`edital_${currentUser ? currentUser.id : 'guest'}`, JSON.stringify(allEditalItems));
+            if (navigator.onLine && currentUser) {
+                try {
+                    await supabaseClient.from('edital').upsert({
+                        id: String(item.id),
+                        user_id: currentUser.id,
+                        concurso: item.concurso || currentConcurso,
+                        materia: item.materia || 'Geral',
+                        assunto: item.assunto || 'Tópico',
+                        prioridade: parseInt(item.prioridade) || 1,
+                        assunto_prioridade: parseInt(item.assunto_prioridade) || 1,
+                        teoria: !!item.teoria,
+                        questoes: !!item.questoes,
+                        rev_24h: !!item.rev_24h,
+                        rev_7d: !!item.rev_7d,
+                        rev_30d: !!item.rev_30d,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id' });
+                } catch(e) { console.warn('Erro salvando item do edital:', e); }
+            }
+        }
+
+        async function addManualItem(e) {
+            e.preventDefault();
+            const materia = document.getElementById('materia').value.trim();
+            const assunto = document.getElementById('assunto').value.trim();
+            const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
+
+            const newItem = {
+                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+                materia, assunto, prioridade, assunto_prioridade: 1, concurso: currentConcurso,
+                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
+            };
+            allEditalItems.push(newItem);
+            await saveEditalItemToCloud(newItem);
+            document.getElementById('materia').value = '';
+            document.getElementById('assunto').value = '';
+            filterDataByConcurso();
+        }
+
+        async function toggleCheck(id, field, val) {
+            const item = allEditalItems.find(i => String(i.id) === String(id));
+            if (item) {
+                item[field] = !val;
+                await saveEditalItemToCloud(item);
+                filterDataByConcurso();
+                renderMonthCalendar();
+            }
+        }
+
+        async function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    let raw = JSON.parse(e.target.result);
+                    let targetConcurso = raw.concurso || prompt("Nome do Concurso:", "TJ-CE");
+                    if (!targetConcurso) return;
+                    currentConcurso = targetConcurso.trim();
+                    
+                    let list = raw.materias || raw;
+                    let formatted = [];
+                    list.forEach((m, idxMat) => {
+                        let mName = m.materia || m.nome;
+                        (m.assuntos || []).forEach((a, idxAss) => {
+                            formatted.push({
+                                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + idxMat + idxAss),
+                                user_id: currentUser ? currentUser.id : null,
+                                concurso: currentConcurso,
+                                materia: mName,
+                                assunto: typeof a === 'string' ? a : a.nome,
+                                prioridade: m.prioridade || 1,
+                                assunto_prioridade: idxAss + 1,
+                                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
+                            });
+                        });
+                    });
+
+                    allEditalItems = allEditalItems.filter(i => i.concurso !== currentConcurso).concat(formatted);
+                    localStorage.setItem(`edital_${currentUser ? currentUser.id : 'guest'}`, JSON.stringify(allEditalItems));
+
+                    if (navigator.onLine && currentUser) {
+                        await supabaseClient.from('edital').upsert(formatted.map(i => ({ ...i, user_id: currentUser.id })), { onConflict: 'id' });
+                    }
+                    filterDataByConcurso();
+                    alert('Importação concluída com sucesso!');
+                } catch(err) { alert('Erro ao ler JSON.'); }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- FLASHCARDS ---
+        async function saveFlashcardsLocalStorage() {
+            localStorage.setItem(`fc_${currentUser ? currentUser.id : 'guest'}`, JSON.stringify(flashcardsList));
+        }
+
+        async function addFlashcard(e) {
+            e.preventDefault();
+            const materia = document.getElementById('fcMateriaSelect').value;
+            const pergunta = document.getElementById('fcPergunta').value.trim();
+            const resposta = document.getElementById('fcResposta').value.trim();
+            if (!pergunta || !resposta) return;
+
+            const fc = {
+                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+                user_id: currentUser ? currentUser.id : null,
+                concurso: currentConcurso,
+                materia, assunto: '', pergunta, resposta
+            };
+            flashcardsList.push(fc);
+            await saveFlashcardsLocalStorage();
+
+            if (navigator.onLine && currentUser) {
+                await supabaseClient.from('flashcards').upsert({ ...fc, user_id: currentUser.id }, { onConflict: 'id' });
+            }
+            document.getElementById('fcPergunta').value = '';
+            document.getElementById('fcResposta').value = '';
+            renderFlashcards();
+        }
+
+        function renderFlashcards() {
+            const container = document.getElementById('flashcardsContainer');
             container.innerHTML = '';
-
-            const metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-            const topics = dateSchedule[activeSelectedDateKey] || [];
-
-            if (topics.length === 0) {
-                container.innerHTML = `<p style="opacity:0.85; padding:1rem;">Nenhum tópico agendado para este dia.</p>`;
-                return;
-            }
-
-            topics.forEach((topicoStr, idx) => {
-                const cleanTop = topicoStr.replace(/^🔄 Rev \(\d+d\): /, '');
-                const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
+            const filtered = flashcardsList.filter(f => f.concurso === currentConcurso);
+            if (filtered.length === 0) { container.innerHTML = '<p style="opacity:0.7;">Nenhum flashcard cadastrado.</p>'; return; }
+            filtered.forEach((fc, idx) => {
+                const globalIdx = flashcardsList.indexOf(fc);
                 container.innerHTML += `
-                    <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${topicoStr}</strong></div>
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            ${matchedItem ? `
-                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                                    <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'teoria', ${matchedItem.teoria})"> Teoria
-                                </label>
-                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                                    <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'questoes', ${matchedItem.questoes})"> Questões
-                                </label>
-                            ` : ''}
-                            <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
+                    <div class="flashcard-box">
+                        <div>
+                            <span style="font-size:0.75rem; color:#93c5fd; background:#1e3a8a; padding:2px 6px; border-radius:4px;">${fc.materia || 'Geral'}</span>
+                            <p style="margin-top:6px;"><strong>P:</strong> ${fc.pergunta}</p>
+                            <p style="margin-top:4px; color:#34d399;"><strong>R:</strong> ${fc.resposta}</p>
                         </div>
-                        <div id="editArea_${idx}" style="width:100%; display:none;"></div>
+                        <button class="btn btn-danger btn-sm" onclick="deleteFlashcard(${globalIdx})">Excluir</button>
                     </div>
                 `;
             });
         }
 
-        function getUniqueMateriasFromEdital() {
-            const set = new Set();
-            editalItems.forEach(i => { if (i.materia) set.add(i.materia); });
-            return Array.from(set);
-        }
-
-        function getAssuntosForMateria(matName) {
-            return editalItems.filter(i => i.materia === matName).map(i => i.assunto);
-        }
-
-        function showEditTopicDropdown(idx) {
-            const editArea = document.getElementById(`editArea_${idx}`);
-            if (!editArea) return;
-            const materias = getUniqueMateriasFromEdital();
-            if (materias.length === 0) return alert('O edital atual não possui matérias para selecionar.');
-            let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
-
-            editArea.innerHTML = `
-                <div class="edit-selector-box">
-                    <label style="font-size:0.82rem; font-weight:700; color:#93c5fd;">Selecione a Matéria e o Assunto do Edital:</label>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">${matOptions}</select>
-                        <select id="editAssSel_${idx}" style="flex:1; min-width:180px;"></select>
-                    </div>
-                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
-                        <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
-                        <button class="btn btn-info btn-sm" onclick="addManualTopicToDay(${idx})">+ Inserir Manualmente</button>
-                        <button class="btn btn-success btn-sm" onclick="confirmEditTopicWithSwap(${idx})">Salvar / Trocar Assunto</button>
-                    </div>
-                </div>
-            `;
-            editArea.style.display = 'block';
-            updateEditAssuntoDropdown(idx);
-        }
-
-        async function addManualTopicToDay(targetIdx) {
-            const matSel = document.getElementById(`editMatSel_${targetIdx}`);
-            const selectedMat = matSel ? matSel.value : '';
-            const novoAssunto = prompt(`Digite o novo assunto para a matéria "${selectedMat}":`);
-            if (!novoAssunto || !novoAssunto.trim()) return;
-
-            const newFullString = `${selectedMat} - ${novoAssunto.trim()}`;
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-
-            metadata[currentConcurso].dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
-            await saveConcursosMetadata(metadata);
-            renderDayTopicsList();
-            renderMonthCalendar();
-        }
-
-        function updateEditAssuntoDropdown(idx) {
-            const matSel = document.getElementById(`editMatSel_${idx}`);
-            const assSel = document.getElementById(`editAssSel_${idx}`);
-            if (!matSel || !assSel) return;
-            const selectedMat = matSel.value;
-            const assuntos = getAssuntosForMateria(selectedMat);
-            assSel.innerHTML = assuntos.map(a => `<option value="${a}">${a}</option>`).join('');
-        }
-
-        async function confirmEditTopicWithSwap(targetIdx) {
-            const matSel = document.getElementById(`editMatSel_${targetIdx}`);
-            const assSel = document.getElementById(`editAssSel_${targetIdx}`);
-            if (!matSel || !assSel) return;
-
-            const newMateria = matSel.value;
-            const newAssunto = assSel.value;
-            const newFullString = `${newMateria} - ${newAssunto}`;
-
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-
-            const dateSchedule = metadata[currentConcurso].dateSchedule;
-            const oldFullString = dateSchedule[activeSelectedDateKey][targetIdx];
-
-            let foundDate = null;
-            let foundIndex = -1;
-            Object.keys(dateSchedule).forEach(dKey => {
-                const arr = dateSchedule[dKey];
-                const matchIdx = arr.findIndex(item => item === newFullString || item.endsWith(`: ${newFullString}`));
-                if (matchIdx !== -1) { foundDate = dKey; foundIndex = matchIdx; }
-            });
-
-            if (foundDate && (foundDate !== activeSelectedDateKey || foundIndex !== targetIdx)) {
-                dateSchedule[foundDate][foundIndex] = oldFullString;
-                dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
-                alert(`O assunto "${newFullString}" já estava agendado em ${foundDate}. Os assuntos foram trocados entre si com sucesso!`);
-            } else {
-                dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
+        async function deleteFlashcard(idx) {
+            const fc = flashcardsList[idx];
+            flashcardsList.splice(idx, 1);
+            await saveFlashcardsLocalStorage();
+            if (navigator.onLine && currentUser && fc.id) {
+                await supabaseClient.from('flashcards').delete().eq('id', fc.id);
             }
-
-            await saveConcursosMetadata(metadata);
-            renderDayTopicsList();
-            renderMonthCalendar();
+            renderFlashcards();
         }
 
-        function showAddTopicSelectors() {
-            const container = document.getElementById('addNewTopicArea');
-            const materias = getUniqueMateriasFromEdital();
-            if (materias.length === 0) return alert('Adicione ou importe matérias no edital primeiro.');
-            let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
-
-            container.innerHTML = `
-                <div class="edit-selector-box">
-                    <label style="font-size:0.85rem; font-weight:700; color:var(--primary-blue);">Adicionar Tópico a Este Dia (Selecione da Lista do Edital):</label>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <select id="addMatSel" onchange="updateAddAssuntoDropdown()" style="flex:1; min-width:160px;">${matOptions}</select>
-                        <select id="addAssSel" style="flex:1; min-width:180px;"></select>
-                    </div>
-                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">
-                        <button class="btn btn-secondary btn-sm" onclick="resetAddTopicArea()">Cancelar</button>
-                        <button class="btn btn-primary btn-sm" onclick="confirmAddTopicWithSwap()">Adicionar ao Dia</button>
-                    </div>
-                </div>
-            `;
-            updateAddAssuntoDropdown();
-        }
-
-        function updateAddAssuntoDropdown() {
-            const matSel = document.getElementById('addMatSel');
-            const assSel = document.getElementById('addAssSel');
-            if (!matSel || !assSel) return;
-            const selectedMat = matSel.value;
-            const assuntos = getAssuntosForMateria(selectedMat);
-            assSel.innerHTML = assuntos.map(a => `<option value="${a}">${a}</option>`).join('');
-        }
-
-        function resetAddTopicArea() {
-            const container = document.getElementById('addNewTopicArea');
-            container.innerHTML = `<button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico a Este Dia</button>`;
-        }
-
-        async function confirmAddTopicWithSwap() {
-            const matSel = document.getElementById('addMatSel');
-            const assSel = document.getElementById('addAssSel');
-            if (!matSel || !assSel) return;
-
-            const newMateria = matSel.value;
-            const newAssunto = assSel.value;
-            const newFullString = `${newMateria} - ${newAssunto}`;
-
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-            if (!metadata[currentConcurso].dateSchedule[activeSelectedDateKey]) metadata[currentConcurso].dateSchedule[activeSelectedDateKey] = [];
-
-            metadata[currentConcurso].dateSchedule[activeSelectedDateKey].push(newFullString);
-            await saveConcursosMetadata(metadata);
-            resetAddTopicArea();
-            renderDayTopicsList();
-            renderMonthCalendar();
-        }
-
-        async function toggleCheckFromModal(id, field, currentValue) {
-            await toggleCheck(id, field, currentValue);
-            renderDayTopicsList();
-        }
-
-        async function deleteTopicFromDay(idx) {
-            if (confirm('Deseja remover este tópico do dia?')) {
-                let metadata = getConcursosMetadata();
-                metadata[currentConcurso].dateSchedule[activeSelectedDateKey].splice(idx, 1);
-                await saveConcursosMetadata(metadata);
-                renderDayTopicsList();
-                renderMonthCalendar();
-            }
-        }
-
+        // --- NOTAS E CRONOGRAMA ---
         function populateNotesMateriaDropdowns() {
             const mSel = document.getElementById('notesMateriaSelect');
             const modalSel = document.getElementById('inputNotaMateria');
             if (!mSel || !modalSel) return;
             mSel.innerHTML = ''; modalSel.innerHTML = '';
-
-            const setMaterias = new Set();
-            editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
-            if (setMaterias.size === 0) setMaterias.add('Geral');
-
-            setMaterias.forEach(mat => {
-                mSel.innerHTML += `<option value="${mat}">${mat}</option>`;
-                modalSel.innerHTML += `<option value="${mat}">${mat}</option>`;
+            const set = new Set();
+            editalItems.forEach(i => { if (i.materia) set.add(i.materia); });
+            if (set.size === 0) set.add('Geral');
+            set.forEach(m => {
+                mSel.innerHTML += `<option value="${m}">${m}</option>`;
+                modalSel.innerHTML += `<option value="${m}">${m}</option>`;
             });
         }
 
@@ -1408,548 +625,100 @@
             const container = document.getElementById('notesContainer');
             if (!container) return;
             container.innerHTML = '';
-
             const selectedMat = document.getElementById('notesMateriaSelect').value;
-            const metadata = getConcursosMetadata();
-            const notesList = metadata[currentConcurso]?.structuredNotes || [];
-            const filtered = notesList.filter(n => n.materia === selectedMat);
+            if (!metadataCache[currentConcurso]) metadataCache[currentConcurso] = {};
+            const notes = metadataCache[currentConcurso].structuredNotes || [];
+            const filtered = notes.filter(n => n.materia === selectedMat);
 
-            if (filtered.length === 0) {
-                container.innerHTML = `<p style="opacity:0.8; padding:1rem;">Nenhuma anotação cadastrada para a matéria <strong>${selectedMat}</strong>.</p>`;
-                return;
-            }
-
+            if (filtered.length === 0) { container.innerHTML = '<p style="opacity:0.7;">Nenhuma anotação para esta matéria.</p>'; return; }
             filtered.forEach((nota, idx) => {
-                const globalIndex = notesList.indexOf(nota);
+                const gIdx = notes.indexOf(nota);
                 container.innerHTML += `
                     <div class="note-card">
-                        <div class="note-card-header">
-                            <span class="note-card-title">${nota.titulo}</span>
-                            <span class="note-card-date">Editado em ${nota.data || 'Recente'}</span>
-                        </div>
-                        <div class="note-card-body">${nota.conteudo}</div>
-                        <div class="note-card-actions">
-                            <button class="btn btn-secondary btn-sm" onclick="editNota(${globalIndex})">Editar</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteNota(${globalIndex})">Excluir</button>
-                        </div>
+                        <h4 style="color:var(--primary-blue); margin-bottom:4px;">${nota.titulo}</h4>
+                        <p style="white-space:pre-line; margin-bottom:8px;">${nota.conteudo}</p>
+                        <button class="btn btn-danger btn-sm" onclick="deleteNota(${gIdx})">Excluir</button>
                     </div>
                 `;
             });
-        }
-
-        function openModalNovaNota() {
-            currentEditingNoteIndex = null;
-            document.getElementById('modalNotaTitle').innerText = 'Nova Nota';
-            document.getElementById('inputNotaTitulo').value = '';
-            document.getElementById('inputNotaConteudo').value = '';
-            document.getElementById('modalNovaNota').style.display = 'flex';
-        }
-
-        function closeModalNovaNota() { document.getElementById('modalNovaNota').style.display = 'none'; }
-
-        function editNota(globalIndex) {
-            const metadata = getConcursosMetadata();
-            const notesList = metadata[currentConcurso]?.structuredNotes || [];
-            const nota = notesList[globalIndex];
-            if (!nota) return;
-
-            currentEditingNoteIndex = globalIndex;
-            document.getElementById('modalNotaTitle').innerText = `Editar Nota (${nota.materia})`;
-            document.getElementById('inputNotaMateria').value = nota.materia;
-            document.getElementById('inputNotaTitulo').value = nota.titulo;
-            document.getElementById('inputNotaConteudo').value = nota.conteudo;
-            document.getElementById('modalNovaNota').style.display = 'flex';
         }
 
         async function salvarNota() {
             const materia = document.getElementById('inputNotaMateria').value;
             const titulo = document.getElementById('inputNotaTitulo').value.trim();
             const conteudo = document.getElementById('inputNotaConteudo').value.trim();
-            if (!titulo || !conteudo) return alert('Preencha título e conteúdo da anotação.');
+            if (!titulo || !conteudo) return alert('Preencha título e conteúdo.');
 
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            if (!metadata[currentConcurso].structuredNotes) metadata[currentConcurso].structuredNotes = [];
+            if (!metadataCache[currentConcurso]) metadataCache[currentConcurso] = {};
+            if (!metadataCache[currentConcurso].structuredNotes) metadataCache[currentConcurso].structuredNotes = [];
+            metadataCache[currentConcurso].structuredNotes.push({ materia, titulo, conteudo });
 
-            const nowStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            if (currentEditingNoteIndex !== null) {
-                metadata[currentConcurso].structuredNotes[currentEditingNoteIndex] = { materia, titulo, conteudo, data: nowStr };
-            } else {
-                metadata[currentConcurso].structuredNotes.push({ materia, titulo, conteudo, data: nowStr });
-            }
-
-            await saveConcursosMetadata(metadata);
+            await saveMetadata(metadataCache);
             closeModalNovaNota();
-            document.getElementById('notesMateriaSelect').value = materia;
             renderNotesList();
         }
 
-        async function deleteNota(globalIndex) {
-            if (confirm('Deseja excluir esta anotação?')) {
-                let metadata = getConcursosMetadata();
-                if (metadata[currentConcurso]?.structuredNotes) {
-                    metadata[currentConcurso].structuredNotes.splice(globalIndex, 1);
-                    await saveConcursosMetadata(metadata);
-                    renderNotesList();
-                }
+        async function deleteNota(idx) {
+            if (confirm('Excluir anotação?')) {
+                metadataCache[currentConcurso].structuredNotes.splice(idx, 1);
+                await saveMetadata(metadataCache);
+                renderNotesList();
             }
         }
 
-        function openModalConfigHorarios() {
-            document.getElementById('cfgDataInicio').value = new Date().toISOString().split('T')[0];
-            document.getElementById('modalConfigHorarios').style.display = 'flex';
-        }
-        function closeModalConfigHorarios() { document.getElementById('modalConfigHorarios').style.display = 'none'; }
-
-        /* FLASHCARDS COM SUPABASE */
-        function populateFcMateriaDropdown() {
-            const mSel = document.getElementById('fcMateriaSelect');
-            if (!mSel) return;
-            mSel.innerHTML = '<option value="">Selecione a Matéria (Opcional)</option>';
-            const setMaterias = new Set();
-            editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
-            setMaterias.forEach(mat => { mSel.innerHTML += `<option value="${mat}">${mat}</option>`; });
-            updateFcAssuntoOptions();
-        }
-
-        function updateFcAssuntoOptions() {
-            const mVal = document.getElementById('fcMateriaSelect').value;
-            const aSel = document.getElementById('fcAssuntoSelect');
-            if (!aSel) return;
-            aSel.innerHTML = '<option value="">Selecione o Assunto (Opcional)</option>';
-            if (!mVal) return;
-            const assuntos = editalItems.filter(i => i.materia === mVal).map(i => i.assunto);
-            assuntos.forEach(ass => { aSel.innerHTML += `<option value="${ass}">${ass}</option>`; });
-        }
-
-        async function saveFlashcardsData() {
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            metadata[currentConcurso].flashcards = flashcardsList;
-            await saveConcursosMetadata(metadata);
-
-            if (navigator.onLine && currentUser) {
-                try {
-                    for (let fc of flashcardsList) {
-                        if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
-                        const payload = {
-                            id: String(fc.id),
-                            user_id: currentUser.id,
-                            concurso: currentConcurso,
-                            materia: fc.materia || '',
-                            assunto: fc.assunto || '',
-                            pergunta: fc.pergunta,
-                            resposta: fc.resposta,
-                            updated_at: new Date().toISOString()
-                        };
-                        await supabaseClient.from('flashcards').upsert(payload, { onConflict: 'id' });
-                    }
-                } catch(err) { console.warn('Erro salvando flashcards na nuvem:', err); }
-            }
-        }
-
-        async function loadFlashcardsData() {
-            if (navigator.onLine && currentUser) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('flashcards')
-                        .select('*')
-                        .eq('user_id', currentUser.id)
-                        .eq('concurso', currentConcurso);
-
-                    if (!error && data) {
-                        flashcardsList = data.map(fc => ({
-                            id: fc.id,
-                            materia: fc.materia,
-                            assunto: fc.assunto,
-                            pergunta: fc.pergunta,
-                            resposta: fc.resposta
-                        }));
-                    } else {
-                        const metadata = getConcursosMetadata();
-                        flashcardsList = metadata[currentConcurso]?.flashcards || [];
-                    }
-                } catch(e) {
-                    const metadata = getConcursosMetadata();
-                    flashcardsList = metadata[currentConcurso]?.flashcards || [];
-                }
-            } else {
-                const metadata = getConcursosMetadata();
-                flashcardsList = metadata[currentConcurso]?.flashcards || [];
-            }
-            populateFcMateriaDropdown();
-            renderFlashcardFolders();
-            renderFlashcards();
-        }
-
-        async function deleteFlashcardFromCloud(id) {
-            if (navigator.onLine && currentUser && id) {
-                try {
-                    await supabaseClient.from('flashcards').delete().eq('id', id);
-                } catch(err) { console.warn('Erro ao deletar flashcard na nuvem:', err); }
-            }
-        }
-
-        function renderFlashcardFolders() {
-            const folderContainer = document.getElementById('flashcardFoldersContainer');
-            if (!folderContainer) return;
-            folderContainer.innerHTML = '';
-
-            if (flashcardsList.length === 0) {
-                folderContainer.innerHTML = '<p style="opacity: 0.75; font-size:0.9rem;">Nenhum baralho disponível.</p>';
-                return;
-            }
-
-            const deckHierarchy = {};
-            flashcardsList.forEach(fc => {
-                const mat = fc.materia || 'Geral / Sem Matéria';
-                const ass = fc.assunto || 'Sem Assunto Específico';
-                if (!deckHierarchy[mat]) deckHierarchy[mat] = { total: 0, assuntos: {} };
-                deckHierarchy[mat].total++;
-                if (!deckHierarchy[mat].assuntos[ass]) deckHierarchy[mat].assuntos[ass] = 0;
-                deckHierarchy[mat].assuntos[ass]++;
+        // --- TABELA E CALENDÁRIO ---
+        function renderTable() {
+            const tbody = document.getElementById('edital-list');
+            tbody.innerHTML = '';
+            const map = {};
+            editalItems.forEach(i => {
+                const m = i.materia || 'Geral';
+                if (!map[m]) map[m] = { items: [], prioridade: i.prioridade || 1 };
+                map[m].items.push(i);
             });
 
-            Object.keys(deckHierarchy).forEach(matName => {
-                const matData = deckHierarchy[matName];
-                const isOpen = openFcFolders[matName] !== false;
-                const isMatActive = (activeFcMateriaFilter === matName && !activeFcAssuntoFilter);
-
-                let subfoldersHtml = '';
-                Object.keys(matData.assuntos).forEach(assName => {
-                    const count = matData.assuntos[assName];
-                    const isAssActive = (activeFcMateriaFilter === matName && activeFcAssuntoFilter === assName);
-                    subfoldersHtml += `
-                        <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '${assName.replace(/'/g, "\\'")}')">
-                            <span style="font-size:0.9rem; font-weight:600;">📑 ${assName}</span>
-                            <span style="font-size:0.8rem; opacity:0.8;">${count} cartões</span>
-                        </div>
+            Object.keys(map).forEach(mName => {
+                const grp = map[mName];
+                tbody.innerHTML += `
+                    <tr class="materia-header-row" style="background:var(--header-materia-bg);">
+                        <td><input type="number" class="priority-input" value="${grp.prioridade}" onchange="updateMateriaPrio('${mName}', this.value)"></td>
+                        <td colspan="7"><strong>${mName}</strong> (${grp.items.length} assuntos)</td>
+                    </tr>
+                `;
+                grp.items.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" onchange="updateAssuntoPrio('${item.id}', this.value)"></td>
+                            <td style="text-align: left; padding-left: 1.5rem;">${item.assunto}</td>
+                            <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${item.id}', 'teoria', ${item.teoria})"></td>
+                            <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck('${item.id}', 'questoes', ${item.questoes})"></td>
+                            <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck('${item.id}', 'rev_24h', ${item.rev_24h})"></td>
+                            <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck('${item.id}', 'rev_7d', ${item.rev_7d})"></td>
+                            <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck('${item.id}', 'rev_30d', ${item.rev_30d})"></td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteEditalItem('${item.id}')">Excluir</button></td>
+                        </tr>
                     `;
                 });
-
-                folderContainer.innerHTML += `
-                    <div class="anki-folder-card">
-                        <div class="anki-folder-header" onclick="toggleFcFolder('${matName.replace(/'/g, "\\'")}')">
-                            <div class="anki-folder-title">
-                                📁 <span>${matName}</span>
-                                ${isMatActive ? '<span style="color:#34d399; font-size:0.75rem;">(Caixa Aberta)</span>' : ''}
-                            </div>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <span class="anki-folder-count">${matData.total} cartões</span>
-                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '')" title="Abrir caixa desta matéria">Abrir Caixa</button>
-                                <span>${isOpen ? '▼' : '►'}</span>
-                            </div>
-                        </div>
-                        ${isOpen ? `<div class="anki-subfolder-list">${subfoldersHtml}</div>` : ''}
-                    </div>
-                `;
-            });
-
-            const btnReset = document.getElementById('btnResetFcFilter');
-            if (btnReset) btnReset.style.display = (activeFcMateriaFilter || activeFcAssuntoFilter) ? 'inline-flex' : 'none';
-        }
-
-        function toggleFcFolder(matName) {
-            openFcFolders[matName] = !(openFcFolders[matName] !== false);
-            renderFlashcardFolders();
-        }
-
-        function setFlashcardViewFilter(mat, ass) {
-            activeFcMateriaFilter = mat;
-            activeFcAssuntoFilter = ass;
-            renderFlashcardFolders();
-            renderFlashcards();
-        }
-
-        function renderFlashcards() {
-            const container = document.getElementById('flashcardsContainer');
-            container.innerHTML = '';
-            if (!activeFcMateriaFilter && !activeFcAssuntoFilter) return;
-
-            let displayList = flashcardsList.map((fc, idx) => ({ ...fc, originalIndex: idx }));
-            if (activeFcMateriaFilter) displayList = displayList.filter(fc => (fc.materia || 'Geral / Sem Matéria') === activeFcMateriaFilter);
-            if (activeFcAssuntoFilter) displayList = displayList.filter(fc => (fc.assunto || 'Sem Assunto Específico') === activeFcAssuntoFilter);
-
-            if (displayList.length === 0) {
-                container.innerHTML = '<p style="opacity: 0.8; padding:1rem;">Nenhum flashcard encontrado para este filtro.</p>';
-                return;
-            }
-
-            const grouped = {};
-            displayList.forEach(fc => {
-                const mKey = fc.materia || 'Geral / Sem Matéria';
-                if (!grouped[mKey]) grouped[mKey] = [];
-                grouped[mKey].push(fc);
-            });
-
-            Object.keys(grouped).forEach(mName => {
-                let cardsHtml = '';
-                grouped[mName].forEach(fc => {
-                    cardsHtml += `
-                        <div class="flashcard-box">
-                            <div class="flashcard-content">
-                                <div class="flashcard-meta">
-                                    <span class="flashcard-badge-materia">${fc.materia || 'Geral'}</span>
-                                    ${fc.assunto ? `<span class="flashcard-badge-assunto">${fc.assunto}</span>` : ''}
-                                </div>
-                                <p><strong>P:</strong> ${fc.pergunta}</p>
-                                <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${fc.resposta}</p>
-                            </div>
-                            <div style="display:flex; gap:6px; flex-shrink:0;">
-                                <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard">Editar ✏️</button>
-                                <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir 🗑️</button>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                container.innerHTML += `
-                    <div style="margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--primary-blue);">
-                        <h4 style="color:var(--header-materia-text); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-                            <span>📦 Caixa Aberta: ${mName}</span>
-                            <span style="font-size:0.8rem; font-weight:normal;">(${grouped[mName].length} cartões)</span>
-                        </h4>
-                        ${cardsHtml}
-                    </div>
-                `;
             });
         }
 
-        function openEditarFlashcardModal(idx) {
-            editingFcIndex = idx;
-            const fc = flashcardsList[idx];
-            if (!fc) return;
-            document.getElementById('editFcMateria').value = fc.materia || '';
-            document.getElementById('editFcAssunto').value = fc.assunto || '';
-            document.getElementById('editFcPergunta').value = fc.pergunta || '';
-            document.getElementById('editFcResposta').value = fc.resposta || '';
-            document.getElementById('modalEditarFlashcard').style.display = 'flex';
-        }
-
-        function closeModalEditarFlashcard() {
-            document.getElementById('modalEditarFlashcard').style.display = 'none';
-            editingFcIndex = null;
-        }
-
-        async function salvarEdicaoFlashcard() {
-            if (editingFcIndex === null) return;
-            const mat = document.getElementById('editFcMateria').value.trim();
-            const ass = document.getElementById('editFcAssunto').value.trim();
-            const perg = document.getElementById('editFcPergunta').value.trim();
-            const resp = document.getElementById('editFcResposta').value.trim();
-            if (!perg || !resp) return alert('Pergunta e Resposta são obrigatórias.');
-
-            flashcardsList[editingFcIndex].materia = mat;
-            flashcardsList[editingFcIndex].assunto = ass;
-            flashcardsList[editingFcIndex].pergunta = perg;
-            flashcardsList[editingFcIndex].resposta = resp;
-
-            closeModalEditarFlashcard();
-            renderFlashcardFolders();
-            renderFlashcards();
-            await saveFlashcardsData();
-        }
-
-        async function addFlashcard(e) {
-            e.preventDefault();
-            const materia = document.getElementById('fcMateriaSelect').value;
-            const assunto = document.getElementById('fcAssuntoSelect').value;
-            const pergunta = document.getElementById('fcPergunta').value.trim();
-            const resposta = document.getElementById('fcResposta').value.trim();
-            if (!pergunta || !resposta) return;
-
-            const newFc = {
-                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                materia, assunto, pergunta, resposta
-            };
-
-            flashcardsList.push(newFc);
-            document.getElementById('fcPergunta').value = '';
-            document.getElementById('fcResposta').value = '';
-            renderFlashcardFolders();
-            renderFlashcards();
-            await saveFlashcardsData();
-        }
-
-        async function removeFlashcard(idx) {
-            if (confirm('Deseja apagar este flashcard individualmente?')) {
-                const removed = flashcardsList.splice(idx, 1);
-                if (removed[0] && removed[0].id) {
-                    await deleteFlashcardFromCloud(removed[0].id);
-                }
-                renderFlashcardFolders();
-                renderFlashcards();
-                await saveFlashcardsData();
+        async function deleteEditalItem(id) {
+            allEditalItems = allEditalItems.filter(i => String(i.id) !== String(id));
+            localStorage.setItem(`edital_${currentUser ? currentUser.id : 'guest'}`, JSON.stringify(allEditalItems));
+            if (navigator.onLine && currentUser) {
+                await supabaseClient.from('edital').delete().eq('id', id);
             }
+            filterDataByConcurso();
         }
-
-        function parseTextToFlashcards(rawText, selectedMateria = '', selectedAssunto = '') {
-            if (!rawText || !rawText.trim()) return 0;
-            const lines = rawText.split(/\r?\n|\r/);
-            let currentPergunta = '';
-            let currentResposta = '';
-            let count = 0;
-
-            lines.forEach(line => {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.length < 2) return;
-                if (/^(p:|pergunta:)/i.test(trimmed)) {
-                    if (currentPergunta && currentResposta) {
-                        flashcardsList.push({
-                            id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                            materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta
-                        });
-                        count++;
-                        currentResposta = '';
-                    }
-                    currentPergunta = trimmed.replace(/^(p:|pergunta:)/i, '').trim();
-                } else if (/^(r:|resposta:)/i.test(trimmed)) {
-                    currentResposta = trimmed.replace(/^(r:|resposta:)/i, '').trim();
-                } else {
-                    const parts = trimmed.split(/;|,/);
-                    if (parts.length >= 2) {
-                        const p = parts[0].trim();
-                        const r = parts.slice(1).join(';').trim();
-                        if (p && r && p.length > 1 && r.length > 1) {
-                            flashcardsList.push({
-                                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                                materia: selectedMateria, assunto: selectedAssunto, pergunta: p, resposta: r
-                            });
-                            count++;
-                        }
-                    }
-                }
-            });
-
-            if (currentPergunta && currentResposta) {
-                flashcardsList.push({
-                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                    materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta
-                });
-                count++;
-            }
-            return count;
-        }
-
-        async function processPastedFlashcardsText() {
-            const textArea = document.getElementById('fcPasteTextArea');
-            const rawText = textArea.value;
-            const materia = document.getElementById('fcMateriaSelect').value;
-            const assunto = document.getElementById('fcAssuntoSelect').value;
-            if (!rawText || !rawText.trim()) return alert('Cole o texto das perguntas e respostas na caixa antes de converter.');
-
-            const importedCount = parseTextToFlashcards(rawText, materia, assunto);
-            if (importedCount > 0) {
-                textArea.value = '';
-                renderFlashcardFolders();
-                renderFlashcards();
-                await saveFlashcardsData();
-                alert(`Sucesso! ${importedCount} flashcards gerados.`);
-            } else {
-                alert('Formato não reconhecido. Use "P:" e "R:" ou separe por ponto e vírgula (;).');
-            }
-        }
-
-        function openModalFiltroEstudoFlashcards() {
-            const matSel = document.getElementById('studyFilterMateria');
-            if (!matSel) return;
-            matSel.innerHTML = '<option value="">Todas as Matérias</option>';
-            const setMaterias = new Set();
-            flashcardsList.forEach(fc => { if (fc.materia) setMaterias.add(fc.materia); });
-            setMaterias.forEach(mat => { matSel.innerHTML += `<option value="${mat}">${mat}</option>`; });
-            updateStudyFilterAssuntoOptions();
-            document.getElementById('modalFiltroEstudoFC').style.display = 'flex';
-        }
-
-        function closeModalFiltroEstudoFlashcards() { document.getElementById('modalFiltroEstudoFC').style.display = 'none'; }
-
-        function updateStudyFilterAssuntoOptions() {
-            const matVal = document.getElementById('studyFilterMateria').value;
-            const assSel = document.getElementById('studyFilterAssunto');
-            if (!assSel) return;
-            assSel.innerHTML = '<option value="">Todos os Assuntos</option>';
-            if (!matVal) return;
-            const setAssuntos = new Set();
-            flashcardsList.forEach(fc => { if (fc.materia === matVal && fc.assunto) setAssuntos.add(fc.assunto); });
-            setAssuntos.forEach(ass => { assSel.innerHTML += `<option value="${ass}">${ass}</option>`; });
-        }
-
-        function startFilteredStudyModal() {
-            const targetMateria = document.getElementById('studyFilterMateria').value;
-            const targetAssunto = document.getElementById('studyFilterAssunto').value;
-            let filteredCards = [...flashcardsList];
-            if (targetMateria) filteredCards = filteredCards.filter(fc => fc.materia === targetMateria);
-            if (targetAssunto) filteredCards = filteredCards.filter(fc => fc.assunto === targetAssunto);
-            if (filteredCards.length === 0) return alert('Nenhum flashcard encontrado para o filtro.');
-
-            closeModalFiltroEstudoFlashcards();
-            startStudyModalWithList(filteredCards);
-        }
-
-        function startShuffleStudyModal() {
-            if (flashcardsList.length === 0) return alert('Cadastre ou importe flashcards antes de iniciar o estudo.');
-            const groupedByMateria = {};
-            flashcardsList.forEach(fc => {
-                const mKey = fc.materia || 'Geral / Sem Matéria';
-                if (!groupedByMateria[mKey]) groupedByMateria[mKey] = [];
-                groupedByMateria[mKey].push(fc);
-            });
-            const shuffledList = [];
-            Object.keys(groupedByMateria).forEach(mName => {
-                const shuffledMateriaCards = [...groupedByMateria[mName]].sort(() => Math.random() - 0.5);
-                shuffledList.push(...shuffledMateriaCards);
-            });
-            startStudyModalWithList(shuffledList);
-        }
-
-        function startStudyModalWithList(list) {
-            studyQueue = [...list];
-            currentStudyIdx = 0;
-            showingAnswer = false;
-            updateStudyModalCard();
-            document.getElementById('modalStudyFlashcards').style.display = 'flex';
-        }
-
-        function updateStudyModalCard() {
-            if (currentStudyIdx >= studyQueue.length) {
-                alert('Parabéns! Você concluiu a revisão de todos os flashcards selecionados.');
-                closeStudyModal();
-                return;
-            }
-            const fc = studyQueue[currentStudyIdx];
-            document.getElementById('studyModalProgress').innerText = `${currentStudyIdx + 1} / ${studyQueue.length}`;
-            const metaContainer = document.getElementById('studyCardMeta');
-            metaContainer.innerHTML = `<span class="flashcard-badge-materia">${fc.materia || 'Geral'}</span>`;
-            if (fc.assunto) metaContainer.innerHTML += `<span class="flashcard-badge-assunto">${fc.assunto}</span>`;
-            showingAnswer = false;
-            document.getElementById('studyCardLabel').innerText = 'FRENTE (Clique para virar)';
-            document.getElementById('studyCardText').innerText = fc.pergunta;
-        }
-
-        function toggleStudyCardAnswer() {
-            if (currentStudyIdx >= studyQueue.length) return;
-            const fc = studyQueue[currentStudyIdx];
-            showingAnswer = !showingAnswer;
-            if (showingAnswer) {
-                document.getElementById('studyCardLabel').innerText = 'VERSO / RESPOSTA';
-                document.getElementById('studyCardText').innerText = fc.resposta;
-            } else {
-                document.getElementById('studyCardLabel').innerText = 'FRENTE (Clique para virar)';
-                document.getElementById('studyCardText').innerText = fc.pergunta;
-            }
-        }
-
-        function nextStudyCard() { currentStudyIdx++; updateStudyModalCard(); }
-        function closeStudyModal() { document.getElementById('modalStudyFlashcards').style.display = 'none'; }
 
         function initMonthYearSelectors() {
             const mSel = document.getElementById('monthSelect');
             const ySel = document.getElementById('yearSelect');
             if (!mSel || !ySel) return;
             mSel.innerHTML = ''; ySel.innerHTML = '';
-            MESES.forEach((m, idx) => { mSel.innerHTML += `<option value="${idx}" ${idx === selectedMonth ? 'selected' : ''}>${m}</option>`; });
-            const yearStart = selectedYear - 1;
-            for (let y = yearStart; y <= yearStart + 5; y++) {
+            const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            meses.forEach((m, idx) => { mSel.innerHTML += `<option value="${idx}" ${idx === selectedMonth ? 'selected' : ''}>${m}</option>`; });
+            for (let y = selectedYear - 1; y <= selectedYear + 3; y++) {
                 ySel.innerHTML += `<option value="${y}" ${y === selectedYear ? 'selected' : ''}>${y}</option>`;
             }
         }
@@ -1964,770 +733,27 @@
             const grid = document.getElementById('monthCalendarGrid');
             if (!grid) return;
             grid.innerHTML = '';
-
-            const metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
             const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
             const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-            const todayObj = new Date();
-            const isCurrentMonth = todayObj.getMonth() === selectedMonth && todayObj.getFullYear() === selectedYear;
+            const today = new Date();
 
-            for (let i = 0; i < firstDay; i++) { grid.innerHTML += `<div class="month-day-cell other-month"></div>`; }
-
+            for (let i = 0; i < firstDay; i++) { grid.innerHTML += `<div class="month-day-cell" style="opacity:0.3;"></div>`; }
             for (let day = 1; day <= daysInMonth; day++) {
-                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const isToday = isCurrentMonth && todayObj.getDate() === day;
-                const items = dateSchedule[dateKey] || [];
-
-                let badgesHtml = '';
-                items.forEach(it => {
-                    const cleanTop = it.replace(/^🔄 Rev \(\d+d\): /, '');
-                    const isRev = it.startsWith('🔄 Rev');
-                    const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
-                    let isDone = false;
-                    if (matchedItem) {
-                        if (isRev) {
-                            if (it.includes('24h')) isDone = !!matchedItem.rev_24h;
-                            else if (it.includes('7d')) isDone = !!matchedItem.rev_7d;
-                            else if (it.includes('30d')) isDone = !!matchedItem.rev_30d;
-                            else isDone = !!(matchedItem.rev_24h || matchedItem.rev_7d || matchedItem.rev_30d);
-                        } else {
-                            isDone = !!(matchedItem.teoria || matchedItem.questoes);
-                        }
-                    }
-                    badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${it}</div>`;
-                });
-
+                const isToday = today.getDate() === day && today.getMonth() === selectedMonth && today.getFullYear() === selectedYear;
                 grid.innerHTML += `
-                    <div class="month-day-cell ${isToday ? 'today' : ''}" onclick="openModalDayContent('${dateKey}')">
-                        <div class="day-num-header">
-                            <span>${day}</span>
-                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Abrir dia">+</button>
-                        </div>
-                        <div class="day-badges-scroll">${badgesHtml}</div>
+                    <div class="month-day-cell ${isToday ? 'today' : ''}">
+                        <div class="day-num-header"><span>${day}</span></div>
+                        <div class="day-badges-scroll"></div>
                     </div>
                 `;
             }
-            renderDelayedPanel();
         }
 
-        async function limparCronogramaMesAtual() {
-            if (confirm('Deseja limpar todos os agendamentos do mês exibido?')) {
-                let metadata = getConcursosMetadata();
-                if (metadata[currentConcurso]?.dateSchedule) {
-                    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-                    for (let day = 1; day <= daysInMonth; day++) {
-                        const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        delete metadata[currentConcurso].dateSchedule[dateKey];
-                    }
-                    await saveConcursosMetadata(metadata);
-                    renderMonthCalendar();
-                }
-            }
-        }
-
-        function filterDelayedList(type, btn) {
-            currentDelayedFilter = type;
-            document.querySelectorAll('.filter-tab').forEach(tb => tb.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-            renderDelayedPanel();
-        }
-
-        function renderDelayedPanel() {
-            const container = document.getElementById('delayedItemsContainer');
-            if (!container) return;
-            container.innerHTML = '';
-
-            const metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            let count = 0;
-            Object.keys(dateSchedule).forEach(dKey => {
-                if (dKey < todayStr && dateSchedule[dKey].length > 0) count += dateSchedule[dKey].length;
-            });
-            document.getElementById('delayedBadgeCount').textContent = `${count} atrasadas`;
-
-            let displayList = [];
-            Object.keys(dateSchedule).forEach(dKey => {
-                if (currentDelayedFilter === 'hoje' && dKey === todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
-                else if (currentDelayedFilter === 'atrasadas' && dKey < todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
-                else if (currentDelayedFilter === 'proximas' && dKey > todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
-            });
-
-            if (displayList.length === 0) {
-                container.innerHTML = '<p style="opacity: 0.8; font-size:0.9rem;">Nenhum item agendado para esta aba.</p>';
-                return;
-            }
-
-            displayList.forEach(group => {
-                group.items.forEach(it => {
-                    container.innerHTML += `
-                        <div class="delayed-card">
-                            <div class="delayed-card-info">
-                                <h4>Data: ${group.date}</h4>
-                                <p>${it}</p>
-                                <span class="delayed-tag">${currentConcurso}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-            });
-        }
-
-        async function loadData() {
-            await loadConcursosMetadata();
-            loadLocalEditalData();
-            filterDataByConcurso();
-            initMonthYearSelectors();
-            renderMonthCalendar();
-            loadNotesData();
-            await loadFlashcardsData();
-            if (navigator.onLine && currentUser) await syncAllWithSupabase();
-        }
-
-        async function syncAllWithSupabase() {
-            if (!currentUser) return;
-            try {
-                const { data, error } = await supabaseClient
-                    .from('edital')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('prioridade', { ascending: true });
-
-                if (!error && data) {
-                    allEditalItems = data.map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
-                    saveEditalToLocalStorage();
-                }
-
-                await loadConcursosMetadata();
-                filterDataByConcurso();
-                renderMonthCalendar();
-                loadNotesData();
-                await loadFlashcardsData();
-            } catch(e) { console.log('Sincronização em segundo plano...'); }
-        }
-
-        async function forceFullSync(evt) {
-            if (!currentUser) return alert('Você precisa estar logado para sincronizar.');
-            const btn = evt ? evt.target : null;
-            if (btn) btn.innerText = 'Sincronizando...';
-            try {
-                await syncAllWithSupabase();
-                alert('Sincronização concluída com sucesso!');
-            } catch (err) {
-                alert('Erro ao sincronizar: ' + err.message);
-            } finally {
-                if (btn) btn.innerText = 'Sincronizar Agora';
-            }
-        }
-
-        function getEditalLocalStorageKey() {
-            const uid = currentUser ? currentUser.id : 'guest';
-            return `edital_offline_data_${uid}`;
-        }
-
-        function loadLocalEditalData() {
-            const local = localStorage.getItem(getEditalLocalStorageKey());
-            if (local) {
-                try {
-                    allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
-                } catch(e) { allEditalItems = []; }
-            }
-        }
-
-        function saveEditalToLocalStorage() {
-            localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
-        }
-
-        async function saveEditalItemToCloud(item) {
-            saveEditalToLocalStorage();
-            if (navigator.onLine && currentUser) {
-                try {
-                    const payload = {
-                        id: String(item.id),
-                        user_id: currentUser.id,
-                        materia: item.materia || 'Geral',
-                        assunto: item.assunto || 'Tópico',
-                        prioridade: parseInt(item.prioridade) || 1,
-                        assunto_prioridade: parseInt(item.assunto_prioridade) || 1,
-                        concurso: item.concurso || currentConcurso,
-                        teoria: !!item.teoria,
-                        questoes: !!item.questoes,
-                        rev_24h: !!item.rev_24h,
-                        rev_7d: !!item.rev_7d,
-                        rev_30d: !!item.rev_30d
-                    };
-                    await supabaseClient.from('edital').upsert(payload, { onConflict: 'id' });
-                } catch(e) { console.warn('Erro sync item:', e); }
-            }
-        }
-
-        async function deleteEditalItemFromCloud(id) {
-            allEditalItems = allEditalItems.filter(i => String(i.id) !== String(id));
-            saveEditalToLocalStorage();
-            if (navigator.onLine && currentUser) {
-                try { await supabaseClient.from('edital').delete().eq('id', id); }
-                catch(e) { console.warn('Erro delete:', e); }
-            }
-            filterDataByConcurso();
-        }
-
-        function renderConcursoSelector() {
-            const select = document.getElementById('concursoSelect');
-            select.innerHTML = '';
-            const metadata = getConcursosMetadata();
-            const set = new Set(Object.keys(metadata));
-            set.add('Concurso Geral');
-            allEditalItems.forEach(i => { if (i.concurso) set.add(i.concurso); });
-            const list = Array.from(set);
-
-            if (!list.includes(currentConcurso)) currentConcurso = list[0] || 'Concurso Geral';
-            list.forEach(c => { select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`; });
-            updateCountdownBadge();
-        }
-
-        function changeConcurso(val) {
-            currentConcurso = val;
-            localStorage.setItem('last_studied_concurso', currentConcurso);
-            filterDataByConcurso();
-            renderMonthCalendar();
-            loadNotesData();
-            loadFlashcardsData();
-        }
-
-        function filterDataByConcurso() {
-            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-            renderConcursoSelector();
-            document.getElementById('edital-title').innerText = `Edital: ${currentConcurso}`;
-            populateFcMateriaDropdown();
-            populateNotesMateriaDropdowns();
-            renderTable();
-            renderChart();
-        }
-
-        function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
-        function closeModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'none'; }
-
-        async function confirmarNovoConcurso() {
-            const nome = document.getElementById('inputNomeConcurso').value.trim();
-            const dataProva = document.getElementById('inputDataConcurso').value;
-            if (!nome) return alert('Informe o nome do concurso.');
-
-            let metadata = getConcursosMetadata();
-            metadata[nome] = { dataProva: dataProva || null, dateSchedule: {} };
-            await saveConcursosMetadata(metadata);
-
-            currentConcurso = nome;
-            localStorage.setItem('last_studied_concurso', currentConcurso);
-            document.getElementById('inputNomeConcurso').value = '';
-            document.getElementById('inputDataConcurso').value = '';
-            closeModalNovoConcurso();
-            changeConcurso(currentConcurso);
-        }
-
-        async function renomearConcursoAtual() {
-            if (currentConcurso.trim().toLowerCase() === 'concurso geral') return alert('O Concurso Geral padrão não pode ser renomeado.');
-            const novoNome = prompt(`Digite o novo nome para o concurso "${currentConcurso}":`, currentConcurso);
-            if (!novoNome || !novoNome.trim() || novoNome.trim() === currentConcurso) return;
-
-            const nomeFormatado = novoNome.trim();
-            let metadata = getConcursosMetadata();
-            if (metadata[nomeFormatado]) return alert('Já existe um concurso cadastrado com esse nome.');
-
-            const antigoNome = currentConcurso;
-            metadata[nomeFormatado] = metadata[antigoNome] || { dataProva: null, dateSchedule: {} };
-            delete metadata[antigoNome];
-            await saveConcursosMetadata(metadata);
-
-            const oldFileKey = `edital_file_${currentUser ? currentUser.id : 'guest'}_${antigoNome}`;
-            const newFileKey = `edital_file_${currentUser ? currentUser.id : 'guest'}_${nomeFormatado}`;
-            const fileDataRaw = localStorage.getItem(oldFileKey);
-            if (fileDataRaw) {
-                localStorage.setItem(newFileKey, fileDataRaw);
-                localStorage.removeItem(oldFileKey);
-            }
-
-            allEditalItems.forEach(item => {
-                if ((item.concurso || 'Concurso Geral') === antigoNome) item.concurso = nomeFormatado;
-            });
-            saveEditalToLocalStorage();
-
-            if (navigator.onLine && currentUser) {
-                try {
-                    await supabaseClient.from('edital').update({ concurso: nomeFormatado }).eq('user_id', currentUser.id).eq('concurso', antigoNome);
-                    await supabaseClient.from('flashcards').update({ concurso: nomeFormatado }).eq('user_id', currentUser.id).eq('concurso', antigoNome);
-                } catch(err) { console.warn('Erro ao renomear na nuvem:', err); }
-            }
-
-            currentConcurso = nomeFormatado;
-            localStorage.setItem('last_studied_concurso', currentConcurso);
-            changeConcurso(currentConcurso);
-            alert(`Concurso renomeado com sucesso para "${nomeFormatado}".`);
-        }
-
-        async function removerConcursoAtual() {
-            if (currentConcurso.trim().toLowerCase() === 'concurso geral') return alert('O Concurso Geral padrão não pode ser excluído.');
-            if (confirm(`Deseja remover o concurso "${currentConcurso}" e todos os seus itens?`)) {
-                let metadata = getConcursosMetadata();
-                delete metadata[currentConcurso];
-                await saveConcursosMetadata(metadata);
-
-                const itemsToDelete = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-                for (let item of itemsToDelete) await deleteEditalItemFromCloud(item.id);
-
-                if (navigator.onLine && currentUser) {
-                    try {
-                        await supabaseClient.from('flashcards').delete().eq('user_id', currentUser.id).eq('concurso', currentConcurso);
-                    } catch(e) {}
-                }
-
-                currentConcurso = 'Concurso Geral';
-                localStorage.setItem('last_studied_concurso', currentConcurso);
-                changeConcurso(currentConcurso);
-            }
-        }
-
-        async function excluirMateriaEspecifica() {
-            const materias = getUniqueMateriasFromEdital();
-            if (materias.length === 0) return alert('Não há matérias cadastradas para excluir.');
-            const listaFormatada = materias.map((m, idx) => `${idx + 1}. ${m}`).join('\n');
-            const resposta = prompt(`Digite o NÚMERO ou o NOME exato da matéria que deseja excluir:\n\n${listaFormatada}`);
-            if (!resposta || !resposta.trim()) return;
-
-            let materiaParaExcluir = null;
-            const numIndex = parseInt(resposta.trim()) - 1;
-            if (!isNaN(numIndex) && numIndex >= 0 && numIndex < materias.length) materiaParaExcluir = materias[numIndex];
-            else materiaParaExcluir = materias.find(m => m.toLowerCase() === resposta.trim().toLowerCase());
-
-            if (!materiaParaExcluir) return alert('Matéria não encontrada.');
-            if (confirm(`Tem certeza de que deseja excluir a matéria "${materiaParaExcluir}" e TODOS os seus assuntos?`)) {
-                const itemsToDelete = editalItems.filter(i => i.materia === materiaParaExcluir);
-                for (let item of itemsToDelete) await deleteEditalItemFromCloud(item.id);
-                filterDataByConcurso();
-                alert(`A matéria "${materiaParaExcluir}" foi excluída com sucesso!`);
-            }
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('edital-list');
-            tbody.innerHTML = '';
-            const materiasMap = {};
-            editalItems.forEach(item => {
-                const mat = item.materia || 'Geral';
-                if (!materiasMap[mat]) materiasMap[mat] = { items: [], prioridade: item.prioridade || 1 };
-                materiasMap[mat].items.push(item);
-            });
-
-            const sortedMaterias = Object.keys(materiasMap).sort((a, b) => (materiasMap[a].prioridade || 1) - (materiasMap[b].prioridade || 1));
-
-            sortedMaterias.forEach(materiaName => {
-                const group = materiasMap[materiaName];
-                const isOpen = openMaterias[materiaName] !== false;
-                const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
-
-                tbody.innerHTML += `
-                    <tr class="materia-header-row" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
-                        <td onclick="event.stopPropagation()">
-                            <input type="number" class="priority-input" value="${group.prioridade}" min="1" onchange="updateMateriaPriority('${materiaName.replace(/'/g, "\\'")}', this.value)">
-                        </td>
-                        <td colspan="7">
-                            <div class="materia-header-content">
-                                <span><strong>${materiaName}</strong> (${group.items.length} assuntos)</span>
-                                <span>${isOpen ? 'Recolher' : 'Expandir'}</span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-
-                if (isOpen) {
-                    const sortedAssuntos = [...group.items].sort((a, b) => (a.assunto_prioridade || 1) - (b.assunto_prioridade || 1));
-                    sortedAssuntos.forEach(item => {
-                        const safeId = String(item.id);
-                        tbody.innerHTML += `
-                            <tr style="border-left: 4px solid ${PALETA_SOLIDAS[colorIdx % PALETA_SOLIDAS.length]};">
-                                <td>
-                                    <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority('${safeId}', this.value)" title="Prioridade do Assunto">
-                                </td>
-                                <td style="text-align: left; padding-left: 1.5rem;">${item.assunto}</td>
-                                <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'teoria', ${item.teoria})"></td>
-                                <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'questoes', ${item.questoes})"></td>
-                                <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_24h', ${item.rev_24h})"></td>
-                                <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_7d', ${item.rev_7d})"></td>
-                                <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_30d', ${item.rev_30d})"></td>
-                                <td><button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes('${safeId}')">Limpar</button></td>
-                            </tr>
-                        `;
-                    });
-                }
-            });
-        }
-
-        function toggleMateria(materiaName) { openMaterias[materiaName] = !openMaterias[materiaName]; renderTable(); }
-        function toggleAllAccordions(open) { editalItems.forEach(i => openMaterias[i.materia] = open); renderTable(); }
-
-        async function updateMateriaPriority(materiaName, newPriority) {
-            const val = parseInt(newPriority) || 1;
-            editalItems.forEach(item => {
-                if (item.materia === materiaName) {
-                    item.prioridade = val;
-                    saveEditalItemToCloud(item);
-                }
-            });
-            filterDataByConcurso();
-        }
-
-        async function updateAssuntoPriority(id, newPriority) {
-            const val = parseInt(newPriority) || 1;
-            const item = allEditalItems.find(i => String(i.id) === String(id));
-            if (item) {
-                item.assunto_prioridade = val;
-                await saveEditalItemToCloud(item);
-                filterDataByConcurso();
-            }
-        }
-
-        async function toggleCheck(id, field, currentValue) {
-            const item = allEditalItems.find(i => String(i.id) === String(id));
-            if (item) {
-                item[field] = !currentValue;
-                await saveEditalItemToCloud(item);
-                filterDataByConcurso();
-                renderMonthCalendar();
-            }
-        }
-
-        async function clearRowCheckboxes(id) {
-            const item = allEditalItems.find(i => String(i.id) === String(id));
-            if (item) {
-                item.teoria = false; item.questoes = false; item.rev_24h = false; item.rev_7d = false; item.rev_30d = false;
-                await saveEditalItemToCloud(item);
-                filterDataByConcurso();
-                renderMonthCalendar();
-            }
-        }
-
-        async function addManualItem(e) {
-            e.preventDefault();
-            const materia = document.getElementById('materia').value.trim();
-            const assunto = document.getElementById('assunto').value.trim();
-            const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
-
-            const newItem = {
-                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                materia, assunto, prioridade, assunto_prioridade: 1, concurso: currentConcurso,
-                user_id: currentUser ? currentUser.id : null,
-                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
-            };
-
-            allEditalItems.push(newItem);
-            openMaterias[materia] = true;
-            await saveEditalItemToCloud(newItem);
-            document.getElementById('materia').value = '';
-            document.getElementById('assunto').value = '';
-            filterDataByConcurso();
-        }
-
-        async function clearData() {
-            if (confirm(`Apagar todos os tópicos do edital "${currentConcurso}"?`)) {
-                const toRemove = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-                for (let i of toRemove) await deleteEditalItemFromCloud(i.id);
-                filterDataByConcurso();
-            }
-        }
-
-        async function importJSON(event) {
-            const file = event.target.files ? event.target.files[0] : null;
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    let rawData = JSON.parse(e.target.result);
-                    let formattedData = [];
-
-                    let targetConcurso = rawData.concurso || rawData.nome || currentConcurso;
-                    if (!targetConcurso || targetConcurso === 'Concurso Geral') {
-                        targetConcurso = prompt("Informe o nome do Concurso para este arquivo JSON:", "TJ-CE Técnico Judiciário");
-                    }
-                    if (!targetConcurso) return alert("Nome do concurso é obrigatório para importação.");
-
-                    currentConcurso = targetConcurso.trim();
-                    localStorage.setItem('last_studied_concurso', currentConcurso);
-
-                    let metadata = getConcursosMetadata();
-                    if (!metadata[currentConcurso]) {
-                        metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
-                    }
-                    await saveConcursosMetadata(metadata);
-
-                    let listMaterias = Array.isArray(rawData) ? rawData : (rawData.materias || rawData.disciplinas || rawData.modulos || rawData.edital || rawData.conteudos || []);
-
-                    if (Array.isArray(listMaterias)) {
-                        listMaterias.forEach((matObj, idxMat) => {
-                            let mName = matObj.materia || matObj.disciplina || matObj.nome || matObj.titulo || `Matéria ${idxMat + 1}`;
-                            let prio = parseInt(matObj.prioridade || matObj.ordem || (idxMat + 1));
-                            let listAssuntos = matObj.assuntos || matObj.topicos || matObj.conteudos || matObj.itens || [];
-
-                            if (Array.isArray(listAssuntos)) {
-                                listAssuntos.forEach((assuntoItem, idxAss) => {
-                                    let assuntoText = typeof assuntoItem === 'string' ? assuntoItem : (assuntoItem.nome || assuntoItem.titulo || assuntoItem.assunto || 'Tópico');
-                                    
-                                    const itemObj = {
-                                        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random() + idxMat + idxAss),
-                                        materia: mName, 
-                                        assunto: assuntoText,
-                                        prioridade: prio, 
-                                        assunto_prioridade: idxAss + 1, 
-                                        concurso: currentConcurso,
-                                        user_id: currentUser ? currentUser.id : null,
-                                        teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
-                                    };
-
-                                    formattedData.push(itemObj);
-                                    allEditalItems.push(itemObj);
-                                    openMaterias[mName] = true;
-                                });
-                            }
-                        });
-                    }
-
-                    if (formattedData.length > 0) {
-                        saveEditalToLocalStorage();
-
-                        if (navigator.onLine && currentUser) {
-                            try {
-                                const payloadList = formattedData.map(item => ({
-                                    id: String(item.id),
-                                    user_id: currentUser.id,
-                                    materia: item.materia,
-                                    assunto: item.assunto,
-                                    prioridade: item.prioridade,
-                                    assunto_prioridade: item.assunto_prioridade,
-                                    concurso: currentConcurso,
-                                    teoria: false,
-                                    questoes: false,
-                                    rev_24h: false,
-                                    rev_7d: false,
-                                    rev_30d: false
-                                }));
-                                await supabaseClient.from('edital').upsert(payloadList, { onConflict: 'id' });
-                            } catch (errSync) {
-                                console.warn('Erro enviando lote importado para o banco:', errSync);
-                            }
-                        }
-
-                        filterDataByConcurso();
-                        alert(`Sucesso! ${formattedData.length} tópicos foram gravados no Edital do concurso "${currentConcurso}".`);
-                    } else {
-                        alert('Não foi possível identificar matérias e assuntos válidos no JSON.');
-                    }
-                } catch(err) {
-                    console.error('Erro na leitura do JSON:', err);
-                    alert('Erro ao processar o arquivo JSON. Certifique-se de que o arquivo está correto.');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
-        }
-
-        function updateCountdownBadge() {
-            const badge = document.getElementById('countdownBadge');
-            const metadata = getConcursosMetadata();
-            const dataStr = metadata[currentConcurso]?.dataProva;
-            if (!dataStr) { badge.textContent = "Data da prova não definida"; return; }
-            const diffDias = Math.ceil((new Date(dataStr + "T00:00:00") - new Date()) / (1000 * 60 * 60 * 24));
-            badge.textContent = diffDias < 0 ? "Prova realizada" : (diffDias === 0 ? "Prova HOJE!" : `Faltam ${diffDias} dias`);
-        }
-
-        async function editarDataProva() {
-            let metadata = getConcursosMetadata();
-            const novaData = prompt(`Data da prova (AAAA-MM-DD):`, metadata[currentConcurso]?.dataProva || '');
-            if (novaData !== null) {
-                if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-                metadata[currentConcurso].dataProva = novaData.trim() || null;
-                await saveConcursosMetadata(metadata);
-                updateCountdownBadge();
-            }
-        }
-
-        function renderChart() {
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            const legendGrid = document.getElementById('chartLegendGrid');
-            const counts = {};
-
-            editalItems.forEach(item => {
-                const mat = item.materia || 'Geral';
-                if (!counts[mat]) counts[mat] = { total: 0, concluido: 0 };
-                counts[mat].total += 5;
-                if (item.teoria) counts[mat].concluido++;
-                if (item.questoes) counts[mat].concluido++;
-                if (item.rev_24h) counts[mat].concluido++;
-                if (item.rev_7d) counts[mat].concluido++;
-                if (item.rev_30d) counts[mat].concluido++;
-            });
-
-            const labels = Object.keys(counts);
-            const percentData = labels.map(l => Math.round((counts[l].concluido / (counts[l].total || 1)) * 100));
-            const barColors = labels.map((_, idx) => PALETA_SOLIDAS[idx % PALETA_SOLIDAS.length]);
-
-            if (legendGrid) {
-                legendGrid.innerHTML = '';
-                labels.forEach((mName, idx) => {
-                    const color = PALETA_SOLIDAS[idx % PALETA_SOLIDAS.length];
-                    legendGrid.innerHTML += `
-                        <div class="chart-legend-item">
-                            <span class="chart-legend-color" style="background-color: ${color};"></span>
-                            <span>${mName} (${percentData[idx]}%)</span>
-                        </div>
-                    `;
-                });
-            }
-
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{ label: 'Progresso %', data: percentData, backgroundColor: barColors }]
-                },
-                options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, max: 100 } } }
-            });
-        }
-
-        function getMateriaColorIndex(materiaName, sortedMaterias) {
-            const idx = sortedMaterias.indexOf(materiaName);
-            return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
-        }
-
-        let timerInterval = null;
-        let timeLeft = 25 * 60;
-
-        function updateTimerSettings() {
-            if (!timerInterval) {
-                timeLeft = (parseInt(document.getElementById('focoMin').value) || 25) * 60;
-                updateDisplay();
-            }
-        }
-
-        function updateDisplay() {
-            const min = Math.floor(timeLeft / 60);
-            const sec = timeLeft % 60;
-            document.getElementById('timer').innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-        }
-
-        function startTimer() {
-            if (timerInterval) return;
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) { timeLeft--; updateDisplay(); }
-                else { clearInterval(timerInterval); timerInterval = null; alert('Pomodoro Finalizado!'); }
-            }, 1000);
-        }
-
-        function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
-
-        function openModalViewEdital() {
-            document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
-            renderEditalFileViewer();
-            document.getElementById('modalViewEdital').style.display = 'flex';
-        }
-
-        function closeModalViewEdital() {
-            if (activeObjectUrl) { URL.revokeObjectURL(activeObjectUrl); activeObjectUrl = null; }
-            document.getElementById('modalViewEdital').style.display = 'none';
-        }
-
-        function getEditalFileStorageKey() {
-            const uid = currentUser ? currentUser.id : 'guest';
-            return `edital_file_${uid}_${currentConcurso}`;
-        }
-
-        function dataURLtoBlob(dataurl) {
-            const arr = dataurl.split(',');
-            const mime = arr[0].match(/:(.*?);/)[1];
-            const bstr = atob(arr[1]);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) { u8arr[n] = bstr.charCodeAt(n); }
-            return new Blob([u8arr], { type: mime });
-        }
-
-        function renderEditalFileViewer() {
-            const container = document.getElementById('editalViewerContainer');
-            const btnDownload = document.getElementById('btnDownloadEdital');
-            const btnRemove = document.getElementById('btnRemoveEdital');
-
-            if (activeObjectUrl) { URL.revokeObjectURL(activeObjectUrl); activeObjectUrl = null; }
-            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
-
-            if (!fileDataRaw) {
-                container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${currentConcurso}</strong>.</p>`;
-                btnDownload.style.display = 'none';
-                btnRemove.style.display = 'none';
-                return;
-            }
-
-            try {
-                const fileObj = JSON.parse(fileDataRaw);
-                btnDownload.style.display = 'inline-flex';
-                btnRemove.style.display = 'inline-flex';
-                if (fileObj.type.includes('pdf')) {
-                    const blob = dataURLtoBlob(fileObj.data);
-                    activeObjectUrl = URL.createObjectURL(blob);
-                    container.innerHTML = `<embed src="${activeObjectUrl}#toolbar=1" type="application/pdf" style="width:100%; height:100%; min-height:500px; border:none; border-radius:6px;"></embed>`;
-                } else if (fileObj.type.includes('image')) {
-                    container.innerHTML = `<img src="${fileObj.data}" style="max-width:100%; max-height:480px; border-radius:6px; object-fit:contain;">`;
-                } else {
-                    container.innerHTML = `<p style="font-size:1.1rem; font-weight:700; color:var(--primary-blue);">${fileObj.name}</p>`;
-                }
-            } catch (e) {
-                container.innerHTML = `<p style="color:#ef4444;">Erro ao carregar arquivo do edital.</p>`;
-            }
-        }
-
-        function uploadEditalFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const fileObj = { name: file.name, type: file.type || 'application/pdf', data: e.target.result };
-                localStorage.setItem(getEditalFileStorageKey(), JSON.stringify(fileObj));
-                renderEditalFileViewer();
-                alert('Arquivo anexado com sucesso!');
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
-        }
-
-        function downloadEditalFile() {
-            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
-            if (!fileDataRaw) return;
-            const fileObj = JSON.parse(fileDataRaw);
-            const a = document.createElement('a');
-            a.href = fileObj.data;
-            a.download = fileObj.name || 'Edital.pdf';
-            a.click();
-        }
-
-        function removerEditalFile() {
-            if (confirm(`Remover o edital do concurso "${currentConcurso}"?`)) {
-                localStorage.removeItem(getEditalFileStorageKey());
-                renderEditalFileViewer();
-            }
-        }
-
-        function openModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'flex'; }
-        function closeModalPromptIA() { document.getElementById('modalPromptIA').style.display = 'none'; }
-        function copyPromptToClipboard() {
-            navigator.clipboard.writeText(document.getElementById('promptTextToCopy').innerText);
-            alert('Prompt copiado!');
-        }
-
-        async function checkAuthAndSync() {
+        // --- AUTENTICAÇÃO E CONTROLE DE TELAS ---
+        async function checkAuth() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session && session.user) {
                 currentUser = session.user;
-                checkSuperUserStatus();
                 showDashboard();
             } else {
                 document.getElementById('auth-screen').style.display = 'flex';
@@ -2738,52 +764,31 @@
         async function handleLogin() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
-            if (!email || !password) return alert('Preencha e-mail e senha.');
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert('Erro ao entrar: ' + error.message);
-            else { currentUser = data.user; checkSuperUserStatus(); showDashboard(); }
+            if (error) alert('Erro: ' + error.message);
+            else { currentUser = data.user; showDashboard(); }
         }
 
         async function handleSignUp() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
-            if (!email || !password) return alert('Preencha e-mail e senha.');
             const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) alert('Erro ao cadastrar: ' + error.message);
-            else alert('Cadastro realizado com sucesso! Clique em Entrar.');
+            if (error) alert('Erro: ' + error.message);
+            else alert('Cadastrado com sucesso! Faça login.');
         }
 
         async function handleLogout() {
             await supabaseClient.auth.signOut();
-            currentUser = null; isSuperUser = false;
+            currentUser = null;
             document.getElementById('app-dashboard').style.display = 'none';
             document.getElementById('auth-screen').style.display = 'flex';
-        }
-
-        function checkSuperUserStatus() {
-            isSuperUser = true; 
-            const badge = document.getElementById('superUserBadge');
-            if (badge) badge.style.display = isSuperUser ? 'inline-block' : 'none';
         }
 
         function showDashboard() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-dashboard').style.display = 'block';
-            updateOnlineStatus();
             loadData();
         }
-
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (session && session.user) {
-                currentUser = session.user;
-                checkSuperUserStatus();
-                showDashboard();
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', () => { checkAuthAndSync(); });
-
-        function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
 
         function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
@@ -2792,90 +797,30 @@
             btn.classList.add('active');
         }
 
-        window.handleSignUp = handleSignUp;
-        window.handleLogin = handleLogin;
-        window.handleLogout = handleLogout;
-        window.toggleDarkMode = toggleDarkMode;
-        window.switchTab = switchTab;
-        window.importJSON = importJSON;
-        window.clearData = clearData;
-        window.addManualItem = addManualItem;
-        window.toggleCheck = toggleCheck;
-        window.clearRowCheckboxes = clearRowCheckboxes;
-        window.toggleMateria = toggleMateria;
-        window.toggleAllAccordions = toggleAllAccordions;
-        window.updateMateriaPriority = updateMateriaPriority;
-        window.updateAssuntoPriority = updateAssuntoPriority;
-        window.excluirMateriaEspecifica = excluirMateriaEspecifica;
-        window.changeConcurso = changeConcurso;
-        window.openModalNovoConcurso = openModalNovoConcurso;
-        window.closeModalNovoConcurso = closeModalNovoConcurso;
-        window.confirmarNovoConcurso = confirmarNovoConcurso;
-        window.renomearConcursoAtual = renomearConcursoAtual;
-        window.removerConcursoAtual = removerConcursoAtual;
-        window.editarDataProva = editarDataProva;
-        window.startTimer = startTimer;
-        window.resetTimer = resetTimer;
-        window.updateTimerSettings = updateTimerSettings;
-        window.openModalPromptIA = openModalPromptIA;
-        window.closeModalPromptIA = closeModalPromptIA;
-        window.copyPromptToClipboard = copyPromptToClipboard;
-        window.openModalViewEdital = openModalViewEdital;
-        window.closeModalViewEdital = closeModalViewEdital;
-        window.uploadEditalFile = uploadEditalFile;
-        window.downloadEditalFile = downloadEditalFile;
-        window.removerEditalFile = removerEditalFile;
-        window.forceFullSync = forceFullSync;
-        window.addFlashcard = addFlashcard;
-        window.removeFlashcard = removeFlashcard;
-        window.openEditarFlashcardModal = openEditarFlashcardModal;
-        window.closeModalEditarFlashcard = closeModalEditarFlashcard;
-        window.salvarEdicaoFlashcard = salvarEdicaoFlashcard;
-        window.onMonthYearChange = onMonthYearChange;
-        window.limparCronogramaMesAtual = limparCronogramaMesAtual;
-        window.filterDelayedList = filterDelayedList;
-        window.updateFcAssuntoOptions = updateFcAssuntoOptions;
-        window.processPastedFlashcardsText = processPastedFlashcardsText;
-        window.startShuffleStudyModal = startShuffleStudyModal;
-        window.toggleStudyCardAnswer = toggleStudyCardAnswer;
-        window.nextStudyCard = nextStudyCard;
-        window.closeStudyModal = closeStudyModal;
-        window.openModalConfigHorarios = openModalConfigHorarios;
-        window.closeModalConfigHorarios = closeModalConfigHorarios;
-        window.gerarCronogramaInteligente = gerarCronogramaInteligente;
-        window.renderNotesList = renderNotesList;
-        window.openModalNovaNota = openModalNovaNota;
-        window.closeModalNovaNota = closeModalNovaNota;
-        window.salvarNota = salvarNota;
-        window.editNota = editNota;
-        window.deleteNota = deleteNota;
-        window.handleActionButton = handleActionButton;
-        window.openModalDayContent = openModalDayContent;
-        window.closeModalDayContent = closeModalDayContent;
-        window.toggleCheckFromModal = toggleCheckFromModal;
-        window.deleteTopicFromDay = deleteTopicFromDay;
-        window.openModalSelectCronogramaType = openModalSelectCronogramaType;
-        window.closeModalSelectCronogramaType = closeModalSelectCronogramaType;
-        window.chooseCronogramaType = chooseCronogramaType;
-        window.openModalMentorisMethod = openModalMentorisMethod;
-        window.closeModalMentorisMethod = closeModalMentorisMethod;
-        window.toggleWeekdaySelect = toggleWeekdaySelect;
-        window.selectHoursOption = selectHoursOption;
-        window.gerarCronogramaMetodo2 = gerarCronogramaMetodo2;
-        window.showEditTopicDropdown = showEditTopicDropdown;
-        window.updateEditAssuntoDropdown = updateEditAssuntoDropdown;
-        window.confirmEditTopicWithSwap = confirmEditTopicWithSwap;
-        window.addManualTopicToDay = addManualTopicToDay;
-        window.showAddTopicSelectors = showAddTopicSelectors;
-        window.updateAddAssuntoDropdown = updateAddAssuntoDropdown;
-        window.resetAddTopicArea = resetAddTopicArea;
-        window.confirmAddTopicWithSwap = confirmAddTopicWithSwap;
-        window.toggleFcFolder = toggleFcFolder;
-        window.setFlashcardViewFilter = setFlashcardViewFilter;
-        window.openModalFiltroEstudoFlashcards = openModalFiltroEstudoFlashcards;
-        window.closeModalFiltroEstudoFlashcards = closeModalFiltroEstudoFlashcards;
-        window.updateStudyFilterAssuntoOptions = updateStudyFilterAssuntoOptions;
-        window.startFilteredStudyModal = startFilteredStudyModal;
+        function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
+        function openModalNovaNota() { document.getElementById('modalNovaNota').style.display = 'flex'; }
+        function closeModalNovaNota() { document.getElementById('modalNovaNota').style.display = 'none'; }
+        function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
+        function closeModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'none'; }
+        
+        async function confirmarNovoConcurso() {
+            const nome = document.getElementById('inputNomeConcurso').value.trim();
+            if (!nome) return alert('Informe o nome.');
+            currentConcurso = nome;
+            closeModalNovoConcurso();
+            filterDataByConcurso();
+        }
+
+        async function removerConcursoAtual() {
+            if (confirm(`Excluir concurso ${currentConcurso}?`)) {
+                allEditalItems = allEditalItems.filter(i => i.concurso !== currentConcurso);
+                localStorage.setItem(`edital_${currentUser.id}`, JSON.stringify(allEditalItems));
+                currentConcurso = 'Concurso Geral';
+                filterDataByConcurso();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', checkAuth);
     </script>
 </body>
 </html>
