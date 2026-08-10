@@ -23,10 +23,11 @@
       }
     </script>
 
-    <!-- Supabase, Chart.js e PDF.js -->
+    <!-- Supabase, Chart.js, PDF.js e Mammoth (para Word .docx/.doc) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     
     <style>
         :root {
@@ -536,7 +537,7 @@
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
                         <label class="btn btn-success" style="cursor: pointer;">
-                            Carregar Perguntas (.txt, .csv, .doc, .pdf)
+                            Carregar Perguntas (.txt, .csv, .doc, .docx, .pdf)
                             <input type="file" id="fcFileInput" accept=".txt,.csv,.doc,.docx,.pdf" style="display: none;" onchange="importFlashcardsFile(event)">
                         </label>
                     </div>
@@ -1757,6 +1758,7 @@
             }
         }
 
+        /* CORREÇÃO ROBUSTA DE IMPORTAÇÃO DE FLASHCARDS PARA .DOCX / .PDF / .TXT */
         async function importFlashcardsFile(evt) {
             const file = evt.target.files[0];
             if (!file) return;
@@ -1765,7 +1767,12 @@
             let rawText = "";
 
             try {
-                if (fileName.endsWith('.pdf')) {
+                if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+                    // Uso da biblioteca Mammoth.js para extração limpa de Word sem lixo de binários ZIP/XML
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                    rawText = result.value || "";
+                } else if (fileName.endsWith('.pdf')) {
                     const arrayBuffer = await file.arrayBuffer();
                     const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                     let fullPdfText = "";
@@ -1784,10 +1791,6 @@
                     alert('Não foi possível extrair texto legível do arquivo selecionado.');
                     return;
                 }
-
-                rawText = rawText.replace(/<[^>]+>/g, ' ')
-                                 .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ')
-                                 .replace(/[^\x20-\x7E\xA0-\xFF\u0100-\u017F\s]/g, '');
 
                 const lines = rawText.split(/\r?\n|\r/);
                 let currentPergunta = '';
@@ -1828,7 +1831,7 @@
                 if (importedCount > 0) {
                     renderFlashcards();
                     await saveFlashcardsData();
-                    alert(`Sucesso! ${importedCount} flashcards foram importados.`);
+                    alert(`Sucesso! ${importedCount} flashcards foram importados sem erros.`);
                 } else {
                     alert('Não foram encontrados pares válidos de Pergunta e Resposta no arquivo.');
                 }
@@ -2318,7 +2321,7 @@
 
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
-                const isOpen = openMaterias[materiaName] !== false; // Padrão aberto se não estiver explicitamente false
+                const isOpen = openMaterias[materiaName] !== false;
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
 
                 tbody.innerHTML += `
@@ -2434,7 +2437,7 @@
             }
         }
 
-        /* FUNÇÃO IMPORTAR JSON FLEXÍVEL E ROBUSTA */
+        /* CORREÇÃO DEFINITIVA DE GRAVAÇÃO DO EDITAL VERTICALIZADO POR CONCURSO */
         async function importJSON(event) {
             const file = event.target.files ? event.target.files[0] : null;
             if (!file) return;
@@ -2445,27 +2448,23 @@
                     let rawData = JSON.parse(e.target.result);
                     let formattedData = [];
 
-                    // Determinar concurso alvo (prioriza o selecionado na tela)
+                    // Garante que o concurso atual seja estritamente o selecionado na tela
                     let targetConcurso = (currentConcurso && currentConcurso !== 'Concurso Geral') 
                         ? currentConcurso 
                         : (rawData.concurso || rawData.nome || 'Concurso Importado');
 
                     currentConcurso = targetConcurso;
+                    localStorage.setItem('last_studied_concurso', currentConcurso);
 
-                    // Atualizar metadados do concurso
+                    // Garante metadados e registro do concurso no app
                     let metadata = getConcursosMetadata();
                     if (!metadata[currentConcurso]) {
                         metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
                     }
                     await saveConcursosMetadata(metadata);
 
-                    // Identificar array de matérias flexivelmente
-                    let listMaterias = [];
-                    if (Array.isArray(rawData)) {
-                        listMaterias = rawData;
-                    } else {
-                        listMaterias = rawData.materias || rawData.disciplinas || rawData.modulos || rawData.edital || rawData.conteudos || [];
-                    }
+                    // Mapeia matérias com flexibilidade de sintaxe
+                    let listMaterias = Array.isArray(rawData) ? rawData : (rawData.materias || rawData.disciplinas || rawData.modulos || rawData.edital || rawData.conteudos || []);
 
                     if (Array.isArray(listMaterias)) {
                         listMaterias.forEach((matObj, idxMat) => {
@@ -2484,7 +2483,7 @@
                                         assunto: assuntoText,
                                         prioridade: prio, 
                                         assunto_prioridade: idxAss + 1, 
-                                        concurso: currentConcurso,
+                                        concurso: currentConcurso, // Vincula diretamente ao concurso ativo
                                         user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
                                     };
@@ -2498,8 +2497,10 @@
                     }
 
                     if (formattedData.length > 0) {
+                        // Persiste imediatamente na memória local
                         saveEditalToLocalStorage();
 
+                        // Sincroniza em lote no Supabase
                         if (navigator.onLine && currentUser) {
                             try {
                                 const payloadList = formattedData.map(item => ({
@@ -2509,7 +2510,7 @@
                                     assunto: item.assunto,
                                     prioridade: item.prioridade,
                                     assunto_prioridade: item.assunto_prioridade,
-                                    concurso: item.concurso,
+                                    concurso: currentConcurso,
                                     teoria: false,
                                     questoes: false,
                                     rev_24h: false,
@@ -2522,15 +2523,16 @@
                             }
                         }
 
+                        // Atualiza a visualização do concurso
                         filterDataByConcurso();
-                        alert(`Sucesso! ${formattedData.length} tópicos foram convertidos em Edital Verticalizado e salvos no concurso "${currentConcurso}".`);
+                        alert(`Sucesso! ${formattedData.length} tópicos foram gravados no Edital Verticalizado do concurso "${currentConcurso}".`);
                     } else {
-                        alert('Não foi possível identificar matérias/assuntos no JSON. Verifique a estrutura do arquivo.');
+                        alert('Não foi possível identificar matérias e assuntos válidos no JSON.');
                     }
 
                 } catch(err) {
                     console.error('Erro na leitura do JSON:', err);
-                    alert('Erro ao processar o arquivo JSON. Certifique-se de que é um JSON válido.');
+                    alert('Erro ao processar o arquivo JSON. Certifique-se de que o arquivo está correto.');
                 }
             };
             reader.readAsText(file);
