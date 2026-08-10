@@ -537,7 +537,7 @@
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
                         <label class="btn btn-success" style="cursor: pointer;">
-                            Carregar Perguntas (.txt, .csv, .doc, .docx, .pdf)
+                            Carregar Arquivo (.txt, .csv, .doc, .docx, .pdf)
                             <input type="file" id="fcFileInput" accept=".txt,.csv,.doc,.docx,.pdf" style="display: none;" onchange="importFlashcardsFile(event)">
                         </label>
                     </div>
@@ -546,7 +546,7 @@
                 <!-- GUIA / DICA DE IMPORTAÇÃO DE FLASHCARDS -->
                 <div class="import-info-box">
                     <h4>💡 Como importar suas perguntas sem erros de formatação:</h4>
-                    <p>Para garantir a leitura perfeita, você pode importar diretamente seus arquivos (<strong>.txt</strong>, <strong>.csv</strong>, <strong>.doc / .docx</strong> ou <strong>.pdf</strong>) estruturados assim:</p>
+                    <p>Você pode colar o texto diretamente na caixa abaixo ou importar arquivos (<strong>.txt</strong>, <strong>.csv</strong>, <strong>.doc / .docx</strong> ou <strong>.pdf</strong>) estruturados assim:</p>
                     <ul>
                         <li><strong>Linha a linha (com P: e R:):</strong><br>
                             <code>P: Qual a capital do Ceará?</code><br>
@@ -558,6 +558,15 @@
                     </ul>
                 </div>
 
+                <!-- NOVO: CAIXA DE IMPORTAÇÃO RÁPIDA DE TEXTO EM LOTE (COLAR PERGUNTAS DE UMA SÓ VEZ) -->
+                <div style="background: rgba(0,0,0,0.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem;">
+                    <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">📋 Importação Rápida via Texto (Colar em Lote)</h4>
+                    <p style="font-size: 0.85rem; opacity: 0.85; margin-bottom: 10px;">Cole o bloco de texto com suas perguntas e respostas abaixo e clique no botão para convertê-las automaticamente:</p>
+                    <textarea id="fcPasteTextArea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza" style="min-height: 120px; font-family: monospace; font-size: 0.88rem; margin-bottom: 10px;"></textarea>
+                    <button class="btn btn-success" onclick="processPastedFlashcardsText()">⚡ Converter Texto em Flashcards</button>
+                </div>
+
+                <!-- FORMULÁRIO INDIVIDUAL -->
                 <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
                         <select id="fcMateriaSelect" onchange="updateFcAssuntoOptions()" style="flex:1; min-width: 180px;">
@@ -569,7 +578,7 @@
                     </div>
                     <input type="text" id="fcPergunta" placeholder="Frente / Pergunta (ex: Qual o prazo do recurso?)" required>
                     <input type="text" id="fcResposta" placeholder="Verso / Resposta (ex: 15 dias úteis)" required>
-                    <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard</button>
+                    <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard Individual</button>
                 </form>
 
                 <div id="flashcardsContainer"></div>
@@ -1758,7 +1767,73 @@
             }
         }
 
-        /* CORREÇÃO ROBUSTA DE IMPORTAÇÃO DE FLASHCARDS PARA .DOCX / .PDF / .TXT */
+        /* FUNÇÃO AUXILIAR PARA PROCESSAR BLOCO DE TEXTO */
+        function parseTextToFlashcards(rawText, selectedMateria = '', selectedAssunto = '') {
+            if (!rawText || !rawText.trim()) return 0;
+
+            const lines = rawText.split(/\r?\n|\r/);
+            let currentPergunta = '';
+            let currentResposta = '';
+            let count = 0;
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.length < 2) return;
+
+                if (/^(p:|pergunta:)/i.test(trimmed)) {
+                    if (currentPergunta && currentResposta) {
+                        flashcardsList.push({ materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta });
+                        count++;
+                        currentResposta = '';
+                    }
+                    currentPergunta = trimmed.replace(/^(p:|pergunta:)/i, '').trim();
+                } else if (/^(r:|resposta:)/i.test(trimmed)) {
+                    currentResposta = trimmed.replace(/^(r:|resposta:)/i, '').trim();
+                } else {
+                    const parts = trimmed.split(/;|,/);
+                    if (parts.length >= 2) {
+                        const p = parts[0].trim();
+                        const r = parts.slice(1).join(';').trim();
+                        if (p && r && p.length > 1 && r.length > 1) {
+                            flashcardsList.push({ materia: selectedMateria, assunto: selectedAssunto, pergunta: p, resposta: r });
+                            count++;
+                        }
+                    }
+                }
+            });
+
+            if (currentPergunta && currentResposta) {
+                flashcardsList.push({ materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta });
+                count++;
+            }
+
+            return count;
+        }
+
+        /* IMPORTAÇÃO VIA CAIXA DE TEXTO COLADA */
+        async function processPastedFlashcardsText() {
+            const textArea = document.getElementById('fcPasteTextArea');
+            const rawText = textArea.value;
+            const materia = document.getElementById('fcMateriaSelect').value;
+            const assunto = document.getElementById('fcAssuntoSelect').value;
+
+            if (!rawText || !rawText.trim()) {
+                return alert('Cole o texto das perguntas e respostas na caixa antes de converter.');
+            }
+
+            const importedCount = parseTextToFlashcards(rawText, materia, assunto);
+
+            if (importedCount > 0) {
+                textArea.value = '';
+                renderFlashcards();
+                await saveFlashcardsData();
+                alert(`Sucesso! ${importedCount} flashcards foram gerados e adicionados.`);
+            } else {
+                alert('Não foi possível reconhecer o formato das perguntas/respostas. Certifique-se de usar "P:" e "R:" ou separar por ponto e vírgula (;).');
+            }
+        }
+
+        /* IMPORTAÇÃO DE FLASHCARDS VIA ARQUIVOS */
         async function importFlashcardsFile(evt) {
             const file = evt.target.files[0];
             if (!file) return;
@@ -1768,7 +1843,6 @@
 
             try {
                 if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
-                    // Uso da biblioteca Mammoth.js para extração limpa de Word sem lixo de binários ZIP/XML
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
                     rawText = result.value || "";
@@ -1787,51 +1861,14 @@
                     rawText = await file.text();
                 }
 
-                if (!rawText || !rawText.trim()) {
-                    alert('Não foi possível extrair texto legível do arquivo selecionado.');
-                    return;
-                }
-
-                const lines = rawText.split(/\r?\n|\r/);
-                let currentPergunta = '';
-                let currentResposta = '';
-                let importedCount = 0;
-
-                lines.forEach(line => {
-                    const trimmed = line.trim();
-                    if (!trimmed || trimmed.length < 2) return;
-
-                    if (/^(p:|pergunta:)/i.test(trimmed)) {
-                        if (currentPergunta && currentResposta) {
-                            flashcardsList.push({ materia: '', assunto: '', pergunta: currentPergunta, resposta: currentResposta });
-                            importedCount++;
-                            currentResposta = '';
-                        }
-                        currentPergunta = trimmed.replace(/^(p:|pergunta:)/i, '').trim();
-                    } else if (/^(r:|resposta:)/i.test(trimmed)) {
-                        currentResposta = trimmed.replace(/^(r:|resposta:)/i, '').trim();
-                    } else {
-                        const parts = trimmed.split(/;|,/);
-                        if (parts.length >= 2) {
-                            const p = parts[0].trim();
-                            const r = parts.slice(1).join(';').trim();
-                            if (p && r && p.length > 1 && r.length > 1) {
-                                flashcardsList.push({ materia: '', assunto: '', pergunta: p, resposta: r });
-                                importedCount++;
-                            }
-                        }
-                    }
-                });
-
-                if (currentPergunta && currentResposta) {
-                    flashcardsList.push({ materia: '', assunto: '', pergunta: currentPergunta, resposta: currentResposta });
-                    importedCount++;
-                }
+                const materia = document.getElementById('fcMateriaSelect').value;
+                const assunto = document.getElementById('fcAssuntoSelect').value;
+                const importedCount = parseTextToFlashcards(rawText, materia, assunto);
 
                 if (importedCount > 0) {
                     renderFlashcards();
                     await saveFlashcardsData();
-                    alert(`Sucesso! ${importedCount} flashcards foram importados sem erros.`);
+                    alert(`Sucesso! ${importedCount} flashcards foram importados do arquivo.`);
                 } else {
                     alert('Não foram encontrados pares válidos de Pergunta e Resposta no arquivo.');
                 }
@@ -2437,7 +2474,6 @@
             }
         }
 
-        /* CORREÇÃO DEFINITIVA DE GRAVAÇÃO DO EDITAL VERTICALIZADO POR CONCURSO */
         async function importJSON(event) {
             const file = event.target.files ? event.target.files[0] : null;
             if (!file) return;
@@ -2448,7 +2484,6 @@
                     let rawData = JSON.parse(e.target.result);
                     let formattedData = [];
 
-                    // Garante que o concurso atual seja estritamente o selecionado na tela
                     let targetConcurso = (currentConcurso && currentConcurso !== 'Concurso Geral') 
                         ? currentConcurso 
                         : (rawData.concurso || rawData.nome || 'Concurso Importado');
@@ -2456,14 +2491,12 @@
                     currentConcurso = targetConcurso;
                     localStorage.setItem('last_studied_concurso', currentConcurso);
 
-                    // Garante metadados e registro do concurso no app
                     let metadata = getConcursosMetadata();
                     if (!metadata[currentConcurso]) {
                         metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
                     }
                     await saveConcursosMetadata(metadata);
 
-                    // Mapeia matérias com flexibilidade de sintaxe
                     let listMaterias = Array.isArray(rawData) ? rawData : (rawData.materias || rawData.disciplinas || rawData.modulos || rawData.edital || rawData.conteudos || []);
 
                     if (Array.isArray(listMaterias)) {
@@ -2483,7 +2516,7 @@
                                         assunto: assuntoText,
                                         prioridade: prio, 
                                         assunto_prioridade: idxAss + 1, 
-                                        concurso: currentConcurso, // Vincula diretamente ao concurso ativo
+                                        concurso: currentConcurso,
                                         user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
                                     };
@@ -2497,10 +2530,8 @@
                     }
 
                     if (formattedData.length > 0) {
-                        // Persiste imediatamente na memória local
                         saveEditalToLocalStorage();
 
-                        // Sincroniza em lote no Supabase
                         if (navigator.onLine && currentUser) {
                             try {
                                 const payloadList = formattedData.map(item => ({
@@ -2523,7 +2554,6 @@
                             }
                         }
 
-                        // Atualiza a visualização do concurso
                         filterDataByConcurso();
                         alert(`Sucesso! ${formattedData.length} tópicos foram gravados no Edital Verticalizado do concurso "${currentConcurso}".`);
                     } else {
@@ -2869,6 +2899,7 @@
         window.limparCronogramaMesAtual = limparCronogramaMesAtual;
         window.filterDelayedList = filterDelayedList;
         window.updateFcAssuntoOptions = updateFcAssuntoOptions;
+        window.processPastedFlashcardsText = processPastedFlashcardsText;
         window.importFlashcardsFile = importFlashcardsFile;
         window.startShuffleStudyModal = startShuffleStudyModal;
         window.toggleStudyCardAnswer = toggleStudyCardAnswer;
