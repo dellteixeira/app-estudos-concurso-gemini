@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- TAGS ANTI-CACHE PARA EVITAR QUE VOLTE AO VISUAL ANTIGO -->
+    <!-- TAGS ANTI-CACHE -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Meu Painel de Estudos</title>
 
-    <!-- Configurações PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,16 +20,12 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(reg => {
-              reg.update();
-              console.log('Service Worker atualizado com sucesso:', reg);
-            })
+            .then(reg => { reg.update(); })
             .catch(err => console.error('Erro no Service Worker:', err));
         });
       }
     </script>
 
-    <!-- Supabase, Chart.js, PDF.js e Mammoth (para Word .docx/.doc) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -107,28 +102,13 @@
 
         .action-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; width: 100%; }
         .action-bar .btn-action { 
-            background-color: #475569; 
-            color: #ffffff; 
-            padding: 0.6rem 0.9rem; 
-            font-size: 0.88rem; 
-            font-weight: 600; 
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
-            flex: 1 1 auto; 
-            justify-content: center; 
-            text-align: center; 
-            min-width: 130px; 
-            cursor: pointer; 
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            background-color: #475569; color: #ffffff; padding: 0.6rem 0.9rem; font-size: 0.88rem; font-weight: 600; 
+            border: 1px solid var(--border-color); border-radius: 8px; flex: 1 1 auto; justify-content: center; 
+            text-align: center; min-width: 130px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;
         }
         .action-bar .btn-action:hover { background-color: #64748b; }
         .action-bar .btn-action.active-blue { 
-            background-color: var(--primary-blue) !important; 
-            border-color: #60a5fa !important; 
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); 
+            background-color: var(--primary-blue) !important; border-color: #60a5fa !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); 
         }
 
         .nav-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; flex-wrap: wrap; }
@@ -171,7 +151,6 @@
         .delayed-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; }
         .delayed-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
         .delayed-title { font-size: 1.4rem; font-weight: 800; }
-
         .badge-delayed { background: #ef4444; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
 
         .filter-tabs { display: flex; gap: 8px; margin-bottom: 1rem; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; width: fit-content; }
@@ -183,10 +162,8 @@
             border-radius: 10px; padding: 1rem; margin-bottom: 0.8rem; display: flex;
             justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
         }
-
         .delayed-card-info h4 { color: #ef4444; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 4px; }
         .delayed-card-info p { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
-
         .delayed-tag { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
 
         .month-calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: 700; color: var(--primary-blue); margin-bottom: 8px; }
@@ -254,13 +231,11 @@
             border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: flex;
             justify-content: space-between; align-items: flex-start; gap: 1rem;
         }
-
         .flashcard-content { flex: 1; word-break: break-word; }
         .flashcard-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
         .flashcard-badge-materia { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
         .flashcard-badge-assunto { background: rgba(255,255,255,0.1); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
 
-        /* ESTILOS ANKI DECKS / PASTAS DE FLASHCARDS */
         .anki-folder-card {
             background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
             border-radius: 10px; margin-bottom: 1rem; overflow: hidden;
@@ -309,27 +284,11 @@
         }
 
         .chart-legend-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 10px;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);
         }
-        .chart-legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-color);
-        }
-        .chart-legend-color {
-            width: 14px;
-            height: 14px;
-            border-radius: 3px;
-            flex-shrink: 0;
-        }
+        .chart-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--text-color); }
+        .chart-legend-color { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
 
         .day-topic-row {
             background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
@@ -337,19 +296,15 @@
             justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
         }
 
-        .weekday-picker {
-            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 12px 0;
-        }
+        .weekday-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 12px 0; }
         .weekday-btn {
             background: var(--card-bg); border: 2px solid var(--border-color);
-            border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer;
-            transition: all 0.2s ease;
+            border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s ease;
         }
         .weekday-btn strong { display: block; font-size: 1.1rem; color: var(--text-color); }
         .weekday-btn span { font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; }
         .weekday-btn.selected {
-            border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.15);
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+            border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.15); box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
         }
 
         .hours-option-card {
@@ -569,7 +524,6 @@
                     </div>
                 </div>
 
-                <!-- GUIA / DICA DE IMPORTAÇÃO DE FLASHCARDS -->
                 <div class="import-info-box">
                     <h4>💡 Como importar suas perguntas sem erros de formatação:</h4>
                     <p>Você pode colar o texto diretamente na caixa abaixo estruturado assim:</p>
@@ -584,7 +538,6 @@
                     </ul>
                 </div>
 
-                <!-- CAIXA DE IMPORTAÇÃO RÁPIDA DE TEXTO EM LOTE (COLAR PERGUNTAS DE UMA SÓ VEZ) -->
                 <div style="background: rgba(0,0,0,0.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem;">
                     <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">📋 Importação Rápida via Texto (Colar em Lote)</h4>
                     <p style="font-size: 0.85rem; opacity: 0.85; margin-bottom: 10px;">Cole o bloco de texto com suas perguntas e respostas abaixo e clique no botão para convertê-las automaticamente:</p>
@@ -592,7 +545,6 @@
                     <button class="btn btn-success" onclick="processPastedFlashcardsText()">⚡ Converter Texto em Flashcards</button>
                 </div>
 
-                <!-- FORMULÁRIO INDIVIDUAL -->
                 <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
                         <select id="fcMateriaSelect" onchange="updateFcAssuntoOptions()" style="flex:1; min-width: 180px;">
@@ -607,7 +559,6 @@
                     <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard Individual</button>
                 </form>
 
-                <!-- ÁREA DE DECKS / PASTAS ESTILO ANKI -->
                 <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
                     <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px;">
                         📁 Baralhos / Pastas de Flashcards (Estilo Anki)
@@ -731,18 +682,10 @@
 
             <h4 style="color: var(--primary-blue); margin-top: 1rem;">Quanto tempo por dia você consegue estudar?</h4>
             <div id="hoursSelectionContainer">
-                <div class="hours-option-card" onclick="selectHoursOption(this, 1)">
-                    <span>⏱️ Menos de 1h por dia</span>
-                </div>
-                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)">
-                    <span>⏱️ Entre 1h e 2h por dia</span>
-                </div>
-                <div class="hours-option-card" onclick="selectHoursOption(this, 3)">
-                    <span>⏱️ Entre 2h a 4h por dia</span>
-                </div>
-                <div class="hours-option-card" onclick="selectHoursOption(this, 5)">
-                    <span>🔥 Acima de 4h (Modo Hardcore)</span>
-                </div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 1)"><span>⏱️ Menos de 1h por dia</span></div>
+                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)"><span>⏱️ Entre 1h e 2h por dia</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 3)"><span>⏱️ Entre 2h a 4h por dia</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 5)"><span>🔥 Acima de 4h (Modo Hardcore)</span></div>
             </div>
 
             <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
@@ -778,58 +721,23 @@
             </div>
 
             <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Horários Padrão (Segunda a Sexta):</h4>
-
             <div class="shift-box">
                 <span><strong>Manhã Início:</strong> <input type="time" id="cfgManhaInicio" value="10:00"></span>
                 <span><strong>Qtd Horas:</strong> <input type="number" id="cfgManhaQtd" value="1" min="0" max="12" style="width:70px;"></span>
             </div>
-
             <div class="shift-box">
                 <span><strong>Tarde Início:</strong> <input type="time" id="cfgTardeInicio" value="13:00"></span>
                 <span><strong>Qtd Horas:</strong> <input type="number" id="cfgTardeQtd" value="1" min="0" max="12" style="width:70px;"></span>
             </div>
-
             <div class="shift-box">
                 <span><strong>Noite Início:</strong> <input type="time" id="cfgNoiteInicio" value="21:00"></span>
                 <span><strong>Qtd Horas:</strong> <input type="number" id="cfgNoiteQtd" value="1" min="0" max="12" style="width:70px;"></span>
             </div>
 
             <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Dias de Estudo no Fim de Semana:</h4>
-
             <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
                 <label><input type="checkbox" id="cfgIncluirSabado" checked> Incluir Sábado</label>
                 <label><input type="checkbox" id="cfgIncluirDomingo" checked> Incluir Domingo</label>
-            </div>
-
-            <div style="border: 1px dashed var(--primary-blue); padding: 1rem; border-radius: 8px; margin-top: 10px;">
-                <h5 style="color: var(--header-materia-text); margin-bottom: 8px;">Horários do Fim de Semana (Sáb/Dom):</h5>
-                
-                <div class="shift-box">
-                    <span><strong>Manhã Início:</strong> <input type="time" id="cfgFimSabManhaInicio" value="08:00"></span>
-                    <span><strong>Qtd Horas:</strong> <input type="number" id="cfgFimSabManhaQtd" value="3" min="0" max="12" style="width:70px;"></span>
-                </div>
-
-                <div class="shift-box">
-                    <span><strong>Tarde Início:</strong> <input type="time" id="cfgFimSabTardeInicio" value="14:00"></span>
-                    <span><strong>Qtd Horas:</strong> <input type="number" id="cfgFimSabTardeQtd" value="2" min="0" max="12" style="width:70px;"></span>
-                </div>
-
-                <div class="shift-box">
-                    <span><strong>Noite Início:</strong> <input type="time" id="cfgFimSabNoiteInicio" value="19:00"></span>
-                    <span><strong>Qtd Horas:</strong> <input type="number" id="cfgFimSabNoiteQtd" value="0" min="0" max="12" style="width:70px;"></span>
-                </div>
-            </div>
-
-            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
-            <div class="form-group">
-                <select id="m1RevisionStrategy" style="width:100%;">
-                    <option value="nenhuma">Sem Revisão Espaçada</option>
-                    <option value="classica">Revisão Clássica (Dias: 7, 30, 90)</option>
-                    <option value="bimestral">Revisão Bimestral (Dias: 1, 15, 30, 60)</option>
-                    <option value="curta">Revisão Curta (Dias: 7, 14, 21, 30)</option>
-                    <option value="semestral">Revisão Semestral (Dias: 1, 7, 28, 90, 180)</option>
-                    <option value="intensiva">Revisão Intensiva (Dias: 3, 7, 14, 21, 30, 45, 60)</option>
-                </select>
             </div>
 
             <div class="modal-actions">
@@ -844,13 +752,10 @@
         <div class="modal">
             <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
             <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
-            
             <div id="dayTopicsContainer"></div>
-            
             <div id="addNewTopicArea" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
                 <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico a Este Dia</button>
             </div>
-
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
             </div>
@@ -861,22 +766,18 @@
     <div class="modal-overlay" id="modalNovaNota">
         <div class="modal">
             <h3 id="modalNotaTitle">Nova Nota</h3>
-            
             <div class="form-group">
                 <label><strong>Matéria Vinculada:</strong></label>
                 <select id="inputNotaMateria"></select>
             </div>
-
             <div class="form-group">
                 <label><strong>Título da Anotação:</strong></label>
-                <input type="text" id="inputNotaTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes, Resumo Cap. 2...">
+                <input type="text" id="inputNotaTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes...">
             </div>
-
             <div class="form-group">
                 <label><strong>Conteúdo / Resumo / Dicas:</strong></label>
                 <textarea id="inputNotaConteudo" placeholder="Digite aqui o conteúdo da sua nota..." style="min-height:180px;"></textarea>
             </div>
-
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalNovaNota()">Cancelar (ESC)</button>
                 <button class="btn btn-success" onclick="salvarNota()">Salvar Nota (ENTER)</button>
@@ -891,16 +792,13 @@
                 <h3 id="studyModalTitle">Sessão de Estudos</h3>
                 <span id="studyModalProgress" style="font-weight:700; color:var(--primary-blue);">0 / 0</span>
             </div>
-
             <div class="flashcard-meta" id="studyCardMeta"></div>
-
             <div class="study-card-container" onclick="toggleStudyCardAnswer()">
                 <div class="study-card-inner">
                     <p style="font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;" id="studyCardLabel">Pergunta (Clique para virar)</p>
                     <h3 id="studyCardText" style="font-size:1.25rem; font-weight:700;"></h3>
                 </div>
             </div>
-
             <div class="modal-actions" style="justify-content:space-between; width:100%;">
                 <button class="btn btn-secondary" onclick="closeStudyModal()">Sair do Treino</button>
                 <div style="display:flex; gap:8px;">
@@ -925,11 +823,9 @@
                     <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Apagar Edital</button>
                 </div>
             </div>
-
             <div id="editalViewerContainer" style="flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
                 <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
             </div>
-
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
             </div>
@@ -1134,40 +1030,24 @@
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
 
-        /* MODAIS DO SELETOR DE PREENCHIMENTO DO CRONOGRAMA */
-        function openModalSelectCronogramaType() {
-            document.getElementById('modalSelectCronogramaType').style.display = 'flex';
-        }
-
-        function closeModalSelectCronogramaType() {
-            document.getElementById('modalSelectCronogramaType').style.display = 'none';
-        }
-
+        function openModalSelectCronogramaType() { document.getElementById('modalSelectCronogramaType').style.display = 'flex'; }
+        function closeModalSelectCronogramaType() { document.getElementById('modalSelectCronogramaType').style.display = 'none'; }
         function chooseCronogramaType(typeNum) {
             closeModalSelectCronogramaType();
-            if (typeNum === 1) {
-                openModalConfigHorarios();
-            } else {
-                openModalMentorisMethod();
-            }
+            if (typeNum === 1) openModalConfigHorarios();
+            else openModalMentorisMethod();
         }
 
         function openModalMentorisMethod() {
             document.getElementById('m2DataInicio').value = new Date().toISOString().split('T')[0];
             document.getElementById('modalMentorisMethod').style.display = 'flex';
         }
-
-        function closeModalMentorisMethod() {
-            document.getElementById('modalMentorisMethod').style.display = 'none';
-        }
+        function closeModalMentorisMethod() { document.getElementById('modalMentorisMethod').style.display = 'none'; }
 
         function toggleWeekdaySelect(elem, dayIdx) {
             elem.classList.toggle('selected');
-            if (selectedWeekdays.includes(dayIdx)) {
-                selectedWeekdays = selectedWeekdays.filter(d => d !== dayIdx);
-            } else {
-                selectedWeekdays.push(dayIdx);
-            }
+            if (selectedWeekdays.includes(dayIdx)) selectedWeekdays = selectedWeekdays.filter(d => d !== dayIdx);
+            else selectedWeekdays.push(dayIdx);
         }
 
         function selectHoursOption(elem, slots) {
@@ -1176,48 +1056,37 @@
             selectedDailyHoursSlots = slots;
         }
 
-        /* AUXILIAR PARA AGENDAR REVISÕES ESPAÇADAS FUTURAS */
         function applySpacedRevisions(dateSchedule, baseDateObj, topicText, strategyKey) {
             const daysOffset = STRATEGIES_MAP[strategyKey] || STRATEGIES_MAP.classica;
-
             daysOffset.forEach(offset => {
                 let revDate = new Date(baseDateObj);
                 revDate.setDate(revDate.getDate() + offset);
-
                 const revKey = `${revDate.getFullYear()}-${String(revDate.getMonth() + 1).padStart(2, '0')}-${String(revDate.getDate()).padStart(2, '0')}`;
                 if (!dateSchedule[revKey]) dateSchedule[revKey] = [];
-                
                 const revText = `🔄 Rev (${offset}d): ${topicText}`;
-                if (!dateSchedule[revKey].includes(revText)) {
-                    dateSchedule[revKey].push(revText);
-                }
+                if (!dateSchedule[revKey].includes(revText)) dateSchedule[revKey].push(revText);
             });
         }
 
-        /* ORDENAÇÃO DUPLA DO CRONOGRAMA (MATÉRIA E ASSUNTO) */
         function getSortedEditalItems() {
             return [...editalItems].sort((a, b) => {
                 const prioMatA = a.prioridade || 1;
                 const prioMatB = b.prioridade || 1;
                 if (prioMatA !== prioMatB) return prioMatA - prioMatB;
-                
                 const prioAssA = a.assunto_prioridade || 1;
                 const prioAssB = b.assunto_prioridade || 1;
                 return prioAssA - prioAssB;
             });
         }
 
-        /* GERAR CRONOGRAMA MÉTODO 2 */
         async function gerarCronogramaMetodo2() {
             if (editalItems.length === 0) return alert('Sua lista de edital está vazia.');
             if (selectedWeekdays.length === 0) return alert('Selecione pelo menos um dia de estudo na semana.');
-
             const dataInicioStr = document.getElementById('m2DataInicio').value;
             if (!dataInicioStr) return alert('Escolha a data de início.');
 
             const strategyKey = document.getElementById('m2RevisionStrategy').value;
             const sortedByPriority = getSortedEditalItems();
-
             let currDate = new Date(dataInicioStr + "T00:00:00");
             let itemIdx = 0;
 
@@ -1227,20 +1096,14 @@
 
             while (itemIdx < sortedByPriority.length) {
                 const dayOfWeek = currDate.getDay();
-
                 if (selectedWeekdays.includes(dayOfWeek)) {
                     const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
-                    
-                    if (!metadata[currentConcurso].dateSchedule[dateKey]) {
-                        metadata[currentConcurso].dateSchedule[dateKey] = [];
-                    }
-
+                    if (!metadata[currentConcurso].dateSchedule[dateKey]) metadata[currentConcurso].dateSchedule[dateKey] = [];
                     for (let s = 0; s < selectedDailyHoursSlots; s++) {
                         if (itemIdx < sortedByPriority.length) {
                             const it = sortedByPriority[itemIdx];
                             const topicText = `${it.materia} - ${it.assunto}`;
                             metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
-
                             applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
                             itemIdx++;
                         }
@@ -1255,16 +1118,13 @@
             alert('Cronograma Método 2 gerado com sucesso!');
         }
 
-        /* GERAR CRONOGRAMA MÉTODO 1 */
         async function gerarCronogramaInteligente() {
             if (editalItems.length === 0) return alert('Sua lista de edital está vazia.');
-
             const dataInicioStr = document.getElementById('cfgDataInicio').value;
             if (!dataInicioStr) return alert('Escolha a data de início.');
 
             const strategyKey = document.getElementById('m1RevisionStrategy').value;
             const sortedByPriority = getSortedEditalItems();
-
             const incSab = document.getElementById('cfgIncluirSabado').checked;
             const incDom = document.getElementById('cfgIncluirDomingo').checked;
 
@@ -1279,24 +1139,18 @@
                 const dayOfWeek = currDate.getDay();
                 let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
                 let canStudy = true;
-
                 if (dayOfWeek === 6 && !incSab) canStudy = false;
                 if (dayOfWeek === 0 && !incDom) canStudy = false;
 
                 if (canStudy) {
                     const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
                     const slots = isWeekend ? 3 : 2;
-
-                    if (!metadata[currentConcurso].dateSchedule[dateKey]) {
-                        metadata[currentConcurso].dateSchedule[dateKey] = [];
-                    }
-
+                    if (!metadata[currentConcurso].dateSchedule[dateKey]) metadata[currentConcurso].dateSchedule[dateKey] = [];
                     for (let s = 0; s < slots; s++) {
                         if (itemIdx < sortedByPriority.length) {
                             const it = sortedByPriority[itemIdx];
                             const topicText = `${it.materia} - ${it.assunto}`;
                             metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
-
                             applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
                             itemIdx++;
                         }
@@ -1311,7 +1165,6 @@
             alert('Cronograma Método 1 gerado com sucesso!');
         }
 
-        /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR INLINE DE EDITAL E TROCA RECÍPRICA DE ASSUNTOS */
         function openModalDayContent(dateKey) {
             activeSelectedDateKey = dateKey;
             document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
@@ -1339,12 +1192,9 @@
             topics.forEach((topicoStr, idx) => {
                 const cleanTop = topicoStr.replace(/^🔄 Rev \(\d+d\): /, '');
                 const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
-
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;">
-                            <strong style="color:var(--primary-blue); font-size:0.95rem;">${topicoStr}</strong>
-                        </div>
+                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${topicoStr}</strong></div>
                         <div style="display:flex; gap:10px; align-items:center;">
                             ${matchedItem ? `
                                 <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
@@ -1376,19 +1226,15 @@
         function showEditTopicDropdown(idx) {
             const editArea = document.getElementById(`editArea_${idx}`);
             if (!editArea) return;
-
             const materias = getUniqueMateriasFromEdital();
             if (materias.length === 0) return alert('O edital atual não possui matérias para selecionar.');
-
             let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
 
             editArea.innerHTML = `
                 <div class="edit-selector-box">
                     <label style="font-size:0.82rem; font-weight:700; color:#93c5fd;">Selecione a Matéria e o Assunto do Edital:</label>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">
-                            ${matOptions}
-                        </select>
+                        <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">${matOptions}</select>
                         <select id="editAssSel_${idx}" style="flex:1; min-width:180px;"></select>
                     </div>
                     <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
@@ -1405,18 +1251,15 @@
         async function addManualTopicToDay(targetIdx) {
             const matSel = document.getElementById(`editMatSel_${targetIdx}`);
             const selectedMat = matSel ? matSel.value : '';
-
             const novoAssunto = prompt(`Digite o novo assunto para a matéria "${selectedMat}":`);
             if (!novoAssunto || !novoAssunto.trim()) return;
 
             const newFullString = `${selectedMat} - ${novoAssunto.trim()}`;
-
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
 
             metadata[currentConcurso].dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
-
             await saveConcursosMetadata(metadata);
             renderDayTopicsList();
             renderMonthCalendar();
@@ -1426,17 +1269,14 @@
             const matSel = document.getElementById(`editMatSel_${idx}`);
             const assSel = document.getElementById(`editAssSel_${idx}`);
             if (!matSel || !assSel) return;
-
             const selectedMat = matSel.value;
             const assuntos = getAssuntosForMateria(selectedMat);
-
             assSel.innerHTML = assuntos.map(a => `<option value="${a}">${a}</option>`).join('');
         }
 
         async function confirmEditTopicWithSwap(targetIdx) {
             const matSel = document.getElementById(`editMatSel_${targetIdx}`);
             const assSel = document.getElementById(`editAssSel_${targetIdx}`);
-
             if (!matSel || !assSel) return;
 
             const newMateria = matSel.value;
@@ -1452,14 +1292,10 @@
 
             let foundDate = null;
             let foundIndex = -1;
-
             Object.keys(dateSchedule).forEach(dKey => {
                 const arr = dateSchedule[dKey];
                 const matchIdx = arr.findIndex(item => item === newFullString || item.endsWith(`: ${newFullString}`));
-                if (matchIdx !== -1) {
-                    foundDate = dKey;
-                    foundIndex = matchIdx;
-                }
+                if (matchIdx !== -1) { foundDate = dKey; foundIndex = matchIdx; }
             });
 
             if (foundDate && (foundDate !== activeSelectedDateKey || foundIndex !== targetIdx)) {
@@ -1478,18 +1314,14 @@
         function showAddTopicSelectors() {
             const container = document.getElementById('addNewTopicArea');
             const materias = getUniqueMateriasFromEdital();
-
             if (materias.length === 0) return alert('Adicione ou importe matérias no edital primeiro.');
-
             let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
 
             container.innerHTML = `
                 <div class="edit-selector-box">
                     <label style="font-size:0.85rem; font-weight:700; color:var(--primary-blue);">Adicionar Tópico a Este Dia (Selecione da Lista do Edital):</label>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <select id="addMatSel" onchange="updateAddAssuntoDropdown()" style="flex:1; min-width:160px;">
-                            ${matOptions}
-                        </select>
+                        <select id="addMatSel" onchange="updateAddAssuntoDropdown()" style="flex:1; min-width:160px;">${matOptions}</select>
                         <select id="addAssSel" style="flex:1; min-width:180px;"></select>
                     </div>
                     <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">
@@ -1505,7 +1337,6 @@
             const matSel = document.getElementById('addMatSel');
             const assSel = document.getElementById('addAssSel');
             if (!matSel || !assSel) return;
-
             const selectedMat = matSel.value;
             const assuntos = getAssuntosForMateria(selectedMat);
             assSel.innerHTML = assuntos.map(a => `<option value="${a}">${a}</option>`).join('');
@@ -1528,13 +1359,9 @@
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-
-            if (!metadata[currentConcurso].dateSchedule[activeSelectedDateKey]) {
-                metadata[currentConcurso].dateSchedule[activeSelectedDateKey] = [];
-            }
+            if (!metadata[currentConcurso].dateSchedule[activeSelectedDateKey]) metadata[currentConcurso].dateSchedule[activeSelectedDateKey] = [];
 
             metadata[currentConcurso].dateSchedule[activeSelectedDateKey].push(newFullString);
-
             await saveConcursosMetadata(metadata);
             resetAddTopicArea();
             renderDayTopicsList();
@@ -1556,17 +1383,14 @@
             }
         }
 
-        /* ANOTAÇÕES */
         function populateNotesMateriaDropdowns() {
             const mSel = document.getElementById('notesMateriaSelect');
             const modalSel = document.getElementById('inputNotaMateria');
-
             if (!mSel || !modalSel) return;
             mSel.innerHTML = ''; modalSel.innerHTML = '';
 
             const setMaterias = new Set();
             editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
-
             if (setMaterias.size === 0) setMaterias.add('Geral');
 
             setMaterias.forEach(mat => {
@@ -1588,7 +1412,6 @@
             const selectedMat = document.getElementById('notesMateriaSelect').value;
             const metadata = getConcursosMetadata();
             const notesList = metadata[currentConcurso]?.structuredNotes || [];
-
             const filtered = notesList.filter(n => n.materia === selectedMat);
 
             if (filtered.length === 0) {
@@ -1628,7 +1451,6 @@
             const metadata = getConcursosMetadata();
             const notesList = metadata[currentConcurso]?.structuredNotes || [];
             const nota = notesList[globalIndex];
-
             if (!nota) return;
 
             currentEditingNoteIndex = globalIndex;
@@ -1643,7 +1465,6 @@
             const materia = document.getElementById('inputNotaMateria').value;
             const titulo = document.getElementById('inputNotaTitulo').value.trim();
             const conteudo = document.getElementById('inputNotaConteudo').value.trim();
-
             if (!titulo || !conteudo) return alert('Preencha título e conteúdo da anotação.');
 
             let metadata = getConcursosMetadata();
@@ -1651,7 +1472,6 @@
             if (!metadata[currentConcurso].structuredNotes) metadata[currentConcurso].structuredNotes = [];
 
             const nowStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
             if (currentEditingNoteIndex !== null) {
                 metadata[currentConcurso].structuredNotes[currentEditingNoteIndex] = { materia, titulo, conteudo, data: nowStr };
             } else {
@@ -1679,7 +1499,6 @@
             document.getElementById('cfgDataInicio').value = new Date().toISOString().split('T')[0];
             document.getElementById('modalConfigHorarios').style.display = 'flex';
         }
-
         function closeModalConfigHorarios() { document.getElementById('modalConfigHorarios').style.display = 'none'; }
 
         /* FLASHCARDS */
@@ -1687,13 +1506,9 @@
             const mSel = document.getElementById('fcMateriaSelect');
             if (!mSel) return;
             mSel.innerHTML = '<option value="">Selecione a Matéria (Opcional)</option>';
-
             const setMaterias = new Set();
             editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
-
-            setMaterias.forEach(mat => {
-                mSel.innerHTML += `<option value="${mat}">${mat}</option>`;
-            });
+            setMaterias.forEach(mat => { mSel.innerHTML += `<option value="${mat}">${mat}</option>`; });
             updateFcAssuntoOptions();
         }
 
@@ -1702,13 +1517,9 @@
             const aSel = document.getElementById('fcAssuntoSelect');
             if (!aSel) return;
             aSel.innerHTML = '<option value="">Selecione o Assunto (Opcional)</option>';
-
             if (!mVal) return;
-
             const assuntos = editalItems.filter(i => i.materia === mVal).map(i => i.assunto);
-            assuntos.forEach(ass => {
-                aSel.innerHTML += `<option value="${ass}">${ass}</option>`;
-            });
+            assuntos.forEach(ass => { aSel.innerHTML += `<option value="${ass}">${ass}</option>`; });
         }
 
         async function saveFlashcardsData() {
@@ -1726,7 +1537,6 @@
             renderFlashcards();
         }
 
-        /* RENDERIZAR PASTAS/BARALHOS ESTILO ANKI */
         function renderFlashcardFolders() {
             const folderContainer = document.getElementById('flashcardFoldersContainer');
             if (!folderContainer) return;
@@ -1741,10 +1551,8 @@
             flashcardsList.forEach(fc => {
                 const mat = fc.materia || 'Geral / Sem Matéria';
                 const ass = fc.assunto || 'Sem Assunto Específico';
-
                 if (!deckHierarchy[mat]) deckHierarchy[mat] = { total: 0, assuntos: {} };
                 deckHierarchy[mat].total++;
-
                 if (!deckHierarchy[mat].assuntos[ass]) deckHierarchy[mat].assuntos[ass] = 0;
                 deckHierarchy[mat].assuntos[ass]++;
             });
@@ -1758,7 +1566,6 @@
                 Object.keys(matData.assuntos).forEach(assName => {
                     const count = matData.assuntos[assName];
                     const isAssActive = (activeFcMateriaFilter === matName && activeFcAssuntoFilter === assName);
-
                     subfoldersHtml += `
                         <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '${assName.replace(/'/g, "\\'")}')">
                             <span style="font-size:0.9rem; font-weight:600;">📑 ${assName}</span>
@@ -1786,9 +1593,7 @@
             });
 
             const btnReset = document.getElementById('btnResetFcFilter');
-            if (btnReset) {
-                btnReset.style.display = (activeFcMateriaFilter || activeFcAssuntoFilter) ? 'inline-flex' : 'none';
-            }
+            if (btnReset) btnReset.style.display = (activeFcMateriaFilter || activeFcAssuntoFilter) ? 'inline-flex' : 'none';
         }
 
         function toggleFcFolder(matName) {
@@ -1803,24 +1608,14 @@
             renderFlashcards();
         }
 
-        /* CORREÇÃO SOLICITADA: NENHUM CARTÃO FICA EXPOSTO SOLTO NA TELA PRINCIPAL */
         function renderFlashcards() {
             const container = document.getElementById('flashcardsContainer');
             container.innerHTML = '';
-
-            // Se nenhuma pasta/subpasta foi aberta, não exibe os cartões na tela (comportamento idêntico ao Anki)
-            if (!activeFcMateriaFilter && !activeFcAssuntoFilter) {
-                return;
-            }
+            if (!activeFcMateriaFilter && !activeFcAssuntoFilter) return;
 
             let displayList = flashcardsList.map((fc, idx) => ({ ...fc, originalIndex: idx }));
-
-            if (activeFcMateriaFilter) {
-                displayList = displayList.filter(fc => (fc.materia || 'Geral / Sem Matéria') === activeFcMateriaFilter);
-            }
-            if (activeFcAssuntoFilter) {
-                displayList = displayList.filter(fc => (fc.assunto || 'Sem Assunto Específico') === activeFcAssuntoFilter);
-            }
+            if (activeFcMateriaFilter) displayList = displayList.filter(fc => (fc.materia || 'Geral / Sem Matéria') === activeFcMateriaFilter);
+            if (activeFcAssuntoFilter) displayList = displayList.filter(fc => (fc.assunto || 'Sem Assunto Específico') === activeFcAssuntoFilter);
 
             if (displayList.length === 0) {
                 container.innerHTML = '<p style="opacity: 0.8; padding:1rem;">Nenhum flashcard encontrado para este filtro.</p>';
@@ -1871,12 +1666,10 @@
             editingFcIndex = idx;
             const fc = flashcardsList[idx];
             if (!fc) return;
-
             document.getElementById('editFcMateria').value = fc.materia || '';
             document.getElementById('editFcAssunto').value = fc.assunto || '';
             document.getElementById('editFcPergunta').value = fc.pergunta || '';
             document.getElementById('editFcResposta').value = fc.resposta || '';
-
             document.getElementById('modalEditarFlashcard').style.display = 'flex';
         }
 
@@ -1887,21 +1680,13 @@
 
         async function salvarEdicaoFlashcard() {
             if (editingFcIndex === null) return;
-
             const mat = document.getElementById('editFcMateria').value.trim();
             const ass = document.getElementById('editFcAssunto').value.trim();
             const perg = document.getElementById('editFcPergunta').value.trim();
             const resp = document.getElementById('editFcResposta').value.trim();
-
             if (!perg || !resp) return alert('Pergunta e Resposta são obrigatórias.');
 
-            flashcardsList[editingFcIndex] = {
-                materia: mat,
-                assunto: ass,
-                pergunta: perg,
-                resposta: resp
-            };
-
+            flashcardsList[editingFcIndex] = { materia: mat, assunto: ass, pergunta: perg, resposta: resp };
             closeModalEditarFlashcard();
             renderFlashcardFolders();
             renderFlashcards();
@@ -1914,7 +1699,6 @@
             const assunto = document.getElementById('fcAssuntoSelect').value;
             const pergunta = document.getElementById('fcPergunta').value.trim();
             const resposta = document.getElementById('fcResposta').value.trim();
-
             if (!pergunta || !resposta) return;
 
             flashcardsList.push({ materia, assunto, pergunta, resposta });
@@ -1934,10 +1718,8 @@
             }
         }
 
-        /* FUNÇÃO AUXILIAR PARA PROCESSAR BLOCO DE TEXTO */
         function parseTextToFlashcards(rawText, selectedMateria = '', selectedAssunto = '') {
             if (!rawText || !rawText.trim()) return 0;
-
             const lines = rawText.split(/\r?\n|\r/);
             let currentPergunta = '';
             let currentResposta = '';
@@ -1946,7 +1728,6 @@
             lines.forEach(line => {
                 const trimmed = line.trim();
                 if (!trimmed || trimmed.length < 2) return;
-
                 if (/^(p:|pergunta:)/i.test(trimmed)) {
                     if (currentPergunta && currentResposta) {
                         flashcardsList.push({ materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta });
@@ -1973,91 +1754,59 @@
                 flashcardsList.push({ materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta });
                 count++;
             }
-
             return count;
         }
 
-        /* IMPORTAÇÃO VIA CAIXA DE TEXTO COLADA */
         async function processPastedFlashcardsText() {
             const textArea = document.getElementById('fcPasteTextArea');
             const rawText = textArea.value;
             const materia = document.getElementById('fcMateriaSelect').value;
             const assunto = document.getElementById('fcAssuntoSelect').value;
-
-            if (!rawText || !rawText.trim()) {
-                return alert('Cole o texto das perguntas e respostas na caixa antes de converter.');
-            }
+            if (!rawText || !rawText.trim()) return alert('Cole o texto das perguntas e respostas na caixa antes de converter.');
 
             const importedCount = parseTextToFlashcards(rawText, materia, assunto);
-
             if (importedCount > 0) {
                 textArea.value = '';
                 renderFlashcardFolders();
                 renderFlashcards();
                 await saveFlashcardsData();
-                alert(`Sucesso! ${importedCount} flashcards foram gerados e adicionados.`);
+                alert(`Sucesso! ${importedCount} flashcards gerados.`);
             } else {
-                alert('Não foi possível reconhecer o formato das perguntas/respostas. Certifique-se de usar "P:" e "R:" ou separar por ponto e vírgula (;).');
+                alert('Formato não reconhecido. Use "P:" e "R:" ou separe por ponto e vírgula (;).');
             }
         }
 
-        /* MODAL DE FILTRO PARA ESTUDAR MATÉRIA/ASSUNTO ESPECÍFICO */
         function openModalFiltroEstudoFlashcards() {
             const matSel = document.getElementById('studyFilterMateria');
             if (!matSel) return;
             matSel.innerHTML = '<option value="">Todas as Matérias</option>';
-
             const setMaterias = new Set();
-            flashcardsList.forEach(fc => {
-                if (fc.materia) setMaterias.add(fc.materia);
-            });
-
-            setMaterias.forEach(mat => {
-                matSel.innerHTML += `<option value="${mat}">${mat}</option>`;
-            });
-
+            flashcardsList.forEach(fc => { if (fc.materia) setMaterias.add(fc.materia); });
+            setMaterias.forEach(mat => { matSel.innerHTML += `<option value="${mat}">${mat}</option>`; });
             updateStudyFilterAssuntoOptions();
             document.getElementById('modalFiltroEstudoFC').style.display = 'flex';
         }
 
-        function closeModalFiltroEstudoFlashcards() {
-            document.getElementById('modalFiltroEstudoFC').style.display = 'none';
-        }
+        function closeModalFiltroEstudoFlashcards() { document.getElementById('modalFiltroEstudoFC').style.display = 'none'; }
 
         function updateStudyFilterAssuntoOptions() {
             const matVal = document.getElementById('studyFilterMateria').value;
             const assSel = document.getElementById('studyFilterAssunto');
             if (!assSel) return;
             assSel.innerHTML = '<option value="">Todos os Assuntos</option>';
-
             if (!matVal) return;
-
             const setAssuntos = new Set();
-            flashcardsList.forEach(fc => {
-                if (fc.materia === matVal && fc.assunto) setAssuntos.add(fc.assunto);
-            });
-
-            setAssuntos.forEach(ass => {
-                assSel.innerHTML += `<option value="${ass}">${ass}</option>`;
-            });
+            flashcardsList.forEach(fc => { if (fc.materia === matVal && fc.assunto) setAssuntos.add(fc.assunto); });
+            setAssuntos.forEach(ass => { assSel.innerHTML += `<option value="${ass}">${ass}</option>`; });
         }
 
         function startFilteredStudyModal() {
             const targetMateria = document.getElementById('studyFilterMateria').value;
             const targetAssunto = document.getElementById('studyFilterAssunto').value;
-
             let filteredCards = [...flashcardsList];
-
-            if (targetMateria) {
-                filteredCards = filteredCards.filter(fc => fc.materia === targetMateria);
-            }
-            if (targetAssunto) {
-                filteredCards = filteredCards.filter(fc => fc.assunto === targetAssunto);
-            }
-
-            if (filteredCards.length === 0) {
-                return alert('Nenhum flashcard encontrado para o filtro selecionado.');
-            }
+            if (targetMateria) filteredCards = filteredCards.filter(fc => fc.materia === targetMateria);
+            if (targetAssunto) filteredCards = filteredCards.filter(fc => fc.assunto === targetAssunto);
+            if (filteredCards.length === 0) return alert('Nenhum flashcard encontrado para o filtro.');
 
             closeModalFiltroEstudoFlashcards();
             startStudyModalWithList(filteredCards);
@@ -2065,20 +1814,17 @@
 
         function startShuffleStudyModal() {
             if (flashcardsList.length === 0) return alert('Cadastre ou importe flashcards antes de iniciar o estudo.');
-
             const groupedByMateria = {};
             flashcardsList.forEach(fc => {
                 const mKey = fc.materia || 'Geral / Sem Matéria';
                 if (!groupedByMateria[mKey]) groupedByMateria[mKey] = [];
                 groupedByMateria[mKey].push(fc);
             });
-
             const shuffledList = [];
             Object.keys(groupedByMateria).forEach(mName => {
                 const shuffledMateriaCards = [...groupedByMateria[mName]].sort(() => Math.random() - 0.5);
                 shuffledList.push(...shuffledMateriaCards);
             });
-
             startStudyModalWithList(shuffledList);
         }
 
@@ -2096,14 +1842,11 @@
                 closeStudyModal();
                 return;
             }
-
             const fc = studyQueue[currentStudyIdx];
             document.getElementById('studyModalProgress').innerText = `${currentStudyIdx + 1} / ${studyQueue.length}`;
-
             const metaContainer = document.getElementById('studyCardMeta');
             metaContainer.innerHTML = `<span class="flashcard-badge-materia">${fc.materia || 'Geral'}</span>`;
             if (fc.assunto) metaContainer.innerHTML += `<span class="flashcard-badge-assunto">${fc.assunto}</span>`;
-
             showingAnswer = false;
             document.getElementById('studyCardLabel').innerText = 'FRENTE (Clique para virar)';
             document.getElementById('studyCardText').innerText = fc.pergunta;
@@ -2113,7 +1856,6 @@
             if (currentStudyIdx >= studyQueue.length) return;
             const fc = studyQueue[currentStudyIdx];
             showingAnswer = !showingAnswer;
-
             if (showingAnswer) {
                 document.getElementById('studyCardLabel').innerText = 'VERSO / RESPOSTA';
                 document.getElementById('studyCardText').innerText = fc.resposta;
@@ -2126,17 +1868,12 @@
         function nextStudyCard() { currentStudyIdx++; updateStudyModalCard(); }
         function closeStudyModal() { document.getElementById('modalStudyFlashcards').style.display = 'none'; }
 
-        /* CALENDÁRIO MENSAL EM GRADE */
         function initMonthYearSelectors() {
             const mSel = document.getElementById('monthSelect');
             const ySel = document.getElementById('yearSelect');
             if (!mSel || !ySel) return;
             mSel.innerHTML = ''; ySel.innerHTML = '';
-
-            MESES.forEach((m, idx) => {
-                mSel.innerHTML += `<option value="${idx}" ${idx === selectedMonth ? 'selected' : ''}>${m}</option>`;
-            });
-
+            MESES.forEach((m, idx) => { mSel.innerHTML += `<option value="${idx}" ${idx === selectedMonth ? 'selected' : ''}>${m}</option>`; });
             const yearStart = selectedYear - 1;
             for (let y = yearStart; y <= yearStart + 5; y++) {
                 ySel.innerHTML += `<option value="${y}" ${y === selectedYear ? 'selected' : ''}>${y}</option>`;
@@ -2156,16 +1893,12 @@
 
             const metadata = getConcursosMetadata();
             const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-
             const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
             const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-
             const todayObj = new Date();
             const isCurrentMonth = todayObj.getMonth() === selectedMonth && todayObj.getFullYear() === selectedYear;
 
-            for (let i = 0; i < firstDay; i++) {
-                grid.innerHTML += `<div class="month-day-cell other-month"></div>`;
-            }
+            for (let i = 0; i < firstDay; i++) { grid.innerHTML += `<div class="month-day-cell other-month"></div>`; }
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -2177,7 +1910,6 @@
                     const cleanTop = it.replace(/^🔄 Rev \(\d+d\): /, '');
                     const isRev = it.startsWith('🔄 Rev');
                     const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
-                    
                     let isDone = false;
                     if (matchedItem) {
                         if (isRev) {
@@ -2189,7 +1921,6 @@
                             isDone = !!(matchedItem.teoria || matchedItem.questoes);
                         }
                     }
-                    
                     badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${it}</div>`;
                 });
 
@@ -2241,7 +1972,6 @@
             Object.keys(dateSchedule).forEach(dKey => {
                 if (dKey < todayStr && dateSchedule[dKey].length > 0) count += dateSchedule[dKey].length;
             });
-
             document.getElementById('delayedBadgeCount').textContent = `${count} atrasadas`;
 
             let displayList = [];
@@ -2279,10 +2009,7 @@
             renderMonthCalendar();
             loadNotesData();
             loadFlashcardsData();
-
-            if (navigator.onLine && currentUser) {
-                await syncAllWithSupabase();
-            }
+            if (navigator.onLine && currentUser) await syncAllWithSupabase();
         }
 
         async function syncAllWithSupabase() {
@@ -2311,10 +2038,9 @@
             if (!currentUser) return alert('Você precisa estar logado para sincronizar.');
             const btn = evt ? evt.target : null;
             if (btn) btn.innerText = 'Sincronizando...';
-
             try {
                 await syncAllWithSupabase();
-                alert('Sincronização concluída com sucesso em todos os seus dispositivos!');
+                alert('Sincronização concluída com sucesso!');
             } catch (err) {
                 alert('Erro ao sincronizar: ' + err.message);
             } finally {
@@ -2322,9 +2048,13 @@
             }
         }
 
-        function loadLocalEditalData() {
+        function getEditalLocalStorageKey() {
             const uid = currentUser ? currentUser.id : 'guest';
-            const local = localStorage.getItem(`edital_offline_data_${uid}`);
+            return `edital_offline_data_${uid}`;
+        }
+
+        function loadLocalEditalData() {
+            const local = localStorage.getItem(getEditalLocalStorageKey());
             if (local) {
                 try {
                     allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
@@ -2333,8 +2063,7 @@
         }
 
         function saveEditalToLocalStorage() {
-            const uid = currentUser ? currentUser.id : 'guest';
-            localStorage.setItem(`edital_offline_data_${uid}`, JSON.stringify(allEditalItems));
+            localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
         }
 
         async function saveEditalItemToCloud(item) {
@@ -2374,18 +2103,13 @@
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
             const metadata = getConcursosMetadata();
-            
             const set = new Set(Object.keys(metadata));
             set.add('Concurso Geral');
-            
             allEditalItems.forEach(i => { if (i.concurso) set.add(i.concurso); });
             const list = Array.from(set);
 
             if (!list.includes(currentConcurso)) currentConcurso = list[0] || 'Concurso Geral';
-
-            list.forEach(c => {
-                select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`;
-            });
+            list.forEach(c => { select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`; });
             updateCountdownBadge();
         }
 
@@ -2429,22 +2153,15 @@
         }
 
         async function renomearConcursoAtual() {
-            if (currentConcurso.trim().toLowerCase() === 'concurso geral') {
-                return alert('O Concurso Geral padrão não pode ser renomeado.');
-            }
-
+            if (currentConcurso.trim().toLowerCase() === 'concurso geral') return alert('O Concurso Geral padrão não pode ser renomeado.');
             const novoNome = prompt(`Digite o novo nome para o concurso "${currentConcurso}":`, currentConcurso);
             if (!novoNome || !novoNome.trim() || novoNome.trim() === currentConcurso) return;
 
             const nomeFormatado = novoNome.trim();
             let metadata = getConcursosMetadata();
-
-            if (metadata[nomeFormatado]) {
-                return alert('Já existe um concurso cadastrado com esse nome.');
-            }
+            if (metadata[nomeFormatado]) return alert('Já existe um concurso cadastrado com esse nome.');
 
             const antigoNome = currentConcurso;
-
             metadata[nomeFormatado] = metadata[antigoNome] || { dataProva: null, dateSchedule: {} };
             delete metadata[antigoNome];
             await saveConcursosMetadata(metadata);
@@ -2457,22 +2174,15 @@
                 localStorage.removeItem(oldFileKey);
             }
 
-            const itemsToUpdate = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === antigoNome);
-            itemsToUpdate.forEach(item => {
-                item.concurso = nomeFormatado;
+            allEditalItems.forEach(item => {
+                if ((item.concurso || 'Concurso Geral') === antigoNome) item.concurso = nomeFormatado;
             });
             saveEditalToLocalStorage();
 
-            if (navigator.onLine && currentUser && itemsToUpdate.length > 0) {
+            if (navigator.onLine && currentUser) {
                 try {
-                    await supabaseClient
-                        .from('edital')
-                        .update({ concurso: nomeFormatado })
-                        .eq('user_id', currentUser.id)
-                        .eq('concurso', antigoNome);
-                } catch(err) {
-                    console.warn('Erro ao renomear concurso na nuvem:', err);
-                }
+                    await supabaseClient.from('edital').update({ concurso: nomeFormatado }).eq('user_id', currentUser.id).eq('concurso', antigoNome);
+                } catch(err) { console.warn('Erro ao renomear na nuvem:', err); }
             }
 
             currentConcurso = nomeFormatado;
@@ -2482,18 +2192,14 @@
         }
 
         async function removerConcursoAtual() {
-            if (currentConcurso.trim().toLowerCase() === 'concurso geral') {
-                return alert('O Concurso Geral padrão não pode ser excluído.');
-            }
+            if (currentConcurso.trim().toLowerCase() === 'concurso geral') return alert('O Concurso Geral padrão não pode ser excluído.');
             if (confirm(`Deseja remover o concurso "${currentConcurso}" e todos os seus itens?`)) {
                 let metadata = getConcursosMetadata();
                 delete metadata[currentConcurso];
                 await saveConcursosMetadata(metadata);
 
-                const itemsToDelete = allEditalItems.filter(i => i.concurso === currentConcurso);
-                for (let item of itemsToDelete) {
-                    await deleteEditalItemFromCloud(item.id);
-                }
+                const itemsToDelete = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+                for (let item of itemsToDelete) await deleteEditalItemFromCloud(item.id);
 
                 currentConcurso = 'Concurso Geral';
                 localStorage.setItem('last_studied_concurso', currentConcurso);
@@ -2504,28 +2210,19 @@
         async function excluirMateriaEspecifica() {
             const materias = getUniqueMateriasFromEdital();
             if (materias.length === 0) return alert('Não há matérias cadastradas para excluir.');
-
             const listaFormatada = materias.map((m, idx) => `${idx + 1}. ${m}`).join('\n');
             const resposta = prompt(`Digite o NÚMERO ou o NOME exato da matéria que deseja excluir:\n\n${listaFormatada}`);
-
             if (!resposta || !resposta.trim()) return;
 
             let materiaParaExcluir = null;
             const numIndex = parseInt(resposta.trim()) - 1;
-
-            if (!isNaN(numIndex) && numIndex >= 0 && numIndex < materias.length) {
-                materiaParaExcluir = materias[numIndex];
-            } else {
-                materiaParaExcluir = materias.find(m => m.toLowerCase() === resposta.trim().toLowerCase());
-            }
+            if (!isNaN(numIndex) && numIndex >= 0 && numIndex < materias.length) materiaParaExcluir = materias[numIndex];
+            else materiaParaExcluir = materias.find(m => m.toLowerCase() === resposta.trim().toLowerCase());
 
             if (!materiaParaExcluir) return alert('Matéria não encontrada.');
-
             if (confirm(`Tem certeza de que deseja excluir a matéria "${materiaParaExcluir}" e TODOS os seus assuntos?`)) {
                 const itemsToDelete = editalItems.filter(i => i.materia === materiaParaExcluir);
-                for (let item of itemsToDelete) {
-                    await deleteEditalItemFromCloud(item.id);
-                }
+                for (let item of itemsToDelete) await deleteEditalItemFromCloud(item.id);
                 filterDataByConcurso();
                 alert(`A matéria "${materiaParaExcluir}" foi excluída com sucesso!`);
             }
@@ -2564,7 +2261,6 @@
 
                 if (isOpen) {
                     const sortedAssuntos = [...group.items].sort((a, b) => (a.assunto_prioridade || 1) - (b.assunto_prioridade || 1));
-
                     sortedAssuntos.forEach(item => {
                         const safeId = String(item.id);
                         tbody.innerHTML += `
@@ -2637,7 +2333,7 @@
             const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
 
             const newItem = {
-                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                 materia, assunto, prioridade, assunto_prioridade: 1, concurso: currentConcurso,
                 user_id: currentUser ? currentUser.id : null,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
@@ -2654,13 +2350,12 @@
         async function clearData() {
             if (confirm(`Apagar todos os tópicos do edital "${currentConcurso}"?`)) {
                 const toRemove = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-                for (let i of toRemove) {
-                    await deleteEditalItemFromCloud(i.id);
-                }
+                for (let i of toRemove) await deleteEditalItemFromCloud(i.id);
                 filterDataByConcurso();
             }
         }
 
+        /* CORREÇÃO DEFINITIVA DA IMPORTAÇÃO JSON / SEPARAÇÃO DE CONCURSOS */
         async function importJSON(event) {
             const file = event.target.files ? event.target.files[0] : null;
             if (!file) return;
@@ -2690,7 +2385,6 @@
                         listMaterias.forEach((matObj, idxMat) => {
                             let mName = matObj.materia || matObj.disciplina || matObj.nome || matObj.titulo || `Matéria ${idxMat + 1}`;
                             let prio = parseInt(matObj.prioridade || matObj.ordem || (idxMat + 1));
-                            
                             let listAssuntos = matObj.assuntos || matObj.topicos || matObj.conteudos || matObj.itens || [];
 
                             if (Array.isArray(listAssuntos)) {
@@ -2698,7 +2392,7 @@
                                     let assuntoText = typeof assuntoItem === 'string' ? assuntoItem : (assuntoItem.nome || assuntoItem.titulo || assuntoItem.assunto || 'Tópico');
                                     
                                     const itemObj = {
-                                        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                                        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random() + idxMat + idxAss),
                                         materia: mName, 
                                         assunto: assuntoText,
                                         prioridade: prio, 
@@ -2742,11 +2436,10 @@
                         }
 
                         filterDataByConcurso();
-                        alert(`Sucesso! ${formattedData.length} tópicos foram gravados no Edital Verticalizado do concurso "${currentConcurso}".`);
+                        alert(`Sucesso! ${formattedData.length} tópicos foram gravados no Edital do concurso "${currentConcurso}".`);
                     } else {
                         alert('Não foi possível identificar matérias e assuntos válidos no JSON.');
                     }
-
                 } catch(err) {
                     console.error('Erro na leitura do JSON:', err);
                     alert('Erro ao processar o arquivo JSON. Certifique-se de que o arquivo está correto.');
@@ -2816,16 +2509,7 @@
                     labels: labels,
                     datasets: [{ label: 'Progresso %', data: percentData, backgroundColor: barColors }]
                 },
-                options: { 
-                    responsive: true, 
-                    plugins: { 
-                        legend: { display: false }
-                    },
-                    scales: { 
-                        x: { display: false },
-                        y: { beginAtZero: true, max: 100 } 
-                    } 
-                }
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, max: 100 } } }
             });
         }
 
@@ -2834,7 +2518,6 @@
             return idx >= 0 ? idx % PALETA_CORES_MATERIAS.length : 0;
         }
 
-        /* POMODORO */
         let timerInterval = null;
         let timeLeft = 25 * 60;
 
@@ -2861,7 +2544,6 @@
 
         function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
 
-        /* VISUALIZAÇÃO DE EDITAL PDF */
         function openModalViewEdital() {
             document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
             renderEditalFileViewer();
@@ -2869,10 +2551,7 @@
         }
 
         function closeModalViewEdital() {
-            if (activeObjectUrl) {
-                URL.revokeObjectURL(activeObjectUrl);
-                activeObjectUrl = null;
-            }
+            if (activeObjectUrl) { URL.revokeObjectURL(activeObjectUrl); activeObjectUrl = null; }
             document.getElementById('modalViewEdital').style.display = 'none';
         }
 
@@ -2896,11 +2575,7 @@
             const btnDownload = document.getElementById('btnDownloadEdital');
             const btnRemove = document.getElementById('btnRemoveEdital');
 
-            if (activeObjectUrl) {
-                URL.revokeObjectURL(activeObjectUrl);
-                activeObjectUrl = null;
-            }
-
+            if (activeObjectUrl) { URL.revokeObjectURL(activeObjectUrl); activeObjectUrl = null; }
             const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
 
             if (!fileDataRaw) {
@@ -2914,7 +2589,6 @@
                 const fileObj = JSON.parse(fileDataRaw);
                 btnDownload.style.display = 'inline-flex';
                 btnRemove.style.display = 'inline-flex';
-
                 if (fileObj.type.includes('pdf')) {
                     const blob = dataURLtoBlob(fileObj.data);
                     activeObjectUrl = URL.createObjectURL(blob);
@@ -2932,7 +2606,6 @@
         function uploadEditalFile(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 const fileObj = { name: file.name, type: file.type || 'application/pdf', data: e.target.result };
@@ -2968,7 +2641,6 @@
             alert('Prompt copiado!');
         }
 
-        /* INICIALIZAÇÃO DE SESSÃO */
         async function checkAuthAndSync() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session && session.user) {
@@ -2985,7 +2657,6 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
             if (!email || !password) return alert('Preencha e-mail e senha.');
-
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) alert('Erro ao entrar: ' + error.message);
             else { currentUser = data.user; checkSuperUserStatus(); showDashboard(); }
@@ -2995,7 +2666,6 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
             if (!email || !password) return alert('Preencha e-mail e senha.');
-
             const { error } = await supabaseClient.auth.signUp({ email, password });
             if (error) alert('Erro ao cadastrar: ' + error.message);
             else alert('Cadastro realizado com sucesso! Clique em Entrar.');
@@ -3029,16 +2699,13 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuthAndSync();
-        });
+        document.addEventListener('DOMContentLoaded', () => { checkAuthAndSync(); });
 
         function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
 
         function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
-
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
         }
