@@ -97,8 +97,32 @@
             font-weight: 600; font-size: 0.85rem; border: 1px solid #1e40af; cursor: pointer;
         }
 
-        .action-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 1.5rem; flex-wrap: wrap; width: 100%; }
-        .action-bar .btn { padding: 0.5rem 0.8rem; font-size: 0.88rem; flex: 1 1 auto; justify-content: center; text-align: center; min-width: 130px; }
+        /* BARRAS DE AÇÃO FIGURA 2: PADRÃO CINZA E ATIVO AZUL */
+        .action-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; width: 100%; }
+        .action-bar .btn-action { 
+            background-color: #475569; 
+            color: #ffffff; 
+            padding: 0.6rem 0.9rem; 
+            font-size: 0.88rem; 
+            font-weight: 600; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            flex: 1 1 auto; 
+            justify-content: center; 
+            text-align: center; 
+            min-width: 130px; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .action-bar .btn-action:hover { background-color: #64748b; }
+        .action-bar .btn-action.active-blue { 
+            background-color: var(--primary-blue) !important; 
+            border-color: #60a5fa !important; 
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); 
+        }
 
         .nav-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; flex-wrap: wrap; }
         .tab-btn { background: transparent; border: none; color: var(--text-color); padding: 0.6rem 1.2rem; font-weight: 700; font-size: 1rem; cursor: pointer; border-radius: 6px; opacity: 0.6; transition: 0.2s; }
@@ -209,7 +233,62 @@
 
         .flashcard-box {
             background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
-            border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
+            border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: flex;
+            justify-content: space-between; align-items: flex-start; gap: 1rem;
+        }
+
+        .flashcard-content { flex: 1; }
+        .flashcard-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+        .flashcard-badge-materia { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+        .flashcard-badge-assunto { background: rgba(255,255,255,0.1); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
+
+        .study-card-container {
+            perspective: 1000px; width: 100%; min-height: 250px; display: flex;
+            justify-content: center; align-items: center; margin: 1rem 0; cursor: pointer;
+        }
+        .study-card-inner {
+            background: var(--card-bg); border: 2px solid var(--primary-blue); border-radius: 12px;
+            padding: 2rem; width: 100%; text-align: center; box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            min-height: 220px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        .note-card {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 1.2rem; margin-bottom: 1rem;
+        }
+        .note-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .note-card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary-blue); }
+        .note-card-date { font-size: 0.8rem; color: #94a3b8; }
+        .note-card-body { font-size: 0.95rem; line-height: 1.6; white-space: pre-line; margin-bottom: 1rem; color: var(--text-color); }
+        .note-card-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+        .shift-box {
+            background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
+            padding: 12px; border-radius: 8px; margin-bottom: 10px;
+        }
+
+        /* ESTILO DAS LEGENDAS HORIZONTAIS DO GRÁFICO (FIGURA 1) */
+        .chart-legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        .chart-legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            flex-shrink: 0;
         }
 
         @media (max-width: 768px) {
@@ -260,18 +339,18 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES DA APLICAÇÃO -->
+        <!-- BARRA DE AÇÕES COM BOTÕES DE COR CINZA QUE MUDAM PARA AZUL AO SEREM CLICADOS (FIGURA 2) -->
         <div class="action-bar">
-            <button class="btn btn-purple" onclick="forceFullSync(event)">Sincronizar Agora 🔄</button>
-            <button class="btn btn-warning" onclick="openModalViewEdital()">Ver / Anexar Edital PDF</button>
-            <label class="btn btn-success" style="cursor: pointer;">
+            <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora 🔄</button>
+            <button class="btn-action" onclick="handleActionButton(this, openModalViewEdital)">Ver / Anexar Edital PDF</button>
+            <label class="btn-action" style="cursor: pointer;">
                 Importar JSON
-                <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="importJSON(event)">
+                <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="handleActionButton(this.parentElement, importJSON, event)">
             </label>
-            <button class="btn btn-info" onclick="openModalPromptIA()">Como Gerar JSON com IA</button>
-            <button class="btn btn-danger" onclick="clearData()">Limpar Edital Atual</button>
-            <button class="btn btn-secondary" onclick="toggleDarkMode()">Modo Claro/Escuro</button>
-            <button class="btn btn-secondary" onclick="handleLogout()">Sair</button>
+            <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
+            <button class="btn-action" onclick="handleActionButton(this, clearData)">Limpar Edital Atual</button>
+            <button class="btn-action" onclick="handleActionButton(this, toggleDarkMode)">Modo Claro/Escuro</button>
+            <button class="btn-action" onclick="handleActionButton(this, handleLogout)">Sair</button>
         </div>
 
         <div class="nav-tabs">
@@ -299,7 +378,9 @@
 
                 <div class="card">
                     <h3>Progresso Geral de Estudo (%)</h3>
-                    <canvas id="progressChart" height="160"></canvas>
+                    <canvas id="progressChart" height="150"></canvas>
+                    <!-- LEGENDAS DAS MATÉRIAS ALINHADAS NA HORIZONTAL COM QUADRADOS COLORIDOS (FIGURA 1) -->
+                    <div class="chart-legend-grid" id="chartLegendGrid"></div>
                 </div>
             </div>
 
@@ -366,7 +447,7 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="autoPreencherCronograma()">Preencher Cronograma Automaticamente</button>
+                        <button class="btn btn-purple" onclick="openModalConfigHorarios()">Preencher Cronograma Automaticamente</button>
                         <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Mês Atual</button>
                     </div>
                 </div>
@@ -386,26 +467,184 @@
         <!-- TAB 3: ANOTAÇÕES -->
         <div id="tab-anotacoes" class="tab-content">
             <div class="card">
-                <h3>Anotações e Caderno de Resumos</h3>
-                <p style="opacity: 0.85; margin-bottom: 1rem;">Escreva resumos, pontos importantes e observações que ficam salvas em tempo real no Supabase.</p>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <textarea id="notesText" placeholder="Escreva suas anotações aqui..." style="min-height: 300px;" oninput="saveNotesData()"></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+                    <h3>Anotações e Caderno de Resumos</h3>
+                    <button class="btn btn-primary" onclick="openModalNovaNota()">+ Incluir Nota</button>
                 </div>
-                <button class="btn btn-primary" onclick="forceSaveNotes()">Salvar Anotações</button>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label><strong>Selecione a Matéria:</strong></label>
+                    <select id="notesMateriaSelect" onchange="renderNotesList()"></select>
+                </div>
+
+                <div id="notesContainer"></div>
             </div>
         </div>
 
         <!-- TAB 4: FLASHCARDS -->
         <div id="tab-flashcards" class="tab-content">
             <div class="card">
-                <h3>Flashcards e Estudo Ativo</h3>
-                <p style="opacity: 0.85; margin-bottom: 1rem;">Crie e revise flashcards vinculados ao seu concurso.</p>
-                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <h3>Flashcards e Estudo Ativo</h3>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
+                        <label class="btn btn-success" style="cursor: pointer;">
+                            Carregar Perguntas (.txt, .rtf, .doc)
+                            <input type="file" id="fcFileInput" accept=".txt,.rtf,.doc,.docx" style="display: none;" onchange="importFlashcardsFile(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <select id="fcMateriaSelect" onchange="updateFcAssuntoOptions()" style="flex:1; min-width: 180px;">
+                            <option value="">Selecione a Matéria (Opcional)</option>
+                        </select>
+                        <select id="fcAssuntoSelect" style="flex:1; min-width: 180px;">
+                            <option value="">Selecione o Assunto (Opcional)</option>
+                        </select>
+                    </div>
                     <input type="text" id="fcPergunta" placeholder="Frente / Pergunta (ex: Qual o prazo do recurso?)" required>
                     <input type="text" id="fcResposta" placeholder="Verso / Resposta (ex: 15 dias úteis)" required>
                     <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard</button>
                 </form>
+
                 <div id="flashcardsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIGURAR HORÁRIOS E TURNOS DE ESTUDO -->
+    <div class="modal-overlay" id="modalConfigHorarios">
+        <div class="modal modal-large">
+            <h3>Configurar Horários e Turnos de Estudo</h3>
+            <p style="font-size:0.9rem; opacity:0.85;">
+                Configure seus horários de estudo e a data em que pretende iniciar. O sistema alocará <strong>100% dos tópicos pendentes do edital</strong>, estendendo o cronograma pelos meses seguintes até concluir todo o conteúdo.
+            </p>
+
+            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
+                <label><strong>Data de Início do Cronograma:</strong></label>
+                <input type="date" id="cfgDataInicio">
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Horários Padrão (Segunda a Sexta):</h4>
+
+            <div class="shift-box">
+                <strong>Manhã:</strong>
+                <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
+                    <label>Início: <input type="time" id="cfgManhaInicio" value="10:00"></label>
+                    <label>Qtd Horas: <input type="number" id="cfgManhaQtd" value="1" min="0" max="12"></label>
+                </div>
+            </div>
+
+            <div class="shift-box">
+                <strong>Tarde:</strong>
+                <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
+                    <label>Início: <input type="time" id="cfgTardeInicio" value="13:00"></label>
+                    <label>Qtd Horas: <input type="number" id="cfgTardeQtd" value="1" min="0" max="12"></label>
+                </div>
+            </div>
+
+            <div class="shift-box">
+                <strong>Noite:</strong>
+                <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
+                    <label>Início: <input type="time" id="cfgNoiteInicio" value="21:00"></label>
+                    <label>Qtd Horas: <input type="number" id="cfgNoiteQtd" value="1" min="0" max="12"></label>
+                </div>
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Dias de Estudo no Fim de Semana:</h4>
+
+            <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+                <label><input type="checkbox" id="cfgIncluirSabado" checked> Incluir Sábado</label>
+                <label><input type="checkbox" id="cfgIncluirDomingo" checked> Incluir Domingo</label>
+            </div>
+
+            <div style="border: 1px dashed var(--primary-blue); padding: 1rem; border-radius: 8px; margin-top: 10px;">
+                <h5 style="color: var(--header-materia-text); margin-bottom: 8px;">Horários do Fim de Semana (Sáb/Dom):</h5>
+                
+                <div class="shift-box">
+                    <strong>Manhã:</strong>
+                    <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
+                        <label>Início: <input type="time" id="cfgFimSabManhaInicio" value="08:00"></label>
+                        <label>Qtd Horas: <input type="number" id="cfgFimSabManhaQtd" value="3" min="0" max="12"></label>
+                    </div>
+                </div>
+
+                <div class="shift-box">
+                    <strong>Tarde:</strong>
+                    <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
+                        <label>Início: <input type="time" id="cfgFimSabTardeInicio" value="14:00"></label>
+                        <label>Qtd Horas: <input type="number" id="cfgFimSabTardeQtd" value="2" min="0" max="12"></label>
+                    </div>
+                </div>
+
+                <div class="shift-box">
+                    <strong>Noite:</strong>
+                    <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
+                        <label>Início: <input type="time" id="cfgFimSabNoiteInicio" value="19:00"></label>
+                        <label>Qtd Horas: <input type="number" id="cfgFimSabNoiteQtd" value="0" min="0" max="12"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma Completo 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INCLUIR / EDITAR NOTA -->
+    <div class="modal-overlay" id="modalNovaNota">
+        <div class="modal">
+            <h3 id="modalNotaTitle">Nova Nota</h3>
+            
+            <div class="form-group">
+                <label><strong>Matéria Vinculada:</strong></label>
+                <select id="inputNotaMateria"></select>
+            </div>
+
+            <div class="form-group">
+                <label><strong>Título da Anotação:</strong></label>
+                <input type="text" id="inputNotaTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes, Resumo Cap. 2...">
+            </div>
+
+            <div class="form-group">
+                <label><strong>Conteúdo / Resumo / Dicas:</strong></label>
+                <textarea id="inputNotaConteudo" placeholder="Digite aqui o conteúdo da sua nota..." style="min-height:180px;"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalNovaNota()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="salvarNota()">Salvar Nota (ENTER)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ESTUDO FLASHCARDS EMBARALHADOS -->
+    <div class="modal-overlay" id="modalStudyFlashcards">
+        <div class="modal">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 id="studyModalTitle">Sessão de Estudos</h3>
+                <span id="studyModalProgress" style="font-weight:700; color:var(--primary-blue);">0 / 0</span>
+            </div>
+
+            <div class="flashcard-meta" id="studyCardMeta"></div>
+
+            <div class="study-card-container" onclick="toggleStudyCardAnswer()">
+                <div class="study-card-inner">
+                    <p style="font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;" id="studyCardLabel">Pergunta (Clique para virar)</p>
+                    <h3 id="studyCardText" style="font-size:1.25rem; font-weight:700;"></h3>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="justify-content:space-between; width:100%;">
+                <button class="btn btn-secondary" onclick="closeStudyModal()">Sair do Treino</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-info" onclick="toggleStudyCardAnswer()">Virar Cartão</button>
+                    <button class="btn btn-primary" onclick="nextStudyCard()">Próximo ➔</button>
+                </div>
             </div>
         </div>
     </div>
@@ -499,7 +738,7 @@
             'linear-gradient(135deg, #7c2d12 0%, #f97316 100%)',
             'linear-gradient(135deg, #831843 0%, #ec4899 100%)'
         ];
-        const PALETA_SOLIDAS = ['#3b82f6', '#22c55e', '#c084fc', '#f97316', '#ec4899'];
+        const PALETA_SOLIDAS = ['#3b82f6', '#22c55e', '#c084fc', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
 
         let currentUser = null;
         let isSuperUser = false;
@@ -512,10 +751,45 @@
         let flashcardsList = [];
         let activeObjectUrl = null;
         let currentDelayedFilter = 'hoje';
-        let saveNotesTimeout = null;
+
+        let studyQueue = [];
+        let currentStudyIdx = 0;
+        let showingAnswer = false;
+        let currentEditingNoteIndex = null;
 
         let selectedMonth = new Date().getMonth();
         let selectedYear = new Date().getFullYear();
+
+        /* MANIPULADOR DE CLIQUE DA BARRA DE AÇÃO (FIGURA 2 - SELEÇÃO AZUL) */
+        function handleActionButton(btnElem, actionFn, eventArg) {
+            document.querySelectorAll('.action-bar .btn-action').forEach(b => b.classList.remove('active-blue'));
+            if (btnElem) btnElem.classList.add('active-blue');
+            if (typeof actionFn === 'function') actionFn(eventArg);
+        }
+
+        /* SUPORTE TECLADO GLOBAL: ENTER & ESC */
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModalConfigHorarios();
+                closeModalNovaNota();
+                closeStudyModal();
+                closeModalViewEdital();
+                closeModalPromptIA();
+                closeModalNovoConcurso();
+            } else if (e.key === 'Enter' && !e.shiftKey) {
+                if (document.getElementById('auth-screen').style.display !== 'none') {
+                    handleLogin();
+                } else if (document.getElementById('modalNovoConcurso').style.display === 'flex') {
+                    confirmarNovoConcurso();
+                } else if (document.getElementById('modalNovaNota').style.display === 'flex') {
+                    salvarNota();
+                } else if (document.getElementById('modalConfigHorarios').style.display === 'flex') {
+                    gerarCronogramaInteligente();
+                } else if (document.getElementById('modalPromptIA').style.display === 'flex') {
+                    copyPromptToClipboard();
+                }
+            }
+        });
 
         function updateOnlineStatus() {
             const banner = document.getElementById('offline-banner');
@@ -573,30 +847,211 @@
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
 
-        /* ANOTAÇÕES E FLASHCARDS SINC */
-        function saveNotesData() {
-            clearTimeout(saveNotesTimeout);
-            saveNotesTimeout = setTimeout(async () => {
-                const text = document.getElementById('notesText').value;
-                let metadata = getConcursosMetadata();
-                if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-                metadata[currentConcurso].notes = text;
-                await saveConcursosMetadata(metadata);
-            }, 800);
-        }
+        /* ANOTAÇÕES */
+        function populateNotesMateriaDropdowns() {
+            const mSel = document.getElementById('notesMateriaSelect');
+            const modalSel = document.getElementById('inputNotaMateria');
 
-        async function forceSaveNotes() {
-            const text = document.getElementById('notesText').value;
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            metadata[currentConcurso].notes = text;
-            await saveConcursosMetadata(metadata);
-            alert('Anotações salvas com sucesso na nuvem!');
+            if (!mSel || !modalSel) return;
+            mSel.innerHTML = ''; modalSel.innerHTML = '';
+
+            const setMaterias = new Set();
+            editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
+
+            if (setMaterias.size === 0) setMaterias.add('Geral');
+
+            setMaterias.forEach(mat => {
+                mSel.innerHTML += `<option value="${mat}">${mat}</option>`;
+                modalSel.innerHTML += `<option value="${mat}">${mat}</option>`;
+            });
         }
 
         function loadNotesData() {
+            populateNotesMateriaDropdowns();
+            renderNotesList();
+        }
+
+        function renderNotesList() {
+            const container = document.getElementById('notesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const selectedMat = document.getElementById('notesMateriaSelect').value;
             const metadata = getConcursosMetadata();
-            document.getElementById('notesText').value = metadata[currentConcurso]?.notes || '';
+            const notesList = metadata[currentConcurso]?.structuredNotes || [];
+
+            const filtered = notesList.filter(n => n.materia === selectedMat);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p style="opacity:0.8; padding:1rem;">Nenhuma anotação cadastrada para a matéria <strong>${selectedMat}</strong>.</p>`;
+                return;
+            }
+
+            filtered.forEach((nota, idx) => {
+                const globalIndex = notesList.indexOf(nota);
+                container.innerHTML += `
+                    <div class="note-card">
+                        <div class="note-card-header">
+                            <span class="note-card-title">${nota.titulo}</span>
+                            <span class="note-card-date">Editado em ${nota.data || 'Recente'}</span>
+                        </div>
+                        <div class="note-card-body">${nota.conteudo}</div>
+                        <div class="note-card-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="editNota(${globalIndex})">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteNota(${globalIndex})">Excluir</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openModalNovaNota() {
+            currentEditingNoteIndex = null;
+            document.getElementById('modalNotaTitle').innerText = 'Nova Nota';
+            document.getElementById('inputNotaTitulo').value = '';
+            document.getElementById('inputNotaConteudo').value = '';
+            document.getElementById('modalNovaNota').style.display = 'flex';
+        }
+
+        function closeModalNovaNota() {
+            document.getElementById('modalNovaNota').style.display = 'none';
+        }
+
+        function editNota(globalIndex) {
+            const metadata = getConcursosMetadata();
+            const notesList = metadata[currentConcurso]?.structuredNotes || [];
+            const nota = notesList[globalIndex];
+
+            if (!nota) return;
+
+            currentEditingNoteIndex = globalIndex;
+            document.getElementById('modalNotaTitle').innerText = `Editar Nota (${nota.materia})`;
+            document.getElementById('inputNotaMateria').value = nota.materia;
+            document.getElementById('inputNotaTitulo').value = nota.titulo;
+            document.getElementById('inputNotaConteudo').value = nota.conteudo;
+            document.getElementById('modalNovaNota').style.display = 'flex';
+        }
+
+        async function salvarNota() {
+            const materia = document.getElementById('inputNotaMateria').value;
+            const titulo = document.getElementById('inputNotaTitulo').value.trim();
+            const conteudo = document.getElementById('inputNotaConteudo').value.trim();
+
+            if (!titulo || !conteudo) return alert('Preencha título e conteúdo da anotação.');
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].structuredNotes) metadata[currentConcurso].structuredNotes = [];
+
+            const nowStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            if (currentEditingNoteIndex !== null) {
+                metadata[currentConcurso].structuredNotes[currentEditingNoteIndex] = { materia, titulo, conteudo, data: nowStr };
+            } else {
+                metadata[currentConcurso].structuredNotes.push({ materia, titulo, conteudo, data: nowStr });
+            }
+
+            await saveConcursosMetadata(metadata);
+            closeModalNovaNota();
+            document.getElementById('notesMateriaSelect').value = materia;
+            renderNotesList();
+        }
+
+        async function deleteNota(globalIndex) {
+            if (confirm('Deseja excluir esta anotação?')) {
+                let metadata = getConcursosMetadata();
+                if (metadata[currentConcurso]?.structuredNotes) {
+                    metadata[currentConcurso].structuredNotes.splice(globalIndex, 1);
+                    await saveConcursosMetadata(metadata);
+                    renderNotesList();
+                }
+            }
+        }
+
+        /* CONFIGURADOR DE HORÁRIOS E TURNOS */
+        function openModalConfigHorarios() {
+            document.getElementById('cfgDataInicio').value = new Date().toISOString().split('T')[0];
+            document.getElementById('modalConfigHorarios').style.display = 'flex';
+        }
+
+        function closeModalConfigHorarios() {
+            document.getElementById('modalConfigHorarios').style.display = 'none';
+        }
+
+        async function gerarCronogramaInteligente() {
+            if (editalItems.length === 0) return alert('Sua lista de edital está vazia. Adicione matérias para preencher.');
+
+            const dataInicioStr = document.getElementById('cfgDataInicio').value;
+            if (!dataInicioStr) return alert('Escolha a data de início do cronograma.');
+
+            const incSab = document.getElementById('cfgIncluirSabado').checked;
+            const incDom = document.getElementById('cfgIncluirDomingo').checked;
+
+            let currDate = new Date(dataInicioStr + "T00:00:00");
+            let itemIdx = 0;
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].dateSchedule = {};
+
+            while (itemIdx < editalItems.length) {
+                const dayOfWeek = currDate.getDay();
+                let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                let canStudy = true;
+
+                if (dayOfWeek === 6 && !incSab) canStudy = false;
+                if (dayOfWeek === 0 && !incDom) canStudy = false;
+
+                if (canStudy) {
+                    const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
+                    const slots = isWeekend ? 3 : 2; 
+
+                    metadata[currentConcurso].dateSchedule[dateKey] = [];
+
+                    for (let s = 0; s < slots; s++) {
+                        if (itemIdx < editalItems.length) {
+                            const it = editalItems[itemIdx];
+                            metadata[currentConcurso].dateSchedule[dateKey].push(`${it.materia} - ${it.assunto}`);
+                            itemIdx++;
+                        }
+                    }
+                }
+                currDate.setDate(currDate.getDate() + 1);
+            }
+
+            await saveConcursosMetadata(metadata);
+            closeModalConfigHorarios();
+            renderMonthCalendar();
+            alert('Cronograma completo gerado com sucesso para todo o edital!');
+        }
+
+        /* FLASHCARDS */
+        function populateFcMateriaDropdown() {
+            const mSel = document.getElementById('fcMateriaSelect');
+            if (!mSel) return;
+            mSel.innerHTML = '<option value="">Selecione a Matéria (Opcional)</option>';
+
+            const setMaterias = new Set();
+            editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
+
+            setMaterias.forEach(mat => {
+                mSel.innerHTML += `<option value="${mat}">${mat}</option>`;
+            });
+            updateFcAssuntoOptions();
+        }
+
+        function updateFcAssuntoOptions() {
+            const mVal = document.getElementById('fcMateriaSelect').value;
+            const aSel = document.getElementById('fcAssuntoSelect');
+            if (!aSel) return;
+            aSel.innerHTML = '<option value="">Selecione o Assunto (Opcional)</option>';
+
+            if (!mVal) return;
+
+            const assuntos = editalItems.filter(i => i.materia === mVal).map(i => i.assunto);
+            assuntos.forEach(ass => {
+                aSel.innerHTML += `<option value="${ass}">${ass}</option>`;
+            });
         }
 
         async function saveFlashcardsData() {
@@ -609,22 +1064,50 @@
         function loadFlashcardsData() {
             const metadata = getConcursosMetadata();
             flashcardsList = metadata[currentConcurso]?.flashcards || [];
+            populateFcMateriaDropdown();
             renderFlashcards();
         }
 
         function renderFlashcards() {
             const container = document.getElementById('flashcardsContainer');
             container.innerHTML = '';
+
             if (flashcardsList.length === 0) {
                 container.innerHTML = '<p style="opacity: 0.8;">Nenhum flashcard criado para este concurso.</p>';
                 return;
             }
+
+            const grouped = {};
             flashcardsList.forEach((fc, idx) => {
+                const mKey = fc.materia || 'Geral / Sem Matéria';
+                if (!grouped[mKey]) grouped[mKey] = [];
+                grouped[mKey].push({ ...fc, originalIndex: idx });
+            });
+
+            Object.keys(grouped).forEach(mName => {
+                let cardsHtml = '';
+                grouped[mName].forEach(fc => {
+                    cardsHtml += `
+                        <div class="flashcard-box">
+                            <div class="flashcard-content">
+                                <div class="flashcard-meta">
+                                    <span class="flashcard-badge-materia">${fc.materia || 'Geral'}</span>
+                                    ${fc.assunto ? `<span class="flashcard-badge-assunto">${fc.assunto}</span>` : ''}
+                                </div>
+                                <p><strong>P:</strong> ${fc.pergunta}</p>
+                                <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${fc.resposta}</p>
+                            </div>
+                            <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir 🗑️</button>
+                        </div>
+                    `;
+                });
+
                 container.innerHTML += `
-                    <div class="flashcard-box">
-                        <p><strong>P:</strong> ${fc.pergunta}</p>
-                        <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${fc.resposta}</p>
-                        <button class="btn btn-danger btn-sm" style="margin-top:8px;" onclick="removeFlashcard(${idx})">Excluir</button>
+                    <div style="margin-bottom:1.5rem;">
+                        <h4 style="color:var(--primary-blue); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px;">
+                            ${mName} (${grouped[mName].length} cartões)
+                        </h4>
+                        ${cardsHtml}
                     </div>
                 `;
             });
@@ -632,11 +1115,14 @@
 
         async function addFlashcard(e) {
             e.preventDefault();
+            const materia = document.getElementById('fcMateriaSelect').value;
+            const assunto = document.getElementById('fcAssuntoSelect').value;
             const pergunta = document.getElementById('fcPergunta').value.trim();
             const resposta = document.getElementById('fcResposta').value.trim();
+
             if (!pergunta || !resposta) return;
 
-            flashcardsList.push({ pergunta, resposta });
+            flashcardsList.push({ materia, assunto, pergunta, resposta });
             document.getElementById('fcPergunta').value = '';
             document.getElementById('fcResposta').value = '';
             renderFlashcards();
@@ -644,10 +1130,123 @@
         }
 
         async function removeFlashcard(idx) {
-            flashcardsList.splice(idx, 1);
-            renderFlashcards();
-            await saveFlashcardsData();
+            if (confirm('Deseja apagar este flashcard individualmente?')) {
+                flashcardsList.splice(idx, 1);
+                renderFlashcards();
+                await saveFlashcardsData();
+            }
         }
+
+        function importFlashcardsFile(evt) {
+            const file = evt.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r?\n/);
+
+                let currentPergunta = '';
+                let currentResposta = '';
+                let importedCount = 0;
+
+                lines.forEach(line => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return;
+
+                    if (trimmed.toLowerCase().startsWith('p:') || trimmed.toLowerCase().startsWith('pergunta:')) {
+                        if (currentPergunta && currentResposta) {
+                            flashcardsList.push({ materia: '', assunto: '', pergunta: currentPergunta, resposta: currentResposta });
+                            importedCount++;
+                            currentResposta = '';
+                        }
+                        currentPergunta = trimmed.replace(/^(p:|pergunta:)/i, '').trim();
+                    } else if (trimmed.toLowerCase().startsWith('r:') || trimmed.toLowerCase().startsWith('resposta:')) {
+                        currentResposta = trimmed.replace(/^(r:|resposta:)/i, '').trim();
+                    } else if (trimmed.includes(';') || trimmed.includes('\t')) {
+                        const parts = trimmed.split(/[;\t]/);
+                        if (parts.length >= 2) {
+                            flashcardsList.push({ materia: '', assunto: '', pergunta: parts[0].trim(), resposta: parts[1].trim() });
+                            importedCount++;
+                        }
+                    }
+                });
+
+                if (currentPergunta && currentResposta) {
+                    flashcardsList.push({ materia: '', assunto: '', pergunta: currentPergunta, resposta: currentResposta });
+                    importedCount++;
+                }
+
+                if (importedCount > 0) {
+                    renderFlashcards();
+                    await saveFlashcardsData();
+                    alert(`Sucesso! ${importedCount} flashcards foram importados.`);
+                } else {
+                    alert('Formato de arquivo não reconhecido. Use a estrutura:\nP: Sua Pergunta\nR: Sua Resposta');
+                }
+            };
+            reader.readAsText(file);
+            evt.target.value = '';
+        }
+
+        function startShuffleStudyModal() {
+            if (flashcardsList.length === 0) return alert('Cadastre ou importe flashcards antes de iniciar o estudo.');
+
+            const groupedByMateria = {};
+            flashcardsList.forEach(fc => {
+                const mKey = fc.materia || 'Geral / Sem Matéria';
+                if (!groupedByMateria[mKey]) groupedByMateria[mKey] = [];
+                groupedByMateria[mKey].push(fc);
+            });
+
+            studyQueue = [];
+
+            Object.keys(groupedByMateria).forEach(mName => {
+                const shuffledMateriaCards = [...groupedByMateria[mName]].sort(() => Math.random() - 0.5);
+                studyQueue.push(...shuffledMateriaCards);
+            });
+
+            currentStudyIdx = 0;
+            showingAnswer = false;
+            updateStudyModalCard();
+            document.getElementById('modalStudyFlashcards').style.display = 'flex';
+        }
+
+        function updateStudyModalCard() {
+            if (currentStudyIdx >= studyQueue.length) {
+                alert('Parabéns! Você concluiu a revisão de todos os flashcards.');
+                closeStudyModal();
+                return;
+            }
+
+            const fc = studyQueue[currentStudyIdx];
+            document.getElementById('studyModalProgress').innerText = `${currentStudyIdx + 1} / ${studyQueue.length}`;
+
+            const metaContainer = document.getElementById('studyCardMeta');
+            metaContainer.innerHTML = `<span class="flashcard-badge-materia">${fc.materia || 'Geral'}</span>`;
+            if (fc.assunto) metaContainer.innerHTML += `<span class="flashcard-badge-assunto">${fc.assunto}</span>`;
+
+            showingAnswer = false;
+            document.getElementById('studyCardLabel').innerText = 'FRENTE (Clique para virar)';
+            document.getElementById('studyCardText').innerText = fc.pergunta;
+        }
+
+        function toggleStudyCardAnswer() {
+            if (currentStudyIdx >= studyQueue.length) return;
+            const fc = studyQueue[currentStudyIdx];
+            showingAnswer = !showingAnswer;
+
+            if (showingAnswer) {
+                document.getElementById('studyCardLabel').innerText = 'VERSO / RESPOSTA';
+                document.getElementById('studyCardText').innerText = fc.resposta;
+            } else {
+                document.getElementById('studyCardLabel').innerText = 'FRENTE (Clique para virar)';
+                document.getElementById('studyCardText').innerText = fc.pergunta;
+            }
+        }
+
+        function nextStudyCard() { currentStudyIdx++; updateStudyModalCard(); }
+        function closeStudyModal() { document.getElementById('modalStudyFlashcards').style.display = 'none'; }
 
         /* CALENDÁRIO MENSAL EM GRADE */
         function initMonthYearSelectors() {
@@ -727,29 +1326,6 @@
                 await saveConcursosMetadata(metadata);
                 renderMonthCalendar();
             }
-        }
-
-        async function autoPreencherCronograma() {
-            if (editalItems.length === 0) return alert('Adicione tópicos ao edital para preencher o cronograma.');
-
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-
-            const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-            let itemIdx = 0;
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                if (itemIdx < editalItems.length) {
-                    metadata[currentConcurso].dateSchedule[dateKey] = [editalItems[itemIdx].materia + ' - ' + editalItems[itemIdx].assunto];
-                    itemIdx++;
-                }
-            }
-
-            await saveConcursosMetadata(metadata);
-            renderMonthCalendar();
-            alert('Cronograma mensal gerado com sucesso!');
         }
 
         async function limparCronogramaMesAtual() {
@@ -945,6 +1521,8 @@
             editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
             renderConcursoSelector();
             document.getElementById('edital-title').innerText = `Edital: ${currentConcurso}`;
+            populateFcMateriaDropdown();
+            populateNotesMateriaDropdowns();
             renderTable();
             renderChart();
         }
@@ -1003,7 +1581,7 @@
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
 
                 tbody.innerHTML += `
-                    <tr class="materia-header-row" style="background: ${PALETA_CORES_MATERIAS[colorIdx]};" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
+                    <tr class="materia-header-row" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
                         <td onclick="event.stopPropagation()">
                             <input type="number" class="priority-input" value="${group.prioridade}" min="1" onchange="updateMateriaPriority('${materiaName.replace(/'/g, "\\'")}', this.value)">
                         </td>
@@ -1020,7 +1598,7 @@
                     group.items.forEach(item => {
                         const safeId = String(item.id);
                         tbody.innerHTML += `
-                            <tr style="border-left: 4px solid ${PALETA_SOLIDAS[colorIdx]};">
+                            <tr style="border-left: 4px solid ${PALETA_SOLIDAS[colorIdx % PALETA_SOLIDAS.length]};">
                                 <td></td>
                                 <td style="text-align: left; padding-left: 1.5rem;">${item.assunto}</td>
                                 <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'teoria', ${item.teoria})"></td>
@@ -1100,7 +1678,7 @@
         }
 
         async function importJSON(event) {
-            const file = event.target.files[0];
+            const file = event.target.files ? event.target.files[0] : null;
             if (!file) return;
 
             const reader = new FileReader();
@@ -1164,8 +1742,10 @@
             }
         }
 
+        /* REESTRUTURAÇÃO DO GRÁFICO E GERADOR DE LEGENDAS LIMPAS NA HORIZONTAL (FIGURA 1) */
         function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
+            const legendGrid = document.getElementById('chartLegendGrid');
             const counts = {};
 
             editalItems.forEach(item => {
@@ -1181,15 +1761,38 @@
 
             const labels = Object.keys(counts);
             const percentData = labels.map(l => Math.round((counts[l].concluido / (counts[l].total || 1)) * 100));
+            const barColors = labels.map((_, idx) => PALETA_SOLIDAS[idx % PALETA_SOLIDAS.length]);
+
+            if (legendGrid) {
+                legendGrid.innerHTML = '';
+                labels.forEach((mName, idx) => {
+                    const color = PALETA_SOLIDAS[idx % PALETA_SOLIDAS.length];
+                    legendGrid.innerHTML += `
+                        <div class="chart-legend-item">
+                            <span class="chart-legend-color" style="background-color: ${color};"></span>
+                            <span>${mName} (${percentData[idx]}%)</span>
+                        </div>
+                    `;
+                });
+            }
 
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{ label: 'Progresso %', data: percentData, backgroundColor: PALETA_SOLIDAS }]
+                    datasets: [{ label: 'Progresso %', data: percentData, backgroundColor: barColors }]
                 },
-                options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+                options: { 
+                    responsive: true, 
+                    plugins: { 
+                        legend: { display: false }
+                    },
+                    scales: { 
+                        x: { display: false },
+                        y: { beginAtZero: true, max: 100 } 
+                    } 
+                }
             });
         }
 
@@ -1438,15 +2041,28 @@
         window.downloadEditalFile = downloadEditalFile;
         window.removerEditalFile = removerEditalFile;
         window.forceFullSync = forceFullSync;
-        window.saveNotesData = saveNotesData;
-        window.forceSaveNotes = forceSaveNotes;
         window.addFlashcard = addFlashcard;
         window.removeFlashcard = removeFlashcard;
         window.onMonthYearChange = onMonthYearChange;
         window.addTopicToDate = addTopicToDate;
-        window.autoPreencherCronograma = autoPreencherCronograma;
         window.limparCronogramaMesAtual = limparCronogramaMesAtual;
         window.filterDelayedList = filterDelayedList;
+        window.updateFcAssuntoOptions = updateFcAssuntoOptions;
+        window.importFlashcardsFile = importFlashcardsFile;
+        window.startShuffleStudyModal = startShuffleStudyModal;
+        window.toggleStudyCardAnswer = toggleStudyCardAnswer;
+        window.nextStudyCard = nextStudyCard;
+        window.closeStudyModal = closeStudyModal;
+        window.openModalConfigHorarios = openModalConfigHorarios;
+        window.closeModalConfigHorarios = closeModalConfigHorarios;
+        window.gerarCronogramaInteligente = gerarCronogramaInteligente;
+        window.renderNotesList = renderNotesList;
+        window.openModalNovaNota = openModalNovaNota;
+        window.closeModalNovaNota = closeModalNovaNota;
+        window.salvarNota = salvarNota;
+        window.editNota = editNota;
+        window.deleteNota = deleteNota;
+        window.handleActionButton = handleActionButton;
     </script>
 </body>
 </html>
