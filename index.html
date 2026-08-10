@@ -203,6 +203,7 @@
             display: flex; justify-content: space-between; align-items: center;
         }
         .clean-subject-badge.done { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #34d399; text-decoration: line-through; }
+        .clean-subject-badge.rev { background: rgba(245, 158, 11, 0.2); border-color: #f59e0b; color: #fcd34d; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
         .modal { background: var(--card-bg); color: var(--text-color); padding: 24px; border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
@@ -265,7 +266,8 @@
 
         .shift-box {
             background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
-            padding: 12px; border-radius: 8px; margin-bottom: 10px;
+            padding: 8px 12px; border-radius: 8px; margin-bottom: 8px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
         }
 
         .chart-legend-grid {
@@ -297,11 +299,41 @@
             justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
         }
 
+        .weekday-picker {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 12px 0;
+        }
+        .weekday-btn {
+            background: var(--card-bg); border: 2px solid var(--border-color);
+            border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .weekday-btn strong { display: block; font-size: 1.1rem; color: var(--text-color); }
+        .weekday-btn span { font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; }
+        .weekday-btn.selected {
+            border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.15);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .hours-option-card {
+            background: rgba(0,0,0,0.2); border: 2px solid var(--border-color);
+            border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;
+        }
+        .hours-option-card:hover { border-color: var(--primary-blue); }
+        .hours-option-card.selected { border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.15); }
+
+        .edit-selector-box {
+            background: rgba(15, 23, 42, 0.8); border: 1px solid var(--primary-blue);
+            padding: 10px; border-radius: 8px; margin-top: 8px; width: 100%;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+
         @media (max-width: 768px) {
             .grid-top { grid-template-columns: 1fr; }
             .month-grid { grid-template-columns: repeat(1, 1fr); }
             .month-calendar-header { display: none; }
             .month-day-cell { height: auto; min-height: 100px; }
+            .weekday-picker { grid-template-columns: repeat(4, 1fr); }
         }
     </style>
 </head>
@@ -452,7 +484,7 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="openModalConfigHorarios()">Preencher Cronograma Automaticamente</button>
+                        <button class="btn btn-purple" onclick="openModalSelectCronogramaType()">Preencher Cronograma Automaticamente</button>
                         <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Mês Atual</button>
                     </div>
                 </div>
@@ -519,29 +551,97 @@
         </div>
     </div>
 
-    <!-- MODAL GERENCIAR CONTEÚDO DO DIA (CLICAR NO CRONOGRAMA) -->
-    <div class="modal-overlay" id="modalDayContent">
+    <!-- MODAL SELEÇÃO DO TIPO DE PREENCHIMENTO DO CRONOGRAMA -->
+    <div class="modal-overlay" id="modalSelectCronogramaType">
         <div class="modal">
-            <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
-            <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
-            <div id="dayTopicsContainer"></div>
-            
-            <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
-                <button class="btn btn-primary btn-sm" onclick="addNewTopicToActiveDay()">+ Adicionar Novo Tópico a Este Dia</button>
+            <h3>Escolha o Método de Preenchimento</h3>
+            <p style="font-size:0.9rem; opacity:0.85;">Selecione como prefere planejar sua rotina de estudos:</p>
+
+            <div style="display:flex; flex-direction:column; gap:12px; margin: 10px 0;">
+                <div class="hours-option-card" onclick="chooseCronogramaType(1)">
+                    <div>
+                        <strong>Preenchimento 1: Horários Definidos por Turnos</strong>
+                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Define início e carga horária exata para Manhã, Tarde e Noite.</p>
+                    </div>
+                    ➔
+                </div>
+
+                <div class="hours-option-card" onclick="chooseCronogramaType(2)">
+                    <div>
+                        <strong>Preenchimento 2: Dias da Semana + Carga Horária Diária</strong>
+                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Selecione os dias ativos e a quantidade de horas gerais disponíveis.</p>
+                    </div>
+                    ➔
+                </div>
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
+                <button class="btn btn-secondary" onclick="closeModalSelectCronogramaType()">Cancelar (ESC)</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL CONFIGURAR HORÁRIOS E TURNOS -->
+    <!-- MODAL MÉTODO 2: DIAS DA SEMANA E CARGA HORÁRIA -->
+    <div class="modal-overlay" id="modalMentorisMethod">
+        <div class="modal modal-large">
+            <h3>Configurar Rotina Semanal e Revisão Espaçada</h3>
+            
+            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
+                <label><strong>Data de Início do Cronograma:</strong></label>
+                <input type="date" id="m2DataInicio">
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Quais dias você pode estudar?</h4>
+            <div class="weekday-picker">
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 0)"><strong>D</strong><span>DOM</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 1)"><strong>S</strong><span>SEG</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 2)"><strong>T</strong><span>TER</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 3)"><strong>Q</strong><span>QUA</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 4)"><strong>Q</strong><span>QUI</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 5)"><strong>S</strong><span>SEX</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 6)"><strong>S</strong><span>SÁB</span></div>
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Quanto tempo por dia você consegue estudar?</h4>
+            <div id="hoursSelectionContainer">
+                <div class="hours-option-card" onclick="selectHoursOption(this, 1)">
+                    <span>⏱️ Menos de 1h por dia</span>
+                </div>
+                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)">
+                    <span>⏱️ Entre 1h e 2h por dia</span>
+                </div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 3)">
+                    <span>⏱️ Entre 2h a 4h por dia</span>
+                </div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 5)">
+                    <span>🔥 Acima de 4h (Modo Hardcore)</span>
+                </div>
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
+            <div class="form-group">
+                <select id="m2RevisionStrategy" style="width:100%;">
+                    <option value="classica">Revisão Clássica (Dias: 7, 30, 90)</option>
+                    <option value="bimestral">Revisão Bimestral (Dias: 1, 15, 30, 60)</option>
+                    <option value="curta">Revisão Curta (Dias: 7, 14, 21, 30)</option>
+                    <option value="semestral">Revisão Semestral (Dias: 1, 7, 28, 90, 180)</option>
+                    <option value="intensiva">Revisão Intensiva (Dias: 3, 7, 14, 21, 30, 45, 60)</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalMentorisMethod()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="gerarCronogramaMetodo2()">Gerar Cronograma 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIGURAR HORÁRIOS E TURNOS (MÉTODO 1) -->
     <div class="modal-overlay" id="modalConfigHorarios">
         <div class="modal modal-large">
-            <h3>Configurar Horários e Turnos de Estudo</h3>
+            <h3>Configurar Horários e Turnos de Estudo (Método 1)</h3>
             <p style="font-size:0.9rem; opacity:0.85;">
-                Configure seus horários de estudo e a data em que pretende iniciar. O sistema alocará <strong>100% dos tópicos do edital organizados por PRIORIDADE</strong>, estendendo o cronograma pelos meses seguintes até concluir todo o conteúdo.
+                Configure seus horários de estudo. O sistema alocará <strong>100% dos tópicos organizados por PRIORIDADE</strong>.
             </p>
 
             <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
@@ -552,27 +652,18 @@
             <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Horários Padrão (Segunda a Sexta):</h4>
 
             <div class="shift-box">
-                <strong>Manhã:</strong>
-                <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
-                    <label>Início: <input type="time" id="cfgManhaInicio" value="10:00"></label>
-                    <label>Qtd Horas: <input type="number" id="cfgManhaQtd" value="1" min="0" max="12"></label>
-                </div>
+                <span><strong>Manhã Início:</strong> <input type="time" id="cfgManhaInicio" value="10:00"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgManhaQtd" value="1" min="0" max="12" style="width:70px;"></span>
             </div>
 
             <div class="shift-box">
-                <strong>Tarde:</strong>
-                <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
-                    <label>Início: <input type="time" id="cfgTardeInicio" value="13:00"></label>
-                    <label>Qtd Horas: <input type="number" id="cfgTardeQtd" value="1" min="0" max="12"></label>
-                </div>
+                <span><strong>Tarde Início:</strong> <input type="time" id="cfgTardeInicio" value="13:00"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgTardeQtd" value="1" min="0" max="12" style="width:70px;"></span>
             </div>
 
             <div class="shift-box">
-                <strong>Noite:</strong>
-                <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
-                    <label>Início: <input type="time" id="cfgNoiteInicio" value="21:00"></label>
-                    <label>Qtd Horas: <input type="number" id="cfgNoiteQtd" value="1" min="0" max="12"></label>
-                </div>
+                <span><strong>Noite Início:</strong> <input type="time" id="cfgNoiteInicio" value="21:00"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgNoiteQtd" value="1" min="0" max="12" style="width:70px;"></span>
             </div>
 
             <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Dias de Estudo no Fim de Semana:</h4>
@@ -586,33 +677,53 @@
                 <h5 style="color: var(--header-materia-text); margin-bottom: 8px;">Horários do Fim de Semana (Sáb/Dom):</h5>
                 
                 <div class="shift-box">
-                    <strong>Manhã:</strong>
-                    <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
-                        <label>Início: <input type="time" id="cfgFimSabManhaInicio" value="08:00"></label>
-                        <label>Qtd Horas: <input type="number" id="cfgFimSabManhaQtd" value="3" min="0" max="12"></label>
-                    </div>
+                    <span><strong>Manhã Início:</strong> <input type="time" id="cfgFimSabManhaInicio" value="08:00"></span>
+                    <span><strong>Qtd Horas:</strong> <input type="number" id="cfgFimSabManhaQtd" value="3" min="0" max="12" style="width:70px;"></span>
                 </div>
 
                 <div class="shift-box">
-                    <strong>Tarde:</strong>
-                    <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
-                        <label>Início: <input type="time" id="cfgFimSabTardeInicio" value="14:00"></label>
-                        <label>Qtd Horas: <input type="number" id="cfgFimSabTardeQtd" value="2" min="0" max="12"></label>
-                    </div>
+                    <span><strong>Tarde Início:</strong> <input type="time" id="cfgFimSabTardeInicio" value="14:00"></span>
+                    <span><strong>Qtd Horas:</strong> <input type="number" id="cfgFimSabTardeQtd" value="2" min="0" max="12" style="width:70px;"></span>
                 </div>
 
                 <div class="shift-box">
-                    <strong>Noite:</strong>
-                    <div style="display:flex; gap:1rem; margin-top:6px; flex-wrap:wrap;">
-                        <label>Início: <input type="time" id="cfgFimSabNoiteInicio" value="19:00"></label>
-                        <label>Qtd Horas: <input type="number" id="cfgFimSabNoiteQtd" value="0" min="0" max="12"></label>
-                    </div>
+                    <span><strong>Noite Início:</strong> <input type="time" id="cfgFimSabNoiteInicio" value="19:00"></span>
+                    <span><strong>Qtd Horas:</strong> <input type="number" id="cfgFimSabNoiteQtd" value="0" min="0" max="12" style="width:70px;"></span>
                 </div>
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
+            <div class="form-group">
+                <select id="m1RevisionStrategy" style="width:100%;">
+                    <option value="classica">Revisão Clássica (Dias: 7, 30, 90)</option>
+                    <option value="bimestral">Revisão Bimestral (Dias: 1, 15, 30, 60)</option>
+                    <option value="curta">Revisão Curta (Dias: 7, 14, 21, 30)</option>
+                    <option value="semestral">Revisão Semestral (Dias: 1, 7, 28, 90, 180)</option>
+                    <option value="intensiva">Revisão Intensiva (Dias: 3, 7, 14, 21, 30, 45, 60)</option>
+                </select>
             </div>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma por Prioridade 🚀</button>
+                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GERENCIAR CONTEÚDO DO DIA COM SELETOR DE EDITAL E TROCA RECÍPROCA -->
+    <div class="modal-overlay" id="modalDayContent">
+        <div class="modal">
+            <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
+            <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
+            
+            <div id="dayTopicsContainer"></div>
+            
+            <div id="addNewTopicArea" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
+                <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico a Este Dia</button>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -762,6 +873,14 @@
         ];
         const PALETA_SOLIDAS = ['#3b82f6', '#22c55e', '#c084fc', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
 
+        const STRATEGIES_MAP = {
+            classica: [7, 30, 90],
+            bimestral: [1, 15, 30, 60],
+            curta: [7, 14, 21, 30],
+            semestral: [1, 7, 28, 90, 180],
+            intensiva: [3, 7, 14, 21, 30, 45, 60]
+        };
+
         let currentUser = null;
         let isSuperUser = false;
         let myChart = null;
@@ -783,6 +902,9 @@
         let selectedMonth = new Date().getMonth();
         let selectedYear = new Date().getFullYear();
 
+        let selectedWeekdays = [0, 1, 2, 3, 4, 5, 6];
+        let selectedDailyHoursSlots = 2;
+
         function handleActionButton(btnElem, actionFn, eventArg) {
             document.querySelectorAll('.action-bar .btn-action').forEach(b => b.classList.remove('active-blue'));
             if (btnElem) btnElem.classList.add('active-blue');
@@ -791,6 +913,8 @@
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                closeModalSelectCronogramaType();
+                closeModalMentorisMethod();
                 closeModalConfigHorarios();
                 closeModalNovaNota();
                 closeStudyModal();
@@ -807,6 +931,8 @@
                     salvarNota();
                 } else if (document.getElementById('modalConfigHorarios').style.display === 'flex') {
                     gerarCronogramaInteligente();
+                } else if (document.getElementById('modalMentorisMethod').style.display === 'flex') {
+                    gerarCronogramaMetodo2();
                 } else if (document.getElementById('modalPromptIA').style.display === 'flex') {
                     copyPromptToClipboard();
                 }
@@ -869,109 +995,122 @@
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
 
-        /* JANELA E AÇÕES DO DIA NO CRONOGRAMA INTEGRADO */
-        function openModalDayContent(dateKey) {
-            activeSelectedDateKey = dateKey;
-            document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
-            renderDayTopicsList();
-            document.getElementById('modalDayContent').style.display = 'flex';
+        /* MODAIS DO SELETOR DE PREENCHIMENTO DO CRONOGRAMA */
+        function openModalSelectCronogramaType() {
+            document.getElementById('modalSelectCronogramaType').style.display = 'flex';
         }
 
-        function closeModalDayContent() {
-            document.getElementById('modalDayContent').style.display = 'none';
+        function closeModalSelectCronogramaType() {
+            document.getElementById('modalSelectCronogramaType').style.display = 'none';
         }
 
-        function renderDayTopicsList() {
-            const container = document.getElementById('dayTopicsContainer');
-            if (!container || !activeSelectedDateKey) return;
-            container.innerHTML = '';
-
-            const metadata = getConcursosMetadata();
-            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-            const topics = dateSchedule[activeSelectedDateKey] || [];
-
-            if (topics.length === 0) {
-                container.innerHTML = `<p style="opacity:0.85; padding:1rem;">Nenhum tópico agendado para este dia.</p>`;
-                return;
+        function chooseCronogramaType(typeNum) {
+            closeModalSelectCronogramaType();
+            if (typeNum === 1) {
+                openModalConfigHorarios();
+            } else {
+                openModalMentorisMethod();
             }
+        }
 
-            topics.forEach((topicoStr, idx) => {
-                const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === topicoStr);
+        function openModalMentorisMethod() {
+            document.getElementById('m2DataInicio').value = new Date().toISOString().split('T')[0];
+            document.getElementById('modalMentorisMethod').style.display = 'flex';
+        }
 
-                container.innerHTML += `
-                    <div class="day-topic-row">
-                        <div style="flex:1;">
-                            <strong style="color:var(--primary-blue); font-size:0.95rem;">${topicoStr}</strong>
-                        </div>
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            ${matchedItem ? `
-                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                                    <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'teoria', ${matchedItem.teoria})"> Teoria
-                                </label>
-                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                                    <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'questoes', ${matchedItem.questoes})"> Questões
-                                </label>
-                            ` : ''}
-                            <button class="btn btn-secondary btn-sm" onclick="editTopicInDay(${idx})">Editar</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
-                        </div>
-                    </div>
-                `;
+        function closeModalMentorisMethod() {
+            document.getElementById('modalMentorisMethod').style.display = 'none';
+        }
+
+        function toggleWeekdaySelect(elem, dayIdx) {
+            elem.classList.toggle('selected');
+            if (selectedWeekdays.includes(dayIdx)) {
+                selectedWeekdays = selectedWeekdays.filter(d => d !== dayIdx);
+            } else {
+                selectedWeekdays.push(dayIdx);
+            }
+        }
+
+        function selectHoursOption(elem, slots) {
+            document.querySelectorAll('#hoursSelectionContainer .hours-option-card').forEach(c => c.classList.remove('selected'));
+            elem.classList.add('selected');
+            selectedDailyHoursSlots = slots;
+        }
+
+        /* AUXILIAR PARA AGENDAR REVISÕES ESPAÇADAS FUTURAS */
+        function applySpacedRevisions(dateSchedule, baseDateObj, topicText, strategyKey) {
+            const daysOffset = STRATEGIES_MAP[strategyKey] || STRATEGIES_MAP.classica;
+
+            daysOffset.forEach(offset => {
+                let revDate = new Date(baseDateObj);
+                revDate.setDate(revDate.getDate() + offset);
+
+                const revKey = `${revDate.getFullYear()}-${String(revDate.getMonth() + 1).padStart(2, '0')}-${String(revDate.getDate()).padStart(2, '0')}`;
+                if (!dateSchedule[revKey]) dateSchedule[revKey] = [];
+                
+                const revText = `🔄 Rev (${offset}d): ${topicText}`;
+                if (!dateSchedule[revKey].includes(revText)) {
+                    dateSchedule[revKey].push(revText);
+                }
             });
         }
 
-        async function toggleCheckFromModal(id, field, currentValue) {
-            await toggleCheck(id, field, currentValue);
-            renderDayTopicsList();
-        }
+        /* GERAR CRONOGRAMA MÉTODO 2 */
+        async function gerarCronogramaMetodo2() {
+            if (editalItems.length === 0) return alert('Sua lista de edital está vazia.');
+            if (selectedWeekdays.length === 0) return alert('Selecione pelo menos um dia de estudo na semana.');
 
-        async function editTopicInDay(idx) {
+            const dataInicioStr = document.getElementById('m2DataInicio').value;
+            if (!dataInicioStr) return alert('Escolha a data de início.');
+
+            const strategyKey = document.getElementById('m2RevisionStrategy').value;
+            const sortedByPriority = [...editalItems].sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
+
+            let currDate = new Date(dataInicioStr + "T00:00:00");
+            let itemIdx = 0;
+
             let metadata = getConcursosMetadata();
-            const currentVal = metadata[currentConcurso]?.dateSchedule[activeSelectedDateKey][idx];
-            const newVal = prompt('Editar o conteúdo/matéria deste dia:', currentVal);
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].dateSchedule = {};
 
-            if (newVal !== null && newVal.trim()) {
-                metadata[currentConcurso].dateSchedule[activeSelectedDateKey][idx] = newVal.trim();
-                await saveConcursosMetadata(metadata);
-                renderDayTopicsList();
-                renderMonthCalendar();
-            }
-        }
+            while (itemIdx < sortedByPriority.length) {
+                const dayOfWeek = currDate.getDay();
 
-        async function deleteTopicFromDay(idx) {
-            if (confirm('Deseja remover este tópico do dia?')) {
-                let metadata = getConcursosMetadata();
-                metadata[currentConcurso].dateSchedule[activeSelectedDateKey].splice(idx, 1);
-                await saveConcursosMetadata(metadata);
-                renderDayTopicsList();
-                renderMonthCalendar();
-            }
-        }
+                if (selectedWeekdays.includes(dayOfWeek)) {
+                    const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
+                    
+                    if (!metadata[currentConcurso].dateSchedule[dateKey]) {
+                        metadata[currentConcurso].dateSchedule[dateKey] = [];
+                    }
 
-        async function addNewTopicToActiveDay() {
-            const materia = prompt(`Adicionar novo tópico/matéria para ${activeSelectedDateKey}:`);
-            if (materia && materia.trim()) {
-                let metadata = getConcursosMetadata();
-                if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-                if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-                if (!metadata[currentConcurso].dateSchedule[activeSelectedDateKey]) {
-                    metadata[currentConcurso].dateSchedule[activeSelectedDateKey] = [];
+                    for (let s = 0; s < selectedDailyHoursSlots; s++) {
+                        if (itemIdx < sortedByPriority.length) {
+                            const it = sortedByPriority[itemIdx];
+                            const topicText = `${it.materia} - ${it.assunto}`;
+                            metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
+
+                            applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
+                            itemIdx++;
+                        }
+                    }
                 }
-
-                metadata[currentConcurso].dateSchedule[activeSelectedDateKey].push(materia.trim());
-                await saveConcursosMetadata(metadata);
-                renderDayTopicsList();
-                renderMonthCalendar();
+                currDate.setDate(currDate.getDate() + 1);
             }
+
+            await saveConcursosMetadata(metadata);
+            closeModalMentorisMethod();
+            renderMonthCalendar();
+            alert('Cronograma Método 2 gerado com sucesso com Revisão Espaçada!');
         }
 
-        /* GERAR CRONOGRAMA AUTOMÁTICO BASEADO NA PRIORIDADE DO EDITAL */
+        /* GERAR CRONOGRAMA MÉTODO 1 */
         async function gerarCronogramaInteligente() {
-            if (editalItems.length === 0) return alert('Sua lista de edital está vazia. Adicione matérias para preencher.');
+            if (editalItems.length === 0) return alert('Sua lista de edital está vazia.');
 
             const dataInicioStr = document.getElementById('cfgDataInicio').value;
-            if (!dataInicioStr) return alert('Escolha a data de início do cronograma.');
+            if (!dataInicioStr) return alert('Escolha a data de início.');
 
+            const strategyKey = document.getElementById('m1RevisionStrategy').value;
             const sortedByPriority = [...editalItems].sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
 
             const incSab = document.getElementById('cfgIncluirSabado').checked;
@@ -996,12 +1135,17 @@
                     const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
                     const slots = isWeekend ? 3 : 2;
 
-                    metadata[currentConcurso].dateSchedule[dateKey] = [];
+                    if (!metadata[currentConcurso].dateSchedule[dateKey]) {
+                        metadata[currentConcurso].dateSchedule[dateKey] = [];
+                    }
 
                     for (let s = 0; s < slots; s++) {
                         if (itemIdx < sortedByPriority.length) {
                             const it = sortedByPriority[itemIdx];
-                            metadata[currentConcurso].dateSchedule[dateKey].push(`${it.materia} - ${it.assunto}`);
+                            const topicText = `${it.materia} - ${it.assunto}`;
+                            metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
+
+                            applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
                             itemIdx++;
                         }
                     }
@@ -1012,7 +1156,232 @@
             await saveConcursosMetadata(metadata);
             closeModalConfigHorarios();
             renderMonthCalendar();
-            alert('Cronograma gerado com sucesso respeitando as maiores prioridades do edital!');
+            alert('Cronograma Método 1 gerado com sucesso com Revisão Espaçada!');
+        }
+
+        /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR DE EDITAL E TROCA RECÍPROCA DE ASSUNTOS */
+        function openModalDayContent(dateKey) {
+            activeSelectedDateKey = dateKey;
+            document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
+            renderDayTopicsList();
+            document.getElementById('modalDayContent').style.display = 'flex';
+        }
+
+        function closeModalDayContent() { document.getElementById('modalDayContent').style.display = 'none'; }
+
+        function renderDayTopicsList() {
+            const container = document.getElementById('dayTopicsContainer');
+            if (!container || !activeSelectedDateKey) return;
+            container.innerHTML = '';
+
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
+            const topics = dateSchedule[activeSelectedDateKey] || [];
+
+            if (topics.length === 0) {
+                container.innerHTML = `<p style="opacity:0.85; padding:1rem;">Nenhum tópico agendado para este dia.</p>`;
+                return;
+            }
+
+            topics.forEach((topicoStr, idx) => {
+                const cleanTop = topicoStr.replace(/^🔄 Rev \(\d+d\): /, '');
+                const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
+
+                container.innerHTML += `
+                    <div class="day-topic-row" id="topicRow_${idx}">
+                        <div style="flex:1;">
+                            <strong style="color:var(--primary-blue); font-size:0.95rem;">${topicoStr}</strong>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            ${matchedItem ? `
+                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
+                                    <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'teoria', ${matchedItem.teoria})"> Teoria
+                                </label>
+                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
+                                    <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'questoes', ${matchedItem.questoes})"> Questões
+                                </label>
+                            ` : ''}
+                            <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
+                        </div>
+                        <div id="editArea_${idx}" style="width:100%; display:none;"></div>
+                    </div>
+                `;
+            });
+        }
+
+        function getUniqueMateriasFromEdital() {
+            const set = new Set();
+            editalItems.forEach(i => { if (i.materia) set.add(i.materia); });
+            return Array.from(set);
+        }
+
+        function getAssuntosForMateria(matName) {
+            return editalItems.filter(i => i.materia === matName).map(i => i.assunto);
+        }
+
+        function showEditTopicDropdown(idx) {
+            const editArea = document.getElementById(`editArea_${idx}`);
+            if (!editArea) return;
+
+            const materias = getUniqueMateriasFromEdital();
+            if (materias.length === 0) return alert('O edital atual não possui matérias para selecionar.');
+
+            let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
+
+            editArea.innerHTML = `
+                <div class="edit-selector-box">
+                    <label style="font-size:0.8rem; font-weight:700;">Selecione a nova Matéria e Assunto do Edital:</label>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">
+                            ${matOptions}
+                        </select>
+                        <select id="editAssSel_${idx}" style="flex:1; min-width:180px;"></select>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
+                        <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
+                        <button class="btn btn-success btn-sm" onclick="confirmEditTopicWithSwap(${idx})">Salvar / Trocar Assunto</button>
+                    </div>
+                </div>
+            `;
+            editArea.style.display = 'block';
+            updateEditAssuntoDropdown(idx);
+        }
+
+        function updateEditAssuntoDropdown(idx) {
+            const matSel = document.getElementById(`editMatSel_${idx}`);
+            const assSel = document.getElementById(`editAssSel_${idx}`);
+            if (!matSel || !assSel) return;
+
+            const selectedMat = matSel.value;
+            const assuntos = getAssuntosForMateria(selectedMat);
+
+            assSel.innerHTML = assuntos.map(a => `<option value="${a}">${a}</option>`).join('');
+        }
+
+        async function confirmEditTopicWithSwap(targetIdx) {
+            const matSel = document.getElementById(`editMatSel_${targetIdx}`);
+            const assSel = document.getElementById(`editAssSel_${targetIdx}`);
+
+            if (!matSel || !assSel) return;
+
+            const newMateria = matSel.value;
+            const newAssunto = assSel.value;
+            const newFullString = `${newMateria} - ${newAssunto}`;
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+
+            const dateSchedule = metadata[currentConcurso].dateSchedule;
+            const oldFullString = dateSchedule[activeSelectedDateKey][targetIdx];
+
+            // Busca se o novo assunto já está agendado em alguma data/hora
+            let foundDate = null;
+            let foundIndex = -1;
+
+            Object.keys(dateSchedule).forEach(dKey => {
+                const arr = dateSchedule[dKey];
+                const matchIdx = arr.findIndex(item => item === newFullString || item.endsWith(`: ${newFullString}`));
+                if (matchIdx !== -1) {
+                    foundDate = dKey;
+                    foundIndex = matchIdx;
+                }
+            });
+
+            // Se o assunto escolhido já existir em outro dia, realiza a troca recíproca (Swap)
+            if (foundDate && (foundDate !== activeSelectedDateKey || foundIndex !== targetIdx)) {
+                dateSchedule[foundDate][foundIndex] = oldFullString;
+                dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
+                alert(`O assunto "${newFullString}" já estava agendado em ${foundDate}. Os assuntos foram trocados entre si com sucesso!`);
+            } else {
+                dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
+            }
+
+            await saveConcursosMetadata(metadata);
+            renderDayTopicsList();
+            renderMonthCalendar();
+        }
+
+        function showAddTopicSelectors() {
+            const container = document.getElementById('addNewTopicArea');
+            const materias = getUniqueMateriasFromEdital();
+
+            if (materias.length === 0) return alert('Adicione ou importe matérias no edital primeiro.');
+
+            let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
+
+            container.innerHTML = `
+                <div class="edit-selector-box">
+                    <label style="font-size:0.85rem; font-weight:700; color:var(--primary-blue);">Adicionar Tópico a Este Dia:</label>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <select id="addMatSel" onchange="updateAddAssuntoDropdown()" style="flex:1; min-width:160px;">
+                            ${matOptions}
+                        </select>
+                        <select id="addAssSel" style="flex:1; min-width:180px;"></select>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">
+                        <button class="btn btn-secondary btn-sm" onclick="resetAddTopicArea()">Cancelar</button>
+                        <button class="btn btn-primary btn-sm" onclick="confirmAddTopicWithSwap()">Adicionar ao Dia</button>
+                    </div>
+                </div>
+            `;
+            updateAddAssuntoDropdown();
+        }
+
+        function updateAddAssuntoDropdown() {
+            const matSel = document.getElementById('addMatSel');
+            const assSel = document.getElementById('addAssSel');
+            if (!matSel || !assSel) return;
+
+            const selectedMat = matSel.value;
+            const assuntos = getAssuntosForMateria(selectedMat);
+            assSel.innerHTML = assuntos.map(a => `<option value="${a}">${a}</option>`).join('');
+        }
+
+        function resetAddTopicArea() {
+            const container = document.getElementById('addNewTopicArea');
+            container.innerHTML = `<button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico a Este Dia</button>`;
+        }
+
+        async function confirmAddTopicWithSwap() {
+            const matSel = document.getElementById('addMatSel');
+            const assSel = document.getElementById('addAssSel');
+            if (!matSel || !assSel) return;
+
+            const newMateria = matSel.value;
+            const newAssunto = assSel.value;
+            const newFullString = `${newMateria} - ${newAssunto}`;
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+
+            if (!metadata[currentConcurso].dateSchedule[activeSelectedDateKey]) {
+                metadata[currentConcurso].dateSchedule[activeSelectedDateKey] = [];
+            }
+
+            metadata[currentConcurso].dateSchedule[activeSelectedDateKey].push(newFullString);
+
+            await saveConcursosMetadata(metadata);
+            resetAddTopicArea();
+            renderDayTopicsList();
+            renderMonthCalendar();
+        }
+
+        async function toggleCheckFromModal(id, field, currentValue) {
+            await toggleCheck(id, field, currentValue);
+            renderDayTopicsList();
+        }
+
+        async function deleteTopicFromDay(idx) {
+            if (confirm('Deseja remover este tópico do dia?')) {
+                let metadata = getConcursosMetadata();
+                metadata[currentConcurso].dateSchedule[activeSelectedDateKey].splice(idx, 1);
+                await saveConcursosMetadata(metadata);
+                renderDayTopicsList();
+                renderMonthCalendar();
+            }
         }
 
         /* ANOTAÇÕES */
@@ -1412,9 +1781,12 @@
 
                 let badgesHtml = '';
                 items.forEach(it => {
-                    const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === it);
+                    const cleanTop = it.replace(/^🔄 Rev \(\d+d\): /, '');
+                    const isRev = it.startsWith('🔄 Rev');
+                    const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
                     const isDone = matchedItem && (matchedItem.teoria || matchedItem.questoes);
-                    badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : ''}">${it}</div>`;
+                    
+                    badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${it}</div>`;
                 });
 
                 grid.innerHTML += `
@@ -2168,9 +2540,22 @@
         window.openModalDayContent = openModalDayContent;
         window.closeModalDayContent = closeModalDayContent;
         window.toggleCheckFromModal = toggleCheckFromModal;
-        window.editTopicInDay = editTopicInDay;
         window.deleteTopicFromDay = deleteTopicFromDay;
-        window.addNewTopicToActiveDay = addNewTopicToActiveDay;
+        window.openModalSelectCronogramaType = openModalSelectCronogramaType;
+        window.closeModalSelectCronogramaType = closeModalSelectCronogramaType;
+        window.chooseCronogramaType = chooseCronogramaType;
+        window.openModalMentorisMethod = openModalMentorisMethod;
+        window.closeModalMentorisMethod = closeModalMentorisMethod;
+        window.toggleWeekdaySelect = toggleWeekdaySelect;
+        window.selectHoursOption = selectHoursOption;
+        window.gerarCronogramaMetodo2 = gerarCronogramaMetodo2;
+        window.showEditTopicDropdown = showEditTopicDropdown;
+        window.updateEditAssuntoDropdown = updateEditAssuntoDropdown;
+        window.confirmEditTopicWithSwap = confirmEditTopicWithSwap;
+        window.showAddTopicSelectors = showAddTopicSelectors;
+        window.updateAddAssuntoDropdown = updateAddAssuntoDropdown;
+        window.resetAddTopicArea = resetAddTopicArea;
+        window.confirmAddTopicWithSwap = confirmAddTopicWithSwap;
     </script>
 </body>
 </html>
