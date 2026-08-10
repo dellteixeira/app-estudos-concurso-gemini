@@ -18,7 +18,6 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script>
-      // FORÇAR ATUALIZAÇÃO DO SERVICE WORKER E LIMPAR CACHE ANTIGO
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
@@ -566,7 +565,6 @@
                     <h3>Flashcards e Estudo Ativo</h3>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
-                        <!-- BOTÃO SOLICITADO: ESTUDO FOCADO POR MATÉRIA/ASSUNTO -->
                         <button class="btn btn-info" onclick="openModalFiltroEstudoFlashcards()">🎯 Estudar Matéria / Assunto Específico</button>
                     </div>
                 </div>
@@ -615,7 +613,7 @@
                         📁 Baralhos / Pastas de Flashcards (Estilo Anki)
                     </h4>
                     <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" onclick="setFlashcardViewFilter('', '')" style="display: none;">
-                        Mostrar Todos os Baralhos
+                        📁 Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
                     </button>
                 </div>
 
@@ -982,33 +980,6 @@
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
                 <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO DE FLASHCARDS -->
-    <div class="modal-overlay" id="modalFiltroEstudoFC">
-        <div class="modal">
-            <h3>🎯 Estudar Matéria / Assunto Específico</h3>
-            <p style="font-size:0.88rem; color:#94a3b8;">Selecione abaixo qual matéria ou assunto você deseja revisar:</p>
-            
-            <div class="form-group">
-                <label>Matéria:</label>
-                <select id="studyFilterMateria" onchange="updateStudyFilterAssuntoOptions()">
-                    <option value="">Todas as Matérias</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Assunto:</label>
-                <select id="studyFilterAssunto">
-                    <option value="">Todos os Assuntos</option>
-                </select>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalFiltroEstudoFlashcards()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="startFilteredStudyModal()">Iniciar Estudo Focado 🚀</button>
             </div>
         </div>
     </div>
@@ -1766,7 +1737,6 @@
                 return;
             }
 
-            // Agrupa por Matéria -> Assunto
             const deckHierarchy = {};
             flashcardsList.forEach(fc => {
                 const mat = fc.materia || 'Geral / Sem Matéria';
@@ -1802,11 +1772,11 @@
                         <div class="anki-folder-header" onclick="toggleFcFolder('${matName.replace(/'/g, "\\'")}')">
                             <div class="anki-folder-title">
                                 📁 <span>${matName}</span>
-                                ${isMatActive ? '<span style="color:#34d399; font-size:0.75rem;">(Filtrado)</span>' : ''}
+                                ${isMatActive ? '<span style="color:#34d399; font-size:0.75rem;">(Caixa Aberta)</span>' : ''}
                             </div>
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <span class="anki-folder-count">${matData.total} cartões</span>
-                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '')" title="Filtrar só esta matéria">Ver Matéria</button>
+                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '')" title="Abrir caixa desta matéria">Abrir Caixa</button>
                                 <span>${isOpen ? '▼' : '►'}</span>
                             </div>
                         </div>
@@ -1833,9 +1803,15 @@
             renderFlashcards();
         }
 
+        /* CORREÇÃO SOLICITADA: NENHUM CARTÃO FICA EXPOSTO SOLTO NA TELA PRINCIPAL */
         function renderFlashcards() {
             const container = document.getElementById('flashcardsContainer');
             container.innerHTML = '';
+
+            // Se nenhuma pasta/subpasta foi aberta, não exibe os cartões na tela (comportamento idêntico ao Anki)
+            if (!activeFcMateriaFilter && !activeFcAssuntoFilter) {
+                return;
+            }
 
             let displayList = flashcardsList.map((fc, idx) => ({ ...fc, originalIndex: idx }));
 
@@ -1880,9 +1856,10 @@
                 });
 
                 container.innerHTML += `
-                    <div style="margin-bottom:1.5rem;">
-                        <h4 style="color:var(--primary-blue); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px;">
-                            ${mName} (${grouped[mName].length} cartões exibidos)
+                    <div style="margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--primary-blue);">
+                        <h4 style="color:var(--header-materia-text); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>📦 Caixa Aberta: ${mName}</span>
+                            <span style="font-size:0.8rem; font-weight:normal;">(${grouped[mName].length} cartões)</span>
                         </h4>
                         ${cardsHtml}
                     </div>
