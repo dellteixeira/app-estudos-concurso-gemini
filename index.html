@@ -233,6 +233,14 @@
             white-space: pre-wrap; word-break: break-word;
         }
 
+        .import-info-box {
+            background: rgba(59, 130, 246, 0.08); border: 1px solid var(--primary-blue);
+            border-radius: 8px; padding: 1rem; margin-bottom: 1.2rem; font-size: 0.88rem; line-height: 1.5;
+        }
+        .import-info-box h4 { color: #93c5fd; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px; }
+        .import-info-box ul { margin-left: 1.2rem; margin-top: 0.4rem; }
+        .import-info-box code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #38bdf8; }
+
         .flashcard-box {
             background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
             border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: flex;
@@ -528,10 +536,28 @@
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
                         <label class="btn btn-success" style="cursor: pointer;">
-                            Carregar Perguntas (.txt, .rtf, .doc)
-                            <input type="file" id="fcFileInput" accept=".txt,.rtf,.doc,.docx" style="display: none;" onchange="importFlashcardsFile(event)">
+                            Carregar Perguntas (.txt, .csv, .tsv)
+                            <input type="file" id="fcFileInput" accept=".txt,.csv,.tsv" style="display: none;" onchange="importFlashcardsFile(event)">
                         </label>
                     </div>
+                </div>
+
+                <!-- GUIA / DICA DE IMPORTAÇÃO DE FLASHCARDS -->
+                <div class="import-info-box">
+                    <h4>💡 Como importar suas perguntas sem erros de formatação:</h4>
+                    <p>Para garantir que o texto e os acentos fiquem perfeitos, utilize arquivos de texto simples (<strong>.txt</strong>, <strong>.csv</strong> ou <strong>.tsv</strong>) configurados em uma destas formas:</p>
+                    <ul>
+                        <li><strong>Linha a linha (com P: e R:):</strong><br>
+                            <code>P: Qual a capital do Ceará?</code><br>
+                            <code>R: Fortaleza</code>
+                        </li>
+                        <li><strong>Separado por ponto e vírgula ou Tabulação:</strong><br>
+                            <code>Qual a capital do Ceará?; Fortaleza</code>
+                        </li>
+                    </ul>
+                    <p style="margin-top: 6px; font-size: 0.83rem; color: #94a3b8;">
+                        <em>Nota: Se o seu arquivo estiver no Word (.doc/.docx), clique em <strong>Arquivo &gt; Salvar Como</strong> no Word e selecione o formato <strong>Texto Sem Formatação (*.txt)</strong> antes de importar.</em>
+                    </p>
                 </div>
 
                 <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -1666,7 +1692,11 @@
 
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const text = e.target.result;
+                let text = e.target.result;
+
+                // Remove caracteres nulos/não-imprimíveis de arquivos binários mal interpretados
+                text = text.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+
                 const lines = text.split(/\r?\n/);
 
                 let currentPergunta = '';
@@ -1677,20 +1707,25 @@
                     const trimmed = line.trim();
                     if (!trimmed) return;
 
-                    if (trimmed.toLowerCase().startsWith('p:') || trimmed.toLowerCase().startsWith('pergunta:')) {
+                    if (/^(p:|pergunta:)/i.test(trimmed)) {
                         if (currentPergunta && currentResposta) {
                             flashcardsList.push({ materia: '', assunto: '', pergunta: currentPergunta, resposta: currentResposta });
                             importedCount++;
                             currentResposta = '';
                         }
                         currentPergunta = trimmed.replace(/^(p:|pergunta:)/i, '').trim();
-                    } else if (trimmed.toLowerCase().startsWith('r:') || trimmed.toLowerCase().startsWith('resposta:')) {
+                    } else if (/^(r:|resposta:)/i.test(trimmed)) {
                         currentResposta = trimmed.replace(/^(r:|resposta:)/i, '').trim();
-                    } else if (trimmed.includes(';') || trimmed.includes('\t')) {
-                        const parts = trimmed.split(/[;\t]/);
+                    } else {
+                        // Suporte a delimitadores CSV/TSV (; , \t |)
+                        const parts = trimmed.split(/;|\t|\|/);
                         if (parts.length >= 2) {
-                            flashcardsList.push({ materia: '', assunto: '', pergunta: parts[0].trim(), resposta: parts[1].trim() });
-                            importedCount++;
+                            const p = parts[0].trim();
+                            const r = parts.slice(1).join(';').trim();
+                            if (p && r) {
+                                flashcardsList.push({ materia: '', assunto: '', pergunta: p, resposta: r });
+                                importedCount++;
+                            }
                         }
                     }
                 });
@@ -1705,10 +1740,12 @@
                     await saveFlashcardsData();
                     alert(`Sucesso! ${importedCount} flashcards foram importados.`);
                 } else {
-                    alert('Formato de arquivo não reconhecido. Use a estrutura:\nP: Sua Pergunta\nR: Sua Resposta');
+                    alert('Não foi possível ler as perguntas. Certifique-se de salvar seu documento como Arquivo de Texto (.txt), CSV ou TSV.');
                 }
             };
-            reader.readAsText(file);
+
+            // Força a leitura UTF-8 para preservar acentuação em PT-BR
+            reader.readAsText(file, 'UTF-8');
             evt.target.value = '';
         }
 
@@ -2324,7 +2361,7 @@
                                         assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
                                         prioridade: prio, 
                                         assunto_prioridade: indexAssunto + 1, 
-                                        concurso: currentConcurso, // Força a vinculação estrita ao concurso selecionado
+                                        concurso: currentConcurso,
                                         user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
                                     };
