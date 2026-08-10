@@ -379,7 +379,7 @@
 
         <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
-            <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora 🔄</button>
+            <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalViewEdital)">Ver / Anexar Edital PDF</button>
             <label class="btn-action" style="cursor: pointer;">
                 Importar JSON
@@ -621,6 +621,7 @@
             <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
             <div class="form-group">
                 <select id="m2RevisionStrategy" style="width:100%;">
+                    <option value="nenhuma">Sem Revisão Espaçada</option>
                     <option value="classica">Revisão Clássica (Dias: 7, 30, 90)</option>
                     <option value="bimestral">Revisão Bimestral (Dias: 1, 15, 30, 60)</option>
                     <option value="curta">Revisão Curta (Dias: 7, 14, 21, 30)</option>
@@ -695,6 +696,7 @@
             <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
             <div class="form-group">
                 <select id="m1RevisionStrategy" style="width:100%;">
+                    <option value="nenhuma">Sem Revisão Espaçada</option>
                     <option value="classica">Revisão Clássica (Dias: 7, 30, 90)</option>
                     <option value="bimestral">Revisão Bimestral (Dias: 1, 15, 30, 60)</option>
                     <option value="curta">Revisão Curta (Dias: 7, 14, 21, 30)</option>
@@ -874,6 +876,7 @@
         const PALETA_SOLIDAS = ['#3b82f6', '#22c55e', '#c084fc', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
 
         const STRATEGIES_MAP = {
+            nenhuma: [],
             classica: [7, 30, 90],
             bimestral: [1, 15, 30, 60],
             curta: [7, 14, 21, 30],
@@ -1100,7 +1103,7 @@
             await saveConcursosMetadata(metadata);
             closeModalMentorisMethod();
             renderMonthCalendar();
-            alert('Cronograma Método 2 gerado com sucesso com Revisão Espaçada!');
+            alert('Cronograma Método 2 gerado com sucesso!');
         }
 
         /* GERAR CRONOGRAMA MÉTODO 1 */
@@ -1156,7 +1159,7 @@
             await saveConcursosMetadata(metadata);
             closeModalConfigHorarios();
             renderMonthCalendar();
-            alert('Cronograma Método 1 gerado com sucesso com Revisão Espaçada!');
+            alert('Cronograma Método 1 gerado com sucesso!');
         }
 
         /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR INLINE DE EDITAL E TROCA RECÍPROCA DE ASSUNTOS */
@@ -1945,7 +1948,7 @@
             } catch (err) {
                 alert('Erro ao sincronizar: ' + err.message);
             } finally {
-                if (btn) btn.innerText = 'Sincronizar Agora 🔄';
+                if (btn) btn.innerText = 'Sincronizar Agora';
             }
         }
 
