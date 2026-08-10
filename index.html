@@ -536,8 +536,8 @@
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
                         <label class="btn btn-success" style="cursor: pointer;">
-                            Carregar Perguntas (.txt, .csv, .tsv)
-                            <input type="file" id="fcFileInput" accept=".txt,.csv,.tsv" style="display: none;" onchange="importFlashcardsFile(event)">
+                            Carregar Perguntas (.txt, .csv, .doc, .pdf)
+                            <input type="file" id="fcFileInput" accept=".txt,.csv,.doc,.docx,.pdf" style="display: none;" onchange="importFlashcardsFile(event)">
                         </label>
                     </div>
                 </div>
@@ -545,19 +545,16 @@
                 <!-- GUIA / DICA DE IMPORTAÇÃO DE FLASHCARDS -->
                 <div class="import-info-box">
                     <h4>💡 Como importar suas perguntas sem erros de formatação:</h4>
-                    <p>Para garantir que o texto e os acentos fiquem perfeitos, utilize arquivos de texto simples (<strong>.txt</strong>, <strong>.csv</strong> ou <strong>.tsv</strong>) configurados em uma destas formas:</p>
+                    <p>Para garantir a leitura perfeita, você pode importar diretamente seus arquivos (<strong>.txt</strong>, <strong>.csv</strong>, <strong>.doc / .docx</strong> ou <strong>.pdf</strong>) estruturados assim:</p>
                     <ul>
                         <li><strong>Linha a linha (com P: e R:):</strong><br>
                             <code>P: Qual a capital do Ceará?</code><br>
                             <code>R: Fortaleza</code>
                         </li>
-                        <li><strong>Separado por ponto e vírgula ou Tabulação:</strong><br>
+                        <li><strong>Separado por ponto e vírgula ou vírgula:</strong><br>
                             <code>Qual a capital do Ceará?; Fortaleza</code>
                         </li>
                     </ul>
-                    <p style="margin-top: 6px; font-size: 0.83rem; color: #94a3b8;">
-                        <em>Nota: Se o seu arquivo estiver no Word (.doc/.docx), clique em <strong>Arquivo &gt; Salvar Como</strong> no Word e selecione o formato <strong>Texto Sem Formatação (*.txt)</strong> antes de importar.</em>
-                    </p>
                 </div>
 
                 <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -1686,19 +1683,48 @@
             }
         }
 
-        function importFlashcardsFile(evt) {
+        async function importFlashcardsFile(evt) {
             const file = evt.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                let text = e.target.result;
+            const fileName = file.name.toLowerCase();
+            let rawText = "";
 
-                // Remove caracteres nulos/não-imprimíveis de arquivos binários mal interpretados
-                text = text.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+            try {
+                if (fileName.endsWith('.pdf')) {
+                    // Extração nativa de PDF via PDF.js
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    let fullPdfText = "";
+                    for (let i = 1; i <= pdfDoc.numPages; i++) {
+                        const page = await pdfDoc.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        fullPdfText += pageText + "\n";
+                    }
+                    rawText = fullPdfText;
+                } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+                    // Extração e limpeza do conteúdo textual de documentos do Word
+                    const arrayBuffer = await file.arrayBuffer();
+                    const decoder = new TextDecoder('utf-8');
+                    const decoded = decoder.decode(arrayBuffer);
+                    
+                    // Extrai texto ignorando caracteres e estruturas binárias de arquivos Word
+                    rawText = decoded.replace(/<[^>]+>/g, ' ')
+                                     .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ')
+                                     .replace(/\s+/g, ' ');
+                } else {
+                    // Arquivos de texto simples (.txt, .csv)
+                    rawText = await file.text();
+                }
 
-                const lines = text.split(/\r?\n/);
+                if (!rawText || !rawText.trim()) {
+                    alert('Não foi possível extrair texto legível do arquivo selecionado.');
+                    return;
+                }
 
+                // Normaliza quebras de linha e sanitiza o texto
+                const lines = rawText.split(/\r?\n|\r/);
                 let currentPergunta = '';
                 let currentResposta = '';
                 let importedCount = 0;
@@ -1717,8 +1743,8 @@
                     } else if (/^(r:|resposta:)/i.test(trimmed)) {
                         currentResposta = trimmed.replace(/^(r:|resposta:)/i, '').trim();
                     } else {
-                        // Suporte a delimitadores CSV/TSV (; , \t |)
-                        const parts = trimmed.split(/;|\t|\|/);
+                        // Suporte a separadores (; ou ,)
+                        const parts = trimmed.split(/;|,/);
                         if (parts.length >= 2) {
                             const p = parts[0].trim();
                             const r = parts.slice(1).join(';').trim();
@@ -1740,13 +1766,14 @@
                     await saveFlashcardsData();
                     alert(`Sucesso! ${importedCount} flashcards foram importados.`);
                 } else {
-                    alert('Não foi possível ler as perguntas. Certifique-se de salvar seu documento como Arquivo de Texto (.txt), CSV ou TSV.');
+                    alert('Não foram encontrados pares de Pergunta e Resposta no arquivo. Certifique-se de usar a estrutura com "P:" e "R:" ou separada por ponto e vírgula.');
                 }
-            };
-
-            // Força a leitura UTF-8 para preservar acentuação em PT-BR
-            reader.readAsText(file, 'UTF-8');
-            evt.target.value = '';
+            } catch (err) {
+                console.error('Erro na importação do arquivo:', err);
+                alert('Erro ao processar o arquivo. Verifique se o formato está correto.');
+            } finally {
+                evt.target.value = '';
+            }
         }
 
         function startShuffleStudyModal() {
@@ -2056,10 +2083,11 @@
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
             const metadata = getConcursosMetadata();
+            
             const set = new Set(Object.keys(metadata));
             set.add('Concurso Geral');
             
-            allEditalItems.forEach(i => { if(i.concurso) set.add(i.concurso); });
+            allEditalItems.forEach(i => { if (i.concurso) set.add(i.concurso); });
             const list = Array.from(set);
 
             if (!list.includes(currentConcurso)) currentConcurso = list[0] || 'Concurso Geral';
@@ -2124,30 +2152,40 @@
                 return alert('Já existe um concurso cadastrado com esse nome.');
             }
 
-            // Transfere metadados do concurso
-            metadata[nomeFormatado] = metadata[currentConcurso] || { dataProva: null, dateSchedule: {} };
-            delete metadata[currentConcurso];
+            const antigoNome = currentConcurso;
+
+            metadata[nomeFormatado] = metadata[antigoNome] || { dataProva: null, dateSchedule: {} };
+            delete metadata[antigoNome];
             await saveConcursosMetadata(metadata);
 
-            // Transfere arquivo PDF/imagem do edital do LocalStorage
-            const oldFileKey = getEditalFileStorageKey();
+            const oldFileKey = `edital_file_${currentUser ? currentUser.id : 'guest'}_${antigoNome}`;
+            const newFileKey = `edital_file_${currentUser ? currentUser.id : 'guest'}_${nomeFormatado}`;
             const fileDataRaw = localStorage.getItem(oldFileKey);
+            if (fileDataRaw) {
+                localStorage.setItem(newFileKey, fileDataRaw);
+                localStorage.removeItem(oldFileKey);
+            }
 
-            // Atualiza os itens do edital vinculados a este concurso
-            const itemsToUpdate = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-            for (let item of itemsToUpdate) {
+            const itemsToUpdate = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === antigoNome);
+            itemsToUpdate.forEach(item => {
                 item.concurso = nomeFormatado;
-                await saveEditalItemToCloud(item);
+            });
+            saveEditalToLocalStorage();
+
+            if (navigator.onLine && currentUser && itemsToUpdate.length > 0) {
+                try {
+                    await supabaseClient
+                        .from('edital')
+                        .update({ concurso: nomeFormatado })
+                        .eq('user_id', currentUser.id)
+                        .eq('concurso', antigoNome);
+                } catch(err) {
+                    console.warn('Erro ao renomear concurso na nuvem:', err);
+                }
             }
 
             currentConcurso = nomeFormatado;
             localStorage.setItem('last_studied_concurso', currentConcurso);
-
-            if (fileDataRaw) {
-                localStorage.setItem(getEditalFileStorageKey(), fileDataRaw);
-                localStorage.removeItem(oldFileKey);
-            }
-
             changeConcurso(currentConcurso);
             alert(`Concurso renomeado com sucesso para "${nomeFormatado}".`);
         }
@@ -2342,7 +2380,12 @@
                     let rawData = JSON.parse(e.target.result);
                     let formattedData = [];
 
-                    // Garante que o concurso atual possui seus metadados salvos
+                    let targetConcurso = (currentConcurso && currentConcurso !== 'Concurso Geral') 
+                        ? currentConcurso 
+                        : (rawData.concurso || 'Concurso Importado');
+
+                    currentConcurso = targetConcurso;
+
                     let metadata = getConcursosMetadata();
                     if (!metadata[currentConcurso]) {
                         metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
