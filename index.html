@@ -1159,7 +1159,7 @@
             alert('Cronograma Método 1 gerado com sucesso com Revisão Espaçada!');
         }
 
-        /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR INLINE DE EDITAL E TROCA RECÍPROCA DE ASSUNTOS */
+        /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR INLINE DE EDITAL, BOTÃO INSERIR MANUALMENTE E TROCA RECÍPROCA DE ASSUNTOS */
         function openModalDayContent(dateKey) {
             activeSelectedDateKey = dateKey;
             document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
@@ -1226,27 +1226,55 @@
             if (!editArea) return;
 
             const materias = getUniqueMateriasFromEdital();
-            if (materias.length === 0) return alert('O edital atual não possui matérias para selecionar.');
-
             let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
 
             editArea.innerHTML = `
-                <div class="edit-selector-box">
+                <div class="edit-selector-box" id="editBox_${idx}">
                     <label style="font-size:0.82rem; font-weight:700; color:#93c5fd;">Selecione a Matéria e o Assunto do Edital:</label>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <div id="editInputsContainer_${idx}" style="display:flex; gap:8px; flex-wrap:wrap;">
                         <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">
                             ${matOptions}
                         </select>
                         <select id="editAssSel_${idx}" style="flex:1; min-width:180px;"></select>
                     </div>
-                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
+                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
                         <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
+                        <button class="btn btn-info btn-sm" id="btnManualToggle_${idx}" onclick="toggleEditManualMode(${idx})">Inserir Manualmente</button>
                         <button class="btn btn-success btn-sm" onclick="confirmEditTopicWithSwap(${idx})">Salvar / Trocar Assunto</button>
                     </div>
                 </div>
             `;
             editArea.style.display = 'block';
             updateEditAssuntoDropdown(idx);
+        }
+
+        function toggleEditManualMode(idx) {
+            const container = document.getElementById(`editInputsContainer_${idx}`);
+            const btnToggle = document.getElementById(`btnManualToggle_${idx}`);
+            if (!container) return;
+
+            const isManual = container.getAttribute('data-manual') === 'true';
+
+            if (!isManual) {
+                container.setAttribute('data-manual', 'true');
+                container.innerHTML = `
+                    <input type="text" id="editMatInput_${idx}" placeholder="Matéria (ex: Direito Civil)" style="flex:1; min-width:160px;" required>
+                    <input type="text" id="editAssInput_${idx}" placeholder="Assunto (ex: Direitos Reais)" style="flex:1; min-width:180px;" required>
+                `;
+                if (btnToggle) btnToggle.innerText = 'Selecionar do Edital';
+            } else {
+                container.setAttribute('data-manual', 'false');
+                const materias = getUniqueMateriasFromEdital();
+                let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
+                container.innerHTML = `
+                    <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">
+                        ${matOptions}
+                    </select>
+                    <select id="editAssSel_${idx}" style="flex:1; min-width:180px;"></select>
+                `;
+                if (btnToggle) btnToggle.innerText = 'Inserir Manualmente';
+                updateEditAssuntoDropdown(idx);
+            }
         }
 
         function updateEditAssuntoDropdown(idx) {
@@ -1261,13 +1289,29 @@
         }
 
         async function confirmEditTopicWithSwap(targetIdx) {
-            const matSel = document.getElementById(`editMatSel_${targetIdx}`);
-            const assSel = document.getElementById(`editAssSel_${targetIdx}`);
+            const container = document.getElementById(`editInputsContainer_${targetIdx}`);
+            const isManual = container && container.getAttribute('data-manual') === 'true';
 
-            if (!matSel || !assSel) return;
+            let newMateria = '';
+            let newAssunto = '';
 
-            const newMateria = matSel.value;
-            const newAssunto = assSel.value;
+            if (isManual) {
+                const matInput = document.getElementById(`editMatInput_${targetIdx}`);
+                const assInput = document.getElementById(`editAssInput_${targetIdx}`);
+                newMateria = matInput ? matInput.value.trim() : '';
+                newAssunto = assInput ? assInput.value.trim() : '';
+
+                if (!newMateria || !newAssunto) {
+                    return alert('Preencha a matéria e o assunto para salvar manualmente.');
+                }
+            } else {
+                const matSel = document.getElementById(`editMatSel_${targetIdx}`);
+                const assSel = document.getElementById(`editAssSel_${targetIdx}`);
+                if (!matSel || !assSel) return;
+                newMateria = matSel.value;
+                newAssunto = assSel.value;
+            }
+
             const newFullString = `${newMateria} - ${newAssunto}`;
 
             let metadata = getConcursosMetadata();
@@ -1280,14 +1324,16 @@
             let foundDate = null;
             let foundIndex = -1;
 
-            Object.keys(dateSchedule).forEach(dKey => {
-                const arr = dateSchedule[dKey];
-                const matchIdx = arr.findIndex(item => item === newFullString || item.endsWith(`: ${newFullString}`));
-                if (matchIdx !== -1) {
-                    foundDate = dKey;
-                    foundIndex = matchIdx;
-                }
-            });
+            if (!isManual) {
+                Object.keys(dateSchedule).forEach(dKey => {
+                    const arr = dateSchedule[dKey];
+                    const matchIdx = arr.findIndex(item => item === newFullString || item.endsWith(`: ${newFullString}`));
+                    if (matchIdx !== -1) {
+                        foundDate = dKey;
+                        foundIndex = matchIdx;
+                    }
+                });
+            }
 
             if (foundDate && (foundDate !== activeSelectedDateKey || foundIndex !== targetIdx)) {
                 dateSchedule[foundDate][foundIndex] = oldFullString;
@@ -2562,6 +2608,7 @@
         window.selectHoursOption = selectHoursOption;
         window.gerarCronogramaMetodo2 = gerarCronogramaMetodo2;
         window.showEditTopicDropdown = showEditTopicDropdown;
+        window.toggleEditManualMode = toggleEditManualMode;
         window.updateEditAssuntoDropdown = updateEditAssuntoDropdown;
         window.confirmEditTopicWithSwap = confirmEditTopicWithSwap;
         window.showAddTopicSelectors = showAddTopicSelectors;
