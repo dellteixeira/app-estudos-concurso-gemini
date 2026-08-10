@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- TAGS ANTI-CACHE PARA EVITAR QUE VOLTE AO VISUAL ANTIGO -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Meu Painel de Estudos</title>
 
     <!-- Configurações PWA -->
@@ -14,10 +18,14 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script>
+      // FORÇAR ATUALIZAÇÃO DO SERVICE WORKER E LIMPAR CACHE ANTIGO
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registrado:', reg))
+            .then(reg => {
+              reg.update();
+              console.log('Service Worker atualizado com sucesso:', reg);
+            })
             .catch(err => console.error('Erro no Service Worker:', err));
         });
       }
@@ -978,6 +986,33 @@
         </div>
     </div>
 
+    <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO DE FLASHCARDS -->
+    <div class="modal-overlay" id="modalFiltroEstudoFC">
+        <div class="modal">
+            <h3>🎯 Estudar Matéria / Assunto Específico</h3>
+            <p style="font-size:0.88rem; color:#94a3b8;">Selecione abaixo qual matéria ou assunto você deseja revisar:</p>
+            
+            <div class="form-group">
+                <label>Matéria:</label>
+                <select id="studyFilterMateria" onchange="updateStudyFilterAssuntoOptions()">
+                    <option value="">Todas as Matérias</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Assunto:</label>
+                <select id="studyFilterAssunto">
+                    <option value="">Todos os Assuntos</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalFiltroEstudoFlashcards()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="startFilteredStudyModal()">Iniciar Estudo Focado 🚀</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxdGN2ZWl4bXdpYW93ZWltZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzA4ODgsImV4cCI6MjEwMTUwNjg4OH0._8OOEdGbvDK1Vh_af2FJJn0-EVFjJjGZ_krQ6ue6V6c';
@@ -1305,7 +1340,7 @@
             alert('Cronograma Método 1 gerado com sucesso!');
         }
 
-        /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR INLINE DE EDITAL E TROCA RECÍPROCA DE ASSUNTOS */
+        /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR INLINE DE EDITAL E TROCA RECÍPRICA DE ASSUNTOS */
         function openModalDayContent(dateKey) {
             activeSelectedDateKey = dateKey;
             document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
