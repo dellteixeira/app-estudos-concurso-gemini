@@ -2355,7 +2355,7 @@
             }
         }
 
-        /* CORREÇÃO DEFINITIVA DA IMPORTAÇÃO JSON / SEPARAÇÃO DE CONCURSOS */
+        /* IMPORTAÇÃO JSON ROBUSTA E CORRIGIDA */
         async function importJSON(event) {
             const file = event.target.files ? event.target.files[0] : null;
             if (!file) return;
@@ -2366,11 +2366,13 @@
                     let rawData = JSON.parse(e.target.result);
                     let formattedData = [];
 
-                    let targetConcurso = (currentConcurso && currentConcurso !== 'Concurso Geral') 
-                        ? currentConcurso 
-                        : (rawData.concurso || rawData.nome || 'Concurso Importado');
+                    let targetConcurso = rawData.concurso || rawData.nome || currentConcurso;
+                    if (!targetConcurso || targetConcurso === 'Concurso Geral') {
+                        targetConcurso = prompt("Informe o nome do Concurso para este arquivo JSON:", "TJ-CE Técnico Judiciário");
+                    }
+                    if (!targetConcurso) return alert("Nome do concurso é obrigatório para importação.");
 
-                    currentConcurso = targetConcurso;
+                    currentConcurso = targetConcurso.trim();
                     localStorage.setItem('last_studied_concurso', currentConcurso);
 
                     let metadata = getConcursosMetadata();
