@@ -887,7 +887,7 @@
         let allEditalItems = [];
         let editalItems = [];
         let openMaterias = {}; 
-        let currentConcurso = 'Concurso Geral';
+        let currentConcurso = localStorage.getItem('last_studied_concurso') || 'Concurso Geral';
         let metadataCache = {};
         let flashcardsList = [];
         let activeObjectUrl = null;
@@ -1804,7 +1804,18 @@
                     const cleanTop = it.replace(/^🔄 Rev \(\d+d\): /, '');
                     const isRev = it.startsWith('🔄 Rev');
                     const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
-                    const isDone = matchedItem && (matchedItem.teoria || matchedItem.questoes);
+                    
+                    let isDone = false;
+                    if (matchedItem) {
+                        if (isRev) {
+                            if (it.includes('24h')) isDone = !!matchedItem.rev_24h;
+                            else if (it.includes('7d')) isDone = !!matchedItem.rev_7d;
+                            else if (it.includes('30d')) isDone = !!matchedItem.rev_30d;
+                            else isDone = !!(matchedItem.rev_24h || matchedItem.rev_7d || matchedItem.rev_30d);
+                        } else {
+                            isDone = !!(matchedItem.teoria || matchedItem.questoes);
+                        }
+                    }
                     
                     badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${it}</div>`;
                 });
@@ -2005,6 +2016,7 @@
 
         function changeConcurso(val) {
             currentConcurso = val;
+            localStorage.setItem('last_studied_concurso', currentConcurso);
             filterDataByConcurso();
             renderMonthCalendar();
             loadNotesData();
@@ -2034,6 +2046,7 @@
             await saveConcursosMetadata(metadata);
 
             currentConcurso = nome;
+            localStorage.setItem('last_studied_concurso', currentConcurso);
             document.getElementById('inputNomeConcurso').value = '';
             document.getElementById('inputDataConcurso').value = '';
             closeModalNovoConcurso();
@@ -2041,7 +2054,9 @@
         }
 
         async function removerConcursoAtual() {
-            if (currentConcurso === 'Concurso Geral') return alert('O Concurso Geral padrão não pode ser excluído.');
+            if (currentConcurso.trim().toLowerCase() === 'concurso geral') {
+                return alert('O Concurso Geral padrão não pode ser excluído.');
+            }
             if (confirm(`Deseja remover o concurso "${currentConcurso}" e todos os seus itens?`)) {
                 let metadata = getConcursosMetadata();
                 delete metadata[currentConcurso];
@@ -2053,6 +2068,7 @@
                 }
 
                 currentConcurso = 'Concurso Geral';
+                localStorage.setItem('last_studied_concurso', currentConcurso);
                 changeConcurso(currentConcurso);
             }
         }
@@ -2184,7 +2200,10 @@
                     let formattedData = [];
 
                     if (rawData.materias && Array.isArray(rawData.materias)) {
-                        if (rawData.concurso) currentConcurso = rawData.concurso;
+                        if (rawData.concurso) {
+                            currentConcurso = rawData.concurso;
+                            localStorage.setItem('last_studied_concurso', currentConcurso);
+                        }
                         
                         let metadata = getConcursosMetadata();
                         if (!metadata[currentConcurso]) {
