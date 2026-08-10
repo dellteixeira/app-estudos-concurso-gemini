@@ -97,7 +97,6 @@
             font-weight: 600; font-size: 0.85rem; border: 1px solid #1e40af; cursor: pointer;
         }
 
-        /* BARRAS DE AÇÃO FIGURA 2: PADRÃO CINZA E ATIVO AZUL */
         .action-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; width: 100%; }
         .action-bar .btn-action { 
             background-color: #475569; 
@@ -201,7 +200,9 @@
             background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
             color: #93c5fd; padding: 3px 6px; border-radius: 4px; font-size: 0.72rem;
             font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .clean-subject-badge.done { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #34d399; text-decoration: line-through; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
         .modal { background: var(--card-bg); color: var(--text-color); padding: 24px; border-radius: 12px; width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
@@ -267,7 +268,6 @@
             padding: 12px; border-radius: 8px; margin-bottom: 10px;
         }
 
-        /* ESTILO DAS LEGENDAS HORIZONTAIS DO GRÁFICO (FIGURA 1) */
         .chart-legend-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -289,6 +289,12 @@
             height: 14px;
             border-radius: 3px;
             flex-shrink: 0;
+        }
+
+        .day-topic-row {
+            background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex;
+            justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
         }
 
         @media (max-width: 768px) {
@@ -339,7 +345,7 @@
             </div>
         </header>
 
-        <!-- BARRA DE AÇÕES COM BOTÕES DE COR CINZA QUE MUDAM PARA AZUL AO SEREM CLICADOS (FIGURA 2) -->
+        <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
             <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora 🔄</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalViewEdital)">Ver / Anexar Edital PDF</button>
@@ -379,7 +385,6 @@
                 <div class="card">
                     <h3>Progresso Geral de Estudo (%)</h3>
                     <canvas id="progressChart" height="150"></canvas>
-                    <!-- LEGENDAS DAS MATÉRIAS ALINHADAS NA HORIZONTAL COM QUADRADOS COLORIDOS (FIGURA 1) -->
                     <div class="chart-legend-grid" id="chartLegendGrid"></div>
                 </div>
             </div>
@@ -514,12 +519,29 @@
         </div>
     </div>
 
-    <!-- MODAL CONFIGURAR HORÁRIOS E TURNOS DE ESTUDO -->
+    <!-- MODAL GERENCIAR CONTEÚDO DO DIA (CLICAR NO CRONOGRAMA) -->
+    <div class="modal-overlay" id="modalDayContent">
+        <div class="modal">
+            <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
+            <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
+            <div id="dayTopicsContainer"></div>
+            
+            <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
+                <button class="btn btn-primary btn-sm" onclick="addNewTopicToActiveDay()">+ Adicionar Novo Tópico a Este Dia</button>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIGURAR HORÁRIOS E TURNOS -->
     <div class="modal-overlay" id="modalConfigHorarios">
         <div class="modal modal-large">
             <h3>Configurar Horários e Turnos de Estudo</h3>
             <p style="font-size:0.9rem; opacity:0.85;">
-                Configure seus horários de estudo e a data em que pretende iniciar. O sistema alocará <strong>100% dos tópicos pendentes do edital</strong>, estendendo o cronograma pelos meses seguintes até concluir todo o conteúdo.
+                Configure seus horários de estudo e a data em que pretende iniciar. O sistema alocará <strong>100% dos tópicos do edital organizados por PRIORIDADE</strong>, estendendo o cronograma pelos meses seguintes até concluir todo o conteúdo.
             </p>
 
             <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
@@ -590,7 +612,7 @@
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma Completo 🚀</button>
+                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma por Prioridade 🚀</button>
             </div>
         </div>
     </div>
@@ -751,6 +773,7 @@
         let flashcardsList = [];
         let activeObjectUrl = null;
         let currentDelayedFilter = 'hoje';
+        let activeSelectedDateKey = null;
 
         let studyQueue = [];
         let currentStudyIdx = 0;
@@ -760,14 +783,12 @@
         let selectedMonth = new Date().getMonth();
         let selectedYear = new Date().getFullYear();
 
-        /* MANIPULADOR DE CLIQUE DA BARRA DE AÇÃO (FIGURA 2 - SELEÇÃO AZUL) */
         function handleActionButton(btnElem, actionFn, eventArg) {
             document.querySelectorAll('.action-bar .btn-action').forEach(b => b.classList.remove('active-blue'));
             if (btnElem) btnElem.classList.add('active-blue');
             if (typeof actionFn === 'function') actionFn(eventArg);
         }
 
-        /* SUPORTE TECLADO GLOBAL: ENTER & ESC */
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeModalConfigHorarios();
@@ -776,6 +797,7 @@
                 closeModalViewEdital();
                 closeModalPromptIA();
                 closeModalNovoConcurso();
+                closeModalDayContent();
             } else if (e.key === 'Enter' && !e.shiftKey) {
                 if (document.getElementById('auth-screen').style.display !== 'none') {
                     handleLogin();
@@ -847,6 +869,152 @@
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
 
+        /* JANELA E AÇÕES DO DIA NO CRONOGRAMA INTEGRADO */
+        function openModalDayContent(dateKey) {
+            activeSelectedDateKey = dateKey;
+            document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
+            renderDayTopicsList();
+            document.getElementById('modalDayContent').style.display = 'flex';
+        }
+
+        function closeModalDayContent() {
+            document.getElementById('modalDayContent').style.display = 'none';
+        }
+
+        function renderDayTopicsList() {
+            const container = document.getElementById('dayTopicsContainer');
+            if (!container || !activeSelectedDateKey) return;
+            container.innerHTML = '';
+
+            const metadata = getConcursosMetadata();
+            const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
+            const topics = dateSchedule[activeSelectedDateKey] || [];
+
+            if (topics.length === 0) {
+                container.innerHTML = `<p style="opacity:0.85; padding:1rem;">Nenhum tópico agendado para este dia.</p>`;
+                return;
+            }
+
+            topics.forEach((topicoStr, idx) => {
+                const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === topicoStr);
+
+                container.innerHTML += `
+                    <div class="day-topic-row">
+                        <div style="flex:1;">
+                            <strong style="color:var(--primary-blue); font-size:0.95rem;">${topicoStr}</strong>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            ${matchedItem ? `
+                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
+                                    <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'teoria', ${matchedItem.teoria})"> Teoria
+                                </label>
+                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
+                                    <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'questoes', ${matchedItem.questoes})"> Questões
+                                </label>
+                            ` : ''}
+                            <button class="btn btn-secondary btn-sm" onclick="editTopicInDay(${idx})">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function toggleCheckFromModal(id, field, currentValue) {
+            await toggleCheck(id, field, currentValue);
+            renderDayTopicsList();
+        }
+
+        async function editTopicInDay(idx) {
+            let metadata = getConcursosMetadata();
+            const currentVal = metadata[currentConcurso]?.dateSchedule[activeSelectedDateKey][idx];
+            const newVal = prompt('Editar o conteúdo/matéria deste dia:', currentVal);
+
+            if (newVal !== null && newVal.trim()) {
+                metadata[currentConcurso].dateSchedule[activeSelectedDateKey][idx] = newVal.trim();
+                await saveConcursosMetadata(metadata);
+                renderDayTopicsList();
+                renderMonthCalendar();
+            }
+        }
+
+        async function deleteTopicFromDay(idx) {
+            if (confirm('Deseja remover este tópico do dia?')) {
+                let metadata = getConcursosMetadata();
+                metadata[currentConcurso].dateSchedule[activeSelectedDateKey].splice(idx, 1);
+                await saveConcursosMetadata(metadata);
+                renderDayTopicsList();
+                renderMonthCalendar();
+            }
+        }
+
+        async function addNewTopicToActiveDay() {
+            const materia = prompt(`Adicionar novo tópico/matéria para ${activeSelectedDateKey}:`);
+            if (materia && materia.trim()) {
+                let metadata = getConcursosMetadata();
+                if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+                if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+                if (!metadata[currentConcurso].dateSchedule[activeSelectedDateKey]) {
+                    metadata[currentConcurso].dateSchedule[activeSelectedDateKey] = [];
+                }
+
+                metadata[currentConcurso].dateSchedule[activeSelectedDateKey].push(materia.trim());
+                await saveConcursosMetadata(metadata);
+                renderDayTopicsList();
+                renderMonthCalendar();
+            }
+        }
+
+        /* GERAR CRONOGRAMA AUTOMÁTICO BASEADO NA PRIORIDADE DO EDITAL */
+        async function gerarCronogramaInteligente() {
+            if (editalItems.length === 0) return alert('Sua lista de edital está vazia. Adicione matérias para preencher.');
+
+            const dataInicioStr = document.getElementById('cfgDataInicio').value;
+            if (!dataInicioStr) return alert('Escolha a data de início do cronograma.');
+
+            const sortedByPriority = [...editalItems].sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1));
+
+            const incSab = document.getElementById('cfgIncluirSabado').checked;
+            const incDom = document.getElementById('cfgIncluirDomingo').checked;
+
+            let currDate = new Date(dataInicioStr + "T00:00:00");
+            let itemIdx = 0;
+
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].dateSchedule = {};
+
+            while (itemIdx < sortedByPriority.length) {
+                const dayOfWeek = currDate.getDay();
+                let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                let canStudy = true;
+
+                if (dayOfWeek === 6 && !incSab) canStudy = false;
+                if (dayOfWeek === 0 && !incDom) canStudy = false;
+
+                if (canStudy) {
+                    const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
+                    const slots = isWeekend ? 3 : 2;
+
+                    metadata[currentConcurso].dateSchedule[dateKey] = [];
+
+                    for (let s = 0; s < slots; s++) {
+                        if (itemIdx < sortedByPriority.length) {
+                            const it = sortedByPriority[itemIdx];
+                            metadata[currentConcurso].dateSchedule[dateKey].push(`${it.materia} - ${it.assunto}`);
+                            itemIdx++;
+                        }
+                    }
+                }
+                currDate.setDate(currDate.getDate() + 1);
+            }
+
+            await saveConcursosMetadata(metadata);
+            closeModalConfigHorarios();
+            renderMonthCalendar();
+            alert('Cronograma gerado com sucesso respeitando as maiores prioridades do edital!');
+        }
+
         /* ANOTAÇÕES */
         function populateNotesMateriaDropdowns() {
             const mSel = document.getElementById('notesMateriaSelect');
@@ -913,9 +1081,7 @@
             document.getElementById('modalNovaNota').style.display = 'flex';
         }
 
-        function closeModalNovaNota() {
-            document.getElementById('modalNovaNota').style.display = 'none';
-        }
+        function closeModalNovaNota() { document.getElementById('modalNovaNota').style.display = 'none'; }
 
         function editNota(globalIndex) {
             const metadata = getConcursosMetadata();
@@ -968,62 +1134,12 @@
             }
         }
 
-        /* CONFIGURADOR DE HORÁRIOS E TURNOS */
         function openModalConfigHorarios() {
             document.getElementById('cfgDataInicio').value = new Date().toISOString().split('T')[0];
             document.getElementById('modalConfigHorarios').style.display = 'flex';
         }
 
-        function closeModalConfigHorarios() {
-            document.getElementById('modalConfigHorarios').style.display = 'none';
-        }
-
-        async function gerarCronogramaInteligente() {
-            if (editalItems.length === 0) return alert('Sua lista de edital está vazia. Adicione matérias para preencher.');
-
-            const dataInicioStr = document.getElementById('cfgDataInicio').value;
-            if (!dataInicioStr) return alert('Escolha a data de início do cronograma.');
-
-            const incSab = document.getElementById('cfgIncluirSabado').checked;
-            const incDom = document.getElementById('cfgIncluirDomingo').checked;
-
-            let currDate = new Date(dataInicioStr + "T00:00:00");
-            let itemIdx = 0;
-
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            metadata[currentConcurso].dateSchedule = {};
-
-            while (itemIdx < editalItems.length) {
-                const dayOfWeek = currDate.getDay();
-                let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-                let canStudy = true;
-
-                if (dayOfWeek === 6 && !incSab) canStudy = false;
-                if (dayOfWeek === 0 && !incDom) canStudy = false;
-
-                if (canStudy) {
-                    const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
-                    const slots = isWeekend ? 3 : 2; 
-
-                    metadata[currentConcurso].dateSchedule[dateKey] = [];
-
-                    for (let s = 0; s < slots; s++) {
-                        if (itemIdx < editalItems.length) {
-                            const it = editalItems[itemIdx];
-                            metadata[currentConcurso].dateSchedule[dateKey].push(`${it.materia} - ${it.assunto}`);
-                            itemIdx++;
-                        }
-                    }
-                }
-                currDate.setDate(currDate.getDate() + 1);
-            }
-
-            await saveConcursosMetadata(metadata);
-            closeModalConfigHorarios();
-            renderMonthCalendar();
-            alert('Cronograma completo gerado com sucesso para todo o edital!');
-        }
+        function closeModalConfigHorarios() { document.getElementById('modalConfigHorarios').style.display = 'none'; }
 
         /* FLASHCARDS */
         function populateFcMateriaDropdown() {
@@ -1296,36 +1412,22 @@
 
                 let badgesHtml = '';
                 items.forEach(it => {
-                    badgesHtml += `<div class="clean-subject-badge">${it}</div>`;
+                    const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === it);
+                    const isDone = matchedItem && (matchedItem.teoria || matchedItem.questoes);
+                    badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : ''}">${it}</div>`;
                 });
 
                 grid.innerHTML += `
-                    <div class="month-day-cell ${isToday ? 'today' : ''}" onclick="addTopicToDate('${dateKey}')">
+                    <div class="month-day-cell ${isToday ? 'today' : ''}" onclick="openModalDayContent('${dateKey}')">
                         <div class="day-num-header">
                             <span>${day}</span>
-                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Adicionar matéria">+</button>
+                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Abrir dia">+</button>
                         </div>
                         <div class="day-badges-scroll">${badgesHtml}</div>
                     </div>
                 `;
             }
             renderDelayedPanel();
-        }
-
-        async function addTopicToDate(dateKey) {
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-
-            const materia = prompt(`Adicionar matéria/tópico para o dia ${dateKey}:`);
-            if (materia && materia.trim()) {
-                if (!metadata[currentConcurso].dateSchedule[dateKey]) {
-                    metadata[currentConcurso].dateSchedule[dateKey] = [];
-                }
-                metadata[currentConcurso].dateSchedule[dateKey].push(materia.trim());
-                await saveConcursosMetadata(metadata);
-                renderMonthCalendar();
-            }
         }
 
         async function limparCronogramaMesAtual() {
@@ -1634,6 +1736,7 @@
                 item[field] = !currentValue;
                 await saveEditalItemToCloud(item);
                 filterDataByConcurso();
+                renderMonthCalendar();
             }
         }
 
@@ -1643,6 +1746,7 @@
                 item.teoria = false; item.questoes = false; item.rev_24h = false; item.rev_7d = false; item.rev_30d = false;
                 await saveEditalItemToCloud(item);
                 filterDataByConcurso();
+                renderMonthCalendar();
             }
         }
 
@@ -1742,7 +1846,6 @@
             }
         }
 
-        /* REESTRUTURAÇÃO DO GRÁFICO E GERADOR DE LEGENDAS LIMPAS NA HORIZONTAL (FIGURA 1) */
         function renderChart() {
             const ctx = document.getElementById('progressChart').getContext('2d');
             const legendGrid = document.getElementById('chartLegendGrid');
@@ -2044,7 +2147,6 @@
         window.addFlashcard = addFlashcard;
         window.removeFlashcard = removeFlashcard;
         window.onMonthYearChange = onMonthYearChange;
-        window.addTopicToDate = addTopicToDate;
         window.limparCronogramaMesAtual = limparCronogramaMesAtual;
         window.filterDelayedList = filterDelayedList;
         window.updateFcAssuntoOptions = updateFcAssuntoOptions;
@@ -2063,6 +2165,12 @@
         window.editNota = editNota;
         window.deleteNota = deleteNota;
         window.handleActionButton = handleActionButton;
+        window.openModalDayContent = openModalDayContent;
+        window.closeModalDayContent = closeModalDayContent;
+        window.toggleCheckFromModal = toggleCheckFromModal;
+        window.editTopicInDay = editTopicInDay;
+        window.deleteTopicFromDay = deleteTopicFromDay;
+        window.addNewTopicToActiveDay = addNewTopicToActiveDay;
     </script>
 </body>
 </html>
