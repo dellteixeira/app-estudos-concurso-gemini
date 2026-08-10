@@ -1501,7 +1501,7 @@
         }
         function closeModalConfigHorarios() { document.getElementById('modalConfigHorarios').style.display = 'none'; }
 
-        /* FLASHCARDS */
+        /* FLASHCARDS COM SUPABASE */
         function populateFcMateriaDropdown() {
             const mSel = document.getElementById('fcMateriaSelect');
             if (!mSel) return;
@@ -1527,14 +1527,67 @@
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             metadata[currentConcurso].flashcards = flashcardsList;
             await saveConcursosMetadata(metadata);
+
+            if (navigator.onLine && currentUser) {
+                try {
+                    for (let fc of flashcardsList) {
+                        if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+                        const payload = {
+                            id: String(fc.id),
+                            user_id: currentUser.id,
+                            concurso: currentConcurso,
+                            materia: fc.materia || '',
+                            assunto: fc.assunto || '',
+                            pergunta: fc.pergunta,
+                            resposta: fc.resposta,
+                            updated_at: new Date().toISOString()
+                        };
+                        await supabaseClient.from('flashcards').upsert(payload, { onConflict: 'id' });
+                    }
+                } catch(err) { console.warn('Erro salvando flashcards na nuvem:', err); }
+            }
         }
 
-        function loadFlashcardsData() {
-            const metadata = getConcursosMetadata();
-            flashcardsList = metadata[currentConcurso]?.flashcards || [];
+        async function loadFlashcardsData() {
+            if (navigator.onLine && currentUser) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('flashcards')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .eq('concurso', currentConcurso);
+
+                    if (!error && data) {
+                        flashcardsList = data.map(fc => ({
+                            id: fc.id,
+                            materia: fc.materia,
+                            assunto: fc.assunto,
+                            pergunta: fc.pergunta,
+                            resposta: fc.resposta
+                        }));
+                    } else {
+                        const metadata = getConcursosMetadata();
+                        flashcardsList = metadata[currentConcurso]?.flashcards || [];
+                    }
+                } catch(e) {
+                    const metadata = getConcursosMetadata();
+                    flashcardsList = metadata[currentConcurso]?.flashcards || [];
+                }
+            } else {
+                const metadata = getConcursosMetadata();
+                flashcardsList = metadata[currentConcurso]?.flashcards || [];
+            }
             populateFcMateriaDropdown();
             renderFlashcardFolders();
             renderFlashcards();
+        }
+
+        async function deleteFlashcardFromCloud(id) {
+            if (navigator.onLine && currentUser && id) {
+                try {
+                    await supabaseClient.from('flashcards').delete().eq('id', id);
+                } catch(err) { console.warn('Erro ao deletar flashcard na nuvem:', err); }
+            }
         }
 
         function renderFlashcardFolders() {
@@ -1686,7 +1739,11 @@
             const resp = document.getElementById('editFcResposta').value.trim();
             if (!perg || !resp) return alert('Pergunta e Resposta são obrigatórias.');
 
-            flashcardsList[editingFcIndex] = { materia: mat, assunto: ass, pergunta: perg, resposta: resp };
+            flashcardsList[editingFcIndex].materia = mat;
+            flashcardsList[editingFcIndex].assunto = ass;
+            flashcardsList[editingFcIndex].pergunta = perg;
+            flashcardsList[editingFcIndex].resposta = resp;
+
             closeModalEditarFlashcard();
             renderFlashcardFolders();
             renderFlashcards();
@@ -1701,7 +1758,12 @@
             const resposta = document.getElementById('fcResposta').value.trim();
             if (!pergunta || !resposta) return;
 
-            flashcardsList.push({ materia, assunto, pergunta, resposta });
+            const newFc = {
+                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                materia, assunto, pergunta, resposta
+            };
+
+            flashcardsList.push(newFc);
             document.getElementById('fcPergunta').value = '';
             document.getElementById('fcResposta').value = '';
             renderFlashcardFolders();
@@ -1711,7 +1773,10 @@
 
         async function removeFlashcard(idx) {
             if (confirm('Deseja apagar este flashcard individualmente?')) {
-                flashcardsList.splice(idx, 1);
+                const removed = flashcardsList.splice(idx, 1);
+                if (removed[0] && removed[0].id) {
+                    await deleteFlashcardFromCloud(removed[0].id);
+                }
                 renderFlashcardFolders();
                 renderFlashcards();
                 await saveFlashcardsData();
@@ -1730,7 +1795,10 @@
                 if (!trimmed || trimmed.length < 2) return;
                 if (/^(p:|pergunta:)/i.test(trimmed)) {
                     if (currentPergunta && currentResposta) {
-                        flashcardsList.push({ materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta });
+                        flashcardsList.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                            materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta
+                        });
                         count++;
                         currentResposta = '';
                     }
@@ -1743,7 +1811,10 @@
                         const p = parts[0].trim();
                         const r = parts.slice(1).join(';').trim();
                         if (p && r && p.length > 1 && r.length > 1) {
-                            flashcardsList.push({ materia: selectedMateria, assunto: selectedAssunto, pergunta: p, resposta: r });
+                            flashcardsList.push({
+                                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                                materia: selectedMateria, assunto: selectedAssunto, pergunta: p, resposta: r
+                            });
                             count++;
                         }
                     }
@@ -1751,7 +1822,10 @@
             });
 
             if (currentPergunta && currentResposta) {
-                flashcardsList.push({ materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta });
+                flashcardsList.push({
+                    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                    materia: selectedMateria, assunto: selectedAssunto, pergunta: currentPergunta, resposta: currentResposta
+                });
                 count++;
             }
             return count;
@@ -2008,7 +2082,7 @@
             initMonthYearSelectors();
             renderMonthCalendar();
             loadNotesData();
-            loadFlashcardsData();
+            await loadFlashcardsData();
             if (navigator.onLine && currentUser) await syncAllWithSupabase();
         }
 
@@ -2030,7 +2104,7 @@
                 filterDataByConcurso();
                 renderMonthCalendar();
                 loadNotesData();
-                loadFlashcardsData();
+                await loadFlashcardsData();
             } catch(e) { console.log('Sincronização em segundo plano...'); }
         }
 
@@ -2073,10 +2147,10 @@
                     const payload = {
                         id: String(item.id),
                         user_id: currentUser.id,
-                        materia: item.materia,
-                        assunto: item.assunto,
-                        prioridade: item.prioridade || 1,
-                        assunto_prioridade: item.assunto_prioridade || 1,
+                        materia: item.materia || 'Geral',
+                        assunto: item.assunto || 'Tópico',
+                        prioridade: parseInt(item.prioridade) || 1,
+                        assunto_prioridade: parseInt(item.assunto_prioridade) || 1,
                         concurso: item.concurso || currentConcurso,
                         teoria: !!item.teoria,
                         questoes: !!item.questoes,
@@ -2182,6 +2256,7 @@
             if (navigator.onLine && currentUser) {
                 try {
                     await supabaseClient.from('edital').update({ concurso: nomeFormatado }).eq('user_id', currentUser.id).eq('concurso', antigoNome);
+                    await supabaseClient.from('flashcards').update({ concurso: nomeFormatado }).eq('user_id', currentUser.id).eq('concurso', antigoNome);
                 } catch(err) { console.warn('Erro ao renomear na nuvem:', err); }
             }
 
@@ -2200,6 +2275,12 @@
 
                 const itemsToDelete = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
                 for (let item of itemsToDelete) await deleteEditalItemFromCloud(item.id);
+
+                if (navigator.onLine && currentUser) {
+                    try {
+                        await supabaseClient.from('flashcards').delete().eq('user_id', currentUser.id).eq('concurso', currentConcurso);
+                    } catch(e) {}
+                }
 
                 currentConcurso = 'Concurso Geral';
                 localStorage.setItem('last_studied_concurso', currentConcurso);
@@ -2355,7 +2436,6 @@
             }
         }
 
-        /* IMPORTAÇÃO JSON ROBUSTA E CORRIGIDA */
         async function importJSON(event) {
             const file = event.target.files ? event.target.files[0] : null;
             if (!file) return;
