@@ -323,9 +323,9 @@
         .hours-option-card.selected { border-color: var(--primary-blue); background: rgba(59, 130, 246, 0.15); }
 
         .edit-selector-box {
-            background: rgba(15, 23, 42, 0.8); border: 1px solid var(--primary-blue);
-            padding: 10px; border-radius: 8px; margin-top: 8px; width: 100%;
-            display: flex; flex-direction: column; gap: 8px;
+            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--primary-blue);
+            padding: 12px; border-radius: 8px; margin-top: 8px; width: 100%;
+            display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
         @media (max-width: 768px) {
@@ -710,7 +710,7 @@
         </div>
     </div>
 
-    <!-- MODAL GERENCIAR CONTEÚDO DO DIA COM SELETOR DE EDITAL E TROCA RECÍPROCA -->
+    <!-- MODAL GERENCIAR CONTEÚDO DO DIA -->
     <div class="modal-overlay" id="modalDayContent">
         <div class="modal">
             <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
@@ -1159,10 +1159,11 @@
             alert('Cronograma Método 1 gerado com sucesso com Revisão Espaçada!');
         }
 
-        /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR DE EDITAL E TROCA RECÍPROCA DE ASSUNTOS */
+        /* GERENCIAR DIA NO CRONOGRAMA COM SELETOR INLINE DE EDITAL E TROCA RECÍPROCA DE ASSUNTOS */
         function openModalDayContent(dateKey) {
             activeSelectedDateKey = dateKey;
             document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
+            resetAddTopicArea();
             renderDayTopicsList();
             document.getElementById('modalDayContent').style.display = 'flex';
         }
@@ -1231,7 +1232,7 @@
 
             editArea.innerHTML = `
                 <div class="edit-selector-box">
-                    <label style="font-size:0.8rem; font-weight:700;">Selecione a nova Matéria e Assunto do Edital:</label>
+                    <label style="font-size:0.82rem; font-weight:700; color:#93c5fd;">Selecione a Matéria e o Assunto do Edital:</label>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">
                             ${matOptions}
@@ -1276,7 +1277,6 @@
             const dateSchedule = metadata[currentConcurso].dateSchedule;
             const oldFullString = dateSchedule[activeSelectedDateKey][targetIdx];
 
-            // Busca se o novo assunto já está agendado em alguma data/hora
             let foundDate = null;
             let foundIndex = -1;
 
@@ -1289,7 +1289,6 @@
                 }
             });
 
-            // Se o assunto escolhido já existir em outro dia, realiza a troca recíproca (Swap)
             if (foundDate && (foundDate !== activeSelectedDateKey || foundIndex !== targetIdx)) {
                 dateSchedule[foundDate][foundIndex] = oldFullString;
                 dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
@@ -1313,7 +1312,7 @@
 
             container.innerHTML = `
                 <div class="edit-selector-box">
-                    <label style="font-size:0.85rem; font-weight:700; color:var(--primary-blue);">Adicionar Tópico a Este Dia:</label>
+                    <label style="font-size:0.85rem; font-weight:700; color:var(--primary-blue);">Adicionar Tópico a Este Dia (Selecione da Lista do Edital):</label>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <select id="addMatSel" onchange="updateAddAssuntoDropdown()" style="flex:1; min-width:160px;">
                             ${matOptions}
