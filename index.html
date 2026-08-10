@@ -247,7 +247,7 @@
             justify-content: space-between; align-items: flex-start; gap: 1rem;
         }
 
-        .flashcard-content { flex: 1; }
+        .flashcard-content { flex: 1; word-break: break-word; }
         .flashcard-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
         .flashcard-badge-materia { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
         .flashcard-badge-assunto { background: rgba(255,255,255,0.1); color: var(--text-color); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
@@ -572,6 +572,33 @@
                 </form>
 
                 <div id="flashcardsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR FLASHCARD -->
+    <div class="modal-overlay" id="modalEditarFlashcard">
+        <div class="modal">
+            <h3>Editar Flashcard</h3>
+            <div class="form-group">
+                <label>Matéria (Opcional)</label>
+                <input type="text" id="editFcMateria">
+            </div>
+            <div class="form-group">
+                <label>Assunto (Opcional)</label>
+                <input type="text" id="editFcAssunto">
+            </div>
+            <div class="form-group">
+                <label>Frente / Pergunta</label>
+                <textarea id="editFcPergunta" style="min-height:80px;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Verso / Resposta</label>
+                <textarea id="editFcResposta" style="min-height:80px;"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalEditarFlashcard()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="salvarEdicaoFlashcard()">Salvar Alterações</button>
             </div>
         </div>
     </div>
@@ -926,6 +953,7 @@
         let currentStudyIdx = 0;
         let showingAnswer = false;
         let currentEditingNoteIndex = null;
+        let editingFcIndex = null;
 
         let selectedMonth = new Date().getMonth();
         let selectedYear = new Date().getFullYear();
@@ -950,6 +978,7 @@
                 closeModalPromptIA();
                 closeModalNovoConcurso();
                 closeModalDayContent();
+                closeModalEditarFlashcard();
             } else if (e.key === 'Enter' && !e.shiftKey) {
                 if (document.getElementById('auth-screen').style.display !== 'none') {
                     handleLogin();
@@ -963,6 +992,8 @@
                     gerarCronogramaMetodo2();
                 } else if (document.getElementById('modalPromptIA').style.display === 'flex') {
                     copyPromptToClipboard();
+                } else if (document.getElementById('modalEditarFlashcard').style.display === 'flex') {
+                    salvarEdicaoFlashcard();
                 }
             }
         });
@@ -1643,7 +1674,10 @@
                                 <p><strong>P:</strong> ${fc.pergunta}</p>
                                 <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${fc.resposta}</p>
                             </div>
-                            <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir 🗑️</button>
+                            <div style="display:flex; gap:6px; flex-shrink:0;">
+                                <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard">Editar ✏️</button>
+                                <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir 🗑️</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -1657,6 +1691,46 @@
                     </div>
                 `;
             });
+        }
+
+        function openEditarFlashcardModal(idx) {
+            editingFcIndex = idx;
+            const fc = flashcardsList[idx];
+            if (!fc) return;
+
+            document.getElementById('editFcMateria').value = fc.materia || '';
+            document.getElementById('editFcAssunto').value = fc.assunto || '';
+            document.getElementById('editFcPergunta').value = fc.pergunta || '';
+            document.getElementById('editFcResposta').value = fc.resposta || '';
+
+            document.getElementById('modalEditarFlashcard').style.display = 'flex';
+        }
+
+        function closeModalEditarFlashcard() {
+            document.getElementById('modalEditarFlashcard').style.display = 'none';
+            editingFcIndex = null;
+        }
+
+        async function salvarEdicaoFlashcard() {
+            if (editingFcIndex === null) return;
+
+            const mat = document.getElementById('editFcMateria').value.trim();
+            const ass = document.getElementById('editFcAssunto').value.trim();
+            const perg = document.getElementById('editFcPergunta').value.trim();
+            const resp = document.getElementById('editFcResposta').value.trim();
+
+            if (!perg || !resp) return alert('Pergunta e Resposta são obrigatórias.');
+
+            flashcardsList[editingFcIndex] = {
+                materia: mat,
+                assunto: ass,
+                pergunta: perg,
+                resposta: resp
+            };
+
+            closeModalEditarFlashcard();
+            renderFlashcards();
+            await saveFlashcardsData();
         }
 
         async function addFlashcard(e) {
@@ -1692,7 +1766,6 @@
 
             try {
                 if (fileName.endsWith('.pdf')) {
-                    // Extração nativa de PDF via PDF.js
                     const arrayBuffer = await file.arrayBuffer();
                     const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                     let fullPdfText = "";
@@ -1703,18 +1776,7 @@
                         fullPdfText += pageText + "\n";
                     }
                     rawText = fullPdfText;
-                } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-                    // Extração e limpeza do conteúdo textual de documentos do Word
-                    const arrayBuffer = await file.arrayBuffer();
-                    const decoder = new TextDecoder('utf-8');
-                    const decoded = decoder.decode(arrayBuffer);
-                    
-                    // Extrai texto ignorando caracteres e estruturas binárias de arquivos Word
-                    rawText = decoded.replace(/<[^>]+>/g, ' ')
-                                     .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ')
-                                     .replace(/\s+/g, ' ');
                 } else {
-                    // Arquivos de texto simples (.txt, .csv)
                     rawText = await file.text();
                 }
 
@@ -1723,7 +1785,10 @@
                     return;
                 }
 
-                // Normaliza quebras de linha e sanitiza o texto
+                rawText = rawText.replace(/<[^>]+>/g, ' ')
+                                 .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ')
+                                 .replace(/[^\x20-\x7E\xA0-\xFF\u0100-\u017F\s]/g, '');
+
                 const lines = rawText.split(/\r?\n|\r/);
                 let currentPergunta = '';
                 let currentResposta = '';
@@ -1731,7 +1796,7 @@
 
                 lines.forEach(line => {
                     const trimmed = line.trim();
-                    if (!trimmed) return;
+                    if (!trimmed || trimmed.length < 2) return;
 
                     if (/^(p:|pergunta:)/i.test(trimmed)) {
                         if (currentPergunta && currentResposta) {
@@ -1743,12 +1808,11 @@
                     } else if (/^(r:|resposta:)/i.test(trimmed)) {
                         currentResposta = trimmed.replace(/^(r:|resposta:)/i, '').trim();
                     } else {
-                        // Suporte a separadores (; ou ,)
                         const parts = trimmed.split(/;|,/);
                         if (parts.length >= 2) {
                             const p = parts[0].trim();
                             const r = parts.slice(1).join(';').trim();
-                            if (p && r) {
+                            if (p && r && p.length > 1 && r.length > 1) {
                                 flashcardsList.push({ materia: '', assunto: '', pergunta: p, resposta: r });
                                 importedCount++;
                             }
@@ -1766,7 +1830,7 @@
                     await saveFlashcardsData();
                     alert(`Sucesso! ${importedCount} flashcards foram importados.`);
                 } else {
-                    alert('Não foram encontrados pares de Pergunta e Resposta no arquivo. Certifique-se de usar a estrutura com "P:" e "R:" ou separada por ponto e vírgula.');
+                    alert('Não foram encontrados pares válidos de Pergunta e Resposta no arquivo.');
                 }
             } catch (err) {
                 console.error('Erro na importação do arquivo:', err);
@@ -2254,7 +2318,7 @@
 
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
-                const isOpen = !!openMaterias[materiaName];
+                const isOpen = openMaterias[materiaName] !== false; // Padrão aberto se não estiver explicitamente false
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
 
                 tbody.innerHTML += `
@@ -2370,6 +2434,7 @@
             }
         }
 
+        /* FUNÇÃO IMPORTAR JSON FLEXÍVEL E ROBUSTA */
         async function importJSON(event) {
             const file = event.target.files ? event.target.files[0] : null;
             if (!file) return;
@@ -2380,44 +2445,93 @@
                     let rawData = JSON.parse(e.target.result);
                     let formattedData = [];
 
+                    // Determinar concurso alvo (prioriza o selecionado na tela)
                     let targetConcurso = (currentConcurso && currentConcurso !== 'Concurso Geral') 
                         ? currentConcurso 
-                        : (rawData.concurso || 'Concurso Importado');
+                        : (rawData.concurso || rawData.nome || 'Concurso Importado');
 
                     currentConcurso = targetConcurso;
 
+                    // Atualizar metadados do concurso
                     let metadata = getConcursosMetadata();
                     if (!metadata[currentConcurso]) {
                         metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
-                        await saveConcursosMetadata(metadata);
+                    }
+                    await saveConcursosMetadata(metadata);
+
+                    // Identificar array de matérias flexivelmente
+                    let listMaterias = [];
+                    if (Array.isArray(rawData)) {
+                        listMaterias = rawData;
+                    } else {
+                        listMaterias = rawData.materias || rawData.disciplinas || rawData.modulos || rawData.edital || rawData.conteudos || [];
                     }
 
-                    if (rawData.materias && Array.isArray(rawData.materias)) {
-                        rawData.materias.forEach(matObj => {
-                            const mName = matObj.materia || 'Matéria Importada';
-                            const prio = parseInt(matObj.prioridade || 1);
-                            if (Array.isArray(matObj.assuntos)) {
-                                matObj.assuntos.forEach((assuntoStr, indexAssunto) => {
+                    if (Array.isArray(listMaterias)) {
+                        listMaterias.forEach((matObj, idxMat) => {
+                            let mName = matObj.materia || matObj.disciplina || matObj.nome || matObj.titulo || `Matéria ${idxMat + 1}`;
+                            let prio = parseInt(matObj.prioridade || matObj.ordem || (idxMat + 1));
+                            
+                            let listAssuntos = matObj.assuntos || matObj.topicos || matObj.conteudos || matObj.itens || [];
+
+                            if (Array.isArray(listAssuntos)) {
+                                listAssuntos.forEach((assuntoItem, idxAss) => {
+                                    let assuntoText = typeof assuntoItem === 'string' ? assuntoItem : (assuntoItem.nome || assuntoItem.titulo || assuntoItem.assunto || 'Tópico');
+                                    
                                     const itemObj = {
                                         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                                         materia: mName, 
-                                        assunto: typeof assuntoStr === 'string' ? assuntoStr : (assuntoStr.nome || 'Tópico'),
+                                        assunto: assuntoText,
                                         prioridade: prio, 
-                                        assunto_prioridade: indexAssunto + 1, 
+                                        assunto_prioridade: idxAss + 1, 
                                         concurso: currentConcurso,
                                         user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
                                     };
+
                                     formattedData.push(itemObj);
                                     allEditalItems.push(itemObj);
-                                    saveEditalItemToCloud(itemObj);
+                                    openMaterias[mName] = true;
                                 });
                             }
                         });
                     }
-                    changeConcurso(currentConcurso);
-                    alert(`Sucesso! ${formattedData.length} tópicos foram importados para o concurso "${currentConcurso}".`);
-                } catch(err) { alert('Erro ao processar o arquivo JSON.'); }
+
+                    if (formattedData.length > 0) {
+                        saveEditalToLocalStorage();
+
+                        if (navigator.onLine && currentUser) {
+                            try {
+                                const payloadList = formattedData.map(item => ({
+                                    id: String(item.id),
+                                    user_id: currentUser.id,
+                                    materia: item.materia,
+                                    assunto: item.assunto,
+                                    prioridade: item.prioridade,
+                                    assunto_prioridade: item.assunto_prioridade,
+                                    concurso: item.concurso,
+                                    teoria: false,
+                                    questoes: false,
+                                    rev_24h: false,
+                                    rev_7d: false,
+                                    rev_30d: false
+                                }));
+                                await supabaseClient.from('edital').upsert(payloadList);
+                            } catch (errSync) {
+                                console.warn('Erro enviando lote importado para o banco:', errSync);
+                            }
+                        }
+
+                        filterDataByConcurso();
+                        alert(`Sucesso! ${formattedData.length} tópicos foram convertidos em Edital Verticalizado e salvos no concurso "${currentConcurso}".`);
+                    } else {
+                        alert('Não foi possível identificar matérias/assuntos no JSON. Verifique a estrutura do arquivo.');
+                    }
+
+                } catch(err) {
+                    console.error('Erro na leitura do JSON:', err);
+                    alert('Erro ao processar o arquivo JSON. Certifique-se de que é um JSON válido.');
+                }
             };
             reader.readAsText(file);
             event.target.value = '';
@@ -2746,6 +2860,9 @@
         window.forceFullSync = forceFullSync;
         window.addFlashcard = addFlashcard;
         window.removeFlashcard = removeFlashcard;
+        window.openEditarFlashcardModal = openEditarFlashcardModal;
+        window.closeModalEditarFlashcard = closeModalEditarFlashcard;
+        window.salvarEdicaoFlashcard = salvarEdicaoFlashcard;
         window.onMonthYearChange = onMonthYearChange;
         window.limparCronogramaMesAtual = limparCronogramaMesAtual;
         window.filterDelayedList = filterDelayedList;
