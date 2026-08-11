@@ -2,16 +2,19 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <!-- TAGS ANTI-CACHE -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Meu Painel de Estudos</title>
-    <!-- Mobile UI v2 - 2026-08-11 | build 20260811-4 -->
+    <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=20260811-5">
     <meta name="theme-color" content="#0f172a">
+    <meta name="color-scheme" content="dark light">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Estudos">
@@ -20,7 +23,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260811-4', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=20260811-5', { updateViaCache: 'none' })
             .then(reg => reg.update())
             .catch(err => console.error('Erro no Service Worker:', err));
         });
@@ -324,7 +327,76 @@
         /* Indicadores compactos usados pelo calendário em telas pequenas */
         .month-day-mobile-meta { display: none; }
 
+
+        /* =========================================================
+           PWA MULTIPLATAFORMA / SAFE AREAS
+           ========================================================= */
+        body {
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        #pwa-install-banner {
+            display: none;
+            position: sticky;
+            top: env(safe-area-inset-top, 0px);
+            z-index: 1999;
+            width: 100%;
+            background: var(--card-bg);
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+            padding: 10px 14px;
+        }
+
+        #pwa-install-banner.visible { display: block; }
+
+        .pwa-install-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .pwa-install-copy {
+            min-width: 0;
+            flex: 1;
+            font-size: 0.86rem;
+            line-height: 1.35;
+        }
+
+        .pwa-install-copy strong {
+            display: block;
+            color: var(--header-materia-text);
+            font-size: 0.92rem;
+            margin-bottom: 2px;
+        }
+
+        .pwa-install-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .pwa-install-actions button {
+            min-height: 40px;
+        }
+
+        @media (display-mode: standalone) {
+            #pwa-install-banner { display: none !important; }
+        }
+
         @media (max-width: 900px) {
+
+            #pwa-install-banner { padding: 10px 12px; }
+            .pwa-install-inner { align-items: flex-start; }
+            .pwa-install-copy { font-size: 0.82rem; }
+            .pwa-install-actions { flex-direction: column; gap: 6px; }
+            .pwa-install-actions .btn { padding: 0.45rem 0.7rem; font-size: 0.78rem; }
             /* Layout geral mobile */
             #app-dashboard { padding: 1rem; }
             header { gap: 0.85rem; }
@@ -507,6 +579,19 @@
 <body>
 
     <div id="offline-banner">Modo Offline - As alterações serão salvas localmente e sincronizadas quando houver conexão.</div>
+
+    <div id="pwa-install-banner" role="status" aria-live="polite">
+        <div class="pwa-install-inner">
+            <div class="pwa-install-copy">
+                <strong id="pwaInstallTitle">Instalar Painel de Estudos</strong>
+                <span id="pwaInstallText">Instale o app para abrir em tela cheia e facilitar o uso offline.</span>
+            </div>
+            <div class="pwa-install-actions">
+                <button id="pwaInstallButton" class="btn btn-primary btn-sm" type="button" onclick="installPwaApp()">Instalar</button>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="dismissPwaBanner()">Agora não</button>
+            </div>
+        </div>
+    </div>
 
     <!-- AUTH SCREEN -->
     <div id="auth-screen" class="auth-container">
@@ -3574,6 +3659,102 @@
             }
         }
 
+
+        // =========================================================
+        // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS
+        // =========================================================
+        let deferredPwaInstallPrompt = null;
+
+        function isPwaStandalone() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+
+        function getPwaPlatform() {
+            const ua = navigator.userAgent || '';
+            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isAndroid = /Android/i.test(ua);
+            return { isIOS, isAndroid };
+        }
+
+        function showPwaInstallBanner(mode = 'generic') {
+            if (isPwaStandalone() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;
+
+            const banner = document.getElementById('pwa-install-banner');
+            const title = document.getElementById('pwaInstallTitle');
+            const message = document.getElementById('pwaInstallText');
+            const installBtn = document.getElementById('pwaInstallButton');
+            if (!banner || !title || !message || !installBtn) return;
+
+            if (mode === 'ios') {
+                title.textContent = 'Instalar no iPhone / iPad';
+                message.textContent = 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.';
+                installBtn.style.display = 'none';
+            } else if (mode === 'android-manual') {
+                title.textContent = 'Instalar no Android';
+                message.textContent = 'Abra o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.';
+                installBtn.style.display = 'none';
+            } else {
+                title.textContent = 'Instalar Painel de Estudos';
+                message.textContent = 'Instale o app para abrir em tela cheia e facilitar o uso offline.';
+                installBtn.style.display = '';
+            }
+
+            banner.classList.add('visible');
+        }
+
+        function hidePwaInstallBanner() {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.classList.remove('visible');
+        }
+
+        function dismissPwaBanner() {
+            sessionStorage.setItem('pwa_install_banner_dismissed', '1');
+            hidePwaInstallBanner();
+        }
+
+        async function installPwaApp() {
+            if (!deferredPwaInstallPrompt) {
+                const { isIOS, isAndroid } = getPwaPlatform();
+                showPwaInstallBanner(isIOS ? 'ios' : (isAndroid ? 'android-manual' : 'generic'));
+                return;
+            }
+
+            deferredPwaInstallPrompt.prompt();
+            try {
+                await deferredPwaInstallPrompt.userChoice;
+            } finally {
+                deferredPwaInstallPrompt = null;
+                hidePwaInstallBanner();
+            }
+        }
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            deferredPwaInstallPrompt = event;
+            showPwaInstallBanner('prompt');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPwaInstallPrompt = null;
+            hidePwaInstallBanner();
+        });
+
+        window.addEventListener('load', () => {
+            if (isPwaStandalone()) return;
+            const { isIOS, isAndroid } = getPwaPlatform();
+            if (isIOS) {
+                setTimeout(() => showPwaInstallBanner('ios'), 900);
+            } else if (isAndroid) {
+                // Chromium dispara beforeinstallprompt quando elegível. Se não
+                // disparar (ex.: Firefox), oferece orientação manual sem bloquear a UI.
+                setTimeout(() => {
+                    if (!deferredPwaInstallPrompt) showPwaInstallBanner('android-manual');
+                }, 1800);
+            }
+        });
+
+        window.installPwaApp = installPwaApp;
+        window.dismissPwaBanner = dismissPwaBanner;
         window.handleSignUp = handleSignUp;
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
