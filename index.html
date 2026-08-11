@@ -695,7 +695,8 @@
                     <h3>Relógio Pomodoro</h3>
                     <div class="timer-display" id="timer">25:00</div>
                     <div class="pomodoro-actions">
-                        <button class="btn btn-primary" onclick="startTimer()">Iniciar</button>
+                        <button class="btn btn-primary" id="startTimerBtn" onclick="startTimer()">Iniciar</button>
+                        <button class="btn btn-warning" id="pauseTimerBtn" onclick="togglePauseTimer()" disabled>Pausar</button>
                         <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
                     </div>
                     <div class="timer-settings">
@@ -3395,9 +3396,18 @@
 
         let timerInterval = null;
         let timeLeft = 25 * 60;
+        let isTimerPaused = false;
+        let timerHasStarted = false;
+
+        function updatePauseButton() {
+            const pauseBtn = document.getElementById('pauseTimerBtn');
+            if (!pauseBtn) return;
+            pauseBtn.disabled = !timerHasStarted || timeLeft <= 0;
+            pauseBtn.textContent = isTimerPaused ? 'Continuar' : 'Pausar';
+        }
 
         function updateTimerSettings() {
-            if (!timerInterval) {
+            if (!timerInterval && !isTimerPaused) {
                 timeLeft = (parseInt(document.getElementById('focoMin').value) || 25) * 60;
                 updateDisplay();
             }
@@ -3410,14 +3420,51 @@
         }
 
         function startTimer() {
-            if (timerInterval) return;
+            if (timerInterval || timeLeft <= 0) return;
+            timerHasStarted = true;
+            isTimerPaused = false;
+            updatePauseButton();
+
             timerInterval = setInterval(() => {
-                if (timeLeft > 0) { timeLeft--; updateDisplay(); }
-                else { clearInterval(timerInterval); timerInterval = null; alert('Pomodoro Finalizado!'); }
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateDisplay();
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    timerHasStarted = false;
+                    isTimerPaused = false;
+                    updatePauseButton();
+                    alert('Pomodoro Finalizado!');
+                }
             }, 1000);
         }
 
-        function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
+        function togglePauseTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                isTimerPaused = true;
+                updatePauseButton();
+                return;
+            }
+
+            if (isTimerPaused && timerHasStarted && timeLeft > 0) {
+                startTimer();
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isTimerPaused = false;
+            timerHasStarted = false;
+            timeLeft = (parseInt(document.getElementById('focoMin').value) || 25) * 60;
+            updateDisplay();
+            updatePauseButton();
+        }
 
         let pdfJsLoadPromise = null;
         function loadPdfJsOnce() {
