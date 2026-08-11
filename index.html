@@ -139,9 +139,46 @@
         input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--card-bg); color: var(--text-color); font-size: 0.95rem; outline: none; max-width: 100%; box-sizing: border-box; }
         textarea { width: 100%; min-height: 120px; resize: vertical; line-height: 1.5; font-family: inherit; }
 
-        .timer-display { font-size: 4rem; font-weight: bold; text-align: center; margin: 0.5rem 0; letter-spacing: 2px; }
-        .timer-settings { display: flex; justify-content: center; align-items: center; gap: 1.2rem; margin-top: 1rem; font-size: 0.95rem; flex-wrap: wrap; }
-        .timer-settings label { display: flex; align-items: center; gap: 0.5rem; }
+        /* POMODORO — centralizado em todas as resoluções */
+        .pomodoro-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .pomodoro-card h3 {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+        .timer-display {
+            width: 100%;
+            font-size: 4rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 0.5rem auto;
+            letter-spacing: 2px;
+        }
+        .pomodoro-actions {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .timer-settings {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.2rem;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            flex-wrap: wrap;
+            text-align: center;
+        }
+        .timer-settings label { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .timer-settings input { width: 85px !important; text-align: center; padding: 0.5rem 0.4rem; font-weight: 600; }
 
         .weekly-hours-banner {
@@ -654,10 +691,10 @@
         <!-- TAB 1: EDITAL VERTICALIZADO -->
         <div id="tab-edital" class="tab-content active">
             <div class="grid-top">
-                <div class="card">
+                <div class="card pomodoro-card">
                     <h3>Relógio Pomodoro</h3>
                     <div class="timer-display" id="timer">25:00</div>
-                    <div style="text-align: center; margin-bottom: 1rem;">
+                    <div class="pomodoro-actions">
                         <button class="btn btn-primary" onclick="startTimer()">Iniciar</button>
                         <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
                     </div>
