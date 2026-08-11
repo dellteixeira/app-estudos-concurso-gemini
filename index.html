@@ -19,7 +19,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260810-1', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=20260811-2', { updateViaCache: 'none' })
             .then(reg => reg.update())
             .catch(err => console.error('Erro no Service Worker:', err));
         });
@@ -1046,6 +1046,43 @@
             return result;
         }
 
+        function chunkArray(items, batchSize = 50) {
+            const chunks = [];
+            for (let index = 0; index < items.length; index += batchSize) {
+                chunks.push(items.slice(index, index + batchSize));
+            }
+            return chunks;
+        }
+
+        function isLikelyNetworkError(error) {
+            const message = String(error?.message || error || '').toLowerCase();
+            return message.includes('networkerror') ||
+                message.includes('failed to fetch') ||
+                message.includes('fetch resource') ||
+                message.includes('network request failed') ||
+                message.includes('load failed');
+        }
+
+        function waitForRetry(milliseconds) {
+            return new Promise(resolve => setTimeout(resolve, milliseconds));
+        }
+
+        async function runSupabaseRequest(requestFactory, maxAttempts = 3) {
+            let lastError = null;
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    const result = await requestFactory();
+                    if (result?.error && isLikelyNetworkError(result.error)) throw result.error;
+                    return result;
+                } catch (error) {
+                    lastError = error;
+                    if (!isLikelyNetworkError(error) || attempt === maxAttempts) throw error;
+                    await waitForRetry(400 * attempt);
+                }
+            }
+            throw lastError || new Error('Falha de rede durante a sincronização.');
+        }
+
         function handleActionButton(btnElem, actionFn, eventArg) {
             document.querySelectorAll('.action-bar .btn-action').forEach(b => b.classList.remove('active-blue'));
             if (btnElem) btnElem.classList.add('active-blue');
@@ -1123,12 +1160,12 @@
 
             if (navigator.onLine && currentUser) {
                 try {
-                    const result = await supabaseClient.from('user_settings').upsert({
+                    const result = await runSupabaseRequest(() => supabaseClient.from('user_settings').upsert({
                         user_id: currentUser.id,
                         setting_key: 'concursos_metadata',
                         setting_value: data,
                         updated_at: new Date().toISOString()
-                    }, { onConflict: 'user_id,setting_key' });
+                    }, { onConflict: 'user_id,setting_key' }));
                     throwIfSupabaseError(result, 'Não foi possível salvar as configurações');
                     setMetadataDirty(false);
                 } catch(err) {
@@ -1143,12 +1180,12 @@
                 try {
                     if (getSyncState().metadataDirty) await flushPendingMetadata();
                     if (getSyncState().metadataDirty) return;
-                    const { data, error } = await supabaseClient
+                    const { data, error } = await runSupabaseRequest(() => supabaseClient
                         .from('user_settings')
                         .select('setting_value')
                         .eq('user_id', currentUser.id)
                         .eq('setting_key', 'concursos_metadata')
-                        .maybeSingle();
+                        .maybeSingle());
 
                     if (!error && data && data.setting_value) {
                         metadataCache = data.setting_value;
@@ -1161,12 +1198,12 @@
         async function flushPendingMetadata() {
             const state = getSyncState();
             if (!state.metadataDirty || !navigator.onLine || !currentUser) return;
-            const result = await supabaseClient.from('user_settings').upsert({
+            const result = await runSupabaseRequest(() => supabaseClient.from('user_settings').upsert({
                 user_id: currentUser.id,
                 setting_key: 'concursos_metadata',
                 setting_value: getConcursosMetadata(),
                 updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id,setting_key' });
+            }, { onConflict: 'user_id,setting_key' }));
             throwIfSupabaseError(result, 'Falha ao sincronizar configurações pendentes');
             setMetadataDirty(false);
         }
@@ -1671,6 +1708,9 @@
         }
 
         async function saveFlashcardsData() {
+            flashcardsList.forEach(fc => {
+                if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+            });
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             metadata[currentConcurso].flashcards = flashcardsList;
@@ -1679,24 +1719,7 @@
 
             if (navigator.onLine && currentUser) {
                 try {
-                    const payloadList = flashcardsList.map(fc => {
-                        if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
-                        return {
-                            id: String(fc.id),
-                            user_id: currentUser.id,
-                            concurso: currentConcurso,
-                            materia: fc.materia || '',
-                            assunto: fc.assunto || '',
-                            pergunta: fc.pergunta,
-                            resposta: fc.resposta,
-                            updated_at: new Date().toISOString()
-                        };
-                    });
-                    if (payloadList.length > 0) {
-                        const result = await supabaseClient.from('flashcards').upsert(payloadList, { onConflict: 'id' });
-                        throwIfSupabaseError(result, 'Falha ao salvar flashcards');
-                    }
-                    setFlashcardsDirty(false);
+                    await flushPendingFlashcards(currentConcurso, [...flashcardsList]);
                 } catch(err) { console.warn('Flashcards mantidos na fila de sincronização:', err); }
             }
         }
@@ -1716,11 +1739,11 @@
                         flashcardsList = localFlashcards;
                         throw new Error('Há flashcards locais aguardando sincronização.');
                     }
-                    const { data, error } = await supabaseClient
+                    const { data, error } = await runSupabaseRequest(() => supabaseClient
                         .from('flashcards')
                         .select('*')
                         .eq('user_id', currentUser.id)
-                        .eq('concurso', currentConcurso);
+                        .eq('concurso', currentConcurso));
 
                     if (!error && data) {
                         flashcardsList = data.map(fc => ({
@@ -1753,9 +1776,9 @@
             queueFlashcardDelete(id);
             if (navigator.onLine && currentUser && id) {
                 try {
-                    const result = await supabaseClient.from('flashcards').delete()
+                    const result = await runSupabaseRequest(() => supabaseClient.from('flashcards').delete()
                         .eq('id', id)
-                        .eq('user_id', currentUser.id);
+                        .eq('user_id', currentUser.id));
                     throwIfSupabaseError(result, 'Falha ao excluir flashcard');
                     const state = getSyncState();
                     state.flashcardDeletes = state.flashcardDeletes.filter(savedId => String(savedId) !== String(id));
@@ -1766,17 +1789,21 @@
 
         async function flushPendingFlashcards(concursoName = currentConcurso, cards = flashcardsList) {
             if (!navigator.onLine || !currentUser) return;
-            const state = getSyncState();
+            const initialState = getSyncState();
 
-            if (state.flashcardDeletes.length > 0) {
-                const result = await supabaseClient.from('flashcards').delete()
-                    .in('id', state.flashcardDeletes)
-                    .eq('user_id', currentUser.id);
+            for (const deleteBatch of chunkArray([...initialState.flashcardDeletes], 100)) {
+                const result = await runSupabaseRequest(() => supabaseClient.from('flashcards').delete()
+                    .in('id', deleteBatch)
+                    .eq('user_id', currentUser.id));
                 throwIfSupabaseError(result, 'Falha ao sincronizar exclusões de flashcards');
-                state.flashcardDeletes = [];
+                const latestState = getSyncState();
+                const confirmedIds = new Set(deleteBatch.map(String));
+                latestState.flashcardDeletes = latestState.flashcardDeletes.filter(id => !confirmedIds.has(String(id)));
+                saveSyncState(latestState);
             }
 
-            if (state.flashcardsDirty[concursoName]) {
+            if (getSyncState().flashcardsDirty[concursoName]) {
+                const originalCardsSignature = JSON.stringify(cards);
                 const payloadList = cards.map(fc => {
                     if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
                     return {
@@ -1790,14 +1817,28 @@
                         updated_at: new Date().toISOString()
                     };
                 });
-                if (payloadList.length > 0) {
-                    const result = await supabaseClient.from('flashcards').upsert(payloadList, { onConflict: 'id' });
+                if (JSON.stringify(cards) !== originalCardsSignature) {
+                    const metadataWithIds = getConcursosMetadata();
+                    const savedCards = metadataWithIds[concursoName]?.flashcards || [];
+                    if (JSON.stringify(savedCards) === originalCardsSignature) {
+                        if (!metadataWithIds[concursoName]) metadataWithIds[concursoName] = {};
+                        metadataWithIds[concursoName].flashcards = cards;
+                        localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadataWithIds));
+                    }
+                }
+                for (const payloadBatch of chunkArray(payloadList, 50)) {
+                    const result = await runSupabaseRequest(() => supabaseClient.from('flashcards').upsert(payloadBatch, { onConflict: 'id' }));
                     throwIfSupabaseError(result, 'Falha ao sincronizar flashcards');
                 }
-                delete state.flashcardsDirty[concursoName];
-            }
 
-            saveSyncState(state);
+                const latestMetadata = getConcursosMetadata();
+                const currentCards = latestMetadata[concursoName]?.flashcards || [];
+                if (JSON.stringify(currentCards) === JSON.stringify(cards)) {
+                    const latestState = getSyncState();
+                    delete latestState.flashcardsDirty[concursoName];
+                    saveSyncState(latestState);
+                }
+            }
         }
 
         async function flushAllPendingFlashcards() {
@@ -2321,11 +2362,11 @@
                     throw new Error('Ainda existem alterações do edital aguardando envio.');
                 }
 
-                const { data, error } = await supabaseClient
+                const { data, error } = await runSupabaseRequest(() => supabaseClient
                     .from('edital')
                     .select('*')
                     .eq('user_id', currentUser.id)
-                    .order('prioridade', { ascending: true });
+                    .order('prioridade', { ascending: true }));
 
                 if (error) throw new Error(`Falha ao baixar edital: ${error.message}`);
                 allEditalItems = (data || []).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
@@ -2368,7 +2409,10 @@
                 if (hasPendingSync()) throw new Error('Algumas alterações continuam aguardando conexão com o servidor.');
                 alert('Sincronização concluída com sucesso!');
             } catch (err) {
-                alert('Erro ao sincronizar: ' + err.message);
+                const message = isLikelyNetworkError(err)
+                    ? 'O Supabase não respondeu após três tentativas. Seus dados continuam salvos neste dispositivo e permanecerão na fila. Aguarde alguns segundos e tente novamente.'
+                    : err.message;
+                alert('Erro ao sincronizar: ' + message);
             } finally {
                 if (btn) btn.innerText = 'Sincronizar Agora';
             }
@@ -2411,7 +2455,7 @@
                         rev_7d: !!item.rev_7d,
                         rev_30d: !!item.rev_30d
                     };
-                    const result = await supabaseClient.from('edital').upsert(payload, { onConflict: 'id' });
+                    const result = await runSupabaseRequest(() => supabaseClient.from('edital').upsert(payload, { onConflict: 'id' }));
                     throwIfSupabaseError(result, 'Falha ao salvar tópico');
                     const state = getSyncState();
                     delete state.editalUpserts[String(item.id)];
@@ -2426,9 +2470,9 @@
             queueEditalDelete(id);
             if (navigator.onLine && currentUser) {
                 try {
-                    const result = await supabaseClient.from('edital').delete()
+                    const result = await runSupabaseRequest(() => supabaseClient.from('edital').delete()
                         .eq('id', id)
-                        .eq('user_id', currentUser.id);
+                        .eq('user_id', currentUser.id));
                     throwIfSupabaseError(result, 'Falha ao excluir tópico');
                     const state = getSyncState();
                     state.editalDeletes = state.editalDeletes.filter(savedId => String(savedId) !== String(id));
@@ -2440,38 +2484,48 @@
 
         async function flushPendingEdital() {
             if (!navigator.onLine || !currentUser) return;
-            const state = getSyncState();
+            const initialState = getSyncState();
 
-            if (state.editalDeletes.length > 0) {
-                const result = await supabaseClient.from('edital').delete()
-                    .in('id', state.editalDeletes)
-                    .eq('user_id', currentUser.id);
+            for (const deleteBatch of chunkArray([...initialState.editalDeletes], 100)) {
+                const result = await runSupabaseRequest(() => supabaseClient.from('edital').delete()
+                    .in('id', deleteBatch)
+                    .eq('user_id', currentUser.id));
                 throwIfSupabaseError(result, 'Falha ao sincronizar exclusões do edital');
-                state.editalDeletes = [];
+                const latestState = getSyncState();
+                const confirmedIds = new Set(deleteBatch.map(String));
+                latestState.editalDeletes = latestState.editalDeletes.filter(id => !confirmedIds.has(String(id)));
+                saveSyncState(latestState);
             }
 
-            const pendingItems = Object.values(state.editalUpserts);
+            const pendingItems = Object.values(initialState.editalUpserts);
             if (pendingItems.length > 0) {
-                const payloadList = pendingItems.map(item => ({
-                    id: String(item.id),
-                    user_id: currentUser.id,
-                    materia: item.materia || 'Geral',
-                    assunto: item.assunto || 'Tópico',
-                    prioridade: parseInt(item.prioridade) || 1,
-                    assunto_prioridade: parseInt(item.assunto_prioridade) || 1,
-                    concurso: item.concurso || currentConcurso,
-                    teoria: !!item.teoria,
-                    questoes: !!item.questoes,
-                    rev_24h: !!item.rev_24h,
-                    rev_7d: !!item.rev_7d,
-                    rev_30d: !!item.rev_30d
-                }));
-                const result = await supabaseClient.from('edital').upsert(payloadList, { onConflict: 'id' });
-                throwIfSupabaseError(result, 'Falha ao sincronizar alterações do edital');
-                state.editalUpserts = {};
+                for (const sourceBatch of chunkArray(pendingItems, 50)) {
+                    const payloadBatch = sourceBatch.map(item => ({
+                        id: String(item.id),
+                        user_id: currentUser.id,
+                        materia: item.materia || 'Geral',
+                        assunto: item.assunto || 'Tópico',
+                        prioridade: parseInt(item.prioridade) || 1,
+                        assunto_prioridade: parseInt(item.assunto_prioridade) || 1,
+                        concurso: item.concurso || currentConcurso,
+                        teoria: !!item.teoria,
+                        questoes: !!item.questoes,
+                        rev_24h: !!item.rev_24h,
+                        rev_7d: !!item.rev_7d,
+                        rev_30d: !!item.rev_30d
+                    }));
+                    const result = await runSupabaseRequest(() => supabaseClient.from('edital').upsert(payloadBatch, { onConflict: 'id' }));
+                    throwIfSupabaseError(result, 'Falha ao sincronizar alterações do edital');
+                    const latestState = getSyncState();
+                    sourceBatch.forEach(item => {
+                        const id = String(item.id);
+                        if (JSON.stringify(latestState.editalUpserts[id]) === JSON.stringify(item)) {
+                            delete latestState.editalUpserts[id];
+                        }
+                    });
+                    saveSyncState(latestState);
+                }
             }
-
-            saveSyncState(state);
         }
 
         function renderConcursoSelector() {
@@ -2792,25 +2846,7 @@
 
                         if (navigator.onLine && currentUser) {
                             try {
-                                const payloadList = formattedData.map(item => ({
-                                    id: String(item.id),
-                                    user_id: currentUser.id,
-                                    materia: item.materia,
-                                    assunto: item.assunto,
-                                    prioridade: item.prioridade,
-                                    assunto_prioridade: item.assunto_prioridade,
-                                    concurso: currentConcurso,
-                                    teoria: false,
-                                    questoes: false,
-                                    rev_24h: false,
-                                    rev_7d: false,
-                                    rev_30d: false
-                                }));
-                                const result = await supabaseClient.from('edital').upsert(payloadList, { onConflict: 'id' });
-                                throwIfSupabaseError(result, 'Falha ao importar tópicos');
-                                const state = getSyncState();
-                                formattedData.forEach(item => delete state.editalUpserts[String(item.id)]);
-                                saveSyncState(state);
+                                await flushPendingEdital();
                             } catch (errSync) {
                                 console.warn('Importação mantida na fila de sincronização:', errSync);
                             }
