@@ -522,7 +522,7 @@
                 <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
                 <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
                 <button class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
-                <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual()">Excluir</button>
+                <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual(this)">Excluir</button>
                 
                 <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
                     Sem data de prova
@@ -1134,7 +1134,8 @@
                 flashcardsDirty: {},
                 editalUpserts: {},
                 editalDeletes: [],
-                flashcardDeletes: []
+                flashcardDeletes: [],
+                concursoDeletes: []
             };
             try {
                 const saved = JSON.parse(localStorage.getItem(getSyncStateStorageKey()) || '{}');
@@ -1146,7 +1147,8 @@
                         : (saved.flashcardsDirty ? { [currentConcurso]: true } : {}),
                     editalUpserts: saved.editalUpserts || {},
                     editalDeletes: Array.isArray(saved.editalDeletes) ? saved.editalDeletes : [],
-                    flashcardDeletes: Array.isArray(saved.flashcardDeletes) ? saved.flashcardDeletes : []
+                    flashcardDeletes: Array.isArray(saved.flashcardDeletes) ? saved.flashcardDeletes : [],
+                    concursoDeletes: Array.isArray(saved.concursoDeletes) ? saved.concursoDeletes : []
                 };
             } catch (error) {
                 return emptyState;
@@ -1193,11 +1195,29 @@
             saveSyncState(state);
         }
 
+        function queueConcursoDelete(concursoName) {
+            const nome = String(concursoName || '').trim();
+            if (!nome) return;
+
+            const state = getSyncState();
+            if (!state.concursoDeletes.includes(nome)) state.concursoDeletes.push(nome);
+
+            // Não enviar novamente tópicos/flashcards pertencentes a um concurso já excluído.
+            Object.keys(state.editalUpserts).forEach(id => {
+                if ((state.editalUpserts[id]?.concurso || 'Concurso Geral') === nome) {
+                    delete state.editalUpserts[id];
+                }
+            });
+            delete state.flashcardsDirty[nome];
+            saveSyncState(state);
+        }
+
         function hasPendingSync() {
             const state = getSyncState();
             return state.metadataDirty || Object.keys(state.flashcardsDirty).length > 0 ||
                 Object.keys(state.editalUpserts).length > 0 ||
-                state.editalDeletes.length > 0 || state.flashcardDeletes.length > 0;
+                state.editalDeletes.length > 0 || state.flashcardDeletes.length > 0 ||
+                state.concursoDeletes.length > 0;
         }
 
         function throwIfSupabaseError(result, contextMessage) {
@@ -2566,11 +2586,40 @@
             }
         }
 
+        async function flushPendingConcursoDeletes() {
+            if (!navigator.onLine || !currentUser) return;
+
+            const pending = [...getSyncState().concursoDeletes];
+            for (const concursoName of pending) {
+                const editalResult = await runSupabaseRequest(() => supabaseClient
+                    .from('edital')
+                    .delete()
+                    .eq('user_id', currentUser.id)
+                    .eq('concurso', concursoName));
+                throwIfSupabaseError(editalResult, `Falha ao excluir edital do concurso ${concursoName}`);
+
+                const flashcardsResult = await runSupabaseRequest(() => supabaseClient
+                    .from('flashcards')
+                    .delete()
+                    .eq('user_id', currentUser.id)
+                    .eq('concurso', concursoName));
+                throwIfSupabaseError(flashcardsResult, `Falha ao excluir flashcards do concurso ${concursoName}`);
+
+                const latestState = getSyncState();
+                latestState.concursoDeletes = latestState.concursoDeletes.filter(name => name !== concursoName);
+                delete latestState.flashcardsDirty[concursoName];
+                saveSyncState(latestState);
+            }
+        }
+
         async function syncAllWithSupabase() {
             if (!currentUser) return;
             if (syncPromise) return syncPromise;
 
             syncPromise = (async () => {
+                // Exclusões de concursos vêm primeiro para impedir que dados removidos
+                // sejam baixados novamente antes da limpeza remota terminar.
+                await flushPendingConcursoDeletes();
                 await flushPendingEdital();
                 const stateAfterEdital = getSyncState();
                 if (Object.keys(stateAfterEdital.editalUpserts).length > 0 || stateAfterEdital.editalDeletes.length > 0) {
@@ -2830,23 +2879,69 @@
             alert(`Concurso renomeado com sucesso para "${nomeFormatado}".`);
         }
 
-        async function removerConcursoAtual() {
-            if (currentConcurso.trim().toLowerCase() === 'concurso geral') return alert('O Concurso Geral padrão não pode ser excluído.');
-            if (confirm(`Deseja remover o concurso "${currentConcurso}" e todos os seus itens?`)) {
-                const concursoRemovido = currentConcurso;
-                let metadata = getConcursosMetadata();
-                const flashcardsToDelete = metadata[concursoRemovido]?.flashcards || [];
-                flashcardsToDelete.forEach(fc => { if (fc.id) queueFlashcardDelete(fc.id); });
+        async function removerConcursoAtual(btn = null) {
+            if (currentConcurso.trim().toLowerCase() === 'concurso geral') {
+                return alert('O Concurso Geral padrão não pode ser excluído.');
+            }
+
+            const concursoRemovido = currentConcurso;
+            if (!confirm(`Deseja remover o concurso "${concursoRemovido}" e todos os seus itens?`)) return;
+
+            const originalButtonText = btn ? btn.textContent : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Excluindo...';
+            }
+
+            try {
+                // 1) Marca a exclusão antes de alterar a interface. Se a rede falhar,
+                // a sincronização futura continuará sabendo que o concurso deve ser apagado.
+                queueConcursoDelete(concursoRemovido);
+
+                // 2) Remove todos os tópicos da memória de uma só vez e grava o edital uma única vez.
+                allEditalItems = allEditalItems.filter(item =>
+                    (item.concurso || 'Concurso Geral') !== concursoRemovido
+                );
+                saveEditalToLocalStorage();
+
+                // 3) Remove metadados/cronograma/notas/flashcards localmente sem esperar rede.
+                const metadata = getConcursosMetadata();
                 delete metadata[concursoRemovido];
-                await saveConcursosMetadata(metadata);
+                metadataCache = metadata;
+                localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadata));
+                setMetadataDirty(true);
 
-                const itemsToDelete = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === concursoRemovido);
-                for (let item of itemsToDelete) await deleteEditalItemFromCloud(item.id);
-                await deleteEditalFileRecord(getEditalFileStorageKey(concursoRemovido));
-
+                // 4) Troca de concurso e renderiza imediatamente — percepção instantânea para o usuário.
                 currentConcurso = 'Concurso Geral';
                 localStorage.setItem('last_studied_concurso', currentConcurso);
                 changeConcurso(currentConcurso);
+
+                // 5) O anexo é local; sua limpeza não precisa bloquear a interface.
+                deleteEditalFileRecord(getEditalFileStorageKey(concursoRemovido))
+                    .catch(error => console.warn('Anexo local será removido posteriormente:', error));
+
+                // 6) Exclusão remota em lote ocorre em segundo plano:
+                //    1 DELETE do edital + 1 DELETE dos flashcards por concurso.
+                if (navigator.onLine && currentUser) {
+                    scheduleBackgroundTask(async () => {
+                        try {
+                            await syncAllWithSupabase();
+                        } catch (error) {
+                            console.warn(`Exclusão de "${concursoRemovido}" mantida na fila:`, error);
+                            updateOnlineStatusBannerOnly();
+                        }
+                    }, 50);
+                }
+
+                alert(`Concurso "${concursoRemovido}" removido do aplicativo. A limpeza na nuvem continuará automaticamente em segundo plano.`);
+            } catch (error) {
+                console.error('Falha ao excluir concurso:', error);
+                alert('Não foi possível concluir a exclusão local: ' + error.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = originalButtonText || 'Excluir';
+                }
             }
         }
 
