@@ -3398,6 +3398,57 @@
         let timeLeft = 25 * 60;
         let isTimerPaused = false;
         let timerHasStarted = false;
+        let pomodoroAudioContext = null;
+
+        function preparePomodoroAudio() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!pomodoroAudioContext) pomodoroAudioContext = new AudioCtx();
+                if (pomodoroAudioContext.state === 'suspended') {
+                    pomodoroAudioContext.resume().catch(() => {});
+                }
+            } catch (error) {
+                console.warn('Áudio do Pomodoro indisponível:', error);
+            }
+        }
+
+        function playPomodoroBell() {
+            try {
+                preparePomodoroAudio();
+                const ctx = pomodoroAudioContext;
+                if (!ctx) return;
+
+                const master = ctx.createGain();
+                master.gain.setValueAtTime(0.0001, ctx.currentTime);
+                master.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime + 0.015);
+                master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.9);
+                master.connect(ctx.destination);
+
+                // Harmônicos metálicos para produzir um som semelhante a sino.
+                [880, 1320, 1760].forEach((frequency, index) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = index === 0 ? 'sine' : 'triangle';
+                    osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+                    gain.gain.setValueAtTime(index === 0 ? 0.8 : 0.28 / index, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (0.8 - index * 0.1));
+                    osc.connect(gain);
+                    gain.connect(master);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.9);
+                });
+            } catch (error) {
+                console.warn('Não foi possível tocar o sino do Pomodoro:', error);
+            }
+        }
+
+        function playPomodoroCompletionBell() {
+            // Três toques fortes. Não depende de arquivo externo e funciona offline.
+            playPomodoroBell();
+            setTimeout(playPomodoroBell, 750);
+            setTimeout(playPomodoroBell, 1500);
+        }
 
         function updatePauseButton() {
             const pauseBtn = document.getElementById('pauseTimerBtn');
@@ -3421,6 +3472,7 @@
 
         function startTimer() {
             if (timerInterval || timeLeft <= 0) return;
+            preparePomodoroAudio();
             timerHasStarted = true;
             isTimerPaused = false;
             updatePauseButton();
@@ -3437,7 +3489,8 @@
                     timerHasStarted = false;
                     isTimerPaused = false;
                     updatePauseButton();
-                    alert('Pomodoro Finalizado!');
+                    playPomodoroCompletionBell();
+                    setTimeout(() => alert('Pomodoro Finalizado!'), 2300);
                 }
             }, 1000);
         }
