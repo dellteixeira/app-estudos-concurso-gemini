@@ -19,8 +19,8 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => { reg.update(); })
+          navigator.serviceWorker.register('./sw.js?v=20260810-1', { updateViaCache: 'none' })
+            .then(reg => reg.update())
             .catch(err => console.error('Erro no Service Worker:', err));
         });
       }
@@ -29,7 +29,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     
     <style>
         :root {
@@ -740,6 +739,18 @@
                 <label><input type="checkbox" id="cfgIncluirDomingo" checked> Incluir Domingo</label>
             </div>
 
+            <div class="form-group" style="margin-top: 1rem;">
+                <label><strong>Estratégia de Revisões:</strong></label>
+                <select id="m1RevisionStrategy" style="width:100%;">
+                    <option value="nenhuma">Sem revisões automáticas</option>
+                    <option value="classica" selected>Clássica — 7, 30 e 90 dias</option>
+                    <option value="bimestral">Intensa — 1, 15, 30 e 60 dias</option>
+                    <option value="curta">Curta — 7, 14, 21 e 30 dias</option>
+                    <option value="semestral">Longa — 1, 7, 28, 90 e 180 dias</option>
+                    <option value="intensiva">Intensiva — 3, 7, 14, 21, 30, 45 e 60 dias</option>
+                </select>
+            </div>
+
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
                 <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma 🚀</button>
@@ -935,11 +946,116 @@
 
         let selectedWeekdays = [0, 1, 2, 3, 4, 5, 6];
         let selectedDailyHoursSlots = 2;
+        let syncPromise = null;
+        let dashboardLoadPromise = null;
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function encodeHandlerValue(value) {
+            return encodeURIComponent(String(value ?? ''));
+        }
+
+        function getSyncStateStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `pending_sync_${uid}`;
+        }
+
+        function getSyncState() {
+            const emptyState = {
+                metadataDirty: false,
+                flashcardsDirty: {},
+                editalUpserts: {},
+                editalDeletes: [],
+                flashcardDeletes: []
+            };
+            try {
+                const saved = JSON.parse(localStorage.getItem(getSyncStateStorageKey()) || '{}');
+                return {
+                    ...emptyState,
+                    ...saved,
+                    flashcardsDirty: (saved.flashcardsDirty && typeof saved.flashcardsDirty === 'object')
+                        ? saved.flashcardsDirty
+                        : (saved.flashcardsDirty ? { [currentConcurso]: true } : {}),
+                    editalUpserts: saved.editalUpserts || {},
+                    editalDeletes: Array.isArray(saved.editalDeletes) ? saved.editalDeletes : [],
+                    flashcardDeletes: Array.isArray(saved.flashcardDeletes) ? saved.flashcardDeletes : []
+                };
+            } catch (error) {
+                return emptyState;
+            }
+        }
+
+        function saveSyncState(state) {
+            localStorage.setItem(getSyncStateStorageKey(), JSON.stringify(state));
+        }
+
+        function setMetadataDirty(isDirty) {
+            const state = getSyncState();
+            state.metadataDirty = !!isDirty;
+            saveSyncState(state);
+        }
+
+        function setFlashcardsDirty(isDirty, concursoName = currentConcurso) {
+            const state = getSyncState();
+            if (isDirty) state.flashcardsDirty[concursoName] = true;
+            else delete state.flashcardsDirty[concursoName];
+            saveSyncState(state);
+        }
+
+        function queueEditalUpsert(item) {
+            const state = getSyncState();
+            const id = String(item.id);
+            state.editalUpserts[id] = { ...item, id };
+            state.editalDeletes = state.editalDeletes.filter(savedId => String(savedId) !== id);
+            saveSyncState(state);
+        }
+
+        function queueEditalDelete(id) {
+            const state = getSyncState();
+            const normalizedId = String(id);
+            delete state.editalUpserts[normalizedId];
+            if (!state.editalDeletes.includes(normalizedId)) state.editalDeletes.push(normalizedId);
+            saveSyncState(state);
+        }
+
+        function queueFlashcardDelete(id) {
+            const state = getSyncState();
+            const normalizedId = String(id);
+            if (!state.flashcardDeletes.includes(normalizedId)) state.flashcardDeletes.push(normalizedId);
+            saveSyncState(state);
+        }
+
+        function hasPendingSync() {
+            const state = getSyncState();
+            return state.metadataDirty || Object.keys(state.flashcardsDirty).length > 0 ||
+                Object.keys(state.editalUpserts).length > 0 ||
+                state.editalDeletes.length > 0 || state.flashcardDeletes.length > 0;
+        }
+
+        function throwIfSupabaseError(result, contextMessage) {
+            if (result && result.error) {
+                throw new Error(`${contextMessage}: ${result.error.message || 'erro desconhecido'}`);
+            }
+            return result;
+        }
 
         function handleActionButton(btnElem, actionFn, eventArg) {
             document.querySelectorAll('.action-bar .btn-action').forEach(b => b.classList.remove('active-blue'));
             if (btnElem) btnElem.classList.add('active-blue');
-            if (typeof actionFn === 'function') actionFn(eventArg);
+            if (typeof actionFn === 'function') {
+                const actionEvent = eventArg || { target: btnElem };
+                const result = actionFn(actionEvent);
+                if (result && typeof result.catch === 'function') {
+                    result.catch(error => console.error('Falha na ação:', error));
+                }
+            }
         }
 
         document.addEventListener('keydown', function(e) {
@@ -976,8 +1092,15 @@
 
         function updateOnlineStatus() {
             const banner = document.getElementById('offline-banner');
-            if (!navigator.onLine) banner.style.display = 'block';
-            else { banner.style.display = 'none'; syncAllWithSupabase(); }
+            if (!navigator.onLine) {
+                banner.textContent = hasPendingSync()
+                    ? 'Modo Offline — suas alterações estão protegidas e aguardam sincronização.'
+                    : 'Modo Offline — os dados continuam disponíveis neste dispositivo.';
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+                if (currentUser) syncAllWithSupabase().catch(error => console.warn('Sincronização adiada:', error));
+            }
         }
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
@@ -996,16 +1119,21 @@
             metadataCache = data;
             const key = getConcursosMetadataStorageKey();
             localStorage.setItem(key, JSON.stringify(data));
+            setMetadataDirty(true);
 
             if (navigator.onLine && currentUser) {
                 try {
-                    await supabaseClient.from('user_settings').upsert({
+                    const result = await supabaseClient.from('user_settings').upsert({
                         user_id: currentUser.id,
                         setting_key: 'concursos_metadata',
                         setting_value: data,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'user_id,setting_key' });
-                } catch(err) { console.warn('Erro salvando no Supabase:', err); }
+                    throwIfSupabaseError(result, 'Não foi possível salvar as configurações');
+                    setMetadataDirty(false);
+                } catch(err) {
+                    console.warn('Configurações mantidas localmente para sincronização:', err);
+                }
             }
         }
 
@@ -1013,6 +1141,8 @@
             loadLocalMetadata();
             if (navigator.onLine && currentUser) {
                 try {
+                    if (getSyncState().metadataDirty) await flushPendingMetadata();
+                    if (getSyncState().metadataDirty) return;
                     const { data, error } = await supabaseClient
                         .from('user_settings')
                         .select('setting_value')
@@ -1024,8 +1154,21 @@
                         metadataCache = data.setting_value;
                         localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadataCache));
                     }
-                } catch(e) { console.log('Sincronização offline'); }
+                } catch(e) { console.log('Configurações locais preservadas:', e); }
             }
+        }
+
+        async function flushPendingMetadata() {
+            const state = getSyncState();
+            if (!state.metadataDirty || !navigator.onLine || !currentUser) return;
+            const result = await supabaseClient.from('user_settings').upsert({
+                user_id: currentUser.id,
+                setting_key: 'concursos_metadata',
+                setting_value: getConcursosMetadata(),
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id,setting_key' });
+            throwIfSupabaseError(result, 'Falha ao sincronizar configurações pendentes');
+            setMetadataDirty(false);
         }
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
@@ -1127,6 +1270,10 @@
             const sortedByPriority = getSortedEditalItems();
             const incSab = document.getElementById('cfgIncluirSabado').checked;
             const incDom = document.getElementById('cfgIncluirDomingo').checked;
+            const dailySlots = ['cfgManhaQtd', 'cfgTardeQtd', 'cfgNoiteQtd']
+                .map(id => Math.max(0, parseInt(document.getElementById(id).value) || 0))
+                .reduce((total, value) => total + value, 0);
+            if (dailySlots < 1) return alert('Informe pelo menos 1 hora de estudo em algum turno.');
 
             let currDate = new Date(dataInicioStr + "T00:00:00");
             let itemIdx = 0;
@@ -1144,7 +1291,7 @@
 
                 if (canStudy) {
                     const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
-                    const slots = isWeekend ? 3 : 2;
+                    const slots = dailySlots;
                     if (!metadata[currentConcurso].dateSchedule[dateKey]) metadata[currentConcurso].dateSchedule[dateKey] = [];
                     for (let s = 0; s < slots; s++) {
                         if (itemIdx < sortedByPriority.length) {
@@ -1192,16 +1339,17 @@
             topics.forEach((topicoStr, idx) => {
                 const cleanTop = topicoStr.replace(/^🔄 Rev \(\d+d\): /, '');
                 const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
+                const safeMatchedId = matchedItem ? encodeHandlerValue(matchedItem.id) : '';
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${topicoStr}</strong></div>
+                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong></div>
                         <div style="display:flex; gap:10px; align-items:center;">
                             ${matchedItem ? `
                                 <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                                    <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'teoria', ${matchedItem.teoria})"> Teoria
+                                    <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'teoria', ${matchedItem.teoria})"> Teoria
                                 </label>
                                 <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                                    <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal('${matchedItem.id}', 'questoes', ${matchedItem.questoes})"> Questões
+                                    <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
                                 </label>
                             ` : ''}
                             <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
@@ -1228,7 +1376,7 @@
             if (!editArea) return;
             const materias = getUniqueMateriasFromEdital();
             if (materias.length === 0) return alert('O edital atual não possui matérias para selecionar.');
-            let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
+            let matOptions = materias.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
 
             editArea.innerHTML = `
                 <div class="edit-selector-box">
@@ -1271,7 +1419,7 @@
             if (!matSel || !assSel) return;
             const selectedMat = matSel.value;
             const assuntos = getAssuntosForMateria(selectedMat);
-            assSel.innerHTML = assuntos.map(a => `<option value="${a}">${a}</option>`).join('');
+            assSel.innerHTML = assuntos.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
         }
 
         async function confirmEditTopicWithSwap(targetIdx) {
@@ -1315,7 +1463,7 @@
             const container = document.getElementById('addNewTopicArea');
             const materias = getUniqueMateriasFromEdital();
             if (materias.length === 0) return alert('Adicione ou importe matérias no edital primeiro.');
-            let matOptions = materias.map(m => `<option value="${m}">${m}</option>`).join('');
+            let matOptions = materias.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
 
             container.innerHTML = `
                 <div class="edit-selector-box">
@@ -1339,7 +1487,7 @@
             if (!matSel || !assSel) return;
             const selectedMat = matSel.value;
             const assuntos = getAssuntosForMateria(selectedMat);
-            assSel.innerHTML = assuntos.map(a => `<option value="${a}">${a}</option>`).join('');
+            assSel.innerHTML = assuntos.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
         }
 
         function resetAddTopicArea() {
@@ -1394,8 +1542,8 @@
             if (setMaterias.size === 0) setMaterias.add('Geral');
 
             setMaterias.forEach(mat => {
-                mSel.innerHTML += `<option value="${mat}">${mat}</option>`;
-                modalSel.innerHTML += `<option value="${mat}">${mat}</option>`;
+                mSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`;
+                modalSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`;
             });
         }
 
@@ -1415,7 +1563,7 @@
             const filtered = notesList.filter(n => n.materia === selectedMat);
 
             if (filtered.length === 0) {
-                container.innerHTML = `<p style="opacity:0.8; padding:1rem;">Nenhuma anotação cadastrada para a matéria <strong>${selectedMat}</strong>.</p>`;
+                container.innerHTML = `<p style="opacity:0.8; padding:1rem;">Nenhuma anotação cadastrada para a matéria <strong>${escapeHtml(selectedMat)}</strong>.</p>`;
                 return;
             }
 
@@ -1424,10 +1572,10 @@
                 container.innerHTML += `
                     <div class="note-card">
                         <div class="note-card-header">
-                            <span class="note-card-title">${nota.titulo}</span>
-                            <span class="note-card-date">Editado em ${nota.data || 'Recente'}</span>
+                            <span class="note-card-title">${escapeHtml(nota.titulo)}</span>
+                            <span class="note-card-date">Editado em ${escapeHtml(nota.data || 'Recente')}</span>
                         </div>
-                        <div class="note-card-body">${nota.conteudo}</div>
+                        <div class="note-card-body" style="white-space:pre-wrap;">${escapeHtml(nota.conteudo)}</div>
                         <div class="note-card-actions">
                             <button class="btn btn-secondary btn-sm" onclick="editNota(${globalIndex})">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteNota(${globalIndex})">Excluir</button>
@@ -1508,7 +1656,7 @@
             mSel.innerHTML = '<option value="">Selecione a Matéria (Opcional)</option>';
             const setMaterias = new Set();
             editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
-            setMaterias.forEach(mat => { mSel.innerHTML += `<option value="${mat}">${mat}</option>`; });
+            setMaterias.forEach(mat => { mSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`; });
             updateFcAssuntoOptions();
         }
 
@@ -1519,20 +1667,21 @@
             aSel.innerHTML = '<option value="">Selecione o Assunto (Opcional)</option>';
             if (!mVal) return;
             const assuntos = editalItems.filter(i => i.materia === mVal).map(i => i.assunto);
-            assuntos.forEach(ass => { aSel.innerHTML += `<option value="${ass}">${ass}</option>`; });
+            assuntos.forEach(ass => { aSel.innerHTML += `<option value="${escapeHtml(ass)}">${escapeHtml(ass)}</option>`; });
         }
 
         async function saveFlashcardsData() {
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             metadata[currentConcurso].flashcards = flashcardsList;
+            setFlashcardsDirty(true);
             await saveConcursosMetadata(metadata);
 
             if (navigator.onLine && currentUser) {
                 try {
-                    for (let fc of flashcardsList) {
+                    const payloadList = flashcardsList.map(fc => {
                         if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
-                        const payload = {
+                        return {
                             id: String(fc.id),
                             user_id: currentUser.id,
                             concurso: currentConcurso,
@@ -1542,15 +1691,31 @@
                             resposta: fc.resposta,
                             updated_at: new Date().toISOString()
                         };
-                        await supabaseClient.from('flashcards').upsert(payload, { onConflict: 'id' });
+                    });
+                    if (payloadList.length > 0) {
+                        const result = await supabaseClient.from('flashcards').upsert(payloadList, { onConflict: 'id' });
+                        throwIfSupabaseError(result, 'Falha ao salvar flashcards');
                     }
-                } catch(err) { console.warn('Erro salvando flashcards na nuvem:', err); }
+                    setFlashcardsDirty(false);
+                } catch(err) { console.warn('Flashcards mantidos na fila de sincronização:', err); }
             }
         }
 
         async function loadFlashcardsData() {
+            const localMetadata = getConcursosMetadata();
+            const localFlashcards = localMetadata[currentConcurso]?.flashcards || [];
             if (navigator.onLine && currentUser) {
                 try {
+                    const syncState = getSyncState();
+                    if (syncState.flashcardsDirty[currentConcurso] || syncState.flashcardDeletes.length > 0) {
+                        flashcardsList = localFlashcards;
+                        await flushPendingFlashcards();
+                    }
+                    const remainingState = getSyncState();
+                    if (remainingState.flashcardsDirty[currentConcurso] || remainingState.flashcardDeletes.length > 0) {
+                        flashcardsList = localFlashcards;
+                        throw new Error('Há flashcards locais aguardando sincronização.');
+                    }
                     const { data, error } = await supabaseClient
                         .from('flashcards')
                         .select('*')
@@ -1565,17 +1730,18 @@
                             pergunta: fc.pergunta,
                             resposta: fc.resposta
                         }));
+                        const cachedMetadata = getConcursosMetadata();
+                        if (!cachedMetadata[currentConcurso]) cachedMetadata[currentConcurso] = {};
+                        cachedMetadata[currentConcurso].flashcards = flashcardsList;
+                        localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(cachedMetadata));
                     } else {
-                        const metadata = getConcursosMetadata();
-                        flashcardsList = metadata[currentConcurso]?.flashcards || [];
+                        flashcardsList = localFlashcards;
                     }
                 } catch(e) {
-                    const metadata = getConcursosMetadata();
-                    flashcardsList = metadata[currentConcurso]?.flashcards || [];
+                    flashcardsList = localFlashcards;
                 }
             } else {
-                const metadata = getConcursosMetadata();
-                flashcardsList = metadata[currentConcurso]?.flashcards || [];
+                flashcardsList = localFlashcards;
             }
             populateFcMateriaDropdown();
             renderFlashcardFolders();
@@ -1583,10 +1749,66 @@
         }
 
         async function deleteFlashcardFromCloud(id) {
+            if (!id) return;
+            queueFlashcardDelete(id);
             if (navigator.onLine && currentUser && id) {
                 try {
-                    await supabaseClient.from('flashcards').delete().eq('id', id);
-                } catch(err) { console.warn('Erro ao deletar flashcard na nuvem:', err); }
+                    const result = await supabaseClient.from('flashcards').delete()
+                        .eq('id', id)
+                        .eq('user_id', currentUser.id);
+                    throwIfSupabaseError(result, 'Falha ao excluir flashcard');
+                    const state = getSyncState();
+                    state.flashcardDeletes = state.flashcardDeletes.filter(savedId => String(savedId) !== String(id));
+                    saveSyncState(state);
+                } catch(err) { console.warn('Exclusão do flashcard mantida na fila:', err); }
+            }
+        }
+
+        async function flushPendingFlashcards(concursoName = currentConcurso, cards = flashcardsList) {
+            if (!navigator.onLine || !currentUser) return;
+            const state = getSyncState();
+
+            if (state.flashcardDeletes.length > 0) {
+                const result = await supabaseClient.from('flashcards').delete()
+                    .in('id', state.flashcardDeletes)
+                    .eq('user_id', currentUser.id);
+                throwIfSupabaseError(result, 'Falha ao sincronizar exclusões de flashcards');
+                state.flashcardDeletes = [];
+            }
+
+            if (state.flashcardsDirty[concursoName]) {
+                const payloadList = cards.map(fc => {
+                    if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+                    return {
+                        id: String(fc.id),
+                        user_id: currentUser.id,
+                        concurso: concursoName,
+                        materia: fc.materia || '',
+                        assunto: fc.assunto || '',
+                        pergunta: fc.pergunta,
+                        resposta: fc.resposta,
+                        updated_at: new Date().toISOString()
+                    };
+                });
+                if (payloadList.length > 0) {
+                    const result = await supabaseClient.from('flashcards').upsert(payloadList, { onConflict: 'id' });
+                    throwIfSupabaseError(result, 'Falha ao sincronizar flashcards');
+                }
+                delete state.flashcardsDirty[concursoName];
+            }
+
+            saveSyncState(state);
+        }
+
+        async function flushAllPendingFlashcards() {
+            const metadata = getConcursosMetadata();
+            const dirtyConcursos = Object.keys(getSyncState().flashcardsDirty);
+            for (const concursoName of dirtyConcursos) {
+                const cards = metadata[concursoName]?.flashcards || [];
+                await flushPendingFlashcards(concursoName, cards);
+            }
+            if (getSyncState().flashcardDeletes.length > 0) {
+                await flushPendingFlashcards(currentConcurso, flashcardsList);
             }
         }
 
@@ -1614,14 +1836,16 @@
                 const matData = deckHierarchy[matName];
                 const isOpen = openFcFolders[matName] !== false;
                 const isMatActive = (activeFcMateriaFilter === matName && !activeFcAssuntoFilter);
+                const safeMatHandler = encodeHandlerValue(matName);
 
                 let subfoldersHtml = '';
                 Object.keys(matData.assuntos).forEach(assName => {
                     const count = matData.assuntos[assName];
                     const isAssActive = (activeFcMateriaFilter === matName && activeFcAssuntoFilter === assName);
+                    const safeAssHandler = encodeHandlerValue(assName);
                     subfoldersHtml += `
-                        <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '${assName.replace(/'/g, "\\'")}')">
-                            <span style="font-size:0.9rem; font-weight:600;">📑 ${assName}</span>
+                        <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), decodeURIComponent('${safeAssHandler}'))">
+                            <span style="font-size:0.9rem; font-weight:600;">📑 ${escapeHtml(assName)}</span>
                             <span style="font-size:0.8rem; opacity:0.8;">${count} cartões</span>
                         </div>
                     `;
@@ -1629,14 +1853,14 @@
 
                 folderContainer.innerHTML += `
                     <div class="anki-folder-card">
-                        <div class="anki-folder-header" onclick="toggleFcFolder('${matName.replace(/'/g, "\\'")}')">
+                        <div class="anki-folder-header" onclick="toggleFcFolder(decodeURIComponent('${safeMatHandler}'))">
                             <div class="anki-folder-title">
-                                📁 <span>${matName}</span>
+                                📁 <span>${escapeHtml(matName)}</span>
                                 ${isMatActive ? '<span style="color:#34d399; font-size:0.75rem;">(Caixa Aberta)</span>' : ''}
                             </div>
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <span class="anki-folder-count">${matData.total} cartões</span>
-                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter('${matName.replace(/'/g, "\\'")}', '')" title="Abrir caixa desta matéria">Abrir Caixa</button>
+                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria">Abrir Caixa</button>
                                 <span>${isOpen ? '▼' : '►'}</span>
                             </div>
                         </div>
@@ -1689,11 +1913,11 @@
                         <div class="flashcard-box">
                             <div class="flashcard-content">
                                 <div class="flashcard-meta">
-                                    <span class="flashcard-badge-materia">${fc.materia || 'Geral'}</span>
-                                    ${fc.assunto ? `<span class="flashcard-badge-assunto">${fc.assunto}</span>` : ''}
+                                    <span class="flashcard-badge-materia">${escapeHtml(fc.materia || 'Geral')}</span>
+                                    ${fc.assunto ? `<span class="flashcard-badge-assunto">${escapeHtml(fc.assunto)}</span>` : ''}
                                 </div>
-                                <p><strong>P:</strong> ${fc.pergunta}</p>
-                                <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${fc.resposta}</p>
+                                <p><strong>P:</strong> ${escapeHtml(fc.pergunta)}</p>
+                                <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${escapeHtml(fc.resposta)}</p>
                             </div>
                             <div style="display:flex; gap:6px; flex-shrink:0;">
                                 <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard">Editar ✏️</button>
@@ -1706,7 +1930,7 @@
                 container.innerHTML += `
                     <div style="margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--primary-blue);">
                         <h4 style="color:var(--header-materia-text); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-                            <span>📦 Caixa Aberta: ${mName}</span>
+                            <span>📦 Caixa Aberta: ${escapeHtml(mName)}</span>
                             <span style="font-size:0.8rem; font-weight:normal;">(${grouped[mName].length} cartões)</span>
                         </h4>
                         ${cardsHtml}
@@ -1856,7 +2080,7 @@
             matSel.innerHTML = '<option value="">Todas as Matérias</option>';
             const setMaterias = new Set();
             flashcardsList.forEach(fc => { if (fc.materia) setMaterias.add(fc.materia); });
-            setMaterias.forEach(mat => { matSel.innerHTML += `<option value="${mat}">${mat}</option>`; });
+            setMaterias.forEach(mat => { matSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`; });
             updateStudyFilterAssuntoOptions();
             document.getElementById('modalFiltroEstudoFC').style.display = 'flex';
         }
@@ -1871,7 +2095,7 @@
             if (!matVal) return;
             const setAssuntos = new Set();
             flashcardsList.forEach(fc => { if (fc.materia === matVal && fc.assunto) setAssuntos.add(fc.assunto); });
-            setAssuntos.forEach(ass => { assSel.innerHTML += `<option value="${ass}">${ass}</option>`; });
+            setAssuntos.forEach(ass => { assSel.innerHTML += `<option value="${escapeHtml(ass)}">${escapeHtml(ass)}</option>`; });
         }
 
         function startFilteredStudyModal() {
@@ -1919,8 +2143,8 @@
             const fc = studyQueue[currentStudyIdx];
             document.getElementById('studyModalProgress').innerText = `${currentStudyIdx + 1} / ${studyQueue.length}`;
             const metaContainer = document.getElementById('studyCardMeta');
-            metaContainer.innerHTML = `<span class="flashcard-badge-materia">${fc.materia || 'Geral'}</span>`;
-            if (fc.assunto) metaContainer.innerHTML += `<span class="flashcard-badge-assunto">${fc.assunto}</span>`;
+            metaContainer.innerHTML = `<span class="flashcard-badge-materia">${escapeHtml(fc.materia || 'Geral')}</span>`;
+            if (fc.assunto) metaContainer.innerHTML += `<span class="flashcard-badge-assunto">${escapeHtml(fc.assunto)}</span>`;
             showingAnswer = false;
             document.getElementById('studyCardLabel').innerText = 'FRENTE (Clique para virar)';
             document.getElementById('studyCardText').innerText = fc.pergunta;
@@ -1995,7 +2219,7 @@
                             isDone = !!(matchedItem.teoria || matchedItem.questoes);
                         }
                     }
-                    badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${it}</div>`;
+                    badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${escapeHtml(it)}</div>`;
                 });
 
                 grid.innerHTML += `
@@ -2065,9 +2289,9 @@
                     container.innerHTML += `
                         <div class="delayed-card">
                             <div class="delayed-card-info">
-                                <h4>Data: ${group.date}</h4>
-                                <p>${it}</p>
-                                <span class="delayed-tag">${currentConcurso}</span>
+                                <h4>Data: ${escapeHtml(group.date)}</h4>
+                                <p>${escapeHtml(it)}</p>
+                                <span class="delayed-tag">${escapeHtml(currentConcurso)}</span>
                             </div>
                         </div>
                     `;
@@ -2088,24 +2312,51 @@
 
         async function syncAllWithSupabase() {
             if (!currentUser) return;
-            try {
+            if (syncPromise) return syncPromise;
+
+            syncPromise = (async () => {
+                await flushPendingEdital();
+                const stateAfterEdital = getSyncState();
+                if (Object.keys(stateAfterEdital.editalUpserts).length > 0 || stateAfterEdital.editalDeletes.length > 0) {
+                    throw new Error('Ainda existem alterações do edital aguardando envio.');
+                }
+
                 const { data, error } = await supabaseClient
                     .from('edital')
                     .select('*')
                     .eq('user_id', currentUser.id)
                     .order('prioridade', { ascending: true });
 
-                if (!error && data) {
-                    allEditalItems = data.map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
-                    saveEditalToLocalStorage();
-                }
+                if (error) throw new Error(`Falha ao baixar edital: ${error.message}`);
+                allEditalItems = (data || []).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
+                saveEditalToLocalStorage();
 
                 await loadConcursosMetadata();
+                await flushAllPendingFlashcards();
                 filterDataByConcurso();
                 renderMonthCalendar();
                 loadNotesData();
                 await loadFlashcardsData();
-            } catch(e) { console.log('Sincronização em segundo plano...'); }
+            })();
+
+            try {
+                await syncPromise;
+            } finally {
+                syncPromise = null;
+                updateOnlineStatusBannerOnly();
+            }
+        }
+
+        function updateOnlineStatusBannerOnly() {
+            const banner = document.getElementById('offline-banner');
+            if (!navigator.onLine) {
+                banner.textContent = hasPendingSync()
+                    ? 'Modo Offline — suas alterações estão protegidas e aguardam sincronização.'
+                    : 'Modo Offline — os dados continuam disponíveis neste dispositivo.';
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
         }
 
         async function forceFullSync(evt) {
@@ -2114,6 +2365,7 @@
             if (btn) btn.innerText = 'Sincronizando...';
             try {
                 await syncAllWithSupabase();
+                if (hasPendingSync()) throw new Error('Algumas alterações continuam aguardando conexão com o servidor.');
                 alert('Sincronização concluída com sucesso!');
             } catch (err) {
                 alert('Erro ao sincronizar: ' + err.message);
@@ -2142,6 +2394,7 @@
 
         async function saveEditalItemToCloud(item) {
             saveEditalToLocalStorage();
+            queueEditalUpsert(item);
             if (navigator.onLine && currentUser) {
                 try {
                     const payload = {
@@ -2158,19 +2411,67 @@
                         rev_7d: !!item.rev_7d,
                         rev_30d: !!item.rev_30d
                     };
-                    await supabaseClient.from('edital').upsert(payload, { onConflict: 'id' });
-                } catch(e) { console.warn('Erro sync item:', e); }
+                    const result = await supabaseClient.from('edital').upsert(payload, { onConflict: 'id' });
+                    throwIfSupabaseError(result, 'Falha ao salvar tópico');
+                    const state = getSyncState();
+                    delete state.editalUpserts[String(item.id)];
+                    saveSyncState(state);
+                } catch(e) { console.warn('Tópico mantido na fila de sincronização:', e); }
             }
         }
 
         async function deleteEditalItemFromCloud(id) {
             allEditalItems = allEditalItems.filter(i => String(i.id) !== String(id));
             saveEditalToLocalStorage();
+            queueEditalDelete(id);
             if (navigator.onLine && currentUser) {
-                try { await supabaseClient.from('edital').delete().eq('id', id); }
-                catch(e) { console.warn('Erro delete:', e); }
+                try {
+                    const result = await supabaseClient.from('edital').delete()
+                        .eq('id', id)
+                        .eq('user_id', currentUser.id);
+                    throwIfSupabaseError(result, 'Falha ao excluir tópico');
+                    const state = getSyncState();
+                    state.editalDeletes = state.editalDeletes.filter(savedId => String(savedId) !== String(id));
+                    saveSyncState(state);
+                } catch(e) { console.warn('Exclusão mantida na fila de sincronização:', e); }
             }
             filterDataByConcurso();
+        }
+
+        async function flushPendingEdital() {
+            if (!navigator.onLine || !currentUser) return;
+            const state = getSyncState();
+
+            if (state.editalDeletes.length > 0) {
+                const result = await supabaseClient.from('edital').delete()
+                    .in('id', state.editalDeletes)
+                    .eq('user_id', currentUser.id);
+                throwIfSupabaseError(result, 'Falha ao sincronizar exclusões do edital');
+                state.editalDeletes = [];
+            }
+
+            const pendingItems = Object.values(state.editalUpserts);
+            if (pendingItems.length > 0) {
+                const payloadList = pendingItems.map(item => ({
+                    id: String(item.id),
+                    user_id: currentUser.id,
+                    materia: item.materia || 'Geral',
+                    assunto: item.assunto || 'Tópico',
+                    prioridade: parseInt(item.prioridade) || 1,
+                    assunto_prioridade: parseInt(item.assunto_prioridade) || 1,
+                    concurso: item.concurso || currentConcurso,
+                    teoria: !!item.teoria,
+                    questoes: !!item.questoes,
+                    rev_24h: !!item.rev_24h,
+                    rev_7d: !!item.rev_7d,
+                    rev_30d: !!item.rev_30d
+                }));
+                const result = await supabaseClient.from('edital').upsert(payloadList, { onConflict: 'id' });
+                throwIfSupabaseError(result, 'Falha ao sincronizar alterações do edital');
+                state.editalUpserts = {};
+            }
+
+            saveSyncState(state);
         }
 
         function renderConcursoSelector() {
@@ -2183,7 +2484,7 @@
             const list = Array.from(set);
 
             if (!list.includes(currentConcurso)) currentConcurso = list[0] || 'Concurso Geral';
-            list.forEach(c => { select.innerHTML += `<option value="${c}" ${c === currentConcurso ? 'selected' : ''}>${c}</option>`; });
+            list.forEach(c => { select.innerHTML += `<option value="${escapeHtml(c)}" ${c === currentConcurso ? 'selected' : ''}>${escapeHtml(c)}</option>`; });
             updateCountdownBadge();
         }
 
@@ -2242,45 +2543,37 @@
 
             const oldFileKey = `edital_file_${currentUser ? currentUser.id : 'guest'}_${antigoNome}`;
             const newFileKey = `edital_file_${currentUser ? currentUser.id : 'guest'}_${nomeFormatado}`;
-            const fileDataRaw = localStorage.getItem(oldFileKey);
-            if (fileDataRaw) {
-                localStorage.setItem(newFileKey, fileDataRaw);
-                localStorage.removeItem(oldFileKey);
-            }
+            await moveEditalFileRecord(oldFileKey, newFileKey);
 
             allEditalItems.forEach(item => {
-                if ((item.concurso || 'Concurso Geral') === antigoNome) item.concurso = nomeFormatado;
+                if ((item.concurso || 'Concurso Geral') === antigoNome) {
+                    item.concurso = nomeFormatado;
+                    queueEditalUpsert(item);
+                }
             });
             saveEditalToLocalStorage();
-
-            if (navigator.onLine && currentUser) {
-                try {
-                    await supabaseClient.from('edital').update({ concurso: nomeFormatado }).eq('user_id', currentUser.id).eq('concurso', antigoNome);
-                    await supabaseClient.from('flashcards').update({ concurso: nomeFormatado }).eq('user_id', currentUser.id).eq('concurso', antigoNome);
-                } catch(err) { console.warn('Erro ao renomear na nuvem:', err); }
-            }
+            setFlashcardsDirty(true);
 
             currentConcurso = nomeFormatado;
             localStorage.setItem('last_studied_concurso', currentConcurso);
             changeConcurso(currentConcurso);
+            if (navigator.onLine && currentUser) syncAllWithSupabase().catch(error => console.warn('Renomeação aguardando sincronização:', error));
             alert(`Concurso renomeado com sucesso para "${nomeFormatado}".`);
         }
 
         async function removerConcursoAtual() {
             if (currentConcurso.trim().toLowerCase() === 'concurso geral') return alert('O Concurso Geral padrão não pode ser excluído.');
             if (confirm(`Deseja remover o concurso "${currentConcurso}" e todos os seus itens?`)) {
+                const concursoRemovido = currentConcurso;
                 let metadata = getConcursosMetadata();
-                delete metadata[currentConcurso];
+                const flashcardsToDelete = metadata[concursoRemovido]?.flashcards || [];
+                flashcardsToDelete.forEach(fc => { if (fc.id) queueFlashcardDelete(fc.id); });
+                delete metadata[concursoRemovido];
                 await saveConcursosMetadata(metadata);
 
-                const itemsToDelete = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+                const itemsToDelete = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === concursoRemovido);
                 for (let item of itemsToDelete) await deleteEditalItemFromCloud(item.id);
-
-                if (navigator.onLine && currentUser) {
-                    try {
-                        await supabaseClient.from('flashcards').delete().eq('user_id', currentUser.id).eq('concurso', currentConcurso);
-                    } catch(e) {}
-                }
+                await deleteEditalFileRecord(getEditalFileStorageKey(concursoRemovido));
 
                 currentConcurso = 'Concurso Geral';
                 localStorage.setItem('last_studied_concurso', currentConcurso);
@@ -2325,15 +2618,16 @@
                 const group = materiasMap[materiaName];
                 const isOpen = openMaterias[materiaName] !== false;
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
+                const safeMateriaHandler = encodeHandlerValue(materiaName);
 
                 tbody.innerHTML += `
-                    <tr class="materia-header-row" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="toggleMateria('${materiaName.replace(/'/g, "\\'")}')">
+                    <tr class="materia-header-row" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="toggleMateria(decodeURIComponent('${safeMateriaHandler}'))">
                         <td onclick="event.stopPropagation()">
-                            <input type="number" class="priority-input" value="${group.prioridade}" min="1" onchange="updateMateriaPriority('${materiaName.replace(/'/g, "\\'")}', this.value)">
+                            <input type="number" class="priority-input" value="${group.prioridade}" min="1" onchange="updateMateriaPriority(decodeURIComponent('${safeMateriaHandler}'), this.value)">
                         </td>
                         <td colspan="7">
                             <div class="materia-header-content">
-                                <span><strong>${materiaName}</strong> (${group.items.length} assuntos)</span>
+                                <span><strong>${escapeHtml(materiaName)}</strong> (${group.items.length} assuntos)</span>
                                 <span>${isOpen ? 'Recolher' : 'Expandir'}</span>
                             </div>
                         </td>
@@ -2343,19 +2637,19 @@
                 if (isOpen) {
                     const sortedAssuntos = [...group.items].sort((a, b) => (a.assunto_prioridade || 1) - (b.assunto_prioridade || 1));
                     sortedAssuntos.forEach(item => {
-                        const safeId = String(item.id);
+                        const safeId = encodeHandlerValue(item.id);
                         tbody.innerHTML += `
                             <tr style="border-left: 4px solid ${PALETA_SOLIDAS[colorIdx % PALETA_SOLIDAS.length]};">
                                 <td>
-                                    <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority('${safeId}', this.value)" title="Prioridade do Assunto">
+                                    <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority(decodeURIComponent('${safeId}'), this.value)" title="Prioridade do Assunto">
                                 </td>
-                                <td style="text-align: left; padding-left: 1.5rem;">${item.assunto}</td>
-                                <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'teoria', ${item.teoria})"></td>
-                                <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'questoes', ${item.questoes})"></td>
-                                <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_24h', ${item.rev_24h})"></td>
-                                <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_7d', ${item.rev_7d})"></td>
-                                <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck('${safeId}', 'rev_30d', ${item.rev_30d})"></td>
-                                <td><button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes('${safeId}')">Limpar</button></td>
+                                <td style="text-align: left; padding-left: 1.5rem;">${escapeHtml(item.assunto)}</td>
+                                <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'teoria', ${item.teoria})"></td>
+                                <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'questoes', ${item.questoes})"></td>
+                                <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'rev_24h', ${item.rev_24h})"></td>
+                                <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'rev_7d', ${item.rev_7d})"></td>
+                                <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'rev_30d', ${item.rev_30d})"></td>
+                                <td><button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes(decodeURIComponent('${safeId}'))">Limpar</button></td>
                             </tr>
                         `;
                     });
@@ -2494,6 +2788,7 @@
 
                     if (formattedData.length > 0) {
                         saveEditalToLocalStorage();
+                        formattedData.forEach(queueEditalUpsert);
 
                         if (navigator.onLine && currentUser) {
                             try {
@@ -2511,9 +2806,13 @@
                                     rev_7d: false,
                                     rev_30d: false
                                 }));
-                                await supabaseClient.from('edital').upsert(payloadList, { onConflict: 'id' });
+                                const result = await supabaseClient.from('edital').upsert(payloadList, { onConflict: 'id' });
+                                throwIfSupabaseError(result, 'Falha ao importar tópicos');
+                                const state = getSyncState();
+                                formattedData.forEach(item => delete state.editalUpserts[String(item.id)]);
+                                saveSyncState(state);
                             } catch (errSync) {
-                                console.warn('Erro enviando lote importado para o banco:', errSync);
+                                console.warn('Importação mantida na fila de sincronização:', errSync);
                             }
                         }
 
@@ -2578,7 +2877,7 @@
                     legendGrid.innerHTML += `
                         <div class="chart-legend-item">
                             <span class="chart-legend-color" style="background-color: ${color};"></span>
-                            <span>${mName} (${percentData[idx]}%)</span>
+                            <span>${escapeHtml(mName)} (${percentData[idx]}%)</span>
                         </div>
                     `;
                 });
@@ -2637,9 +2936,76 @@
             document.getElementById('modalViewEdital').style.display = 'none';
         }
 
-        function getEditalFileStorageKey() {
+        function getEditalFileStorageKey(concursoName = currentConcurso) {
             const uid = currentUser ? currentUser.id : 'guest';
-            return `edital_file_${uid}_${currentConcurso}`;
+            return `edital_file_${uid}_${concursoName}`;
+        }
+
+        function openEditalFilesDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('painel-estudos-files', 1);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains('editalFiles')) db.createObjectStore('editalFiles', { keyPath: 'key' });
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('Não foi possível abrir o armazenamento de arquivos.'));
+            });
+        }
+
+        async function putEditalFileRecord(record) {
+            const db = await openEditalFilesDatabase();
+            return new Promise((resolve, reject) => {
+                const request = db.transaction('editalFiles', 'readwrite').objectStore('editalFiles').put(record);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error || new Error('Não foi possível salvar o arquivo.'));
+            });
+        }
+
+        async function getEditalFileRecord(key = getEditalFileStorageKey()) {
+            const db = await openEditalFilesDatabase();
+            const storedRecord = await new Promise((resolve, reject) => {
+                const request = db.transaction('editalFiles', 'readonly').objectStore('editalFiles').get(key);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error('Não foi possível ler o arquivo.'));
+            });
+            if (storedRecord) return storedRecord;
+
+            const legacyData = localStorage.getItem(key);
+            if (!legacyData) return null;
+            try {
+                const legacyFile = JSON.parse(legacyData);
+                const migratedRecord = {
+                    key,
+                    name: legacyFile.name || 'Edital.pdf',
+                    type: legacyFile.type || 'application/pdf',
+                    blob: dataURLtoBlob(legacyFile.data),
+                    updatedAt: new Date().toISOString()
+                };
+                await putEditalFileRecord(migratedRecord);
+                localStorage.removeItem(key);
+                return migratedRecord;
+            } catch (error) {
+                console.warn('Não foi possível migrar o anexo antigo:', error);
+                return null;
+            }
+        }
+
+        async function deleteEditalFileRecord(key = getEditalFileStorageKey()) {
+            const db = await openEditalFilesDatabase();
+            await new Promise((resolve, reject) => {
+                const request = db.transaction('editalFiles', 'readwrite').objectStore('editalFiles').delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error || new Error('Não foi possível apagar o arquivo.'));
+            });
+            localStorage.removeItem(key);
+        }
+
+        async function moveEditalFileRecord(oldKey, newKey) {
+            const record = await getEditalFileRecord(oldKey);
+            if (!record) return;
+            await putEditalFileRecord({ ...record, key: newKey });
+            await deleteEditalFileRecord(oldKey);
         }
 
         function dataURLtoBlob(dataurl) {
@@ -2652,67 +3018,70 @@
             return new Blob([u8arr], { type: mime });
         }
 
-        function renderEditalFileViewer() {
+        async function renderEditalFileViewer() {
             const container = document.getElementById('editalViewerContainer');
             const btnDownload = document.getElementById('btnDownloadEdital');
             const btnRemove = document.getElementById('btnRemoveEdital');
 
             if (activeObjectUrl) { URL.revokeObjectURL(activeObjectUrl); activeObjectUrl = null; }
-            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
-
-            if (!fileDataRaw) {
-                container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${currentConcurso}</strong>.</p>`;
-                btnDownload.style.display = 'none';
-                btnRemove.style.display = 'none';
-                return;
-            }
 
             try {
-                const fileObj = JSON.parse(fileDataRaw);
+                const fileObj = await getEditalFileRecord();
+                if (!fileObj) {
+                    container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${escapeHtml(currentConcurso)}</strong>.</p>`;
+                    btnDownload.style.display = 'none';
+                    btnRemove.style.display = 'none';
+                    return;
+                }
                 btnDownload.style.display = 'inline-flex';
                 btnRemove.style.display = 'inline-flex';
+                activeObjectUrl = URL.createObjectURL(fileObj.blob);
                 if (fileObj.type.includes('pdf')) {
-                    const blob = dataURLtoBlob(fileObj.data);
-                    activeObjectUrl = URL.createObjectURL(blob);
                     container.innerHTML = `<embed src="${activeObjectUrl}#toolbar=1" type="application/pdf" style="width:100%; height:100%; min-height:500px; border:none; border-radius:6px;"></embed>`;
                 } else if (fileObj.type.includes('image')) {
-                    container.innerHTML = `<img src="${fileObj.data}" style="max-width:100%; max-height:480px; border-radius:6px; object-fit:contain;">`;
+                    container.innerHTML = `<img src="${activeObjectUrl}" alt="Pré-visualização do edital" style="max-width:100%; max-height:480px; border-radius:6px; object-fit:contain;">`;
                 } else {
-                    container.innerHTML = `<p style="font-size:1.1rem; font-weight:700; color:var(--primary-blue);">${fileObj.name}</p>`;
+                    container.innerHTML = `<p style="font-size:1.1rem; font-weight:700; color:var(--primary-blue);">${escapeHtml(fileObj.name)}</p>`;
                 }
             } catch (e) {
                 container.innerHTML = `<p style="color:#ef4444;">Erro ao carregar arquivo do edital.</p>`;
             }
         }
 
-        function uploadEditalFile(event) {
+        async function uploadEditalFile(event) {
             const file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const fileObj = { name: file.name, type: file.type || 'application/pdf', data: e.target.result };
-                localStorage.setItem(getEditalFileStorageKey(), JSON.stringify(fileObj));
-                renderEditalFileViewer();
+            try {
+                await putEditalFileRecord({
+                    key: getEditalFileStorageKey(),
+                    name: file.name,
+                    type: file.type || 'application/octet-stream',
+                    blob: file,
+                    updatedAt: new Date().toISOString()
+                });
+                await renderEditalFileViewer();
                 alert('Arquivo anexado com sucesso!');
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                alert('Não foi possível armazenar o arquivo neste navegador. Verifique o espaço disponível.');
+            }
             event.target.value = '';
         }
 
-        function downloadEditalFile() {
-            const fileDataRaw = localStorage.getItem(getEditalFileStorageKey());
-            if (!fileDataRaw) return;
-            const fileObj = JSON.parse(fileDataRaw);
+        async function downloadEditalFile() {
+            const fileObj = await getEditalFileRecord();
+            if (!fileObj) return;
+            const downloadUrl = URL.createObjectURL(fileObj.blob);
             const a = document.createElement('a');
-            a.href = fileObj.data;
+            a.href = downloadUrl;
             a.download = fileObj.name || 'Edital.pdf';
             a.click();
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
         }
 
-        function removerEditalFile() {
+        async function removerEditalFile() {
             if (confirm(`Remover o edital do concurso "${currentConcurso}"?`)) {
-                localStorage.removeItem(getEditalFileStorageKey());
-                renderEditalFileViewer();
+                await deleteEditalFileRecord();
+                await renderEditalFileViewer();
             }
         }
 
@@ -2761,7 +3130,8 @@
         }
 
         function checkSuperUserStatus() {
-            isSuperUser = true; 
+            const appRole = currentUser?.app_metadata?.role || currentUser?.user_metadata?.role || '';
+            isSuperUser = appRole === 'super_user' || appRole === 'admin';
             const badge = document.getElementById('superUserBadge');
             if (badge) badge.style.display = isSuperUser ? 'inline-block' : 'none';
         }
@@ -2769,8 +3139,12 @@
         function showDashboard() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-dashboard').style.display = 'block';
-            updateOnlineStatus();
-            loadData();
+            updateOnlineStatusBannerOnly();
+            if (dashboardLoadPromise) return;
+            dashboardLoadPromise = loadData().catch(error => {
+                console.error('Falha ao carregar o painel:', error);
+                alert('O painel foi aberto com os dados locais. A sincronização será tentada novamente.');
+            }).finally(() => { dashboardLoadPromise = null; });
         }
 
         supabaseClient.auth.onAuthStateChange((event, session) => {
