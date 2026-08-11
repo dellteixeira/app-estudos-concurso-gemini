@@ -1,21 +1,31 @@
 {
+  "id": "./",
   "short_name": "Estudos",
   "name": "Meu Painel de Estudos - Concursos",
+  "description": "Painel de estudos para concursos com edital verticalizado, cronograma, anotações, flashcards e sincronização online/offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "icon-192.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "192x192",
+      "purpose": "any"
     }
-  ],
-  "start_url": "./",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
-  "display": "standalone",
-  "orientation": "any"
+  ]
 }
