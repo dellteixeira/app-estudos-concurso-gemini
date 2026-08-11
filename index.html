@@ -8,6 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Meu Painel de Estudos</title>
+    <!-- Mobile UI v1 - 2026-08-11 -->
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
@@ -28,7 +29,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- PDF.js agora é carregado sob demanda ao abrir o visualizador de edital. -->
     
     <style>
         :root {
@@ -320,12 +321,171 @@
             display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
+        /* Indicadores compactos usados pelo calendário em telas pequenas */
+        .month-day-mobile-meta { display: none; }
+
         @media (max-width: 768px) {
-            .grid-top { grid-template-columns: 1fr; }
-            .month-grid { grid-template-columns: repeat(1, 1fr); }
-            .month-calendar-header { display: none; }
-            .month-day-cell { height: auto; min-height: 100px; }
+            /* Layout geral mobile */
+            #app-dashboard { padding: 1rem; }
+            header { gap: 0.85rem; }
+            .header-brand { width: 100%; }
+            .header-brand h2 { font-size: 1.55rem; }
+            .super-user-badge { font-size: 0.68rem; }
+            .grid-top { grid-template-columns: 1fr; gap: 1rem; }
+            .card { padding: 1rem; border-radius: 14px; margin-bottom: 1rem; }
+
+            /* Seletor de concurso mais confortável para toque */
+            .concurso-selector-bar { width: 100%; padding: 0.85rem; gap: 0.6rem; }
+            .concurso-selector-bar select { flex: 1 1 220px; min-height: 46px; }
+            .concurso-selector-bar .btn { min-height: 42px; justify-content: center; }
+            .countdown-badge { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; }
+
+            /* Barra de ações: duas colunas simétricas */
+            .action-bar {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                width: 100%;
+                align-items: stretch;
+            }
+            .action-bar .btn-action {
+                width: 100%;
+                min-width: 0;
+                min-height: 60px;
+                padding: 10px 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                line-height: 1.25;
+                font-size: 0.88rem;
+                white-space: normal;
+                word-break: normal;
+                flex: none;
+            }
+            .action-bar > .btn-action:last-child { grid-column: 1 / -1; }
+
+            /* Navegação principal em grade 2x2 */
+            .nav-tabs {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+                padding-bottom: 0.75rem;
+            }
+            .tab-btn {
+                width: 100%;
+                min-height: 52px;
+                padding: 10px 6px;
+                font-size: 0.9rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+            }
+
+            /* Pomodoro */
+            .timer-display { font-size: clamp(3rem, 16vw, 4.4rem); }
+            .timer-settings { gap: 0.75rem; }
+            .timer-settings label { flex: 1 1 135px; justify-content: center; }
+
+            /* Calendário mensal compacto: mês inteiro visível */
+            .month-calendar-header {
+                display: grid;
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+                gap: 4px;
+                font-size: 0.68rem;
+                margin-bottom: 5px;
+            }
+            .month-calendar-header > div { overflow: hidden; text-overflow: clip; }
+            .month-grid {
+                display: grid;
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+                gap: 4px;
+            }
+            .month-day-cell {
+                height: 62px;
+                min-height: 62px;
+                padding: 4px;
+                border-radius: 8px;
+                overflow: hidden;
+                align-items: center;
+                justify-content: flex-start;
+            }
+            .month-day-cell:active { transform: scale(0.97); }
+            .day-num-header {
+                width: 100%;
+                border-bottom: none;
+                padding: 0;
+                margin: 0;
+                font-size: 0.8rem;
+                justify-content: center;
+            }
+            .day-num-header button { display: none; }
+            .day-badges-scroll { display: none; }
+            .month-day-mobile-meta {
+                display: flex;
+                width: 100%;
+                flex: 1;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                font-size: 0.64rem;
+                line-height: 1;
+                color: #93c5fd;
+            }
+            .month-day-mobile-count {
+                min-width: 22px;
+                padding: 3px 5px;
+                border-radius: 999px;
+                background: rgba(59,130,246,0.18);
+                border: 1px solid rgba(59,130,246,0.55);
+                text-align: center;
+                font-weight: 800;
+            }
+            .month-day-mobile-count.rev {
+                color: #fcd34d;
+                border-color: rgba(245,158,11,0.65);
+                background: rgba(245,158,11,0.14);
+            }
+            .month-day-mobile-count.done {
+                color: #34d399;
+                border-color: rgba(16,185,129,0.65);
+                background: rgba(16,185,129,0.14);
+            }
+
+            /* Cabeçalho e controles do cronograma */
+            #tab-calendario .card > div:first-child { align-items: stretch !important; }
+            #tab-calendario select { min-height: 42px; }
+            #tab-calendario .btn { min-height: 44px; justify-content: center; }
+            .weekly-hours-banner { font-size: 0.9rem; }
+            .filter-tabs { width: 100%; }
+            .filter-tab { flex: 1; padding: 8px 6px; }
+
+            /* Modal do dia otimizado para celular */
+            #modalDayContent { align-items: flex-end; padding: 0; }
+            #modalDayContent .modal {
+                width: 100%;
+                max-width: none;
+                max-height: 88vh;
+                border-radius: 18px 18px 0 0;
+                padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+                gap: 12px;
+            }
+            #dayModalTitle { font-size: 1.2rem; margin-bottom: 0; }
+            .day-topic-row { padding: 11px; gap: 8px; }
+            .day-topic-row > div:first-child { min-width: 100%; }
+
             .weekday-picker { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        @media (max-width: 390px) {
+            #app-dashboard { padding: 0.75rem; }
+            .action-bar { gap: 8px; }
+            .action-bar .btn-action { font-size: 0.82rem; min-height: 58px; }
+            .month-grid, .month-calendar-header { gap: 3px; }
+            .month-day-cell { height: 58px; min-height: 58px; }
         }
     </style>
 </head>
@@ -762,6 +922,7 @@
     <div class="modal-overlay" id="modalDayContent">
         <div class="modal">
             <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
+            <div id="dayModalSummary" style="font-size:0.82rem; color:#93c5fd; font-weight:700;"></div>
             <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
             <div id="dayTopicsContainer"></div>
             <div id="addNewTopicArea" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
@@ -1351,7 +1512,15 @@
 
         function openModalDayContent(dateKey) {
             activeSelectedDateKey = dateKey;
-            document.getElementById('dayModalTitle').innerText = `Conteúdo Agendado: ${dateKey}`;
+            const [year, month, day] = dateKey.split('-').map(Number);
+            const dateObj = new Date(year, month - 1, day);
+            const formattedDate = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+            const metadata = getConcursosMetadata();
+            const topics = metadata[currentConcurso]?.dateSchedule?.[dateKey] || [];
+            const revisions = topics.filter(item => item.startsWith('🔄 Rev')).length;
+            document.getElementById('dayModalTitle').innerText = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+            const summary = document.getElementById('dayModalSummary');
+            if (summary) summary.textContent = `${topics.length} ${topics.length === 1 ? 'item agendado' : 'itens agendados'}${revisions ? ` • ${revisions} ${revisions === 1 ? 'revisão' : 'revisões'}` : ''}`;
             resetAddTopicArea();
             renderDayTopicsList();
             document.getElementById('modalDayContent').style.display = 'flex';
@@ -2228,7 +2397,6 @@
         function renderMonthCalendar() {
             const grid = document.getElementById('monthCalendarGrid');
             if (!grid) return;
-            grid.innerHTML = '';
 
             const metadata = getConcursosMetadata();
             const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
@@ -2237,19 +2405,29 @@
             const todayObj = new Date();
             const isCurrentMonth = todayObj.getMonth() === selectedMonth && todayObj.getFullYear() === selectedYear;
 
-            for (let i = 0; i < firstDay; i++) { grid.innerHTML += `<div class="month-day-cell other-month"></div>`; }
+            // Índice para evitar procurar repetidamente o mesmo tópico em toda a lista do edital.
+            const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const htmlParts = [];
+
+            for (let i = 0; i < firstDay; i++) {
+                htmlParts.push('<div class="month-day-cell other-month" aria-hidden="true"></div>');
+            }
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const isToday = isCurrentMonth && todayObj.getDate() === day;
                 const items = dateSchedule[dateKey] || [];
+                let completedCount = 0;
+                let revisionCount = 0;
+                const badgeParts = [];
 
-                let badgesHtml = '';
                 items.forEach(it => {
                     const cleanTop = it.replace(/^🔄 Rev \(\d+d\): /, '');
                     const isRev = it.startsWith('🔄 Rev');
-                    const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
+                    if (isRev) revisionCount++;
+                    const matchedItem = editalLookup.get(cleanTop);
                     let isDone = false;
+
                     if (matchedItem) {
                         if (isRev) {
                             if (it.includes('24h')) isDone = !!matchedItem.rev_24h;
@@ -2260,19 +2438,30 @@
                             isDone = !!(matchedItem.teoria || matchedItem.questoes);
                         }
                     }
-                    badgesHtml += `<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${escapeHtml(it)}</div>`;
+                    if (isDone) completedCount++;
+                    badgeParts.push(`<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${escapeHtml(it)}</div>`);
                 });
 
-                grid.innerHTML += `
-                    <div class="month-day-cell ${isToday ? 'today' : ''}" onclick="openModalDayContent('${dateKey}')">
+                const allDone = items.length > 0 && completedCount === items.length;
+                const mobileClass = allDone ? 'done' : (revisionCount > 0 ? 'rev' : '');
+                const mobileMeta = items.length > 0
+                    ? `<div class="month-day-mobile-meta"><span class="month-day-mobile-count ${mobileClass}" title="${items.length} itens agendados">${allDone ? '✓' : items.length}</span></div>`
+                    : '<div class="month-day-mobile-meta"></div>';
+
+                htmlParts.push(`
+                    <div class="month-day-cell ${isToday ? 'today' : ''}" onclick="openModalDayContent('${dateKey}')" role="button" tabindex="0" aria-label="Dia ${day}, ${items.length} itens agendados">
                         <div class="day-num-header">
                             <span>${day}</span>
-                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Abrir dia">+</button>
+                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Abrir dia" tabindex="-1">+</button>
                         </div>
-                        <div class="day-badges-scroll">${badgesHtml}</div>
+                        <div class="day-badges-scroll">${badgeParts.join('')}</div>
+                        ${mobileMeta}
                     </div>
-                `;
+                `);
             }
+
+            // Uma única escrita no DOM reduz reflows/repaints, especialmente em celulares.
+            grid.innerHTML = htmlParts.join('');
             renderDelayedPanel();
         }
 
@@ -2340,15 +2529,41 @@
             });
         }
 
+        function scheduleBackgroundTask(task, timeout = 400) {
+            const runner = () => Promise.resolve().then(task).catch(error => console.warn('Tarefa em segundo plano falhou:', error));
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(runner, { timeout });
+            } else {
+                window.setTimeout(runner, Math.min(timeout, 300));
+            }
+        }
+
         async function loadData() {
-            await loadConcursosMetadata();
+            // MOBILE-FIRST: mostra imediatamente o que já está salvo no aparelho.
+            loadLocalMetadata();
             loadLocalEditalData();
             filterDataByConcurso();
             initMonthYearSelectors();
             renderMonthCalendar();
             loadNotesData();
-            await loadFlashcardsData();
-            if (navigator.onLine && currentUser) await syncAllWithSupabase();
+
+            // Flashcards locais também aparecem antes de qualquer espera de rede.
+            const localMetadata = getConcursosMetadata();
+            flashcardsList = localMetadata[currentConcurso]?.flashcards || [];
+            populateFcMateriaDropdown();
+            renderFlashcardFolders();
+            renderFlashcards();
+
+            // A nuvem atualiza a interface depois, sem bloquear a primeira renderização.
+            if (navigator.onLine && currentUser) {
+                scheduleBackgroundTask(async () => {
+                    try {
+                        await syncAllWithSupabase();
+                    } catch (error) {
+                        console.warn('Sincronização em segundo plano adiada:', error);
+                    }
+                }, 250);
+            }
         }
 
         async function syncAllWithSupabase() {
@@ -2886,8 +3101,20 @@
             }
         }
 
+        let chartRenderSequence = 0;
+
         function renderChart() {
-            const ctx = document.getElementById('progressChart').getContext('2d');
+            const sequence = ++chartRenderSequence;
+            scheduleBackgroundTask(() => {
+                if (sequence !== chartRenderSequence) return;
+                renderChartNow();
+            }, 600);
+        }
+
+        function renderChartNow() {
+            const canvas = document.getElementById('progressChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+            const ctx = canvas.getContext('2d');
             const legendGrid = document.getElementById('chartLegendGrid');
             const counts = {};
 
@@ -2907,16 +3134,15 @@
             const barColors = labels.map((_, idx) => PALETA_SOLIDAS[idx % PALETA_SOLIDAS.length]);
 
             if (legendGrid) {
-                legendGrid.innerHTML = '';
-                labels.forEach((mName, idx) => {
+                legendGrid.innerHTML = labels.map((mName, idx) => {
                     const color = PALETA_SOLIDAS[idx % PALETA_SOLIDAS.length];
-                    legendGrid.innerHTML += `
+                    return `
                         <div class="chart-legend-item">
                             <span class="chart-legend-color" style="background-color: ${color};"></span>
                             <span>${escapeHtml(mName)} (${percentData[idx]}%)</span>
                         </div>
                     `;
-                });
+                }).join('');
             }
 
             if (myChart) myChart.destroy();
@@ -2961,10 +3187,28 @@
 
         function resetTimer() { clearInterval(timerInterval); timerInterval = null; updateTimerSettings(); }
 
+        let pdfJsLoadPromise = null;
+        function loadPdfJsOnce() {
+            if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+            if (pdfJsLoadPromise) return pdfJsLoadPromise;
+
+            pdfJsLoadPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                script.async = true;
+                script.onload = () => resolve(window.pdfjsLib || true);
+                script.onerror = () => { pdfJsLoadPromise = null; reject(new Error('Não foi possível carregar o PDF.js.')); };
+                document.head.appendChild(script);
+            });
+            return pdfJsLoadPromise;
+        }
+
         function openModalViewEdital() {
             document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
             renderEditalFileViewer();
             document.getElementById('modalViewEdital').style.display = 'flex';
+            // Biblioteca pesada carregada somente quando o recurso de edital é realmente aberto.
+            scheduleBackgroundTask(() => loadPdfJsOnce().catch(error => console.warn(error.message)), 1000);
         }
 
         function closeModalViewEdital() {
@@ -3191,7 +3435,18 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => { checkAuthAndSync(); });
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthAndSync();
+            const calendarGrid = document.getElementById('monthCalendarGrid');
+            if (calendarGrid) {
+                calendarGrid.addEventListener('keydown', event => {
+                    if ((event.key === 'Enter' || event.key === ' ') && event.target.classList.contains('month-day-cell')) {
+                        event.preventDefault();
+                        event.target.click();
+                    }
+                });
+            }
+        });
 
         function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
 
