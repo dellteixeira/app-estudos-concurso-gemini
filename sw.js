@@ -1,6 +1,7 @@
-const CACHE_NAME = 'edital-dashboard-v7-20260811-4';
+const CACHE_NAME = 'edital-dashboard-v8-20260811-5';
 
 const APP_SHELL = [
+  './',
   './manifest.json',
   './icon-192.png'
 ];
@@ -9,16 +10,17 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(
+        APP_SHELL.map((asset) => cache.add(asset))
+      )
+    )
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches
-      .keys()
+    caches.keys()
       .then((names) =>
         Promise.all(
           names.map((name) =>
@@ -45,14 +47,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-
   // ==========================================================
-  // HTML / NAVEGAÇÃO
+  // NAVEGAÇÕES / HTML
+  //
   // Estratégia: NETWORK FIRST
   //
-  // Sempre tenta buscar a versão mais recente na internet.
-  // Se não houver conexão, utiliza a última versão disponível
-  // no cache.
+  // Sempre tenta carregar a versão mais recente do aplicativo.
+  // Se não houver internet, utiliza a última versão válida
+  // armazenada no cache.
+  //
+  // Isso ajuda a evitar que uma versão antiga do index.html
+  // permaneça presa no cache após uma nova publicação.
   // ==========================================================
 
   const isNavigation =
@@ -85,21 +90,22 @@ self.addEventListener('fetch', (event) => {
         })
 
         .catch(async () => {
-          // Primeiro tenta encontrar exatamente a página solicitada.
+          // Primeiro tenta recuperar exatamente a página solicitada.
           const exact = await caches.match(request);
 
           if (exact) {
             return exact;
           }
 
-          // Depois tenta a raiz do aplicativo.
+          // Se não houver, tenta utilizar a raiz do aplicativo.
           const root = await caches.match('./');
 
           if (root) {
             return root;
           }
 
-          // Caso seja a primeira visita e o usuário esteja offline.
+          // Caso seja a primeira utilização e não exista
+          // nenhuma versão armazenada offline.
           return new Response(
             'Aplicativo indisponível offline nesta primeira visita.',
             {
@@ -115,16 +121,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-
   // ==========================================================
   // RECURSOS ESTÁTICOS
   //
-  // Estratégia:
-  // STALE-WHILE-REVALIDATE
+  // Estratégia: STALE-WHILE-REVALIDATE
   //
-  // 1. Se houver cache, entrega imediatamente.
-  // 2. Simultaneamente busca uma versão nova.
-  // 3. Atualiza o cache para a próxima utilização.
+  // 1. Se existir no cache, entrega imediatamente.
+  // 2. Ao mesmo tempo busca uma versão atualizada na rede.
+  // 3. Atualiza o cache silenciosamente.
+  //
+  // Isso mantém o aplicativo rápido sem impedir atualizações.
   // ==========================================================
 
   if (request.method === 'GET') {
@@ -136,7 +142,6 @@ self.addEventListener('fetch', (event) => {
           const networkFetch = fetch(request)
 
             .then((response) => {
-
               if (
                 response &&
                 response.ok &&
@@ -145,7 +150,6 @@ self.addEventListener('fetch', (event) => {
                   url.protocol === 'https:'
                 )
               ) {
-
                 caches
                   .open(CACHE_NAME)
                   .then((cache) => {
@@ -159,9 +163,7 @@ self.addEventListener('fetch', (event) => {
               return response;
             })
 
-            .catch(() => {
-              return cached;
-            });
+            .catch(() => cached);
 
           return cached || networkFetch;
         })
