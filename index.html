@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Meu Painel de Estudos</title>
-    <!-- Mobile UI v1 - 2026-08-11 -->
+    <!-- Mobile UI v2 - 2026-08-11 | build 20260811-4 -->
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
@@ -20,7 +20,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260811-2', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=20260811-4', { updateViaCache: 'none' })
             .then(reg => reg.update())
             .catch(err => console.error('Erro no Service Worker:', err));
         });
@@ -324,7 +324,7 @@
         /* Indicadores compactos usados pelo calendário em telas pequenas */
         .month-day-mobile-meta { display: none; }
 
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             /* Layout geral mobile */
             #app-dashboard { padding: 1rem; }
             header { gap: 0.85rem; }
@@ -351,7 +351,9 @@
             .action-bar .btn-action {
                 width: 100%;
                 min-width: 0;
+                height: 60px;
                 min-height: 60px;
+                max-height: 60px;
                 padding: 10px 8px;
                 display: flex;
                 align-items: center;
@@ -402,10 +404,14 @@
                 display: grid;
                 grid-template-columns: repeat(7, minmax(0, 1fr));
                 gap: 4px;
+                width: 100%;
+                min-width: 0;
             }
             .month-day-cell {
                 height: 62px;
                 min-height: 62px;
+                max-height: 62px;
+                min-width: 0;
                 padding: 4px;
                 border-radius: 8px;
                 overflow: hidden;
@@ -477,13 +483,22 @@
             .day-topic-row { padding: 11px; gap: 8px; }
             .day-topic-row > div:first-child { min-width: 100%; }
 
+            /* Evita que conteúdo desktop force largura/altura no calendário compacto */
+            #monthCalendarGrid .clean-subject-badge { display: none !important; }
+            #monthCalendarGrid .day-badges-scroll { display: none !important; }
+            #monthCalendarGrid .month-day-mobile-meta { display: flex !important; }
+
+            /* Área do calendário ocupa toda a largura disponível sem rolagem horizontal */
+            #tab-calendario .card { overflow: hidden; }
+            #monthCalendarGrid, .month-calendar-header { max-width: 100%; }
+
             .weekday-picker { grid-template-columns: repeat(4, 1fr); }
         }
 
         @media (max-width: 390px) {
             #app-dashboard { padding: 0.75rem; }
             .action-bar { gap: 8px; }
-            .action-bar .btn-action { font-size: 0.82rem; min-height: 58px; }
+            .action-bar .btn-action { font-size: 0.82rem; height: 58px; min-height: 58px; max-height: 58px; }
             .month-grid, .month-calendar-header { gap: 3px; }
             .month-day-cell { height: 58px; min-height: 58px; }
         }
@@ -3550,6 +3565,13 @@
             document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
+
+            // Renderiza componentes pesados somente quando a aba fica visível.
+            if (tabId === 'tab-calendario') {
+                requestAnimationFrame(() => renderMonthCalendar());
+            } else if (tabId === 'tab-edital') {
+                requestAnimationFrame(() => renderChart());
+            }
         }
 
         window.handleSignUp = handleSignUp;
