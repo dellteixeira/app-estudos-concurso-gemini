@@ -311,6 +311,34 @@
         .delayed-card-info p { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
         .delayed-tag { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
 
+
+        .delayed-day-group {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            background: rgba(255,255,255,0.02);
+        }
+        .delayed-day-summary {
+            width: 100%; border: 0; background: transparent; color: var(--text-color);
+            padding: 0.9rem 1rem; display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; cursor: pointer; text-align: left; font-weight: 800;
+        }
+        .delayed-day-summary:hover { background: rgba(59,130,246,0.08); }
+        .delayed-day-summary-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .delayed-day-date { color: var(--primary-blue); font-size: 1rem; }
+        .delayed-day-late {
+            background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.35);
+            padding: 3px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 800;
+        }
+        .delayed-day-count { opacity: 0.75; font-size: 0.8rem; font-weight: 700; }
+        .delayed-day-chevron { transition: transform 0.2s ease; font-size: 1rem; opacity: 0.75; }
+        .delayed-day-content { display: none; padding: 0 0.8rem 0.8rem; }
+        .delayed-day-group.open .delayed-day-content { display: block; }
+        .delayed-day-group.open .delayed-day-chevron { transform: rotate(180deg); }
+        .delayed-day-content .delayed-card { margin-bottom: 0.55rem; }
+        .delayed-day-content .delayed-card:last-child { margin-bottom: 0; }
+
         .month-calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-weight: 700; color: var(--primary-blue); margin-bottom: 8px; }
         .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
 
@@ -2924,6 +2952,21 @@
             renderDelayedPanel();
         }
 
+        function formatScheduleShortDate(dateKey) {
+            const parts = String(dateKey || '').split('-');
+            if (parts.length !== 3) return String(dateKey || '');
+            return `${parts[2]}/${parts[1]}`;
+        }
+
+        function daysBetweenDateKeys(fromKey, toKey) {
+            const parseKey = (key) => {
+                const [year, month, day] = String(key).split('-').map(Number);
+                return new Date(year, month - 1, day);
+            };
+            const diff = parseKey(toKey).getTime() - parseKey(fromKey).getTime();
+            return Math.max(0, Math.round(diff / 86400000));
+        }
+
         function renderDelayedPanel() {
             const container = document.getElementById('delayedItemsContainer');
             if (!container) return;
@@ -2931,39 +2974,78 @@
 
             const metadata = getConcursosMetadata();
             const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalDateKey();
 
             let count = 0;
             Object.keys(dateSchedule).forEach(dKey => {
-                if (dKey < todayStr && dateSchedule[dKey].length > 0) count += dateSchedule[dKey].length;
+                if (dKey < todayStr && Array.isArray(dateSchedule[dKey]) && dateSchedule[dKey].length > 0) {
+                    count += dateSchedule[dKey].length;
+                }
             });
             document.getElementById('delayedBadgeCount').textContent = `${count} atrasadas`;
 
-            let displayList = [];
-            Object.keys(dateSchedule).forEach(dKey => {
-                if (currentDelayedFilter === 'hoje' && dKey === todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
-                else if (currentDelayedFilter === 'atrasadas' && dKey < todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
-                else if (currentDelayedFilter === 'proximas' && dKey > todayStr) displayList.push({ date: dKey, items: dateSchedule[dKey] });
-            });
+            const displayList = Object.keys(dateSchedule)
+                .sort()
+                .filter(dKey => {
+                    const items = dateSchedule[dKey];
+                    if (!Array.isArray(items) || items.length === 0) return false;
+                    if (currentDelayedFilter === 'hoje') return dKey === todayStr;
+                    if (currentDelayedFilter === 'atrasadas') return dKey < todayStr;
+                    if (currentDelayedFilter === 'proximas') return dKey > todayStr;
+                    return false;
+                })
+                .map(dKey => ({ date: dKey, items: dateSchedule[dKey] }));
 
             if (displayList.length === 0) {
                 container.innerHTML = '<p style="opacity: 0.8; font-size:0.9rem;">Nenhum item agendado para esta aba.</p>';
                 return;
             }
 
+            let html = '';
             displayList.forEach(group => {
+                const formattedDate = formatScheduleShortDate(group.date);
+                const isLate = group.date < todayStr;
+                const isToday = group.date === todayStr;
+                const daysLate = isLate ? daysBetweenDateKeys(group.date, todayStr) : 0;
+                const daysAhead = group.date > todayStr ? daysBetweenDateKeys(todayStr, group.date) : 0;
+                const itemCountText = `${group.items.length} ${group.items.length === 1 ? 'matéria' : 'matérias'}`;
+
+                let timingBadge = '';
+                if (isLate) {
+                    timingBadge = `<span class="delayed-day-late">${daysLate} ${daysLate === 1 ? 'dia de atraso' : 'dias de atraso'}</span>`;
+                } else if (isToday) {
+                    timingBadge = '<span class="delayed-day-late" style="color:#38bdf8;border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.12);">Hoje</span>';
+                } else {
+                    timingBadge = `<span class="delayed-day-count">em ${daysAhead} ${daysAhead === 1 ? 'dia' : 'dias'}</span>`;
+                }
+
+                const openClass = isToday ? ' open' : '';
+                let itemsHtml = '';
                 group.items.forEach(it => {
-                    container.innerHTML += `
+                    itemsHtml += `
                         <div class="delayed-card">
                             <div class="delayed-card-info">
-                                <h4>Data: ${escapeHtml(group.date)}</h4>
                                 <p>${escapeHtml(it)}</p>
                                 <span class="delayed-tag">${escapeHtml(currentConcurso)}</span>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
+
+                html += `
+                    <div class="delayed-day-group${openClass}">
+                        <button type="button" class="delayed-day-summary" onclick="this.parentElement.classList.toggle('open')">
+                            <span class="delayed-day-summary-main">
+                                <span class="delayed-day-date">${escapeHtml(formattedDate)}</span>
+                                ${timingBadge}
+                                <span class="delayed-day-count">${escapeHtml(itemCountText)}</span>
+                            </span>
+                            <span class="delayed-day-chevron">⌄</span>
+                        </button>
+                        <div class="delayed-day-content">${itemsHtml}</div>
+                    </div>`;
             });
+
+            container.innerHTML = html;
         }
 
         function scheduleBackgroundTask(task, timeout = 400) {
@@ -3759,25 +3841,55 @@
             return `pomodoro_daily_minutes_${uid}_${getLocalDateKey()}`;
         }
 
-        function getGeneralPomodoroStorageKey() {
+        function getPomodoroExtraStoragePrefix() {
             const uid = currentUser ? currentUser.id : 'guest';
-            return `pomodoro_general_minutes_${uid}`;
+            return `pomodoro_extra_minutes_${uid}_${encodeURIComponent(currentConcurso)}_`;
         }
 
-        function getGeneralPomodoroMinutes() {
-            const value = parseInt(localStorage.getItem(getGeneralPomodoroStorageKey()) || '0');
+        function getDailyPomodoroExtraStorageKey(dateKey = getLocalDateKey()) {
+            return `${getPomodoroExtraStoragePrefix()}${dateKey}`;
+        }
+
+        function getDailyPomodoroExtraMinutes(dateKey = getLocalDateKey()) {
+            const value = parseInt(localStorage.getItem(getDailyPomodoroExtraStorageKey(dateKey)) || '0');
             return Number.isFinite(value) && value > 0 ? value : 0;
         }
 
-        function setGeneralPomodoroMinutes(minutes) {
-            const normalized = Math.max(0, Math.round(Number(minutes) || 0));
-            localStorage.setItem(getGeneralPomodoroStorageKey(), String(normalized));
-        }
-
-        function addGeneralPomodoroMinutes(minutes) {
+        function addDailyPomodoroExtraMinutes(minutes, dateKey = getLocalDateKey()) {
             const increment = Math.max(0, Math.round(Number(minutes) || 0));
             if (!increment) return;
-            setGeneralPomodoroMinutes(getGeneralPomodoroMinutes() + increment);
+            const key = getDailyPomodoroExtraStorageKey(dateKey);
+            localStorage.setItem(key, String(getDailyPomodoroExtraMinutes(dateKey) + increment));
+        }
+
+        function getTotalPomodoroExtraMinutes() {
+            const prefix = getPomodoroExtraStoragePrefix();
+            let total = 0;
+            for (let index = 0; index < localStorage.length; index++) {
+                const key = localStorage.key(index);
+                if (!key || !key.startsWith(prefix)) continue;
+                const value = parseInt(localStorage.getItem(key) || '0');
+                if (Number.isFinite(value) && value > 0) total += value;
+            }
+            return total;
+        }
+
+        function getPlannedPomodoroMinutes() {
+            const metadata = getConcursosMetadata();
+            const concursoData = metadata[currentConcurso] || {};
+            const targetHours = Number(concursoData.pomodoroDailyTargetHours || 0);
+            const dateSchedule = concursoData.dateSchedule || {};
+            if (!Number.isFinite(targetHours) || targetHours <= 0) return 0;
+
+            const studyDays = Object.values(dateSchedule).filter(items =>
+                Array.isArray(items) && items.some(item => !String(item).startsWith('🔄 Rev'))
+            ).length;
+
+            return Math.round(studyDays * targetHours * 60);
+        }
+
+        function getGeneralPomodoroMinutes() {
+            return getPlannedPomodoroMinutes() + getTotalPomodoroExtraMinutes();
         }
 
         function getDailyPomodoroMinutes() {
@@ -3850,6 +3962,7 @@
         function resetDailyPomodoroHours() {
             if (!confirm('Deseja zerar todas as horas Pomodoro contabilizadas hoje?')) return;
             localStorage.removeItem(getDailyPomodoroStorageKey());
+            localStorage.removeItem(getDailyPomodoroExtraStorageKey());
             renderPomodoroDailyCounter();
         }
 
@@ -3898,8 +4011,16 @@
                     timerInterval = null;
                     timerHasStarted = false;
                     isTimerPaused = false;
-                    addGeneralPomodoroMinutes(currentFocusCycleMinutes);
-                    addDailyPomodoroMinutes(currentFocusCycleMinutes);
+                    const studiedBefore = getDailyPomodoroMinutes();
+                    const targetMinutes = Math.round(getPomodoroDailyTargetHours() * 60);
+                    const studiedAfter = studiedBefore + currentFocusCycleMinutes;
+                    if (targetMinutes > 0) {
+                        const extraBefore = Math.max(0, studiedBefore - targetMinutes);
+                        const extraAfter = Math.max(0, studiedAfter - targetMinutes);
+                        const newExtraMinutes = Math.max(0, extraAfter - extraBefore);
+                        if (newExtraMinutes > 0) addDailyPomodoroExtraMinutes(newExtraMinutes);
+                    }
+                    setDailyPomodoroMinutes(studiedAfter);
                     currentFocusCycleMinutes = 0;
                     updatePauseButton();
                     playPomodoroCompletionBell();
