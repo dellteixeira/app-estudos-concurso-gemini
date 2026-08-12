@@ -10,7 +10,7 @@
     <title>Meu Painel de Estudos</title>
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
-    <link rel="manifest" href="manifest.json?v=20260811-5">
+    <link rel="manifest" href="manifest.json?v=20260812-6">
     <meta name="theme-color" content="#0f172a">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -23,7 +23,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260811-5', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=20260812-6', { updateViaCache: 'none' })
             .then(reg => reg.update())
             .catch(err => console.error('Erro no Service Worker:', err));
         });
@@ -4630,6 +4630,127 @@
                 .trim();
         }
 
+        // Preserva a estrutura visual do PDF (linhas e títulos). A versão anterior
+        // concatenava todos os itens com espaços, o que fazia a IA confundir
+        // cabeçalhos como "Conhecimentos"/"Direito" com disciplinas reais.
+        function extractPdfPageTextWithLayout(items) {
+            const tokens = (Array.isArray(items) ? items : [])
+                .map((item, order) => {
+                    const str = String(item?.str || '').replace(/\u0000/g, ' ').trim();
+                    const transform = Array.isArray(item?.transform) ? item.transform : [];
+                    const x = Number(transform[4]);
+                    const y = Number(transform[5]);
+                    return {
+                        str,
+                        x: Number.isFinite(x) ? x : 0,
+                        y: Number.isFinite(y) ? y : 0,
+                        order
+                    };
+                })
+                .filter(t => t.str);
+
+            if (!tokens.length) return '';
+
+            // Agrupa por coordenada vertical com tolerância suficiente para fontes
+            // diferentes na mesma linha. Em seguida ordena horizontalmente.
+            const tolerance = 2.6;
+            const lines = [];
+            for (const token of tokens) {
+                let line = lines.find(l => Math.abs(l.y - token.y) <= tolerance);
+                if (!line) {
+                    line = { y: token.y, tokens: [] };
+                    lines.push(line);
+                }
+                line.tokens.push(token);
+            }
+
+            lines.sort((a, b) => b.y - a.y);
+            const textLines = lines.map(line => {
+                line.tokens.sort((a, b) => (a.x - b.x) || (a.order - b.order));
+                return line.tokens.map(t => t.str).join(' ')
+                    .replace(/\s+([,.;:!?])/g, '$1')
+                    .replace(/\(\s+/g, '(')
+                    .replace(/\s+\)/g, ')')
+                    .replace(/[ \t]{2,}/g, ' ')
+                    .trim();
+            }).filter(Boolean);
+
+            return normalizeEditalPageText(textLines.join('\n'));
+        }
+
+        function isGenericStudyHeading(value) {
+            const t = foldEditalText(value).replace(/[:;.-]+$/g, '').trim();
+            return [
+                'conhecimentos', 'conhecimentos gerais', 'conhecimentos especificos',
+                'direito', 'legislacao', 'nocao de direito', 'nocoes de direito',
+                'conteudo programatico', 'conteudos programaticos', 'programa', 'programa de provas'
+            ].includes(t);
+        }
+
+        function knownDisciplineNameFromLine(line) {
+            const raw = String(line || '').trim();
+            const folded = foldEditalText(raw);
+            if (!folded || folded.length > 150) return '';
+
+            const names = [
+                'Língua Portuguesa', 'Redação', 'Raciocínio Lógico', 'Raciocínio Lógico-Matemático',
+                'Matemática', 'Informática', 'Noções de Informática', 'Direito Constitucional',
+                'Direito Administrativo', 'Direito Civil', 'Direito Penal', 'Direito Processual Civil',
+                'Direito Processual Penal', 'Direito do Trabalho', 'Direito Processual do Trabalho',
+                'Direito Tributário', 'Direito Financeiro', 'Direito Previdenciário', 'Direito Eleitoral',
+                'Direito Empresarial', 'Direito Ambiental', 'Direitos Humanos', 'Administração Pública',
+                'Administração Geral', 'Contabilidade', 'Contabilidade Pública', 'Auditoria', 'Arquivologia',
+                'Estatística', 'Economia', 'Legislação Específica', 'Organização Judiciária',
+                'Ética no Serviço Público', 'Gestão Pública', 'Gestão de Pessoas',
+                'Direitos das Pessoas com Deficiência'
+            ];
+
+            const normalizedPairs = names.map(name => [name, foldEditalText(name)]);
+            // Cabeçalho típico: "DIREITO PENAL:" ou "Direito Penal - ...".
+            for (const [name, f] of normalizedPairs) {
+                if (folded === f || folded.startsWith(f + ':') || folded.startsWith(f + ' -') || folded.startsWith(f + ' –') || folded.startsWith(f + ' —')) {
+                    return name;
+                }
+            }
+            return '';
+        }
+
+        function buildDisciplineStructuredExcerpt(text) {
+            const lines = String(text || '').split(/\n+/).map(v => v.trim()).filter(Boolean);
+            if (!lines.length) return '';
+
+            const sections = [];
+            let current = null;
+
+            for (const line of lines) {
+                const discipline = knownDisciplineNameFromLine(line);
+                if (discipline) {
+                    if (current && current.lines.length) sections.push(current);
+                    current = { discipline, lines: [] };
+
+                    // Mantém conteúdo que esteja na mesma linha após ':' ou travessão.
+                    const colon = line.indexOf(':');
+                    if (colon >= 0 && line.slice(colon + 1).trim()) {
+                        current.lines.push(line.slice(colon + 1).trim());
+                    }
+                    continue;
+                }
+
+                if (current) {
+                    if (isGenericStudyHeading(line)) continue;
+                    current.lines.push(line);
+                }
+            }
+            if (current && current.lines.length) sections.push(current);
+
+            if (!sections.length) return '';
+
+            return sections.map(section => {
+                const body = section.lines.join('\n').trim();
+                return `### DISCIPLINA: ${section.discipline}\n${body}`;
+            }).join('\n\n');
+        }
+
         function foldEditalText(text) {
             return String(text || '')
                 .normalize('NFD')
@@ -4815,7 +4936,7 @@
                 setAiEditalStatus(`Lendo PDF: página ${pageNumber} de ${pdf.numPages}...`);
                 const page = await pdf.getPage(pageNumber);
                 const content = await page.getTextContent();
-                const text = normalizeEditalPageText(content.items.map(item => item.str).join(' '));
+                const text = extractPdfPageTextWithLayout(content.items);
                 pages.push({ pageNumber, text, score: scoreEditalPage(text) });
             }
 
@@ -4879,6 +5000,19 @@
                 .join('\n');
 
             if (text.length > maxChars) text = text.slice(0, maxChars);
+
+            // Cria uma segunda representação hierárquica do MESMO recorte. Ela vem
+            // antes do texto bruto para que o modelo enxergue claramente disciplina →
+            // tópicos, mesmo em editais longos. Reserva até ~32k caracteres para essa
+            // estrutura e usa o restante para o recorte original, sem ultrapassar 98k.
+            const structuredExcerpt = buildDisciplineStructuredExcerpt(text);
+            if (structuredExcerpt) {
+                const structuredHeader = '===== ESTRUTURA DE DISCIPLINAS DETECTADA NO PDF =====\n';
+                const rawHeader = '\n\n===== RECORTE ORIGINAL PARA CONFERÊNCIA =====\n';
+                const structuredBlock = (structuredHeader + structuredExcerpt).slice(0, 32000);
+                const rawBudget = Math.max(0, maxChars - structuredBlock.length - rawHeader.length);
+                text = structuredBlock + rawHeader + text.slice(0, rawBudget);
+            }
 
             return {
                 text,
