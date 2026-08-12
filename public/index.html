@@ -1685,6 +1685,11 @@
                 O Painel extrai o texto do PDF no navegador, seleciona as páginas mais prováveis do conteúdo programático e envia somente esse recorte para análise. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> é estimada apenas com base no próprio edital nesta fase; não representa frequência histórica da banca.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
+            <div class="form-group" style="margin-top:0.8rem;">
+                <label><strong>Banca examinadora (opcional nesta fase):</strong></label>
+                <input type="text" id="inputAiBanca" placeholder="Ex.: FCC, FGV, Cebraspe...">
+                <small style="color:#94a3b8; line-height:1.35;">A banca é enviada como contexto, mas a Fase 1 ainda não consulta automaticamente o histórico de questões. Não será inventada frequência histórica.</small>
+            </div>
             <div id="aiEditalStatus" class="ai-analysis-status" aria-live="polite"></div>
             <div id="aiEditalPreview" class="ai-analysis-preview"></div>
             <div class="modal-actions" style="flex-wrap:wrap;">
@@ -4628,22 +4633,58 @@
         function scoreEditalPage(text) {
             const t = String(text || '').toLowerCase();
             let score = 0;
-            const strong = [
+
+            const contentMarkers = [
                 'conteúdo programático', 'conteudo programatico', 'programa de provas',
-                'conhecimentos específicos', 'conhecimentos especificos',
-                'conhecimentos gerais', 'disciplinas', 'conteúdos', 'conteudos'
+                'conhecimentos gerais', 'conhecimentos específicos', 'conhecimentos especificos',
+                'conteúdos programáticos', 'conteudos programaticos'
             ];
+
             const subjects = [
-                'língua portuguesa', 'lingua portuguesa', 'direito constitucional', 'direito administrativo',
-                'direito civil', 'direito penal', 'direito processual', 'raciocínio lógico', 'raciocinio logico',
-                'informática', 'informatica', 'legislação', 'legislacao', 'administração pública',
-                'administração financeira', 'contabilidade', 'auditoria', 'arquivologia', 'estatística',
-                'economia', 'redação', 'redacao', 'conhecimentos especializados'
+                'língua portuguesa', 'lingua portuguesa', 'redação', 'redacao',
+                'raciocínio lógico', 'raciocinio logico', 'matemática', 'matematica',
+                'informática', 'informatica',
+                'direito constitucional', 'direito administrativo', 'direito civil',
+                'direito penal', 'direito processual civil', 'direito processual penal',
+                'direito do trabalho', 'direito processual do trabalho',
+                'administração pública', 'administracao publica', 'contabilidade',
+                'auditoria', 'arquivologia', 'estatística', 'estatistica', 'economia',
+                'legislação específica', 'legislacao especifica', 'organização judiciária',
+                'organizacao judiciaria', 'direitos das pessoas com deficiência',
+                'direitos das pessoas com deficiencia'
             ];
-            strong.forEach(k => { if (t.includes(k)) score += 8; });
-            subjects.forEach(k => { if (t.includes(k)) score += 2; });
-            if (/anexo\s+[ivxlcdm]+/i.test(text || '')) score += 1;
-            if (/\b(prova|questões|questoes|peso|pontuação|pontuacao)\b/i.test(text || '')) score += 1;
+
+            const administrative = [
+                'das inscrições', 'das inscricoes', 'isenção', 'isencao',
+                'candidatos com deficiência', 'candidatos com deficiencia',
+                'candidatos negros', 'candidatos indígenas', 'candidatos indigenas',
+                'candidatos quilombolas', 'das disposições preliminares', 'das disposicoes preliminares',
+                'dos cargos', 'requisitos para investidura', 'da inscrição', 'da inscricao',
+                'atendimento especial', 'dos recursos', 'do resultado', 'da classificação',
+                'da classificacao', 'da nomeação', 'da nomeacao', 'cronograma',
+                'prestação das provas', 'prestacao das provas'
+            ];
+
+            contentMarkers.forEach(k => { if (t.includes(k)) score += 10; });
+            let subjectHits = 0;
+            subjects.forEach(k => {
+                if (t.includes(k)) {
+                    subjectHits += 1;
+                    score += 7;
+                }
+            });
+
+            // Páginas com várias disciplinas juntas são fortes candidatas ao conteúdo programático.
+            if (subjectHits >= 2) score += subjectHits * 8;
+            if (subjectHits >= 4) score += 20;
+
+            administrative.forEach(k => { if (t.includes(k)) score -= 7; });
+
+            // Sumários costumam reunir muitos títulos administrativos e números de página.
+            const dotLeaderCount = (String(text || '').match(/\.{3,}/g) || []).length;
+            if (dotLeaderCount >= 3) score -= 20;
+
+            if (/\b(peso|n[uú]mero de quest[oõ]es|quest[oõ]es|pontua[cç][aã]o)\b/i.test(text || '')) score += 3;
             return score;
         }
 
@@ -4666,46 +4707,53 @@
                 throw new Error('O PDF parece ser digitalizado como imagem ou não possui texto pesquisável. Nesta fase, use um PDF com camada de texto.');
             }
 
-            const selected = new Set();
-            const strongIndexes = pages.map((p, i) => p.score >= 8 ? i : -1).filter(i => i >= 0);
+            // Em vez de começar pelas primeiras páginas do edital, prioriza as páginas
+            // com maior densidade real de disciplinas/conteúdo programático.
+            const ranked = pages
+                .map((p, index) => ({ ...p, index }))
+                .filter(p => p.text && p.score > 0)
+                .sort((a, b) => b.score - a.score);
 
-            strongIndexes.forEach(i => {
-                for (let j = Math.max(0, i - 1); j <= Math.min(pages.length - 1, i + 2); j++) selected.add(j);
-            });
-
-            // Se houver um ponto forte de conteúdo programático, percorre uma janela contínua
-            // para evitar cortar disciplinas que seguem nas páginas seguintes.
-            if (strongIndexes.length) {
-                const start = Math.max(0, strongIndexes[0] - 1);
-                const end = Math.min(pages.length - 1, start + 27);
-                for (let i = start; i <= end; i++) selected.add(i);
+            if (!ranked.length) {
+                throw new Error('Não foi possível localizar páginas com conteúdo programático. Confira se o edital anexado contém o programa das disciplinas.');
             }
 
-            // Complementa com as páginas mais relevantes do documento.
-            [...pages]
-                .map((p, i) => ({...p, index:i}))
-                .sort((a,b) => b.score - a.score)
-                .slice(0, 18)
-                .forEach(p => selected.add(p.index));
+            const selected = new Set();
+            const anchors = ranked.slice(0, Math.min(6, ranked.length));
 
-            // Em edital pequeno, usa tudo; em edital grande, respeita o recorte econômico.
-            if (pages.length <= 35) pages.forEach((_, i) => selected.add(i));
+            anchors.forEach(anchor => {
+                // O conteúdo costuma continuar nas páginas seguintes. Inclui uma janela
+                // pequena ao redor de cada âncora, evitando puxar o início administrativo.
+                for (let j = Math.max(0, anchor.index - 1); j <= Math.min(pages.length - 1, anchor.index + 4); j++) {
+                    selected.add(j);
+                }
+            });
 
-            let chosen = [...selected].sort((a,b) => a-b).map(i => pages[i]);
+            let chosen = [...selected]
+                .sort((a, b) => a - b)
+                .map(i => pages[i])
+                .filter(p => p.text);
+
             const maxChars = 88000;
             let total = 0;
             const finalPages = [];
+
+            // Mantém a ordem natural das páginas, mas só depois de selecionar as regiões
+            // relevantes. Isso evita o problema anterior de cortar o PDF nas primeiras páginas.
             for (const p of chosen) {
                 const blockSize = p.text.length + 40;
-                if (total + blockSize > maxChars && finalPages.length >= 8) continue;
-                if (!p.text) continue;
+                if (total + blockSize > maxChars && finalPages.length >= 6) continue;
                 finalPages.push(p);
                 total += blockSize;
                 if (total >= maxChars) break;
             }
 
-            if (!finalPages.length) throw new Error('Não foi possível localizar texto útil no edital.');
-            const text = finalPages.map(p => `\n--- PÁGINA ${p.pageNumber} ---\n${p.text}`).join('\n');
+            if (!finalPages.length) throw new Error('Não foi possível localizar texto útil no conteúdo programático.');
+
+            const text = finalPages
+                .map(p => `\n--- PÁGINA ${p.pageNumber} | SCORE ${p.score} ---\n${p.text}`)
+                .join('\n');
+
             return {
                 text,
                 totalPages: pdf.numPages,
@@ -4717,26 +4765,25 @@
         function normalizeAiAnalysis(data) {
             const root = data && data.analysis ? data.analysis : data;
             if (!root || typeof root !== 'object') throw new Error('A IA retornou um formato inválido.');
+
             const materias = Array.isArray(root.materias) ? root.materias : [];
             const cleanMaterias = materias.map((mat, idx) => {
                 const materia = String(mat.materia || mat.nome || `Matéria ${idx + 1}`).trim();
                 const prioridade = Math.min(3, Math.max(1, parseInt(mat.prioridade) || 2));
-                const assuntosRaw = Array.isArray(mat.assuntos) ? mat.assuntos : [];
-                const assuntos = assuntosRaw.map((ass, aidx) => {
-                    if (typeof ass === 'string') return { assunto: ass.trim(), prioridade: Math.min(3, Math.max(1, aidx + 1)) };
-                    return {
-                        assunto: String(ass.assunto || ass.nome || ass.titulo || '').trim(),
-                        prioridade: Math.min(3, Math.max(1, parseInt(ass.prioridade) || 2))
-                    };
-                }).filter(a => a.assunto);
-                return { materia, prioridade, assuntos };
+                const pesoNum = Number(mat.peso);
+                const peso = Number.isFinite(pesoNum) && pesoNum >= 0 ? pesoNum : 1.0;
+                const assuntos = (Array.isArray(mat.assuntos) ? mat.assuntos : [])
+                    .map(ass => String(typeof ass === 'string' ? ass : (ass?.assunto || ass?.nome || '')).trim())
+                    .filter(Boolean);
+                return { materia, prioridade, peso, assuntos };
             }).filter(m => m.materia && m.assuntos.length);
-            if (!cleanMaterias.length) throw new Error('A IA não identificou matérias e assuntos suficientes para importação.');
+
+            if (!cleanMaterias.length) {
+                throw new Error('A IA não encontrou disciplinas reais do conteúdo programático. Não importe o resultado; revise o recorte do edital.');
+            }
+
             return {
                 concurso: String(root.concurso || currentConcurso || '').trim(),
-                banca: String(root.banca || '').trim(),
-                cargo: String(root.cargo || '').trim(),
-                criterio_prioridade: String(root.criterio_prioridade || 'Estimativa baseada somente no edital.').trim(),
                 materias: cleanMaterias
             };
         }
@@ -4747,6 +4794,7 @@
             const pagesLabel = extractionMeta?.selectedPages?.length
                 ? `${extractionMeta.selectedPages.length}/${extractionMeta.totalPages}`
                 : '—';
+
             let html = `
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -4754,22 +4802,24 @@
                     <div class="ai-preview-stat"><strong>${escapeHtml(pagesLabel)}</strong><span>páginas analisadas</span></div>
                 </div>
                 <div class="ai-source-note" style="margin-bottom:0.8rem;">
-                    ${analysis.banca ? `Banca identificada: <strong>${escapeHtml(analysis.banca)}</strong> · ` : ''}
-                    ${analysis.cargo ? `Cargo: <strong>${escapeHtml(analysis.cargo)}</strong><br>` : ''}
-                    ${escapeHtml(analysis.criterio_prioridade)}
+                    <strong>Critério desta fase:</strong> prioridade e peso usam somente informações encontradas no edital. Histórico real da banca ainda não é consultado automaticamente.
                 </div>`;
+
             analysis.materias.forEach(mat => {
                 html += `<div class="ai-preview-materia">
                     <div class="ai-preview-materia-title">
-                        <span>${escapeHtml(mat.materia)} <small style="opacity:.65;">(${mat.assuntos.length} assuntos)</small></span>
+                        <span>${escapeHtml(mat.materia)} <small style="opacity:.65;">(${mat.assuntos.length} assuntos · peso ${escapeHtml(String(mat.peso))})</small></span>
                         <span class="ai-priority-badge ai-priority-${mat.prioridade}" title="Prioridade da matéria">P${mat.prioridade}</span>
                     </div>
                     <div class="ai-preview-topics">`;
-                mat.assuntos.forEach(ass => {
-                    html += `<div class="ai-preview-topic"><span>${escapeHtml(ass.assunto)}</span><span class="ai-priority-badge ai-priority-${ass.prioridade}">P${ass.prioridade}</span></div>`;
+
+                mat.assuntos.forEach((ass, idx) => {
+                    html += `<div class="ai-preview-topic"><span>${idx + 1}. ${escapeHtml(ass)}</span></div>`;
                 });
+
                 html += `</div></div>`;
             });
+
             preview.innerHTML = html;
             preview.classList.add('visible');
         }
@@ -4803,6 +4853,7 @@
                     },
                     body: JSON.stringify({
                         concurso: currentConcurso,
+                        banca: document.getElementById('inputAiBanca')?.value?.trim() || '',
                         fileName: fileObj.name || 'Edital.pdf',
                         text: extraction.text,
                         selectedPages: extraction.selectedPages,
@@ -4837,15 +4888,16 @@
 
             analysis.materias.forEach(mat => {
                 mat.assuntos.forEach((ass, idxAss) => {
-                    const key = `${mat.materia.trim().toLowerCase()}|||${ass.assunto.trim().toLowerCase()}`;
-                    if (existingKeys.has(key)) return;
+                    const assunto = String(ass || '').trim();
+                    const key = `${mat.materia.trim().toLowerCase()}|||${assunto.toLowerCase()}`;
+                    if (!assunto || existingKeys.has(key)) return;
                     existingKeys.add(key);
                     novos.push({
                         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                         materia: mat.materia,
-                        assunto: ass.assunto,
+                        assunto: assunto,
                         prioridade: mat.prioridade,
-                        assunto_prioridade: ass.prioridade,
+                        assunto_prioridade: mat.prioridade,
                         concurso: currentConcurso,
                         user_id: currentUser ? currentUser.id : null,
                         teoria: false,
