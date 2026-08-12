@@ -63,6 +63,48 @@ function isAdministrativeMateriaName(value) {
   return exactOrStarts.some(term => name === term || name.startsWith(`${term} `));
 }
 
+function isGenericMateriaName(value) {
+  const name = foldLabel(value).replace(/[:;.-]+$/g, "").trim();
+  return [
+    "conhecimentos", "conhecimentos gerais", "conhecimentos especificos",
+    "direito", "legislacao", "nocao de direito", "nocoes de direito",
+    "programa", "conteudo programatico", "conteudos programaticos"
+  ].includes(name);
+}
+
+function looksLikeDisciplineName(value) {
+  const name = foldLabel(value);
+  const patterns = [
+    "lingua portuguesa", "redacao", "raciocinio logico", "matematica", "informatica",
+    "direito constitucional", "direito administrativo", "direito civil", "direito penal",
+    "direito processual civil", "direito processual penal", "direito do trabalho",
+    "direito processual do trabalho", "direito tributario", "direito financeiro",
+    "direito previdenciario", "direito eleitoral", "direito empresarial", "direito ambiental",
+    "direitos humanos", "administracao publica", "contabilidade", "auditoria", "arquivologia",
+    "estatistica", "economia", "legislacao especifica", "organizacao judiciaria"
+  ];
+  return patterns.some(p => name === p || name.startsWith(p + " "));
+}
+
+function analysisNeedsRepair(analysis) {
+  const materias = Array.isArray(analysis?.materias) ? analysis.materias : [];
+  if (!materias.length) return true;
+
+  let generic = 0;
+  let disciplineNamesAsTopics = 0;
+  let totalTopics = 0;
+  for (const item of materias) {
+    if (isGenericMateriaName(item?.materia)) generic++;
+    const assuntos = Array.isArray(item?.assuntos) ? item.assuntos : [];
+    totalTopics += assuntos.length;
+    disciplineNamesAsTopics += assuntos.filter(looksLikeDisciplineName).length;
+  }
+
+  // Sinais inequívocos do erro observado: "Direito" como matéria ou nomes
+  // de disciplinas aparecendo como assuntos, além de baixa densidade temática.
+  return generic > 0 || disciplineNamesAsTopics >= 2 || totalTopics < materias.length * 2;
+}
+
 
 function stripMarkdownJsonFence(value) {
   return String(value || "")
@@ -169,7 +211,7 @@ function parseStructuredAIResponse(result) {
 function sanitizeAnalysis(analysis) {
   const materias = Array.isArray(analysis?.materias) ? analysis.materias : [];
   const clean = materias
-    .filter(item => !isAdministrativeMateriaName(item?.materia))
+    .filter(item => !isAdministrativeMateriaName(item?.materia) && !isGenericMateriaName(item?.materia))
     .map(item => ({
       materia: String(item?.materia || "").trim(),
       prioridade: Math.min(3, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
@@ -253,20 +295,24 @@ NÃO CONFUNDA CAPÍTULOS ADMINISTRATIVOS DO EDITAL COM DISCIPLINAS.
 Considere como matéria somente disciplina/conhecimento exigido para estudo, por exemplo:
 Língua Portuguesa, Raciocínio Lógico, Informática, Direito Constitucional, Direito Administrativo, Direito Civil, Direito Penal, Direito Processual Civil, Direito Processual Penal, Direito do Trabalho, legislação específica, conhecimentos especializados etc., conforme EXISTIREM no texto recebido.
 
-REGRAS:
-1. Preserve os nomes das disciplinas e dos assuntos conforme o edital.
-2. Extraia TODOS os assuntos efetivamente listados no conteúdo programático das disciplinas encontradas no recorte.
-3. Não invente assunto, disciplina, lei, súmula, jurisprudência ou peso.
-4. Se o edital informar número de questões, pontuação ou peso da disciplina, use isso para definir o campo "peso".
-5. Se o edital NÃO informar peso, use 1.0.
-6. prioridade: 1 = alta, 2 = média, 3 = baixa.
-7. A prioridade deve usar apenas dados do edital recebido: peso, quantidade de questões, pontuação, extensão e especificidade para o cargo.
-8. Se não houver informação suficiente para diferenciar prioridades, use 2.
-9. Os assuntos devem ser ordenados do mais relevante para o menos relevante segundo os sinais existentes no edital.
-10. NÃO alegue que um assunto é "mais cobrado pela banca" sem dados históricos fornecidos na entrada.
-11. O histórico da banca NÃO está disponível nesta Fase 1. Portanto não invente frequência histórica.
-12. Se o recorte contiver apenas regras administrativas e nenhum conteúdo programático real, retorne "materias": [].
-13. Retorne SOMENTE JSON válido no schema solicitado, sem comentários e sem Markdown.
+REGRAS DE HIERARQUIA (CRÍTICAS):
+1. A matéria deve ser a DISCIPLINA ESPECÍFICA. Exemplos corretos: "Direito Penal", "Direito Constitucional", "Direito Administrativo".
+2. NUNCA use cabeçalhos agrupadores como matéria: "Direito", "Conhecimentos", "Conhecimentos Gerais", "Conhecimentos Específicos" ou "Legislação" quando o texto contiver disciplinas específicas abaixo deles.
+3. NUNCA coloque nomes de disciplinas dentro de "assuntos". Exemplo ERRADO: matéria "Direito" com assuntos ["Direito Penal", "Direito Constitucional"].
+4. Em "assuntos", coloque os CONTEÚDOS A ESTUDAR pertencentes à disciplina. Exemplo: matéria "Direito Penal" → ["Aplicação da lei penal", "Crimes contra a pessoa", "Crimes contra a Administração Pública", ...], somente se esses itens estiverem no texto recebido.
+5. Preserve os nomes das disciplinas e dos assuntos conforme o edital.
+6. Extraia TODOS os assuntos efetivamente listados no conteúdo programático das disciplinas encontradas no recorte; não resuma uma disciplina inteira em um único rótulo genérico.
+7. Não invente assunto, disciplina, lei, súmula, jurisprudência ou peso.
+8. Se o edital informar número de questões, pontuação ou peso da disciplina, use isso para definir o campo "peso".
+9. Se o edital NÃO informar peso, use 1.0.
+10. prioridade: 1 = alta, 2 = média, 3 = baixa.
+11. A prioridade deve usar apenas dados do edital recebido: peso, quantidade de questões, pontuação, extensão e especificidade para o cargo.
+12. Se não houver informação suficiente para diferenciar prioridades, use 2.
+13. Os assuntos devem ser ordenados do mais relevante para o menos relevante segundo os sinais existentes no edital.
+14. NÃO alegue que um assunto é "mais cobrado pela banca" sem dados históricos fornecidos na entrada.
+15. O histórico da banca NÃO está disponível nesta Fase 1. Portanto não invente frequência histórica.
+16. Se o recorte contiver apenas regras administrativas e nenhum conteúdo programático real, retorne "materias": [].
+17. Retorne SOMENTE JSON válido no schema solicitado, sem comentários e sem Markdown.
 
 Formato lógico obrigatório:
 {
@@ -299,31 +345,65 @@ ${rawText}
 `;
 
   try {
-    const result = await env.AI.run(MODEL, {
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: editalSchema
-      },
-      temperature: 0,
-      max_tokens: 12000
-    });
+    const runModel = async (messages) => {
+      const result = await env.AI.run(MODEL, {
+        messages,
+        response_format: {
+          type: "json_schema",
+          json_schema: editalSchema
+        },
+        temperature: 0,
+        max_tokens: 12000
+      });
+      return parseStructuredAIResponse(result);
+    };
 
-    const rawAnalysis = result?.response ?? result;
+    let rawAnalysis = await runModel([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ]);
 
-    if (!rawAnalysis || typeof rawAnalysis !== "object") {
-      return json({ error: "O modelo não retornou um JSON estruturado válido." }, 502);
+    if (!rawAnalysis || !Array.isArray(rawAnalysis.materias)) {
+      return json({ error: "O modelo não retornou um JSON estruturado válido com matérias e assuntos." }, 502);
     }
 
-    if (!Array.isArray(rawAnalysis.materias)) {
-      return json({ error: "A resposta da IA não contém a lista de matérias esperada." }, 502);
+    // Segunda passagem automática somente quando a primeira resposta apresenta
+    // o erro de hierarquia detectado no teste real (ex.: matéria "Direito" com
+    // "Direito Penal" como assunto). A reparação usa o MESMO texto do edital;
+    // não acrescenta conhecimento externo.
+    let repaired = false;
+    if (analysisNeedsRepair(rawAnalysis)) {
+      const repairPrompt = `
+A resposta anterior apresentou hierarquia inadequada ou poucos assuntos.
+REFAÇA A EXTRAÇÃO DO ZERO usando APENAS o recorte original abaixo.
+
+Regras obrigatórias:
+- cada matéria deve ser uma disciplina específica (ex.: Direito Penal);
+- "Direito", "Conhecimentos", "Conhecimentos Gerais" e "Conhecimentos Específicos" são agrupadores, NÃO matérias;
+- nomes de disciplinas jamais podem aparecer como assuntos;
+- assuntos devem ser os tópicos efetivos listados depois/debaixo de cada disciplina;
+- extraia todos os tópicos explicitamente presentes no recorte, sem inventar e sem resumir demais;
+- retorne somente o JSON do schema.
+
+RECORTE ORIGINAL:
+${rawText}`;
+
+      const second = await runModel([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: repairPrompt }
+      ]);
+      if (second && Array.isArray(second.materias)) {
+        rawAnalysis = second;
+        repaired = true;
+      }
     }
 
     const analysis = sanitizeAnalysis(rawAnalysis);
-    return json({ analysis, model: MODEL });
+    if (!analysis.materias.length) {
+      return json({ error: "A IA não conseguiu separar disciplinas específicas e seus assuntos. O resultado foi bloqueado para evitar importação incorreta." }, 422);
+    }
+
+    return json({ analysis, model: MODEL, repaired });
   } catch (error) {
     console.error("Workers AI error", error);
     return json({ error: "Não foi possível concluir a análise no Workers AI." }, 502);
