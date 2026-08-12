@@ -828,6 +828,252 @@
             .month-grid, .month-calendar-header { gap: 3px; }
             .month-day-cell { height: 58px; min-height: 58px; }
         }
+    
+
+        /* =========================================================
+           VISUAL REFRESH 2026 — MODERN / MOBILE FIRST
+           Camada visual sem alterar Supabase, RLS ou sincronização.
+           ========================================================= */
+        :root {
+            --modern-bg: #071525;
+            --modern-surface: #0d2136;
+            --modern-surface-2: #132b44;
+            --modern-border: rgba(87, 146, 196, 0.25);
+            --modern-blue: #13a8ff;
+            --modern-blue-2: #3b82f6;
+            --modern-muted: #8fa7bf;
+            --modern-green: #00d66b;
+            --modern-warning: #f6b73c;
+            --modern-danger: #ff4d5e;
+            --modern-purple: #8b5cf6;
+            --modern-radius: 16px;
+        }
+
+        body:not(.light-mode) {
+            --bg-color: var(--modern-bg);
+            --card-bg: var(--modern-surface);
+            --border-color: var(--modern-border);
+            --primary-blue: var(--modern-blue);
+            --primary-hover: #0397ec;
+            --header-materia-bg: var(--modern-surface-2);
+            --header-materia-text: #bfe6ff;
+        }
+
+        body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        #app-dashboard { max-width: 1380px; }
+        .card, .delayed-panel, .concurso-selector-bar, .auth-card {
+            border-radius: var(--modern-radius);
+            border-color: var(--modern-border);
+            box-shadow: 0 12px 30px rgba(0,0,0,.12);
+        }
+        .card { background: linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,0)), var(--card-bg); }
+        .card h3 { color: var(--text-color); font-size: 1.15rem; letter-spacing: -.01em; }
+        input, select, textarea { border-radius: 12px; min-height: 44px; }
+        textarea { min-height: 120px; }
+        .btn, .btn-action, .tab-btn { border-radius: 12px; }
+        .btn-primary { background: linear-gradient(135deg, var(--modern-blue-2), var(--modern-blue)); }
+        .btn-success { background: var(--modern-green); color: #04150c; }
+        .btn-danger { background: var(--modern-danger); }
+        .btn-warning { background: var(--modern-warning); color: #1d1400; }
+        .btn-purple { background: linear-gradient(135deg, #6d5dfc, var(--modern-purple)); }
+        .btn-info { background: #0b86c8; }
+
+        header.modern-header {
+            background: rgba(7,21,37,.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--modern-border);
+            border-radius: 18px;
+            padding: 1rem 1.1rem;
+            position: sticky;
+            top: calc(env(safe-area-inset-top, 0px) + 8px);
+            z-index: 120;
+            box-shadow: 0 12px 34px rgba(0,0,0,.16);
+        }
+        .header-brand img { width: 42px; height: 42px; border: 2px solid rgba(19,168,255,.45); }
+        .header-brand-copy { display:flex; flex-direction:column; min-width:0; }
+        .header-brand-copy h2 { line-height:1.05; letter-spacing:-.025em; }
+        .header-brand-copy span { color: var(--modern-muted); font-size:.76rem; margin-top:4px; }
+        .mobile-tools-toggle { display:none; }
+
+        .modern-command-center {
+            display:grid;
+            grid-template-columns:minmax(260px, 1fr) auto;
+            gap:12px;
+            margin: 0 0 1rem;
+            position:relative;
+        }
+        .modern-search-shell {
+            position:relative;
+            display:flex;
+            align-items:center;
+            gap:10px;
+            min-height:52px;
+            background:var(--card-bg);
+            border:1px solid var(--modern-border);
+            border-radius:15px;
+            padding:0 14px;
+        }
+        .modern-search-shell:focus-within { border-color:var(--modern-blue); box-shadow:0 0 0 3px rgba(19,168,255,.12); }
+        .modern-search-icon { font-size:1.15rem; opacity:.7; }
+        #globalStudySearch { background:transparent; border:0; min-height:50px; padding:0; flex:1; width:100%; }
+        .modern-tools-button { min-height:52px; }
+        .global-search-results {
+            display:none; position:absolute; left:0; right:170px; top:58px; z-index:160;
+            background:#0a1b2d; border:1px solid var(--modern-border); border-radius:14px;
+            box-shadow:0 18px 40px rgba(0,0,0,.32); max-height:360px; overflow:auto; padding:8px;
+        }
+        .global-search-results.visible { display:block; }
+        .search-result-item { width:100%; border:0; background:transparent; color:var(--text-color); text-align:left; padding:10px 12px; border-radius:10px; cursor:pointer; }
+        .search-result-item:hover { background:rgba(19,168,255,.1); }
+        .search-result-type { display:inline-block; font-size:.68rem; font-weight:800; color:var(--modern-blue); text-transform:uppercase; margin-right:6px; }
+        .search-result-sub { display:block; color:var(--modern-muted); font-size:.76rem; margin-top:3px; }
+
+        .study-overview-grid {
+            display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:1.15rem;
+        }
+        .overview-card {
+            min-height:92px; padding:14px; border-radius:15px; background:var(--card-bg);
+            border:1px solid var(--modern-border); display:flex; flex-direction:column; justify-content:space-between;
+        }
+        .overview-label { color:var(--modern-muted); font-size:.73rem; font-weight:750; }
+        .overview-value { font-size:1.35rem; font-weight:850; letter-spacing:-.03em; }
+        .overview-hint { font-size:.68rem; color:var(--modern-muted); }
+        .overview-card.accent .overview-value { color:var(--modern-blue); }
+        .overview-card.success .overview-value { color:var(--modern-green); }
+        .overview-card.warning .overview-value { color:var(--modern-warning); }
+
+        .action-bar {
+            background:var(--card-bg); border:1px solid var(--modern-border); border-radius:15px;
+            padding:8px; box-shadow:none;
+        }
+        .action-bar .btn-action { background:transparent; border-color:transparent; color:var(--modern-muted); min-height:42px; }
+        .action-bar .btn-action:hover { background:rgba(19,168,255,.08); color:var(--text-color); }
+        .nav-tabs { border:0; background:rgba(255,255,255,.025); border-radius:15px; padding:6px; gap:5px; }
+        .tab-btn { flex:1; min-height:44px; color:var(--modern-muted); opacity:1; }
+        .tab-btn.active { background:linear-gradient(135deg, rgba(59,130,246,.88), rgba(19,168,255,.92)); box-shadow:0 8px 18px rgba(19,168,255,.16); }
+
+        .pomodoro-card { position:relative; overflow:hidden; }
+        .pomodoro-card::before { content:""; position:absolute; width:230px; height:230px; border-radius:50%; background:rgba(19,168,255,.07); top:-130px; right:-80px; pointer-events:none; }
+        .timer-display { font-size:clamp(3.4rem,7vw,5.2rem); letter-spacing:-.05em; color:#fff; }
+        .pomodoro-actions .btn { min-width:105px; justify-content:center; }
+        .pomodoro-progress-track { height:12px; }
+        .pomodoro-progress-fill { background:linear-gradient(90deg,var(--modern-blue-2),var(--modern-green)); }
+
+        #tab-edital .card:last-child > h3 { font-size:1.28rem; }
+        table { border-collapse:separate; border-spacing:0 7px; }
+        thead th { color:var(--modern-muted); background:transparent; border:0; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; }
+        tbody tr:not(.materia-header-row) { background:rgba(255,255,255,.018); }
+        tbody tr:not(.materia-header-row) td { border-top:1px solid var(--modern-border); border-bottom:1px solid var(--modern-border); }
+        tbody tr:not(.materia-header-row) td:first-child { border-radius:12px 0 0 12px; }
+        tbody tr:not(.materia-header-row) td:last-child { border-radius:0 12px 12px 0; }
+        .materia-header-row { background:var(--modern-surface-2) !important; box-shadow:inset 4px 0 0 var(--modern-blue); }
+        .materia-header-row td { border:0; padding:1rem !important; }
+        .materia-header-row td:first-child { border-radius:14px 0 0 14px; }
+        .materia-header-row td:last-child { border-radius:0 14px 14px 0; }
+        .materia-header-content { gap:12px; }
+        .materia-header-main { display:flex; flex-direction:column; gap:4px; min-width:0; }
+        .materia-header-title { font-size:1rem; }
+        .materia-header-meta { color:var(--modern-muted); font-size:.72rem; font-weight:700; }
+        .materia-header-right { display:flex; align-items:center; gap:12px; }
+        .materia-progress-ring {
+            --pct:0; width:42px; height:42px; border-radius:50%; display:grid; place-items:center;
+            background:conic-gradient(var(--modern-blue) calc(var(--pct)*1%), rgba(143,167,191,.14) 0);
+            position:relative; flex:0 0 auto;
+        }
+        .materia-progress-ring::before { content:""; position:absolute; inset:5px; border-radius:50%; background:var(--modern-surface-2); }
+        .materia-progress-ring span { position:relative; font-size:.64rem; font-weight:850; color:var(--modern-blue); }
+        .materia-expand-label { color:var(--modern-blue); font-size:.78rem; font-weight:800; }
+
+        .note-card, .flashcard-box, .anki-folder-card, .delayed-day-group, .day-topic-row {
+            border-radius:14px; border-color:var(--modern-border); background:rgba(255,255,255,.02);
+        }
+        .note-card { transition:transform .18s ease,border-color .18s ease; }
+        .note-card:hover { transform:translateY(-2px); border-color:rgba(19,168,255,.45); }
+        .note-card-title { color:#fff; }
+        .flashcard-badge-materia, .delayed-tag { border-radius:999px; }
+
+        .mobile-bottom-nav, .context-fab { display:none; }
+
+        @media (max-width: 900px) {
+            body { padding-bottom:calc(84px + env(safe-area-inset-bottom,0px)); }
+            #app-dashboard { padding:.75rem; }
+            header.modern-header { position:relative; top:auto; padding:.8rem; margin-bottom:.8rem; }
+            .header-brand { width:auto; flex:1; }
+            .header-brand img { width:38px; height:38px; }
+            .header-brand-copy h2 { font-size:1.18rem; }
+            .header-brand-copy span { display:none; }
+            .mobile-tools-toggle { display:inline-flex; width:44px; height:44px; align-items:center; justify-content:center; border:1px solid var(--modern-border); background:var(--modern-surface-2); color:#fff; border-radius:12px; font-size:1.15rem; }
+            .concurso-selector-bar { order:3; margin-top:8px; padding:.65rem; }
+            .concurso-selector-bar label { display:none; }
+            .concurso-selector-bar .btn-warning, .concurso-selector-bar .btn-danger { display:none; }
+            .countdown-badge { width:100%; }
+
+            .modern-command-center { grid-template-columns:1fr auto; gap:8px; }
+            .modern-tools-button { width:48px; padding:0; font-size:0; }
+            .modern-tools-button::before { content:"☷"; font-size:1.2rem; }
+            .global-search-results { right:0; }
+            .study-overview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+            .overview-card { min-height:82px; padding:12px; }
+            .study-overview-grid .overview-card:last-child { grid-column:1 / -1; }
+
+            .action-bar { display:none; grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .action-bar.mobile-open { display:grid; }
+            .action-bar .btn-action { background:rgba(255,255,255,.03); border:1px solid var(--modern-border); height:auto; min-height:52px; max-height:none; }
+            .nav-tabs { display:none; }
+
+            .grid-top { gap:.8rem; }
+            .card { border-radius:16px; }
+            .pomodoro-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .pomodoro-actions .btn { width:100%; min-width:0; }
+            .pomodoro-daily-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+
+            #tab-edital .table-responsive { overflow:visible; }
+            #tab-edital table, #tab-edital tbody { display:block; width:100%; }
+            #tab-edital thead { display:none; }
+            #tab-edital tbody tr { width:100%; }
+            #tab-edital .materia-header-row { display:grid; grid-template-columns:68px 1fr; margin:0 0 8px; border:1px solid var(--modern-border); border-radius:14px; overflow:hidden; }
+            #tab-edital .materia-header-row td { display:flex; align-items:center; border-radius:0 !important; }
+            #tab-edital .materia-header-row td:first-child { justify-content:center; padding:10px 6px !important; }
+            #tab-edital .materia-header-row td[colspan] { padding:10px !important; }
+            #tab-edital .materia-header-content { width:100%; }
+            #tab-edital .materia-header-right { gap:7px; }
+            #tab-edital .materia-expand-label { display:none; }
+            #tab-edital .materia-progress-ring { width:38px; height:38px; }
+            #tab-edital tbody tr:not(.materia-header-row) {
+                display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px;
+                border:1px solid var(--modern-border) !important; border-left:4px solid var(--modern-blue) !important;
+                border-radius:14px; padding:10px; margin:0 0 8px; background:rgba(255,255,255,.018);
+            }
+            #tab-edital tbody tr:not(.materia-header-row) td { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:0; padding:5px !important; min-width:0; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(1)::before { content:"Prioridade"; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(3)::before { content:"Teoria"; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(4)::before { content:"Questões"; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(5)::before { content:"24h"; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(6)::before { content:"7d"; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(7)::before { content:"30d"; }
+            #tab-edital tbody tr:not(.materia-header-row) td:not(:nth-child(2)):not(:last-child)::before { color:var(--modern-muted); font-size:.62rem; font-weight:800; text-transform:uppercase; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(2) { grid-column:1 / -1; align-items:flex-start; font-size:1rem; font-weight:800; padding:4px !important; }
+            #tab-edital tbody tr:not(.materia-header-row) td:last-child { grid-column:1 / -1; }
+            #tab-edital tbody tr:not(.materia-header-row) td:last-child .btn { width:100%; justify-content:center; }
+            #tab-edital input[type="checkbox"] { width:22px; height:22px; accent-color:var(--modern-blue); }
+
+            .mobile-bottom-nav {
+                display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); position:fixed; z-index:500;
+                left:8px; right:8px; bottom:calc(8px + env(safe-area-inset-bottom,0px));
+                background:rgba(8,25,42,.94); backdrop-filter:blur(18px); border:1px solid var(--modern-border);
+                border-radius:18px; padding:6px; box-shadow:0 14px 40px rgba(0,0,0,.34);
+            }
+            .mobile-nav-btn { border:0; background:transparent; color:var(--modern-muted); min-height:54px; border-radius:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:.64rem; font-weight:750; }
+            .mobile-nav-btn .nav-ico { font-size:1.2rem; line-height:1; }
+            .mobile-nav-btn.active { color:#fff; background:rgba(19,168,255,.13); }
+            .context-fab {
+                display:flex; position:fixed; right:18px; bottom:calc(84px + env(safe-area-inset-bottom,0px)); z-index:480;
+                width:54px; height:54px; border:0; border-radius:18px; align-items:center; justify-content:center;
+                background:linear-gradient(135deg,var(--modern-blue-2),var(--modern-blue)); color:#fff; font-size:1.7rem;
+                box-shadow:0 14px 30px rgba(19,168,255,.3); cursor:pointer;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -864,12 +1110,16 @@
 
     <!-- MAIN DASHBOARD -->
     <div id="app-dashboard">
-        <header>
+        <header class="modern-header">
             <div class="header-brand">
                 <img src="icon-192.png" alt="Símbolo Estudos">
-                <h2>Painel de Estudos</h2>
+                <div class="header-brand-copy">
+                    <h2>Painel de Estudos</h2>
+                    <span>Seu planner inteligente para concursos</span>
+                </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
             </div>
+            <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">☰</button>
             
             <div class="concurso-selector-bar">
                 <label><strong>Concurso:</strong></label>
@@ -883,6 +1133,23 @@
                 </div>
             </div>
         </header>
+
+        <section class="modern-command-center" aria-label="Busca e ferramentas">
+            <div class="modern-search-shell">
+                <span class="modern-search-icon">⌕</span>
+                <input id="globalStudySearch" type="search" placeholder="Pesquisar matéria, assunto, flashcard ou anotação..." autocomplete="off" oninput="runGlobalStudySearch(this.value)" onfocus="runGlobalStudySearch(this.value)">
+            </div>
+            <button class="btn btn-secondary modern-tools-button" type="button" onclick="toggleModernTools()">Ferramentas</button>
+            <div id="globalSearchResults" class="global-search-results"></div>
+        </section>
+
+        <section class="study-overview-grid" aria-label="Resumo de estudos">
+            <div class="overview-card accent"><span class="overview-label">Progresso Geral</span><strong class="overview-value" id="modernOverviewProgress">0%</strong><span class="overview-hint">edital verticalizado</span></div>
+            <div class="overview-card"><span class="overview-label">Assuntos</span><strong class="overview-value" id="modernOverviewTopics">0</strong><span class="overview-hint">no concurso atual</span></div>
+            <div class="overview-card warning"><span class="overview-label">Revisões</span><strong class="overview-value" id="modernOverviewReviews">0</strong><span class="overview-hint">pendentes agora</span></div>
+            <div class="overview-card success"><span class="overview-label">Estudado Hoje</span><strong class="overview-value" id="modernOverviewToday">00:00</strong><span class="overview-hint">Pomodoro concluído</span></div>
+            <div class="overview-card"><span class="overview-label">Meta Diária</span><strong class="overview-value" id="modernOverviewTarget">—</strong><span class="overview-hint">planejamento atual</span></div>
+        </section>
 
         <!-- BARRA DE AÇÕES -->
         <div class="action-bar">
@@ -1114,6 +1381,15 @@
                 <div id="flashcardsContainer"></div>
             </div>
         </div>
+
+        <nav class="mobile-bottom-nav" aria-label="Navegação principal mobile">
+            <button class="mobile-nav-btn active" type="button" data-tab="tab-edital" onclick="mobileSwitchTab('tab-edital', this)"><span class="nav-ico">▤</span><span>Edital</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-calendario" onclick="mobileSwitchTab('tab-calendario', this)"><span class="nav-ico">▦</span><span>Cronograma</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" onclick="mobileSwitchTab('tab-flashcards', this)"><span class="nav-ico">◇</span><span>Flashcards</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" onclick="mobileSwitchTab('tab-anotacoes', this)"><span class="nav-ico">✎</span><span>Anotações</span></button>
+            <button class="mobile-nav-btn" type="button" onclick="toggleModernTools()"><span class="nav-ico">•••</span><span>Mais</span></button>
+        </nav>
+        <button id="contextFab" class="context-fab" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo">+</button>
     </div>
 
     <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
@@ -3549,6 +3825,9 @@
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
                 const isOpen = openMaterias[materiaName] === true;
+                const totalChecksMateria = Math.max(1, group.items.length * 5);
+                const doneChecksMateria = group.items.reduce((sum, topic) => sum + ['teoria','questoes','rev_24h','rev_7d','rev_30d'].filter(key => !!topic[key]).length, 0);
+                const materiaPct = Math.round((doneChecksMateria / totalChecksMateria) * 100);
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
                 const safeMateriaHandler = encodeHandlerValue(materiaName);
 
@@ -3559,8 +3838,14 @@
                         </td>
                         <td colspan="7">
                             <div class="materia-header-content">
-                                <span><strong>${escapeHtml(materiaName)}</strong> (${group.items.length} assuntos)</span>
-                                <span>${isOpen ? 'Recolher' : 'Expandir'}</span>
+                                <span class="materia-header-main">
+                                    <strong class="materia-header-title">${escapeHtml(materiaName)}</strong>
+                                    <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${group.prioridade}</span>
+                                </span>
+                                <span class="materia-header-right">
+                                    <span class="materia-progress-ring" style="--pct:${materiaPct}"><span>${materiaPct}%</span></span>
+                                    <span class="materia-expand-label">${isOpen ? 'Recolher' : 'Expandir'}</span>
+                                </span>
                             </div>
                         </td>
                     </tr>
@@ -4411,6 +4696,9 @@
             document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
+            document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+            updateContextFab(tabId);
+            updateModernOverview();
 
             // Renderiza componentes pesados somente quando a aba fica visível.
             if (tabId === 'tab-calendario') {
@@ -4420,6 +4708,163 @@
             }
         }
 
+
+
+        // =========================================================
+        // UI MODERNA 2026 — BUSCA, RESUMO, NAVEGAÇÃO MOBILE E FAB
+        // =========================================================
+        function toggleModernTools() {
+            const bar = document.querySelector('.action-bar');
+            if (!bar) return;
+            bar.classList.toggle('mobile-open');
+            if (bar.classList.contains('mobile-open') && window.innerWidth <= 900) {
+                setTimeout(() => bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 30);
+            }
+        }
+
+        function getStructuredNotesForCurrentConcurso() {
+            try {
+                const metadata = getConcursosMetadata();
+                return metadata[currentConcurso]?.structuredNotes || [];
+            } catch (_) { return []; }
+        }
+
+        function runGlobalStudySearch(rawTerm) {
+            const box = document.getElementById('globalSearchResults');
+            if (!box) return;
+            const term = (rawTerm || '').trim().toLocaleLowerCase('pt-BR');
+            if (term.length < 2) { box.classList.remove('visible'); box.innerHTML = ''; return; }
+
+            const results = [];
+            editalItems.forEach(item => {
+                const mat = item.materia || 'Geral';
+                const assunto = item.assunto || '';
+                if (`${mat} ${assunto}`.toLocaleLowerCase('pt-BR').includes(term)) {
+                    results.push({ type:'Edital', title:assunto || mat, sub:mat, action:() => openSearchEditalResult(mat) });
+                }
+            });
+            getStructuredNotesForCurrentConcurso().forEach(note => {
+                const txt = `${note.materia || ''} ${note.titulo || ''} ${note.conteudo || ''}`.toLocaleLowerCase('pt-BR');
+                if (txt.includes(term)) results.push({ type:'Nota', title:note.titulo || 'Anotação', sub:note.materia || '', action:() => openSearchNotesResult(note.materia || '') });
+            });
+            (flashcardsList || []).forEach(fc => {
+                const txt = `${fc.materia || ''} ${fc.assunto || ''} ${fc.pergunta || ''} ${fc.resposta || ''}`.toLocaleLowerCase('pt-BR');
+                if (txt.includes(term)) results.push({ type:'Flashcard', title:fc.pergunta || 'Flashcard', sub:[fc.materia,fc.assunto].filter(Boolean).join(' · '), action:() => openSearchFlashcardResult(fc) });
+            });
+
+            const limited = results.slice(0, 16);
+            if (!limited.length) {
+                box.innerHTML = '<div style="padding:12px;color:var(--modern-muted);font-size:.84rem;">Nenhum resultado encontrado.</div>';
+                box.classList.add('visible');
+                return;
+            }
+            box.innerHTML = limited.map((r, idx) => `
+                <button class="search-result-item" type="button" onclick="activateGlobalSearchResult(${idx})">
+                    <span class="search-result-type">${escapeHtml(r.type)}</span>${escapeHtml(r.title)}
+                    <span class="search-result-sub">${escapeHtml(r.sub || '')}</span>
+                </button>`).join('');
+            window.__globalStudySearchResults = limited;
+            box.classList.add('visible');
+        }
+
+        function activateGlobalSearchResult(index) {
+            const result = window.__globalStudySearchResults?.[index];
+            if (result?.action) result.action();
+            const box = document.getElementById('globalSearchResults');
+            if (box) box.classList.remove('visible');
+        }
+
+        function findDesktopTabButton(tabId) {
+            return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => (btn.getAttribute('onclick') || '').includes(`'${tabId}'`));
+        }
+
+        function openSearchEditalResult(materia) {
+            openMaterias[materia] = true;
+            const btn = findDesktopTabButton('tab-edital');
+            if (btn) switchTab('tab-edital', btn);
+            renderTable();
+            setTimeout(() => document.getElementById('edital-title')?.scrollIntoView({behavior:'smooth', block:'start'}), 60);
+        }
+        function openSearchNotesResult(materia) {
+            const btn = findDesktopTabButton('tab-anotacoes');
+            if (btn) switchTab('tab-anotacoes', btn);
+            loadNotesData();
+            const sel = document.getElementById('notesMateriaSelect');
+            if (sel && [...sel.options].some(o => o.value === materia)) { sel.value = materia; renderNotesList(); }
+        }
+        function openSearchFlashcardResult(fc) {
+            const btn = findDesktopTabButton('tab-flashcards');
+            if (btn) switchTab('tab-flashcards', btn);
+            if (typeof setFlashcardViewFilter === 'function') setFlashcardViewFilter(fc.materia || '', fc.assunto || '');
+        }
+
+        function mobileSwitchTab(tabId, mobileBtn) {
+            const desktopBtn = findDesktopTabButton(tabId);
+            if (desktopBtn) switchTab(tabId, desktopBtn);
+            document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+            updateContextFab(tabId);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateContextFab(tabId) {
+            const fab = document.getElementById('contextFab');
+            if (!fab) return;
+            const active = tabId || document.querySelector('.tab-content.active')?.id || 'tab-edital';
+            const labels = {
+                'tab-edital':'Adicionar tópico',
+                'tab-calendario':'Preencher cronograma',
+                'tab-anotacoes':'Nova anotação',
+                'tab-flashcards':'Novo flashcard'
+            };
+            fab.setAttribute('aria-label', labels[active] || 'Adicionar');
+            fab.title = labels[active] || 'Adicionar';
+        }
+
+        function handleContextFab() {
+            const active = document.querySelector('.tab-content.active')?.id || 'tab-edital';
+            if (active === 'tab-anotacoes') return openModalNovaNota();
+            if (active === 'tab-calendario') return openModalSelectCronogramaType();
+            if (active === 'tab-flashcards') {
+                document.getElementById('fcPergunta')?.scrollIntoView({behavior:'smooth', block:'center'});
+                setTimeout(() => document.getElementById('fcPergunta')?.focus(), 350);
+                return;
+            }
+            document.getElementById('materia')?.scrollIntoView({behavior:'smooth', block:'center'});
+            setTimeout(() => document.getElementById('materia')?.focus(), 350);
+        }
+
+        function updateModernOverview() {
+            const topics = editalItems || [];
+            const checks = ['teoria','questoes','rev_24h','rev_7d','rev_30d'];
+            const done = topics.reduce((acc, item) => acc + checks.filter(k => !!item[k]).length, 0);
+            const total = topics.length * checks.length;
+            const pct = total ? Math.round(done / total * 100) : 0;
+            const delayedText = document.getElementById('delayedBadgeCount')?.textContent || '0';
+            const delayed = (delayedText.match(/\d+/) || ['0'])[0];
+            const today = document.getElementById('dailyPomodoroTotal')?.textContent || '00:00';
+            const target = document.getElementById('dailyPomodoroTarget')?.textContent || '—';
+            const set = (id, value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
+            set('modernOverviewProgress', `${pct}%`);
+            set('modernOverviewTopics', topics.length);
+            set('modernOverviewReviews', delayed);
+            set('modernOverviewToday', today);
+            set('modernOverviewTarget', target === 'Sem meta' ? '—' : target);
+        }
+
+        document.addEventListener('click', (event) => {
+            const results = document.getElementById('globalSearchResults');
+            if (results && !event.target.closest('.modern-command-center')) results.classList.remove('visible');
+        });
+
+        window.addEventListener('load', () => {
+            updateModernOverview();
+            updateContextFab();
+            const observedIds = ['edital-list','dailyPomodoroTotal','dailyPomodoroTarget','delayedBadgeCount'];
+            observedIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) new MutationObserver(updateModernOverview).observe(el, {childList:true,subtree:true,characterData:true});
+            });
+        });
 
         // =========================================================
         // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS
