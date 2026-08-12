@@ -1,4 +1,4 @@
-const CACHE_NAME = 'edital-dashboard-v13-universal-v8_5-1-20260812';
+const CACHE_NAME = 'edital-dashboard-v14-universal-v8_6-1-20260812';
 
 const APP_SHELL = [
   './manifest.json',
