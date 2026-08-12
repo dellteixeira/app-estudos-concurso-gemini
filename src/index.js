@@ -1,3 +1,4 @@
+// Universal Parser V7: o backend recebe matéria/assunto já bloqueados pelo frontend.
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const MAX_TEXT_CHARS = 110000;
 
@@ -266,6 +267,7 @@ ${rawText.slice(0, MAX_TEXT_CHARS)}
   }
 
   return json({
+    parserVersion: "v7-universal-core",
     analysis: {
       concurso,
       materias: finalMaterias
