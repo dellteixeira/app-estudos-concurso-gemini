@@ -1684,7 +1684,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V8 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V8.1.1 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -4873,16 +4873,28 @@
             return null;
         }
 
-        function looksLikeRoleHeading(item, force=false) {
-            const raw=stripSectionNumber(String(item?.text||'').replace(/\s+/g,' ').trim()).replace(/:$/,'').trim();
-            if (!raw || raw.length<4 || raw.length>135 || !roleSignal(raw)) return false;
+        function looksLikeRoleHeading(item, perCargoContext=false) {
+            const source=String(item?.text||'').replace(/\s+/g,' ').trim();
+            const raw=stripSectionNumber(source).replace(/:$/,'').trim();
+            if (!raw || raw.length<3 || raw.length>105) return false;
             if (findKnownDisciplineAtStart(raw)) return false;
             const f=foldEditalText(raw);
             if (/^(cargo|cargos|funcao|função|area|área|especialidade)$/.test(f)) return false;
+            if (/^(anexo|capitulo|capítulo|secao|seção|prova|conhecimentos?|conteudos?|conteúdos?)\b/.test(f)) return false;
+            if (/^[0-9]+(?:\.[0-9]+)+/.test(source)) return false;
+            // Frases de conteúdo não podem virar cargos, mesmo quando contêm "administrativo", "agente" etc.
+            if (/[.;]\s+/.test(raw) || (raw.match(/:/g)||[]).length>0) return false;
+            const words=raw.split(/\s+/).filter(Boolean);
+            if (words.length>11) return false;
             const letters=raw.replace(/[^A-Za-zÀ-ÿ]/g,'');
             const uppers=raw.replace(/[^A-ZÁÉÍÓÚÂÊÔÃÕÇ]/g,'');
             const upperRatio=letters.length?uppers.length/letters.length:(item?.uppercaseRatio||0);
-            return force || upperRatio>.64 || (item?.boldRatio||0)>.45 || /:$/.test(String(item?.text||''));
+            const strongVisual = upperRatio>=.78 || (item?.uppercaseRatio||0)>=.78 || (item?.boldRatio||0)>=.58;
+            const lexicalRole = roleSignal(raw);
+            // Fora de um bloco "para cada cargo", exige também sinal lexical de cargo/profissão.
+            // Dentro dele, um heading visual forte basta, permitindo profissões não previstas em lista fixa.
+            if (perCargoContext) return strongVisual;
+            return lexicalRole && strongVisual;
         }
 
         function inferEducationLevelForRole(lines, roleLabel, programStart) {
@@ -4927,9 +4939,7 @@
                     continue;
                 }
                 // FGV/IBFC/Consulpam: heading autônomo do cargo/especialidade.
-                const next=lines[i+1];
-                const nextLooksDiscipline=next && (!!findKnownDisciplineAtStart(next.text) || /:$/.test(String(next.text||'')) || /^\d+(?:\.\d+)*\.?\s+/.test(String(next.text||'')));
-                if (looksLikeRoleHeading(item, inPerCargoSpecific || nextLooksDiscipline)) {
+                if (looksLikeRoleHeading(item, inPerCargoSpecific)) {
                     events.push({type:'role',index:i,code:`BL${hashEditalText(raw)%10000}`,label:raw.replace(/:$/,'').trim(),confidence:inPerCargoSpecific?.92:.82});
                 }
             }
@@ -5134,7 +5144,7 @@
 
             const selectedPages=[...new Set([...generalLines,...specificLines].map(x=>x.pageNumber).filter(Boolean))].sort((a,b)=>a-b);
             const text=[`BLOCO/CARGO SELECIONADO: ${cargo.label}`,cargo.educationLevel?`NÍVEL INFERIDO: ${cargo.educationLevel}`:'',`PESO GERAL: ${weights.generalWeight||1}`,`PESO ESPECÍFICO: ${weights.specificWeight||1}`,'','===== CONTEÚDO COMUM/GERAL =====',generalLines.map(x=>x.text).join('\n'),'','===== CONTEÚDO ESPECÍFICO =====',specificLines.map(x=>x.text).join('\n')].filter(Boolean).join('\n').slice(0,98000);
-            return {cargo,materias,text,totalPages:structure.totalPages,selectedPages,selectedChars:text.length,selectionMode:'adaptive-universal-parser-v8',confidence:materias.reduce((s,m)=>s+(Number(m.confidence)||.5),0)/materias.length,weights};
+            return {cargo,materias,text,totalPages:structure.totalPages,selectedPages,selectedChars:text.length,selectionMode:'adaptive-universal-parser-v8.1',confidence:materias.reduce((s,m)=>s+(Number(m.confidence)||.5),0)/materias.length,weights};
         }
 
         async function prepareAiCargoSelector(fileObj) {
@@ -5193,7 +5203,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(extractionMeta?.cargo?.label || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V8 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V8.1 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -5276,7 +5286,7 @@
                 renderAiEditalPreview(analysis, extraction);
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
-                setAiEditalStatus(`Análise concluída para ${extraction.cargo.label}. Matérias e assuntos foram bloqueados pelo Universal Parser V8; modelo: ${modelInfo}.`);
+                setAiEditalStatus(`Análise concluída para ${extraction.cargo.label}. Matérias e assuntos foram bloqueados pelo Universal Parser V8.1.1; modelo: ${modelInfo}.`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
