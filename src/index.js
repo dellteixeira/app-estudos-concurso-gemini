@@ -35,6 +35,157 @@ function json(data, status = 200) {
   });
 }
 
+
+function foldLabel(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isAdministrativeMateriaName(value) {
+  const name = foldLabel(value);
+  if (!name) return true;
+
+  const exactOrStarts = [
+    "disposicoes preliminares", "das disposicoes preliminares", "dos cargos",
+    "das inscricoes", "da inscricao", "inscricoes para candidatos",
+    "candidatos com deficiencia", "candidatos negros", "candidatos indigenas",
+    "candidatos quilombolas", "das provas", "da prestacao das provas",
+    "prestacao das provas", "dos recursos", "resultado", "do resultado",
+    "classificacao", "da classificacao", "nomeacao", "da nomeacao",
+    "cronograma", "isencao", "atendimento especial", "conteudo programatico",
+    "conteudos programaticos", "programa de provas"
+  ];
+
+  return exactOrStarts.some(term => name === term || name.startsWith(`${term} `));
+}
+
+
+function stripMarkdownJsonFence(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
+function extractFirstJsonObject(text) {
+  const source = stripMarkdownJsonFence(text);
+  if (!source) return null;
+
+  // Primeiro tenta o conteúdo inteiro.
+  try {
+    return JSON.parse(source);
+  } catch {}
+
+  // Fallback defensivo: localiza o primeiro objeto JSON balanceado,
+  // respeitando strings e caracteres escapados.
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (ch === "{") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === "}" && depth > 0) {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        const candidate = source.slice(start, i + 1);
+        try {
+          return JSON.parse(candidate);
+        } catch {
+          start = -1;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function parseStructuredAIResponse(result) {
+  if (!result) return null;
+
+  const candidates = [
+    result?.response,
+    result?.result?.response,
+    result?.response?.response,
+    result?.output,
+    result?.data,
+    result
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    if (typeof candidate === "object" && !Array.isArray(candidate)) {
+      // Objeto já estruturado no formato esperado.
+      if (Array.isArray(candidate.materias)) return candidate;
+
+      // Alguns envelopes podem conter o objeto em outra chave.
+      if (candidate.analysis && typeof candidate.analysis === "object") {
+        if (Array.isArray(candidate.analysis.materias)) return candidate.analysis;
+      }
+
+      // Evita JSON.stringify de objetos muito complexos quando não necessário.
+      continue;
+    }
+
+    if (typeof candidate === "string") {
+      const parsed = extractFirstJsonObject(candidate);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        if (Array.isArray(parsed.materias)) return parsed;
+        if (parsed.analysis && Array.isArray(parsed.analysis.materias)) return parsed.analysis;
+      }
+    }
+  }
+
+  return null;
+}
+
+function sanitizeAnalysis(analysis) {
+  const materias = Array.isArray(analysis?.materias) ? analysis.materias : [];
+  const clean = materias
+    .filter(item => !isAdministrativeMateriaName(item?.materia))
+    .map(item => ({
+      materia: String(item?.materia || "").trim(),
+      prioridade: Math.min(3, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) >= 0 ? Number(item.peso) : 1.0,
+      assuntos: Array.isArray(item?.assuntos)
+        ? [...new Set(item.assuntos.map(v => String(v || "").trim()).filter(Boolean))]
+        : []
+    }))
+    .filter(item => item.materia && item.assuntos.length > 0);
+
+  return {
+    concurso: String(analysis?.concurso || "").trim(),
+    materias: clean
+  };
+}
+
 async function authenticateSupabaseUser(request, env) {
   const authorization = request.headers.get("authorization") || "";
   if (!authorization.startsWith("Bearer ")) return null;
@@ -161,16 +312,17 @@ ${rawText}
       max_tokens: 12000
     });
 
-    const analysis = result?.response ?? result;
+    const rawAnalysis = result?.response ?? result;
 
-    if (!analysis || typeof analysis !== "object") {
+    if (!rawAnalysis || typeof rawAnalysis !== "object") {
       return json({ error: "O modelo não retornou um JSON estruturado válido." }, 502);
     }
 
-    if (!Array.isArray(analysis.materias)) {
+    if (!Array.isArray(rawAnalysis.materias)) {
       return json({ error: "A resposta da IA não contém a lista de matérias esperada." }, 502);
     }
 
+    const analysis = sanitizeAnalysis(rawAnalysis);
     return json({ analysis, model: MODEL });
   } catch (error) {
     console.error("Workers AI error", error);
