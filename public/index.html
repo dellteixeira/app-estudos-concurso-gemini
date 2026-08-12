@@ -181,6 +181,98 @@
         .timer-settings label { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .timer-settings input { width: 85px !important; text-align: center; padding: 0.5rem 0.4rem; font-weight: 600; }
 
+
+        /* Contador diário do Pomodoro */
+        .pomodoro-daily-panel {
+            width: 100%;
+            margin-top: 1.35rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .pomodoro-daily-panel h4 {
+            color: var(--header-materia-text);
+            font-size: 1rem;
+            margin-bottom: 0.85rem;
+            text-align: center;
+        }
+        .pomodoro-daily-stats {
+            width: min(100%, 560px);
+            margin: 0 auto 0.85rem;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .pomodoro-daily-stat {
+            background: rgba(0,0,0,0.16);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.8rem 0.7rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+        }
+        .pomodoro-daily-value {
+            font-size: 1.45rem;
+            line-height: 1.1;
+            font-weight: 800;
+            color: var(--text-color);
+        }
+        .pomodoro-daily-label {
+            margin-top: 4px;
+            font-size: 0.76rem;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+        .pomodoro-progress-track {
+            width: min(100%, 560px);
+            height: 10px;
+            margin: 0 auto 0.65rem;
+            background: rgba(148,163,184,0.16);
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .pomodoro-progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: inherit;
+            transition: width 0.25s ease;
+        }
+        .pomodoro-daily-status {
+            width: min(100%, 560px);
+            margin: 0 auto 0.8rem;
+            min-height: 20px;
+            font-size: 0.82rem;
+            line-height: 1.35;
+            color: #94a3b8;
+            text-align: center;
+        }
+        .pomodoro-reset-hours {
+            margin: 0 auto;
+        }
+
+        /* Grupos de ações com alinhamento consistente */
+        .edital-manual-actions,
+        .edital-guide-actions,
+        .calendar-primary-actions,
+        .flashcard-study-actions {
+            display: flex;
+            align-items: stretch;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .edital-manual-actions .btn,
+        .edital-guide-actions .btn,
+        .calendar-primary-actions .btn,
+        .flashcard-study-actions .btn {
+            justify-content: center;
+            text-align: center;
+        }
+        .edital-guide-actions { margin-bottom: 1rem; }
+
         .weekly-hours-banner {
             background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
             padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 1.05rem;
@@ -601,6 +693,89 @@
             #tab-calendario .card { overflow: hidden; }
             #monthCalendarGrid, .month-calendar-header { max-width: 100%; }
 
+
+            /* Edital: ações em pares, alinhadas */
+            .edital-manual-form {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                width: 100%;
+            }
+            .edital-manual-form #materia,
+            .edital-manual-form #assunto {
+                width: 100%;
+                min-width: 0;
+            }
+            .edital-manual-form #prioridade {
+                grid-column: 1 / -1;
+                width: 100%;
+                min-height: 44px;
+            }
+            .edital-manual-actions {
+                grid-column: 1 / -1;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                width: 100%;
+            }
+            .edital-manual-actions .btn,
+            .edital-guide-actions .btn {
+                width: 100%;
+                min-height: 48px;
+                white-space: normal;
+                line-height: 1.2;
+            }
+            .edital-guide-actions {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                width: 100%;
+            }
+
+            /* Cronograma: ações principais lado a lado */
+            .calendar-primary-actions {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px !important;
+                width: 100%;
+            }
+            .calendar-primary-actions .btn {
+                width: 100%;
+                min-width: 0;
+                min-height: 56px !important;
+                padding: 8px 7px;
+                white-space: normal;
+                line-height: 1.2;
+                font-size: 0.82rem;
+            }
+
+            /* Flashcards: dois modos de estudo na mesma linha */
+            .flashcards-header {
+                display: block !important;
+            }
+            .flashcards-header > h3 {
+                margin-bottom: 0.9rem;
+            }
+            .flashcard-study-actions {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px !important;
+                width: 100%;
+            }
+            .flashcard-study-actions .btn {
+                width: 100%;
+                min-width: 0;
+                min-height: 58px;
+                padding: 8px 7px;
+                white-space: normal;
+                line-height: 1.2;
+                font-size: 0.8rem;
+            }
+
+            .pomodoro-daily-stats { gap: 8px; }
+            .pomodoro-daily-value { font-size: 1.25rem; }
+            .pomodoro-daily-panel { margin-top: 1rem; padding-top: 1rem; }
+
             .weekday-picker { grid-template-columns: repeat(4, 1fr); }
         }
 
@@ -703,6 +878,25 @@
                         <label>Foco (min): <input type="number" id="focoMin" value="25" min="1" onchange="updateTimerSettings()"></label>
                         <label>Pausa (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
                     </div>
+
+                    <div class="pomodoro-daily-panel">
+                        <h4>Horas Pomodoro do Dia</h4>
+                        <div class="pomodoro-daily-stats">
+                            <div class="pomodoro-daily-stat">
+                                <span class="pomodoro-daily-value" id="dailyPomodoroTotal">00:00</span>
+                                <span class="pomodoro-daily-label">Estudado hoje</span>
+                            </div>
+                            <div class="pomodoro-daily-stat">
+                                <span class="pomodoro-daily-value" id="dailyPomodoroTarget">Sem meta</span>
+                                <span class="pomodoro-daily-label">Meta diária do cronograma</span>
+                            </div>
+                        </div>
+                        <div class="pomodoro-progress-track" aria-hidden="true">
+                            <div class="pomodoro-progress-fill" id="dailyPomodoroProgress"></div>
+                        </div>
+                        <div class="pomodoro-daily-status" id="dailyPomodoroStatus">Gere um cronograma para definir a meta diária.</div>
+                        <button class="btn btn-danger btn-sm pomodoro-reset-hours" type="button" onclick="resetDailyPomodoroHours()">Resetar Horas do Dia</button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -715,15 +909,17 @@
             <div class="card">
                 <h3 id="edital-title">Edital Agrupado por Matéria</h3>
                 
-                <form class="form-row" onsubmit="addManualItem(event)">
+                <form class="form-row edital-manual-form" onsubmit="addManualItem(event)">
                     <input type="text" id="materia" placeholder="Matéria (ex: Direito Administrativo)" required>
                     <input type="text" id="assunto" placeholder="Assunto (ex: Atos Administrativos)" required>
                     <input type="number" id="prioridade" placeholder="Prioridade" value="1" min="1">
-                    <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
+                    <div class="edital-manual-actions">
+                        <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
+                        <button type="button" class="btn btn-danger" onclick="excluirMateriaEspecifica()">Excluir Matéria</button>
+                    </div>
                 </form>
 
-                <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                    <button class="btn btn-danger btn-sm" onclick="excluirMateriaEspecifica()">Excluir Matéria</button>
+                <div class="edital-guide-actions">
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">Expandir Todas as Guias</button>
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">Recolher Todas as Guias</button>
                 </div>
@@ -775,7 +971,7 @@
                         <select id="yearSelect" onchange="onMonthYearChange()"></select>
                     </div>
 
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <div class="calendar-primary-actions">
                         <button class="btn btn-purple" onclick="openModalSelectCronogramaType()">Preencher Cronograma Automaticamente</button>
                         <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Mês Atual</button>
                     </div>
@@ -813,16 +1009,16 @@
         <!-- TAB 4: FLASHCARDS -->
         <div id="tab-flashcards" class="tab-content">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                <div class="flashcards-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                     <h3>Flashcards e Estudo Ativo</h3>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados 🔀</button>
-                        <button class="btn btn-info" onclick="openModalFiltroEstudoFlashcards()">🎯 Estudar Matéria / Assunto Específico</button>
+                    <div class="flashcard-study-actions">
+                        <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados</button>
+                        <button class="btn btn-info" onclick="openModalFiltroEstudoFlashcards()">Estudar Matéria / Assunto Específico</button>
                     </div>
                 </div>
 
                 <div class="import-info-box">
-                    <h4>💡 Como importar suas perguntas sem erros de formatação:</h4>
+                    <h4>Como importar suas perguntas sem erros de formatação:</h4>
                     <p>Você pode colar o texto diretamente na caixa abaixo estruturado assim:</p>
                     <ul>
                         <li><strong>Linha a linha (com P: e R:):</strong><br>
@@ -836,10 +1032,10 @@
                 </div>
 
                 <div style="background: rgba(0,0,0,0.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem;">
-                    <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">📋 Importação Rápida via Texto (Colar em Lote)</h4>
+                    <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">Importação Rápida via Texto (Colar em Lote)</h4>
                     <p style="font-size: 0.85rem; opacity: 0.85; margin-bottom: 10px;">Cole o bloco de texto com suas perguntas e respostas abaixo e clique no botão para convertê-las automaticamente:</p>
                     <textarea id="fcPasteTextArea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza" style="min-height: 120px; font-family: monospace; font-size: 0.88rem; margin-bottom: 10px;"></textarea>
-                    <button class="btn btn-success" onclick="processPastedFlashcardsText()">⚡ Converter Texto em Flashcards</button>
+                    <button class="btn btn-success" onclick="processPastedFlashcardsText()">Converter Texto em Flashcards</button>
                 </div>
 
                 <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -858,10 +1054,10 @@
 
                 <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
                     <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px;">
-                        📁 Baralhos / Pastas de Flashcards (Estilo Anki)
+                        Baralhos / Pastas de Flashcards (Estilo Anki)
                     </h4>
                     <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" onclick="setFlashcardViewFilter('', '')" style="display: none;">
-                        📁 Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
+                        Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
                     </button>
                 </div>
 
@@ -875,7 +1071,7 @@
     <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
     <div class="modal-overlay" id="modalFiltroEstudoFC">
         <div class="modal">
-            <h3>🎯 Estudo Focado de Flashcards</h3>
+            <h3>Estudo Focado de Flashcards</h3>
             <p style="font-size:0.88rem; color:#94a3b8;">Escolha a matéria e/ou assunto específico que você deseja revisar agora:</p>
             
             <div class="form-group">
@@ -894,7 +1090,7 @@
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalFiltroEstudoFlashcards()">Cancelar (ESC)</button>
-                <button class="btn btn-purple" onclick="startFilteredStudyModal()">Iniciar Treino Focado 🚀</button>
+                <button class="btn btn-purple" onclick="startFilteredStudyModal()">Iniciar Treino Focado</button>
             </div>
         </div>
     </div>
@@ -1611,10 +1807,13 @@
                 currDate.setDate(currDate.getDate() + 1);
             }
 
+            metadata[currentConcurso].pomodoroDailyTargetHours = selectedDailyHoursSlots;
+            metadata[currentConcurso].pomodoroScheduleMethod = 2;
             await saveConcursosMetadata(metadata);
             closeModalMentorisMethod();
             renderMonthCalendar();
-            alert('Cronograma Método 2 gerado com sucesso!');
+            renderPomodoroDailyCounter();
+            alert(`Cronograma Método 2 gerado com sucesso! Meta diária do Pomodoro: ${selectedDailyHoursSlots}h.`);
         }
 
         async function gerarCronogramaInteligente() {
@@ -1662,10 +1861,13 @@
                 currDate.setDate(currDate.getDate() + 1);
             }
 
+            metadata[currentConcurso].pomodoroDailyTargetHours = dailySlots;
+            metadata[currentConcurso].pomodoroScheduleMethod = 1;
             await saveConcursosMetadata(metadata);
             closeModalConfigHorarios();
             renderMonthCalendar();
-            alert('Cronograma Método 1 gerado com sucesso!');
+            renderPomodoroDailyCounter();
+            alert(`Cronograma Método 1 gerado com sucesso! Meta diária do Pomodoro: ${dailySlots}h.`);
         }
 
         function openModalDayContent(dateKey) {
@@ -2223,7 +2425,7 @@
                     <div class="anki-folder-card">
                         <div class="anki-folder-header" onclick="toggleFcFolder(decodeURIComponent('${safeMatHandler}'))">
                             <div class="anki-folder-title">
-                                📁 <span>${escapeHtml(matName)}</span>
+                                <span>${escapeHtml(matName)}</span>
                                 ${isMatActive ? '<span style="color:#34d399; font-size:0.75rem;">(Caixa Aberta)</span>' : ''}
                             </div>
                             <div style="display:flex; align-items:center; gap:10px;">
@@ -2961,6 +3163,7 @@
             populateNotesMateriaDropdowns();
             renderTable();
             renderChart();
+            renderPomodoroDailyCounter();
         }
 
         function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
@@ -3398,6 +3601,7 @@
         let timeLeft = 25 * 60;
         let isTimerPaused = false;
         let timerHasStarted = false;
+        let currentFocusCycleMinutes = 0;
         let pomodoroAudioContext = null;
 
         function preparePomodoroAudio() {
@@ -3421,7 +3625,7 @@
 
                 const master = ctx.createGain();
                 master.gain.setValueAtTime(0.0001, ctx.currentTime);
-                master.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime + 0.015);
+                master.gain.exponentialRampToValueAtTime(1.0, ctx.currentTime + 0.015);
                 master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.9);
                 master.connect(ctx.destination);
 
@@ -3443,11 +3647,110 @@
             }
         }
 
+        function playPomodoroBellSequence(count, spacingMs) {
+            const total = Math.max(1, parseInt(count) || 1);
+            const spacing = Math.max(120, parseInt(spacingMs) || 300);
+            for (let index = 0; index < total; index++) {
+                setTimeout(playPomodoroBell, index * spacing);
+            }
+        }
+
+        function playPomodoroStartBell() {
+            // Dois toques rápidos ao iniciar um novo ciclo de foco.
+            playPomodoroBellSequence(2, 280);
+        }
+
+        function playPomodoroPauseBell() {
+            // Um toque ao pausar.
+            playPomodoroBellSequence(1, 0);
+        }
+
         function playPomodoroCompletionBell() {
-            // Três toques fortes. Não depende de arquivo externo e funciona offline.
-            playPomodoroBell();
-            setTimeout(playPomodoroBell, 750);
-            setTimeout(playPomodoroBell, 1500);
+            // Cinco toques fortes e mais próximos ao finalizar.
+            playPomodoroBellSequence(5, 320);
+        }
+
+        function getLocalDateKey(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getDailyPomodoroStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `pomodoro_daily_minutes_${uid}_${getLocalDateKey()}`;
+        }
+
+        function getDailyPomodoroMinutes() {
+            const value = parseInt(localStorage.getItem(getDailyPomodoroStorageKey()) || '0');
+            return Number.isFinite(value) && value > 0 ? value : 0;
+        }
+
+        function setDailyPomodoroMinutes(minutes) {
+            const normalized = Math.max(0, Math.round(Number(minutes) || 0));
+            localStorage.setItem(getDailyPomodoroStorageKey(), String(normalized));
+            renderPomodoroDailyCounter();
+        }
+
+        function addDailyPomodoroMinutes(minutes) {
+            const increment = Math.max(0, Math.round(Number(minutes) || 0));
+            if (!increment) return;
+            setDailyPomodoroMinutes(getDailyPomodoroMinutes() + increment);
+        }
+
+        function getPomodoroDailyTargetHours() {
+            const metadata = getConcursosMetadata();
+            const target = Number(metadata[currentConcurso]?.pomodoroDailyTargetHours || 0);
+            return Number.isFinite(target) && target > 0 ? target : 0;
+        }
+
+        function formatStudyMinutes(totalMinutes) {
+            const safeMinutes = Math.max(0, Math.round(Number(totalMinutes) || 0));
+            const hours = Math.floor(safeMinutes / 60);
+            const minutes = safeMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        function renderPomodoroDailyCounter() {
+            const totalEl = document.getElementById('dailyPomodoroTotal');
+            const targetEl = document.getElementById('dailyPomodoroTarget');
+            const progressEl = document.getElementById('dailyPomodoroProgress');
+            const statusEl = document.getElementById('dailyPomodoroStatus');
+            if (!totalEl || !targetEl || !progressEl || !statusEl) return;
+
+            const studiedMinutes = getDailyPomodoroMinutes();
+            const targetHours = getPomodoroDailyTargetHours();
+            const targetMinutes = Math.round(targetHours * 60);
+
+            totalEl.textContent = formatStudyMinutes(studiedMinutes);
+
+            if (!targetMinutes) {
+                targetEl.textContent = 'Sem meta';
+                progressEl.style.width = '0%';
+                statusEl.textContent = 'Gere um cronograma pelos métodos 1 ou 2 para definir a meta diária.';
+                return;
+            }
+
+            targetEl.textContent = `${targetHours}h`;
+            const percent = (studiedMinutes / targetMinutes) * 100;
+            progressEl.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+
+            if (studiedMinutes < targetMinutes) {
+                const remaining = targetMinutes - studiedMinutes;
+                statusEl.textContent = `${Math.round(percent)}% da meta concluída • Restam ${formatStudyMinutes(remaining)}.`;
+            } else if (studiedMinutes === targetMinutes) {
+                statusEl.textContent = 'Meta diária concluída.';
+            } else {
+                const extra = studiedMinutes - targetMinutes;
+                statusEl.textContent = `Meta concluída • ${formatStudyMinutes(extra)} de estudo extra hoje.`;
+            }
+        }
+
+        function resetDailyPomodoroHours() {
+            if (!confirm('Deseja zerar todas as horas Pomodoro contabilizadas hoje?')) return;
+            localStorage.removeItem(getDailyPomodoroStorageKey());
+            renderPomodoroDailyCounter();
         }
 
         function updatePauseButton() {
@@ -3473,6 +3776,13 @@
         function startTimer() {
             if (timerInterval || timeLeft <= 0) return;
             preparePomodoroAudio();
+
+            const isNewCycle = !timerHasStarted;
+            if (isNewCycle) {
+                currentFocusCycleMinutes = Math.max(1, parseInt(document.getElementById('focoMin').value) || 25);
+                playPomodoroStartBell();
+            }
+
             timerHasStarted = true;
             isTimerPaused = false;
             updatePauseButton();
@@ -3488,6 +3798,8 @@
                     timerInterval = null;
                     timerHasStarted = false;
                     isTimerPaused = false;
+                    addDailyPomodoroMinutes(currentFocusCycleMinutes);
+                    currentFocusCycleMinutes = 0;
                     updatePauseButton();
                     playPomodoroCompletionBell();
                     setTimeout(() => alert('Pomodoro Finalizado!'), 2300);
@@ -3500,6 +3812,7 @@
                 clearInterval(timerInterval);
                 timerInterval = null;
                 isTimerPaused = true;
+                playPomodoroPauseBell();
                 updatePauseButton();
                 return;
             }
@@ -3514,25 +3827,10 @@
             timerInterval = null;
             isTimerPaused = false;
             timerHasStarted = false;
+            currentFocusCycleMinutes = 0;
             timeLeft = (parseInt(document.getElementById('focoMin').value) || 25) * 60;
             updateDisplay();
             updatePauseButton();
-        }
-
-        let pdfJsLoadPromise = null;
-        function loadPdfJsOnce() {
-            if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
-            if (pdfJsLoadPromise) return pdfJsLoadPromise;
-
-            pdfJsLoadPromise = new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-                script.async = true;
-                script.onload = () => resolve(window.pdfjsLib || true);
-                script.onerror = () => { pdfJsLoadPromise = null; reject(new Error('Não foi possível carregar o PDF.js.')); };
-                document.head.appendChild(script);
-            });
-            return pdfJsLoadPromise;
         }
 
         function openModalViewEdital() {
@@ -3976,6 +4274,7 @@
         window.closeModalFiltroEstudoFlashcards = closeModalFiltroEstudoFlashcards;
         window.updateStudyFilterAssuntoOptions = updateStudyFilterAssuntoOptions;
         window.startFilteredStudyModal = startFilteredStudyModal;
+        window.resetDailyPomodoroHours = resetDailyPomodoroHours;
     </script>
 </body>
 </html>
