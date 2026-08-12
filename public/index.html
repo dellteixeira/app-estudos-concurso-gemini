@@ -1684,7 +1684,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V8.1.1 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V8.2 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -4806,25 +4806,68 @@
             ];
             let best=-1,bestScore=-1;
             for (let i=0;i<lines.length;i++) {
-                const f=foldEditalText(lines[i].text); let score=0;
+                const raw=String(lines[i].text||'').trim();
+                const f=foldEditalText(raw); let score=0;
                 for (const a of aliases) {
                     const af=foldEditalText(a);
-                    if (f===af) score=Math.max(score,14);
-                    else if (f.includes(af) && f.length<150) score=Math.max(score,10);
+                    if (f===af) score=Math.max(score,18); // heading canônico
+                    else if (f.startsWith(af) && f.length<110) score=Math.max(score,14);
+                    else if (f.includes(af) && f.length<150) score=Math.max(score,8); // mera referência no corpo
                 }
-                if (/^anexo\s+[ivxlcdm\d]+\b/.test(f) && /(conteudo|programa|avaliacao)/.test(f)) score += 5;
-                if (/^\d+(?:\.\d+)*\s+dos objetos de avaliacao/.test(f)) score = Math.max(score,12);
-                if ((lines[i].uppercaseRatio||0)>.7) score += 1;
-                // privilegia ocorrências mais ao fim quando há referência ao anexo no corpo inicial
-                if (score>0) score += Math.min(3, i/Math.max(1,lines.length)*3);
+                // Referências como “conteúdo programático constante do Anexo B” não são início do conteúdo.
+                if (/(constante|conforme|previsto|indicado)\s+(?:no|na|do|da)?\s*[“"']?anexo\b/.test(f) || /conteudo programatico constante/.test(f)) score -= 7;
+                // Heading de ANEXO imediatamente antes/depois do marcador recebe forte bônus.
+                const prev=foldEditalText(lines[i-1]?.text||''), next=foldEditalText(lines[i+1]?.text||'');
+                if (/^anexo\s+[a-zivxlcdm\d]+\b/.test(prev) || /^anexo\s+[a-zivxlcdm\d]+\b/.test(f)) score += 8;
+                if (/^anexo\s+[a-zivxlcdm\d]+\b/.test(next)) score += 3;
+                if (/^\d+(?:\.\d+)*\s+dos objetos de avaliacao/.test(f)) score = Math.max(score,15);
+                if ((lines[i].uppercaseRatio||0)>.7) score += 2;
+                // Se logo após o marcador há headings de disciplina, trata-se quase certamente do bloco real.
+                let disciplineLookahead=0;
+                for (let j=i+1;j<Math.min(lines.length,i+12);j++) {
+                    const t=String(lines[j]?.text||'').trim();
+                    if (!t) continue;
+                    if (findKnownDisciplineAtStart(stripSectionNumber(t))) disciplineLookahead++;
+                    else {
+                        const letters=t.replace(/[^A-Za-zÀ-ÿ]/g,''), uppers=t.replace(/[^A-ZÁÉÍÓÚÂÊÔÃÕÇ]/g,'');
+                        const ratio=letters.length?uppers.length/letters.length:0;
+                        if (ratio>.82 && t.split(/\s+/).length<=10 && !/[.;!?]$/.test(t)) disciplineLookahead++;
+                    }
+                }
+                if (disciplineLookahead>=1) score += 5;
+                if (disciplineLookahead>=2) score += 5;
+                if (score>0) score += Math.min(2, i/Math.max(1,lines.length)*2);
                 if (score>bestScore){bestScore=score;best=i;}
             }
-            if (bestScore>=9) return best;
+            if (bestScore>=10) return best;
             for (let i=Math.floor(lines.length*.35);i<lines.length;i++) {
                 const f=foldEditalText(lines[i].text);
                 if (/^(conhecimentos|disciplinas|materias)\b/.test(f)) return Math.max(0,i-1);
             }
             return -1;
+        }
+
+        function inferSingleRoleFromPreamble(lines, programStart) {
+            const limit=Math.min(programStart>0?programStart:lines.length, Math.max(220, Math.floor(lines.length*.22)));
+            const candidates=[];
+            for (let i=0;i<limit;i++) {
+                const raw=String(lines[i]?.text||'').replace(/\s+/g,' ').trim();
+                if (!raw || raw.length>180) continue;
+                let m=raw.match(/(?:provimento|preenchimento|selecionar candidatos[^,;]{0,50})[^.]{0,120}?\b(?:do|dos|de)\s+(?:cargo|cargos|fun[cç][aã]o|fun[cç][oõ]es)\s+(?:de\s+)?([^.;]{3,100})/i);
+                if (!m) m=raw.match(/\b(?:cargo|fun[cç][aã]o)\s+(?:de\s+)?([A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç][^.;]{2,90})/i);
+                if (!m) continue;
+                let label=m[1].replace(/\s+(?:do|da|de)\s+quadro.*$/i,'').replace(/\s+e\s+estabelece.*$/i,'').trim();
+                if (!label || label.split(/\s+/).length>14 || !roleSignal(label)) continue;
+                candidates.push({label:titleCaseLoose(label),index:i});
+            }
+            if (!candidates.length) return null;
+            // Só cria cargo único quando há um candidato claramente dominante/recorrente.
+            const freq=new Map();
+            for (const c of candidates){const k=foldEditalText(c.label);const x=freq.get(k)||{...c,count:0};x.count++;freq.set(k,x);}
+            const ranked=[...freq.values()].sort((a,b)=>b.count-a.count || a.index-b.index);
+            const top=ranked[0];
+            if (!top) return null;
+            return {code:`BL${hashEditalText(top.label)%10000}`,label:top.label,rawLabel:top.label,confidence:top.count>1?.93:.84,segments:[],educationLevel:'',synthetic:true,singleRole:true};
         }
 
         function findProgramEndIndex(lines, start) {
@@ -4966,9 +5009,15 @@
                 }
             }
 
-            // Se só há blocos compartilhados e nenhum cargo explícito, o edital é de bloco único (ex.: Vunesp).
+            // Se não há cargo dentro do programa, tenta identificar um cargo único no preâmbulo do edital.
             if (!scopeMap.size) {
-                scopeMap.set('__FULL__',{code:'__FULL__',label:'Conteúdo programático (bloco único)',rawLabel:'Conteúdo programático',confidence:.94,segments:[{start:programStart+1,end:programEnd,kind:'specific',level:''}],educationLevel:'',synthetic:true});
+                const single=inferSingleRoleFromPreamble(lines,programStart);
+                if (single) {
+                    single.segments=[{start:programStart+1,end:programEnd,kind:'specific',level:''}];
+                    scopeMap.set(single.code,single);
+                } else {
+                    scopeMap.set('__FULL__',{code:'__FULL__',label:'Conteúdo programático (bloco único)',rawLabel:'Conteúdo programático',confidence:.94,segments:[{start:programStart+1,end:programEnd,kind:'specific',level:''}],educationLevel:'',synthetic:true});
+                }
             }
 
             // Remove falsos cargos que são headings evidentemente de disciplinas.
