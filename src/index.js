@@ -1,5 +1,5 @@
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const MAX_TEXT_CHARS = 90000;
+const MAX_TEXT_CHARS = 110000;
 
 const editalSchema = {
   type: "object",
@@ -71,7 +71,7 @@ async function analyzeEdital(request, env) {
   }
 
   if (rawText.length > MAX_TEXT_CHARS) {
-    return json({ error: "Recorte do edital excedeu o limite de segurança desta versão." }, 413);
+    return json({ error: "Recorte do edital excedeu o limite de segurança desta versão. O Painel deve reduzir automaticamente o texto antes do envio." }, 413);
   }
 
   const systemPrompt = `
