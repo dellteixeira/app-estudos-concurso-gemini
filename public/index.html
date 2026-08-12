@@ -272,6 +272,19 @@
             text-align: center;
         }
         .edital-guide-actions { margin-bottom: 1rem; }
+        .calendar-primary-actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.6rem;
+            width: min(100%, 760px);
+        }
+        .calendar-primary-actions .btn {
+            width: 100%;
+            min-width: 0;
+            min-height: 46px;
+            white-space: normal;
+            line-height: 1.2;
+        }
 
         .weekly-hours-banner {
             background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-blue);
@@ -735,18 +748,18 @@
             /* Cronograma: ações principais lado a lado */
             .calendar-primary-actions {
                 display: grid !important;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 10px !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 8px !important;
                 width: 100%;
             }
             .calendar-primary-actions .btn {
                 width: 100%;
                 min-width: 0;
                 min-height: 56px !important;
-                padding: 8px 7px;
+                padding: 8px 5px;
                 white-space: normal;
-                line-height: 1.2;
-                font-size: 0.82rem;
+                line-height: 1.15;
+                font-size: 0.76rem;
             }
 
             /* Flashcards: dois modos de estudo na mesma linha */
@@ -972,8 +985,9 @@
                     </div>
 
                     <div class="calendar-primary-actions">
-                        <button class="btn btn-purple" onclick="openModalSelectCronogramaType()">Preencher Cronograma Automaticamente</button>
-                        <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Mês Atual</button>
+                        <button class="btn btn-purple" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
+                        <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
+                        <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
                     </div>
                 </div>
 
@@ -2840,6 +2854,64 @@
             }
         }
 
+        async function limparMateriasEstudadas() {
+            const itensDoConcurso = allEditalItems.filter(item =>
+                (item.concurso || 'Concurso Geral') === currentConcurso
+            );
+
+            if (itensDoConcurso.length === 0) {
+                alert('Não há matérias neste concurso para limpar.');
+                return;
+            }
+
+            const marcados = itensDoConcurso.filter(item =>
+                item.teoria || item.questoes || item.rev_24h || item.rev_7d || item.rev_30d
+            );
+
+            if (marcados.length === 0) {
+                alert('Todas as matérias deste concurso já estão marcadas como não estudadas.');
+                return;
+            }
+
+            const confirmar = confirm(
+                `Deseja marcar novamente como não estudados os ${marcados.length} tópicos já concluídos/revisados de "${currentConcurso}"?\n\n` +
+                'O cronograma não será apagado. Apenas Teoria, Questões e Revisões serão desmarcadas.'
+            );
+            if (!confirmar) return;
+
+            // Atualização local em lote: evita uma gravação/renderização por tópico.
+            marcados.forEach(item => {
+                item.teoria = false;
+                item.questoes = false;
+                item.rev_24h = false;
+                item.rev_7d = false;
+                item.rev_30d = false;
+            });
+
+            saveEditalToLocalStorage();
+
+            // Coloca todos os registros alterados na fila em uma única gravação.
+            const state = getSyncState();
+            marcados.forEach(item => {
+                const id = String(item.id);
+                state.editalUpserts[id] = { ...item, id };
+                state.editalDeletes = state.editalDeletes.filter(savedId => String(savedId) !== id);
+            });
+            saveSyncState(state);
+
+            filterDataByConcurso();
+            renderMonthCalendar();
+
+            // Sincroniza em segundo plano; se falhar, a fila permanece protegida localmente.
+            if (navigator.onLine && currentUser) {
+                syncAllWithSupabase().catch(error =>
+                    console.warn('Limpeza das matérias aguardando sincronização:', error)
+                );
+            }
+
+            alert(`${marcados.length} tópicos foram marcados novamente como não estudados.`);
+        }
+
         function filterDelayedList(type, btn) {
             currentDelayedFilter = type;
             document.querySelectorAll('.filter-tab').forEach(tb => tb.classList.remove('active'));
@@ -4231,6 +4303,7 @@
         window.salvarEdicaoFlashcard = salvarEdicaoFlashcard;
         window.onMonthYearChange = onMonthYearChange;
         window.limparCronogramaMesAtual = limparCronogramaMesAtual;
+        window.limparMateriasEstudadas = limparMateriasEstudadas;
         window.filterDelayedList = filterDelayedList;
         window.updateFcAssuntoOptions = updateFcAssuntoOptions;
         window.processPastedFlashcardsText = processPastedFlashcardsText;
