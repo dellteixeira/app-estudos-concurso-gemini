@@ -1,4 +1,4 @@
-// Universal Parser V8: o backend recebe matéria/assunto já bloqueados pelo frontend.
+// Universal Parser V8.3: o backend recebe matéria/assunto já bloqueados pelo frontend.
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const MAX_TEXT_CHARS = 110000;
 
