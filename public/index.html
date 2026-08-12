@@ -4734,25 +4734,50 @@
                 .map(i => pages[i])
                 .filter(p => p.text);
 
-            const maxChars = 88000;
-            let total = 0;
+            // Limite rígido do recorte enviado ao Worker. O limite é aplicado ao texto
+            // FINAL (incluindo cabeçalhos de página), evitando erro 413 mesmo quando
+            // algumas páginas do edital são muito densas.
+            const maxChars = 98000;
             const finalPages = [];
+            let total = 0;
 
-            // Mantém a ordem natural das páginas, mas só depois de selecionar as regiões
-            // relevantes. Isso evita o problema anterior de cortar o PDF nas primeiras páginas.
-            for (const p of chosen) {
-                const blockSize = p.text.length + 40;
-                if (total + blockSize > maxChars && finalPages.length >= 6) continue;
-                finalPages.push(p);
-                total += blockSize;
-                if (total >= maxChars) break;
+            // Primeiro dá preferência às páginas com maior pontuação de conteúdo real.
+            // Depois, no envio, as páginas escolhidas voltam à ordem natural do edital.
+            const candidates = [...chosen].sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.pageNumber - b.pageNumber;
+            });
+
+            for (const p of candidates) {
+                const header = `\n--- PÁGINA ${p.pageNumber} | SCORE ${p.score} ---\n`;
+                const available = maxChars - total - header.length;
+                if (available <= 300) break;
+
+                if (p.text.length <= available) {
+                    finalPages.push({ ...p, sendText: p.text });
+                    total += header.length + p.text.length;
+                    continue;
+                }
+
+                // Se ainda houver bastante espaço, aproveita a parte cabível da página
+                // em vez de ultrapassar o teto. Nunca excede maxChars.
+                if (available >= 2500) {
+                    finalPages.push({ ...p, sendText: p.text.slice(0, available) });
+                    total += header.length + available;
+                }
+                break;
             }
 
             if (!finalPages.length) throw new Error('Não foi possível localizar texto útil no conteúdo programático.');
 
-            const text = finalPages
-                .map(p => `\n--- PÁGINA ${p.pageNumber} | SCORE ${p.score} ---\n${p.text}`)
+            finalPages.sort((a, b) => a.pageNumber - b.pageNumber);
+
+            let text = finalPages
+                .map(p => `\n--- PÁGINA ${p.pageNumber} | SCORE ${p.score} ---\n${p.sendText}`)
                 .join('\n');
+
+            // Defesa final: garante matematicamente que nunca envia mais de 98 mil caracteres.
+            if (text.length > maxChars) text = text.slice(0, maxChars);
 
             return {
                 text,
@@ -4840,7 +4865,7 @@
 
                 setAiEditalStatus('Preparando o edital e localizando o conteúdo programático...');
                 const extraction = await extractRelevantEditalText(fileObj.blob);
-                setAiEditalStatus(`Texto preparado: ${extraction.selectedPages.length} de ${extraction.totalPages} páginas selecionadas. Enviando ao Workers AI...`);
+                setAiEditalStatus(`Texto preparado: ${extraction.selectedPages.length} de ${extraction.totalPages} páginas selecionadas (${extraction.selectedChars.toLocaleString('pt-BR')} caracteres). Enviando ao Workers AI...`);
 
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session?.access_token) throw new Error('Sua sessão expirou. Entre novamente para utilizar a IA.');
