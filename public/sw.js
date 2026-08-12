@@ -1,4 +1,4 @@
-const CACHE_NAME = 'edital-dashboard-v11-universal-v7-20260812';
+const CACHE_NAME = 'edital-dashboard-v12-universal-v8-20260812';
 
 const APP_SHELL = [
   './',
