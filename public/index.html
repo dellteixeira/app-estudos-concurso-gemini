@@ -4630,42 +4630,44 @@
                 .trim();
         }
 
+        function foldEditalText(text) {
+            return String(text || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
         function scoreEditalPage(text) {
-            const t = String(text || '').toLowerCase();
+            const t = foldEditalText(text);
             let score = 0;
 
             const contentMarkers = [
-                'conteúdo programático', 'conteudo programatico', 'programa de provas',
-                'conhecimentos gerais', 'conhecimentos específicos', 'conhecimentos especificos',
-                'conteúdos programáticos', 'conteudos programaticos'
+                'conteudo programatico', 'conteudos programaticos', 'programa de provas',
+                'programa das provas', 'conhecimentos gerais', 'conhecimentos especificos'
             ];
 
             const subjects = [
-                'língua portuguesa', 'lingua portuguesa', 'redação', 'redacao',
-                'raciocínio lógico', 'raciocinio logico', 'matemática', 'matematica',
-                'informática', 'informatica',
-                'direito constitucional', 'direito administrativo', 'direito civil',
-                'direito penal', 'direito processual civil', 'direito processual penal',
-                'direito do trabalho', 'direito processual do trabalho',
-                'administração pública', 'administracao publica', 'contabilidade',
-                'auditoria', 'arquivologia', 'estatística', 'estatistica', 'economia',
-                'legislação específica', 'legislacao especifica', 'organização judiciária',
-                'organizacao judiciaria', 'direitos das pessoas com deficiência',
+                'lingua portuguesa', 'redacao', 'raciocinio logico', 'matematica',
+                'informatica', 'direito constitucional', 'direito administrativo',
+                'direito civil', 'direito penal', 'direito processual civil',
+                'direito processual penal', 'direito do trabalho',
+                'direito processual do trabalho', 'administracao publica', 'contabilidade',
+                'auditoria', 'arquivologia', 'estatistica', 'economia',
+                'legislacao especifica', 'organizacao judiciaria',
                 'direitos das pessoas com deficiencia'
             ];
 
             const administrative = [
-                'das inscrições', 'das inscricoes', 'isenção', 'isencao',
-                'candidatos com deficiência', 'candidatos com deficiencia',
-                'candidatos negros', 'candidatos indígenas', 'candidatos indigenas',
-                'candidatos quilombolas', 'das disposições preliminares', 'das disposicoes preliminares',
-                'dos cargos', 'requisitos para investidura', 'da inscrição', 'da inscricao',
-                'atendimento especial', 'dos recursos', 'do resultado', 'da classificação',
-                'da classificacao', 'da nomeação', 'da nomeacao', 'cronograma',
-                'prestação das provas', 'prestacao das provas'
+                'das inscricoes', 'isencao', 'candidatos com deficiencia',
+                'candidatos negros', 'candidatos indigenas', 'candidatos quilombolas',
+                'das disposicoes preliminares', 'dos cargos', 'requisitos para investidura',
+                'da inscricao', 'atendimento especial', 'dos recursos', 'do resultado',
+                'da classificacao', 'da nomeacao', 'cronograma', 'prestacao das provas'
             ];
 
-            contentMarkers.forEach(k => { if (t.includes(k)) score += 10; });
+            contentMarkers.forEach(k => { if (t.includes(k)) score += 12; });
             let subjectHits = 0;
             subjects.forEach(k => {
                 if (t.includes(k)) {
@@ -4674,18 +4676,133 @@
                 }
             });
 
-            // Páginas com várias disciplinas juntas são fortes candidatas ao conteúdo programático.
             if (subjectHits >= 2) score += subjectHits * 8;
             if (subjectHits >= 4) score += 20;
 
-            administrative.forEach(k => { if (t.includes(k)) score -= 7; });
+            administrative.forEach(k => { if (t.includes(k)) score -= 8; });
 
-            // Sumários costumam reunir muitos títulos administrativos e números de página.
             const dotLeaderCount = (String(text || '').match(/\.{3,}/g) || []).length;
             if (dotLeaderCount >= 3) score -= 20;
 
-            if (/\b(peso|n[uú]mero de quest[oõ]es|quest[oõ]es|pontua[cç][aã]o)\b/i.test(text || '')) score += 3;
+            if (/\b(peso|numero de questoes|questoes|pontuacao)\b/i.test(t)) score += 3;
             return score;
+        }
+
+        function isStrongContentStartPage(text) {
+            const t = foldEditalText(text);
+            const markers = [
+                'conteudo programatico',
+                'conteudos programaticos',
+                'programa de provas',
+                'programa das provas'
+            ];
+            return markers.some(marker => t.includes(marker));
+        }
+
+        function isLikelyContentContinuation(text) {
+            const t = foldEditalText(text);
+            const subjects = [
+                'lingua portuguesa', 'redacao', 'raciocinio logico', 'matematica', 'informatica',
+                'direito constitucional', 'direito administrativo', 'direito civil', 'direito penal',
+                'direito processual civil', 'direito processual penal', 'direito do trabalho',
+                'direito processual do trabalho', 'administracao publica', 'contabilidade',
+                'auditoria', 'arquivologia', 'estatistica', 'economia', 'legislacao especifica',
+                'organizacao judiciaria', 'conhecimentos gerais', 'conhecimentos especificos'
+            ];
+            const studySignals = [
+                'constituicao', 'codigo', 'lei ', 'decreto', 'resolucao', 'sumula', 'jurisprudencia',
+                'gramatica', 'interpretacao de texto', 'administracao', 'processo', 'competencia',
+                'principios', 'direitos', 'crimes', 'recursos', 'procedimento'
+            ];
+            return subjects.some(k => t.includes(k)) || studySignals.filter(k => t.includes(k)).length >= 2;
+        }
+
+        function isStrongAdministrativeBoundary(text) {
+            const t = foldEditalText(text);
+            const boundaryMarkers = [
+                'cronograma de atividades', 'cronograma previsto', 'cronograma do concurso',
+                'das disposicoes finais', 'disposicoes finais', 'das disposicoes finais e transitorias',
+                'do resultado final', 'resultado final e classificacao', 'da homologacao',
+                'dos recursos', 'dos recursos e prazos', 'da nomeacao', 'da posse',
+                'anexo cronograma', 'anexo - cronograma'
+            ];
+            return boundaryMarkers.some(k => t.includes(k));
+        }
+
+        function locateDeterministicContentIndexes(pages) {
+            const starts = pages
+                .map((p, index) => ({ p, index }))
+                .filter(({ p }) => isStrongContentStartPage(p.text));
+
+            if (!starts.length) return null;
+
+            // Prefere o primeiro marcador que também esteja cercado de sinais de disciplinas.
+            let startIndex = starts[0].index;
+            for (const candidate of starts) {
+                const windowEnd = Math.min(pages.length - 1, candidate.index + 2);
+                let signal = 0;
+                for (let i = candidate.index; i <= windowEnd; i++) {
+                    signal += Math.max(0, pages[i].score);
+                    if (isLikelyContentContinuation(pages[i].text)) signal += 12;
+                }
+                if (signal >= 20) {
+                    startIndex = candidate.index;
+                    break;
+                }
+            }
+
+            let endIndex = pages.length - 1;
+            let contentSeen = 0;
+            let weakRun = 0;
+
+            for (let i = startIndex; i < pages.length; i++) {
+                const page = pages[i];
+                const continuation = isLikelyContentContinuation(page.text) || page.score > 0;
+                if (continuation) {
+                    contentSeen += 1;
+                    weakRun = 0;
+                } else {
+                    weakRun += 1;
+                }
+
+                // Só aceita fronteira administrativa depois de já ter percorrido conteúdo real.
+                if (i > startIndex + 1 && contentSeen >= 2 && isStrongAdministrativeBoundary(page.text) && !isLikelyContentContinuation(page.text)) {
+                    endIndex = i - 1;
+                    break;
+                }
+
+                // Defesa para editais em que o próximo anexo não possui marcador claro:
+                // três páginas seguidas sem sinais de conteúdo após uma sequência útil encerram o bloco.
+                if (contentSeen >= 3 && weakRun >= 3) {
+                    endIndex = i - weakRun;
+                    break;
+                }
+            }
+
+            if (endIndex < startIndex) endIndex = startIndex;
+            return { startIndex, endIndex };
+        }
+
+        function buildRankedFallbackPages(pages) {
+            const ranked = pages
+                .map((p, index) => ({ ...p, index }))
+                .filter(p => p.text && p.score > 0)
+                .sort((a, b) => b.score - a.score);
+
+            if (!ranked.length) return [];
+
+            const selected = new Set();
+            const anchors = ranked.slice(0, Math.min(6, ranked.length));
+            anchors.forEach(anchor => {
+                for (let j = Math.max(0, anchor.index - 1); j <= Math.min(pages.length - 1, anchor.index + 4); j++) {
+                    selected.add(j);
+                }
+            });
+
+            return [...selected]
+                .sort((a, b) => a - b)
+                .map(i => pages[i])
+                .filter(p => p.text);
         }
 
         async function extractRelevantEditalText(blob) {
@@ -4707,49 +4824,36 @@
                 throw new Error('O PDF parece ser digitalizado como imagem ou não possui texto pesquisável. Nesta fase, use um PDF com camada de texto.');
             }
 
-            // Em vez de começar pelas primeiras páginas do edital, prioriza as páginas
-            // com maior densidade real de disciplinas/conteúdo programático.
-            const ranked = pages
-                .map((p, index) => ({ ...p, index }))
-                .filter(p => p.text && p.score > 0)
-                .sort((a, b) => b.score - a.score);
+            const interval = locateDeterministicContentIndexes(pages);
+            let chosen;
+            let selectionMode;
 
-            if (!ranked.length) {
+            if (interval) {
+                chosen = pages
+                    .slice(interval.startIndex, interval.endIndex + 1)
+                    .filter(p => p.text);
+                selectionMode = 'deterministic-content-block';
+            } else {
+                chosen = buildRankedFallbackPages(pages);
+                selectionMode = 'ranked-fallback';
+            }
+
+            if (!chosen.length) {
                 throw new Error('Não foi possível localizar páginas com conteúdo programático. Confira se o edital anexado contém o programa das disciplinas.');
             }
 
-            const selected = new Set();
-            const anchors = ranked.slice(0, Math.min(6, ranked.length));
-
-            anchors.forEach(anchor => {
-                // O conteúdo costuma continuar nas páginas seguintes. Inclui uma janela
-                // pequena ao redor de cada âncora, evitando puxar o início administrativo.
-                for (let j = Math.max(0, anchor.index - 1); j <= Math.min(pages.length - 1, anchor.index + 4); j++) {
-                    selected.add(j);
-                }
-            });
-
-            let chosen = [...selected]
-                .sort((a, b) => a - b)
-                .map(i => pages[i])
-                .filter(p => p.text);
-
-            // Limite rígido do recorte enviado ao Worker. O limite é aplicado ao texto
-            // FINAL (incluindo cabeçalhos de página), evitando erro 413 mesmo quando
-            // algumas páginas do edital são muito densas.
             const maxChars = 98000;
             const finalPages = [];
             let total = 0;
 
-            // Primeiro dá preferência às páginas com maior pontuação de conteúdo real.
-            // Depois, no envio, as páginas escolhidas voltam à ordem natural do edital.
-            const candidates = [...chosen].sort((a, b) => {
-                if (b.score !== a.score) return b.score - a.score;
-                return a.pageNumber - b.pageNumber;
-            });
+            // No bloco determinístico, preserva a ordem e a continuidade do edital.
+            // No fallback, prioriza páginas de maior score e restaura a ordem no final.
+            const candidates = selectionMode === 'deterministic-content-block'
+                ? [...chosen]
+                : [...chosen].sort((a, b) => (b.score - a.score) || (a.pageNumber - b.pageNumber));
 
             for (const p of candidates) {
-                const header = `\n--- PÁGINA ${p.pageNumber} | SCORE ${p.score} ---\n`;
+                const header = `\n--- PÁGINA ${p.pageNumber} | SCORE ${p.score} | MODO ${selectionMode} ---\n`;
                 const available = maxChars - total - header.length;
                 if (available <= 300) break;
 
@@ -4759,8 +4863,6 @@
                     continue;
                 }
 
-                // Se ainda houver bastante espaço, aproveita a parte cabível da página
-                // em vez de ultrapassar o teto. Nunca excede maxChars.
                 if (available >= 2500) {
                     finalPages.push({ ...p, sendText: p.text.slice(0, available) });
                     total += header.length + available;
@@ -4773,17 +4875,17 @@
             finalPages.sort((a, b) => a.pageNumber - b.pageNumber);
 
             let text = finalPages
-                .map(p => `\n--- PÁGINA ${p.pageNumber} | SCORE ${p.score} ---\n${p.sendText}`)
+                .map(p => `\n--- PÁGINA ${p.pageNumber} | SCORE ${p.score} | MODO ${selectionMode} ---\n${p.sendText}`)
                 .join('\n');
 
-            // Defesa final: garante matematicamente que nunca envia mais de 98 mil caracteres.
             if (text.length > maxChars) text = text.slice(0, maxChars);
 
             return {
                 text,
                 totalPages: pdf.numPages,
                 selectedPages: finalPages.map(p => p.pageNumber),
-                selectedChars: text.length
+                selectedChars: text.length,
+                selectionMode
             };
         }
 
