@@ -991,7 +991,7 @@
 
         .modern-command-center {
             display:grid;
-            grid-template-columns:minmax(260px, 1fr) auto;
+            grid-template-columns:minmax(260px, 1fr);
             gap:12px;
             margin: 0 0 1rem;
             position:relative;
@@ -1010,9 +1010,8 @@
         .modern-search-shell:focus-within { border-color:var(--modern-blue); box-shadow:0 0 0 3px rgba(19,168,255,.12); }
         .modern-search-icon { font-size:1.15rem; opacity:.7; }
         #globalStudySearch { background:transparent; border:0; min-height:50px; padding:0; flex:1; width:100%; }
-        .modern-tools-button { min-height:52px; }
         .global-search-results {
-            display:none; position:absolute; left:0; right:170px; top:58px; z-index:160;
+            display:none; position:absolute; left:0; right:0; top:58px; z-index:160;
             background:#0a1b2d; border:1px solid var(--modern-border); border-radius:14px;
             box-shadow:0 18px 40px rgba(0,0,0,.32); max-height:360px; overflow:auto; padding:8px;
         }
@@ -1105,9 +1104,7 @@
             .concurso-selector-bar .btn-warning, .concurso-selector-bar .btn-danger { display:none; }
             .countdown-badge { width:100%; }
 
-            .modern-command-center { grid-template-columns:1fr auto; gap:8px; }
-            .modern-tools-button { width:48px; padding:0; font-size:0; }
-            .modern-tools-button::before { content:"☷"; font-size:1.2rem; }
+            .modern-command-center { grid-template-columns:1fr; gap:8px; }
             .global-search-results { right:0; }
             .study-overview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
             .overview-card { min-height:82px; padding:12px; }
@@ -1169,6 +1166,126 @@
                 background:linear-gradient(135deg,var(--modern-blue-2),var(--modern-blue)); color:#fff; font-size:1.7rem;
                 box-shadow:0 14px 30px rgba(19,168,255,.3); cursor:pointer;
             }
+        }
+
+
+        /* V8.7 — MOBILE RESPONSIVE REFINEMENT */
+        @media (max-width: 900px) {
+            #app-dashboard { padding: 10px 10px calc(124px + env(safe-area-inset-bottom,0px)); }
+            header.modern-header {
+                display:grid;
+                grid-template-columns:minmax(0,1fr) auto;
+                align-items:center;
+                gap:10px;
+                padding:12px;
+                margin-bottom:10px;
+                border-radius:18px;
+            }
+            .header-brand { grid-column:1; min-width:0; gap:10px; }
+            .header-brand img { width:42px; height:42px; flex:0 0 42px; }
+            .header-brand-copy h2 { font-size:1.18rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            .mobile-tools-toggle {
+                grid-column:2;
+                width:46px; height:46px;
+                border-radius:14px;
+                flex:0 0 46px;
+            }
+            .concurso-selector-bar {
+                grid-column:1 / -1;
+                width:100%;
+                margin:0;
+                padding:10px;
+                display:grid;
+                grid-template-columns:minmax(88px,auto) minmax(0,1fr);
+                gap:8px;
+                align-items:center;
+                border-radius:15px;
+            }
+            .concurso-selector-bar select {
+                grid-column:1 / -1;
+                width:100%; max-width:none;
+                min-height:48px;
+                font-size:1rem;
+                border-radius:12px;
+            }
+            .concurso-selector-bar .btn-primary {
+                grid-column:1;
+                width:100%;
+                min-height:42px;
+                padding:8px 12px;
+                justify-content:center;
+                border-radius:12px;
+            }
+            .countdown-badge {
+                grid-column:2;
+                width:100%;
+                min-width:0;
+                min-height:42px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                text-align:center;
+                padding:8px 10px;
+                border-radius:12px;
+                font-size:.82rem;
+                line-height:1.15;
+            }
+
+            .modern-command-center {
+                display:block;
+                margin:0 0 10px;
+                width:100%;
+            }
+            .modern-search-shell {
+                width:100%;
+                min-height:50px;
+                border-radius:15px;
+                padding:0 13px;
+            }
+            #globalStudySearch { min-width:0; font-size:.94rem; }
+            .modern-command-center > button,
+            .modern-command-center > .mobile-tools-toggle,
+            .modern-command-center > .tools-button,
+            #toolsButton { display:none !important; }
+
+            .study-overview-grid { gap:8px; margin-bottom:12px; }
+            .overview-card { min-height:92px; padding:12px; }
+            .overview-value { font-size:1.45rem; }
+
+            .grid-top { grid-template-columns:1fr !important; gap:10px; }
+            .card { padding:14px; margin-bottom:12px; }
+            .timer-display { font-size:clamp(3.1rem,18vw,4.4rem); }
+
+            .mobile-bottom-nav {
+                left:10px; right:10px;
+                bottom:calc(10px + env(safe-area-inset-bottom,0px));
+                border-radius:20px;
+                padding:6px;
+            }
+            .context-fab {
+                right:16px;
+                bottom:calc(92px + env(safe-area-inset-bottom,0px));
+                width:52px; height:52px;
+                border-radius:16px;
+            }
+            body { scroll-padding-bottom:130px; }
+        }
+
+        @media (max-width: 430px) {
+            #app-dashboard { padding-left:8px; padding-right:8px; }
+            header.modern-header { padding:10px; }
+            .header-brand img { width:38px; height:38px; flex-basis:38px; }
+            .header-brand-copy h2 { font-size:1.08rem; }
+            .mobile-tools-toggle { width:42px; height:42px; flex-basis:42px; }
+            .concurso-selector-bar { padding:8px; grid-template-columns:82px minmax(0,1fr); }
+            .concurso-selector-bar select { min-height:46px; font-size:.95rem; }
+            .concurso-selector-bar .btn-primary, .countdown-badge { min-height:40px; }
+            .countdown-badge { font-size:.76rem; }
+            .overview-label { font-size:.68rem; }
+            .overview-hint { font-size:.62rem; }
+            .overview-value { font-size:1.3rem; }
+            .mobile-nav-btn { font-size:.60rem; }
+            .mobile-nav-btn .nav-ico { font-size:1.08rem; }
         }
 
     </style>
@@ -1236,7 +1353,6 @@
                 <span class="modern-search-icon">⌕</span>
                 <input id="globalStudySearch" type="search" placeholder="Pesquisar matéria, assunto, flashcard ou anotação..." autocomplete="off" oninput="runGlobalStudySearch(this.value)" onfocus="runGlobalStudySearch(this.value)">
             </div>
-            <button class="btn btn-secondary modern-tools-button" type="button" onclick="toggleModernTools()">Ferramentas</button>
             <div id="globalSearchResults" class="global-search-results"></div>
         </section>
 
@@ -1684,7 +1800,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V8.6 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V8.7 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -5451,7 +5567,7 @@
                 const structure=await loadAiPdfStructure(fileObj.blob,fileObj.name||'');
                 select.innerHTML='<option value="">Selecione o cargo/área/especialidade...</option>'+structure.cargos.map(c=>`<option value="${escapeHtml(c.code)}">${escapeHtml(cargoSelectLabel(c))}</option>`).join('');
                 select.disabled=false; if(structure.cargos.length===1)select.value=structure.cargos[0].code; analyzeBtn.disabled=false;
-                if(hint)hint.textContent=structure.cargos[0]?.synthetic?'Edital com bloco único: o V8.6 identificará automaticamente matérias e assuntos.':`${structure.cargos.length} cargo(s)/área(s)/especialidade(s) localizado(s). O V8.6 combinará internamente conteúdo comum, nível/escolaridade e bloco específico quando existirem.`;
+                if(hint)hint.textContent=structure.cargos[0]?.synthetic?'Edital com bloco único: o V8.6 identificará automaticamente matérias e assuntos.':`${structure.cargos.length} cargo(s)/área(s)/especialidade(s) localizado(s). O V8.7 combinará internamente conteúdo comum, nível/escolaridade e bloco específico quando existirem.`;
                 setAiEditalStatus('');
             }catch(error){console.error('Falha ao detectar estrutura:',error);select.innerHTML='<option value="">Não foi possível detectar blocos</option>';if(hint)hint.textContent=error.message||'Falha na leitura.';setAiEditalStatus(error.message||'Não foi possível detectar a estrutura.',true);}
         }
@@ -5500,7 +5616,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V8.6 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V8.7 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -5583,7 +5699,7 @@
                 renderAiEditalPreview(analysis, extraction);
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V8.6; modelo: ${modelInfo}.`);
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V8.7; modelo: ${modelInfo}.`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
