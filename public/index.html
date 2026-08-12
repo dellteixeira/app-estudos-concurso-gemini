@@ -498,6 +498,100 @@
         .month-day-mobile-meta { display: none; }
 
 
+
+        /* =========================================================
+           ANALISADOR DE EDITAL COM IA — FASE 1
+           ========================================================= */
+        .ai-edital-intro {
+            background: rgba(14,165,233,0.08);
+            border: 1px solid rgba(56,189,248,0.35);
+            border-radius: 12px;
+            padding: 1rem;
+            line-height: 1.5;
+        }
+        .ai-edital-intro strong { color: #7dd3fc; }
+        .ai-analysis-status {
+            display: none;
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            background: rgba(59,130,246,0.10);
+            border: 1px solid rgba(59,130,246,0.28);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+        .ai-analysis-status.visible { display: block; }
+        .ai-analysis-preview {
+            display: none;
+            max-height: 48vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.85rem;
+            background: rgba(0,0,0,0.12);
+        }
+        .ai-analysis-preview.visible { display: block; }
+        .ai-preview-header {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 0.85rem;
+        }
+        .ai-preview-stat {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.7rem;
+            text-align: center;
+            background: rgba(255,255,255,0.03);
+        }
+        .ai-preview-stat strong { display:block; font-size:1.15rem; color:#7dd3fc; }
+        .ai-preview-materia {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 0.65rem;
+        }
+        .ai-preview-materia-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 0.72rem 0.85rem;
+            font-weight: 800;
+            background: rgba(59,130,246,0.10);
+        }
+        .ai-priority-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+            padding: 0 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            border: 1px solid rgba(255,255,255,0.16);
+        }
+        .ai-priority-1 { background: rgba(239,68,68,0.18); color: #fca5a5; }
+        .ai-priority-2 { background: rgba(245,158,11,0.18); color: #fcd34d; }
+        .ai-priority-3 { background: rgba(16,185,129,0.16); color: #6ee7b7; }
+        .ai-preview-topics { padding: 0.35rem 0.85rem 0.65rem; }
+        .ai-preview-topic {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(148,163,184,0.12);
+            font-size: 0.86rem;
+        }
+        .ai-preview-topic:last-child { border-bottom: none; }
+        .ai-source-note { opacity:0.72; font-size:0.78rem; line-height:1.4; }
+        @media (max-width: 900px) {
+            .ai-preview-header { grid-template-columns: 1fr 1fr; }
+            .ai-preview-header .ai-preview-stat:last-child { grid-column: 1 / -1; }
+            .ai-analysis-preview { max-height: 52vh; }
+        }
+
         /* =========================================================
            PWA MULTIPLATAFORMA / SAFE AREAS
            ========================================================= */
@@ -1159,6 +1253,7 @@
                 Importar JSON
                 <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="handleActionButton(this.parentElement, importJSON, event)">
             </label>
+            <button class="btn-action active-blue" onclick="handleActionButton(this, openModalAnaliseEditalIA)">✦ Analisar Edital com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, clearData)">Limpar Edital Atual</button>
             <button class="btn-action" onclick="handleActionButton(this, toggleDarkMode)">Modo Claro/Escuro</button>
@@ -1576,6 +1671,26 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL ANALISAR EDITAL COM IA — FASE 1 -->
+    <div class="modal-overlay" id="modalAnaliseEditalIA">
+        <div class="modal modal-large" style="height:auto; max-height:92vh;">
+            <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
+            <div class="ai-edital-intro">
+                <strong>Workers AI — análise automática do edital anexado.</strong><br>
+                O Painel extrai o texto do PDF no navegador, seleciona as páginas mais prováveis do conteúdo programático e envia somente esse recorte para análise. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> é estimada apenas com base no próprio edital nesta fase; não representa frequência histórica da banca.
+            </div>
+            <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
+            <div id="aiEditalStatus" class="ai-analysis-status" aria-live="polite"></div>
+            <div id="aiEditalPreview" class="ai-analysis-preview"></div>
+            <div class="modal-actions" style="flex-wrap:wrap;">
+                <button class="btn btn-secondary" onclick="closeModalAnaliseEditalIA()">Fechar</button>
+                <button class="btn btn-info" id="btnExecutarAnaliseIA" onclick="executarAnaliseEditalIA()">Analisar Agora</button>
+                <button class="btn btn-success" id="btnImportarAnaliseIA" onclick="importarAnaliseEditalIA()" disabled>Importar para o Edital</button>
             </div>
         </div>
     </div>
@@ -4432,6 +4547,336 @@
             updatePauseButton();
         }
 
+
+        // =========================================================
+        // ANALISADOR DE EDITAL COM IA — FASE 1 (WORKERS AI)
+        // =========================================================
+        let currentAiEditalAnalysis = null;
+        let pdfJsAiLoadPromise = null;
+
+        function setAiEditalStatus(message, isError = false) {
+            const box = document.getElementById('aiEditalStatus');
+            if (!box) return;
+            box.textContent = message || '';
+            box.classList.toggle('visible', !!message);
+            box.style.borderColor = isError ? 'rgba(239,68,68,0.55)' : 'rgba(59,130,246,0.28)';
+            box.style.background = isError ? 'rgba(239,68,68,0.10)' : 'rgba(59,130,246,0.10)';
+        }
+
+        async function openModalAnaliseEditalIA() {
+            currentAiEditalAnalysis = null;
+            const preview = document.getElementById('aiEditalPreview');
+            const importBtn = document.getElementById('btnImportarAnaliseIA');
+            const analyzeBtn = document.getElementById('btnExecutarAnaliseIA');
+            if (preview) { preview.innerHTML = ''; preview.classList.remove('visible'); }
+            if (importBtn) importBtn.disabled = true;
+            if (analyzeBtn) analyzeBtn.disabled = false;
+            setAiEditalStatus('');
+            document.getElementById('modalAnaliseEditalIA').style.display = 'flex';
+
+            const info = document.getElementById('aiEditalFileInfo');
+            try {
+                const fileObj = await getEditalFileRecord();
+                if (!fileObj) {
+                    info.innerHTML = 'Nenhum edital está anexado ao concurso atual. Use <strong>Ver / Anexar Edital PDF</strong> antes de iniciar a análise.';
+                    analyzeBtn.disabled = true;
+                    return;
+                }
+                const sizeMB = fileObj.blob?.size ? (fileObj.blob.size / (1024 * 1024)).toFixed(2) : '—';
+                info.innerHTML = `Arquivo: <strong>${escapeHtml(fileObj.name || 'Edital')}</strong> · ${escapeHtml(sizeMB)} MB · concurso atual: <strong>${escapeHtml(currentConcurso)}</strong>`;
+                if (!(fileObj.type || '').includes('pdf') && !String(fileObj.name || '').toLowerCase().endsWith('.pdf')) {
+                    info.innerHTML += '<br><span style="color:#fbbf24;">Nesta primeira versão, a análise automática aceita PDF com texto pesquisável.</span>';
+                    analyzeBtn.disabled = true;
+                }
+            } catch (error) {
+                info.textContent = 'Não foi possível ler o edital anexado.';
+                analyzeBtn.disabled = true;
+            }
+        }
+
+        function closeModalAnaliseEditalIA() {
+            document.getElementById('modalAnaliseEditalIA').style.display = 'none';
+        }
+
+        function loadPdfJsForAI() {
+            if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+            if (pdfJsAiLoadPromise) return pdfJsAiLoadPromise;
+            pdfJsAiLoadPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                script.async = true;
+                script.onload = () => {
+                    if (!window.pdfjsLib) return reject(new Error('PDF.js não foi inicializado.'));
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    resolve(window.pdfjsLib);
+                };
+                script.onerror = () => reject(new Error('Não foi possível carregar o leitor PDF.js. Verifique a conexão.'));
+                document.head.appendChild(script);
+            });
+            return pdfJsAiLoadPromise;
+        }
+
+        function normalizeEditalPageText(text) {
+            return String(text || '')
+                .replace(/\u0000/g, ' ')
+                .replace(/[ \t]+/g, ' ')
+                .replace(/\s*\n\s*/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        }
+
+        function scoreEditalPage(text) {
+            const t = String(text || '').toLowerCase();
+            let score = 0;
+            const strong = [
+                'conteúdo programático', 'conteudo programatico', 'programa de provas',
+                'conhecimentos específicos', 'conhecimentos especificos',
+                'conhecimentos gerais', 'disciplinas', 'conteúdos', 'conteudos'
+            ];
+            const subjects = [
+                'língua portuguesa', 'lingua portuguesa', 'direito constitucional', 'direito administrativo',
+                'direito civil', 'direito penal', 'direito processual', 'raciocínio lógico', 'raciocinio logico',
+                'informática', 'informatica', 'legislação', 'legislacao', 'administração pública',
+                'administração financeira', 'contabilidade', 'auditoria', 'arquivologia', 'estatística',
+                'economia', 'redação', 'redacao', 'conhecimentos especializados'
+            ];
+            strong.forEach(k => { if (t.includes(k)) score += 8; });
+            subjects.forEach(k => { if (t.includes(k)) score += 2; });
+            if (/anexo\s+[ivxlcdm]+/i.test(text || '')) score += 1;
+            if (/\b(prova|questões|questoes|peso|pontuação|pontuacao)\b/i.test(text || '')) score += 1;
+            return score;
+        }
+
+        async function extractRelevantEditalText(blob) {
+            const pdfjs = await loadPdfJsForAI();
+            const bytes = new Uint8Array(await blob.arrayBuffer());
+            const pdf = await pdfjs.getDocument({ data: bytes }).promise;
+            const pages = [];
+
+            for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+                setAiEditalStatus(`Lendo PDF: página ${pageNumber} de ${pdf.numPages}...`);
+                const page = await pdf.getPage(pageNumber);
+                const content = await page.getTextContent();
+                const text = normalizeEditalPageText(content.items.map(item => item.str).join(' '));
+                pages.push({ pageNumber, text, score: scoreEditalPage(text) });
+            }
+
+            const meaningfulChars = pages.reduce((sum, p) => sum + p.text.length, 0);
+            if (meaningfulChars < 800) {
+                throw new Error('O PDF parece ser digitalizado como imagem ou não possui texto pesquisável. Nesta fase, use um PDF com camada de texto.');
+            }
+
+            const selected = new Set();
+            const strongIndexes = pages.map((p, i) => p.score >= 8 ? i : -1).filter(i => i >= 0);
+
+            strongIndexes.forEach(i => {
+                for (let j = Math.max(0, i - 1); j <= Math.min(pages.length - 1, i + 2); j++) selected.add(j);
+            });
+
+            // Se houver um ponto forte de conteúdo programático, percorre uma janela contínua
+            // para evitar cortar disciplinas que seguem nas páginas seguintes.
+            if (strongIndexes.length) {
+                const start = Math.max(0, strongIndexes[0] - 1);
+                const end = Math.min(pages.length - 1, start + 27);
+                for (let i = start; i <= end; i++) selected.add(i);
+            }
+
+            // Complementa com as páginas mais relevantes do documento.
+            [...pages]
+                .map((p, i) => ({...p, index:i}))
+                .sort((a,b) => b.score - a.score)
+                .slice(0, 18)
+                .forEach(p => selected.add(p.index));
+
+            // Em edital pequeno, usa tudo; em edital grande, respeita o recorte econômico.
+            if (pages.length <= 35) pages.forEach((_, i) => selected.add(i));
+
+            let chosen = [...selected].sort((a,b) => a-b).map(i => pages[i]);
+            const maxChars = 88000;
+            let total = 0;
+            const finalPages = [];
+            for (const p of chosen) {
+                const blockSize = p.text.length + 40;
+                if (total + blockSize > maxChars && finalPages.length >= 8) continue;
+                if (!p.text) continue;
+                finalPages.push(p);
+                total += blockSize;
+                if (total >= maxChars) break;
+            }
+
+            if (!finalPages.length) throw new Error('Não foi possível localizar texto útil no edital.');
+            const text = finalPages.map(p => `\n--- PÁGINA ${p.pageNumber} ---\n${p.text}`).join('\n');
+            return {
+                text,
+                totalPages: pdf.numPages,
+                selectedPages: finalPages.map(p => p.pageNumber),
+                selectedChars: text.length
+            };
+        }
+
+        function normalizeAiAnalysis(data) {
+            const root = data && data.analysis ? data.analysis : data;
+            if (!root || typeof root !== 'object') throw new Error('A IA retornou um formato inválido.');
+            const materias = Array.isArray(root.materias) ? root.materias : [];
+            const cleanMaterias = materias.map((mat, idx) => {
+                const materia = String(mat.materia || mat.nome || `Matéria ${idx + 1}`).trim();
+                const prioridade = Math.min(3, Math.max(1, parseInt(mat.prioridade) || 2));
+                const assuntosRaw = Array.isArray(mat.assuntos) ? mat.assuntos : [];
+                const assuntos = assuntosRaw.map((ass, aidx) => {
+                    if (typeof ass === 'string') return { assunto: ass.trim(), prioridade: Math.min(3, Math.max(1, aidx + 1)) };
+                    return {
+                        assunto: String(ass.assunto || ass.nome || ass.titulo || '').trim(),
+                        prioridade: Math.min(3, Math.max(1, parseInt(ass.prioridade) || 2))
+                    };
+                }).filter(a => a.assunto);
+                return { materia, prioridade, assuntos };
+            }).filter(m => m.materia && m.assuntos.length);
+            if (!cleanMaterias.length) throw new Error('A IA não identificou matérias e assuntos suficientes para importação.');
+            return {
+                concurso: String(root.concurso || currentConcurso || '').trim(),
+                banca: String(root.banca || '').trim(),
+                cargo: String(root.cargo || '').trim(),
+                criterio_prioridade: String(root.criterio_prioridade || 'Estimativa baseada somente no edital.').trim(),
+                materias: cleanMaterias
+            };
+        }
+
+        function renderAiEditalPreview(analysis, extractionMeta) {
+            const preview = document.getElementById('aiEditalPreview');
+            const totalTopics = analysis.materias.reduce((sum, m) => sum + m.assuntos.length, 0);
+            const pagesLabel = extractionMeta?.selectedPages?.length
+                ? `${extractionMeta.selectedPages.length}/${extractionMeta.totalPages}`
+                : '—';
+            let html = `
+                <div class="ai-preview-header">
+                    <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
+                    <div class="ai-preview-stat"><strong>${totalTopics}</strong><span>assuntos</span></div>
+                    <div class="ai-preview-stat"><strong>${escapeHtml(pagesLabel)}</strong><span>páginas analisadas</span></div>
+                </div>
+                <div class="ai-source-note" style="margin-bottom:0.8rem;">
+                    ${analysis.banca ? `Banca identificada: <strong>${escapeHtml(analysis.banca)}</strong> · ` : ''}
+                    ${analysis.cargo ? `Cargo: <strong>${escapeHtml(analysis.cargo)}</strong><br>` : ''}
+                    ${escapeHtml(analysis.criterio_prioridade)}
+                </div>`;
+            analysis.materias.forEach(mat => {
+                html += `<div class="ai-preview-materia">
+                    <div class="ai-preview-materia-title">
+                        <span>${escapeHtml(mat.materia)} <small style="opacity:.65;">(${mat.assuntos.length} assuntos)</small></span>
+                        <span class="ai-priority-badge ai-priority-${mat.prioridade}" title="Prioridade da matéria">P${mat.prioridade}</span>
+                    </div>
+                    <div class="ai-preview-topics">`;
+                mat.assuntos.forEach(ass => {
+                    html += `<div class="ai-preview-topic"><span>${escapeHtml(ass.assunto)}</span><span class="ai-priority-badge ai-priority-${ass.prioridade}">P${ass.prioridade}</span></div>`;
+                });
+                html += `</div></div>`;
+            });
+            preview.innerHTML = html;
+            preview.classList.add('visible');
+        }
+
+        async function executarAnaliseEditalIA() {
+            const analyzeBtn = document.getElementById('btnExecutarAnaliseIA');
+            const importBtn = document.getElementById('btnImportarAnaliseIA');
+            analyzeBtn.disabled = true;
+            importBtn.disabled = true;
+            currentAiEditalAnalysis = null;
+            try {
+                if (!navigator.onLine) throw new Error('A análise por IA exige conexão com a internet.');
+                const fileObj = await getEditalFileRecord();
+                if (!fileObj) throw new Error('Anexe primeiro um edital PDF ao concurso atual.');
+                if (!(fileObj.type || '').includes('pdf') && !String(fileObj.name || '').toLowerCase().endsWith('.pdf')) {
+                    throw new Error('Nesta primeira versão, o analisador automático aceita apenas arquivos PDF.');
+                }
+
+                setAiEditalStatus('Preparando o edital e localizando o conteúdo programático...');
+                const extraction = await extractRelevantEditalText(fileObj.blob);
+                setAiEditalStatus(`Texto preparado: ${extraction.selectedPages.length} de ${extraction.totalPages} páginas selecionadas. Enviando ao Workers AI...`);
+
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session?.access_token) throw new Error('Sua sessão expirou. Entre novamente para utilizar a IA.');
+
+                const response = await fetch('/api/ai/analisar-edital', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        concurso: currentConcurso,
+                        fileName: fileObj.name || 'Edital.pdf',
+                        text: extraction.text,
+                        selectedPages: extraction.selectedPages,
+                        totalPages: extraction.totalPages
+                    })
+                });
+
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.error || `Erro ${response.status} ao consultar a IA.`);
+                const analysis = normalizeAiAnalysis(payload);
+                currentAiEditalAnalysis = { analysis, extraction, model: payload.model || '' };
+                renderAiEditalPreview(analysis, extraction);
+                setAiEditalStatus(`Análise concluída. Confira o resultado antes de importar. Modelo: ${payload.model || 'Workers AI'}.`);
+                importBtn.disabled = false;
+            } catch (error) {
+                console.error('Erro na análise de edital com IA:', error);
+                setAiEditalStatus(error.message || 'Não foi possível analisar o edital.', true);
+            } finally {
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        async function importarAnaliseEditalIA() {
+            if (!currentAiEditalAnalysis?.analysis) return alert('Execute a análise antes de importar.');
+            const analysis = currentAiEditalAnalysis.analysis;
+            const existingKeys = new Set(
+                allEditalItems
+                    .filter(i => (i.concurso || 'Concurso Geral') === currentConcurso)
+                    .map(i => `${String(i.materia || '').trim().toLowerCase()}|||${String(i.assunto || '').trim().toLowerCase()}`)
+            );
+            const novos = [];
+
+            analysis.materias.forEach(mat => {
+                mat.assuntos.forEach((ass, idxAss) => {
+                    const key = `${mat.materia.trim().toLowerCase()}|||${ass.assunto.trim().toLowerCase()}`;
+                    if (existingKeys.has(key)) return;
+                    existingKeys.add(key);
+                    novos.push({
+                        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                        materia: mat.materia,
+                        assunto: ass.assunto,
+                        prioridade: mat.prioridade,
+                        assunto_prioridade: ass.prioridade,
+                        concurso: currentConcurso,
+                        user_id: currentUser ? currentUser.id : null,
+                        teoria: false,
+                        questoes: false,
+                        rev_24h: false,
+                        rev_7d: false,
+                        rev_30d: false
+                    });
+                    openMaterias[mat.materia] = false;
+                });
+            });
+
+            if (!novos.length) return alert('Todos os tópicos identificados pela IA já existem neste concurso. Nenhum item foi duplicado.');
+            const ok = confirm(`Importar ${novos.length} novos tópicos para "${currentConcurso}"?\n\nTópicos já existentes serão preservados e não serão duplicados.`);
+            if (!ok) return;
+
+            novos.forEach(item => {
+                allEditalItems.push(item);
+                queueEditalUpsert(item);
+            });
+            saveEditalToLocalStorage();
+
+            if (navigator.onLine && currentUser) {
+                try { await flushPendingEdital(); }
+                catch (error) { console.warn('Itens da IA mantidos na fila de sincronização:', error); }
+            }
+            filterDataByConcurso();
+            closeModalAnaliseEditalIA();
+            alert(`${novos.length} tópicos importados com sucesso. As matérias permanecem recolhidas por padrão.`);
+        }
+
         function openModalViewEdital() {
             document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
             renderEditalFileViewer();
@@ -4974,6 +5419,10 @@
         window.populateNotaAssuntoDropdown = populateNotaAssuntoDropdown;
         window.handleNotaAssuntoChange = handleNotaAssuntoChange;
         window.switchTab = switchTab;
+        window.openModalAnaliseEditalIA = openModalAnaliseEditalIA;
+        window.closeModalAnaliseEditalIA = closeModalAnaliseEditalIA;
+        window.executarAnaliseEditalIA = executarAnaliseEditalIA;
+        window.importarAnaliseEditalIA = importarAnaliseEditalIA;
         window.importJSON = importJSON;
         window.clearData = clearData;
         window.addManualItem = addManualItem;
