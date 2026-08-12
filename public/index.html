@@ -196,10 +196,10 @@
             text-align: center;
         }
         .pomodoro-daily-stats {
-            width: min(100%, 560px);
+            width: min(100%, 720px);
             margin: 0 auto 0.85rem;
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 10px;
         }
         .pomodoro-daily-stat {
@@ -226,7 +226,7 @@
             font-weight: 700;
         }
         .pomodoro-progress-track {
-            width: min(100%, 560px);
+            width: min(100%, 720px);
             height: 10px;
             margin: 0 auto 0.65rem;
             background: rgba(148,163,184,0.16);
@@ -242,7 +242,7 @@
             transition: width 0.25s ease;
         }
         .pomodoro-daily-status {
-            width: min(100%, 560px);
+            width: min(100%, 720px);
             margin: 0 auto 0.8rem;
             min-height: 20px;
             font-size: 0.82rem;
@@ -786,7 +786,8 @@
             }
 
             .pomodoro-daily-stats { gap: 8px; }
-            .pomodoro-daily-value { font-size: 1.25rem; }
+            .pomodoro-daily-value { font-size: 1.1rem; }
+            .pomodoro-daily-label { font-size: 0.68rem; text-align: center; }
             .pomodoro-daily-panel { margin-top: 1rem; padding-top: 1rem; }
 
             .weekday-picker { grid-template-columns: repeat(4, 1fr); }
@@ -881,14 +882,14 @@
             <div class="grid-top">
                 <div class="card pomodoro-card">
                     <h3>Relógio Pomodoro</h3>
-                    <div class="timer-display" id="timer">25:00</div>
+                    <div class="timer-display" id="timer">40:00</div>
                     <div class="pomodoro-actions">
                         <button class="btn btn-primary" id="startTimerBtn" onclick="startTimer()">Iniciar</button>
                         <button class="btn btn-warning" id="pauseTimerBtn" onclick="togglePauseTimer()" disabled>Pausar</button>
                         <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
                     </div>
                     <div class="timer-settings">
-                        <label>Foco (min): <input type="number" id="focoMin" value="25" min="1" onchange="updateTimerSettings()"></label>
+                        <label>Foco (min): <input type="number" id="focoMin" value="40" min="1" onchange="updateTimerSettings()"></label>
                         <label>Pausa (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
                     </div>
 
@@ -896,12 +897,16 @@
                         <h4>Horas Pomodoro do Dia</h4>
                         <div class="pomodoro-daily-stats">
                             <div class="pomodoro-daily-stat">
+                                <span class="pomodoro-daily-value" id="generalPomodoroTotal">00:00</span>
+                                <span class="pomodoro-daily-label">Horas Gerais</span>
+                            </div>
+                            <div class="pomodoro-daily-stat">
                                 <span class="pomodoro-daily-value" id="dailyPomodoroTotal">00:00</span>
-                                <span class="pomodoro-daily-label">Estudado hoje</span>
+                                <span class="pomodoro-daily-label">Estudado Hoje</span>
                             </div>
                             <div class="pomodoro-daily-stat">
                                 <span class="pomodoro-daily-value" id="dailyPomodoroTarget">Sem meta</span>
-                                <span class="pomodoro-daily-label">Meta diária do cronograma</span>
+                                <span class="pomodoro-daily-label">Meta Diária</span>
                             </div>
                         </div>
                         <div class="pomodoro-progress-track" aria-hidden="true">
@@ -3670,7 +3675,7 @@
         }
 
         let timerInterval = null;
-        let timeLeft = 25 * 60;
+        let timeLeft = 40 * 60;
         let isTimerPaused = false;
         let timerHasStarted = false;
         let currentFocusCycleMinutes = 0;
@@ -3754,6 +3759,27 @@
             return `pomodoro_daily_minutes_${uid}_${getLocalDateKey()}`;
         }
 
+        function getGeneralPomodoroStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `pomodoro_general_minutes_${uid}`;
+        }
+
+        function getGeneralPomodoroMinutes() {
+            const value = parseInt(localStorage.getItem(getGeneralPomodoroStorageKey()) || '0');
+            return Number.isFinite(value) && value > 0 ? value : 0;
+        }
+
+        function setGeneralPomodoroMinutes(minutes) {
+            const normalized = Math.max(0, Math.round(Number(minutes) || 0));
+            localStorage.setItem(getGeneralPomodoroStorageKey(), String(normalized));
+        }
+
+        function addGeneralPomodoroMinutes(minutes) {
+            const increment = Math.max(0, Math.round(Number(minutes) || 0));
+            if (!increment) return;
+            setGeneralPomodoroMinutes(getGeneralPomodoroMinutes() + increment);
+        }
+
         function getDailyPomodoroMinutes() {
             const value = parseInt(localStorage.getItem(getDailyPomodoroStorageKey()) || '0');
             return Number.isFinite(value) && value > 0 ? value : 0;
@@ -3785,16 +3811,18 @@
         }
 
         function renderPomodoroDailyCounter() {
+            const generalEl = document.getElementById('generalPomodoroTotal');
             const totalEl = document.getElementById('dailyPomodoroTotal');
             const targetEl = document.getElementById('dailyPomodoroTarget');
             const progressEl = document.getElementById('dailyPomodoroProgress');
             const statusEl = document.getElementById('dailyPomodoroStatus');
-            if (!totalEl || !targetEl || !progressEl || !statusEl) return;
+            if (!generalEl || !totalEl || !targetEl || !progressEl || !statusEl) return;
 
             const studiedMinutes = getDailyPomodoroMinutes();
             const targetHours = getPomodoroDailyTargetHours();
             const targetMinutes = Math.round(targetHours * 60);
 
+            generalEl.textContent = formatStudyMinutes(getGeneralPomodoroMinutes());
             totalEl.textContent = formatStudyMinutes(studiedMinutes);
 
             if (!targetMinutes) {
@@ -3834,7 +3862,7 @@
 
         function updateTimerSettings() {
             if (!timerInterval && !isTimerPaused) {
-                timeLeft = (parseInt(document.getElementById('focoMin').value) || 25) * 60;
+                timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
                 updateDisplay();
             }
         }
@@ -3851,7 +3879,7 @@
 
             const isNewCycle = !timerHasStarted;
             if (isNewCycle) {
-                currentFocusCycleMinutes = Math.max(1, parseInt(document.getElementById('focoMin').value) || 25);
+                currentFocusCycleMinutes = Math.max(1, parseInt(document.getElementById('focoMin').value) || 40);
                 playPomodoroStartBell();
             }
 
@@ -3870,6 +3898,7 @@
                     timerInterval = null;
                     timerHasStarted = false;
                     isTimerPaused = false;
+                    addGeneralPomodoroMinutes(currentFocusCycleMinutes);
                     addDailyPomodoroMinutes(currentFocusCycleMinutes);
                     currentFocusCycleMinutes = 0;
                     updatePauseButton();
@@ -3900,7 +3929,7 @@
             isTimerPaused = false;
             timerHasStarted = false;
             currentFocusCycleMinutes = 0;
-            timeLeft = (parseInt(document.getElementById('focoMin').value) || 25) * 60;
+            timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
             updateDisplay();
             updatePauseButton();
         }
