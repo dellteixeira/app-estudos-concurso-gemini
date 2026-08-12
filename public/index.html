@@ -912,13 +912,14 @@
                     <h3>Relógio Pomodoro</h3>
                     <div class="timer-display" id="timer">40:00</div>
                     <div class="pomodoro-actions">
-                        <button class="btn btn-primary" id="startTimerBtn" onclick="startTimer()">Iniciar</button>
+                        <button class="btn btn-primary" id="startTimerBtn" onclick="startFocusTimer()">Foco</button>
+                        <button class="btn btn-info" id="intervalTimerBtn" onclick="startIntervalTimer()">Intervalo</button>
                         <button class="btn btn-warning" id="pauseTimerBtn" onclick="togglePauseTimer()" disabled>Pausar</button>
                         <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
                     </div>
                     <div class="timer-settings">
                         <label>Foco (min): <input type="number" id="focoMin" value="40" min="1" onchange="updateTimerSettings()"></label>
-                        <label>Pausa (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
+                        <label>Intervalo (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
                     </div>
 
                     <div class="pomodoro-daily-panel">
@@ -1321,11 +1322,15 @@
             <h3 id="modalNotaTitle">Nova Nota</h3>
             <div class="form-group">
                 <label><strong>Matéria Vinculada:</strong></label>
-                <select id="inputNotaMateria"></select>
+                <select id="inputNotaMateria" onchange="populateNotaAssuntoDropdown()"></select>
             </div>
             <div class="form-group">
+                <label><strong>Assunto Vinculado:</strong></label>
+                <select id="inputNotaAssunto" onchange="handleNotaAssuntoChange()"></select>
+            </div>
+            <div class="form-group" id="notaTituloCustomGroup" style="display:none;">
                 <label><strong>Título da Anotação:</strong></label>
-                <input type="text" id="inputNotaTitulo" placeholder="Ex: Jurisprudências, Prazos Importantes...">
+                <input type="text" id="inputNotaTitulo" placeholder="Digite o título personalizado da anotação...">
             </div>
             <div class="form-group">
                 <label><strong>Conteúdo / Resumo / Dicas:</strong></label>
@@ -2160,8 +2165,57 @@
             });
         }
 
+        function populateNotaAssuntoDropdown(selectedAssunto = '') {
+            const materiaSel = document.getElementById('inputNotaMateria');
+            const assuntoSel = document.getElementById('inputNotaAssunto');
+            if (!materiaSel || !assuntoSel) return;
+
+            const materia = materiaSel.value;
+            const assuntos = [...new Set(
+                editalItems
+                    .filter(i => i.materia === materia && i.assunto)
+                    .map(i => i.assunto.trim())
+                    .filter(Boolean)
+            )];
+
+            assuntoSel.innerHTML = '';
+            assuntos.forEach(assunto => {
+                const opt = document.createElement('option');
+                opt.value = assunto;
+                opt.textContent = assunto;
+                assuntoSel.appendChild(opt);
+            });
+
+            const outroOpt = document.createElement('option');
+            outroOpt.value = '__outro__';
+            outroOpt.textContent = 'Outro';
+            assuntoSel.appendChild(outroOpt);
+
+            if (selectedAssunto && assuntos.includes(selectedAssunto)) {
+                assuntoSel.value = selectedAssunto;
+            } else if (selectedAssunto === '__outro__' || assuntos.length === 0) {
+                assuntoSel.value = '__outro__';
+            } else {
+                assuntoSel.value = assuntos[0];
+            }
+
+            handleNotaAssuntoChange();
+        }
+
+        function handleNotaAssuntoChange() {
+            const assuntoSel = document.getElementById('inputNotaAssunto');
+            const titleGroup = document.getElementById('notaTituloCustomGroup');
+            const titleInput = document.getElementById('inputNotaTitulo');
+            if (!assuntoSel || !titleGroup || !titleInput) return;
+
+            const isOutro = assuntoSel.value === '__outro__';
+            titleGroup.style.display = isOutro ? 'flex' : 'none';
+            if (!isOutro) titleInput.value = '';
+        }
+
         function loadNotesData() {
             populateNotesMateriaDropdowns();
+            populateNotaAssuntoDropdown();
             renderNotesList();
         }
 
@@ -2203,6 +2257,7 @@
             document.getElementById('modalNotaTitle').innerText = 'Nova Nota';
             document.getElementById('inputNotaTitulo').value = '';
             document.getElementById('inputNotaConteudo').value = '';
+            populateNotaAssuntoDropdown();
             document.getElementById('modalNovaNota').style.display = 'flex';
         }
 
@@ -2217,16 +2272,29 @@
             currentEditingNoteIndex = globalIndex;
             document.getElementById('modalNotaTitle').innerText = `Editar Nota (${nota.materia})`;
             document.getElementById('inputNotaMateria').value = nota.materia;
-            document.getElementById('inputNotaTitulo').value = nota.titulo;
+
+            const assuntosDaMateria = editalItems
+                .filter(i => i.materia === nota.materia && i.assunto)
+                .map(i => i.assunto.trim());
+            const assuntoSalvo = nota.assunto || '';
+            const assuntoConhecido = assuntoSalvo && assuntosDaMateria.includes(assuntoSalvo);
+            populateNotaAssuntoDropdown(assuntoConhecido ? assuntoSalvo : '__outro__');
+            document.getElementById('inputNotaTitulo').value = assuntoConhecido ? '' : nota.titulo;
+            handleNotaAssuntoChange();
+
             document.getElementById('inputNotaConteudo').value = nota.conteudo;
             document.getElementById('modalNovaNota').style.display = 'flex';
         }
 
         async function salvarNota() {
             const materia = document.getElementById('inputNotaMateria').value;
-            const titulo = document.getElementById('inputNotaTitulo').value.trim();
+            const assuntoSelecionado = document.getElementById('inputNotaAssunto').value;
+            const tituloCustom = document.getElementById('inputNotaTitulo').value.trim();
+            const isOutro = assuntoSelecionado === '__outro__';
+            const assunto = isOutro ? '' : assuntoSelecionado;
+            const titulo = isOutro ? tituloCustom : assuntoSelecionado;
             const conteudo = document.getElementById('inputNotaConteudo').value.trim();
-            if (!titulo || !conteudo) return alert('Preencha título e conteúdo da anotação.');
+            if (!titulo || !conteudo) return alert(isOutro ? 'Preencha o título personalizado e o conteúdo da anotação.' : 'Preencha o conteúdo da anotação.');
 
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
@@ -2234,9 +2302,9 @@
 
             const nowStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             if (currentEditingNoteIndex !== null) {
-                metadata[currentConcurso].structuredNotes[currentEditingNoteIndex] = { materia, titulo, conteudo, data: nowStr };
+                metadata[currentConcurso].structuredNotes[currentEditingNoteIndex] = { materia, assunto, titulo, conteudo, data: nowStr };
             } else {
-                metadata[currentConcurso].structuredNotes.push({ materia, titulo, conteudo, data: nowStr });
+                metadata[currentConcurso].structuredNotes.push({ materia, assunto, titulo, conteudo, data: nowStr });
             }
 
             await saveConcursosMetadata(metadata);
@@ -3480,7 +3548,7 @@
 
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
-                const isOpen = openMaterias[materiaName] !== false;
+                const isOpen = openMaterias[materiaName] === true;
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
                 const safeMateriaHandler = encodeHandlerValue(materiaName);
 
@@ -3761,6 +3829,7 @@
         let isTimerPaused = false;
         let timerHasStarted = false;
         let currentFocusCycleMinutes = 0;
+        let timerMode = 'focus';
         let pomodoroAudioContext = null;
 
         function preparePomodoroAudio() {
@@ -3991,7 +4060,7 @@
             preparePomodoroAudio();
 
             const isNewCycle = !timerHasStarted;
-            if (isNewCycle) {
+            if (isNewCycle && timerMode === 'focus') {
                 currentFocusCycleMinutes = Math.max(1, parseInt(document.getElementById('focoMin').value) || 40);
                 playPomodoroStartBell();
             }
@@ -4011,22 +4080,56 @@
                     timerInterval = null;
                     timerHasStarted = false;
                     isTimerPaused = false;
-                    const studiedBefore = getDailyPomodoroMinutes();
-                    const targetMinutes = Math.round(getPomodoroDailyTargetHours() * 60);
-                    const studiedAfter = studiedBefore + currentFocusCycleMinutes;
-                    if (targetMinutes > 0) {
-                        const extraBefore = Math.max(0, studiedBefore - targetMinutes);
-                        const extraAfter = Math.max(0, studiedAfter - targetMinutes);
-                        const newExtraMinutes = Math.max(0, extraAfter - extraBefore);
-                        if (newExtraMinutes > 0) addDailyPomodoroExtraMinutes(newExtraMinutes);
+                    if (timerMode === 'focus') {
+                        const studiedBefore = getDailyPomodoroMinutes();
+                        const targetMinutes = Math.round(getPomodoroDailyTargetHours() * 60);
+                        const studiedAfter = studiedBefore + currentFocusCycleMinutes;
+                        if (targetMinutes > 0) {
+                            const extraBefore = Math.max(0, studiedBefore - targetMinutes);
+                            const extraAfter = Math.max(0, studiedAfter - targetMinutes);
+                            const newExtraMinutes = Math.max(0, extraAfter - extraBefore);
+                            if (newExtraMinutes > 0) addDailyPomodoroExtraMinutes(newExtraMinutes);
+                        }
+                        setDailyPomodoroMinutes(studiedAfter);
+                        currentFocusCycleMinutes = 0;
+                        updatePauseButton();
+                        playPomodoroCompletionBell();
+                        setTimeout(() => alert('Foco Finalizado!'), 2300);
+                    } else {
+                        currentFocusCycleMinutes = 0;
+                        updatePauseButton();
+                        playPomodoroCompletionBell();
+                        setTimeout(() => alert('Intervalo Finalizado!'), 2300);
                     }
-                    setDailyPomodoroMinutes(studiedAfter);
-                    currentFocusCycleMinutes = 0;
-                    updatePauseButton();
-                    playPomodoroCompletionBell();
-                    setTimeout(() => alert('Pomodoro Finalizado!'), 2300);
                 }
             }, 1000);
+        }
+
+        function startFocusTimer() {
+            if (timerMode !== 'focus' || (!timerHasStarted && timeLeft <= 0)) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerMode = 'focus';
+                timerHasStarted = false;
+                isTimerPaused = false;
+                currentFocusCycleMinutes = 0;
+                timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
+                updateDisplay();
+            }
+            startTimer();
+        }
+
+        function startIntervalTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerMode = 'interval';
+            timerHasStarted = false;
+            isTimerPaused = false;
+            currentFocusCycleMinutes = 0;
+            timeLeft = (parseInt(document.getElementById('pausaMin').value) || 5) * 60;
+            updateDisplay();
+            playPomodoroPauseBell();
+            startTimer();
         }
 
         function togglePauseTimer() {
@@ -4049,6 +4152,7 @@
             timerInterval = null;
             isTimerPaused = false;
             timerHasStarted = false;
+            timerMode = 'focus';
             currentFocusCycleMinutes = 0;
             timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
             updateDisplay();
@@ -4326,6 +4430,18 @@
             return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         }
 
+        function markPwaInstalled() {
+            try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}
+        }
+
+        function isPwaKnownInstalled() {
+            if (isPwaStandalone()) {
+                markPwaInstalled();
+                return true;
+            }
+            try { return localStorage.getItem('pwa_app_installed') === '1'; } catch (_) { return false; }
+        }
+
         function getPwaPlatform() {
             const ua = navigator.userAgent || '';
             const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -4334,7 +4450,7 @@
         }
 
         function showPwaInstallBanner(mode = 'generic') {
-            if (isPwaStandalone() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;
+            if (isPwaKnownInstalled() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;
 
             const banner = document.getElementById('pwa-install-banner');
             const title = document.getElementById('pwaInstallTitle');
@@ -4387,17 +4503,21 @@
 
         window.addEventListener('beforeinstallprompt', (event) => {
             event.preventDefault();
+            // Se o navegador voltou a oferecer instalação, o app não está mais
+            // instalado neste perfil/dispositivo. Remove um marcador antigo.
+            try { localStorage.removeItem('pwa_app_installed'); } catch (_) {}
             deferredPwaInstallPrompt = event;
             showPwaInstallBanner('prompt');
         });
 
         window.addEventListener('appinstalled', () => {
             deferredPwaInstallPrompt = null;
+            markPwaInstalled();
             hidePwaInstallBanner();
         });
 
         window.addEventListener('load', () => {
-            if (isPwaStandalone()) return;
+            if (isPwaKnownInstalled()) { hidePwaInstallBanner(); return; }
             const { isIOS, isAndroid } = getPwaPlatform();
             if (isIOS) {
                 setTimeout(() => showPwaInstallBanner('ios'), 900);
@@ -4416,6 +4536,10 @@
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
         window.toggleDarkMode = toggleDarkMode;
+        window.startFocusTimer = startFocusTimer;
+        window.startIntervalTimer = startIntervalTimer;
+        window.populateNotaAssuntoDropdown = populateNotaAssuntoDropdown;
+        window.handleNotaAssuntoChange = handleNotaAssuntoChange;
         window.switchTab = switchTab;
         window.importJSON = importJSON;
         window.clearData = clearData;
