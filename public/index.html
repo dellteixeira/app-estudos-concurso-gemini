@@ -4212,7 +4212,7 @@
 
             Object.keys(deckHierarchy).forEach(matName => {
                 const matData = deckHierarchy[matName];
-                const isOpen = openFcFolders[matName] !== false;
+                const isOpen = openFcFolders[matName] === true;
                 const isMatActive = (activeFcMateriaFilter === matName && !activeFcAssuntoFilter);
                 const safeMatHandler = encodeHandlerValue(matName);
 
@@ -4252,7 +4252,7 @@
         }
 
         function toggleFcFolder(matName) {
-            openFcFolders[matName] = !(openFcFolders[matName] !== false);
+            openFcFolders[matName] = !openFcFolders[matName];
             renderFlashcardFolders();
         }
 
@@ -4848,6 +4848,14 @@
 
             // 5) Remove resíduos locais das versões antigas do Pomodoro.
             removeLegacyPomodoroKeysForMonth(monthPrefix);
+
+            // Se não restou nenhum conteúdo normal de estudo em todo o cronograma,
+            // a meta diária deixa de existir. Revisões isoladas não mantêm uma meta ativa.
+            if (!hasActiveStudySchedule(contest)) {
+                contest.pomodoroDailyTargetHours = 0;
+                contest.pomodoroScheduleMethod = null;
+                delete contest.scheduleConfig;
+            }
 
             // Evita manter timer/contexto ativo apontando para um dia apagado.
             if (activeStudyContext?.concurso === currentConcurso &&
@@ -6291,9 +6299,20 @@
             setDailyPomodoroMinutes(getDailyPomodoroMinutes() + increment);
         }
 
+        function hasActiveStudySchedule(concursoData = null) {
+            const metadata = getConcursosMetadata();
+            const data = concursoData || metadata[currentConcurso] || {};
+            const dateSchedule = data.dateSchedule || {};
+            return Object.values(dateSchedule).some(items =>
+                Array.isArray(items) && items.some(item => !String(item).startsWith('🔄 Rev'))
+            );
+        }
+
         function getPomodoroDailyTargetHours() {
             const metadata = getConcursosMetadata();
-            const target = Number(metadata[currentConcurso]?.pomodoroDailyTargetHours || 0);
+            const concursoData = metadata[currentConcurso] || {};
+            if (!hasActiveStudySchedule(concursoData)) return 0;
+            const target = Number(concursoData.pomodoroDailyTargetHours || 0);
             return Number.isFinite(target) && target > 0 ? target : 0;
         }
 
