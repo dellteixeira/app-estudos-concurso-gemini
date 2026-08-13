@@ -3633,6 +3633,196 @@
 
         function closeModalDayContent() { document.getElementById('modalDayContent').style.display = 'none'; }
 
+        function formatDateKeyShort(dateKey) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey || ''))) return String(dateKey || '');
+            const [year, month, day] = String(dateKey).split('-');
+            return `${day}/${month}`;
+        }
+
+        function isRevisionScheduleText(text) {
+            return String(text || '').startsWith('🔄 Rev');
+        }
+
+        function getScheduleRevisionStrategy(contestMeta = null) {
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            return contest?.scheduleConfig?.revisionStrategy || 'classica';
+        }
+
+        function removeTopicRevisionsFromSchedule(dateSchedule, topicText) {
+            Object.keys(dateSchedule || {}).forEach(dateKey => {
+                if (!Array.isArray(dateSchedule[dateKey])) return;
+                dateSchedule[dateKey] = dateSchedule[dateKey].filter(item => {
+                    const raw = String(item || '');
+                    return !(raw.startsWith('🔄 Rev') && normalizeScheduledTopicForStudy(raw) === topicText);
+                });
+                if (!dateSchedule[dateKey].length) delete dateSchedule[dateKey];
+            });
+        }
+
+        function insertNormalTopicBeforeRevisions(dateSchedule, dateKey, topicText) {
+            if (!dateSchedule[dateKey]) dateSchedule[dateKey] = [];
+            if (dateSchedule[dateKey].some(item => normalizeScheduledTopicForStudy(item) === topicText && !isRevisionScheduleText(item))) return;
+            const firstRevision = dateSchedule[dateKey].findIndex(item => isRevisionScheduleText(item));
+            if (firstRevision === -1) dateSchedule[dateKey].push(topicText);
+            else dateSchedule[dateKey].splice(firstRevision, 0, topicText);
+        }
+
+        function reanchorTopicRevisions(dateSchedule, topicText, dateKey, contestMeta = null) {
+            removeTopicRevisionsFromSchedule(dateSchedule, topicText);
+            const strategy = getScheduleRevisionStrategy(contestMeta);
+            const baseDate = new Date(`${dateKey}T00:00:00`);
+            if (!Number.isNaN(baseDate.getTime())) applySpacedRevisions(dateSchedule, baseDate, topicText, strategy);
+        }
+
+        function findNormalTopicLocation(dateSchedule, topicText, preferredDateKey = null) {
+            const keys = Object.keys(dateSchedule || {}).sort();
+            if (preferredDateKey && dateSchedule[preferredDateKey]) {
+                const idx = dateSchedule[preferredDateKey].findIndex(item => !isRevisionScheduleText(item) && normalizeScheduledTopicForStudy(item) === topicText);
+                if (idx !== -1) return { dateKey: preferredDateKey, index: idx };
+            }
+            for (const dateKey of keys) {
+                const items = dateSchedule[dateKey];
+                if (!Array.isArray(items)) continue;
+                const idx = items.findIndex(item => !isRevisionScheduleText(item) && normalizeScheduledTopicForStudy(item) === topicText);
+                if (idx !== -1) return { dateKey, index: idx };
+            }
+            return null;
+        }
+
+        function findNextMovableFutureTopic(dateSchedule, afterDateKey, editalLookup, excludedTopic = '') {
+            const futureKeys = Object.keys(dateSchedule || {}).filter(key => key > afterDateKey).sort();
+            for (const dateKey of futureKeys) {
+                const items = dateSchedule[dateKey];
+                if (!Array.isArray(items)) continue;
+                for (let index = 0; index < items.length; index++) {
+                    const raw = items[index];
+                    if (isRevisionScheduleText(raw)) continue;
+                    const topicText = normalizeScheduledTopicForStudy(raw);
+                    if (!topicText || topicText === excludedTopic) continue;
+                    const state = getScheduledItemStudyState(raw, editalLookup);
+                    const started = !!(state.matchedItem && (state.matchedItem.teoria || state.matchedItem.questoes));
+                    if (!state.done && !started) return { dateKey, index, topicText };
+                }
+            }
+            return null;
+        }
+
+        function ensureStudyPlanHistory(contestMeta) {
+            if (!Array.isArray(contestMeta.studyPlanHistory)) contestMeta.studyPlanHistory = [];
+            return contestMeta.studyPlanHistory;
+        }
+
+        function getLatestAdvanceHistory(topicText, currentDateKey = null) {
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const history = Array.isArray(contest.studyPlanHistory) ? contest.studyPlanHistory : [];
+            for (let i = history.length - 1; i >= 0; i--) {
+                const entry = history[i];
+                if (!['advance','manual_advance'].includes(entry?.type) || entry?.topic !== topicText) continue;
+                if (currentDateKey && entry?.actualDateKey !== currentDateKey) continue;
+                return entry;
+            }
+            return null;
+        }
+
+        function getNextAdaptiveStudySuggestion() {
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || {};
+            const dateSchedule = contest.dateSchedule || {};
+            const todayKey = getLocalDateKey();
+            const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const next = findNextMovableFutureTopic(dateSchedule, todayKey, editalLookup);
+            if (!next) return null;
+            const item = editalLookup.get(next.topicText);
+            const activityType = item?.teoria ? 'questoes' : 'teoria';
+            return { ...next, item, activityType };
+        }
+
+        function renderAdaptiveStudySuggestion(container) {
+            if (!container || activeSelectedDateKey !== getLocalDateKey()) return;
+            const suggestion = getNextAdaptiveStudySuggestion();
+            if (!suggestion) return;
+            const currentItems = getConcursosMetadata()[currentConcurso]?.dateSchedule?.[activeSelectedDateKey] || [];
+            const normalItems = currentItems.filter(item => !isRevisionScheduleText(item));
+            const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const allCurrentDone = normalItems.length === 0 || normalItems.every(item => getScheduledItemStudyState(item, editalLookup).done);
+            if (!allCurrentDone) return;
+            container.insertAdjacentHTML('beforeend', `
+                <div class="edit-selector-box" style="margin-top:12px; border-color:rgba(56,189,248,.35);">
+                    <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+                        <div style="min-width:220px; flex:1;">
+                            <strong style="color:var(--modern-blue-2);">Próximo estudo sugerido</strong>
+                            <div style="margin-top:4px; font-size:.88rem; opacity:.88;">${escapeHtml(suggestion.topicText)} · planejado para ${formatDateKeyShort(suggestion.dateKey)}</div>
+                            <div style="margin-top:3px; font-size:.76rem; opacity:.65;">Ao concluir, o tópico será antecipado e apenas a fila futura será ajustada. A meta diária permanece inalterada.</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="startAdaptiveSuggestedStudy()">▶ Adiantar próximo estudo</button>
+                    </div>
+                </div>
+            `);
+        }
+
+        async function applyAdaptiveScheduleAdvance(metadata, context) {
+            if (!context?.adaptiveAdvance || !context?.plannedDateKey) return null;
+            const contest = metadata[currentConcurso];
+            if (!contest) return null;
+            const actualDateKey = getLocalDateKey();
+            const plannedDateKey = context.plannedDateKey;
+            if (!(plannedDateKey > actualDateKey)) return null;
+
+            const dateSchedule = contest.dateSchedule || (contest.dateSchedule = {});
+            const topicText = getStudyTopicKey(context.materia, context.assunto);
+            const originalLocation = findNormalTopicLocation(dateSchedule, topicText, plannedDateKey);
+            if (!originalLocation || originalLocation.dateKey <= actualDateKey) return null;
+
+            const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
+            dateSchedule[originalLocation.dateKey].splice(originalLocation.index, 1);
+            if (!dateSchedule[originalLocation.dateKey].length) delete dateSchedule[originalLocation.dateKey];
+            insertNormalTopicBeforeRevisions(dateSchedule, actualDateKey, topicText);
+            reanchorTopicRevisions(dateSchedule, topicText, actualDateKey, contest);
+
+            const reflowMoves = [];
+            let vacancyDateKey = originalLocation.dateKey;
+            let safety = 0;
+            while (safety++ < 2000) {
+                const next = findNextMovableFutureTopic(dateSchedule, vacancyDateKey, editalLookup, topicText);
+                if (!next) break;
+                const sourceItems = dateSchedule[next.dateKey];
+                const currentIndex = sourceItems.findIndex(item => !isRevisionScheduleText(item) && normalizeScheduledTopicForStudy(item) === next.topicText);
+                if (currentIndex === -1) break;
+                sourceItems.splice(currentIndex, 1);
+                if (!sourceItems.length) delete dateSchedule[next.dateKey];
+                insertNormalTopicBeforeRevisions(dateSchedule, vacancyDateKey, next.topicText);
+                reanchorTopicRevisions(dateSchedule, next.topicText, vacancyDateKey, contest);
+                reflowMoves.push({ topic: next.topicText, fromDateKey: next.dateKey, toDateKey: vacancyDateKey });
+                vacancyDateKey = next.dateKey;
+            }
+
+            const history = ensureStudyPlanHistory(contest);
+            history.push({
+                type: 'advance',
+                topic: topicText,
+                materia: context.materia,
+                assunto: context.assunto,
+                plannedDateKey,
+                actualDateKey,
+                reflowMoves,
+                createdAt: new Date().toISOString()
+            });
+            if (history.length > 500) contest.studyPlanHistory = history.slice(-500);
+            context.dateKey = actualDateKey;
+            context.scheduledDateKey = actualDateKey;
+            return { topicText, plannedDateKey, actualDateKey, reflowMoves };
+        }
+
+        function startAdaptiveSuggestedStudy() {
+            const suggestion = getNextAdaptiveStudySuggestion();
+            if (!suggestion?.item) return alert('Não há próximo tópico pendente para antecipar.');
+            activeSelectedDateKey = suggestion.dateKey;
+            const items = getConcursosMetadata()[currentConcurso]?.dateSchedule?.[suggestion.dateKey] || [];
+            const idx = items.findIndex(item => !isRevisionScheduleText(item) && normalizeScheduledTopicForStudy(item) === suggestion.topicText);
+            if (idx === -1) return alert('O tópico sugerido não está mais disponível no cronograma.');
+            startScheduledTopicStudy(idx, suggestion.activityType, true);
+        }
+
         function renderDayTopicsList() {
             const container = document.getElementById('dayTopicsContainer');
             if (!container || !activeSelectedDateKey) return;
@@ -3644,6 +3834,7 @@
 
             if (topics.length === 0) {
                 container.innerHTML = `<p style="opacity:0.85; padding:1rem;">Nenhum tópico agendado para este dia.</p>`;
+                renderAdaptiveStudySuggestion(container);
                 return;
             }
 
@@ -3651,9 +3842,12 @@
                 const cleanTop = topicoStr.replace(/^🔄 Rev \(\d+d\): /, '');
                 const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
                 const safeMatchedId = matchedItem ? encodeHandlerValue(matchedItem.id) : '';
+                const advanceHistory = !isRevisionScheduleText(topicoStr) ? getLatestAdvanceHistory(cleanTop, activeSelectedDateKey) : null;
+                const advanceBadge = advanceHistory ? `<span style="display:inline-flex; margin-left:8px; padding:2px 7px; border-radius:999px; font-size:.68rem; color:#7dd3fc; border:1px solid rgba(56,189,248,.3); background:rgba(14,165,233,.08);">Antecipado de ${formatDateKeyShort(advanceHistory.plannedDateKey)}</span>` : '';
+                const futureStudyHint = activeSelectedDateKey > getLocalDateKey() && matchedItem && !isRevisionScheduleText(topicoStr) ? `<span style="display:block; margin-top:3px; font-size:.68rem; opacity:.58;">Estudar agora pode antecipar este tópico com reflow do futuro.</span>` : '';
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong></div>
+                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong>${advanceBadge}${futureStudyHint}</div>
                         <div style="display:flex; gap:10px; align-items:center;">
                             ${matchedItem ? `
                                 <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
@@ -3675,6 +3869,7 @@
                     </div>
                 `;
             });
+            renderAdaptiveStudySuggestion(container);
         }
 
         function getUniqueMateriasFromEdital() {
@@ -3822,10 +4017,77 @@
 
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
-            if (!metadata[currentConcurso].dateSchedule[activeSelectedDateKey]) metadata[currentConcurso].dateSchedule[activeSelectedDateKey] = [];
+            const contest = metadata[currentConcurso];
+            if (!contest.dateSchedule) contest.dateSchedule = {};
+            if (!contest.dateSchedule[activeSelectedDateKey]) contest.dateSchedule[activeSelectedDateKey] = [];
 
-            metadata[currentConcurso].dateSchedule[activeSelectedDateKey].push(newFullString);
+            const existing = findNormalTopicLocation(contest.dateSchedule, newFullString);
+            if (existing) {
+                if (existing.dateKey === activeSelectedDateKey) {
+                    resetAddTopicArea();
+                    return alert('Este tópico já está agendado neste dia. Nenhuma duplicidade foi criada.');
+                }
+
+                if (existing.dateKey > activeSelectedDateKey) {
+                    const moveIt = confirm(
+                        `Este tópico já está planejado para ${formatDateKeyShort(existing.dateKey)}.\n\n` +
+                        `Deseja antecipá-lo para ${formatDateKeyShort(activeSelectedDateKey)} e ajustar somente a fila posterior, sem duplicar o assunto?`
+                    );
+                    if (!moveIt) return;
+
+                    const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
+                    contest.dateSchedule[existing.dateKey].splice(existing.index, 1);
+                    if (!contest.dateSchedule[existing.dateKey].length) delete contest.dateSchedule[existing.dateKey];
+                    insertNormalTopicBeforeRevisions(contest.dateSchedule, activeSelectedDateKey, newFullString);
+                    reanchorTopicRevisions(contest.dateSchedule, newFullString, activeSelectedDateKey, contest);
+
+                    const reflowMoves = [];
+                    let vacancyDateKey = existing.dateKey;
+                    let safety = 0;
+                    while (safety++ < 2000) {
+                        const next = findNextMovableFutureTopic(contest.dateSchedule, vacancyDateKey, editalLookup, newFullString);
+                        if (!next) break;
+                        const sourceItems = contest.dateSchedule[next.dateKey];
+                        const currentIndex = sourceItems.findIndex(item => !isRevisionScheduleText(item) && normalizeScheduledTopicForStudy(item) === next.topicText);
+                        if (currentIndex === -1) break;
+                        sourceItems.splice(currentIndex, 1);
+                        if (!sourceItems.length) delete contest.dateSchedule[next.dateKey];
+                        insertNormalTopicBeforeRevisions(contest.dateSchedule, vacancyDateKey, next.topicText);
+                        reanchorTopicRevisions(contest.dateSchedule, next.topicText, vacancyDateKey, contest);
+                        reflowMoves.push({ topic: next.topicText, fromDateKey: next.dateKey, toDateKey: vacancyDateKey });
+                        vacancyDateKey = next.dateKey;
+                    }
+
+                    const history = ensureStudyPlanHistory(contest);
+                    history.push({
+                        type: 'manual_advance',
+                        topic: newFullString,
+                        materia: newMateria,
+                        assunto: newAssunto,
+                        plannedDateKey: existing.dateKey,
+                        actualDateKey: activeSelectedDateKey,
+                        reflowMoves,
+                        createdAt: new Date().toISOString()
+                    });
+                    if (history.length > 500) contest.studyPlanHistory = history.slice(-500);
+
+                    await saveConcursosMetadata(metadata);
+                    resetAddTopicArea();
+                    renderDayTopicsList();
+                    renderMonthCalendar();
+                    return;
+                }
+
+                const duplicatePast = confirm(
+                    `Este tópico já aparece no cronograma em ${formatDateKeyShort(existing.dateKey)}.\n\n` +
+                    'Adicionar outra ocorrência criaria duplicidade. Deseja manter o cronograma como está?'
+                );
+                resetAddTopicArea();
+                if (!duplicatePast) renderDayTopicsList();
+                return;
+            }
+
+            contest.dateSchedule[activeSelectedDateKey].push(newFullString);
             await saveConcursosMetadata(metadata);
             resetAddTopicArea();
             renderDayTopicsList();
@@ -4974,6 +5236,7 @@
             // pode sobreviver como se ainda houvesse cronograma ativo.
             contest.dateSchedule = {};
             contest.studySessions = [];
+            contest.studyPlanHistory = [];
             contest.pomodoroDailyTargetHours = 0;
             contest.pomodoroScheduleMethod = null;
             delete contest.scheduleConfig;
@@ -6119,7 +6382,10 @@
                 title.textContent = '';
                 return;
             }
-            title.innerHTML = `<span class="study-mode-badge">${activeStudyContext.activityType === 'questoes' ? 'Questões' : 'Teoria'}</span>${escapeHtml(activeStudyContext.materia)} — ${escapeHtml(activeStudyContext.assunto)}`;
+            const advanceNote = activeStudyContext.adaptiveAdvance && activeStudyContext.plannedDateKey
+                ? `<span style="margin-left:8px; font-size:.72rem; color:#7dd3fc;">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
+                : '';
+            title.innerHTML = `<span class="study-mode-badge">${activeStudyContext.activityType === 'questoes' ? 'Questões' : 'Teoria'}</span>${escapeHtml(activeStudyContext.materia)} — ${escapeHtml(activeStudyContext.assunto)}${advanceNote}`;
             box.classList.add('visible');
         }
 
@@ -6264,20 +6530,36 @@
             const metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = { dataProva:null, dateSchedule:{} };
             if (!Array.isArray(metadata[currentConcurso].studySessions)) metadata[currentConcurso].studySessions = [];
+
+            const actualDateKey = getLocalDateKey();
+            const plannedDateKey = context.plannedDateKey || context.dateKey || actualDateKey;
+            let adaptiveResult = null;
+            if (context.adaptiveAdvance && plannedDateKey > actualDateKey) {
+                adaptiveResult = await applyAdaptiveScheduleAdvance(metadata, { ...context, plannedDateKey });
+            }
+
             metadata[currentConcurso].studySessions.push({
-                dateKey: getLocalDateKey(),
-                scheduledDateKey: context.dateKey || null,
+                dateKey: actualDateKey,
+                scheduledDateKey: adaptiveResult ? actualDateKey : (context.dateKey || null),
+                plannedDateKey,
                 materia: context.materia,
                 assunto: context.assunto,
                 activityType: context.activityType === 'questoes' ? 'questoes' : 'teoria',
                 minutes: amount,
-                source: 'pomodoro',
+                source: adaptiveResult ? 'pomodoro_advanced' : 'pomodoro',
+                advanced: !!adaptiveResult,
                 createdAt: new Date().toISOString()
             });
             await saveConcursosMetadata(metadata);
 
             const progressChanged = markEditalProgressFromStudyContext(context);
-            if (progressChanged) {
+            if (adaptiveResult) {
+                activeStudyContext = { ...context, dateKey: actualDateKey, plannedDateKey, adaptiveAdvance:false };
+                filterDataByConcurso();
+                renderMonthCalendar();
+                renderPomodoroDailyCounter();
+                renderActiveStudyContext();
+            } else if (progressChanged) {
                 filterDataByConcurso();
                 renderMonthCalendar();
             } else {
@@ -6296,7 +6578,7 @@
             updateModernOverview();
         }
 
-        function startScheduledTopicStudy(idx, activityType = 'teoria') {
+        function startScheduledTopicStudy(idx, activityType = 'teoria', forceAdaptiveAdvance = false) {
             if (!activeSelectedDateKey) return;
             const metadata = getConcursosMetadata();
             const raw = metadata[currentConcurso]?.dateSchedule?.[activeSelectedDateKey]?.[idx];
@@ -6312,12 +6594,26 @@
             const focusInput = document.getElementById('focoMin');
             if (focusInput) focusInput.value = requestedMinutes;
 
+            const todayKey = getLocalDateKey();
+            const plannedDateKey = activeSelectedDateKey;
+            const isFutureStudy = plannedDateKey > todayKey && !isRevisionScheduleText(raw);
+            let adaptiveAdvance = !!forceAdaptiveAdvance;
+            if (isFutureStudy && !forceAdaptiveAdvance) {
+                adaptiveAdvance = confirm(
+                    `Este tópico está planejado para ${formatDateKeyShort(plannedDateKey)}.\n\n` +
+                    'OK: antecipar para hoje e reorganizar apenas a fila futura.\n' +
+                    'Cancelar: estudar agora sem alterar o cronograma.'
+                );
+            }
+
             activeStudyContext = {
                 concurso: currentConcurso,
                 materia: matched.materia,
                 assunto: matched.assunto,
                 itemId: matched.id,
-                dateKey: activeSelectedDateKey,
+                dateKey: adaptiveAdvance ? todayKey : activeSelectedDateKey,
+                plannedDateKey,
+                adaptiveAdvance: isFutureStudy && adaptiveAdvance,
                 activityType: activityType === 'questoes' ? 'questoes' : 'teoria'
             };
             renderActiveStudyContext();
