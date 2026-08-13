@@ -1887,7 +1887,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V9.13 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V9.14 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -5822,21 +5822,24 @@
 
         function detectGenericDisciplineHeader(item) {
             const line=String(item?.text??item??'').replace(/\s+/g,' ').trim();
-            if(!line||isGenericProgramBoundary(line)) return null;
+            if(!line) return null;
+            const numbered=line.match(/^\s*(\d+(?:\.\d+)*)[.)]?\s+/);
+            const sectionDepth=numbered ? numbered[1].split('.').length : 0;
             const stripped=stripSectionNumber(line);
             const known=findKnownDisciplineAtStart(stripped);
-            if(known) return {name:known.name,remainder:known.remainder,confidence:.99,method:'lexical-hint'};
+            if(known) return {name:known.name,remainder:known.remainder,confidence:.99,method:'lexical-hint',sectionDepth,hasSectionNumber:sectionDepth>0};
+            if(isGenericProgramBoundary(line)) return null;
             const colon=stripped.indexOf(':');
             if(colon>=3&&colon<=145){
                 const head=stripped.slice(0,colon).trim(); const score=editalHeadingScore(head,item,true);
-                if(score>=5) return {name:titleCaseLoose(head),remainder:stripped.slice(colon+1).trim(),confidence:Math.min(.98,.58+score*.05),method:'colon-heading'};
+                if(score>=5) return {name:titleCaseLoose(head),remainder:stripped.slice(colon+1).trim(),confidence:Math.min(.98,.58+score*.05),method:'colon-heading',sectionDepth,hasSectionNumber:sectionDepth>0};
             }
             const fullScore=editalHeadingScore(stripped,item,false);
-            if(stripped.length<=120&&fullScore>=7&&!/[.;!?]$/.test(stripped)) return {name:titleCaseLoose(stripped),remainder:'',confidence:Math.min(.95,.55+fullScore*.05),method:'visual-heading'};
+            if(stripped.length<=120&&fullScore>=7&&!/[.;!?]$/.test(stripped)) return {name:titleCaseLoose(stripped),remainder:'',confidence:Math.min(.95,.55+fullScore*.05),method:'visual-heading',sectionDepth,hasSectionNumber:sectionDepth>0};
             // Numerado + título em caixa alta, muito comum Vunesp/FGV: 1. HISTÓRIA GERAL
             if(/^\d+(?:\.\d+)*[.)]?\s+/.test(line)) {
                 const t=stripSectionNumber(line); const score=editalHeadingScore(t,item,false);
-                if(score>=6 && t.length<100 && !/[.;!?]$/.test(t)) return {name:titleCaseLoose(t),remainder:'',confidence:.9,method:'numbered-heading'};
+                if(score>=6 && t.length<100 && !/[.;!?]$/.test(t)) return {name:titleCaseLoose(t),remainder:'',confidence:.9,method:'numbered-heading',sectionDepth,hasSectionNumber:true};
             }
             return null;
         }
@@ -5975,42 +5978,53 @@
                     line=scopeStripped;
                 }
 
-                if(isGenericProgramBoundary(line)) continue;
-                if(looksLikeRoleHeading({...item,text:line}) && !findKnownDisciplineAtStart(line)) continue;
                 let heading=detectGenericDisciplineHeader(typeof item==='object'?{...item,text:line}:line);
+                let registryMatch=heading ? matchRegistryDiscipline(heading.name,registry) : null;
+                if(heading && registryLocked && registryMatch){
+                    heading={...heading,name:registryMatch.name,confidence:Math.max(heading.confidence||.7,registryMatch.confidence||.9),method:`registry-${registryMatch.source}`};
+                }
 
-                // V9.13: quando a própria prova já declarou suas disciplinas, esse registro é
-                // autoridade estrutural. Subtítulos internos (História Geral, Atualidades etc.)
-                // continuam como assuntos da matéria-pai, mesmo se visualmente parecerem headings.
-                if(heading && registryLocked){
-                    const reg=matchRegistryDiscipline(heading.name,registry);
-                    if(reg){
-                        heading={...heading,name:reg.name,confidence:Math.max(heading.confidence||.7,reg.confidence||.9),method:`registry-${reg.source}`};
-                    } else {
-                        heading=null;
-                    }
+                if(heading && current && heading.hasSectionNumber && Number(heading.sectionDepth||0) > Number(current.sectionDepth||0) && !registryMatch){
+                    heading=null;
                 }
 
                 if(heading){
                     flush();
-                    current={name:heading.name,lines:[],confidence:heading.confidence,method:heading.method};
+                    current={name:heading.name,lines:[],confidence:heading.confidence,method:heading.method,sectionDepth:Number(heading.sectionDepth||0)};
                     if(heading.remainder) current.lines.push({text:heading.remainder,pageNumber:item?.pageNumber});
                     continue;
                 }
 
-                // Se o registro está bloqueado e ainda não chegamos à primeira matéria, não cria
-                // uma falsa matéria genérica; aguarda um heading canônico do edital.
-                if(!current && registryLocked) continue;
-                if(!current) current={name:fallbackMateria,lines:[],confidence:.48,method:'fallback-block'};
+                if(isGenericProgramBoundary(line)) continue;
+                if(looksLikeRoleHeading({...item,text:line}) && !findKnownDisciplineAtStart(line)) continue;
+                if(!current) current={name:fallbackMateria,lines:[],confidence:.48,method:'fallback-block',sectionDepth:0};
                 current.lines.push(typeof item==='object'?{...item,text:line}:{text:line});
             }
             flush();
-
-            if(registryLocked){
-                // Defesa final: nenhuma matéria fora da composição oficial da prova sobrevive.
-                return sections.filter(sec=>matchRegistryDiscipline(sec.materia,registry));
-            }
             return sections;
+        }
+
+        function auditVerticalizedExtraction(materias, selectedLines, registry=[]) {
+            const warnings=[];
+            const names=(materias||[]).map(m=>normalizeDisciplineIdentity(m.materia));
+            const explicit=[];
+            for(const item of (selectedLines||[])){
+                const line=String(item?.text??item??'').trim();
+                if(!line||isPdfNoiseLine(line)) continue;
+                const h=detectGenericDisciplineHeader(typeof item==='object'?item:line);
+                if(!h) continue;
+                const key=normalizeDisciplineIdentity(h.name);
+                if(key && !explicit.some(x=>x.key===key)) explicit.push({key,name:h.name});
+            }
+            for(const h of explicit){
+                if(!names.some(n=>disciplineIdentityMatches(n,h.key))) warnings.push(`Disciplina explícita não verticalizada: ${h.name}`);
+            }
+            if(Array.isArray(registry)&&registry.length>=2){
+                for(const r of registry){
+                    if(!names.some(n=>disciplineIdentityMatches(n,r.name))) warnings.push(`Disciplina do quadro da prova não localizada no programa: ${r.name}`);
+                }
+            }
+            return [...new Set(warnings)].slice(0,12);
         }
 
         function mergeMaterias(materias) {
@@ -6114,7 +6128,7 @@
 
             const selectedPages=[...new Set([...generalLines,...specificLines].map(x=>x.pageNumber).filter(Boolean))].sort((a,b)=>a-b);
             const text=[`BLOCO/CARGO SELECIONADO: ${cargo.label}`,cargo.educationLevel?`NÍVEL INFERIDO: ${cargo.educationLevel}`:'',`PESO GERAL: ${weights.generalWeight||1}`,`PESO ESPECÍFICO: ${weights.specificWeight||1}`,'','===== CONTEÚDO COMUM/GERAL =====',generalLines.map(x=>x.text).join('\n'),'','===== CONTEÚDO ESPECÍFICO =====',specificLines.map(x=>x.text).join('\n')].filter(Boolean).join('\n').slice(0,98000);
-            return {cargo,materias,text,totalPages:structure.totalPages,selectedPages,selectedChars:text.length,selectionMode:'adaptive-universal-parser-v9.13',disciplineRegistry,confidence:materias.reduce((s,m)=>s+(Number(m.confidence)||.5),0)/materias.length,weights};
+            return {cargo,materias,text,totalPages:structure.totalPages,selectedPages,selectedChars:text.length,selectionMode:'adaptive-universal-parser-v9.14',disciplineRegistry,auditWarnings,confidence:materias.reduce((s,m)=>s+(Number(m.confidence)||.5),0)/materias.length,weights};
         }
 
         async function prepareAiCargoSelector(fileObj) {
@@ -6173,7 +6187,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V9.13 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V9.14 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -6261,7 +6275,8 @@
                 renderAiEditalPreview(analysis, extraction);
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.13; modelo: ${modelInfo}.`);
+                const auditNote=(extraction.auditWarnings||[]).length ? ` Verificação estrutural: ${extraction.auditWarnings.length} alerta(s). Revise o preview antes de importar.` : '';
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.14; modelo: ${modelInfo}.${auditNote}`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
