@@ -2443,7 +2443,7 @@
             <div class="overview-card warning"><span class="overview-label">Revisões</span><strong class="overview-value" id="modernOverviewReviews">0</strong><span class="overview-hint">pendentes agora</span></div>
             <div class="overview-card success"><span class="overview-label">Estudado Hoje</span><strong class="overview-value" id="modernOverviewToday">00:00</strong><span class="overview-hint">Pomodoro concluído</span></div>
             <div class="overview-card"><span class="overview-label">Meta Diária</span><strong class="overview-value" id="modernOverviewTarget">—</strong><span class="overview-hint">planejamento atual</span></div>
-            <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">foco efetivo no Pomodoro</span></div>
+            <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">teoria + questões · todas as matérias</span></div>
         </section>
 
         <!-- BARRA DE AÇÕES -->
@@ -5916,6 +5916,12 @@
             return [...totals.values()].sort((a,b) => b.minutes - a.minutes);
         }
 
+        function getTotalRecordedStudyMinutes() {
+            // Fonte canônica do total por matéria: soma todas as sessões de estudo
+            // registradas no concurso atual (Teoria + Questões), sem incluir pausas/intervalos.
+            return getSubjectStudyTotals().reduce((total, row) => total + Math.max(0, Number(row.minutes) || 0), 0);
+        }
+
         function renderSubjectStudyHours() {
             const list = document.getElementById('subjectStudyHoursList');
             if (!list) return;
@@ -5957,6 +5963,7 @@
             });
             await saveConcursosMetadata(metadata);
             renderSubjectStudyHours();
+            updateModernOverview();
         }
 
         async function removeStudySessionsForDate(dateKey = getLocalDateKey()) {
@@ -5966,6 +5973,7 @@
             contest.studySessions = contest.studySessions.filter(s => s?.dateKey !== dateKey);
             await saveConcursosMetadata(metadata);
             renderSubjectStudyHours();
+            updateModernOverview();
         }
 
         function startScheduledTopicStudy(idx, activityType = 'teoria') {
@@ -8261,7 +8269,7 @@
             set('modernOverviewReviews', delayed);
             set('modernOverviewToday', today);
             set('modernOverviewTarget', target === 'Sem meta' ? '—' : target);
-            set('modernOverviewStudiedHours', formatStudyMinutes(getTotalEffectivePomodoroMinutes()));
+            set('modernOverviewStudiedHours', formatStudyMinutes(getTotalRecordedStudyMinutes()));
         }
 
         document.addEventListener('click', (event) => {
