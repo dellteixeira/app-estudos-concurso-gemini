@@ -1467,6 +1467,260 @@
             #modalAnaliseEditalIA #btnImportarAnaliseIA { grid-column: 1 / -1; }
         }
 
+
+
+        /* ==========================================================
+           V9.21 — REFINO VISUAL / LAYOUT DESKTOP
+           Mantém a identidade do painel, reduz vazios e uniformiza
+           cartões, controles e espaçamentos sem alterar a lógica.
+           ========================================================== */
+        :root {
+            --ui-radius-card: 18px;
+            --ui-radius-control: 11px;
+            --ui-gap: 18px;
+            --ui-card-pad: clamp(18px, 1.65vw, 26px);
+            --ui-soft-bg: rgba(255,255,255,.022);
+            --ui-soft-border: rgba(148,163,184,.16);
+        }
+
+        @media (min-width: 901px) {
+            #app-dashboard {
+                max-width: 1760px;
+                margin-inline: auto;
+            }
+
+            .card,
+            .delayed-panel,
+            .concurso-selector-bar,
+            .modern-header,
+            .action-bar {
+                border-radius: var(--ui-radius-card);
+            }
+
+            .card {
+                padding: var(--ui-card-pad);
+                margin-bottom: var(--ui-gap);
+                box-shadow: 0 10px 28px rgba(0,0,0,.10);
+            }
+
+            .card h3 {
+                margin: 0 0 16px;
+                font-size: 1.08rem;
+                line-height: 1.25;
+                letter-spacing: -.015em;
+            }
+
+            .btn:not(.btn-sm),
+            .btn-action,
+            .tab-btn {
+                min-height: 42px;
+                border-radius: var(--ui-radius-control);
+            }
+
+            input, select, textarea {
+                border-radius: var(--ui-radius-control);
+            }
+
+            /* Evita que um cartão force o outro a ocupar a mesma altura. */
+            .grid-top {
+                grid-template-columns: minmax(0, .94fr) minmax(0, 1.06fr);
+                gap: var(--ui-gap);
+                align-items: start;
+                margin-bottom: var(--ui-gap);
+            }
+            .grid-top > .card {
+                align-self: start;
+                margin-bottom: 0;
+                min-height: 0;
+            }
+
+            /* POMODORO — centro real e cartão com altura do conteúdo. */
+            .pomodoro-card {
+                width: 100%;
+                min-height: 0 !important;
+                height: auto !important;
+                padding: clamp(22px, 2vw, 30px);
+                justify-content: flex-start;
+                overflow: hidden;
+            }
+            .pomodoro-card::before {
+                width: 190px;
+                height: 190px;
+                top: -110px;
+                right: -65px;
+                opacity: .8;
+            }
+            .pomodoro-card h3 {
+                margin-bottom: 12px;
+                font-size: 1.14rem;
+            }
+            .timer-display {
+                max-width: 720px;
+                font-size: clamp(4.1rem, 6.4vw, 5.6rem);
+                line-height: .98;
+                margin: 8px auto 18px;
+                letter-spacing: -.055em;
+                font-variant-numeric: tabular-nums;
+            }
+            .pomodoro-actions {
+                width: auto;
+                max-width: 720px;
+                margin: 0 auto 16px;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .pomodoro-actions .btn {
+                min-width: 112px;
+                padding-inline: 18px;
+            }
+            .timer-settings {
+                width: auto;
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 10px 14px;
+                gap: 18px;
+                background: var(--ui-soft-bg);
+                border: 1px solid var(--ui-soft-border);
+                border-radius: 14px;
+            }
+            .timer-settings label {
+                font-weight: 700;
+                color: var(--text-color);
+            }
+            .timer-settings input {
+                width: 78px !important;
+                height: 40px;
+                background: rgba(2, 12, 27, .18);
+            }
+
+            .pomodoro-daily-panel {
+                width: min(100%, 760px);
+                margin: 18px auto 0;
+                padding-top: 18px;
+            }
+            .pomodoro-daily-panel h4 {
+                margin: 0 0 12px;
+                font-size: .94rem;
+                letter-spacing: .005em;
+            }
+            .pomodoro-daily-stats {
+                width: 100%;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            .pomodoro-daily-stat {
+                min-height: 82px;
+                padding: 12px 10px;
+                background: var(--ui-soft-bg);
+                border-color: var(--ui-soft-border);
+                border-radius: 13px;
+            }
+            .pomodoro-daily-value {
+                font-size: 1.3rem;
+            }
+            .pomodoro-progress-track {
+                width: 100%;
+                height: 9px;
+                margin-bottom: 8px;
+            }
+            .pomodoro-daily-status {
+                margin-bottom: 10px;
+            }
+            .pomodoro-reset-hours {
+                margin-top: 8px;
+            }
+            .active-study-context {
+                width: 100%;
+                margin-top: 10px;
+                border-radius: 12px;
+            }
+
+            /* Painel de progresso acompanha a mesma linguagem visual. */
+            .grid-top > .card:not(.pomodoro-card) {
+                padding: clamp(22px, 2vw, 30px);
+            }
+            .study-progress-breakdown {
+                gap: 10px;
+                margin: 0 0 16px;
+            }
+            .study-progress-mini {
+                min-height: 64px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                border-radius: 13px;
+                background: var(--ui-soft-bg);
+                border-color: var(--ui-soft-border);
+            }
+            .chart-legend-grid {
+                margin-top: 14px;
+            }
+            .subject-hours-panel {
+                margin-top: 16px;
+                padding-top: 16px;
+            }
+            .subject-hours-row {
+                padding: 6px 0;
+            }
+
+            /* Edital e formulários: alinhamento consistente e menos ruído. */
+            #tab-edital > .card:not(.pomodoro-card) {
+                overflow: hidden;
+            }
+            .edital-manual-form {
+                gap: 10px;
+                align-items: stretch;
+                margin-bottom: 12px;
+            }
+            .edital-manual-form input,
+            .edital-manual-form select {
+                min-height: 44px;
+            }
+            .edital-manual-actions .btn {
+                min-height: 44px;
+            }
+
+            /* Navegação principal: mais discreta e sofisticada. */
+            .nav-tabs {
+                min-height: 58px;
+                padding: 7px;
+                gap: 7px;
+                border: 1px solid var(--modern-border);
+                border-radius: 16px;
+                background: color-mix(in srgb, var(--modern-surface) 94%, transparent);
+            }
+            .tab-btn {
+                flex: 1 1 180px;
+                margin: 0;
+                padding-inline: 16px;
+                border-radius: 11px;
+            }
+            .tab-btn:not(.active):hover {
+                background: rgba(59,130,246,.10);
+                opacity: .9;
+            }
+
+            /* Calendário e painéis de revisão: mesma densidade visual. */
+            #tab-calendario .card,
+            .delayed-panel {
+                padding: clamp(18px, 1.5vw, 24px);
+            }
+            .delayed-day-group,
+            .day-topic-row,
+            .note-card,
+            .flashcard-box,
+            .anki-folder-card {
+                border-radius: 14px;
+            }
+        }
+
+        /* Telas intermediárias: mantém a grade equilibrada sem apertar controles. */
+        @media (min-width: 901px) and (max-width: 1180px) {
+            .grid-top { grid-template-columns: 1fr; }
+            .pomodoro-card, .grid-top > .card:not(.pomodoro-card) { width: 100%; }
+            .timer-display { font-size: clamp(4rem, 9vw, 5.3rem); }
+        }
+
     </style>
 </head>
 <body>
