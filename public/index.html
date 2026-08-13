@@ -1289,7 +1289,7 @@
         }
 
 
-        /* V8.8 — ANALISADOR IA: MODAL RESPONSIVO / UMA ÚNICA ROLAGEM */
+        /* V8.9 — ANALISADOR IA: MODAL RESPONSIVO / UMA ÚNICA ROLAGEM */
         @media (max-width: 900px), (max-height: 720px) {
             #modalAnaliseEditalIA {
                 padding: 0;
@@ -1887,7 +1887,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V8.8 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V8.9 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -5112,27 +5112,86 @@
             return -1;
         }
 
+        function sanitizeSingleRoleCandidate(value) {
+            let raw=String(value||'').replace(/\s+/g,' ').trim();
+            if (!raw) return '';
+
+            // Remove caudas administrativas que frequentemente aparecem depois do nome do cargo.
+            // A regra é semântica/estrutural, não depende de banca ou de uma lista de profissões.
+            raw=raw
+                .replace(/\s+(?:do|da|de)\s+quadro\b.*$/i,'')
+                .replace(/\s+(?:da|do)\s+carreira\b.*$/i,'')
+                .replace(/\s+(?:é|e)\s+de\s+R\$.*$/i,'')
+                .replace(/\s+(?:com|cuja|cujo)\s+(?:remunera[cç][aã]o|sal[aá]rio|vencimento|subs[ií]dio|jornada|carga\s+hor[aá]ria|lota[cç][aã]o|vagas?)\b.*$/i,'')
+                .replace(/\s+(?:remunera[cç][aã]o|sal[aá]rio|vencimento|subs[ií]dio|jornada|carga\s+hor[aá]ria|lota[cç][aã]o)\s*[:=-].*$/i,'')
+                .replace(/\s+(?:que|o qual|a qual)\s+(?:ser[aá]|ter[aá]|possui|receber[aá]|exercer[aá])\b.*$/i,'')
+                .replace(/\s+e\s+estabelece\b.*$/i,'')
+                .replace(/[,:;\-–—]+$/,'')
+                .trim();
+
+            // Não aceita fragmentos que claramente já carregam dados financeiros/administrativos.
+            if (/R\$|\b(?:remunera[cç][aã]o|sal[aá]rio|vencimento|subs[ií]dio|carga\s+hor[aá]ria|jornada|lota[cç][aã]o)\b/i.test(raw)) return '';
+            if ((raw.match(/\d/g)||[]).length>5) return '';
+            if (raw.length<3 || raw.length>110 || raw.split(/\s+/).length>16) return '';
+            return raw;
+        }
+
         function inferSingleRoleFromPreamble(lines, programStart) {
-            const limit=Math.min(programStart>0?programStart:lines.length, Math.max(220, Math.floor(lines.length*.22)));
+            const limit=Math.min(programStart>0?programStart:lines.length, Math.max(260, Math.floor(lines.length*.25)));
             const candidates=[];
+
+            const pushCandidate=(value,index,score,source)=>{
+                const cleaned=sanitizeSingleRoleCandidate(value);
+                if (!cleaned || isMetaRoleLabel(cleaned) || findKnownDisciplineAtStart(cleaned)) return;
+                candidates.push({label:titleCaseLoose(cleaned),index,score,source});
+            };
+
             for (let i=0;i<limit;i++) {
                 const raw=String(lines[i]?.text||'').replace(/\s+/g,' ').trim();
-                if (!raw || raw.length>180) continue;
-                let m=raw.match(/(?:provimento|preenchimento|selecionar candidatos[^,;]{0,50})[^.]{0,120}?\b(?:do|dos|de)\s+(?:cargo|cargos|fun[cç][aã]o|fun[cç][oõ]es)\s+(?:de\s+)?([^.;]{3,100})/i);
-                if (!m) m=raw.match(/\b(?:cargo|fun[cç][aã]o)\s+(?:de\s+)?([A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç][^.;]{2,90})/i);
-                if (!m) continue;
-                let label=m[1].replace(/\s+(?:do|da|de)\s+quadro.*$/i,'').replace(/\s+e\s+estabelece.*$/i,'').trim();
-                if (!label || label.split(/\s+/).length>14 || !roleSignal(label)) continue;
-                candidates.push({label:titleCaseLoose(label),index:i});
+                if (!raw || raw.length>260) continue;
+                const f=foldEditalText(raw);
+
+                // Contextos de alta confiança: finalidade/objeto do certame.
+                // Aceita quantidade entre "provimento" e "cargos" (ex.: 2.000 (dois mil) cargos de ...).
+                let m=raw.match(/\b(?:provimento|preenchimento)\b[^;]{0,180}?\bcargos?\s+(?:de\s+)?(.+?)(?=\s+(?:do|da)\s+quadro\b|\s+(?:da|do)\s+carreira\b|[.;]|$)/i);
+                if (m) pushCandidate(m[1],i,10,'provimento');
+
+                m=raw.match(/\b(?:concurso|processo\s+seletivo)[^;]{0,140}?\b(?:destinad[oa]s?|visando|para)\b[^;]{0,160}?\bcargos?\s+(?:de\s+)?(.+?)(?=\s+(?:do|da)\s+quadro\b|[.;]|$)/i);
+                if (m) pushCandidate(m[1],i,9,'objeto-certame');
+
+                m=raw.match(/\b(?:selecionar|sele[cç][aã]o\s+de)\s+candidatos[^.;]{0,120}?\b(?:cargo|cargos|fun[cç][aã]o|fun[cç][oõ]es)\s+(?:de\s+)?(.+?)(?=[.;]|$)/i);
+                if (m) pushCandidate(m[1],i,8,'selecao-candidatos');
+
+                // Cabeçalhos/declarações curtas de cargo têm confiança média.
+                m=raw.match(/^\s*(?:CARGO|FUN[CÇ][AÃ]O|EMPREGO)\s*(?:\d+)?\s*[:–—-]\s*(.+)$/i);
+                if (m) pushCandidate(m[1],i,7,'heading');
+
+                // Fallback contextual: "cargo de X", mas rejeita frases de salário, jornada, lotação etc.
+                if (!/(remunera[cç][aã]o|sal[aá]rio|vencimento|subs[ií]dio|jornada|carga horaria|lota[cç][aã]o|valor\s+de|R\$)/i.test(f)) {
+                    m=raw.match(/\b(?:cargo|fun[cç][aã]o|emprego)\s+(?:de\s+)?(.+?)(?=\s+(?:do|da)\s+quadro\b|[.;]|$)/i);
+                    if (m) pushCandidate(m[1],i,3,'fallback-cargo');
+                }
             }
             if (!candidates.length) return null;
-            // Só cria cargo único quando há um candidato claramente dominante/recorrente.
-            const freq=new Map();
-            for (const c of candidates){const k=foldEditalText(c.label);const x=freq.get(k)||{...c,count:0};x.count++;freq.set(k,x);}
-            const ranked=[...freq.values()].sort((a,b)=>b.count-a.count || a.index-b.index);
+
+            // Agrupa o mesmo cargo encontrado em formas/contextos diferentes.
+            // O maior score estrutural pesa mais do que mera frequência de menções administrativas.
+            const grouped=new Map();
+            for (const c of candidates) {
+                const k=foldEditalText(c.label).replace(/[^a-z0-9]+/g,' ').trim();
+                if (!k) continue;
+                const g=grouped.get(k)||{...c,count:0,totalScore:0,bestScore:0};
+                g.count++;
+                g.totalScore+=c.score;
+                g.bestScore=Math.max(g.bestScore,c.score);
+                if (c.score>g.score || (c.score===g.score && c.index<g.index)) Object.assign(g,{label:c.label,index:c.index,score:c.score,source:c.source});
+                grouped.set(k,g);
+            }
+            const ranked=[...grouped.values()].sort((a,b)=>(b.bestScore-a.bestScore)||(b.totalScore-a.totalScore)||(b.count-a.count)||(a.index-b.index));
             const top=ranked[0];
-            if (!top) return null;
-            return {code:`BL${hashEditalText(top.label)%10000}`,label:top.label,rawLabel:top.label,confidence:top.count>1?.93:.84,segments:[],educationLevel:'',synthetic:true,singleRole:true};
+            if (!top || top.bestScore<3) return null;
+            const confidence=top.bestScore>=9?.98:top.bestScore>=7?.95:top.count>1?.90:.82;
+            return {code:`BL${hashEditalText(top.label)%10000}`,label:top.label,rawLabel:top.label,confidence,segments:[],educationLevel:'',synthetic:true,singleRole:true,sourceType:top.source};
         }
 
         function isProgramAnnexHeadingAt(lines, i) {
@@ -5654,7 +5713,7 @@
                 const structure=await loadAiPdfStructure(fileObj.blob,fileObj.name||'');
                 select.innerHTML='<option value="">Selecione o cargo/área/especialidade...</option>'+structure.cargos.map(c=>`<option value="${escapeHtml(c.code)}">${escapeHtml(cargoSelectLabel(c))}</option>`).join('');
                 select.disabled=false; if(structure.cargos.length===1)select.value=structure.cargos[0].code; analyzeBtn.disabled=false;
-                if(hint)hint.textContent=structure.cargos[0]?.synthetic?'Edital com bloco único: o V8.6 identificará automaticamente matérias e assuntos.':`${structure.cargos.length} cargo(s)/área(s)/especialidade(s) localizado(s). O V8.8 combinará internamente conteúdo comum, nível/escolaridade e bloco específico quando existirem.`;
+                if(hint)hint.textContent=structure.cargos[0]?.synthetic?'Edital com cargo/bloco único: matérias e assuntos serão identificados automaticamente a partir do conteúdo programático.':`${structure.cargos.length} cargo(s)/área(s)/especialidade(s) localizado(s). O V8.9 combinará internamente conteúdo comum, nível/escolaridade e bloco específico quando existirem.`;
                 setAiEditalStatus('');
             }catch(error){console.error('Falha ao detectar estrutura:',error);select.innerHTML='<option value="">Não foi possível detectar blocos</option>';if(hint)hint.textContent=error.message||'Falha na leitura.';setAiEditalStatus(error.message||'Não foi possível detectar a estrutura.',true);}
         }
@@ -5703,7 +5762,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V8.8 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V8.9 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -5791,7 +5850,7 @@
                 renderAiEditalPreview(analysis, extraction);
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V8.8; modelo: ${modelInfo}.`);
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V8.9; modelo: ${modelInfo}.`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
