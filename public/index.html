@@ -1470,7 +1470,7 @@
 
 
         /* ==========================================================
-           V9.21 — REFINO VISUAL / LAYOUT DESKTOP
+           V9.22 — GRADE EQUILIBRADA / REFINO VISUAL DESKTOP
            Mantém a identidade do painel, reduz vazios e uniformiza
            cartões, controles e espaçamentos sem alterar a lógica.
            ========================================================== */
@@ -1721,7 +1721,99 @@
             .timer-display { font-size: clamp(4rem, 9vw, 5.3rem); }
         }
 
-    </style>
+    
+
+        /* =====================================================
+           V9.22 — GRADE POMODORO / PROGRESSO EQUILIBRADA
+           No desktop, os dois cartões acompanham a mesma altura.
+           O Pomodoro distribui seu conteúdo na área disponível em
+           vez de concentrá-lo no topo e deixar espaço vazio.
+           ===================================================== */
+        @media (min-width: 1101px) {
+            .grid-top {
+                align-items: stretch;
+            }
+            .grid-top > .card {
+                align-self: stretch;
+                height: 100%;
+            }
+            .pomodoro-card {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+                min-height: 100% !important;
+                height: 100% !important;
+                padding: clamp(26px, 2.2vw, 36px);
+            }
+            .pomodoro-card h3 {
+                margin: 0 0 clamp(14px, 1.3vh, 22px);
+            }
+            .timer-display {
+                margin: clamp(10px, 1.5vh, 20px) auto clamp(18px, 2vh, 28px);
+                font-size: clamp(4.4rem, 6vw, 6rem);
+            }
+            .pomodoro-actions {
+                margin: 0 auto clamp(20px, 2.2vh, 32px);
+                gap: clamp(10px, .9vw, 16px);
+            }
+            .pomodoro-actions .btn {
+                min-width: 116px;
+                min-height: 44px;
+                padding-inline: 20px;
+            }
+            .timer-settings {
+                margin: 0 auto clamp(22px, 2.5vh, 36px);
+                padding: 13px 18px;
+                gap: clamp(22px, 2.5vw, 38px);
+            }
+            .pomodoro-daily-panel {
+                margin-top: 0;
+                padding-top: clamp(20px, 2.3vh, 32px);
+                width: min(100%, 780px);
+            }
+            .pomodoro-daily-panel h4 {
+                margin-bottom: clamp(14px, 1.4vh, 20px);
+            }
+            .pomodoro-daily-stats {
+                gap: clamp(12px, 1vw, 18px);
+                margin-bottom: clamp(14px, 1.4vh, 20px);
+            }
+            .pomodoro-daily-stat {
+                min-height: 92px;
+                padding: 16px 12px;
+            }
+            .pomodoro-daily-value {
+                font-size: 1.45rem;
+            }
+            .pomodoro-progress-track {
+                margin-bottom: 12px;
+            }
+            .pomodoro-daily-status {
+                margin-bottom: 14px;
+            }
+            .pomodoro-reset-hours {
+                margin-top: 10px;
+            }
+        }
+
+        /* Quando a grade vira uma coluna, cada cartão volta a usar apenas
+           a altura necessária ao próprio conteúdo. */
+        @media (max-width: 1100px) {
+            .grid-top {
+                align-items: start;
+            }
+            .grid-top > .card,
+            .pomodoro-card {
+                height: auto !important;
+                min-height: 0 !important;
+                align-self: start;
+            }
+            .pomodoro-card {
+                justify-content: flex-start;
+            }
+        }
+</style>
 </head>
 <body>
 
