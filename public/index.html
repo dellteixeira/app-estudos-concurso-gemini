@@ -274,7 +274,7 @@
         .edital-guide-actions { margin-bottom: 1rem; }
         .calendar-primary-actions {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 0.6rem;
             width: min(100%, 760px);
         }
@@ -299,8 +299,10 @@
         .badge-delayed { background: #ef4444; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
 
         .filter-tabs { display: flex; gap: 8px; margin-bottom: 1rem; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 8px; width: fit-content; }
-        .filter-tab { padding: 6px 16px; border-radius: 6px; border: none; background: transparent; color: var(--text-color); cursor: pointer; font-weight: 600; font-size: 0.9rem; }
-        .filter-tab.active { background: var(--card-bg); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .filter-tab { padding: 6px 16px; border-radius: 9px; border: 1px solid transparent; background: transparent; color: var(--text-color); cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all .18s ease; }
+        .filter-tab:hover, .filter-tab:focus-visible { background: linear-gradient(135deg, rgba(59,130,246,.88), rgba(19,168,255,.92)); color:#fff; border-color:rgba(96,165,250,.8); box-shadow:0 7px 16px rgba(19,168,255,.14); outline:none; }
+        .filter-tab.active { background: linear-gradient(135deg, rgba(59,130,246,.78), rgba(19,168,255,.82)); color:#fff; border-color:rgba(96,165,250,.62); box-shadow:0 7px 16px rgba(19,168,255,.12); }
+        #delayedItemsContainer.collapsed { display:none; }
 
         .delayed-card {
             background: var(--card-bg); border: 1px solid var(--border-color); border-left: 5px solid #ef4444;
@@ -309,6 +311,9 @@
         }
         .delayed-card-info h4 { color: #ef4444; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 4px; }
         .delayed-card-info p { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
+        .delayed-card-info .delayed-item-link { cursor:pointer; transition:color .18s ease, transform .18s ease; display:inline-block; }
+        .delayed-card-info .delayed-item-link:hover, .delayed-card-info .delayed-item-link:focus-visible { color:var(--primary-blue); transform:translateX(2px); outline:none; }
+        .month-day-cell.schedule-jump-highlight { box-shadow:0 0 0 3px rgba(56,189,248,.55), 0 0 24px rgba(56,189,248,.20); }
         .delayed-tag { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
 
 
@@ -324,7 +329,8 @@
             padding: 0.9rem 1rem; display: flex; align-items: center; justify-content: space-between;
             gap: 12px; cursor: pointer; text-align: left; font-weight: 800;
         }
-        .delayed-day-summary:hover { background: rgba(59,130,246,0.08); }
+        .delayed-day-summary:hover, .delayed-day-summary:focus-visible { background:linear-gradient(135deg, rgba(59,130,246,.88), rgba(19,168,255,.92)); color:#fff; box-shadow:0 7px 16px rgba(19,168,255,.12); outline:none; }
+        .delayed-day-summary:hover .delayed-day-date, .delayed-day-summary:focus-visible .delayed-day-date { color:#fff; }
         .delayed-day-summary-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .delayed-day-date { color: var(--primary-blue); font-size: 1rem; }
         .delayed-day-late {
@@ -882,7 +888,7 @@
             /* Cronograma: ações principais lado a lado */
             .calendar-primary-actions {
                 display: grid !important;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 8px !important;
                 width: 100%;
             }
@@ -1056,6 +1062,13 @@
         .action-bar .btn-action:active { transform:translateY(1px); }
         .action-bar .btn-action.active-blue { background:transparent !important; border-color:transparent !important; box-shadow:none !important; }
         .action-bar .btn-action.action-running { opacity:.78; }
+        .btn-logout-header { min-height:38px; padding:.5rem .8rem; background:transparent; color:var(--modern-muted); border:1px solid var(--modern-border); }
+        .btn-logout-header:hover { background:linear-gradient(135deg, rgba(59,130,246,.88), rgba(19,168,255,.92)); color:#fff; border-color:rgba(96,165,250,.8); box-shadow:0 7px 16px rgba(19,168,255,.14); }
+        .calendar-primary-actions .btn { box-shadow:none; }
+        .calendar-primary-actions .btn-primary { background:linear-gradient(135deg, var(--modern-blue-2), var(--modern-blue)); color:#fff; }
+        .calendar-primary-actions .btn-danger { background:var(--modern-danger); color:#fff; }
+        .calendar-primary-actions .btn-warning { background:var(--modern-warning); color:#1d1400; }
+        .calendar-primary-actions .btn:hover { opacity:1; transform:translateY(-1px); filter:brightness(1.05); }
         .nav-tabs { border:0; background:rgba(255,255,255,.025); border-radius:15px; padding:6px; gap:5px; }
         .tab-btn { flex:1; min-height:44px; color:var(--modern-muted); opacity:1; }
         .tab-btn.active { background:linear-gradient(135deg, rgba(59,130,246,.88), rgba(19,168,255,.92)); box-shadow:0 8px 18px rgba(19,168,255,.16); }
@@ -1219,7 +1232,7 @@
                 margin:0;
                 padding:10px;
                 display:grid;
-                grid-template-columns:minmax(88px,auto) minmax(0,1fr);
+                grid-template-columns:minmax(88px,auto) minmax(0,1fr) auto;
                 gap:8px;
                 align-items:center;
                 border-radius:15px;
@@ -1248,7 +1261,13 @@
                 align-items:center;
                 justify-content:center;
                 text-align:center;
+            }
+            .btn-logout-header {
+                grid-column:3;
+                min-height:42px;
+                min-width:58px;
                 padding:8px 10px;
+                justify-content:center;
                 border-radius:12px;
                 font-size:.82rem;
                 line-height:1.15;
@@ -1455,6 +1474,7 @@
                 <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
                     Sem data de prova
                 </div>
+                <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
             </div>
         </header>
 
@@ -1487,7 +1507,6 @@
             <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, clearData)">Limpar Edital Atual</button>
             <button class="btn-action" onclick="handleActionButton(this, toggleDarkMode)">Modo Claro/Escuro</button>
-            <button class="btn-action" onclick="handleActionButton(this, handleLogout)">Sair</button>
         </div>
 
         <div class="nav-tabs">
@@ -1592,9 +1611,9 @@
                 </div>
 
                 <div class="filter-tabs">
-                    <button class="filter-tab active" onclick="filterDelayedList('hoje', this)">Hoje</button>
-                    <button class="filter-tab" onclick="filterDelayedList('atrasadas', this)">Atrasadas</button>
-                    <button class="filter-tab" onclick="filterDelayedList('proximas', this)">Próximas</button>
+                    <button class="filter-tab active" onclick="filterDelayedList('hoje', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Hoje</button>
+                    <button class="filter-tab" onclick="filterDelayedList('atrasadas', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Atrasadas</button>
+                    <button class="filter-tab" onclick="filterDelayedList('proximas', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Próximas</button>
                 </div>
 
                 <div id="delayedItemsContainer"></div>
@@ -1611,15 +1630,11 @@
                     </div>
 
                     <div class="calendar-primary-actions">
-                        <button class="btn btn-purple" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
+                        <button class="btn btn-primary" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
                         <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
                         <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
+                        <button class="btn btn-primary" onclick="reorganizarMateriasCronograma()">Reorganizar Matérias</button>
                     </div>
-                </div>
-
-                <div class="weekly-hours-banner">
-                    <span>Planejamento Visual do Mês:</span>
-                    <span id="weeklyHoursTotal">Sincronizado na Nuvem</span>
                 </div>
 
                 <div class="month-calendar-header">
@@ -1911,7 +1926,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V9.15 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V9.17 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -2549,6 +2564,10 @@
 
             metadata[currentConcurso].pomodoroDailyTargetHours = selectedDailyHoursSlots;
             metadata[currentConcurso].pomodoroScheduleMethod = 2;
+            metadata[currentConcurso].scheduleConfig = {
+                method: 2, startDate: dataInicioStr, revisionStrategy: strategyKey,
+                weekdays: [...selectedWeekdays], dailySlots: selectedDailyHoursSlots
+            };
             await saveConcursosMetadata(metadata);
             closeModalMentorisMethod();
             renderMonthCalendar();
@@ -2603,6 +2622,10 @@
 
             metadata[currentConcurso].pomodoroDailyTargetHours = dailySlots;
             metadata[currentConcurso].pomodoroScheduleMethod = 1;
+            metadata[currentConcurso].scheduleConfig = {
+                method: 1, startDate: dataInicioStr, revisionStrategy: strategyKey,
+                includeSaturday: incSab, includeSunday: incDom, dailySlots
+            };
             await saveConcursosMetadata(metadata);
             closeModalConfigHorarios();
             renderMonthCalendar();
@@ -3615,7 +3638,7 @@
                     : '<div class="month-day-mobile-meta"></div>';
 
                 htmlParts.push(`
-                    <div class="month-day-cell ${isToday ? 'today' : ''} ${studyDayStateClass}" onclick="openModalDayContent('${dateKey}')" role="button" tabindex="0" aria-label="Dia ${day}, ${items.length} itens agendados">
+                    <div class="month-day-cell ${isToday ? 'today' : ''} ${studyDayStateClass}" data-date-key="${dateKey}" onclick="openModalDayContent('${dateKey}')" role="button" tabindex="0" aria-label="Dia ${day}, ${items.length} itens agendados">
                         <div class="day-num-header">
                             <span>${day}</span>
                             <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Abrir dia" tabindex="-1">+</button>
@@ -3629,6 +3652,149 @@
             // Uma única escrita no DOM reduz reflows/repaints, especialmente em celulares.
             grid.innerHTML = htmlParts.join('');
             renderDelayedPanel();
+        }
+
+        function getMateriaScheduleWeight(materia, items, metadata) {
+            const explicit = Number(metadata?.[currentConcurso]?.materiaWeights?.[materia]);
+            if (Number.isFinite(explicit) && explicit > 0) return explicit;
+            const itemWeight = items.map(i => Number(i.peso)).find(v => Number.isFinite(v) && v > 0);
+            if (itemWeight) return itemWeight;
+            const priority = Math.max(1, Math.min(3, Number(items[0]?.prioridade) || 2));
+            return 4 - priority; // P1=3, P2=2, P3=1 quando o edital não fornece peso explícito.
+        }
+
+        function buildWeightedPendingSequence(items, metadata) {
+            const grouped = new Map();
+            items.filter(item => !(item.teoria || item.questoes)).forEach(item => {
+                const key = item.materia || 'Geral';
+                if (!grouped.has(key)) grouped.set(key, []);
+                grouped.get(key).push(item);
+            });
+            const queues = [...grouped.entries()].map(([materia, topicItems]) => ({
+                materia,
+                items: [...topicItems].sort((a,b) => (a.assunto_prioridade||1)-(b.assunto_prioridade||1)),
+                weight: getMateriaScheduleWeight(materia, topicItems, metadata),
+                served: 0,
+                priority: Math.min(...topicItems.map(i => Number(i.prioridade)||2))
+            }));
+            const result = [];
+            while (queues.some(q => q.items.length)) {
+                const available = queues.filter(q => q.items.length);
+                available.sort((a,b) => {
+                    const ratio = (a.served / a.weight) - (b.served / b.weight);
+                    if (Math.abs(ratio) > 1e-9) return ratio;
+                    if (a.priority !== b.priority) return a.priority - b.priority;
+                    return a.materia.localeCompare(b.materia, 'pt-BR');
+                });
+                const chosen = available[0];
+                result.push(chosen.items.shift());
+                chosen.served += 1;
+            }
+            return result;
+        }
+
+        function inferScheduleWeekdays(dateSchedule, fromKey) {
+            const set = new Set();
+            Object.entries(dateSchedule || {}).forEach(([dateKey, items]) => {
+                if (dateKey < fromKey || !Array.isArray(items)) return;
+                if (!items.some(text => !String(text).startsWith('🔄 Rev'))) return;
+                set.add(new Date(dateKey + 'T00:00:00').getDay());
+            });
+            return [...set].sort((a,b)=>a-b);
+        }
+
+        function inferScheduleSlots(dateSchedule, fromKey) {
+            let max = 0;
+            Object.entries(dateSchedule || {}).forEach(([dateKey, items]) => {
+                if (dateKey < fromKey || !Array.isArray(items)) return;
+                const count = items.filter(text => !String(text).startsWith('🔄 Rev')).length;
+                max = Math.max(max, count);
+            });
+            return max;
+        }
+
+        async function reorganizarMateriasCronograma() {
+            if (!editalItems.length) return alert('Não há matérias no edital atual para reorganizar.');
+            const metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            const contestMeta = metadata[currentConcurso];
+            const oldSchedule = contestMeta.dateSchedule || {};
+            const todayKey = getLocalDateKey(new Date());
+            const pendingSequence = buildWeightedPendingSequence(editalItems, metadata);
+            if (!pendingSequence.length) return alert('Todos os tópicos do edital já foram estudados. Não há matérias pendentes para redistribuir.');
+
+            const ok = confirm(
+                `Reorganizar ${pendingSequence.length} tópicos pendentes a partir de hoje?\n\n` +
+                'O histórico dos dias anteriores será preservado. As matérias serão intercaladas conforme o peso do edital; quando não houver peso explícito, será usada a prioridade da matéria. Tópicos adicionados manualmente também serão incluídos.'
+            );
+            if (!ok) return;
+
+            const cfg = contestMeta.scheduleConfig || {};
+            const dailySlots = Math.max(1, Number(cfg.dailySlots) || Number(contestMeta.pomodoroDailyTargetHours) || inferScheduleSlots(oldSchedule, todayKey) || 1);
+            const revisionStrategy = cfg.revisionStrategy || 'classica';
+            let weekdays = Array.isArray(cfg.weekdays) && cfg.weekdays.length ? [...cfg.weekdays] : inferScheduleWeekdays(oldSchedule, todayKey);
+            const method = Number(cfg.method || contestMeta.pomodoroScheduleMethod || 0);
+            if (!weekdays.length && method !== 1) weekdays = [1,2,3,4,5];
+
+            const rebuilt = {};
+            const editalByTopic = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
+            Object.entries(oldSchedule).forEach(([dateKey, items]) => {
+                if (!Array.isArray(items)) return;
+                if (dateKey < todayKey) {
+                    rebuilt[dateKey] = [...items];
+                    return;
+                }
+                // Mantém revisões futuras de tópicos que já começaram a ser estudados;
+                // a redistribuição atua somente sobre o conteúdo ainda pendente.
+                const preservedReviews = items.filter(text => {
+                    const raw = String(text);
+                    if (!raw.startsWith('🔄 Rev')) return false;
+                    const topic = raw.replace(/^🔄 Rev \(\d+d\): /, '');
+                    const item = editalByTopic.get(topic);
+                    return !!(item && (item.teoria || item.questoes || item.rev_24h || item.rev_7d || item.rev_30d));
+                });
+                if (preservedReviews.length) rebuilt[dateKey] = [...new Set(preservedReviews)];
+            });
+
+            let currDate = new Date(todayKey + 'T00:00:00');
+            let index = 0;
+            let safety = 0;
+            while (index < pendingSequence.length && safety < 5000) {
+                safety++;
+                const dow = currDate.getDay();
+                let canStudy;
+                if (method === 1) {
+                    canStudy = !((dow === 6 && cfg.includeSaturday === false) || (dow === 0 && cfg.includeSunday === false));
+                } else {
+                    canStudy = weekdays.includes(dow);
+                }
+                if (canStudy) {
+                    const dateKey = getLocalDateKey(currDate);
+                    if (!rebuilt[dateKey]) rebuilt[dateKey] = [];
+                    for (let slot=0; slot<dailySlots && index<pendingSequence.length; slot++) {
+                        const item = pendingSequence[index++];
+                        const topicText = `${item.materia} - ${item.assunto}`;
+                        if (!rebuilt[dateKey].includes(topicText)) rebuilt[dateKey].push(topicText);
+                        applySpacedRevisions(rebuilt, currDate, topicText, revisionStrategy);
+                    }
+                }
+                currDate.setDate(currDate.getDate()+1);
+            }
+
+            contestMeta.dateSchedule = rebuilt;
+            contestMeta.pomodoroDailyTargetHours = dailySlots;
+            contestMeta.scheduleConfig = {
+                ...cfg,
+                method: method || 2,
+                startDate: todayKey,
+                revisionStrategy,
+                dailySlots,
+                ...(method === 1 ? {} : { weekdays })
+            };
+            await saveConcursosMetadata(metadata);
+            renderMonthCalendar();
+            renderPomodoroDailyCounter();
+            alert('Cronograma reorganizado. O histórico anterior foi preservado e os tópicos pendentes foram redistribuídos por peso/prioridade.');
         }
 
         async function limparCronogramaMesAtual() {
@@ -3726,6 +3892,49 @@
             return Math.max(0, Math.round(diff / 86400000));
         }
 
+        function toggleDelayedItemsContainer() {
+            const container = document.getElementById('delayedItemsContainer');
+            if (!container) return;
+            container.classList.toggle('collapsed');
+        }
+
+        function openScheduledDayFromDelayed(dateKey, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey || ''))) return;
+
+            const [year, month] = dateKey.split('-').map(Number);
+            selectedYear = year;
+            selectedMonth = month - 1;
+
+            const calendarTab = document.getElementById('tab-calendario');
+            const desktopTabButton = [...document.querySelectorAll('.tab-btn')]
+                .find(btn => /cronograma mensal/i.test(btn.textContent || ''));
+
+            if (calendarTab && !calendarTab.classList.contains('active') && desktopTabButton) {
+                switchTab('tab-calendario', desktopTabButton);
+            }
+
+            initMonthYearSelectors();
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+            if (monthSelect) monthSelect.value = String(selectedMonth);
+            if (yearSelect) yearSelect.value = String(selectedYear);
+            renderMonthCalendar();
+
+            requestAnimationFrame(() => {
+                const target = document.querySelector(`.month-day-cell[data-date-key="${dateKey}"]`);
+                if (target) {
+                    target.scrollIntoView({ behavior:'smooth', block:'center' });
+                    target.classList.add('schedule-jump-highlight');
+                    setTimeout(() => target.classList.remove('schedule-jump-highlight'), 1600);
+                }
+                openModalDayContent(dateKey);
+            });
+        }
+
         function renderDelayedPanel() {
             const container = document.getElementById('delayedItemsContainer');
             if (!container) return;
@@ -3784,7 +3993,7 @@
                     itemsHtml += `
                         <div class="delayed-card">
                             <div class="delayed-card-info">
-                                <p>${escapeHtml(it)}</p>
+                                <p class="delayed-item-link" role="button" tabindex="0" title="Abrir este dia no cronograma" onclick="openScheduledDayFromDelayed('${group.date}', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScheduledDayFromDelayed('${group.date}', event);}">${escapeHtml(it)}</p>
                                 <span class="delayed-tag">${escapeHtml(currentConcurso)}</span>
                             </div>
                         </div>`;
@@ -3792,7 +4001,7 @@
 
                 html += `
                     <div class="delayed-day-group${openClass}">
-                        <button type="button" class="delayed-day-summary" onclick="this.parentElement.classList.toggle('open')">
+                        <button type="button" class="delayed-day-summary" ondblclick="this.parentElement.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.parentElement.classList.toggle('open');}" title="Duplo clique para expandir ou recolher">
                             <span class="delayed-day-summary-main">
                                 <span class="delayed-day-date">${escapeHtml(formattedDate)}</span>
                                 ${timingBadge}
@@ -4388,7 +4597,7 @@
 
             const newItem = {
                 id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                materia, assunto, prioridade, assunto_prioridade: 1, concurso: currentConcurso,
+                materia, assunto, prioridade, assunto_prioridade: 1, peso: Math.max(1, 4 - Math.min(3, prioridade)), concurso: currentConcurso,
                 user_id: currentUser ? currentUser.id : null,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
             };
@@ -6284,7 +6493,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V9.15 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V9.17 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -6373,7 +6582,7 @@
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
                 const auditNote=(extraction.auditWarnings||[]).length ? ` Verificação estrutural: ${extraction.auditWarnings.length} alerta(s). Revise o preview antes de importar.` : '';
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.15; modelo: ${modelInfo}.${auditNote}`);
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.17; modelo: ${modelInfo}.${auditNote}`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
@@ -6405,6 +6614,7 @@
                         assunto: assunto,
                         prioridade: mat.prioridade,
                         assunto_prioridade: mat.prioridade,
+                        peso: Number(mat.peso) || 1,
                         concurso: currentConcurso,
                         user_id: currentUser ? currentUser.id : null,
                         teoria: false,
@@ -6420,6 +6630,15 @@
             if (!novos.length) return alert('Todos os tópicos identificados pela IA já existem neste concurso. Nenhum item foi duplicado.');
             const ok = confirm(`Importar ${novos.length} novos tópicos para "${currentConcurso}"?\n\nTópicos já existentes serão preservados e não serão duplicados.`);
             if (!ok) return;
+
+            const metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].materiaWeights) metadata[currentConcurso].materiaWeights = {};
+            analysis.materias.forEach(mat => {
+                const weight = Number(mat.peso);
+                if (Number.isFinite(weight) && weight > 0) metadata[currentConcurso].materiaWeights[mat.materia] = weight;
+            });
+            await saveConcursosMetadata(metadata);
 
             novos.forEach(item => {
                 allEditalItems.push(item);
