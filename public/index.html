@@ -1289,7 +1289,7 @@
         }
 
 
-        /* V9.11 — ANALISADOR IA: MODAL RESPONSIVO / UMA ÚNICA ROLAGEM */
+        /* V9.12 — ANALISADOR IA: MODAL RESPONSIVO / UMA ÚNICA ROLAGEM */
         @media (max-width: 900px), (max-height: 720px) {
             #modalAnaliseEditalIA {
                 padding: 0;
@@ -1887,7 +1887,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V9.11 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V9.12 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -5116,7 +5116,7 @@
             let raw=String(value||'').replace(/\s+/g,' ').trim();
             if (!raw) return '';
 
-            // V9.11: o nome do cargo deve ser um sintagma nominal, nunca a frase administrativa
+            // V9.12: o nome do cargo deve ser um sintagma nominal, nunca a frase administrativa
             // inteira onde ele apareceu. Essas regras são semânticas e independentes de banca.
             raw=raw
                 .replace(/^\s*(?:cargo|emprego|fun[cç][aã]o)\s+(?:p[uú]blico\s+)?(?:inicial\s+)?(?:de\s+)?/i,'')
@@ -5456,83 +5456,179 @@
             return ranges;
         }
 
+        function detectRoleTableGeometry(lines, range) {
+            const roles=[];
+            const pages=[...new Set(lines.slice(range.start,range.end).map(x=>x.pageNumber).filter(Boolean))];
+
+            const cleanCellText=(parts)=>String((parts||[]).join(' '))
+                .replace(/\s+/g,' ')
+                .replace(/\s+([,.;:])/g,'$1')
+                .trim()
+                .replace(/[:;,.-]+$/,'')
+                .trim();
+
+            const isRequirementAnchor=(item)=>{
+                const raw=String(item?.text||'').replace(/\s+/g,' ').trim();
+                const f=foldEditalText(raw);
+                if(!raw) return false;
+                if(/^(?:escolaridade|requisitos?|jornada|remuneracao|vagas?)\b/.test(f)) return false;
+                return /^(?:ensino|nivel|formacao|graduacao|curso\b|diploma\b|registro\b)/.test(f) ||
+                       /^(?:fundamental|medio|superior)\b/.test(f);
+            };
+
+            const isMoneyAnchor=(item)=>/R\$\s*[\d.]+,\d{2}/i.test(String(item?.text||''));
+
+            for(const pageNumber of pages){
+                const pageIndexes=[];
+                for(let i=range.start;i<range.end;i++) if(lines[i]?.pageNumber===pageNumber) pageIndexes.push(i);
+                if(!pageIndexes.length) continue;
+
+                // Localiza a geometria da tabela a partir dos próprios cabeçalhos de coluna.
+                let cargoHeader=-1, reqHeader=-1;
+                for(const idx of pageIndexes){
+                    const f=foldEditalText(lines[idx]?.text||'');
+                    if(cargoHeader<0 && /^cargo\b/.test(f)) cargoHeader=idx;
+                    if(reqHeader<0 && /^(?:escolaridade|requisitos?)\b/.test(f)) reqHeader=idx;
+                }
+                if(cargoHeader<0) continue;
+
+                const cargoX=Number(lines[cargoHeader]?.x)||0;
+                let reqX=reqHeader>=0 ? Number(lines[reqHeader]?.x)||0 : 0;
+                if(!(reqX>cargoX+18)){
+                    // Cabeçalhos quebrados podem esconder ESCOLARIDADE. Procura a primeira coluna
+                    // textual consistente à direita do CARGO.
+                    const xs=pageIndexes
+                        .map(i=>Number(lines[i]?.x)||0)
+                        .filter(x=>x>cargoX+45)
+                        .sort((a,b)=>a-b);
+                    reqX=xs.length?xs[0]:0;
+                }
+                if(!(reqX>cargoX+18)) continue;
+
+                const cargoRight=cargoX + (reqX-cargoX)*0.50;
+                const headerY=Number(lines[cargoHeader]?.y)||0;
+                const pageItems=pageIndexes.map(i=>({i,item:lines[i]}));
+
+                // Âncoras de linha: preferimos a primeira informação da coluna de requisitos;
+                // se o edital não tiver escolaridade, remuneração serve como segunda opção.
+                let anchors=pageItems.filter(({i,item})=>{
+                    if(i===reqHeader) return false;
+                    const x=Number(item?.x)||0;
+                    if(x<cargoRight) return false;
+                    return isRequirementAnchor(item);
+                });
+                if(anchors.length<2){
+                    anchors=pageItems.filter(({item})=>{
+                        const x=Number(item?.x)||0;
+                        return x>cargoRight && isMoneyAnchor(item);
+                    });
+                }
+                if(!anchors.length) continue;
+
+                // Remove âncoras duplicadas muito próximas na mesma linha/célula.
+                anchors.sort((a,b)=>(Number(b.item.y)||0)-(Number(a.item.y)||0));
+                const dedup=[];
+                for(const a of anchors){
+                    if(dedup.some(d=>Math.abs((Number(d.item.y)||0)-(Number(a.item.y)||0))<7)) continue;
+                    dedup.push(a);
+                }
+                anchors=dedup;
+                if(!anchors.length) continue;
+
+                const cargoCandidates=pageItems.filter(({i,item})=>{
+                    if(i===cargoHeader) return false;
+                    const x=Number(item?.x)||0;
+                    const raw=String(item?.text||'').replace(/\s+/g,' ').trim();
+                    const f=foldEditalText(raw);
+                    if(!raw || x>cargoRight) return false;
+                    if(/^(?:cargo|total de vagas|ac\s*=|nota explicativa|concurso publico|edital|realizacao|pagina)\b/.test(f)) return false;
+                    if(isAdministrativeRoleFragment(raw) || isMetaRoleLabel(raw)) return false;
+                    return true;
+                });
+
+                // Cada âncora representa uma linha da tabela. Usamos os pontos médios entre
+                // âncoras para criar bandas Y e recolher APENAS texto da coluna CARGO.
+                for(let ai=0;ai<anchors.length;ai++){
+                    const ay=Number(anchors[ai].item.y)||0;
+                    const prevY=ai===0 ? headerY : Number(anchors[ai-1].item.y)||0;
+                    let nextY;
+                    if(ai+1<anchors.length) nextY=Number(anchors[ai+1].item.y)||0;
+                    else {
+                        const ys=cargoCandidates.map(c=>Number(c.item.y)||0).filter(y=>y<ay);
+                        nextY=ys.length ? Math.min(...ys)-24 : ay-70;
+                    }
+                    const upper=(prevY+ay)/2;
+                    const lower=(ay+nextY)/2;
+                    const hi=Math.max(upper,lower), lo=Math.min(upper,lower);
+                    const row=cargoCandidates
+                        .filter(c=>{ const y=Number(c.item.y)||0; return y<=hi+4 && y>=lo-4; })
+                        .sort((a,b)=>(Number(b.item.y)||0)-(Number(a.item.y)||0) || (Number(a.item.x)||0)-(Number(b.item.x)||0));
+                    const label=cleanCellText(row.map(c=>c.item.text));
+                    if(!label || !isLikelyRoleNameFragment(label)) continue;
+                    roles.push({label:titleCaseLoose(label),index:row[0]?.i??anchors[ai].i,confidence:.995,pageNumber,sourceType:'role-table-geometry'});
+                }
+            }
+            return roles;
+        }
+
         function detectRoleCatalogBeforeProgram(lines, programStart) {
             const found=new Map();
-            const addRole=(label, idx, confidence=.9, educationLevel='')=>{
+            const addRole=(label, idx, confidence=.9, educationLevel='', sourceType='role-table')=>{
                 let clean=String(label||'').replace(/\s+/g,' ').trim().replace(/[:;,.-]+$/,'').trim();
                 if(!isLikelyRoleNameFragment(clean)) return;
                 clean=titleCaseLoose(clean);
                 const key=foldEditalText(clean.replace(/\([^)]*\)/g,'')).replace(/[^a-z0-9]+/g,' ').trim();
                 if(!key || key.length<3) return;
                 const current=found.get(key);
-                const obj={code:`BL${hashEditalText(clean)%10000}`,label:clean,rawLabel:clean,confidence,segments:[],educationLevel:educationLevel||inferEducationLevelForRole(lines,clean,programStart),synthetic:false,catalogOnly:true,sourceType:'role-table'};
+                const obj={code:`BL${hashEditalText(clean)%10000}`,label:clean,rawLabel:clean,confidence,segments:[],educationLevel:educationLevel||inferEducationLevelForRole(lines,clean,programStart),synthetic:false,catalogOnly:true,sourceType};
                 if(!current || confidence>current.confidence) found.set(key,obj);
             };
 
-            // 1) Prioridade máxima: tabelas/seções formais de cargos antes do programa.
-            // O algoritmo não depende do nome da banca: procura o cabeçalho semântico da tabela
-            // e usa a coluna de escolaridade/requisitos como delimitador da coluna CARGO.
             const ranges=findRoleTableRanges(lines,programStart);
+
+            // 1) Fonte primária: geometria real das tabelas. Isso impede que texto das colunas
+            // ESCOLARIDADE/JORNADA/REMUNERAÇÃO seja confundido com nomes de cargo.
+            let geometryHits=0;
             for(const range of ranges){
-                for(let i=range.start+1;i<range.end;i++){
-                    const raw=String(lines[i]?.text||'').replace(/\s+/g,' ').trim();
-                    const f=foldEditalText(raw);
-                    if(!raw) continue;
+                const geometric=detectRoleTableGeometry(lines,range);
+                for(const r of geometric){ addRole(r.label,r.index,r.confidence,'',r.sourceType); geometryHits++; }
+            }
 
-                    // Código + cargo em uma única linha, quando existir.
-                    let m=raw.match(/^([A-Z]{0,3}\d{1,4}|\d{1,4})\s*[-–—]\s*(.{3,75})$/i);
-                    if(m && isLikelyRoleNameFragment(m[2])){
-                        const code=/^[A-Z]/i.test(m[1])?m[1].toUpperCase():`C${m[1]}`;
-                        const label=titleCaseLoose(m[2]);
-                        const key=foldEditalText(label).replace(/[^a-z0-9]+/g,' ').trim();
-                        found.set(key,{code,label,rawLabel:label,confidence:.99,segments:[],educationLevel:inferEducationLevelForRole(lines,label,programStart),synthetic:false,catalogOnly:true,sourceType:'role-table-code'});
-                        continue;
-                    }
-
-                    // Quando surge escolaridade/requisito, as linhas imediatamente anteriores
-                    // pertencem à célula CARGO — inclusive nomes quebrados em 2–5 linhas.
-                    const level=normalizeEducationLevel(raw);
-                    const requirementStart = !!level || /^(?:escolaridade|requisitos?)\b/i.test(f) || /\b(?:comprovacao de experiencia|experiencia de \d+|registro no|carteira nacional de habilitacao|cnh\b|curso tecnico|formacao superior|graduacao)\b/.test(f);
-                    if(requirementStart){
-                        const parts=[];
-                        for(let j=i-1;j>=Math.max(range.start+1,i-6);j--){
-                            const prev=String(lines[j]?.text||'').replace(/\s+/g,' ').trim();
-                            const pf=foldEditalText(prev);
-                            if(!prev) continue;
-                            if(/R\$|\b\d+\s*h\/s\b|\b\d+\s*-\s*\d+\+?CR\b/i.test(prev)) break;
-                            if(/^(?:cargo|escolaridade|requisitos?|jornada|remuneracao|vagas?|total)\b/.test(pf)) break;
-                            if(normalizeEducationLevel(prev)) break;
-                            if(!isLikelyRoleNameFragment(prev)) break;
-                            parts.unshift(prev.replace(/[:;,.-]+$/,''));
+            // 2) Fallback textual conservador SOMENTE quando não houve geometria utilizável.
+            // Aceita formatos lineares como "101 - ADMINISTRADOR", mas não tenta reconstruir
+            // células de tabela a partir de fragmentos vizinhos.
+            if(geometryHits===0){
+                for(const range of ranges){
+                    for(let i=range.start+1;i<range.end;i++){
+                        const raw=String(lines[i]?.text||'').replace(/\s+/g,' ').trim();
+                        const f=foldEditalText(raw);
+                        if(!raw || isAdministrativeRoleFragment(raw)) continue;
+                        let m=raw.match(/^([A-Z]{0,3}\d{1,4}|\d{1,4})\s*[-–—]\s*(.{3,75})$/i);
+                        if(m && isLikelyRoleNameFragment(m[2])){
+                            const code=/^[A-Z]/i.test(m[1])?m[1].toUpperCase():`C${m[1]}`;
+                            const label=titleCaseLoose(m[2]);
+                            const key=foldEditalText(label).replace(/[^a-z0-9]+/g,' ').trim();
+                            found.set(key,{code,label,rawLabel:label,confidence:.97,segments:[],educationLevel:inferEducationLevelForRole(lines,label,programStart),synthetic:false,catalogOnly:true,sourceType:'role-table-code'});
+                            continue;
                         }
-                        if(parts.length){ addRole(parts.join(' '), i-parts.length, .985, level); }
-                    }
-
-                    // Linha curta de cargo seguida, logo depois, por escolaridade/requisitos.
-                    if(isLikelyRoleNameFragment(raw)){
-                        let nearRequirement=false, nearLevel='';
-                        for(let j=i+1;j<Math.min(range.end,i+7);j++){
-                            const nxt=String(lines[j]?.text||'').replace(/\s+/g,' ').trim();
-                            const nf=foldEditalText(nxt);
-                            if(!nxt) continue;
-                            const nl=normalizeEducationLevel(nxt);
-                            if(nl || /\b(?:comprovacao de experiencia|experiencia de \d+|registro no|cnh\b|curso tecnico|graduacao)\b/.test(nf)){ nearRequirement=true; nearLevel=nl; break; }
-                            if(/R\$|\b\d+\s*h\/s\b/.test(nxt)) break;
-                        }
-                        if(nearRequirement) addRole(raw,i,.94,nearLevel);
+                        // Só aceita linha autônoma quando há evidência visual forte e um sinal lexical de cargo.
+                        if(roleSignal(raw) && looksLikeRoleHeading(lines[i],false) && isLikelyRoleNameFragment(raw)) addRole(raw,i,.78,'','role-table-heading');
                     }
                 }
             }
 
-            // 2) Fallback conservador: headings visuais de cargo fora de tabelas.
-            // Só entra se não houver catálogo formal suficiente.
+            // 3) Evidência independente: headings do anexo de atribuições podem validar e
+            // complementar catálogos quando o quadro inicial é difícil de extrair.
             if(found.size<2){
+                let inDuties=false;
                 for(let i=0;i<programStart;i++){
                     const raw=String(lines[i]?.text||'').replace(/\s+/g,' ').trim();
-                    if(!raw || raw.length>90 || isAdministrativeRoleFragment(raw)) continue;
-                    let m=raw.match(/^([0-9]{1,4})\s*[-–—]?\s+(.{3,70})$/);
-                    if(m && isLikelyRoleNameFragment(m[2])) addRole(m[2],i,.78);
-                    else if(roleSignal(raw) && looksLikeRoleHeading(lines[i],false) && isLikelyRoleNameFragment(raw)) addRole(raw.replace(/:$/,''),i,.72);
+                    const f=foldEditalText(raw);
+                    if(/^anexo\s+[a-zivxlcdm\d]+.*atribui[cç][oõ]es.*cargos?/.test(f)){ inDuties=true; continue; }
+                    if(inDuties && /^anexo\s+[a-zivxlcdm\d]+/.test(f)) break;
+                    if(!inDuties || !raw || raw.length>80) continue;
+                    const strong=(lines[i]?.boldRatio||0)>=.45 || (lines[i]?.uppercaseRatio||0)>=.65;
+                    if(strong && isLikelyRoleNameFragment(raw)) addRole(raw,i,.84,'','duties-heading');
                 }
             }
             return [...found.values()];
@@ -5812,7 +5908,7 @@
                 if(looksLikeRoleHeading({...item,text:line}) && !findKnownDisciplineAtStart(line)) continue;
                 let heading=detectGenericDisciplineHeader(typeof item==='object'?{...item,text:line}:line);
 
-                // V9.11: quando a própria prova já declarou suas disciplinas, esse registro é
+                // V9.12: quando a própria prova já declarou suas disciplinas, esse registro é
                 // autoridade estrutural. Subtítulos internos (História Geral, Atualidades etc.)
                 // continuam como assuntos da matéria-pai, mesmo se visualmente parecerem headings.
                 if(heading && registryLocked){
@@ -5951,7 +6047,7 @@
                 const structure=await loadAiPdfStructure(fileObj.blob,fileObj.name||'');
                 select.innerHTML='<option value="">Selecione o cargo/área/especialidade...</option>'+structure.cargos.map(c=>`<option value="${escapeHtml(c.code)}">${escapeHtml(cargoSelectLabel(c))}</option>`).join('');
                 select.disabled=false; if(structure.cargos.length===1)select.value=structure.cargos[0].code; analyzeBtn.disabled=false;
-                if(hint)hint.textContent=structure.cargos[0]?.synthetic?'Edital com cargo/bloco único: matérias e assuntos serão identificados automaticamente a partir do conteúdo programático.':`${structure.cargos.length} cargo(s)/área(s)/especialidade(s) localizado(s). O V9.11 combinará internamente conteúdo comum, nível/escolaridade e bloco específico quando existirem.`;
+                if(hint)hint.textContent=structure.cargos[0]?.synthetic?'Edital com cargo/bloco único: matérias e assuntos serão identificados automaticamente a partir do conteúdo programático.':`${structure.cargos.length} cargo(s)/área(s)/especialidade(s) localizado(s). O V9.12 combinará internamente conteúdo comum, nível/escolaridade e bloco específico quando existirem.`;
                 setAiEditalStatus('');
             }catch(error){console.error('Falha ao detectar estrutura:',error);select.innerHTML='<option value="">Não foi possível detectar blocos</option>';if(hint)hint.textContent=error.message||'Falha na leitura.';setAiEditalStatus(error.message||'Não foi possível detectar a estrutura.',true);}
         }
@@ -6000,7 +6096,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V9.11 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V9.12 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -6088,7 +6184,7 @@
                 renderAiEditalPreview(analysis, extraction);
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.11; modelo: ${modelInfo}.`);
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.12; modelo: ${modelInfo}.`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
