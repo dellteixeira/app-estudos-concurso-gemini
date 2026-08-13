@@ -1130,6 +1130,127 @@
         .pomodoro-progress-track { height:12px; }
         .pomodoro-progress-fill { background:linear-gradient(90deg,var(--modern-blue-2),var(--modern-green)); }
 
+        .pomodoro-card {
+            justify-content: flex-start;
+            gap: 0;
+        }
+        .pomodoro-hero {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0.35rem 0 1.1rem;
+        }
+        .pomodoro-ring-shell {
+            width: min(100%, 420px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+        .pomodoro-ring {
+            --timer-progress: 0;
+            --ring-size: min(74vw, 350px);
+            --ring-thickness: 24px;
+            --timer-accent: var(--modern-blue-2);
+            position: relative;
+            width: var(--ring-size);
+            height: var(--ring-size);
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at center, rgba(255,255,255,.02) 0 59%, transparent 59.5%),
+                radial-gradient(circle at center, rgba(14,165,233,.06) 0 70%, transparent 70.5%);
+            filter: drop-shadow(0 18px 40px rgba(2,12,27,.22));
+        }
+        .pomodoro-ring::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background:
+                radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), rgba(0,0,0,.95) calc(100% - var(--ring-thickness) + 1px), rgba(0,0,0,.95) 100%, transparent 0),
+                conic-gradient(from -90deg, var(--timer-accent) calc(var(--timer-progress) * 1turn), rgba(255,255,255,.12) 0);
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), #000 calc(100% - var(--ring-thickness) + 1px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), #000 calc(100% - var(--ring-thickness) + 1px));
+        }
+        .pomodoro-ring::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: repeating-conic-gradient(from -90deg, rgba(255,255,255,.88) 0deg 2.2deg, transparent 2.2deg 6deg);
+            opacity: .18;
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), #000 calc(100% - var(--ring-thickness) + 1px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), #000 calc(100% - var(--ring-thickness) + 1px));
+            pointer-events: none;
+        }
+        .timer-display {
+            position: relative;
+            z-index: 1;
+            width: calc(100% - (var(--ring-thickness) * 2.2));
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+            margin: 0;
+            text-align: center;
+            background: radial-gradient(circle at 50% 35%, rgba(255,255,255,.055), rgba(255,255,255,.012));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+        }
+        .timer-display-number {
+            font-size: clamp(4.4rem, 10vw, 6.5rem);
+            font-weight: 900;
+            line-height: .88;
+            letter-spacing: -.06em;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+        .timer-display-unit {
+            font-size: clamp(1.15rem, 2.3vw, 1.8rem);
+            font-weight: 800;
+            letter-spacing: .02em;
+            text-transform: lowercase;
+            color: rgba(255,255,255,.92);
+            line-height: 1;
+        }
+        .timer-display-meta {
+            margin-top: .2rem;
+            font-size: clamp(.78rem, 1.4vw, .95rem);
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: #93c5fd;
+        }
+        .pomodoro-actions {
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto 1rem;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        .pomodoro-actions .btn {
+            min-width: 118px;
+            padding: .92rem 1.3rem;
+            border-radius: 14px;
+        }
+        .timer-settings {
+            width: min(100%, 540px);
+            margin: 0 auto;
+            padding: 14px 18px;
+            gap: 24px;
+        }
+        .timer-settings label { gap: .7rem; }
+        .timer-settings input {
+            width: 92px !important;
+            height: 44px;
+            border-radius: 12px;
+        }
+
         #tab-edital .card:last-child > h3 { font-size:1.28rem; }
         table { border-collapse:separate; border-spacing:0 7px; }
         thead th { color:var(--modern-muted); background:transparent; border:0; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; }
@@ -1203,8 +1324,11 @@
 
             .grid-top { gap:.8rem; }
             .card { border-radius:16px; }
+            .pomodoro-ring { --ring-size:min(84vw, 320px); --ring-thickness:22px; }
             .pomodoro-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
             .pomodoro-actions .btn { width:100%; min-width:0; }
+            .timer-settings { width:100%; padding:12px 14px; gap:14px; }
+            .timer-settings label { width:100%; justify-content:space-between; }
             .pomodoro-daily-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
 
             #tab-edital .table-responsive { overflow:visible; }
@@ -1534,7 +1658,7 @@
                 min-height: 0;
             }
 
-            /* POMODORO — centro real e cartão com altura do conteúdo. */
+            /* POMODORO — composição circular com melhor preenchimento visual. */
             .pomodoro-card {
                 width: 100%;
                 min-height: 0 !important;
@@ -1544,53 +1668,15 @@
                 overflow: hidden;
             }
             .pomodoro-card::before {
-                width: 190px;
-                height: 190px;
-                top: -110px;
-                right: -65px;
-                opacity: .8;
+                width: 220px;
+                height: 220px;
+                top: -120px;
+                right: -70px;
+                opacity: .9;
             }
             .pomodoro-card h3 {
-                margin-bottom: 12px;
+                margin-bottom: 8px;
                 font-size: 1.14rem;
-            }
-            .timer-display {
-                max-width: 720px;
-                font-size: clamp(4.1rem, 6.4vw, 5.6rem);
-                line-height: .98;
-                margin: 8px auto 18px;
-                letter-spacing: -.055em;
-                font-variant-numeric: tabular-nums;
-            }
-            .pomodoro-actions {
-                width: auto;
-                max-width: 720px;
-                margin: 0 auto 16px;
-                gap: 10px;
-                flex-wrap: wrap;
-            }
-            .pomodoro-actions .btn {
-                min-width: 112px;
-                padding-inline: 18px;
-            }
-            .timer-settings {
-                width: auto;
-                max-width: 720px;
-                margin: 0 auto;
-                padding: 10px 14px;
-                gap: 18px;
-                background: var(--ui-soft-bg);
-                border: 1px solid var(--ui-soft-border);
-                border-radius: 14px;
-            }
-            .timer-settings label {
-                font-weight: 700;
-                color: var(--text-color);
-            }
-            .timer-settings input {
-                width: 78px !important;
-                height: 40px;
-                background: rgba(2, 12, 27, .18);
             }
 
             .pomodoro-daily-panel {
@@ -1917,7 +2003,17 @@
             <div class="grid-top">
                 <div class="card pomodoro-card">
                     <h3>Relógio Pomodoro</h3>
-                    <div class="timer-display" id="timer">40:00</div>
+                    <div class="pomodoro-hero">
+                        <div class="pomodoro-ring-shell">
+                            <div class="pomodoro-ring" id="pomodoroRing" style="--timer-progress:0;">
+                                <div class="timer-display" id="timer" aria-live="polite">
+                                    <span class="timer-display-number">40</span>
+                                    <span class="timer-display-unit">min</span>
+                                    <span class="timer-display-meta">00s • foco</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="pomodoro-actions">
                         <button class="btn btn-primary" id="startTimerBtn" onclick="startFocusTimer()">Foco</button>
                         <button class="btn btn-info" id="intervalTimerBtn" onclick="startIntervalTimer()">Intervalo</button>
@@ -5237,6 +5333,7 @@
         let isTimerPaused = false;
         let timerHasStarted = false;
         let currentFocusCycleMinutes = 0;
+        let currentTimerTotalSeconds = 40 * 60;
         let timerMode = 'focus';
         let activeStudyContext = null;
         let pomodoroAudioContext = null;
@@ -5440,6 +5537,7 @@
             isTimerPaused = false;
             currentFocusCycleMinutes = 0;
             timeLeft = requestedMinutes * 60;
+            currentTimerTotalSeconds = timeLeft;
             updateDisplay();
             updatePauseButton();
 
@@ -5615,14 +5713,35 @@
         function updateTimerSettings() {
             if (!timerInterval && !isTimerPaused) {
                 timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
+                currentTimerTotalSeconds = timeLeft;
                 updateDisplay();
             }
+        }
+
+        function getPomodoroRingProgress() {
+            const total = Math.max(1, Number(currentTimerTotalSeconds) || 1);
+            const safeLeft = Math.max(0, Number(timeLeft) || 0);
+            const elapsedRatio = Math.min(1, Math.max(0, (total - safeLeft) / total));
+            return elapsedRatio;
         }
 
         function updateDisplay() {
             const min = Math.floor(timeLeft / 60);
             const sec = timeLeft % 60;
-            document.getElementById('timer').innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+            const timerEl = document.getElementById('timer');
+            const ringEl = document.getElementById('pomodoroRing');
+            const modeLabel = timerMode === 'focus' ? 'foco' : 'intervalo';
+            if (timerEl) {
+                timerEl.innerHTML = `
+                    <span class="timer-display-number">${min.toString().padStart(2, '0')}</span>
+                    <span class="timer-display-unit">min</span>
+                    <span class="timer-display-meta">${sec.toString().padStart(2, '0')}s • ${modeLabel}</span>
+                `;
+            }
+            if (ringEl) {
+                ringEl.style.setProperty('--timer-progress', String(getPomodoroRingProgress()));
+                ringEl.style.setProperty('--timer-accent', timerMode === 'focus' ? 'var(--modern-blue-2)' : 'var(--modern-warning)');
+            }
         }
 
         function startTimer() {
@@ -5632,7 +5751,11 @@
             const isNewCycle = !timerHasStarted;
             if (isNewCycle && timerMode === 'focus') {
                 currentFocusCycleMinutes = Math.max(1, parseInt(document.getElementById('focoMin').value) || 40);
+                currentTimerTotalSeconds = currentFocusCycleMinutes * 60;
                 playPomodoroStartBell();
+            }
+            if (isNewCycle && timerMode === 'interval') {
+                currentTimerTotalSeconds = Math.max(1, parseInt(document.getElementById('pausaMin').value) || 5) * 60;
             }
 
             timerHasStarted = true;
@@ -5687,6 +5810,7 @@
                 isTimerPaused = false;
                 currentFocusCycleMinutes = 0;
                 timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
+                currentTimerTotalSeconds = timeLeft;
                 updateDisplay();
             }
             startTimer();
@@ -5700,6 +5824,7 @@
             isTimerPaused = false;
             currentFocusCycleMinutes = 0;
             timeLeft = (parseInt(document.getElementById('pausaMin').value) || 5) * 60;
+            currentTimerTotalSeconds = timeLeft;
             updateDisplay();
             playPomodoroPauseBell();
             startTimer();
@@ -5728,6 +5853,7 @@
             timerMode = 'focus';
             currentFocusCycleMinutes = 0;
             timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
+            currentTimerTotalSeconds = timeLeft;
             updateDisplay();
             updatePauseButton();
         }
