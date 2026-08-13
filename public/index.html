@@ -1426,8 +1426,8 @@
                 <label><strong>Concurso:</strong></label>
                 <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
                 <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
-                <button class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
-                <button class="btn btn-danger btn-sm" onclick="removerConcursoAtual(this)">Excluir</button>
+                <button id="btnRenomearConcurso" class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
+                <button id="btnExcluirConcurso" class="btn btn-danger btn-sm" onclick="removerConcursoAtual(this)">Excluir</button>
                 
                 <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
                     Sem data de prova
@@ -1887,7 +1887,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V9.14 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V9.14.1 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -4023,21 +4023,70 @@
             }
         }
 
+        function isSystemConcurso(nome) {
+            return String(nome || '').trim().toLowerCase() === 'concurso geral';
+        }
+
+        function updateConcursoActionState() {
+            const hasRealConcurso = !!currentConcurso && !isSystemConcurso(currentConcurso);
+            const renameBtn = document.getElementById('btnRenomearConcurso');
+            const deleteBtn = document.getElementById('btnExcluirConcurso');
+            const badge = document.getElementById('countdownBadge');
+
+            if (renameBtn) {
+                renameBtn.disabled = !hasRealConcurso;
+                renameBtn.title = hasRealConcurso ? 'Renomear concurso atual' : 'Crie ou selecione um concurso para renomear';
+            }
+            if (deleteBtn) {
+                deleteBtn.disabled = !hasRealConcurso;
+                deleteBtn.title = hasRealConcurso ? 'Excluir concurso atual' : 'Crie ou selecione um concurso para excluir';
+            }
+            if (badge) {
+                badge.classList.toggle('disabled', !hasRealConcurso);
+                badge.style.pointerEvents = hasRealConcurso ? '' : 'none';
+                badge.style.opacity = hasRealConcurso ? '' : '0.55';
+                badge.title = hasRealConcurso ? 'Clique para alterar a data da prova' : 'Crie ou selecione um concurso';
+            }
+        }
+
         function renderConcursoSelector() {
             const select = document.getElementById('concursoSelect');
             select.innerHTML = '';
             const metadata = getConcursosMetadata();
-            const set = new Set(Object.keys(metadata));
-            set.add('Concurso Geral');
-            allEditalItems.forEach(i => { if (i.concurso) set.add(i.concurso); });
-            const list = Array.from(set);
+            const set = new Set();
 
-            if (!list.includes(currentConcurso)) currentConcurso = list[0] || 'Concurso Geral';
-            list.forEach(c => { select.innerHTML += `<option value="${escapeHtml(c)}" ${c === currentConcurso ? 'selected' : ''}>${escapeHtml(c)}</option>`; });
+            Object.keys(metadata).forEach(nome => { if (!isSystemConcurso(nome)) set.add(nome); });
+            allEditalItems.forEach(i => {
+                const nome = i.concurso || 'Concurso Geral';
+                if (!isSystemConcurso(nome)) set.add(nome);
+            });
+
+            const list = Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+            const currentVisible = list.includes(currentConcurso);
+
+            if (!currentVisible) {
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = list.length ? 'Selecione um concurso...' : 'Crie um concurso para começar';
+                placeholder.selected = true;
+                placeholder.disabled = true;
+                select.appendChild(placeholder);
+            }
+
+            list.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c;
+                option.textContent = c;
+                option.selected = c === currentConcurso;
+                select.appendChild(option);
+            });
+
+            updateConcursoActionState();
             updateCountdownBadge();
         }
 
         function changeConcurso(val) {
+            if (!val) return;
             currentConcurso = val;
             localStorage.setItem('last_studied_concurso', currentConcurso);
             filterDataByConcurso();
@@ -4078,7 +4127,7 @@
         }
 
         async function renomearConcursoAtual() {
-            if (currentConcurso.trim().toLowerCase() === 'concurso geral') return alert('O Concurso Geral padrão não pode ser renomeado.');
+            if (isSystemConcurso(currentConcurso)) return;
             const novoNome = prompt(`Digite o novo nome para o concurso "${currentConcurso}":`, currentConcurso);
             if (!novoNome || !novoNome.trim() || novoNome.trim() === currentConcurso) return;
 
@@ -4112,9 +4161,7 @@
         }
 
         async function removerConcursoAtual(btn = null) {
-            if (currentConcurso.trim().toLowerCase() === 'concurso geral') {
-                return alert('O Concurso Geral padrão não pode ser excluído.');
-            }
+            if (isSystemConcurso(currentConcurso)) return;
 
             const concursoRemovido = currentConcurso;
             if (!confirm(`Deseja remover o concurso "${concursoRemovido}" e todos os seus itens?`)) return;
@@ -4419,14 +4466,22 @@
 
         function updateCountdownBadge() {
             const badge = document.getElementById('countdownBadge');
+            if (!badge) return;
+            if (isSystemConcurso(currentConcurso)) {
+                badge.textContent = 'Sem concurso selecionado';
+                updateConcursoActionState();
+                return;
+            }
             const metadata = getConcursosMetadata();
             const dataStr = metadata[currentConcurso]?.dataProva;
-            if (!dataStr) { badge.textContent = "Data da prova não definida"; return; }
+            if (!dataStr) { badge.textContent = "Data da prova não definida"; updateConcursoActionState(); return; }
             const diffDias = Math.ceil((new Date(dataStr + "T00:00:00") - new Date()) / (1000 * 60 * 60 * 24));
             badge.textContent = diffDias < 0 ? "Prova realizada" : (diffDias === 0 ? "Prova HOJE!" : `Faltam ${diffDias} dias`);
+            updateConcursoActionState();
         }
 
         async function editarDataProva() {
+            if (isSystemConcurso(currentConcurso)) return;
             let metadata = getConcursosMetadata();
             const novaData = prompt(`Data da prova (AAAA-MM-DD):`, metadata[currentConcurso]?.dataProva || '');
             if (novaData !== null) {
@@ -6128,7 +6183,7 @@
 
             const selectedPages=[...new Set([...generalLines,...specificLines].map(x=>x.pageNumber).filter(Boolean))].sort((a,b)=>a-b);
             const text=[`BLOCO/CARGO SELECIONADO: ${cargo.label}`,cargo.educationLevel?`NÍVEL INFERIDO: ${cargo.educationLevel}`:'',`PESO GERAL: ${weights.generalWeight||1}`,`PESO ESPECÍFICO: ${weights.specificWeight||1}`,'','===== CONTEÚDO COMUM/GERAL =====',generalLines.map(x=>x.text).join('\n'),'','===== CONTEÚDO ESPECÍFICO =====',specificLines.map(x=>x.text).join('\n')].filter(Boolean).join('\n').slice(0,98000);
-            return {cargo,materias,text,totalPages:structure.totalPages,selectedPages,selectedChars:text.length,selectionMode:'adaptive-universal-parser-v9.14',disciplineRegistry,auditWarnings,confidence:materias.reduce((s,m)=>s+(Number(m.confidence)||.5),0)/materias.length,weights};
+            return {cargo,materias,text,totalPages:structure.totalPages,selectedPages,selectedChars:text.length,selectionMode:'adaptive-universal-parser-v9.14.1',disciplineRegistry,auditWarnings,confidence:materias.reduce((s,m)=>s+(Number(m.confidence)||.5),0)/materias.length,weights};
         }
 
         async function prepareAiCargoSelector(fileObj) {
@@ -6187,7 +6242,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V9.14 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V9.14.1 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -6276,7 +6331,7 @@
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
                 const auditNote=(extraction.auditWarnings||[]).length ? ` Verificação estrutural: ${extraction.auditWarnings.length} alerta(s). Revise o preview antes de importar.` : '';
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.14; modelo: ${modelInfo}.${auditNote}`);
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.14.1; modelo: ${modelInfo}.${auditNote}`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
