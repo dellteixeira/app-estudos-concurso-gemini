@@ -195,6 +195,44 @@
             margin-bottom: 0.85rem;
             text-align: center;
         }
+
+        .active-study-context {
+            width: min(100%, 720px);
+            margin: 0.85rem auto 0;
+            padding: 0.7rem 0.85rem;
+            border: 1px solid rgba(56,189,248,.28);
+            background: rgba(14,165,233,.08);
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            text-align: left;
+        }
+        .active-study-context.visible { display: flex; }
+        .active-study-context-copy { min-width: 0; }
+        .active-study-context-label { display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:#7dd3fc; font-weight:800; margin-bottom:2px; }
+        .active-study-context-title { display:block; font-size:.84rem; font-weight:800; color:var(--text-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .active-study-context-clear { border:0; background:transparent; color:#94a3b8; cursor:pointer; font-size:1rem; padding:.2rem .35rem; border-radius:6px; }
+        .active-study-context-clear:hover { color:#fff; background:rgba(148,163,184,.12); }
+
+        .subject-hours-panel { margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-color); }
+        .subject-hours-panel h4 { margin:0 0 .7rem; font-size:.9rem; color:var(--header-materia-text); }
+        .subject-hours-list { display:grid; gap:.5rem; }
+        .subject-hours-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.7rem; align-items:center; }
+        .subject-hours-main { min-width:0; }
+        .subject-hours-name { display:flex; justify-content:space-between; gap:.6rem; font-size:.76rem; color:var(--text-color); font-weight:700; margin-bottom:4px; }
+        .subject-hours-name span:first-child { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .subject-hours-track { height:6px; background:rgba(148,163,184,.14); border-radius:999px; overflow:hidden; }
+        .subject-hours-fill { height:100%; background:linear-gradient(90deg,#3b82f6,#0ea5e9); border-radius:999px; }
+        .subject-hours-time { font-size:.74rem; color:#93c5fd; font-weight:800; min-width:48px; text-align:right; }
+        .subject-hours-empty { font-size:.78rem; color:#94a3b8; padding:.35rem 0; }
+        .btn-study-start { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:white; }
+        .btn-study-start:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(14,165,233,.22); }
+        @media (max-width: 760px) {
+            .active-study-context { align-items:flex-start; }
+            .subject-hours-name { font-size:.72rem; }
+        }
         .pomodoro-daily-stats {
             width: min(100%, 720px);
             margin: 0 auto 0.85rem;
@@ -1553,6 +1591,13 @@
                             <div class="pomodoro-progress-fill" id="dailyPomodoroProgress"></div>
                         </div>
                         <div class="pomodoro-daily-status" id="dailyPomodoroStatus">Gere um cronograma para definir a meta diária.</div>
+                        <div class="active-study-context" id="activeStudyContextBox">
+                            <div class="active-study-context-copy">
+                                <span class="active-study-context-label">Estudando agora</span>
+                                <span class="active-study-context-title" id="activeStudyContextTitle"></span>
+                            </div>
+                            <button class="active-study-context-clear" type="button" onclick="clearActiveStudyContext()" title="Desvincular matéria">✕</button>
+                        </div>
                         <button class="btn btn-danger btn-sm pomodoro-reset-hours" type="button" onclick="resetDailyPomodoroHours()">Resetar Horas do Dia</button>
                     </div>
                 </div>
@@ -1561,6 +1606,10 @@
                     <h3>Progresso Geral de Estudo (%)</h3>
                     <canvas id="progressChart" height="150"></canvas>
                     <div class="chart-legend-grid" id="chartLegendGrid"></div>
+                    <div class="subject-hours-panel">
+                        <h4>Horas por Matéria</h4>
+                        <div class="subject-hours-list" id="subjectStudyHoursList"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1926,7 +1975,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V9.17 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V9.19 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -2681,6 +2730,7 @@
                                     <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
                                 </label>
                             ` : ''}
+                            ${matchedItem ? `<button class="btn btn-sm btn-study-start" onclick="startScheduledTopicStudy(${idx})">▶ Iniciar</button>` : ''}
                             <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
                         </div>
@@ -3580,6 +3630,37 @@
             renderMonthCalendar();
         }
 
+        function getScheduledItemStudyState(scheduleText, editalLookup = null) {
+            const text = String(scheduleText || '');
+            const cleanTop = text.replace(/^🔄 Rev \(\d+d\): /, '');
+            const isRevision = text.startsWith('🔄 Rev');
+            const lookup = editalLookup || new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const matchedItem = lookup.get(cleanTop);
+
+            if (!matchedItem) {
+                return { done: false, isRevision, matched: false, cleanTop };
+            }
+
+            let done = false;
+            if (isRevision) {
+                if (text.includes('24h')) done = !!matchedItem.rev_24h;
+                else if (text.includes('7d')) done = !!matchedItem.rev_7d;
+                else if (text.includes('30d')) done = !!matchedItem.rev_30d;
+                else done = !!(matchedItem.rev_24h || matchedItem.rev_7d || matchedItem.rev_30d);
+            } else {
+                // Mantém o mesmo critério já usado pelo calendário: o estudo-base
+                // está concluído quando Teoria OU Questões foi registrado.
+                done = !!(matchedItem.teoria || matchedItem.questoes);
+            }
+
+            return { done, isRevision, matched: true, cleanTop, matchedItem };
+        }
+
+        function getPendingScheduledItems(items, editalLookup = null) {
+            if (!Array.isArray(items)) return [];
+            return items.filter(it => !getScheduledItemStudyState(it, editalLookup).done);
+        }
+
         function renderMonthCalendar() {
             const grid = document.getElementById('monthCalendarGrid');
             if (!grid) return;
@@ -3609,24 +3690,10 @@
                 const badgeParts = [];
 
                 items.forEach(it => {
-                    const cleanTop = it.replace(/^🔄 Rev \(\d+d\): /, '');
-                    const isRev = it.startsWith('🔄 Rev');
-                    if (isRev) revisionCount++;
-                    const matchedItem = editalLookup.get(cleanTop);
-                    let isDone = false;
-
-                    if (matchedItem) {
-                        if (isRev) {
-                            if (it.includes('24h')) isDone = !!matchedItem.rev_24h;
-                            else if (it.includes('7d')) isDone = !!matchedItem.rev_7d;
-                            else if (it.includes('30d')) isDone = !!matchedItem.rev_30d;
-                            else isDone = !!(matchedItem.rev_24h || matchedItem.rev_7d || matchedItem.rev_30d);
-                        } else {
-                            isDone = !!(matchedItem.teoria || matchedItem.questoes);
-                        }
-                    }
-                    if (isDone) completedCount++;
-                    badgeParts.push(`<div class="clean-subject-badge ${isDone ? 'done' : (isRev ? 'rev' : '')}">${escapeHtml(it)}</div>`);
+                    const state = getScheduledItemStudyState(it, editalLookup);
+                    if (state.isRevision) revisionCount++;
+                    if (state.done) completedCount++;
+                    badgeParts.push(`<div class="clean-subject-badge ${state.done ? 'done' : (state.isRevision ? 'rev' : '')}">${escapeHtml(it)}</div>`);
                 });
 
                 const allDone = items.length > 0 && completedCount === items.length;
@@ -3944,25 +4011,26 @@
             const dateSchedule = metadata[currentConcurso]?.dateSchedule || {};
             const todayStr = getLocalDateKey();
 
-            let count = 0;
-            Object.keys(dateSchedule).forEach(dKey => {
-                if (dKey < todayStr && Array.isArray(dateSchedule[dKey]) && dateSchedule[dKey].length > 0) {
-                    count += dateSchedule[dKey].length;
-                }
-            });
+            // A agenda e o calendário devem obedecer à MESMA regra de conclusão.
+            // Um item concluído deixa imediatamente de ser considerado pendente/atrasado.
+            const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const scheduleWithPending = Object.keys(dateSchedule).sort().map(dKey => ({
+                date: dKey,
+                items: getPendingScheduledItems(dateSchedule[dKey], editalLookup)
+            }));
+
+            const count = scheduleWithPending
+                .filter(group => group.date < todayStr)
+                .reduce((sum, group) => sum + group.items.length, 0);
             document.getElementById('delayedBadgeCount').textContent = `${count} atrasadas`;
 
-            const displayList = Object.keys(dateSchedule)
-                .sort()
-                .filter(dKey => {
-                    const items = dateSchedule[dKey];
-                    if (!Array.isArray(items) || items.length === 0) return false;
-                    if (currentDelayedFilter === 'hoje') return dKey === todayStr;
-                    if (currentDelayedFilter === 'atrasadas') return dKey < todayStr;
-                    if (currentDelayedFilter === 'proximas') return dKey > todayStr;
-                    return false;
-                })
-                .map(dKey => ({ date: dKey, items: dateSchedule[dKey] }));
+            const displayList = scheduleWithPending.filter(group => {
+                if (!group.items.length) return false;
+                if (currentDelayedFilter === 'hoje') return group.date === todayStr;
+                if (currentDelayedFilter === 'atrasadas') return group.date < todayStr;
+                if (currentDelayedFilter === 'proximas') return group.date > todayStr;
+                return false;
+            });
 
             if (displayList.length === 0) {
                 container.innerHTML = '<p style="opacity: 0.8; font-size:0.9rem;">Nenhum item agendado para esta aba.</p>';
@@ -4794,6 +4862,7 @@
         let timerHasStarted = false;
         let currentFocusCycleMinutes = 0;
         let timerMode = 'focus';
+        let activeStudyContext = null;
         let pomodoroAudioContext = null;
 
         function preparePomodoroAudio() {
@@ -4860,6 +4929,127 @@
         function playPomodoroCompletionBell() {
             // Cinco toques fortes e mais próximos ao finalizar.
             playPomodoroBellSequence(5, 320);
+        }
+
+        function normalizeScheduledTopicForStudy(rawText) {
+            return String(rawText || '').replace(/^🔄 Rev \(\d+d\):\s*/, '').trim();
+        }
+
+        function renderActiveStudyContext() {
+            const box = document.getElementById('activeStudyContextBox');
+            const title = document.getElementById('activeStudyContextTitle');
+            if (!box || !title) return;
+            if (!activeStudyContext || activeStudyContext.concurso !== currentConcurso) {
+                box.classList.remove('visible');
+                title.textContent = '';
+                return;
+            }
+            title.textContent = `${activeStudyContext.materia} — ${activeStudyContext.assunto}`;
+            box.classList.add('visible');
+        }
+
+        function clearActiveStudyContext() {
+            activeStudyContext = null;
+            renderActiveStudyContext();
+        }
+
+        function getStudySessions() {
+            const metadata = getConcursosMetadata();
+            const sessions = metadata[currentConcurso]?.studySessions;
+            return Array.isArray(sessions) ? sessions : [];
+        }
+
+        function getSubjectStudyTotals() {
+            const totals = new Map();
+            getStudySessions().forEach(session => {
+                const materia = String(session?.materia || '').trim();
+                const minutes = Math.max(0, Number(session?.minutes || 0));
+                if (!materia || !minutes) return;
+                totals.set(materia, (totals.get(materia) || 0) + minutes);
+            });
+            return [...totals.entries()].map(([materia, minutes]) => ({ materia, minutes })).sort((a,b) => b.minutes - a.minutes);
+        }
+
+        function renderSubjectStudyHours() {
+            const list = document.getElementById('subjectStudyHoursList');
+            if (!list) return;
+            const totals = getSubjectStudyTotals();
+            if (!totals.length) {
+                list.innerHTML = '<div class="subject-hours-empty">Inicie uma matéria pelo cronograma para contabilizar o tempo por disciplina.</div>';
+                return;
+            }
+            const max = Math.max(...totals.map(x => x.minutes), 1);
+            const visible = totals.slice(0, 8);
+            list.innerHTML = visible.map(row => {
+                const pct = Math.max(5, Math.round((row.minutes / max) * 100));
+                return `<div class="subject-hours-row">
+                    <div class="subject-hours-main">
+                        <div class="subject-hours-name"><span title="${escapeHtml(row.materia)}">${escapeHtml(row.materia)}</span></div>
+                        <div class="subject-hours-track"><div class="subject-hours-fill" style="width:${pct}%"></div></div>
+                    </div>
+                    <div class="subject-hours-time">${formatStudyMinutes(row.minutes)}</div>
+                </div>`;
+            }).join('');
+        }
+
+        async function recordStudyMinutesForContext(minutes, context = activeStudyContext) {
+            const amount = Math.max(0, Math.round(Number(minutes) || 0));
+            if (!amount || !context || context.concurso !== currentConcurso) return;
+            const metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = { dataProva:null, dateSchedule:{} };
+            if (!Array.isArray(metadata[currentConcurso].studySessions)) metadata[currentConcurso].studySessions = [];
+            metadata[currentConcurso].studySessions.push({
+                dateKey: getLocalDateKey(),
+                scheduledDateKey: context.dateKey || null,
+                materia: context.materia,
+                assunto: context.assunto,
+                minutes: amount,
+                source: 'pomodoro',
+                createdAt: new Date().toISOString()
+            });
+            await saveConcursosMetadata(metadata);
+            renderSubjectStudyHours();
+        }
+
+        async function removeStudySessionsForDate(dateKey = getLocalDateKey()) {
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso];
+            if (!contest || !Array.isArray(contest.studySessions)) return;
+            contest.studySessions = contest.studySessions.filter(s => s?.dateKey !== dateKey);
+            await saveConcursosMetadata(metadata);
+            renderSubjectStudyHours();
+        }
+
+        function startScheduledTopicStudy(idx) {
+            if (!activeSelectedDateKey) return;
+            const metadata = getConcursosMetadata();
+            const raw = metadata[currentConcurso]?.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            if (!raw) return;
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const matched = editalItems.find(i => `${i.materia} - ${i.assunto}` === clean);
+            if (!matched) {
+                alert('Este item não está vinculado a uma matéria do edital verticalizado. Edite o item antes de iniciar.');
+                return;
+            }
+            activeStudyContext = {
+                concurso: currentConcurso,
+                materia: matched.materia,
+                assunto: matched.assunto,
+                itemId: matched.id,
+                dateKey: activeSelectedDateKey
+            };
+            renderActiveStudyContext();
+            closeModalDayContent();
+
+            const editalTabButton = [...document.querySelectorAll('.tab-btn')]
+                .find(btn => /edital verticalizado/i.test(btn.textContent || ''));
+            if (editalTabButton) switchTab('tab-edital', editalTabButton);
+
+            requestAnimationFrame(() => {
+                const pomodoro = document.querySelector('.pomodoro-card');
+                if (pomodoro) pomodoro.scrollIntoView({ behavior:'smooth', block:'center' });
+                startFocusTimer();
+            });
         }
 
         function getLocalDateKey(date = new Date()) {
@@ -4977,6 +5167,8 @@
             const progressEl = document.getElementById('dailyPomodoroProgress');
             const statusEl = document.getElementById('dailyPomodoroStatus');
             if (!generalEl || !totalEl || !targetEl || !progressEl || !statusEl) return;
+            renderActiveStudyContext();
+            renderSubjectStudyHours();
 
             const studiedMinutes = getDailyPomodoroMinutes();
             const targetHours = getPomodoroDailyTargetHours();
@@ -5011,6 +5203,7 @@
             if (!confirm('Deseja zerar todas as horas Pomodoro contabilizadas hoje?')) return;
             localStorage.removeItem(getDailyPomodoroStorageKey());
             localStorage.removeItem(getDailyPomodoroExtraStorageKey());
+            removeStudySessionsForDate(getLocalDateKey());
             renderPomodoroDailyCounter();
         }
 
@@ -5070,6 +5263,9 @@
                             if (newExtraMinutes > 0) addDailyPomodoroExtraMinutes(newExtraMinutes);
                         }
                         setDailyPomodoroMinutes(studiedAfter);
+                        if (activeStudyContext && activeStudyContext.concurso === currentConcurso) {
+                            recordStudyMinutesForContext(currentFocusCycleMinutes, { ...activeStudyContext });
+                        }
                         currentFocusCycleMinutes = 0;
                         updatePauseButton();
                         playPomodoroCompletionBell();
@@ -6493,7 +6689,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V9.17 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V9.19 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -6582,7 +6778,7 @@
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
                 const auditNote=(extraction.auditWarnings||[]).length ? ` Verificação estrutural: ${extraction.auditWarnings.length} alerta(s). Revise o preview antes de importar.` : '';
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.17; modelo: ${modelInfo}.${auditNote}`);
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.19; modelo: ${modelInfo}.${auditNote}`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
