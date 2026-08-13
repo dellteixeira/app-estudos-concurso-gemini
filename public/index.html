@@ -4796,18 +4796,43 @@
         }
 
         async function limparCronogramaMesAtual() {
-            if (confirm('Deseja limpar todos os agendamentos do mês exibido?')) {
-                let metadata = getConcursosMetadata();
-                if (metadata[currentConcurso]?.dateSchedule) {
-                    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-                    for (let day = 1; day <= daysInMonth; day++) {
-                        const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        delete metadata[currentConcurso].dateSchedule[dateKey];
-                    }
-                    await saveConcursosMetadata(metadata);
-                    renderMonthCalendar();
-                }
+            if (!confirm('Deseja limpar todos os agendamentos do mês exibido?\n\nAs horas de Teoria e Questões vinculadas a esses agendamentos também serão removidas para manter o controle sincronizado com o cronograma.')) return;
+
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso];
+            if (!contest?.dateSchedule) return;
+
+            const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-`;
+            const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+            // 1) Remove os agendamentos do mês exibido.
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${monthPrefix}${String(day).padStart(2, '0')}`;
+                delete contest.dateSchedule[dateKey];
+                // Remove apenas o excedente específico deste concurso/data.
+                // A chave diária legada não é apagada por ser compartilhada entre concursos.
+                localStorage.removeItem(getDailyPomodoroExtraStorageKey(dateKey));
             }
+
+            // 2) Remove somente sessões de estudo vinculadas aos agendamentos apagados.
+            // Sessões de outros meses permanecem preservadas.
+            if (Array.isArray(contest.studySessions)) {
+                contest.studySessions = contest.studySessions.filter(session =>
+                    !String(session?.scheduledDateKey || '').startsWith(monthPrefix)
+                );
+            }
+
+            // Evita manter um contexto ativo apontando para um dia que deixou de existir.
+            if (activeStudyContext?.concurso === currentConcurso &&
+                String(activeStudyContext?.dateKey || '').startsWith(monthPrefix)) {
+                clearActiveStudyContext();
+            }
+
+            await saveConcursosMetadata(metadata);
+            renderMonthCalendar();
+            renderPomodoroDailyCounter();
+            renderSubjectStudyHours();
+            updateModernOverview();
         }
 
         async function limparMateriasEstudadas() {
@@ -6088,9 +6113,15 @@
             return getPlannedPomodoroMinutes() + getTotalPomodoroExtraMinutes();
         }
 
-        function getDailyPomodoroMinutes() {
-            const value = parseInt(localStorage.getItem(getDailyPomodoroStorageKey()) || '0');
-            return Number.isFinite(value) && value > 0 ? value : 0;
+        function getDailyPomodoroMinutes(dateKey = getLocalDateKey()) {
+            // Fonte canônica do "Estudado Hoje": sessões efetivamente vinculadas
+            // ao concurso/cronograma atual. Isso mantém o contador sincronizado
+            // com Horas Estudadas e evita horas órfãs após limpar o cronograma.
+            return getStudySessions().reduce((total, session) => {
+                if (session?.dateKey !== dateKey) return total;
+                const minutes = Math.max(0, Number(session?.minutes || 0));
+                return total + minutes;
+            }, 0);
         }
 
         function getTotalEffectivePomodoroMinutes() {
