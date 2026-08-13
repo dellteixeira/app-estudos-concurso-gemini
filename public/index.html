@@ -2672,13 +2672,18 @@
                     <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard Individual</button>
                 </form>
 
-                <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                    <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px;">
-                        Baralhos / Pastas de Flashcards (Estilo Anki)
+                <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:10px;">
+                    <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px; margin:0;">
+                        Flashcards Estilo Anki
                     </h4>
-                    <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" onclick="setFlashcardViewFilter('', '')" style="display: none;">
-                        Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
-                    </button>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="exportAllFlashcards()" title="Exportar todos os flashcards deste concurso organizados por matéria e assunto">Exportar Flashcards</button>
+                        <button class="btn btn-primary btn-sm" type="button" onclick="document.getElementById('flashcardsImportFile').click()" title="Importar flashcards exportados de outro concurso">Importar Flashcards</button>
+                        <input id="flashcardsImportFile" type="file" accept="application/json,.json" style="display:none;" onchange="importFlashcardsFromFile(event)">
+                        <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" onclick="setFlashcardViewFilter('', '')" style="display: none;">
+                            Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
+                        </button>
+                    </div>
                 </div>
 
                 <div id="flashcardFoldersContainer" style="margin-bottom: 1.5rem;"></div>
@@ -4452,6 +4457,139 @@
             }
         }
 
+        function buildFlashcardExportPayload() {
+            const hierarchy = {};
+            (flashcardsList || []).forEach(fc => {
+                const materia = String(fc.materia || 'Geral / Sem Matéria').trim() || 'Geral / Sem Matéria';
+                const assunto = String(fc.assunto || 'Sem Assunto Específico').trim() || 'Sem Assunto Específico';
+                if (!hierarchy[materia]) hierarchy[materia] = {};
+                if (!hierarchy[materia][assunto]) hierarchy[materia][assunto] = [];
+                hierarchy[materia][assunto].push({
+                    pergunta: String(fc.pergunta || ''),
+                    resposta: String(fc.resposta || '')
+                });
+            });
+
+            const pastas = Object.keys(hierarchy).sort((a,b) => a.localeCompare(b, 'pt-BR')).map(materia => ({
+                materia,
+                assuntos: Object.keys(hierarchy[materia]).sort((a,b) => a.localeCompare(b, 'pt-BR')).map(assunto => ({
+                    assunto,
+                    flashcards: hierarchy[materia][assunto]
+                }))
+            }));
+
+            return {
+                formato: 'painel-estudos-flashcards',
+                versao: 1,
+                concursoOrigem: currentConcurso,
+                exportadoEm: new Date().toISOString(),
+                totalFlashcards: (flashcardsList || []).length,
+                pastas
+            };
+        }
+
+        function exportAllFlashcards() {
+            if (!Array.isArray(flashcardsList) || flashcardsList.length === 0) {
+                alert('Não há flashcards neste concurso para exportar.');
+                return;
+            }
+            const payload = buildFlashcardExportPayload();
+            const safeContest = String(currentConcurso || 'concurso')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'concurso';
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `flashcards_${safeContest}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function normalizeImportedFlashcardsPayload(payload) {
+            const cards = [];
+            const pushCard = (raw, materiaFallback = '', assuntoFallback = '') => {
+                if (!raw || typeof raw !== 'object') return;
+                const pergunta = String(raw.pergunta ?? raw.frente ?? raw.question ?? '').trim();
+                const resposta = String(raw.resposta ?? raw.verso ?? raw.answer ?? '').trim();
+                if (!pergunta || !resposta) return;
+                cards.push({
+                    materia: String(raw.materia ?? materiaFallback ?? '').trim(),
+                    assunto: String(raw.assunto ?? assuntoFallback ?? '').trim(),
+                    pergunta,
+                    resposta
+                });
+            };
+
+            if (payload?.formato === 'painel-estudos-flashcards' && Array.isArray(payload.pastas)) {
+                payload.pastas.forEach(pasta => {
+                    const materia = String(pasta?.materia || '').trim();
+                    (pasta?.assuntos || []).forEach(grupo => {
+                        const assunto = String(grupo?.assunto || '').trim();
+                        (grupo?.flashcards || grupo?.cards || []).forEach(card => pushCard(card, materia, assunto));
+                    });
+                });
+                return cards;
+            }
+
+            const flat = Array.isArray(payload) ? payload :
+                (Array.isArray(payload?.flashcards) ? payload.flashcards :
+                (Array.isArray(payload?.cards) ? payload.cards : []));
+            flat.forEach(card => pushCard(card));
+            return cards;
+        }
+
+        async function importFlashcardsFromFile(event) {
+            const input = event?.target;
+            const file = input?.files?.[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const payload = JSON.parse(text);
+                const importedCards = normalizeImportedFlashcardsPayload(payload);
+                if (!importedCards.length) throw new Error('O arquivo não contém flashcards reconhecíveis.');
+
+                const existingKeys = new Set((flashcardsList || []).map(fc =>
+                    [fc.materia, fc.assunto, fc.pergunta, fc.resposta]
+                        .map(v => String(v || '').trim().toLocaleLowerCase('pt-BR')).join('\u241f')
+                ));
+                let added = 0;
+                let duplicates = 0;
+                importedCards.forEach(card => {
+                    const key = [card.materia, card.assunto, card.pergunta, card.resposta]
+                        .map(v => String(v || '').trim().toLocaleLowerCase('pt-BR')).join('\u241f');
+                    if (existingKeys.has(key)) { duplicates++; return; }
+                    existingKeys.add(key);
+                    flashcardsList.push({
+                        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                        materia: card.materia,
+                        assunto: card.assunto,
+                        pergunta: card.pergunta,
+                        resposta: card.resposta
+                    });
+                    added++;
+                });
+
+                if (added) {
+                    openFcFolders = {};
+                    activeFcMateriaFilter = '';
+                    activeFcAssuntoFilter = '';
+                    await saveFlashcardsData();
+                    renderFlashcardFolders();
+                    renderFlashcards();
+                    populateFcMateriaDropdown();
+                }
+                alert(`${added} flashcard(s) importado(s) para "${currentConcurso}".${duplicates ? `\n${duplicates} duplicado(s) ignorado(s).` : ''}`);
+            } catch (error) {
+                console.error('Falha ao importar flashcards:', error);
+                alert('Não foi possível importar este arquivo de flashcards. Verifique se ele é um JSON exportado pelo Painel de Estudos.');
+            } finally {
+                if (input) input.value = '';
+            }
+        }
+
         function openModalFiltroEstudoFlashcards() {
             const matSel = document.getElementById('studyFilterMateria');
             if (!matSel) return;
@@ -4796,102 +4934,113 @@
         }
 
         async function limparCronogramaMesAtual() {
-            if (!confirm('Deseja limpar todos os agendamentos do mês exibido?\n\nAs horas de Teoria e Questões vinculadas a esse período, inclusive registros legados, também serão removidas. O progresso dos tópicos afetados será reconciliado com as sessões que restarem.')) return;
-
             const metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = { dataProva:null, dateSchedule:{} };
             const contest = metadata[currentConcurso];
             if (!contest.dateSchedule || typeof contest.dateSchedule !== 'object') contest.dateSchedule = {};
             if (!Array.isArray(contest.studySessions)) contest.studySessions = [];
 
-            const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-`;
-            const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-            const affectedTopicKeys = new Set();
+            const scheduledCount = Object.values(contest.dateSchedule).reduce((total, items) =>
+                total + (Array.isArray(items) ? items.length : 0), 0);
+            const sessionCount = contest.studySessions.length;
+            const hasPlanning = scheduledCount > 0 || sessionCount > 0 || Number(contest.pomodoroDailyTargetHours || 0) > 0 || contest.scheduleConfig;
 
-            // 1) Captura os tópicos existentes no cronograma antes de apagar o mês.
-            Object.entries(contest.dateSchedule).forEach(([dateKey, items]) => {
-                if (!dateKey.startsWith(monthPrefix) || !Array.isArray(items)) return;
-                items.forEach(raw => {
-                    const key = getScheduledStudyTopicKey(raw);
-                    if (key) affectedTopicKeys.add(key);
-                });
-            });
-
-            // 2) Inclui sessões do período, inclusive registros antigos sem scheduledDateKey.
-            contest.studySessions.forEach(session => {
-                const scheduledDateKey = String(session?.scheduledDateKey || '');
-                const actualDateKey = String(session?.dateKey || '');
-                const belongsToMonth =
-                    scheduledDateKey.startsWith(monthPrefix) ||
-                    (!scheduledDateKey && actualDateKey.startsWith(monthPrefix));
-                if (!belongsToMonth) return;
-                const key = getStudySessionTopicKey(session);
-                if (key) affectedTopicKeys.add(key);
-            });
-
-            // 3) Remove os agendamentos do mês exibido.
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateKey = `${monthPrefix}${String(day).padStart(2, '0')}`;
-                delete contest.dateSchedule[dateKey];
-            }
-
-            // 4) Remove sessões vinculadas ao mês e também sessões legadas do mesmo período.
-            const sessionsBefore = contest.studySessions.length;
-            contest.studySessions = contest.studySessions.filter(session => {
-                const scheduledDateKey = String(session?.scheduledDateKey || '');
-                const actualDateKey = String(session?.dateKey || '');
-                if (scheduledDateKey.startsWith(monthPrefix)) return false;
-                if (!scheduledDateKey && actualDateKey.startsWith(monthPrefix)) return false;
-                return true;
-            });
-            const removedSessions = sessionsBefore - contest.studySessions.length;
-
-            // 5) Remove resíduos locais das versões antigas do Pomodoro.
-            removeLegacyPomodoroKeysForMonth(monthPrefix);
-
-            // Se não restou nenhum conteúdo normal de estudo em todo o cronograma,
-            // a meta diária deixa de existir. Revisões isoladas não mantêm uma meta ativa.
-            if (!hasActiveStudySchedule(contest)) {
+            if (!hasPlanning) {
+                // Corrige também qualquer metadado residual de versões anteriores.
+                contest.dateSchedule = {};
+                contest.studySessions = [];
                 contest.pomodoroDailyTargetHours = 0;
                 contest.pomodoroScheduleMethod = null;
                 delete contest.scheduleConfig;
+                await saveConcursosMetadata(metadata);
+                renderMonthCalendar();
+                renderDelayedPanel();
+                renderPomodoroDailyCounter();
+                renderSubjectStudyHours();
+                renderChart();
+                updateModernOverview();
+                alert('O cronograma deste concurso já está vazio e sem meta ativa.');
+                return;
             }
 
-            // Evita manter timer/contexto ativo apontando para um dia apagado.
-            if (activeStudyContext?.concurso === currentConcurso &&
-                String(activeStudyContext?.dateKey || '').startsWith(monthPrefix)) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                timerHasStarted = false;
-                isTimerPaused = false;
-                currentFocusCycleMinutes = 0;
-                clearActiveStudyContext();
-                resetTimer();
+            const confirmar = confirm(
+                `Deseja limpar TODO o cronograma de "${currentConcurso}"?\n\n` +
+                'Isso removerá todos os agendamentos e revisões futuras, zerará a meta diária, apagará as sessões de Teoria/Questões vinculadas ao planejamento e reconciliará o Progresso Geral.\n\n' +
+                'Os flashcards, anotações e o edital verticalizado serão preservados.'
+            );
+            if (!confirmar) return;
+
+            // Fonte de verdade única: ao apagar o planejamento, nenhum estado derivado
+            // pode sobreviver como se ainda houvesse cronograma ativo.
+            contest.dateSchedule = {};
+            contest.studySessions = [];
+            contest.pomodoroDailyTargetHours = 0;
+            contest.pomodoroScheduleMethod = null;
+            delete contest.scheduleConfig;
+
+            // Remove resíduos legados de Pomodoro específicos do concurso.
+            const extraPrefix = getPomodoroExtraStoragePrefix();
+            const legacyKeys = [];
+            for (let index = 0; index < localStorage.length; index++) {
+                const key = localStorage.key(index);
+                if (key && key.startsWith(extraPrefix)) legacyKeys.push(key);
             }
+            legacyKeys.forEach(key => localStorage.removeItem(key));
+
+            // O contador diário legado não é mais a fonte canônica, mas é zerado para
+            // evitar ressurgimento caso uma versão antiga seja aberta posteriormente.
+            localStorage.removeItem(getDailyPomodoroStorageKey());
+
+            // Encerra qualquer sessão/timer ainda apontando para o planejamento removido.
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerHasStarted = false;
+            isTimerPaused = false;
+            currentFocusCycleMinutes = 0;
+            clearActiveStudyContext();
+            resetTimer();
 
             await saveConcursosMetadata(metadata);
 
-            // 6) Reconcilia os flags de Teoria/Questões com as sessões restantes.
-            const changedItems = reconcileEditalStudyFlagsFromSessions(affectedTopicKeys);
+            // Sem sessões restantes, Teoria e Questões do concurso voltam a falso.
+            const changedItems = [];
+            allEditalItems.forEach(item => {
+                if ((item.concurso || 'Concurso Geral') !== currentConcurso) return;
+                if (item.teoria || item.questoes) {
+                    item.teoria = false;
+                    item.questoes = false;
+                    changedItems.push(item);
+                }
+            });
+            if (changedItems.length) {
+                saveEditalToLocalStorage();
+                const state = getSyncState();
+                changedItems.forEach(item => {
+                    const id = String(item.id);
+                    state.editalUpserts[id] = { ...item, id };
+                    state.editalDeletes = state.editalDeletes.filter(savedId => String(savedId) !== id);
+                });
+                saveSyncState(state);
+            }
 
-            // 7) Atualização coordenada de toda a interface a partir das mesmas fontes.
+            // Atualização coordenada: calendário, abas Hoje/Atrasadas/Próximas,
+            // Meta Diária, Pomodoro, Horas por Matéria e Progresso Geral.
+            currentDelayedFilter = 'hoje';
+            document.querySelectorAll('.filter-tab').forEach((tb, idx) => tb.classList.toggle('active', idx === 0));
             filterDataByConcurso();
             renderMonthCalendar();
+            renderDelayedPanel();
             renderPomodoroDailyCounter();
             renderSubjectStudyHours();
             renderChart();
             updateModernOverview();
 
-            if (navigator.onLine && currentUser && changedItems > 0) {
-                try {
-                    await flushPendingEdital();
-                } catch (error) {
-                    console.warn('Reconciliação do progresso mantida na fila de sincronização:', error);
-                }
+            if (navigator.onLine && currentUser && changedItems.length) {
+                try { await flushPendingEdital(); }
+                catch (error) { console.warn('Reset do progresso mantido na fila de sincronização:', error); }
             }
 
-            const monthLabel = new Date(selectedYear, selectedMonth, 1).toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
-            alert(`Cronograma de ${monthLabel} limpo e sincronizado.\n\nSessões removidas: ${removedSessions}\nTópicos de Teoria/Questões reconciliados: ${changedItems}.`);
+            alert(`Cronograma de "${currentConcurso}" totalmente limpo e sincronizado.\n\nAgendamentos removidos: ${scheduledCount}\nSessões de estudo removidas: ${sessionCount}\nTópicos de Teoria/Questões zerados: ${changedItems.length}.`);
         }
 
         async function limparMateriasEstudadas() {
