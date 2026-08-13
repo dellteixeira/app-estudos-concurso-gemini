@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-26-study-hours-20260813';
+const CACHE_NAME = 'painel-estudos-v9-27-calendar-linked-hours-20260813';
 
 const APP_SHELL = [
   './manifest.json',
