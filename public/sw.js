@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9.10';
+const CACHE_NAME = 'painel-estudos-v9.11';
 
 const APP_SHELL = [
   './manifest.json',
