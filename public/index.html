@@ -4796,43 +4796,94 @@
         }
 
         async function limparCronogramaMesAtual() {
-            if (!confirm('Deseja limpar todos os agendamentos do mês exibido?\n\nAs horas de Teoria e Questões vinculadas a esses agendamentos também serão removidas para manter o controle sincronizado com o cronograma.')) return;
+            if (!confirm('Deseja limpar todos os agendamentos do mês exibido?\n\nAs horas de Teoria e Questões vinculadas a esse período, inclusive registros legados, também serão removidas. O progresso dos tópicos afetados será reconciliado com as sessões que restarem.')) return;
 
             const metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = { dataProva:null, dateSchedule:{} };
             const contest = metadata[currentConcurso];
-            if (!contest?.dateSchedule) return;
+            if (!contest.dateSchedule || typeof contest.dateSchedule !== 'object') contest.dateSchedule = {};
+            if (!Array.isArray(contest.studySessions)) contest.studySessions = [];
 
             const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-`;
             const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+            const affectedTopicKeys = new Set();
 
-            // 1) Remove os agendamentos do mês exibido.
+            // 1) Captura os tópicos existentes no cronograma antes de apagar o mês.
+            Object.entries(contest.dateSchedule).forEach(([dateKey, items]) => {
+                if (!dateKey.startsWith(monthPrefix) || !Array.isArray(items)) return;
+                items.forEach(raw => {
+                    const key = getScheduledStudyTopicKey(raw);
+                    if (key) affectedTopicKeys.add(key);
+                });
+            });
+
+            // 2) Inclui sessões do período, inclusive registros antigos sem scheduledDateKey.
+            contest.studySessions.forEach(session => {
+                const scheduledDateKey = String(session?.scheduledDateKey || '');
+                const actualDateKey = String(session?.dateKey || '');
+                const belongsToMonth =
+                    scheduledDateKey.startsWith(monthPrefix) ||
+                    (!scheduledDateKey && actualDateKey.startsWith(monthPrefix));
+                if (!belongsToMonth) return;
+                const key = getStudySessionTopicKey(session);
+                if (key) affectedTopicKeys.add(key);
+            });
+
+            // 3) Remove os agendamentos do mês exibido.
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateKey = `${monthPrefix}${String(day).padStart(2, '0')}`;
                 delete contest.dateSchedule[dateKey];
-                // Remove apenas o excedente específico deste concurso/data.
-                // A chave diária legada não é apagada por ser compartilhada entre concursos.
-                localStorage.removeItem(getDailyPomodoroExtraStorageKey(dateKey));
             }
 
-            // 2) Remove somente sessões de estudo vinculadas aos agendamentos apagados.
-            // Sessões de outros meses permanecem preservadas.
-            if (Array.isArray(contest.studySessions)) {
-                contest.studySessions = contest.studySessions.filter(session =>
-                    !String(session?.scheduledDateKey || '').startsWith(monthPrefix)
-                );
-            }
+            // 4) Remove sessões vinculadas ao mês e também sessões legadas do mesmo período.
+            const sessionsBefore = contest.studySessions.length;
+            contest.studySessions = contest.studySessions.filter(session => {
+                const scheduledDateKey = String(session?.scheduledDateKey || '');
+                const actualDateKey = String(session?.dateKey || '');
+                if (scheduledDateKey.startsWith(monthPrefix)) return false;
+                if (!scheduledDateKey && actualDateKey.startsWith(monthPrefix)) return false;
+                return true;
+            });
+            const removedSessions = sessionsBefore - contest.studySessions.length;
 
-            // Evita manter um contexto ativo apontando para um dia que deixou de existir.
+            // 5) Remove resíduos locais das versões antigas do Pomodoro.
+            removeLegacyPomodoroKeysForMonth(monthPrefix);
+
+            // Evita manter timer/contexto ativo apontando para um dia apagado.
             if (activeStudyContext?.concurso === currentConcurso &&
                 String(activeStudyContext?.dateKey || '').startsWith(monthPrefix)) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerHasStarted = false;
+                isTimerPaused = false;
+                currentFocusCycleMinutes = 0;
                 clearActiveStudyContext();
+                resetTimer();
             }
 
             await saveConcursosMetadata(metadata);
+
+            // 6) Reconcilia os flags de Teoria/Questões com as sessões restantes.
+            const changedItems = reconcileEditalStudyFlagsFromSessions(affectedTopicKeys);
+
+            // 7) Atualização coordenada de toda a interface a partir das mesmas fontes.
+            filterDataByConcurso();
             renderMonthCalendar();
             renderPomodoroDailyCounter();
             renderSubjectStudyHours();
+            renderChart();
             updateModernOverview();
+
+            if (navigator.onLine && currentUser && changedItems > 0) {
+                try {
+                    await flushPendingEdital();
+                } catch (error) {
+                    console.warn('Reconciliação do progresso mantida na fila de sincronização:', error);
+                }
+            }
+
+            const monthLabel = new Date(selectedYear, selectedMonth, 1).toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+            alert(`Cronograma de ${monthLabel} limpo e sincronizado.\n\nSessões removidas: ${removedSessions}\nTópicos de Teoria/Questões reconciliados: ${changedItems}.`);
         }
 
         async function limparMateriasEstudadas() {
@@ -5926,6 +5977,86 @@
             return Array.isArray(sessions) ? sessions : [];
         }
 
+        function getStudyTopicKey(materia, assunto) {
+            return `${String(materia || '').trim()} - ${String(assunto || '').trim()}`.trim();
+        }
+
+        function getStudySessionTopicKey(session) {
+            return getStudyTopicKey(session?.materia, session?.assunto);
+        }
+
+        function getScheduledStudyTopicKey(rawText) {
+            return normalizeScheduledTopicForStudy(rawText);
+        }
+
+        function removeLegacyPomodoroKeysForMonth(monthPrefix) {
+            const uid = currentUser ? currentUser.id : 'guest';
+            const keysToRemove = [];
+            for (let index = 0; index < localStorage.length; index++) {
+                const key = localStorage.key(index);
+                if (!key) continue;
+                if (key.startsWith(`pomodoro_daily_minutes_${uid}_${monthPrefix}`)) {
+                    keysToRemove.push(key);
+                    continue;
+                }
+                if (key.startsWith(`${getPomodoroExtraStoragePrefix()}${monthPrefix}`)) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+        }
+
+        function reconcileEditalStudyFlagsFromSessions(topicKeys) {
+            const affected = topicKeys instanceof Set ? topicKeys : new Set(topicKeys || []);
+            if (!affected.size) return 0;
+
+            const sessionState = new Map();
+            getStudySessions().forEach(session => {
+                const key = getStudySessionTopicKey(session);
+                if (!affected.has(key)) return;
+                if (!sessionState.has(key)) sessionState.set(key, { teoria:false, questoes:false });
+                const state = sessionState.get(key);
+                if (session?.activityType === 'questoes') state.questoes = true;
+                else state.teoria = true;
+            });
+
+            let changed = 0;
+            allEditalItems.forEach(item => {
+                if ((item.concurso || 'Concurso Geral') !== currentConcurso) return;
+                const key = getStudyTopicKey(item.materia, item.assunto);
+                if (!affected.has(key)) return;
+                const state = sessionState.get(key) || { teoria:false, questoes:false };
+                const nextTeoria = !!state.teoria;
+                const nextQuestoes = !!state.questoes;
+                if (!!item.teoria !== nextTeoria || !!item.questoes !== nextQuestoes) {
+                    item.teoria = nextTeoria;
+                    item.questoes = nextQuestoes;
+                    queueEditalUpsert(item);
+                    changed++;
+                }
+            });
+
+            if (changed) saveEditalToLocalStorage();
+            return changed;
+        }
+
+        function markEditalProgressFromStudyContext(context) {
+            if (!context || context.concurso !== currentConcurso) return false;
+            const item = allEditalItems.find(candidate => {
+                if ((candidate.concurso || 'Concurso Geral') !== currentConcurso) return false;
+                if (context.itemId && String(candidate.id) === String(context.itemId)) return true;
+                return getStudyTopicKey(candidate.materia, candidate.assunto) === getStudyTopicKey(context.materia, context.assunto);
+            });
+            if (!item) return false;
+
+            const field = context.activityType === 'questoes' ? 'questoes' : 'teoria';
+            if (item[field]) return false;
+            item[field] = true;
+            saveEditalToLocalStorage();
+            queueEditalUpsert(item);
+            return true;
+        }
+
         function getSubjectStudyTotals() {
             const totals = new Map();
             getStudySessions().forEach(session => {
@@ -5987,8 +6118,15 @@
                 createdAt: new Date().toISOString()
             });
             await saveConcursosMetadata(metadata);
-            renderSubjectStudyHours();
-            updateModernOverview();
+
+            const progressChanged = markEditalProgressFromStudyContext(context);
+            if (progressChanged) {
+                filterDataByConcurso();
+                renderMonthCalendar();
+            } else {
+                renderSubjectStudyHours();
+                updateModernOverview();
+            }
         }
 
         async function removeStudySessionsForDate(dateKey = getLocalDateKey()) {
@@ -6110,7 +6248,9 @@
         }
 
         function getGeneralPomodoroMinutes() {
-            return getPlannedPomodoroMinutes() + getTotalPomodoroExtraMinutes();
+            // "Horas Gerais" usa a mesma fonte canônica do card "Horas Estudadas":
+            // soma real de todas as sessões de foco (Teoria + Questões) do concurso atual.
+            return getTotalRecordedStudyMinutes();
         }
 
         function getDailyPomodoroMinutes(dateKey = getLocalDateKey()) {
