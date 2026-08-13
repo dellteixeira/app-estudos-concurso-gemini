@@ -1289,7 +1289,7 @@
         }
 
 
-        /* V8.9 — ANALISADOR IA: MODAL RESPONSIVO / UMA ÚNICA ROLAGEM */
+        /* V9.10 — ANALISADOR IA: MODAL RESPONSIVO / UMA ÚNICA ROLAGEM */
         @media (max-width: 900px), (max-height: 720px) {
             #modalAnaliseEditalIA {
                 padding: 0;
@@ -1887,7 +1887,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V8.9 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V9.10 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -5116,9 +5116,12 @@
             let raw=String(value||'').replace(/\s+/g,' ').trim();
             if (!raw) return '';
 
-            // Remove caudas administrativas que frequentemente aparecem depois do nome do cargo.
-            // A regra é semântica/estrutural, não depende de banca ou de uma lista de profissões.
+            // V9.10: o nome do cargo deve ser um sintagma nominal, nunca a frase administrativa
+            // inteira onde ele apareceu. Essas regras são semânticas e independentes de banca.
             raw=raw
+                .replace(/^\s*(?:cargo|emprego|fun[cç][aã]o)\s+(?:p[uú]blico\s+)?(?:inicial\s+)?(?:de\s+)?/i,'')
+                .replace(/^\s*(?:inicial|efetivo|efetiva|de\s+provimento\s+efetivo)\s+de\s+/i,'')
+                .replace(/\s*,?\s+(?:por\s+meio\s+de|mediante|atrav[eé]s\s+de)\s+(?:concurso|processo\s+seletivo)\b.*$/i,'')
                 .replace(/\s+(?:do|da|de)\s+quadro\b.*$/i,'')
                 .replace(/\s+(?:da|do)\s+carreira\b.*$/i,'')
                 .replace(/\s+(?:é|e)\s+de\s+R\$.*$/i,'')
@@ -5129,15 +5132,19 @@
                 .replace(/[,:;\-–—]+$/,'')
                 .trim();
 
-            // Não aceita fragmentos que claramente já carregam dados financeiros/administrativos.
+            // Normaliza hífen quebrado pelo PDF.js sem destruir travessões semânticos longos.
+            raw=raw.replace(/([A-Za-zÀ-ÿ])\s+-\s+([A-Za-zÀ-ÿ])/g,'$1-$2');
+
+            const f=foldEditalText(raw);
             if (/R\$|\b(?:remunera[cç][aã]o|sal[aá]rio|vencimento|subs[ií]dio|carga\s+hor[aá]ria|jornada|lota[cç][aã]o)\b/i.test(raw)) return '';
+            if (/\b(?:por meio de|mediante concurso|concurso publico de provas|processo seletivo|sera|serao|visando ao|destinado a)\b/.test(f)) return '';
             if ((raw.match(/\d/g)||[]).length>5) return '';
-            if (raw.length<3 || raw.length>110 || raw.split(/\s+/).length>16) return '';
+            if (raw.length<3 || raw.length>105 || raw.split(/\s+/).length>14) return '';
             return raw;
         }
 
         function inferSingleRoleFromPreamble(lines, programStart) {
-            const limit=Math.min(programStart>0?programStart:lines.length, Math.max(260, Math.floor(lines.length*.25)));
+            const limit=Math.min(programStart>0?programStart:lines.length, Math.max(320, Math.floor(lines.length*.30)));
             const candidates=[];
 
             const pushCandidate=(value,index,score,source)=>{
@@ -5146,51 +5153,78 @@
                 candidates.push({label:titleCaseLoose(cleaned),index,score,source});
             };
 
-            for (let i=0;i<limit;i++) {
-                const raw=String(lines[i]?.text||'').replace(/\s+/g,' ').trim();
-                if (!raw || raw.length>260) continue;
+            // PDF costuma quebrar uma única frase em 2–4 linhas. Reconstruímos janelas curtas
+            // antes de aplicar a gramática de cargo, mantendo a posição de origem para ranking.
+            const windows=[];
+            for(let i=0;i<limit;i++){
+                let text='';
+                for(let span=1;span<=4 && i+span<=limit;span++){
+                    const part=String(lines[i+span-1]?.text||'').replace(/\s+/g,' ').trim();
+                    if(!part) continue;
+                    text=(text+' '+part).trim();
+                    if(text.length>620) break;
+                    windows.push({text,index:i,span});
+                }
+            }
+
+            for (const w of windows) {
+                const raw=w.text;
+                if (!raw || raw.length>620) continue;
                 const f=foldEditalText(raw);
 
-                // Contextos de alta confiança: finalidade/objeto do certame.
-                // Aceita quantidade entre "provimento" e "cargos" (ex.: 2.000 (dois mil) cargos de ...).
-                let m=raw.match(/\b(?:provimento|preenchimento)\b[^;]{0,180}?\bcargos?\s+(?:de\s+)?(.+?)(?=\s+(?:do|da)\s+quadro\b|\s+(?:da|do)\s+carreira\b|[.;]|$)/i);
-                if (m) pushCandidate(m[1],i,10,'provimento');
+                // Objeto/finalidade do certame: fonte mais confiável para um cargo único.
+                // Ex.: "visando ao provimento de 2.000 (...) cargos de Aluno-Soldado PM do Quadro..."
+                let m=raw.match(/\b(?:provimento|preenchimento)\b.{0,260}?\bcargos?\s+de\s+(.+?)(?=\s+(?:do|da)\s+(?:quadro|carreira)\b|\s*,?\s+(?:por\s+meio\s+de|mediante)\b|[.;]|$)/i);
+                if (m) pushCandidate(m[1],w.index,14,'objeto-provimento');
 
-                m=raw.match(/\b(?:concurso|processo\s+seletivo)[^;]{0,140}?\b(?:destinad[oa]s?|visando|para)\b[^;]{0,160}?\bcargos?\s+(?:de\s+)?(.+?)(?=\s+(?:do|da)\s+quadro\b|[.;]|$)/i);
-                if (m) pushCandidate(m[1],i,9,'objeto-certame');
+                m=raw.match(/\b(?:concurso|processo\s+seletivo)\b.{0,220}?\b(?:destinad[oa]s?|visando|objetiva|para)\b.{0,220}?\bcargos?\s+de\s+(.+?)(?=\s+(?:do|da)\s+(?:quadro|carreira)\b|\s*,?\s+(?:por\s+meio\s+de|mediante)\b|[.;]|$)/i);
+                if (m) pushCandidate(m[1],w.index,12,'objeto-certame');
 
-                m=raw.match(/\b(?:selecionar|sele[cç][aã]o\s+de)\s+candidatos[^.;]{0,120}?\b(?:cargo|cargos|fun[cç][aã]o|fun[cç][oõ]es)\s+(?:de\s+)?(.+?)(?=[.;]|$)/i);
-                if (m) pushCandidate(m[1],i,8,'selecao-candidatos');
+                m=raw.match(/\b(?:vagas?|oportunidades?)\s+(?:destinad[oa]s?\s+)?(?:para|ao)\s+(?:o\s+)?(?:cargo|emprego|fun[cç][aã]o)\s+de\s+(.+?)(?=[,.;]|$)/i);
+                if (m) pushCandidate(m[1],w.index,11,'vagas-para');
 
-                // Cabeçalhos/declarações curtas de cargo têm confiança média.
+                m=raw.match(/\b(?:selecionar|sele[cç][aã]o\s+de)\s+candidatos.{0,180}?\b(?:cargo|cargos|fun[cç][aã]o|fun[cç][oõ]es)\s+(?:de\s+)?(.+?)(?=[.;]|$)/i);
+                if (m) pushCandidate(m[1],w.index,10,'selecao-candidatos');
+
+                // Cabeçalhos explícitos têm alta precisão mesmo fora do preâmbulo narrativo.
                 m=raw.match(/^\s*(?:CARGO|FUN[CÇ][AÃ]O|EMPREGO)\s*(?:\d+)?\s*[:–—-]\s*(.+)$/i);
-                if (m) pushCandidate(m[1],i,7,'heading');
+                if (m) pushCandidate(m[1],w.index,10,'heading');
 
-                // Fallback contextual: "cargo de X", mas rejeita frases de salário, jornada, lotação etc.
+                // Fallback: aceita "cargo inicial de X", mas a sanitização remove o modificador
+                // "inicial de" e qualquer cauda administrativa. Baixa prioridade por desenho.
                 if (!/(remunera[cç][aã]o|sal[aá]rio|vencimento|subs[ií]dio|jornada|carga horaria|lota[cç][aã]o|valor\s+de|R\$)/i.test(f)) {
-                    m=raw.match(/\b(?:cargo|fun[cç][aã]o|emprego)\s+(?:de\s+)?(.+?)(?=\s+(?:do|da)\s+quadro\b|[.;]|$)/i);
-                    if (m) pushCandidate(m[1],i,3,'fallback-cargo');
+                    m=raw.match(/\b(?:cargo|fun[cç][aã]o|emprego)\s+(.+?)(?=\s+(?:do|da)\s+(?:quadro|carreira)\b|[.;]|$)/i);
+                    if (m) pushCandidate(m[1],w.index,4,'fallback-cargo');
                 }
             }
             if (!candidates.length) return null;
 
-            // Agrupa o mesmo cargo encontrado em formas/contextos diferentes.
-            // O maior score estrutural pesa mais do que mera frequência de menções administrativas.
+            // Agrupa equivalentes e favorece o sintagma nominal mais curto quando uma versão
+            // longa contém a curta (evita "Aluno-Soldado PM, por meio de...").
+            const normalized=c=>foldEditalText(c.label).replace(/[^a-z0-9]+/g,' ').trim();
             const grouped=new Map();
             for (const c of candidates) {
-                const k=foldEditalText(c.label).replace(/[^a-z0-9]+/g,' ').trim();
-                if (!k) continue;
+                const k=normalized(c); if (!k) continue;
                 const g=grouped.get(k)||{...c,count:0,totalScore:0,bestScore:0};
-                g.count++;
-                g.totalScore+=c.score;
-                g.bestScore=Math.max(g.bestScore,c.score);
-                if (c.score>g.score || (c.score===g.score && c.index<g.index)) Object.assign(g,{label:c.label,index:c.index,score:c.score,source:c.source});
+                g.count++; g.totalScore+=c.score; g.bestScore=Math.max(g.bestScore,c.score);
+                if (c.score>g.score || (c.score===g.score && c.label.length<g.label.length)) Object.assign(g,{label:c.label,index:c.index,score:c.score,source:c.source});
                 grouped.set(k,g);
             }
-            const ranked=[...grouped.values()].sort((a,b)=>(b.bestScore-a.bestScore)||(b.totalScore-a.totalScore)||(b.count-a.count)||(a.index-b.index));
+            let ranked=[...grouped.values()];
+            for(const a of ranked){
+                const ka=normalized(a);
+                for(const b of ranked){
+                    if(a===b) continue;
+                    const kb=normalized(b);
+                    if(kb.length>=5 && ka!==kb && ka.includes(kb) && b.bestScore>=a.bestScore-2){
+                        b.totalScore+=Math.max(1,a.bestScore*.35); b.count+=1;
+                    }
+                }
+            }
+            ranked.sort((a,b)=>(b.bestScore-a.bestScore)||(b.totalScore-a.totalScore)||(b.count-a.count)||(a.label.length-b.label.length)||(a.index-b.index));
             const top=ranked[0];
-            if (!top || top.bestScore<3) return null;
-            const confidence=top.bestScore>=9?.98:top.bestScore>=7?.95:top.count>1?.90:.82;
+            if (!top || top.bestScore<4) return null;
+            const confidence=top.bestScore>=13?.995:top.bestScore>=10?.98:top.bestScore>=7?.94:top.count>1?.88:.80;
             return {code:`BL${hashEditalText(top.label)%10000}`,label:top.label,rawLabel:top.label,confidence,segments:[],educationLevel:'',synthetic:true,singleRole:true,sourceType:top.source};
         }
 
@@ -5571,8 +5605,79 @@
             return raw.replace(/^\(\s*(?:PARA\s+)?TODOS\s+OS\s+CARGOS(?:\/OCUPA[CÇ][OÕ]ES)?\s*\)\s*:\s*/i,'').trim();
         }
 
-        function parseDisciplineSections(lines, fallbackMateria, weight=1, priority=2) {
+        function normalizeDisciplineIdentity(text) {
+            return foldEditalText(stripSectionNumber(String(text||'')))
+                .replace(/\([^)]*\)/g,' ')
+                .replace(/\b(?:disciplina|materia|prova de|questoes?|peso)\b/g,' ')
+                .replace(/[^a-z0-9]+/g,' ')
+                .replace(/\s+/g,' ').trim();
+        }
+
+        function disciplineIdentityMatches(a,b) {
+            const A=normalizeDisciplineIdentity(a), B=normalizeDisciplineIdentity(b);
+            if(!A||!B) return false;
+            if(A===B) return true;
+            if(A.length>=6 && B.length>=6 && (A.includes(B)||B.includes(A))) return true;
+            const stop=new Set(['de','da','do','das','dos','e','em','para','no','na','nos','nas','com','nocao','nocoes']);
+            const ta=new Set(A.split(' ').filter(x=>x.length>2&&!stop.has(x)));
+            const tb=new Set(B.split(' ').filter(x=>x.length>2&&!stop.has(x)));
+            if(!ta.size||!tb.size) return false;
+            let inter=0; for(const x of ta) if(tb.has(x)) inter++;
+            const min=Math.min(ta.size,tb.size), union=new Set([...ta,...tb]).size;
+            return inter/min>=.67 || inter/union>=.58;
+        }
+
+        function detectExamDisciplineRegistry(lines, programStart) {
+            const found=[];
+            const seen=new Set();
+            const add=(name,confidence=.9,source='exam-composition')=>{
+                let raw=String(name||'').replace(/\s+/g,' ').replace(/[;,:.\-–—]+$/,'').trim();
+                raw=stripSectionNumber(raw).trim();
+                if(!raw||raw.length<3||raw.length>130||isMetaRoleLabel(raw)||roleSignal(raw)||isGenericProgramBoundary(raw)) return;
+                const f=normalizeDisciplineIdentity(raw); if(!f||seen.has(f)) return;
+                // Cabeçalhos administrativos/etapas não são disciplinas.
+                if(/^(prova objetiva|prova discursiva|prova dissertativa|redacao|total|etapa|fase|conteudo programatico|conhecimentos)$/.test(f)) return;
+                seen.add(f); found.push({name:titleCaseLoose(raw),key:f,confidence,source});
+            };
+            const before=lines.slice(0,Math.max(0,programStart));
+            for(let i=0;i<before.length;i++){
+                const raw=String(before[i]?.text||'').replace(/\s+/g,' ').trim();
+                if(!raw||raw.length>240) continue;
+                const ctx=foldEditalText(before.slice(Math.max(0,i-7),Math.min(before.length,i+8)).map(x=>x.text).join(' '));
+                if(!/(prova objetiva|numero de questoes|número de questões|questoes de multipla escolha|disciplinas|conteudo programatico|composicao da prova)/.test(ctx)) continue;
+
+                // Lista declarativa: "1.1.1. Língua Portuguesa ... - 20 (vinte);"
+                let stripped=stripSectionNumber(raw);
+                let m=stripped.match(/^(.{3,125}?)\s*[-–—]\s*\d{1,3}\s*(?:\([^)]*\))?\s*[;.]?$/i);
+                if(m) { add(m[1],.99,'exam-list'); continue; }
+
+                // Tabelas: nome da disciplina seguido de colunas numéricas (qtd/peso/pontos).
+                m=stripped.match(/^(.{3,105}?)\s+(\d{1,3})(?:\s+[0-9]+(?:[.,][0-9]+)?){1,4}\s*$/);
+                if(m) { add(m[1],.96,'exam-table'); continue; }
+
+                // Variante "Disciplina: 20 questões".
+                m=stripped.match(/^(.{3,110}?)\s*[:–—-]\s*\d{1,3}\s+quest(?:ão|ões|oes)\b/i);
+                if(m) { add(m[1],.97,'exam-count'); continue; }
+            }
+            // Só bloqueia a hierarquia se houver evidência de uma composição real com 2+ disciplinas.
+            return found.length>=2 && found.length<=40 ? found : [];
+        }
+
+        function matchRegistryDiscipline(name, registry) {
+            if(!Array.isArray(registry)||!registry.length) return null;
+            let best=null,score=0;
+            for(const r of registry){
+                if(!disciplineIdentityMatches(name,r.name)) continue;
+                const A=normalizeDisciplineIdentity(name),B=normalizeDisciplineIdentity(r.name);
+                let s=A===B?1:(A.includes(B)||B.includes(A))?.92:.78;
+                if(s>score){score=s;best=r;}
+            }
+            return best ? {...best,matchScore:score} : null;
+        }
+
+        function parseDisciplineSections(lines, fallbackMateria, weight=1, priority=2, registry=[]) {
             const sections=[]; let current=null;
+            const registryLocked=Array.isArray(registry)&&registry.length>=2;
             const flush=()=>{
                 if(!current)return;
                 const body=current.lines.map(x=>x.text||x).join(' ').trim();
@@ -5584,35 +5689,50 @@
                 const item=lines[i];
                 let line=String(item?.text??item??'').trim();
                 if(!line||isPdfNoiseLine(line)) continue;
-
-                // Não permite que números estruturais isolados apareçam como assunto.
                 if(isBareStructuralSectionNumber(line)) continue;
 
-                // Alguns PDFs quebram "(PARA TODOS OS CARGOS): 1 ..." para a linha
-                // seguinte ao nome da disciplina. Mantém somente o conteúdo após o escopo.
                 const scopeStripped=stripAudiencePrefixFromProgramLine(line);
                 if(scopeStripped!==line){
                     if(!scopeStripped) continue;
                     line=scopeStripped;
-                    const scopedItem=(typeof item==='object')?{...item,text:line}:{text:line};
-                    if(!current) current={name:fallbackMateria,lines:[],confidence:.48,method:'fallback-block'};
-                    current.lines.push(scopedItem);
-                    continue;
                 }
 
                 if(isGenericProgramBoundary(line)) continue;
                 if(looksLikeRoleHeading({...item,text:line}) && !findKnownDisciplineAtStart(line)) continue;
-                const heading=detectGenericDisciplineHeader(typeof item==='object'?{...item,text:line}:line);
+                let heading=detectGenericDisciplineHeader(typeof item==='object'?{...item,text:line}:line);
+
+                // V9.10: quando a própria prova já declarou suas disciplinas, esse registro é
+                // autoridade estrutural. Subtítulos internos (História Geral, Atualidades etc.)
+                // continuam como assuntos da matéria-pai, mesmo se visualmente parecerem headings.
+                if(heading && registryLocked){
+                    const reg=matchRegistryDiscipline(heading.name,registry);
+                    if(reg){
+                        heading={...heading,name:reg.name,confidence:Math.max(heading.confidence||.7,reg.confidence||.9),method:`registry-${reg.source}`};
+                    } else {
+                        heading=null;
+                    }
+                }
+
                 if(heading){
                     flush();
                     current={name:heading.name,lines:[],confidence:heading.confidence,method:heading.method};
                     if(heading.remainder) current.lines.push({text:heading.remainder,pageNumber:item?.pageNumber});
                     continue;
                 }
+
+                // Se o registro está bloqueado e ainda não chegamos à primeira matéria, não cria
+                // uma falsa matéria genérica; aguarda um heading canônico do edital.
+                if(!current && registryLocked) continue;
                 if(!current) current={name:fallbackMateria,lines:[],confidence:.48,method:'fallback-block'};
                 current.lines.push(typeof item==='object'?{...item,text:line}:{text:line});
             }
-            flush(); return sections;
+            flush();
+
+            if(registryLocked){
+                // Defesa final: nenhuma matéria fora da composição oficial da prova sobrevive.
+                return sections.filter(sec=>matchRegistryDiscipline(sec.materia,registry));
+            }
+            return sections;
         }
 
         function mergeMaterias(materias) {
@@ -5689,9 +5809,16 @@
             // Se um cargo foi detectado mas seu bloco específico ficou vazio, usa somente o intervalo do próprio cargo.
             if(!specificLines.length && !cargo.synthetic) specificLines=(cargo.segments||[]).flatMap(seg=>segmentLines(structure,seg));
 
-            const generalMaterias=parseDisciplineSections(generalLines,'Conhecimentos Gerais',weights.generalWeight||1,2);
+            const disciplineRegistry=detectExamDisciplineRegistry(structure.lines,structure.programStart);
+            let generalMaterias=parseDisciplineSections(generalLines,'Conhecimentos Gerais',weights.generalWeight||1,2,disciplineRegistry);
             const fallbackSpecific=cargo.synthetic?'Conhecimentos do Edital':`Conhecimentos Específicos — ${titleCaseLoose(cargo.rawLabel||cargo.label)}`;
-            const specificMaterias=parseDisciplineSections(specificLines,fallbackSpecific,weights.specificWeight||1,(weights.specificWeight>weights.generalWeight)?1:2);
+            let specificMaterias=parseDisciplineSections(specificLines,fallbackSpecific,weights.specificWeight||1,(weights.specificWeight>weights.generalWeight)?1:2,disciplineRegistry);
+            // Se o quadro da prova foi encontrado mas não casou com este recorte (edital excepcional),
+            // recua com segurança para a análise estrutural original em vez de retornar vazio.
+            if(disciplineRegistry.length>=2 && !generalMaterias.length && !specificMaterias.length){
+                generalMaterias=parseDisciplineSections(generalLines,'Conhecimentos Gerais',weights.generalWeight||1,2,[]);
+                specificMaterias=parseDisciplineSections(specificLines,fallbackSpecific,weights.specificWeight||1,(weights.specificWeight>weights.generalWeight)?1:2,[]);
+            }
             let materias=mergeMaterias([...generalMaterias,...specificMaterias]);
 
             // Remove artefatos de escopo que eventualmente tenham sido interpretados como disciplina.
@@ -5703,7 +5830,7 @@
 
             const selectedPages=[...new Set([...generalLines,...specificLines].map(x=>x.pageNumber).filter(Boolean))].sort((a,b)=>a-b);
             const text=[`BLOCO/CARGO SELECIONADO: ${cargo.label}`,cargo.educationLevel?`NÍVEL INFERIDO: ${cargo.educationLevel}`:'',`PESO GERAL: ${weights.generalWeight||1}`,`PESO ESPECÍFICO: ${weights.specificWeight||1}`,'','===== CONTEÚDO COMUM/GERAL =====',generalLines.map(x=>x.text).join('\n'),'','===== CONTEÚDO ESPECÍFICO =====',specificLines.map(x=>x.text).join('\n')].filter(Boolean).join('\n').slice(0,98000);
-            return {cargo,materias,text,totalPages:structure.totalPages,selectedPages,selectedChars:text.length,selectionMode:'adaptive-universal-parser-v8.5',confidence:materias.reduce((s,m)=>s+(Number(m.confidence)||.5),0)/materias.length,weights};
+            return {cargo,materias,text,totalPages:structure.totalPages,selectedPages,selectedChars:text.length,selectionMode:'adaptive-universal-parser-v9.10',disciplineRegistry,confidence:materias.reduce((s,m)=>s+(Number(m.confidence)||.5),0)/materias.length,weights};
         }
 
         async function prepareAiCargoSelector(fileObj) {
@@ -5713,7 +5840,7 @@
                 const structure=await loadAiPdfStructure(fileObj.blob,fileObj.name||'');
                 select.innerHTML='<option value="">Selecione o cargo/área/especialidade...</option>'+structure.cargos.map(c=>`<option value="${escapeHtml(c.code)}">${escapeHtml(cargoSelectLabel(c))}</option>`).join('');
                 select.disabled=false; if(structure.cargos.length===1)select.value=structure.cargos[0].code; analyzeBtn.disabled=false;
-                if(hint)hint.textContent=structure.cargos[0]?.synthetic?'Edital com cargo/bloco único: matérias e assuntos serão identificados automaticamente a partir do conteúdo programático.':`${structure.cargos.length} cargo(s)/área(s)/especialidade(s) localizado(s). O V8.9 combinará internamente conteúdo comum, nível/escolaridade e bloco específico quando existirem.`;
+                if(hint)hint.textContent=structure.cargos[0]?.synthetic?'Edital com cargo/bloco único: matérias e assuntos serão identificados automaticamente a partir do conteúdo programático.':`${structure.cargos.length} cargo(s)/área(s)/especialidade(s) localizado(s). O V9.10 combinará internamente conteúdo comum, nível/escolaridade e bloco específico quando existirem.`;
                 setAiEditalStatus('');
             }catch(error){console.error('Falha ao detectar estrutura:',error);select.innerHTML='<option value="">Não foi possível detectar blocos</option>';if(hint)hint.textContent=error.message||'Falha na leitura.';setAiEditalStatus(error.message||'Não foi possível detectar a estrutura.',true);}
         }
@@ -5762,7 +5889,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V8.9 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V9.10 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -5850,7 +5977,7 @@
                 renderAiEditalPreview(analysis, extraction);
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V8.9; modelo: ${modelInfo}.`);
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.10; modelo: ${modelInfo}.`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
