@@ -229,6 +229,18 @@
         .subject-hours-empty { font-size:.78rem; color:#94a3b8; padding:.35rem 0; }
         .btn-study-start { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:white; }
         .btn-study-start:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(14,165,233,.22); }
+        .study-launch-controls { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+        .study-minutes-input { width:68px; min-width:68px; padding:.5rem .45rem; border:1px solid var(--border-color); border-radius:9px; background:var(--input-bg); color:var(--text-color); text-align:center; font-weight:800; }
+        .btn-study-theory { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:#fff; }
+        .btn-study-questions { background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; }
+        .btn-study-theory:hover,.btn-study-questions:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(14,165,233,.18); }
+        .study-mode-badge { display:inline-flex; align-items:center; padding:2px 8px; margin-right:5px; border-radius:999px; font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.04em; background:rgba(14,165,233,.13); color:#7dd3fc; border:1px solid rgba(14,165,233,.25); }
+        .study-progress-breakdown { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:8px 0 14px; }
+        .study-progress-mini { border:1px solid var(--border-color); border-radius:12px; padding:9px 12px; background:rgba(15,23,42,.16); }
+        .study-progress-mini span { display:block; font-size:.68rem; color:#94a3b8; font-weight:800; text-transform:uppercase; }
+        .study-progress-mini strong { display:block; margin-top:2px; font-size:1rem; color:var(--text-color); }
+        .subject-hours-detail { font-size:.68rem; color:#94a3b8; margin-top:2px; }
+        @media (max-width:640px){ .study-progress-breakdown{grid-template-columns:1fr 1fr 1fr;} .study-launch-controls{gap:5px;} .study-minutes-input{width:58px; min-width:58px;} }
         @media (max-width: 760px) {
             .active-study-context { align-items:flex-start; }
             .subject-hours-name { font-size:.72rem; }
@@ -1604,6 +1616,11 @@
 
                 <div class="card">
                     <h3>Progresso Geral de Estudo (%)</h3>
+                    <div class="study-progress-breakdown">
+                        <div class="study-progress-mini"><span>Teoria</span><strong id="studyTheoryProgress">0 / 50%</strong></div>
+                        <div class="study-progress-mini"><span>Questões</span><strong id="studyQuestionsProgress">0 / 50%</strong></div>
+                        <div class="study-progress-mini"><span>Total</span><strong id="studyTotalProgress">0%</strong></div>
+                    </div>
                     <canvas id="progressChart" height="150"></canvas>
                     <div class="chart-legend-grid" id="chartLegendGrid"></div>
                     <div class="subject-hours-panel">
@@ -1975,7 +1992,7 @@
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
-                <strong>Universal Parser V9.19 — análise estrutural adaptativa do edital.</strong><br>
+                <strong>Universal Parser V9.20 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
@@ -2730,7 +2747,11 @@
                                     <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
                                 </label>
                             ` : ''}
-                            ${matchedItem ? `<button class="btn btn-sm btn-study-start" onclick="startScheduledTopicStudy(${idx})">▶ Iniciar</button>` : ''}
+                            ${matchedItem ? `<div class="study-launch-controls">
+                                <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
+                                <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">▶ Teoria</button>
+                                <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">▶ Questões</button>
+                            </div>` : ''}
                             <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
                         </div>
@@ -3648,9 +3669,8 @@
                 else if (text.includes('30d')) done = !!matchedItem.rev_30d;
                 else done = !!(matchedItem.rev_24h || matchedItem.rev_7d || matchedItem.rev_30d);
             } else {
-                // Mantém o mesmo critério já usado pelo calendário: o estudo-base
-                // está concluído quando Teoria OU Questões foi registrado.
-                done = !!(matchedItem.teoria || matchedItem.questoes);
+                // O estudo-base só está concluído quando as duas etapas foram realizadas.
+                done = !!(matchedItem.teoria && matchedItem.questoes);
             }
 
             return { done, isRevision, matched: true, cleanTop, matchedItem };
@@ -4564,8 +4584,8 @@
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
                 const isOpen = openMaterias[materiaName] === true;
-                const totalChecksMateria = Math.max(1, group.items.length * 5);
-                const doneChecksMateria = group.items.reduce((sum, topic) => sum + ['teoria','questoes','rev_24h','rev_7d','rev_30d'].filter(key => !!topic[key]).length, 0);
+                const totalChecksMateria = Math.max(1, group.items.length * 2);
+                const doneChecksMateria = group.items.reduce((sum, topic) => sum + ['teoria','questoes'].filter(key => !!topic[key]).length, 0);
                 const materiaPct = Math.round((doneChecksMateria / totalChecksMateria) * 100);
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
                 const safeMateriaHandler = encodeHandlerValue(materiaName);
@@ -4816,13 +4836,23 @@
             editalItems.forEach(item => {
                 const mat = item.materia || 'Geral';
                 if (!counts[mat]) counts[mat] = { total: 0, concluido: 0 };
-                counts[mat].total += 5;
+                counts[mat].total += 2;
                 if (item.teoria) counts[mat].concluido++;
                 if (item.questoes) counts[mat].concluido++;
-                if (item.rev_24h) counts[mat].concluido++;
-                if (item.rev_7d) counts[mat].concluido++;
-                if (item.rev_30d) counts[mat].concluido++;
             });
+
+            const topicCount = editalItems.length;
+            const theoryDone = editalItems.filter(i => !!i.teoria).length;
+            const questionsDone = editalItems.filter(i => !!i.questoes).length;
+            const theoryContribution = topicCount ? Math.round((theoryDone / topicCount) * 50) : 0;
+            const questionsContribution = topicCount ? Math.round((questionsDone / topicCount) * 50) : 0;
+            const totalStudyProgress = Math.min(100, theoryContribution + questionsContribution);
+            const theoryEl = document.getElementById('studyTheoryProgress');
+            const questionsEl = document.getElementById('studyQuestionsProgress');
+            const totalEl = document.getElementById('studyTotalProgress');
+            if (theoryEl) theoryEl.textContent = `${theoryContribution} / 50%`;
+            if (questionsEl) questionsEl.textContent = `${questionsContribution} / 50%`;
+            if (totalEl) totalEl.textContent = `${totalStudyProgress}%`;
 
             const labels = Object.keys(counts);
             const percentData = labels.map(l => Math.round((counts[l].concluido / (counts[l].total || 1)) * 100));
@@ -4944,7 +4974,7 @@
                 title.textContent = '';
                 return;
             }
-            title.textContent = `${activeStudyContext.materia} — ${activeStudyContext.assunto}`;
+            title.innerHTML = `<span class="study-mode-badge">${activeStudyContext.activityType === 'questoes' ? 'Questões' : 'Teoria'}</span>${escapeHtml(activeStudyContext.materia)} — ${escapeHtml(activeStudyContext.assunto)}`;
             box.classList.add('visible');
         }
 
@@ -4965,9 +4995,13 @@
                 const materia = String(session?.materia || '').trim();
                 const minutes = Math.max(0, Number(session?.minutes || 0));
                 if (!materia || !minutes) return;
-                totals.set(materia, (totals.get(materia) || 0) + minutes);
+                if (!totals.has(materia)) totals.set(materia, { materia, minutes:0, teoria:0, questoes:0 });
+                const row = totals.get(materia);
+                row.minutes += minutes;
+                if (session?.activityType === 'questoes') row.questoes += minutes;
+                else row.teoria += minutes;
             });
-            return [...totals.entries()].map(([materia, minutes]) => ({ materia, minutes })).sort((a,b) => b.minutes - a.minutes);
+            return [...totals.values()].sort((a,b) => b.minutes - a.minutes);
         }
 
         function renderSubjectStudyHours() {
@@ -4985,6 +5019,7 @@
                 return `<div class="subject-hours-row">
                     <div class="subject-hours-main">
                         <div class="subject-hours-name"><span title="${escapeHtml(row.materia)}">${escapeHtml(row.materia)}</span></div>
+                        <div class="subject-hours-detail">Teoria ${formatStudyMinutes(row.teoria)} · Questões ${formatStudyMinutes(row.questoes)}</div>
                         <div class="subject-hours-track"><div class="subject-hours-fill" style="width:${pct}%"></div></div>
                     </div>
                     <div class="subject-hours-time">${formatStudyMinutes(row.minutes)}</div>
@@ -5003,6 +5038,7 @@
                 scheduledDateKey: context.dateKey || null,
                 materia: context.materia,
                 assunto: context.assunto,
+                activityType: context.activityType === 'questoes' ? 'questoes' : 'teoria',
                 minutes: amount,
                 source: 'pomodoro',
                 createdAt: new Date().toISOString()
@@ -5020,7 +5056,7 @@
             renderSubjectStudyHours();
         }
 
-        function startScheduledTopicStudy(idx) {
+        function startScheduledTopicStudy(idx, activityType = 'teoria') {
             if (!activeSelectedDateKey) return;
             const metadata = getConcursosMetadata();
             const raw = metadata[currentConcurso]?.dateSchedule?.[activeSelectedDateKey]?.[idx];
@@ -5031,12 +5067,18 @@
                 alert('Este item não está vinculado a uma matéria do edital verticalizado. Edite o item antes de iniciar.');
                 return;
             }
+            const minutesInput = document.getElementById(`studyMinutes_${idx}`);
+            const requestedMinutes = Math.max(1, Math.min(240, parseInt(minutesInput?.value || document.getElementById('focoMin')?.value || '40') || 40));
+            const focusInput = document.getElementById('focoMin');
+            if (focusInput) focusInput.value = requestedMinutes;
+
             activeStudyContext = {
                 concurso: currentConcurso,
                 materia: matched.materia,
                 assunto: matched.assunto,
                 itemId: matched.id,
-                dateKey: activeSelectedDateKey
+                dateKey: activeSelectedDateKey,
+                activityType: activityType === 'questoes' ? 'questoes' : 'teoria'
             };
             renderActiveStudyContext();
             closeModalDayContent();
@@ -5045,10 +5087,20 @@
                 .find(btn => /edital verticalizado/i.test(btn.textContent || ''));
             if (editalTabButton) switchTab('tab-edital', editalTabButton);
 
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerMode = 'focus';
+            timerHasStarted = false;
+            isTimerPaused = false;
+            currentFocusCycleMinutes = 0;
+            timeLeft = requestedMinutes * 60;
+            updateDisplay();
+            updatePauseButton();
+
             requestAnimationFrame(() => {
                 const pomodoro = document.querySelector('.pomodoro-card');
                 if (pomodoro) pomodoro.scrollIntoView({ behavior:'smooth', block:'center' });
-                startFocusTimer();
+                startTimer();
             });
         }
 
@@ -6689,7 +6741,7 @@
             let html = `
                 <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
-                    <strong>Modo:</strong> Universal Parser V9.19 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
+                    <strong>Modo:</strong> Universal Parser V9.20 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
                 <div class="ai-preview-header">
                     <div class="ai-preview-stat"><strong>${analysis.materias.length}</strong><span>matérias</span></div>
@@ -6778,7 +6830,7 @@
 
                 const modelInfo = payload.aiUsed === false ? 'extração determinística (IA indisponível para prioridade)' : (payload.model || 'Workers AI');
                 const auditNote=(extraction.auditWarnings||[]).length ? ` Verificação estrutural: ${extraction.auditWarnings.length} alerta(s). Revise o preview antes de importar.` : '';
-                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.19; modelo: ${modelInfo}.${auditNote}`);
+                setAiEditalStatus(`Análise concluída para ${cargoSelectLabel(extraction.cargo)}. Matérias e assuntos foram bloqueados pelo Universal Parser V9.20; modelo: ${modelInfo}.${auditNote}`);
                 importBtn.disabled = false;
             } catch (error) {
                 console.error('Erro na análise de edital com IA:', error);
@@ -7252,7 +7304,7 @@
 
         function updateModernOverview() {
             const topics = editalItems || [];
-            const checks = ['teoria','questoes','rev_24h','rev_7d','rev_30d'];
+            const checks = ['teoria','questoes'];
             const done = topics.reduce((acc, item) => acc + checks.filter(k => !!item[k]).length, 0);
             const total = topics.length * checks.length;
             const pct = total ? Math.round(done / total * 100) : 0;
