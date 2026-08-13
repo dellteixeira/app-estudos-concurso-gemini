@@ -10,7 +10,7 @@
     <title>Meu Painel de Estudos</title>
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
-    <link rel="manifest" href="manifest.json?v=20260812-7">
+    <link rel="manifest" href="manifest.json?v=20260813-10">
     <meta name="theme-color" content="#0f172a">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -23,7 +23,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260813-9', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=20260813-10', { updateViaCache: 'none' })
             .then(reg => reg.update())
             .catch(err => console.error('Erro no Service Worker:', err));
         });
@@ -1899,6 +1899,475 @@
                 justify-content: flex-start;
             }
         }
+
+
+        /* =====================================================
+           V9.24 — REFINO VISUAL DO POMODORO CIRCULAR
+           Mantém a lógica V9.23 e melhora proporção, contraste,
+           segmentação, distribuição vertical e responsividade.
+           ===================================================== */
+        .pomodoro-ring-shell {
+            width: min(100%, 430px);
+            padding: clamp(4px, .7vw, 10px);
+        }
+        .pomodoro-ring {
+            --ring-size: clamp(286px, 28vw, 372px);
+            --ring-thickness: clamp(20px, 1.8vw, 26px);
+            isolation: isolate;
+            background:
+                radial-gradient(circle at 50% 40%, rgba(19,168,255,.075) 0 44%, transparent 68%),
+                radial-gradient(circle at center, rgba(255,255,255,.018) 0 67%, transparent 67.5%);
+            filter: drop-shadow(0 20px 44px rgba(2,12,27,.28));
+        }
+        .pomodoro-ring::before {
+            z-index: 0;
+            background: conic-gradient(
+                from -90deg,
+                var(--timer-accent) 0 calc(var(--timer-progress) * 1turn),
+                rgba(148,163,184,.18) calc(var(--timer-progress) * 1turn) 1turn
+            );
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), #000 calc(100% - var(--ring-thickness) + 1px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), #000 calc(100% - var(--ring-thickness) + 1px));
+            box-shadow: 0 0 32px color-mix(in srgb, var(--timer-accent) 26%, transparent);
+        }
+        .pomodoro-ring::after {
+            z-index: 1;
+            background: repeating-conic-gradient(
+                from -90deg,
+                rgba(6,12,24,.92) 0deg 1.35deg,
+                transparent 1.35deg 6deg
+            );
+            opacity: .88;
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), #000 calc(100% - var(--ring-thickness) + 1px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-thickness)), #000 calc(100% - var(--ring-thickness) + 1px));
+        }
+        .timer-display {
+            width: calc(100% - (var(--ring-thickness) * 2.55));
+            margin: 0 !important;
+            gap: .28rem;
+            background:
+                radial-gradient(circle at 50% 34%, rgba(255,255,255,.065), rgba(255,255,255,.012) 56%, rgba(2,12,27,.09) 100%);
+            box-shadow:
+                inset 0 0 0 1px rgba(255,255,255,.055),
+                inset 0 -20px 42px rgba(2,12,27,.12);
+        }
+        .timer-display-number {
+            font-size: clamp(4.55rem, 7.2vw, 6.55rem);
+            line-height: .84;
+            text-shadow: 0 6px 26px rgba(0,0,0,.22);
+        }
+        .timer-display-unit {
+            font-size: clamp(1.02rem, 1.7vw, 1.48rem);
+            letter-spacing: .055em;
+            opacity: .92;
+        }
+        .timer-display-meta {
+            margin-top: .34rem;
+            padding: .36rem .68rem;
+            border: 1px solid rgba(147,197,253,.14);
+            border-radius: 999px;
+            background: rgba(15,23,42,.34);
+            font-size: clamp(.7rem, 1vw, .84rem);
+            letter-spacing: .065em;
+        }
+        .pomodoro-actions {
+            max-width: 620px;
+            gap: .65rem;
+        }
+        .pomodoro-actions .btn {
+            min-width: 108px;
+            min-height: 44px;
+            padding: .82rem 1.08rem;
+        }
+        .timer-settings {
+            width: min(100%, 500px);
+            padding: 11px 15px;
+            gap: 18px;
+            border-radius: 15px;
+        }
+        .timer-settings input {
+            width: 84px !important;
+            height: 40px;
+        }
+        .pomodoro-daily-panel {
+            width: min(100%, 720px);
+        }
+
+        @media (min-width: 1101px) {
+            .pomodoro-card {
+                padding: clamp(24px, 2vw, 32px);
+            }
+            .pomodoro-card h3 {
+                margin-bottom: clamp(8px, .8vh, 14px);
+            }
+            .pomodoro-hero {
+                flex: 1 0 auto;
+                min-height: 335px;
+                margin: 0 0 clamp(10px, 1.2vh, 18px);
+            }
+            .pomodoro-ring {
+                --ring-size: clamp(310px, 26vw, 370px);
+            }
+            .pomodoro-actions {
+                margin-bottom: clamp(12px, 1.4vh, 20px);
+            }
+            .timer-settings {
+                margin-bottom: clamp(14px, 1.7vh, 24px);
+            }
+            .pomodoro-daily-panel {
+                padding-top: clamp(16px, 1.8vh, 24px);
+            }
+            .pomodoro-daily-stat {
+                min-height: 82px;
+                padding: 13px 10px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .pomodoro-card {
+                padding: 18px 14px;
+            }
+            .pomodoro-hero {
+                margin: .25rem 0 .85rem;
+            }
+            .pomodoro-ring-shell {
+                padding: 2px;
+            }
+            .pomodoro-ring {
+                --ring-size: min(78vw, 304px);
+                --ring-thickness: 20px;
+            }
+            .timer-display-number {
+                font-size: clamp(4rem, 18vw, 5.15rem);
+            }
+            .timer-display-meta {
+                font-size: .68rem;
+                padding: .3rem .54rem;
+            }
+            .pomodoro-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                margin-bottom: .85rem;
+            }
+            .pomodoro-actions .btn {
+                min-height: 42px;
+                padding: .72rem .7rem;
+            }
+            .timer-settings {
+                padding: 10px 12px;
+                gap: 10px;
+            }
+            .timer-settings label {
+                font-size: .8rem;
+            }
+            .timer-settings input {
+                width: 76px !important;
+                height: 38px;
+            }
+            .pomodoro-daily-panel {
+                padding-top: 14px;
+            }
+        }
+
+        @media (max-width: 390px) {
+            .pomodoro-ring {
+                --ring-size: min(82vw, 278px);
+                --ring-thickness: 18px;
+            }
+            .timer-display-number {
+                font-size: clamp(3.7rem, 19vw, 4.55rem);
+            }
+            .pomodoro-daily-stats {
+                gap: 6px;
+            }
+            .pomodoro-daily-stat {
+                min-height: 70px;
+                padding: 10px 6px;
+            }
+        }
+
+
+
+        /* =====================================================
+           V9.25 — HARMONIZAÇÃO DE TEMAS / POMODORO
+           Dark: elimina preto puro do anel e integra à paleta azul.
+           Light: redefine superfícies modernas, contraste e estados
+           para uma interface clara, limpa e consistente.
+           ===================================================== */
+        body:not(.light-mode) .pomodoro-ring {
+            --timer-ring-track: rgba(72, 119, 153, .34);
+            --timer-ring-segment: rgba(10, 39, 61, .92);
+            background:
+                radial-gradient(circle at 50% 38%, rgba(19,168,255,.10) 0 43%, transparent 67%),
+                radial-gradient(circle at center, rgba(84,137,176,.07) 0 67%, transparent 67.5%);
+            filter: drop-shadow(0 20px 44px rgba(1, 18, 32, .25));
+        }
+        body:not(.light-mode) .pomodoro-ring::before {
+            background: conic-gradient(
+                from -90deg,
+                var(--timer-accent) 0 calc(var(--timer-progress) * 1turn),
+                var(--timer-ring-track) calc(var(--timer-progress) * 1turn) 1turn
+            );
+        }
+        body:not(.light-mode) .pomodoro-ring::after {
+            background: repeating-conic-gradient(
+                from -90deg,
+                var(--timer-ring-segment) 0deg 1.35deg,
+                transparent 1.35deg 6deg
+            );
+            opacity: .82;
+        }
+        body:not(.light-mode) .timer-display {
+            background:
+                radial-gradient(circle at 50% 34%, rgba(65,132,179,.13), rgba(19,63,91,.10) 58%, rgba(5,27,44,.08) 100%);
+            box-shadow:
+                inset 0 0 0 1px rgba(116,175,214,.08),
+                inset 0 -20px 42px rgba(3,24,39,.10);
+        }
+        body:not(.light-mode) .timer-display-meta {
+            background: rgba(12, 45, 69, .54);
+            border-color: rgba(91, 163, 211, .20);
+        }
+
+        body.light-mode {
+            --modern-bg: #f4f7fb;
+            --modern-surface: #ffffff;
+            --modern-surface-2: #f1f6fb;
+            --modern-border: rgba(115, 139, 164, .24);
+            --modern-muted: #71849a;
+            --bg-color: #f4f7fb;
+            --card-bg: #ffffff;
+            --text-color: #26384a;
+            --border-color: #dce6ef;
+            --header-materia-bg: #eef5fb;
+            --header-materia-text: #365e84;
+            --ui-soft-bg: #f7f9fc;
+            --ui-soft-border: #e1e9f1;
+            --completed-bg: #e9fbf2;
+            --atrasado-bg: #fff0f1;
+        }
+        body.light-mode {
+            background: #f4f7fb;
+        }
+        body.light-mode .card,
+        body.light-mode .delayed-panel,
+        body.light-mode .auth-card,
+        body.light-mode .overview-card,
+        body.light-mode .modern-search-shell,
+        body.light-mode .action-bar,
+        body.light-mode .concurso-selector-bar {
+            background: #ffffff;
+            border-color: #dce6ef;
+            box-shadow: 0 8px 24px rgba(55, 78, 103, .07);
+        }
+        body.light-mode .card {
+            background: #ffffff !important;
+        }
+        body.light-mode header.modern-header {
+            background: rgba(255,255,255,.94);
+            border-color: #dce6ef;
+            box-shadow: 0 10px 28px rgba(55,78,103,.09);
+        }
+        body.light-mode .header-brand-copy h2,
+        body.light-mode .card h3,
+        body.light-mode .overview-value,
+        body.light-mode .pomodoro-daily-value {
+            color: #26384a;
+        }
+        body.light-mode .header-brand-copy span,
+        body.light-mode .overview-label,
+        body.light-mode .overview-hint,
+        body.light-mode .pomodoro-daily-label,
+        body.light-mode .search-result-sub {
+            color: #7b8ea3;
+        }
+        body.light-mode .global-search-results {
+            background: #ffffff;
+            border-color: #dce6ef;
+            box-shadow: 0 18px 42px rgba(55,78,103,.14);
+        }
+        body.light-mode .search-result-item:hover {
+            background: #eef7ff;
+        }
+        body.light-mode .nav-tabs {
+            background: #ffffff;
+            border-color: #dce6ef;
+            box-shadow: 0 8px 22px rgba(55,78,103,.06);
+        }
+        body.light-mode .tab-btn {
+            color: #6f8298;
+        }
+        body.light-mode .tab-btn:not(.active):hover {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        body.light-mode .tab-btn.active {
+            color: #ffffff;
+            box-shadow: 0 7px 16px rgba(37,99,235,.16);
+        }
+        body.light-mode .action-bar .btn-action {
+            color: #71849a;
+        }
+        body.light-mode .btn-logout-header {
+            color: #71849a;
+            border-color: #dce6ef;
+            background: #f8fafc;
+        }
+        body.light-mode input,
+        body.light-mode select,
+        body.light-mode textarea {
+            background: #ffffff;
+            color: #26384a;
+            border-color: #d8e3ed;
+        }
+        body.light-mode input:focus,
+        body.light-mode select:focus,
+        body.light-mode textarea:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(59,130,246,.10);
+        }
+        body.light-mode thead th {
+            color: #8396aa;
+        }
+        body.light-mode tbody tr:not(.materia-header-row) {
+            background: #ffffff;
+        }
+        body.light-mode tbody tr:not(.materia-header-row) td {
+            border-color: #e2eaf2;
+        }
+        body.light-mode .materia-header-row {
+            background: #eef5fb !important;
+            box-shadow: inset 4px 0 0 #20a4eb;
+        }
+        body.light-mode .materia-header-row td,
+        body.light-mode .materia-header-title {
+            color: #233a51;
+        }
+        body.light-mode .materia-header-meta {
+            color: #7890a6;
+        }
+        body.light-mode .materia-progress-ring {
+            background: conic-gradient(var(--modern-blue) calc(var(--pct)*1%), #dce9f3 0);
+        }
+        body.light-mode .materia-progress-ring::before {
+            background: #eef5fb;
+        }
+        body.light-mode .priority-input {
+            background: #ffffff;
+            color: #26384a;
+            border-color: #cbd9e5;
+        }
+        body.light-mode .month-day-cell {
+            background: #ffffff;
+            border-color: #e1e8f0;
+        }
+        body.light-mode .month-day-cell:hover {
+            background: #f7fbff;
+        }
+        body.light-mode .month-day-cell.today {
+            background: #eef6ff;
+        }
+        body.light-mode .clean-subject-badge {
+            background: #eef6ff;
+            border-color: #8bbcff;
+            color: #3478cf;
+        }
+        body.light-mode .clean-subject-badge.done {
+            background: #eafaf2;
+            border-color: #52c993;
+            color: #18865a;
+        }
+        body.light-mode .clean-subject-badge.rev {
+            background: #fff7e6;
+            border-color: #f2b84b;
+            color: #a96b00;
+        }
+        body.light-mode .note-card,
+        body.light-mode .flashcard-box,
+        body.light-mode .anki-folder-card,
+        body.light-mode .delayed-day-group,
+        body.light-mode .day-topic-row {
+            background: #ffffff;
+            border-color: #dfe8f0;
+        }
+        body.light-mode .note-card-title {
+            color: #26384a;
+        }
+        body.light-mode .modal-overlay {
+            background: rgba(30, 45, 61, .34);
+            backdrop-filter: blur(3px);
+        }
+        body.light-mode .modal {
+            background: #ffffff;
+            border-color: #dce6ef;
+            box-shadow: 0 24px 60px rgba(55,78,103,.16);
+        }
+
+        body.light-mode .pomodoro-card::before {
+            background: rgba(19,168,255,.055);
+        }
+        body.light-mode .pomodoro-ring {
+            --timer-ring-track: #dbe8f2;
+            --timer-ring-segment: rgba(255,255,255,.94);
+            background:
+                radial-gradient(circle at 50% 38%, rgba(62,148,207,.10) 0 43%, transparent 67%),
+                radial-gradient(circle at center, #f7fbfe 0 67%, transparent 67.5%);
+            filter: drop-shadow(0 16px 30px rgba(67,100,128,.13));
+        }
+        body.light-mode .pomodoro-ring::before {
+            background: conic-gradient(
+                from -90deg,
+                var(--timer-accent) 0 calc(var(--timer-progress) * 1turn),
+                var(--timer-ring-track) calc(var(--timer-progress) * 1turn) 1turn
+            );
+            box-shadow: none;
+        }
+        body.light-mode .pomodoro-ring::after {
+            background: repeating-conic-gradient(
+                from -90deg,
+                var(--timer-ring-segment) 0deg 1.35deg,
+                transparent 1.35deg 6deg
+            );
+            opacity: 1;
+        }
+        body.light-mode .timer-display {
+            background:
+                radial-gradient(circle at 50% 34%, #ffffff 0, #f5faff 58%, #edf5fa 100%);
+            box-shadow:
+                inset 0 0 0 1px #deebf4,
+                inset 0 -18px 36px rgba(87,128,158,.05);
+        }
+        body.light-mode .timer-display-number {
+            color: #23445f;
+            text-shadow: none;
+        }
+        body.light-mode .timer-display-unit {
+            color: #5f7890;
+        }
+        body.light-mode .timer-display-meta {
+            color: #377fca;
+            background: #eef6ff;
+            border-color: #d6e8fa;
+        }
+        body.light-mode .timer-settings {
+            background: #f8fafc;
+            border: 1px solid #e0e8f0;
+        }
+        body.light-mode .pomodoro-daily-panel {
+            border-top-color: #e1e9f1;
+        }
+        body.light-mode .pomodoro-daily-panel h4 {
+            color: #315d91;
+        }
+        body.light-mode .pomodoro-daily-stat {
+            background: #f8fafc;
+            border-color: #e2e9f0;
+        }
+        body.light-mode .pomodoro-progress-track {
+            background: #e8eef4;
+            border-color: #dce5ee;
+        }
+
 </style>
 </head>
 <body>
@@ -5741,6 +6210,8 @@
             if (ringEl) {
                 ringEl.style.setProperty('--timer-progress', String(getPomodoroRingProgress()));
                 ringEl.style.setProperty('--timer-accent', timerMode === 'focus' ? 'var(--modern-blue-2)' : 'var(--modern-warning)');
+                ringEl.dataset.mode = timerMode;
+                ringEl.setAttribute('aria-label', `${min} minutos e ${sec} segundos restantes — ${modeLabel}`);
             }
         }
 
