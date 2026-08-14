@@ -2416,7 +2416,21 @@
             #tab-edital tbody tr.adaptive-edital-row td:last-child { grid-column:1 / -1 !important; grid-row:3 !important; }
             #tab-edital tbody tr.adaptive-edital-row input[type="checkbox"] { width:20px; height:20px; }
         }
-</style>
+
+        /* V9.35 — Lei Seca integrada + conclusão manual de sessão */
+        .btn-study-legal { white-space:nowrap; }
+        #completeFocusBtn:disabled { opacity:.45; cursor:not-allowed; }
+        @media (max-width:700px) {
+            #modalLegalReading { align-items:flex-end; padding:0; }
+            #modalLegalReading .modal { max-width:none; width:100%; border-radius:18px 18px 0 0; max-height:92vh; }
+            #modalLegalReading .modal > div[style*="grid-template-columns"] { grid-template-columns:1fr !important; gap:8px !important; }
+            .pomodoro-actions { display:grid !important; grid-template-columns:1fr 1fr; }
+            .pomodoro-actions .btn { width:100%; }
+            .study-launch-controls { flex-wrap:wrap; }
+            .btn-study-legal { flex:1 1 100%; }
+        }
+
+    </style>
 </head>
 <body>
 
@@ -2491,7 +2505,7 @@
             <div class="overview-card warning"><span class="overview-label">Revisões</span><strong class="overview-value" id="modernOverviewReviews">0</strong><span class="overview-hint">pendentes agora</span></div>
             <div class="overview-card success"><span class="overview-label">Estudado Hoje</span><strong class="overview-value" id="modernOverviewToday">00:00</strong><span class="overview-hint">Pomodoro concluído</span></div>
             <div class="overview-card"><span class="overview-label">Meta Diária</span><strong class="overview-value" id="modernOverviewTarget">—</strong><span class="overview-hint">planejamento atual</span></div>
-            <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">teoria + questões · todas as matérias</span></div>
+            <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">teoria + questões + lei seca · todas as matérias</span></div>
         </section>
 
         <!-- BARRA DE AÇÕES -->
@@ -2535,6 +2549,7 @@
                         <button class="btn btn-primary" id="startTimerBtn" onclick="startFocusTimer()">Foco</button>
                         <button class="btn btn-info" id="intervalTimerBtn" onclick="startIntervalTimer()">Intervalo</button>
                         <button class="btn btn-warning" id="pauseTimerBtn" onclick="togglePauseTimer()" disabled>Pausar</button>
+                        <button class="btn btn-success" id="completeFocusBtn" onclick="completeFocusSessionNow()" disabled>✓ Concluir sessão</button>
                         <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
                     </div>
                     <div class="timer-settings">
@@ -2585,6 +2600,7 @@
                     <div class="subject-hours-panel">
                         <h4>Horas por Matéria</h4>
                         <div class="subject-hours-list" id="subjectStudyHoursList"></div>
+                        <div id="studyActivityDistribution" style="margin-top:12px;font-size:.78rem;opacity:.8;"></div>
                     </div>
                 </div>
             </div>
@@ -2959,6 +2975,47 @@
 
 
     <!-- MODAL ANALISAR EDITAL COM IA — UNIVERSAL PARSER V8 -->
+    <div class="modal-overlay" id="modalLegalReading">
+        <div class="modal" style="max-width:720px;">
+            <h3>⚖ Lei Seca</h3>
+            <div id="legalReadingContext" style="font-size:.9rem; opacity:.82;"></div>
+            <div class="form-group">
+                <label>Blocos cadastrados para esta matéria</label>
+                <select id="legalReadingBlockSelect" onchange="fillLegalReadingFromSelectedBlock()">
+                    <option value="">Leitura livre / novo bloco</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Norma / diploma legal</label>
+                <input id="legalReadingNorm" type="text" placeholder="Ex.: Lei nº 11.343/2006 — Lei de Drogas">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Artigo inicial</label>
+                    <input id="legalReadingStartArticle" type="text" inputmode="numeric" placeholder="Ex.: 5">
+                </div>
+                <div class="form-group">
+                    <label>Artigo final previsto</label>
+                    <input id="legalReadingEndArticle" type="text" inputmode="numeric" placeholder="Ex.: 10">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Tempo de foco (min)</label>
+                <input id="legalReadingMinutes" type="number" min="1" max="240" value="40">
+            </div>
+            <label style="display:flex;gap:8px;align-items:center;font-size:.86rem;">
+                <input id="legalReadingSaveBlock" type="checkbox" checked> Salvar/atualizar este intervalo na biblioteca de Lei Seca
+            </label>
+            <div style="padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;font-size:.78rem;opacity:.78;">
+                Ao concluir a sessão antes do tempo, o app perguntará qual foi o último artigo efetivamente lido. As horas serão contabilizadas pela mesma base de Teoria e Questões.
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeLegalReadingModal()">Cancelar</button>
+                <button class="btn btn-primary" data-enter-default="true" onclick="startLegalReadingStudy()">▶ Iniciar Lei Seca</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalAnaliseEditalIA">
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
             <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
@@ -3374,6 +3431,7 @@
                 modalPromptIA: () => closeModalPromptIA(),
                 modalNovoConcurso: () => closeModalNovoConcurso(),
                 modalDayContent: () => closeModalDayContent(),
+                modalLegalReading: () => closeLegalReadingModal(),
                 modalEditarFlashcard: () => closeModalEditarFlashcard(),
                 modalFiltroEstudoFC: () => closeModalFiltroEstudoFlashcards(),
                 modalAnaliseEditalIA: () => closeModalAnaliseEditalIA()
@@ -4026,6 +4084,7 @@
                                 <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
                                 <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">▶ Teoria</button>
                                 <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">▶ Questões</button>
+                                ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-success btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">⚖ Lei Seca</button>` : ''}
                             </div>` : ''}
                             <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
@@ -6484,6 +6543,8 @@
         let currentTimerTotalSeconds = 40 * 60;
         let timerMode = 'focus';
         let activeStudyContext = null;
+        let pendingLegalStudyContext = null;
+        let focusSessionCommitted = false;
         let pomodoroAudioContext = null;
 
         function preparePomodoroAudio() {
@@ -6568,7 +6629,11 @@
             const advanceNote = activeStudyContext.adaptiveAdvance && activeStudyContext.plannedDateKey
                 ? `<span style="margin-left:8px; font-size:.72rem; color:#7dd3fc;">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
                 : '';
-            title.innerHTML = `<span class="study-mode-badge">${activeStudyContext.activityType === 'questoes' ? 'Questões' : 'Teoria'}</span>${escapeHtml(activeStudyContext.materia)} — ${escapeHtml(activeStudyContext.assunto)}${advanceNote}`;
+            const modeLabel = activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria');
+            const legalNote = activeStudyContext.activityType === 'lei_seca' && activeStudyContext.norma
+                ? `<span style="margin-left:8px;font-size:.72rem;opacity:.8;">${escapeHtml(activeStudyContext.norma)}${activeStudyContext.articleStart ? ` · arts. ${escapeHtml(activeStudyContext.articleStart)}${activeStudyContext.articleEnd ? `–${escapeHtml(activeStudyContext.articleEnd)}` : ''}` : ''}</span>`
+                : '';
+            title.innerHTML = `<span class="study-mode-badge">${modeLabel}</span>${escapeHtml(activeStudyContext.materia)} — ${escapeHtml(activeStudyContext.assunto)}${legalNote}${advanceNote}`;
             box.classList.add('visible');
         }
 
@@ -6623,7 +6688,7 @@
                 if (!sessionState.has(key)) sessionState.set(key, { teoria:false, questoes:false });
                 const state = sessionState.get(key);
                 if (session?.activityType === 'questoes') state.questoes = true;
-                else state.teoria = true;
+                else if (session?.activityType === 'teoria') state.teoria = true;
             });
 
             let changed = 0;
@@ -6647,7 +6712,7 @@
         }
 
         function markEditalProgressFromStudyContext(context) {
-            if (!context || context.concurso !== currentConcurso) return false;
+            if (!context || context.concurso !== currentConcurso || context.activityType === 'lei_seca') return false;
             const item = allEditalItems.find(candidate => {
                 if ((candidate.concurso || 'Concurso Geral') !== currentConcurso) return false;
                 if (context.itemId && String(candidate.id) === String(context.itemId)) return true;
@@ -6669,10 +6734,11 @@
                 const materia = String(session?.materia || '').trim();
                 const minutes = Math.max(0, Number(session?.minutes || 0));
                 if (!materia || !minutes) return;
-                if (!totals.has(materia)) totals.set(materia, { materia, minutes:0, teoria:0, questoes:0 });
+                if (!totals.has(materia)) totals.set(materia, { materia, minutes:0, teoria:0, questoes:0, leiSeca:0 });
                 const row = totals.get(materia);
                 row.minutes += minutes;
                 if (session?.activityType === 'questoes') row.questoes += minutes;
+                else if (session?.activityType === 'lei_seca') row.leiSeca += minutes;
                 else row.teoria += minutes;
             });
             return [...totals.values()].sort((a,b) => b.minutes - a.minutes);
@@ -6680,7 +6746,7 @@
 
         function getTotalRecordedStudyMinutes() {
             // Fonte canônica do total por matéria: soma todas as sessões de estudo
-            // registradas no concurso atual (Teoria + Questões), sem incluir pausas/intervalos.
+            // registradas no concurso atual (Teoria + Questões + Lei Seca), sem incluir pausas/intervalos.
             return getSubjectStudyTotals().reduce((total, row) => total + Math.max(0, Number(row.minutes) || 0), 0);
         }
 
@@ -6688,18 +6754,26 @@
             const list = document.getElementById('subjectStudyHoursList');
             if (!list) return;
             const totals = getSubjectStudyTotals();
+            const distribution = document.getElementById('studyActivityDistribution');
             if (!totals.length) {
                 list.innerHTML = '<div class="subject-hours-empty">Inicie uma matéria pelo cronograma para contabilizar o tempo por disciplina.</div>';
+                if (distribution) distribution.textContent = '';
                 return;
             }
             const max = Math.max(...totals.map(x => x.minutes), 1);
             const visible = totals.slice(0, 8);
+            const overall = totals.reduce((acc,row) => { acc.teoria += row.teoria || 0; acc.questoes += row.questoes || 0; acc.leiSeca += row.leiSeca || 0; return acc; }, {teoria:0,questoes:0,leiSeca:0});
+            const overallMinutes = overall.teoria + overall.questoes + overall.leiSeca;
+            if (distribution && overallMinutes > 0) {
+                const part = value => Math.round((value / overallMinutes) * 100);
+                distribution.innerHTML = `<strong>Distribuição das horas:</strong> Teoria ${part(overall.teoria)}% · Questões ${part(overall.questoes)}%${overall.leiSeca ? ` · Lei Seca ${part(overall.leiSeca)}%` : ''}`;
+            }
             list.innerHTML = visible.map(row => {
                 const pct = Math.max(5, Math.round((row.minutes / max) * 100));
                 return `<div class="subject-hours-row">
                     <div class="subject-hours-main">
                         <div class="subject-hours-name"><span title="${escapeHtml(row.materia)}">${escapeHtml(row.materia)}</span></div>
-                        <div class="subject-hours-detail">Teoria ${formatStudyMinutes(row.teoria)} · Questões ${formatStudyMinutes(row.questoes)}</div>
+                        <div class="subject-hours-detail">Teoria ${formatStudyMinutes(row.teoria)} · Questões ${formatStudyMinutes(row.questoes)}${row.leiSeca ? ` · Lei Seca ${formatStudyMinutes(row.leiSeca)}` : ''}</div>
                         <div class="subject-hours-track"><div class="subject-hours-fill" style="width:${pct}%"></div></div>
                     </div>
                     <div class="subject-hours-time">${formatStudyMinutes(row.minutes)}</div>
@@ -6727,7 +6801,11 @@
                 plannedDateKey,
                 materia: context.materia,
                 assunto: context.assunto,
-                activityType: context.activityType === 'questoes' ? 'questoes' : 'teoria',
+                activityType: context.activityType === 'questoes' ? 'questoes' : (context.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'),
+                legalBlockId: context.legalBlockId || null,
+                norma: context.norma || null,
+                articleStart: context.articleStart || null,
+                articleEnd: context.articleEnd || null,
                 minutes: amount,
                 source: adaptiveResult ? 'pomodoro_advanced' : 'pomodoro',
                 advanced: !!adaptiveResult,
@@ -6797,7 +6875,7 @@
                 dateKey: adaptiveAdvance ? todayKey : activeSelectedDateKey,
                 plannedDateKey,
                 adaptiveAdvance: isFutureStudy && adaptiveAdvance,
-                activityType: activityType === 'questoes' ? 'questoes' : 'teoria'
+                activityType: activityType === 'questoes' ? 'questoes' : (activityType === 'lei_seca' ? 'lei_seca' : 'teoria')
             };
             renderActiveStudyContext();
             closeModalDayContent();
@@ -6812,6 +6890,7 @@
             timerHasStarted = false;
             isTimerPaused = false;
             currentFocusCycleMinutes = 0;
+            focusSessionCommitted = false;
             timeLeft = requestedMinutes * 60;
             currentTimerTotalSeconds = timeLeft;
             updateDisplay();
@@ -6885,7 +6964,7 @@
 
         function getGeneralPomodoroMinutes() {
             // "Horas Gerais" usa a mesma fonte canônica do card "Horas Estudadas":
-            // soma real de todas as sessões de foco (Teoria + Questões) do concurso atual.
+            // soma real de todas as sessões de foco (Teoria + Questões + Lei Seca) do concurso atual.
             return getTotalRecordedStudyMinutes();
         }
 
@@ -7010,9 +7089,16 @@
 
         function updatePauseButton() {
             const pauseBtn = document.getElementById('pauseTimerBtn');
-            if (!pauseBtn) return;
-            pauseBtn.disabled = !timerHasStarted || timeLeft <= 0;
-            pauseBtn.textContent = isTimerPaused ? 'Continuar' : 'Pausar';
+            const completeBtn = document.getElementById('completeFocusBtn');
+            if (pauseBtn) {
+                pauseBtn.disabled = !timerHasStarted || timeLeft <= 0;
+                pauseBtn.textContent = isTimerPaused ? 'Continuar' : 'Pausar';
+            }
+            if (completeBtn) {
+                const elapsedSeconds = Math.max(0, (Number(currentTimerTotalSeconds) || 0) - (Number(timeLeft) || 0));
+                completeBtn.disabled = timerMode !== 'focus' || !timerHasStarted || focusSessionCommitted || elapsedSeconds < 60 || !activeStudyContext;
+                completeBtn.title = activeStudyContext ? 'Concluir e contabilizar os minutos completos já estudados' : 'Inicie uma atividade pelo cronograma para contabilizar a sessão';
+            }
         }
 
         function updateTimerSettings() {
@@ -7049,6 +7135,7 @@
                 ringEl.dataset.mode = timerMode;
                 ringEl.setAttribute('aria-label', `${min} minutos e ${sec} segundos restantes — ${modeLabel}`);
             }
+            updatePauseButton();
         }
 
         function startTimer() {
@@ -7057,6 +7144,7 @@
 
             const isNewCycle = !timerHasStarted;
             if (isNewCycle && timerMode === 'focus') {
+                focusSessionCommitted = false;
                 currentFocusCycleMinutes = Math.max(1, parseInt(document.getElementById('focoMin').value) || 40);
                 currentTimerTotalSeconds = currentFocusCycleMinutes * 60;
                 playPomodoroStartBell();
@@ -7081,6 +7169,8 @@
                     timerHasStarted = false;
                     isTimerPaused = false;
                     if (timerMode === 'focus') {
+                        if (focusSessionCommitted) { updatePauseButton(); return; }
+                        focusSessionCommitted = true;
                         const studiedBefore = getDailyPomodoroMinutes();
                         const targetMinutes = Math.round(getPomodoroDailyTargetHours() * 60);
                         const studiedAfter = studiedBefore + currentFocusCycleMinutes;
@@ -7092,7 +7182,9 @@
                         }
                         setDailyPomodoroMinutes(studiedAfter);
                         if (activeStudyContext && activeStudyContext.concurso === currentConcurso) {
-                            recordStudyMinutesForContext(currentFocusCycleMinutes, { ...activeStudyContext });
+                            const finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
+                            recordStudyMinutesForContext(currentFocusCycleMinutes, finalContext);
+                            updateLegalReadingBlockAfterSession(finalContext);
                         }
                         currentFocusCycleMinutes = 0;
                         updatePauseButton();
@@ -7108,6 +7200,215 @@
             }, 1000);
         }
 
+        function foldLegalStudyText(value) {
+            return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        }
+
+        function isLegalStudyMateria(materia) {
+            const name = foldLegalStudyText(materia);
+            if (!name) return false;
+            const nonLegal = /(?:portugues|lingua portuguesa|rlm|raciocinio logico|matematica|redacao|informatica|estatistica|atualidades|ingles|espanhol|contabilidade|economia|administracao geral|gestao de pessoas)/;
+            if (nonLegal.test(name)) return false;
+            return /(?:\bdireito\b|constitucional|administrativ|penal|processual|civil|tributar|previdenciar|eleitoral|trabalh|legislacao|\blei\b|\bleis\b|estatuto|regimento|decreto|resolucao|codigo|constituicao|jurisprudencia|norma(?:s|tiv)|juridic|ministerio publico|defensoria|magistratura)/.test(name);
+        }
+
+        function getLegalReadingBlocks() {
+            const metadata = getConcursosMetadata();
+            const blocks = metadata[currentConcurso]?.legalReadingBlocks;
+            return Array.isArray(blocks) ? blocks : [];
+        }
+
+        function createLegalBlockId() {
+            return `legal_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+        }
+
+        function renderLegalReadingBlockOptions(materia) {
+            const select = document.getElementById('legalReadingBlockSelect');
+            if (!select) return;
+            const blocks = getLegalReadingBlocks().filter(block => block.materia === materia);
+            select.innerHTML = '<option value="">Leitura livre / novo bloco</option>' + blocks.map(block =>
+                `<option value="${escapeHtml(block.id)}">${escapeHtml(block.norma)}${block.articleStart ? ` — arts. ${escapeHtml(block.articleStart)}${block.articleEnd ? `–${escapeHtml(block.articleEnd)}` : ''}` : ''}</option>`
+            ).join('');
+        }
+
+        function fillLegalReadingFromSelectedBlock() {
+            const id = document.getElementById('legalReadingBlockSelect')?.value || '';
+            if (!id) return;
+            const block = getLegalReadingBlocks().find(item => String(item.id) === String(id));
+            if (!block) return;
+            document.getElementById('legalReadingNorm').value = block.norma || '';
+            document.getElementById('legalReadingStartArticle').value = block.nextArticle || block.articleStart || '';
+            document.getElementById('legalReadingEndArticle').value = block.articleEnd || '';
+        }
+
+        function closeLegalReadingModal() {
+            const modal = document.getElementById('modalLegalReading');
+            if (modal) modal.style.display = 'none';
+            pendingLegalStudyContext = null;
+        }
+
+        function openLegalReadingForScheduledTopic(idx) {
+            if (!activeSelectedDateKey) return;
+            const metadata = getConcursosMetadata();
+            const raw = metadata[currentConcurso]?.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            if (!raw || isRevisionScheduleText(raw)) return alert('Lei Seca deve ser iniciada a partir de um tópico normal de estudo.');
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const matched = editalItems.find(i => `${i.materia} - ${i.assunto}` === clean);
+            if (!matched) return alert('Este item não está vinculado ao edital.');
+            if (!isLegalStudyMateria(matched.materia)) return alert('Lei Seca está disponível apenas para matérias jurídicas ou normativas.');
+
+            const minutesInput = document.getElementById(`studyMinutes_${idx}`);
+            const requestedMinutes = Math.max(1, Math.min(240, parseInt(minutesInput?.value || document.getElementById('focoMin')?.value || '40') || 40));
+            const todayKey = getLocalDateKey();
+            pendingLegalStudyContext = {
+                concurso: currentConcurso,
+                materia: matched.materia,
+                assunto: matched.assunto,
+                itemId: matched.id,
+                dateKey: activeSelectedDateKey,
+                plannedDateKey: activeSelectedDateKey,
+                adaptiveAdvance: false,
+                activityType: 'lei_seca',
+                scheduleIndex: idx
+            };
+            document.getElementById('legalReadingContext').innerHTML = `<strong>${escapeHtml(matched.materia)}</strong> — ${escapeHtml(matched.assunto)}`;
+            document.getElementById('legalReadingNorm').value = '';
+            document.getElementById('legalReadingStartArticle').value = '';
+            document.getElementById('legalReadingEndArticle').value = '';
+            document.getElementById('legalReadingMinutes').value = requestedMinutes;
+            document.getElementById('legalReadingSaveBlock').checked = true;
+            renderLegalReadingBlockOptions(matched.materia);
+            document.getElementById('modalLegalReading').style.display = 'flex';
+        }
+
+        async function upsertLegalReadingBlock(context) {
+            if (!context?.norma || !context?.materia) return null;
+            const metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = { dataProva:null, dateSchedule:{} };
+            const contest = metadata[currentConcurso];
+            if (!Array.isArray(contest.legalReadingBlocks)) contest.legalReadingBlocks = [];
+            const selectedId = document.getElementById('legalReadingBlockSelect')?.value || context.legalBlockId || '';
+            let block = contest.legalReadingBlocks.find(item => String(item.id) === String(selectedId));
+            if (!block) {
+                const signature = `${foldLegalStudyText(context.materia)}|${foldLegalStudyText(context.norma)}|${String(context.articleStart||'')}|${String(context.articleEnd||'')}`;
+                block = contest.legalReadingBlocks.find(item => `${foldLegalStudyText(item.materia)}|${foldLegalStudyText(item.norma)}|${String(item.articleStart||'')}|${String(item.articleEnd||'')}` === signature);
+            }
+            if (!block) {
+                block = { id:createLegalBlockId(), concursoId:currentConcurso, createdAt:new Date().toISOString() };
+                contest.legalReadingBlocks.push(block);
+            }
+            Object.assign(block, {
+                materia: context.materia,
+                assunto: context.assunto,
+                norma: context.norma,
+                articleStart: context.articleStart || '',
+                articleEnd: context.articleEnd || '',
+                updatedAt: new Date().toISOString()
+            });
+            await saveConcursosMetadata(metadata);
+            return block;
+        }
+
+        async function startLegalReadingStudy() {
+            if (!pendingLegalStudyContext) return;
+            const norma = String(document.getElementById('legalReadingNorm')?.value || '').trim();
+            const articleStart = String(document.getElementById('legalReadingStartArticle')?.value || '').trim();
+            const articleEnd = String(document.getElementById('legalReadingEndArticle')?.value || '').trim();
+            const requestedMinutes = Math.max(1, Math.min(240, parseInt(document.getElementById('legalReadingMinutes')?.value || '40') || 40));
+            if (!norma) return alert('Informe a norma ou diploma legal que será estudado.');
+            if (!articleStart) return alert('Informe o artigo inicial da leitura.');
+
+            const todayKey = getLocalDateKey();
+            const plannedDateKey = pendingLegalStudyContext.plannedDateKey;
+            let adaptiveAdvance = false;
+            if (plannedDateKey > todayKey) {
+                adaptiveAdvance = confirm(`Este tópico está planejado para ${formatDateKeyShort(plannedDateKey)}.\n\nOK: antecipar para hoje e reorganizar a fila futura.\nCancelar: estudar Lei Seca agora sem alterar o cronograma.`);
+            }
+            let context = { ...pendingLegalStudyContext, norma, articleStart, articleEnd, adaptiveAdvance, dateKey: adaptiveAdvance ? todayKey : plannedDateKey };
+            if (document.getElementById('legalReadingSaveBlock')?.checked) {
+                const block = await upsertLegalReadingBlock(context);
+                if (block) context.legalBlockId = block.id;
+            }
+            activeStudyContext = context;
+            pendingLegalStudyContext = null;
+            document.getElementById('modalLegalReading').style.display = 'none';
+            renderActiveStudyContext();
+            closeModalDayContent();
+
+            const focusInput = document.getElementById('focoMin');
+            if (focusInput) focusInput.value = requestedMinutes;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerMode = 'focus';
+            timerHasStarted = false;
+            isTimerPaused = false;
+            currentFocusCycleMinutes = 0;
+            focusSessionCommitted = false;
+            timeLeft = requestedMinutes * 60;
+            currentTimerTotalSeconds = timeLeft;
+            updateDisplay();
+            updatePauseButton();
+            requestAnimationFrame(() => {
+                const pomodoro = document.querySelector('.pomodoro-card');
+                if (pomodoro) pomodoro.scrollIntoView({ behavior:'smooth', block:'center' });
+                startTimer();
+            });
+        }
+
+        function finalizeLegalArticleRangeForSession(context) {
+            if (!context || context.activityType !== 'lei_seca') return context;
+            const plannedEnd = String(context.articleEnd || '').trim();
+            const promptText = plannedEnd
+                ? `Você planejou ler até o art. ${plannedEnd}.\n\nInforme o último artigo efetivamente lido:`
+                : 'Informe o último artigo efetivamente lido:';
+            const finalArticle = prompt(promptText, plannedEnd || context.articleStart || '');
+            if (finalArticle !== null && String(finalArticle).trim()) context.articleEnd = String(finalArticle).trim();
+            return context;
+        }
+
+        async function updateLegalReadingBlockAfterSession(context) {
+            if (!context?.legalBlockId || context.activityType !== 'lei_seca') return;
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso];
+            const block = contest?.legalReadingBlocks?.find(item => String(item.id) === String(context.legalBlockId));
+            if (!block) return;
+            block.lastStudiedAt = new Date().toISOString();
+            block.lastArticleRead = context.articleEnd || context.articleStart || null;
+            const n = parseInt(String(block.lastArticleRead || '').replace(/\D/g,''), 10);
+            if (Number.isFinite(n)) block.nextArticle = String(n + 1);
+            block.sessions = Math.max(0, Number(block.sessions || 0)) + 1;
+            await saveConcursosMetadata(metadata);
+        }
+
+        async function completeFocusSessionNow() {
+            if (timerMode !== 'focus' || !timerHasStarted || focusSessionCommitted) return;
+            if (!activeStudyContext || activeStudyContext.concurso !== currentConcurso) {
+                return alert('Inicie Teoria, Questões ou Lei Seca pelo cronograma antes de concluir uma sessão contabilizável.');
+            }
+            const elapsedSeconds = Math.max(0, (Number(currentTimerTotalSeconds) || 0) - (Number(timeLeft) || 0));
+            const completedMinutes = Math.floor(elapsedSeconds / 60);
+            if (completedMinutes < 1) return alert('Complete pelo menos 1 minuto de foco antes de contabilizar a sessão.');
+            if (!confirm(`Concluir esta sessão agora e contabilizar ${completedMinutes} min de estudo?`)) return;
+
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isTimerPaused = false;
+            focusSessionCommitted = true;
+            const finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
+            await recordStudyMinutesForContext(completedMinutes, finalContext);
+            await updateLegalReadingBlockAfterSession(finalContext);
+
+            currentFocusCycleMinutes = 0;
+            timerHasStarted = false;
+            timerMode = 'focus';
+            timeLeft = (parseInt(document.getElementById('focoMin')?.value || '40') || 40) * 60;
+            currentTimerTotalSeconds = timeLeft;
+            updateDisplay();
+            renderPomodoroDailyCounter();
+            playPomodoroCompletionBell();
+            setTimeout(() => alert(`Sessão concluída: ${completedMinutes} min contabilizados.`), 500);
+        }
+
         function startFocusTimer() {
             if (timerMode !== 'focus' || (!timerHasStarted && timeLeft <= 0)) {
                 clearInterval(timerInterval);
@@ -7116,6 +7417,7 @@
                 timerHasStarted = false;
                 isTimerPaused = false;
                 currentFocusCycleMinutes = 0;
+                focusSessionCommitted = false;
                 timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
                 currentTimerTotalSeconds = timeLeft;
                 updateDisplay();
@@ -7130,6 +7432,7 @@
             timerHasStarted = false;
             isTimerPaused = false;
             currentFocusCycleMinutes = 0;
+            focusSessionCommitted = false;
             timeLeft = (parseInt(document.getElementById('pausaMin').value) || 5) * 60;
             currentTimerTotalSeconds = timeLeft;
             updateDisplay();
@@ -7158,6 +7461,7 @@
             isTimerPaused = false;
             timerHasStarted = false;
             timerMode = 'focus';
+            focusSessionCommitted = false;
             currentFocusCycleMinutes = 0;
             timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
             currentTimerTotalSeconds = timeLeft;
