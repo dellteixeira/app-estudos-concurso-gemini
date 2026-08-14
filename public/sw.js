@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-51-account-data-controls-20260814';
+const CACHE_NAME = 'painel-estudos-v9-52-account-backup-cleanup-20260814';
 
 const APP_SHELL = [
   './',
