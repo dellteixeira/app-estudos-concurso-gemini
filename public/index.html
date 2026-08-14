@@ -139,6 +139,11 @@
         .account-section h4 { margin:0 0 10px; color:var(--header-materia-text); }
         .account-danger-zone { border-color:rgba(239,68,68,.5); background:rgba(239,68,68,.055); }
         .account-danger-zone h4 { color:#f87171; }
+        .account-danger-action { margin-top:12px; padding:12px; border:1px solid rgba(239,68,68,.28); border-radius:10px; background:rgba(15,23,42,.18); }
+        .account-danger-action:first-of-type { margin-top:0; }
+        .account-danger-action h5 { margin:0 0 6px; color:var(--text-color); font-size:.9rem; }
+        .account-danger-action p { margin:0; color:#94a3b8; font-size:.78rem; line-height:1.45; }
+        body.light-mode .account-danger-action { background:#fff; }
         .account-inline-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
         .account-inline-actions .btn { justify-content:center; }
         .account-field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
@@ -146,7 +151,13 @@
         .account-helper { color:#94a3b8; font-size:.78rem; line-height:1.45; margin-top:7px; }
         body.light-mode .account-section { background:#f8fafc; }
         body.light-mode .account-summary { background:#eff6ff; }
-        @media (max-width:620px) { .account-field-grid { grid-template-columns:1fr; } .account-field-grid .full { grid-column:auto; } }
+        @media (max-width:620px) {
+            .account-field-grid { grid-template-columns:1fr; }
+            .account-field-grid .full { grid-column:auto; }
+            .account-inline-actions { flex-direction:column; }
+            .account-inline-actions .btn { width:100%; }
+            #modalAccount .modal { max-height:92vh; overflow:auto; }
+        }
 
         .super-user-badge {
             background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.75rem;
@@ -2683,6 +2694,7 @@
                 <button class="btn btn-primary" style="flex:1;" onclick="handleLogin()">Entrar</button>
                 <button class="btn btn-secondary" style="flex:1;" onclick="handleSignUp()">Cadastrar</button>
             </div>
+            <div id="authStatusMessage" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.82rem; line-height:1.4; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.28); color:#86efac;"></div>
         </div>
     </div>
 
@@ -3102,19 +3114,41 @@
 
             <section class="account-section account-danger-zone">
                 <h4>Zona de perigo</h4>
-                <p style="margin:0; line-height:1.5; font-size:.86rem;">Exclui permanentemente <strong>todos os dados de estudo desta conta</strong> no Supabase e neste dispositivo: concursos, edital, cronogramas, sessões, horas, revisões, anotações, flashcards, configurações, PDFs locais, filas offline e backups. <strong>O login e o e-mail são preservados.</strong></p>
-                <div class="account-field-grid" style="margin-top:12px;">
-                    <div class="form-group">
-                        <label for="accountDeletePassword">Senha atual</label>
-                        <input type="password" id="accountDeletePassword" autocomplete="current-password" placeholder="Confirme sua senha">
+
+                <div class="account-danger-action">
+                    <h5>Apagar dados e manter a conta</h5>
+                    <p>Remove concursos, edital, cronogramas, sessões, horas, revisões, anotações, flashcards, configurações, PDFs, filas offline e backups. Seu e-mail e login continuam ativos.</p>
+                    <div class="account-field-grid" style="margin-top:12px;">
+                        <div class="form-group">
+                            <label for="accountDeletePassword">Senha atual</label>
+                            <input type="password" id="accountDeletePassword" autocomplete="current-password" placeholder="Confirme sua senha">
+                        </div>
+                        <div class="form-group">
+                            <label for="accountDeleteConfirmation">Digite EXCLUIR</label>
+                            <input type="text" id="accountDeleteConfirmation" autocomplete="off" spellcheck="false" placeholder="EXCLUIR">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="accountDeleteConfirmation">Digite EXCLUIR</label>
-                        <input type="text" id="accountDeleteConfirmation" autocomplete="off" spellcheck="false" placeholder="EXCLUIR">
+                    <div class="account-inline-actions">
+                        <button class="btn btn-danger" type="button" onclick="deleteAllAccountStudyData()">Apagar todos os dados</button>
                     </div>
                 </div>
-                <div class="account-inline-actions">
-                    <button class="btn btn-danger" type="button" onclick="deleteAllAccountStudyData()">Excluir todos os dados</button>
+
+                <div class="account-danger-action">
+                    <h5>Excluir minha conta permanentemente</h5>
+                    <p>Remove todos os dados e também exclui o usuário do Supabase Auth. Depois disso, esta conta não poderá entrar novamente com o mesmo login/senha sem realizar um novo cadastro.</p>
+                    <div class="account-field-grid" style="margin-top:12px;">
+                        <div class="form-group">
+                            <label for="accountPermanentDeletePassword">Senha atual</label>
+                            <input type="password" id="accountPermanentDeletePassword" autocomplete="current-password" placeholder="Confirme sua senha">
+                        </div>
+                        <div class="form-group">
+                            <label for="accountPermanentDeleteConfirmation">Digite EXCLUIR CONTA</label>
+                            <input type="text" id="accountPermanentDeleteConfirmation" autocomplete="off" spellcheck="false" placeholder="EXCLUIR CONTA">
+                        </div>
+                    </div>
+                    <div class="account-inline-actions">
+                        <button class="btn btn-danger" type="button" onclick="deleteAccountPermanently()">Excluir minha conta</button>
+                    </div>
                 </div>
             </section>
 
@@ -3656,7 +3690,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.51',
+                    appVersion:'9.53',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -10610,7 +10644,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!currentUser) return appNotice('Você precisa estar conectado para acessar a conta.', { title:'Conta indisponível' });
             const email = document.getElementById('accountUserEmail');
             if (email) email.textContent = currentUser.email || 'E-mail não disponível';
-            ['accountCurrentPassword','accountNewPassword','accountConfirmPassword','accountDeletePassword','accountDeleteConfirmation'].forEach(id => {
+            ['accountCurrentPassword','accountNewPassword','accountConfirmPassword','accountDeletePassword','accountDeleteConfirmation','accountPermanentDeletePassword','accountPermanentDeleteConfirmation'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
@@ -10621,7 +10655,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function closeAccountModal() {
             const modal = document.getElementById('modalAccount');
             if (modal) modal.style.display = 'none';
-            ['accountCurrentPassword','accountNewPassword','accountConfirmPassword','accountDeletePassword','accountDeleteConfirmation'].forEach(id => {
+            ['accountCurrentPassword','accountNewPassword','accountConfirmPassword','accountDeletePassword','accountDeleteConfirmation','accountPermanentDeletePassword','accountPermanentDeleteConfirmation'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
@@ -10682,7 +10716,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         const cursor = req.result;
                         if (!cursor) return;
                         const key = String(cursor.key || cursor.value?.key || '');
-                        if (key.startsWith(`edital_file_${uid}_`)) cursor.delete();
+                        if (key.startsWith(`edital_file_${uid}_`) || String(cursor.value?.userId || '') === uid) cursor.delete();
                         cursor.continue();
                     };
                     req.onerror = () => reject(req.error || new Error('Falha ao limpar PDFs locais.'));
@@ -10702,8 +10736,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 await new Promise((resolve, reject) => {
                     const tx = db.transaction(LOCAL_BACKUP_STORE, 'readwrite');
                     const store = tx.objectStore(LOCAL_BACKUP_STORE);
-                    store.delete(`${uid}:current`);
-                    store.delete(`${uid}:previous`);
+                    const req = store.openCursor();
+                    req.onsuccess = () => {
+                        const cursor = req.result;
+                        if (!cursor) return;
+                        const key = String(cursor.key || cursor.value?.key || '');
+                        if (key.startsWith(`${uid}:`) || String(cursor.value?.userId || '') === uid) cursor.delete();
+                        cursor.continue();
+                    };
+                    req.onerror = () => reject(req.error || new Error('Falha ao limpar backups locais.'));
                     tx.oncomplete = () => resolve();
                     tx.onerror = () => reject(tx.error || new Error('Falha ao limpar backups locais.'));
                     tx.onabort = () => reject(tx.error || new Error('Limpeza de backups cancelada.'));
@@ -10715,7 +10756,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
         }
 
-        async function clearLocalStudyDataForUser(uid) {
+        async function clearLocalStudyDataForUser(uid, options = {}) {
             clearTimeout(localBackupTimer);
             backupRestoreInProgress = true;
             const exactKeys = new Set([
@@ -10736,6 +10777,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (key && (exactKeys.has(key) || prefixes.some(prefix => key.startsWith(prefix)))) remove.push(key);
             }
             remove.forEach(key => localStorage.removeItem(key));
+            if (options.includeLegacy) {
+                [
+                    'last_studied_concurso',
+                    'concursos_metadata_guest',
+                    'edital_offline_data_guest',
+                    'pending_sync_guest',
+                    'last_successful_sync_guest'
+                ].forEach(key => localStorage.removeItem(key));
+            }
             await deleteIndexedDbRecordsForUser(uid);
         }
 
@@ -10776,6 +10826,110 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             } catch (error) {
                 backupRestoreInProgress = false;
                 await appNotice(`A exclusão não foi concluída: ${error.message}`, { title:'Falha na exclusão' });
+            }
+        }
+
+        function clearSupabaseAuthStorage() {
+            try {
+                const projectRef = (() => {
+                    try { return new URL(SUPABASE_URL).hostname.split('.')[0]; } catch (_) { return ''; }
+                })();
+                const remove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key) continue;
+                    if ((projectRef && key === `sb-${projectRef}-auth-token`) || key === 'supabase.auth.token') remove.push(key);
+                }
+                remove.forEach(key => localStorage.removeItem(key));
+            } catch (error) {
+                console.warn('Limpeza local da sessão Supabase:', error);
+            }
+        }
+
+        function showCleanAuthScreen(message = '') {
+            currentUser = null;
+            isSuperUser = false;
+            activeUserContextId = null;
+            userContextGeneration += 1;
+            dashboardLoadPromise = null;
+            syncPromise = null;
+            syncUiMode = 'idle';
+            resetInMemoryUserState();
+            currentConcurso = 'Concurso Geral';
+            metadataCache = {};
+            backupRestoreInProgress = false;
+            document.getElementById('app-dashboard').style.display = 'none';
+            document.getElementById('auth-screen').style.display = 'flex';
+            const email = document.getElementById('email');
+            const password = document.getElementById('password');
+            if (email) email.value = '';
+            if (password) password.value = '';
+            const status = document.getElementById('authStatusMessage');
+            if (status) {
+                status.textContent = message || '';
+                status.style.display = message ? 'block' : 'none';
+            }
+        }
+
+        async function deleteAccountPermanently() {
+            if (!currentUser) return;
+            if (!navigator.onLine) {
+                return appNotice('A exclusão permanente da conta exige conexão com a internet. Nenhum dado foi removido.', { title:'Conexão necessária' });
+            }
+
+            const password = document.getElementById('accountPermanentDeletePassword')?.value || '';
+            const confirmation = (document.getElementById('accountPermanentDeleteConfirmation')?.value || '').trim();
+            if (!password) return appNotice('Informe sua senha atual para excluir a conta.', { title:'Confirmação necessária' });
+            if (confirmation !== 'EXCLUIR CONTA') {
+                return appNotice('Digite exatamente EXCLUIR CONTA para liberar a exclusão permanente.', { title:'Confirmação necessária' });
+            }
+
+            const ok = await appConfirm(
+                'Esta operação excluirá permanentemente seus dados de estudo E o seu usuário de login. Você será desconectado imediatamente e voltará para a tela inicial. Para usar este e-mail novamente no futuro, será necessário fazer um novo cadastro.\n\nEsta ação não pode ser desfeita. Continuar?',
+                { title:'Excluir conta permanentemente', confirmText:'Excluir minha conta', danger:true }
+            );
+            if (!ok) return;
+
+            const uid = currentUser.id;
+            try {
+                await verifyCurrentAccountPassword(password);
+                const { data:sessionData, error:sessionError } = await supabaseClient.auth.getSession();
+                if (sessionError || !sessionData?.session?.access_token) throw new Error('Não foi possível obter uma sessão válida para excluir a conta.');
+
+                const response = await fetch('/api/account/delete', {
+                    method:'POST',
+                    headers:{
+                        'content-type':'application/json',
+                        'authorization':`Bearer ${sessionData.session.access_token}`
+                    },
+                    body:'{}'
+                });
+                let payload = {};
+                try { payload = await response.json(); } catch (_) {}
+                if (!response.ok) {
+                    if (payload?.code === 'ACCOUNT_DELETE_NOT_CONFIGURED') {
+                        throw new Error('A exclusão permanente ainda precisa do segredo SUPABASE_SECRET_KEY configurado no Cloudflare Worker.');
+                    }
+                    throw new Error(payload?.error || `Servidor respondeu ${response.status}.`);
+                }
+
+                // A conta já foi removida no servidor. Daqui em diante, toda limpeza
+                // local é best-effort e nunca deve manter o usuário dentro do app.
+                closeAccountModal();
+                document.getElementById('app-dashboard').style.display = 'none';
+                try { await clearLocalStudyDataForUser(uid, { includeLegacy:true }); }
+                catch (localError) { console.warn('Conta excluída; limpeza local parcial:', localError); }
+
+                try { await supabaseClient.auth.signOut({ scope:'local' }); }
+                catch (signOutError) { console.warn('Conta já excluída; signOut local:', signOutError); }
+                clearSupabaseAuthStorage();
+                showCleanAuthScreen('Conta excluída permanentemente. Para usar novamente este e-mail, faça um novo cadastro.');
+
+                // Recarrega em estado anônimo para remover qualquer DOM/closure residual.
+                setTimeout(() => location.replace(location.pathname + location.search), 120);
+            } catch (error) {
+                backupRestoreInProgress = false;
+                await appNotice(`A conta não foi excluída: ${error.message}`, { title:'Falha na exclusão da conta' });
             }
         }
 
