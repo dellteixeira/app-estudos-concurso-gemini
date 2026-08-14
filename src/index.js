@@ -2,6 +2,73 @@
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const MAX_TEXT_CHARS = 110000;
 
+const VENDOR_ROUTES = {
+  "/vendor/supabase.js": {
+    upstreams: [
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    ],
+    contentType: "application/javascript; charset=utf-8"
+  },
+  "/vendor/chart.umd.min.js": {
+    upstreams: [
+      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",
+      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"
+    ],
+    contentType: "application/javascript; charset=utf-8"
+  },
+  "/vendor/pdf.min.js": {
+    upstreams: [
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
+    ],
+    contentType: "application/javascript; charset=utf-8"
+  },
+  "/vendor/pdf.worker.min.js": {
+    upstreams: [
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+    ],
+    contentType: "application/javascript; charset=utf-8"
+  }
+};
+
+async function serveVendorAsset(request, route) {
+  const cache = caches.default;
+  const cacheKey = new Request(request.url, { method: "GET" });
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached;
+
+  let lastStatus = 0;
+  for (const upstreamUrl of route.upstreams) {
+    try {
+      const upstream = await fetch(upstreamUrl, { redirect: "follow" });
+      lastStatus = upstream.status;
+      if (!upstream.ok) continue;
+
+      const headers = new Headers();
+      headers.set("content-type", route.contentType);
+      headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");
+      headers.set("x-content-type-options", "nosniff");
+      headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);
+      const response = new Response(upstream.body, { status: 200, headers });
+      await cache.put(cacheKey, response.clone());
+      return response;
+    } catch (error) {
+      console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);
+    }
+  }
+
+  return new Response("Dependência temporariamente indisponível.", {
+    status: 503,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store",
+      "x-painel-vendor-last-status": String(lastStatus || 0)
+    }
+  });
+}
+
 const prioritySchema = {
   type: "object",
   properties: {
@@ -281,6 +348,11 @@ ${rawText.slice(0, MAX_TEXT_CHARS)}
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    const vendorRoute = VENDOR_ROUTES[url.pathname];
+    if (vendorRoute && request.method === "GET") {
+      return serveVendorAsset(request, vendorRoute);
+    }
 
     if (url.pathname === "/api/ai/analisar-edital") {
       if (request.method !== "POST") {
