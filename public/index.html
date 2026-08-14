@@ -2426,6 +2426,18 @@
             #tab-edital tbody tr.adaptive-edital-row input[type="checkbox"] { width:20px; height:20px; }
         }
 
+        /* V9.38 — reordenação manual de matérias por arraste */
+        .materia-header-row { cursor: grab; user-select: none; }
+        .materia-header-row:active { cursor: grabbing; }
+        .materia-header-row.materia-dragging { opacity:.52; transform:scale(.995); }
+        .materia-header-row.materia-drop-target { outline:2px solid var(--primary-blue); outline-offset:-2px; box-shadow:0 0 0 3px rgba(14,165,233,.12) inset; }
+        .materia-drag-hint { display:inline-flex; align-items:center; margin-left:8px; font-size:.66rem; opacity:.48; font-weight:700; white-space:nowrap; }
+        @media (max-width:700px) {
+            .materia-header-row { touch-action: pan-y; }
+            .materia-drag-hint { font-size:.6rem; margin-left:5px; }
+            body.materia-touch-dragging { overflow:hidden; }
+        }
+
         /* V9.35 — Lei Seca integrada + conclusão manual de sessão */
         #completeFocusBtn:disabled { opacity:.45; cursor:not-allowed; }
         @media (max-width:700px) {
@@ -6309,6 +6321,183 @@
             }
         }
 
+        let draggedMateriaName = null;
+        let materiaTouchTimer = null;
+        let materiaTouchSource = null;
+        let materiaTouchTarget = null;
+        let suppressMateriaClickUntil = 0;
+
+        function getStoredMateriaOrder() {
+            const metadata = getConcursosMetadata();
+            const order = metadata[currentConcurso]?.materiaOrder;
+            return Array.isArray(order) ? order : [];
+        }
+
+        function buildDisplayedMateriaOrder(materiasMap) {
+            const names = Object.keys(materiasMap);
+            const fallback = [...names].sort((a, b) => {
+                const pa = materiasMap[a].prioridade || 1;
+                const pb = materiasMap[b].prioridade || 1;
+                if (pa !== pb) return pa - pb;
+                return names.indexOf(a) - names.indexOf(b);
+            });
+            const stored = getStoredMateriaOrder().filter(name => names.includes(name));
+            const missing = fallback.filter(name => !stored.includes(name));
+            return stored.length ? [...stored, ...missing] : fallback;
+        }
+
+        async function persistMateriaOrder(order) {
+            const metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].materiaOrder = [...order];
+            await saveConcursosMetadata(metadata);
+        }
+
+        function clampMateriaPriority(value) {
+            const parsed = parseInt(value, 10);
+            if (!Number.isFinite(parsed)) return 1;
+            return Math.min(4, Math.max(1, parsed));
+        }
+
+        function getMateriaPriority(materiaName) {
+            const item = editalItems.find(entry => entry.materia === materiaName);
+            return clampMateriaPriority(item?.prioridade ?? 1);
+        }
+
+        async function applyMateriaPriority(materiaName, priority) {
+            const normalizedPriority = clampMateriaPriority(priority);
+            const affected = editalItems.filter(item => item.materia === materiaName);
+            affected.forEach(item => { item.prioridade = normalizedPriority; });
+            await Promise.all(affected.map(item => saveEditalItemToCloud(item)));
+            return normalizedPriority;
+        }
+
+        async function moveMateriaToPosition(sourceName, targetName) {
+            if (!sourceName || !targetName || sourceName === targetName) return;
+            const currentRows = [...document.querySelectorAll('#edital-list .materia-header-row')];
+            const order = currentRows.map(row => decodeURIComponent(row.dataset.materia || '')).filter(Boolean);
+            const sourceIndex = order.indexOf(sourceName);
+            const targetIndex = order.indexOf(targetName);
+            if (sourceIndex < 0 || targetIndex < 0) return;
+
+            // A matéria movida assume a prioridade da faixa/disciplinada de destino.
+            // A prioridade do assunto permanece independente e não é modificada.
+            const targetPriority = getMateriaPriority(targetName);
+            order.splice(sourceIndex, 1);
+            order.splice(targetIndex, 0, sourceName);
+
+            await applyMateriaPriority(sourceName, targetPriority);
+            await persistMateriaOrder(order);
+            filterDataByConcurso();
+        }
+
+        function handleMateriaHeaderClick(event, materiaName) {
+            if (Date.now() < suppressMateriaClickUntil) {
+                event?.preventDefault?.();
+                event?.stopPropagation?.();
+                return;
+            }
+            toggleMateria(materiaName);
+        }
+
+        function handleMateriaDragStart(event, materiaName) {
+            if (event.target.closest('input,button,select,a,label')) {
+                event.preventDefault();
+                return;
+            }
+            draggedMateriaName = materiaName;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', materiaName);
+            requestAnimationFrame(() => event.currentTarget.classList.add('materia-dragging'));
+        }
+
+        function handleMateriaDragOver(event) {
+            if (!draggedMateriaName) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            document.querySelectorAll('.materia-header-row.materia-drop-target').forEach(r => r.classList.remove('materia-drop-target'));
+            event.currentTarget.classList.add('materia-drop-target');
+        }
+
+        async function handleMateriaDrop(event, targetName) {
+            event.preventDefault();
+            const sourceName = draggedMateriaName || event.dataTransfer.getData('text/plain');
+            suppressMateriaClickUntil = Date.now() + 350;
+            cleanupMateriaDragVisuals();
+            draggedMateriaName = null;
+            await moveMateriaToPosition(sourceName, targetName);
+        }
+
+        function cleanupMateriaDragVisuals() {
+            document.querySelectorAll('.materia-header-row.materia-dragging,.materia-header-row.materia-drop-target').forEach(r => {
+                r.classList.remove('materia-dragging','materia-drop-target');
+            });
+        }
+
+        function handleMateriaDragEnd() {
+            draggedMateriaName = null;
+            cleanupMateriaDragVisuals();
+        }
+
+        function bindMateriaTouchReorder() {
+            document.querySelectorAll('#edital-list .materia-header-row').forEach(row => {
+                row.addEventListener('pointerdown', event => {
+                    if (event.pointerType === 'mouse' || event.target.closest('input,button,select,a,label')) return;
+                    clearTimeout(materiaTouchTimer);
+                    materiaTouchSource = row;
+                    materiaTouchTarget = row;
+                    const startX = event.clientX;
+                    const startY = event.clientY;
+                    materiaTouchTimer = setTimeout(() => {
+                        draggedMateriaName = decodeURIComponent(row.dataset.materia || '');
+                        row.classList.add('materia-dragging');
+                        document.body.classList.add('materia-touch-dragging');
+                        if (navigator.vibrate) navigator.vibrate(30);
+                    }, 420);
+                    row._materiaStartX = startX;
+                    row._materiaStartY = startY;
+                });
+
+                row.addEventListener('pointermove', event => {
+                    if (event.pointerType === 'mouse') return;
+                    if (!draggedMateriaName) {
+                        const dx = Math.abs(event.clientX - (row._materiaStartX || event.clientX));
+                        const dy = Math.abs(event.clientY - (row._materiaStartY || event.clientY));
+                        if (dx > 10 || dy > 10) clearTimeout(materiaTouchTimer);
+                        return;
+                    }
+                    event.preventDefault();
+                    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest?.('.materia-header-row');
+                    if (target && target !== materiaTouchTarget) {
+                        materiaTouchTarget?.classList.remove('materia-drop-target');
+                        materiaTouchTarget = target;
+                        materiaTouchTarget.classList.add('materia-drop-target');
+                    }
+                });
+
+                const finishTouch = async event => {
+                    clearTimeout(materiaTouchTimer);
+                    if (!draggedMateriaName) {
+                        materiaTouchSource = null;
+                        materiaTouchTarget = null;
+                        return;
+                    }
+                    event.preventDefault();
+                    const source = draggedMateriaName;
+                    const target = decodeURIComponent(materiaTouchTarget?.dataset?.materia || '');
+                    suppressMateriaClickUntil = Date.now() + 500;
+                    draggedMateriaName = null;
+                    cleanupMateriaDragVisuals();
+                    document.body.classList.remove('materia-touch-dragging');
+                    materiaTouchSource = null;
+                    materiaTouchTarget = null;
+                    if (source && target && source !== target) await moveMateriaToPosition(source, target);
+                };
+                row.addEventListener('pointerup', finishTouch);
+                row.addEventListener('pointercancel', finishTouch);
+            });
+        }
+
         function renderTable() {
             renderAdaptiveEditalHeader();
             const tbody = document.getElementById('edital-list');
@@ -6320,7 +6509,7 @@
                 materiasMap[mat].items.push(item);
             });
 
-            const sortedMaterias = Object.keys(materiasMap).sort((a, b) => (materiasMap[a].prioridade || 1) - (materiasMap[b].prioridade || 1));
+            const sortedMaterias = buildDisplayedMateriaOrder(materiasMap);
 
             sortedMaterias.forEach(materiaName => {
                 const group = materiasMap[materiaName];
@@ -6334,15 +6523,15 @@
                 const activeRevisionOffsets = getActiveRevisionOffsets();
                 const dynamicColspan = 4 + activeRevisionOffsets.length;
                 tbody.innerHTML += `
-                    <tr class="materia-header-row" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="toggleMateria(decodeURIComponent('${safeMateriaHandler}'))">
+                    <tr class="materia-header-row" draggable="true" data-materia="${safeMateriaHandler}" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))" ondragstart="handleMateriaDragStart(event, decodeURIComponent('${safeMateriaHandler}'))" ondragover="handleMateriaDragOver(event)" ondrop="handleMateriaDrop(event, decodeURIComponent('${safeMateriaHandler}'))" ondragend="handleMateriaDragEnd()">
                         <td onclick="event.stopPropagation()">
-                            <input type="number" class="priority-input" value="${group.prioridade}" min="1" onchange="updateMateriaPriority(decodeURIComponent('${safeMateriaHandler}'), this.value)">
+                            <input type="number" class="priority-input" value="${clampMateriaPriority(group.prioridade)}" min="1" max="4" step="1" onchange="updateMateriaPriority(decodeURIComponent('${safeMateriaHandler}'), this.value)" title="Prioridade da disciplina (1 a 4)">
                         </td>
                         <td colspan="${dynamicColspan}">
                             <div class="materia-header-content">
                                 <span class="materia-header-main">
                                     <strong class="materia-header-title">${escapeHtml(materiaName)}</strong>
-                                    <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${group.prioridade}</span>
+                                    <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${clampMateriaPriority(group.prioridade)}<span class="materia-drag-hint">↕ arraste para reordenar e alterar prioridade</span></span>
                                 </span>
                                 <span class="materia-header-right">
                                     <span class="materia-progress-ring" style="--pct:${materiaPct}"><span>${materiaPct}%</span></span>
@@ -6376,19 +6565,15 @@
                     });
                 }
             });
+            bindMateriaTouchReorder();
         }
 
         function toggleMateria(materiaName) { openMaterias[materiaName] = !openMaterias[materiaName]; renderTable(); }
         function toggleAllAccordions(open) { editalItems.forEach(i => openMaterias[i.materia] = open); renderTable(); }
 
         async function updateMateriaPriority(materiaName, newPriority) {
-            const val = parseInt(newPriority) || 1;
-            editalItems.forEach(item => {
-                if (item.materia === materiaName) {
-                    item.prioridade = val;
-                    saveEditalItemToCloud(item);
-                }
-            });
+            const val = clampMateriaPriority(newPriority);
+            await applyMateriaPriority(materiaName, val);
             filterDataByConcurso();
         }
 
