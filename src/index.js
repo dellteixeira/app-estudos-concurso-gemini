@@ -345,6 +345,67 @@ ${rawText.slice(0, MAX_TEXT_CHARS)}
   });
 }
 
+async function deleteAuthenticatedAccount(request, env) {
+  const user = await authenticateSupabaseUser(request, env);
+  if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+
+  const adminKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!adminKey) {
+    return json({
+      error: "Exclusão permanente ainda não está configurada no servidor.",
+      code: "ACCOUNT_DELETE_NOT_CONFIGURED"
+    }, 503);
+  }
+
+  const authorization = request.headers.get("authorization") || "";
+
+  // Primeiro apaga os dados de estudo usando a própria sessão do usuário.
+  // A função RPC é SECURITY INVOKER e usa auth.uid(), portanto não aceita
+  // um user_id arbitrário enviado pelo navegador.
+  const dataDeleteResponse = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/delete_my_study_data`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      apikey: env.SUPABASE_ANON_KEY,
+      authorization
+    },
+    body: "{}"
+  });
+
+  if (!dataDeleteResponse.ok) {
+    const detail = await dataDeleteResponse.text().catch(() => "");
+    console.error("Falha ao excluir dados antes da conta:", dataDeleteResponse.status, detail);
+    return json({
+      error: "Não foi possível excluir os dados da conta antes de remover o login.",
+      code: "ACCOUNT_DATA_DELETE_FAILED"
+    }, 500);
+  }
+
+  // A exclusão de auth.users exige chave privilegiada e acontece somente
+  // neste Worker. A chave nunca é exposta ao frontend. Hard delete é usado
+  // para que o mesmo e-mail não continue autenticando nesta identidade.
+  const authDeleteResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/json",
+      apikey: adminKey,
+      authorization: `Bearer ${adminKey}`
+    },
+    body: JSON.stringify({ should_soft_delete: false })
+  });
+
+  if (!authDeleteResponse.ok) {
+    const detail = await authDeleteResponse.text().catch(() => "");
+    console.error("Falha ao excluir usuário Auth:", authDeleteResponse.status, detail);
+    return json({
+      error: "Os dados foram removidos, mas o login não pôde ser excluído. Tente novamente.",
+      code: "AUTH_USER_DELETE_FAILED"
+    }, 502);
+  }
+
+  return json({ deleted: true, userId: user.id });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -359,6 +420,13 @@ export default {
         return json({ error: "Método não permitido." }, 405);
       }
       return analyzeEdital(request, env);
+    }
+
+    if (url.pathname === "/api/account/delete") {
+      if (request.method !== "POST") {
+        return json({ error: "Método não permitido." }, 405);
+      }
+      return deleteAuthenticatedAccount(request, env);
     }
 
     return env.ASSETS.fetch(request);
