@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-36-internal-critical-dialogs-20260813';
+const CACHE_NAME = 'painel-estudos-v9-37-day-modal-layout-tidy-20260814';
 
 const APP_SHELL = [
   './manifest.json',
