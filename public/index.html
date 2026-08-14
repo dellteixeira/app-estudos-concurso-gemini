@@ -654,6 +654,25 @@
         }
         .ai-preview-topic:last-child { border-bottom: none; }
         .ai-source-note { opacity:0.72; font-size:0.78rem; line-height:1.4; }
+
+        /* V9.33 — horas personalizadas e revisões adaptativas */
+        .custom-daily-hours-panel { margin-top:10px; padding:12px; border:1px solid var(--modern-border); border-radius:12px; background:rgba(255,255,255,.025); }
+        .custom-hours-help { color:var(--modern-muted); font-size:.78rem; margin-bottom:10px; }
+        .custom-daily-hours-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+        .custom-day-hours { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--modern-border); border-radius:10px; background:var(--modern-surface-2); }
+        .custom-day-hours strong { min-width:34px; color:var(--modern-blue-soft); }
+        .custom-day-hours input { width:72px; margin-left:auto; }
+        .revision-model-note { color:var(--modern-muted); font-size:.68rem; font-weight:700; }
+        @media (max-width:900px) {
+            .custom-daily-hours-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            #tab-edital tbody tr:not(.materia-header-row) { grid-template-columns:68px 1fr !important; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(1) { grid-column:1; grid-row:1; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(2) { grid-column:2; grid-row:1; }
+            #tab-edital tbody tr:not(.materia-header-row) td:nth-child(n+3):not(:last-child) { grid-row:2; grid-column:auto; }
+            #tab-edital tbody tr:not(.materia-header-row) td[data-study-control="true"] { flex:0 0 72px; min-width:72px; }
+            #tab-edital tbody tr:not(.materia-header-row) .adaptive-controls-row { grid-column:1 / -1; display:flex; overflow-x:auto; gap:8px; padding:4px 0 2px; scrollbar-width:thin; }
+            #tab-edital tbody tr:not(.materia-header-row) td:last-child { grid-column:1 / -1; grid-row:3; }
+        }
         @media (max-width: 900px) {
             .ai-preview-header { grid-template-columns: 1fr 1fr; }
             .ai-preview-header .ai-preview-stat:last-child { grid-column: 1 / -1; }
@@ -1343,8 +1362,8 @@
             #tab-edital .materia-header-right { gap:7px; }
             #tab-edital .materia-expand-label { display:none; }
             #tab-edital .materia-progress-ring { width:38px; height:38px; }
-            /* V9.32 — edital mobile compacto: prioridade + assunto na primeira linha;
-               Teoria, Questões, 24h, 7d e 30d sempre na mesma linha. */
+            /* Edital mobile compacto: prioridade + assunto na primeira linha;
+               controles de estudo/revisão seguem o modelo adaptativo ativo. */
             #tab-edital tbody tr:not(.materia-header-row) {
                 display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 6px;
                 border:1px solid var(--modern-border) !important; border-left:4px solid var(--modern-blue) !important;
@@ -2377,6 +2396,26 @@
             border-color: #dce5ee;
         }
 
+
+        /* V9.33 — override final do card adaptativo no mobile */
+        @media (max-width:900px) {
+            #tab-edital tbody tr.adaptive-edital-row {
+                display:grid !important;
+                grid-template-columns:repeat(var(--control-count), minmax(0,1fr)) !important;
+                gap:8px 4px !important; overflow:hidden;
+            }
+            #tab-edital tbody tr.adaptive-edital-row td::before { content:none !important; }
+            #tab-edital tbody tr.adaptive-edital-row td:nth-child(1) { grid-column:1 !important; grid-row:1 !important; }
+            #tab-edital tbody tr.adaptive-edital-row td:nth-child(2) { grid-column:2 / -1 !important; grid-row:1 !important; }
+            #tab-edital tbody tr.adaptive-edital-row td[data-study-control="true"] {
+                grid-column:auto !important; grid-row:2 !important; min-width:0 !important; padding:3px 1px !important;
+            }
+            #tab-edital tbody tr.adaptive-edital-row td[data-study-control="true"] .revision-model-note {
+                display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; font-size:.52rem; white-space:nowrap;
+            }
+            #tab-edital tbody tr.adaptive-edital-row td:last-child { grid-column:1 / -1 !important; grid-row:3 !important; }
+            #tab-edital tbody tr.adaptive-edital-row input[type="checkbox"] { width:20px; height:20px; }
+        }
 </style>
 </head>
 <body>
@@ -2571,12 +2610,12 @@
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr>
+                            <tr id="editalTableHeaderRow">
                                 <th style="width: 90px;">Prioridade</th>
                                 <th style="text-align: left; padding-left: 1rem;">Assunto</th>
                                 <th>Teoria</th>
                                 <th>Questões</th>
-                                <th>Rev. 24h</th>
+                                <th>Rev. 1d</th>
                                 <th>Rev. 7d</th>
                                 <th>Rev. 30d</th>
                                 <th>Ações</th>
@@ -2818,22 +2857,27 @@
 
             <h4 style="color: var(--primary-blue); margin-top: 1rem;">Quanto tempo por dia você consegue estudar?</h4>
             <div id="hoursSelectionContainer">
-                <div class="hours-option-card" onclick="selectHoursOption(this, 1)"><span>⏱️ Menos de 1h por dia</span></div>
-                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)"><span>⏱️ Entre 1h e 2h por dia</span></div>
-                <div class="hours-option-card" onclick="selectHoursOption(this, 3)"><span>⏱️ Entre 2h a 4h por dia</span></div>
-                <div class="hours-option-card" onclick="selectHoursOption(this, 5)"><span>🔥 Acima de 4h (Modo Hardcore)</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 1)"><span>⏱️ Até 1h por dia</span></div>
+                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)"><span>⏱️ Até 2h por dia</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 4)"><span>⏱️ Até 4h por dia</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 5)"><span>🔥 5h ou mais (Modo Hardcore)</span></div>
+                <div class="hours-option-card" onclick="selectCustomDailyHoursOption(this)"><span>⚙️ Personalizar horas por dia da semana</span></div>
+            </div>
+            <div id="customDailyHoursPanel" class="custom-daily-hours-panel" style="display:none;">
+                <div class="custom-hours-help">Informe quantas horas livres você realmente possui em cada dia selecionado.</div>
+                <div id="customDailyHoursGrid" class="custom-daily-hours-grid"></div>
             </div>
 
             <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
             <div class="form-group">
                 <select id="m2RevisionStrategy" style="width:100%;">
                     <option value="nenhuma">Sem Revisão Espaçada</option>
-                    <option value="revisao24730" selected>Revisão 24h, 7d e 30d</option>
-                    <option value="classica">Revisão Clássica (Dias: 7, 30, 90)</option>
-                    <option value="bimestral">Revisão Bimestral (Dias: 1, 15, 30, 60)</option>
-                    <option value="curta">Revisão Curta (Dias: 7, 14, 21, 30)</option>
-                    <option value="semestral">Revisão Semestral (Dias: 1, 7, 28, 90, 180)</option>
-                    <option value="intensiva">Revisão Intensiva (Dias: 3, 7, 14, 21, 30, 45, 60)</option>
+                    <option value="revisao24730" selected>Revisão 1d, 7d e 30d</option>
+                    <option value="classica">Revisão Clássica (7d, 30d, 90d)</option>
+                    <option value="bimestral">Revisão Bimestral (1d, 15d, 30d, 60d)</option>
+                    <option value="curta">Revisão Curta (7d, 14d, 21d, 30d)</option>
+                    <option value="semestral">Revisão Semestral (1d, 7d, 28d, 90d, 180d)</option>
+                    <option value="intensiva">Revisão Intensiva (3d, 7d, 14d, 21d, 30d, 45d, 60d)</option>
                 </select>
             </div>
 
@@ -2881,12 +2925,12 @@
                 <label><strong>Estratégia de Revisões:</strong></label>
                 <select id="m1RevisionStrategy" style="width:100%;">
                     <option value="nenhuma">Sem revisões automáticas</option>
-                    <option value="revisao24730" selected>24h, 7d e 30d — revisão recomendada</option>
-                    <option value="classica">Clássica — 7, 30 e 90 dias</option>
-                    <option value="bimestral">Intensa — 1, 15, 30 e 60 dias</option>
-                    <option value="curta">Curta — 7, 14, 21 e 30 dias</option>
-                    <option value="semestral">Longa — 1, 7, 28, 90 e 180 dias</option>
-                    <option value="intensiva">Intensiva — 3, 7, 14, 21, 30, 45 e 60 dias</option>
+                    <option value="revisao24730" selected>1d, 7d e 30d — revisão recomendada</option>
+                    <option value="classica">Clássica — 7d, 30d e 90d</option>
+                    <option value="bimestral">Bimestral — 1d, 15d, 30d e 60d</option>
+                    <option value="curta">Curta — 7d, 14d, 21d e 30d</option>
+                    <option value="semestral">Semestral — 1d, 7d, 28d, 90d e 180d</option>
+                    <option value="intensiva">Intensiva — 3d, 7d, 14d, 21d, 30d, 45d e 60d</option>
                 </select>
             </div>
 
@@ -3123,6 +3167,8 @@
 
         let selectedWeekdays = [0, 1, 2, 3, 4, 5, 6];
         let selectedDailyHoursSlots = 2;
+        let useCustomDailyHours = false;
+        let customDailyHoursByWeekday = {0:2,1:2,2:2,3:2,4:2,5:2,6:2};
         let syncPromise = null;
         let dashboardLoadPromise = null;
 
@@ -3483,7 +3529,25 @@
         }
 
         function openModalMentorisMethod() {
-            document.getElementById('m2DataInicio').value = new Date().toISOString().split('T')[0];
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const cfg = contest.scheduleConfig || {};
+            document.getElementById('m2DataInicio').value = cfg.startDate || new Date().toISOString().split('T')[0];
+            if (cfg.method === 2 && Array.isArray(cfg.weekdays) && cfg.weekdays.length) selectedWeekdays = [...cfg.weekdays];
+            useCustomDailyHours = !!(cfg.method === 2 && cfg.customDailyHoursByWeekday);
+            if (useCustomDailyHours) customDailyHoursByWeekday = {...customDailyHoursByWeekday, ...cfg.customDailyHoursByWeekday};
+            document.querySelectorAll('.weekday-btn').forEach((btn, idx) => btn.classList.toggle('selected', selectedWeekdays.includes(idx)));
+            renderCustomDailyHoursGrid();
+            document.getElementById('customDailyHoursPanel').style.display = useCustomDailyHours ? 'block' : 'none';
+            const hourCards = [...document.querySelectorAll('#hoursSelectionContainer .hours-option-card')];
+            hourCards.forEach(card => card.classList.remove('selected'));
+            if (useCustomDailyHours && hourCards.length) hourCards[hourCards.length - 1].classList.add('selected');
+            else {
+                const targets = [1,2,4,5];
+                const idx = targets.indexOf(Number(cfg.dailySlots || selectedDailyHoursSlots));
+                if (idx >= 0 && hourCards[idx]) hourCards[idx].classList.add('selected');
+                else if (hourCards[1]) hourCards[1].classList.add('selected');
+            }
+            if (cfg.revisionStrategy && document.getElementById('m2RevisionStrategy')) document.getElementById('m2RevisionStrategy').value = cfg.revisionStrategy;
             document.getElementById('modalMentorisMethod').style.display = 'flex';
         }
         function closeModalMentorisMethod() { document.getElementById('modalMentorisMethod').style.display = 'none'; }
@@ -3492,12 +3556,43 @@
             elem.classList.toggle('selected');
             if (selectedWeekdays.includes(dayIdx)) selectedWeekdays = selectedWeekdays.filter(d => d !== dayIdx);
             else selectedWeekdays.push(dayIdx);
+            renderCustomDailyHoursGrid();
         }
 
         function selectHoursOption(elem, slots) {
             document.querySelectorAll('#hoursSelectionContainer .hours-option-card').forEach(c => c.classList.remove('selected'));
             elem.classList.add('selected');
             selectedDailyHoursSlots = slots;
+            useCustomDailyHours = false;
+            const panel = document.getElementById('customDailyHoursPanel');
+            if (panel) panel.style.display = 'none';
+        }
+
+        function selectCustomDailyHoursOption(elem) {
+            document.querySelectorAll('#hoursSelectionContainer .hours-option-card').forEach(c => c.classList.remove('selected'));
+            elem.classList.add('selected');
+            useCustomDailyHours = true;
+            renderCustomDailyHoursGrid();
+            const panel = document.getElementById('customDailyHoursPanel');
+            if (panel) panel.style.display = 'block';
+        }
+
+        function renderCustomDailyHoursGrid() {
+            const grid = document.getElementById('customDailyHoursGrid');
+            if (!grid) return;
+            const labels = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+            grid.innerHTML = selectedWeekdays.slice().sort((a,b)=>a-b).map(dayIdx => `
+                <label class="custom-day-hours"><strong>${labels[dayIdx]}</strong><input type="number" min="1" max="12" step="1" value="${Math.max(1, Math.round(Number(customDailyHoursByWeekday[dayIdx]) || 1))}" onchange="setCustomDailyHours(${dayIdx}, this.value)"><span>h</span></label>
+            `).join('');
+        }
+
+        function setCustomDailyHours(dayIdx, value) {
+            customDailyHoursByWeekday[dayIdx] = Math.max(1, Math.min(12, Math.round(Number(value) || 1)));
+        }
+
+        function getMethod2HoursForWeekday(dayIdx) {
+            if (!useCustomDailyHours) return Math.max(1, Math.round(Number(selectedDailyHoursSlots) || 1));
+            return Math.max(1, Math.min(12, Math.round(Number(customDailyHoursByWeekday[dayIdx]) || 1)));
         }
 
         function applySpacedRevisions(dateSchedule, baseDateObj, topicText, strategyKey) {
@@ -3507,7 +3602,7 @@
                 revDate.setDate(revDate.getDate() + offset);
                 const revKey = `${revDate.getFullYear()}-${String(revDate.getMonth() + 1).padStart(2, '0')}-${String(revDate.getDate()).padStart(2, '0')}`;
                 if (!dateSchedule[revKey]) dateSchedule[revKey] = [];
-                const offsetLabel = offset === 1 ? '24h' : `${offset}d`;
+                const offsetLabel = `${offset}d`;
                 const revText = `🔄 Rev (${offsetLabel}): ${topicText}`;
                 if (!dateSchedule[revKey].includes(revText)) dateSchedule[revKey].push(revText);
             });
@@ -3544,7 +3639,8 @@
                 if (selectedWeekdays.includes(dayOfWeek)) {
                     const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
                     if (!metadata[currentConcurso].dateSchedule[dateKey]) metadata[currentConcurso].dateSchedule[dateKey] = [];
-                    for (let s = 0; s < selectedDailyHoursSlots; s++) {
+                    const dayHours = getMethod2HoursForWeekday(dayOfWeek);
+                    for (let s = 0; s < dayHours; s++) {
                         if (itemIdx < sortedByPriority.length) {
                             const it = sortedByPriority[itemIdx];
                             const topicText = `${it.materia} - ${it.assunto}`;
@@ -3557,17 +3653,22 @@
                 currDate.setDate(currDate.getDate() + 1);
             }
 
-            metadata[currentConcurso].pomodoroDailyTargetHours = selectedDailyHoursSlots;
+            const selectedHours = selectedWeekdays.map(dayIdx => getMethod2HoursForWeekday(dayIdx));
+            const fallbackTarget = selectedHours.length ? Math.round((selectedHours.reduce((a,b)=>a+b,0) / selectedHours.length) * 100) / 100 : 0;
+            metadata[currentConcurso].pomodoroDailyTargetHours = fallbackTarget;
             metadata[currentConcurso].pomodoroScheduleMethod = 2;
             metadata[currentConcurso].scheduleConfig = {
                 method: 2, startDate: dataInicioStr, revisionStrategy: strategyKey,
-                weekdays: [...selectedWeekdays], dailySlots: selectedDailyHoursSlots
+                weekdays: [...selectedWeekdays], dailySlots: useCustomDailyHours ? null : selectedDailyHoursSlots,
+                customDailyHoursByWeekday: useCustomDailyHours ? Object.fromEntries(selectedWeekdays.map(dayIdx => [dayIdx, getMethod2HoursForWeekday(dayIdx)])) : null
             };
             await saveConcursosMetadata(metadata);
             closeModalMentorisMethod();
             renderMonthCalendar();
             renderPomodoroDailyCounter();
-            alert(`Cronograma Método 2 gerado com sucesso! Meta diária do Pomodoro: ${selectedDailyHoursSlots}h.`);
+            filterDataByConcurso();
+            const targetMsg = useCustomDailyHours ? 'Meta diária adaptativa conforme as horas configuradas em cada dia.' : `Meta diária do Pomodoro: ${selectedDailyHoursSlots}h.`;
+            alert(`Cronograma Método 2 gerado com sucesso! ${targetMsg}`);
         }
 
         async function gerarCronogramaInteligente() {
@@ -3625,6 +3726,7 @@
             closeModalConfigHorarios();
             renderMonthCalendar();
             renderPomodoroDailyCounter();
+            filterDataByConcurso();
             alert(`Cronograma Método 1 gerado com sucesso! Meta diária do Pomodoro: ${dailySlots}h.`);
         }
 
@@ -3658,7 +3760,57 @@
 
         function getScheduleRevisionStrategy(contestMeta = null) {
             const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
-            return contest?.scheduleConfig?.revisionStrategy || 'classica';
+            return contest?.scheduleConfig?.revisionStrategy || 'revisao24730';
+        }
+
+        function getActiveRevisionOffsets(contestMeta = null) {
+            const key = getScheduleRevisionStrategy(contestMeta);
+            return [...(STRATEGIES_MAP[key] || [])];
+        }
+
+        function getAdaptiveRevisionCompletion(item, offset, contestMeta = null) {
+            const normalizedOffset = Number(offset);
+            if (!item || !Number.isFinite(normalizedOffset)) return false;
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const saved = contest?.adaptiveRevisionProgress?.[String(item.id)]?.[String(normalizedOffset)];
+            if (typeof saved === 'boolean') return saved;
+            if (normalizedOffset === 1) return !!item.rev_24h;
+            if (normalizedOffset === 7) return !!item.rev_7d;
+            if (normalizedOffset === 30) return !!item.rev_30d;
+            return false;
+        }
+
+        function hasAnyAdaptiveRevisionCompletion(item, contestMeta = null) {
+            if (!item) return false;
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const saved = contest?.adaptiveRevisionProgress?.[String(item.id)] || {};
+            return !!(item.rev_24h || item.rev_7d || item.rev_30d || Object.values(saved).some(Boolean));
+        }
+
+        async function toggleAdaptiveRevision(id, offset, currentValue) {
+            const item = allEditalItems.find(i => String(i.id) === String(id));
+            if (!item) return;
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || (metadata[currentConcurso] = {});
+            if (!contest.adaptiveRevisionProgress) contest.adaptiveRevisionProgress = {};
+            const itemKey = String(item.id);
+            if (!contest.adaptiveRevisionProgress[itemKey]) contest.adaptiveRevisionProgress[itemKey] = {};
+            const next = !currentValue;
+            contest.adaptiveRevisionProgress[itemKey][String(Number(offset))] = next;
+            if (Number(offset) === 1) item.rev_24h = next;
+            if (Number(offset) === 7) item.rev_7d = next;
+            if (Number(offset) === 30) item.rev_30d = next;
+            await Promise.all([saveConcursosMetadata(metadata), saveEditalItemToCloud(item)]);
+            filterDataByConcurso();
+            renderMonthCalendar();
+        }
+
+        function renderAdaptiveEditalHeader() {
+            const row = document.getElementById('editalTableHeaderRow');
+            if (!row) return;
+            const offsets = getActiveRevisionOffsets();
+            const revisionHeaders = offsets.map(offset => `<th>Rev. ${offset}d</th>`).join('');
+            row.innerHTML = `<th style="width:90px;">Prioridade</th><th style="text-align:left;padding-left:1rem;">Assunto</th><th>Teoria</th><th>Questões</th>${revisionHeaders}<th>Ações</th>`;
         }
 
         function removeTopicRevisionsFromSchedule(dateSchedule, topicText) {
@@ -4988,10 +5140,9 @@
 
             let done = false;
             if (isRevision) {
-                if (text.includes('24h')) done = !!matchedItem.rev_24h;
-                else if (text.includes('7d')) done = !!matchedItem.rev_7d;
-                else if (text.includes('30d')) done = !!matchedItem.rev_30d;
-                else done = !!(matchedItem.rev_24h || matchedItem.rev_7d || matchedItem.rev_30d);
+                const match = text.match(/🔄 Rev \((24h|\d+d)\):/);
+                const offset = match ? (match[1] === '24h' ? 1 : Number(match[1].replace('d',''))) : null;
+                done = offset ? getAdaptiveRevisionCompletion(matchedItem, offset) : false;
             } else {
                 // O estudo-base só está concluído quando as duas etapas foram realizadas.
                 done = !!(matchedItem.teoria && matchedItem.questoes);
@@ -5142,6 +5293,7 @@
 
             const cfg = contestMeta.scheduleConfig || {};
             const dailySlots = Math.max(1, Number(cfg.dailySlots) || Number(contestMeta.pomodoroDailyTargetHours) || inferScheduleSlots(oldSchedule, todayKey) || 1);
+            const customDailyHours = (cfg.method === 2 && cfg.customDailyHoursByWeekday) ? cfg.customDailyHoursByWeekday : null;
             const revisionStrategy = cfg.revisionStrategy || 'classica';
             let weekdays = Array.isArray(cfg.weekdays) && cfg.weekdays.length ? [...cfg.weekdays] : inferScheduleWeekdays(oldSchedule, todayKey);
             const method = Number(cfg.method || contestMeta.pomodoroScheduleMethod || 0);
@@ -5162,7 +5314,7 @@
                     if (!raw.startsWith('🔄 Rev')) return false;
                     const topic = raw.replace(/^🔄 Rev \(\d+d\): /, '');
                     const item = editalByTopic.get(topic);
-                    return !!(item && (item.teoria || item.questoes || item.rev_24h || item.rev_7d || item.rev_30d));
+                    return !!(item && (item.teoria || item.questoes || hasAnyAdaptiveRevisionCompletion(item, contestMeta)));
                 });
                 if (preservedReviews.length) rebuilt[dateKey] = [...new Set(preservedReviews)];
             });
@@ -5181,8 +5333,9 @@
                 }
                 if (canStudy) {
                     const dateKey = getLocalDateKey(currDate);
+                    const slotsForDay = customDailyHours ? Math.max(1, Math.round(Number(customDailyHours[dow]) || 1)) : dailySlots;
                     if (!rebuilt[dateKey]) rebuilt[dateKey] = [];
-                    for (let slot=0; slot<dailySlots && index<pendingSequence.length; slot++) {
+                    for (let slot=0; slot<slotsForDay && index<pendingSequence.length; slot++) {
                         const item = pendingSequence[index++];
                         const topicText = `${item.materia} - ${item.assunto}`;
                         if (!rebuilt[dateKey].includes(topicText)) rebuilt[dateKey].push(topicText);
@@ -5199,8 +5352,8 @@
                 method: method || 2,
                 startDate: todayKey,
                 revisionStrategy,
-                dailySlots,
-                ...(method === 1 ? {} : { weekdays })
+                dailySlots: customDailyHours ? null : dailySlots,
+                ...(method === 1 ? {} : { weekdays, customDailyHoursByWeekday: customDailyHours || null })
             };
             await saveConcursosMetadata(metadata);
             renderMonthCalendar();
@@ -5226,6 +5379,7 @@
                 contest.studySessions = [];
                 contest.pomodoroDailyTargetHours = 0;
                 contest.pomodoroScheduleMethod = null;
+                contest.adaptiveRevisionProgress = {};
                 delete contest.scheduleConfig;
                 await saveConcursosMetadata(metadata);
                 renderMonthCalendar();
@@ -5252,6 +5406,7 @@
             contest.studyPlanHistory = [];
             contest.pomodoroDailyTargetHours = 0;
             contest.pomodoroScheduleMethod = null;
+            contest.adaptiveRevisionProgress = {};
             delete contest.scheduleConfig;
 
             // Remove resíduos legados de Pomodoro específicos do concurso.
@@ -5282,9 +5437,12 @@
             const changedItems = [];
             allEditalItems.forEach(item => {
                 if ((item.concurso || 'Concurso Geral') !== currentConcurso) return;
-                if (item.teoria || item.questoes) {
+                if (item.teoria || item.questoes || item.rev_24h || item.rev_7d || item.rev_30d) {
                     item.teoria = false;
                     item.questoes = false;
+                    item.rev_24h = false;
+                    item.rev_7d = false;
+                    item.rev_30d = false;
                     changedItems.push(item);
                 }
             });
@@ -5329,8 +5487,9 @@
                 return;
             }
 
+            const contestMeta = getConcursosMetadata()[currentConcurso] || {};
             const marcados = itensDoConcurso.filter(item =>
-                item.teoria || item.questoes || item.rev_24h || item.rev_7d || item.rev_30d
+                item.teoria || item.questoes || hasAnyAdaptiveRevisionCompletion(item, contestMeta)
             );
 
             if (marcados.length === 0) {
@@ -5352,6 +5511,9 @@
                 item.rev_7d = false;
                 item.rev_30d = false;
             });
+            const metadata = getConcursosMetadata();
+            if (metadata[currentConcurso]) metadata[currentConcurso].adaptiveRevisionProgress = {};
+            saveConcursosMetadata(metadata);
 
             saveEditalToLocalStorage();
 
@@ -5990,6 +6152,7 @@
         }
 
         function renderTable() {
+            renderAdaptiveEditalHeader();
             const tbody = document.getElementById('edital-list');
             tbody.innerHTML = '';
             const materiasMap = {};
@@ -6010,12 +6173,14 @@
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
                 const safeMateriaHandler = encodeHandlerValue(materiaName);
 
+                const activeRevisionOffsets = getActiveRevisionOffsets();
+                const dynamicColspan = 4 + activeRevisionOffsets.length;
                 tbody.innerHTML += `
                     <tr class="materia-header-row" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="toggleMateria(decodeURIComponent('${safeMateriaHandler}'))">
                         <td onclick="event.stopPropagation()">
                             <input type="number" class="priority-input" value="${group.prioridade}" min="1" onchange="updateMateriaPriority(decodeURIComponent('${safeMateriaHandler}'), this.value)">
                         </td>
-                        <td colspan="7">
+                        <td colspan="${dynamicColspan}">
                             <div class="materia-header-content">
                                 <span class="materia-header-main">
                                     <strong class="materia-header-title">${escapeHtml(materiaName)}</strong>
@@ -6034,17 +6199,19 @@
                     const sortedAssuntos = [...group.items].sort((a, b) => (a.assunto_prioridade || 1) - (b.assunto_prioridade || 1));
                     sortedAssuntos.forEach(item => {
                         const safeId = encodeHandlerValue(item.id);
+                        const revisionCells = activeRevisionOffsets.map(offset => {
+                            const checked = getAdaptiveRevisionCompletion(item, offset);
+                            return `<td data-study-control="true"><span class="revision-model-note">${offset}d</span><input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAdaptiveRevision(decodeURIComponent('${safeId}'), ${offset}, ${checked})"></td>`;
+                        }).join('');
                         tbody.innerHTML += `
-                            <tr style="border-left: 4px solid ${PALETA_SOLIDAS[colorIdx % PALETA_SOLIDAS.length]};">
+                            <tr class="adaptive-edital-row" style="--control-count:${2 + activeRevisionOffsets.length}; border-left: 4px solid ${PALETA_SOLIDAS[colorIdx % PALETA_SOLIDAS.length]};">
                                 <td>
                                     <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority(decodeURIComponent('${safeId}'), this.value)" title="Prioridade do Assunto">
                                 </td>
                                 <td style="text-align: left; padding-left: 1.5rem;">${escapeHtml(item.assunto)}</td>
-                                <td><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'teoria', ${item.teoria})"></td>
-                                <td><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'questoes', ${item.questoes})"></td>
-                                <td><input type="checkbox" ${item.rev_24h ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'rev_24h', ${item.rev_24h})"></td>
-                                <td><input type="checkbox" ${item.rev_7d ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'rev_7d', ${item.rev_7d})"></td>
-                                <td><input type="checkbox" ${item.rev_30d ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'rev_30d', ${item.rev_30d})"></td>
+                                <td data-study-control="true"><span class="revision-model-note">Teoria</span><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'teoria', ${item.teoria})"></td>
+                                <td data-study-control="true"><span class="revision-model-note">Questões</span><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'questoes', ${item.questoes})"></td>
+                                ${revisionCells}
                                 <td><button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes(decodeURIComponent('${safeId}'))">Limpar</button></td>
                             </tr>
                         `;
@@ -6091,7 +6258,10 @@
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
                 item.teoria = false; item.questoes = false; item.rev_24h = false; item.rev_7d = false; item.rev_30d = false;
-                await saveEditalItemToCloud(item);
+                const metadata = getConcursosMetadata();
+                const contest = metadata[currentConcurso] || (metadata[currentConcurso] = {});
+                if (contest.adaptiveRevisionProgress) delete contest.adaptiveRevisionProgress[String(item.id)];
+                await Promise.all([saveEditalItemToCloud(item), saveConcursosMetadata(metadata)]);
                 filterDataByConcurso();
                 renderMonthCalendar();
             }
@@ -6766,10 +6936,20 @@
             );
         }
 
-        function getPomodoroDailyTargetHours() {
+        function getPomodoroDailyTargetHours(dateKey = getLocalDateKey()) {
             const metadata = getConcursosMetadata();
             const concursoData = metadata[currentConcurso] || {};
             if (!hasActiveStudySchedule(concursoData)) return 0;
+            const cfg = concursoData.scheduleConfig || {};
+            if (cfg.method === 2 && cfg.customDailyHoursByWeekday) {
+                const [y,m,d] = String(dateKey).split('-').map(Number);
+                const dayIdx = new Date(y, m - 1, d).getDay();
+                const custom = Number(cfg.customDailyHoursByWeekday[dayIdx]);
+                const items = concursoData.dateSchedule?.[dateKey] || [];
+                const hasNormalStudy = Array.isArray(items) && items.some(item => !String(item).startsWith('🔄 Rev'));
+                if (!hasNormalStudy) return 0;
+                return Number.isFinite(custom) && custom > 0 ? custom : 0;
+            }
             const target = Number(concursoData.pomodoroDailyTargetHours || 0);
             return Number.isFinite(target) && target > 0 ? target : 0;
         }
@@ -9130,6 +9310,9 @@
         window.closeModalMentorisMethod = closeModalMentorisMethod;
         window.toggleWeekdaySelect = toggleWeekdaySelect;
         window.selectHoursOption = selectHoursOption;
+        window.selectCustomDailyHoursOption = selectCustomDailyHoursOption;
+        window.setCustomDailyHours = setCustomDailyHours;
+        window.toggleAdaptiveRevision = toggleAdaptiveRevision;
         window.gerarCronogramaMetodo2 = gerarCronogramaMetodo2;
         window.showEditTopicDropdown = showEditTopicDropdown;
         window.updateEditAssuntoDropdown = updateEditAssuntoDropdown;
