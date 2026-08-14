@@ -10,7 +10,7 @@
     <title>Meu Painel de Estudos</title>
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
-    <link rel="manifest" href="manifest.json?v=20260813-10">
+    <link rel="manifest" href="manifest.json?v=20260814-11">
     <meta name="theme-color" content="#0f172a">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -23,15 +23,25 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260813-10', { updateViaCache: 'none' })
-            .then(reg => reg.update())
+          navigator.serviceWorker.register('./sw.js?v=20260814-11', { updateViaCache: 'none' })
+            .then(async reg => {
+              await reg.update();
+              const prime = () => {
+                const worker = navigator.serviceWorker.controller || reg.active || reg.waiting;
+                if (worker) worker.postMessage({ type: 'PRIME_OFFLINE_ASSETS' });
+              };
+              prime();
+              navigator.serviceWorker.ready.then(prime).catch(() => {});
+              window.addEventListener('online', prime);
+              return reg;
+            })
             .catch(err => console.error('Erro no Service Worker:', err));
         });
       }
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
     <!-- PDF.js agora é carregado sob demanda ao abrir o visualizador de edital. -->
     
     <style>
@@ -7838,19 +7848,22 @@
                 .trim();
         }
 
+        const PDF_JS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        const PDF_JS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
         function loadPdfJsForAI() {
             if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
             if (pdfJsAiLoadPromise) return pdfJsAiLoadPromise;
             pdfJsAiLoadPromise = new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                script.src = PDF_JS_URL;
                 script.async = true;
                 script.onload = () => {
                     if (!window.pdfjsLib) return reject(new Error('PDF.js não foi inicializado.'));
-                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_JS_WORKER_URL;
                     resolve(window.pdfjsLib);
                 };
-                script.onerror = () => reject(new Error('Não foi possível carregar o leitor PDF.js. Verifique a conexão.'));
+                script.onerror = () => reject(new Error('Não foi possível carregar o leitor PDF.js. Conecte-se ao menos uma vez para preparar o pacote offline.'));
                 document.head.appendChild(script);
             });
             return pdfJsAiLoadPromise;
