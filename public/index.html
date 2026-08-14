@@ -10,7 +10,7 @@
     <title>Meu Painel de Estudos</title>
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
-    <link rel="manifest" href="manifest.json?v=20260814-12">
+    <link rel="manifest" href="manifest.json?v=20260814-13">
     <meta name="theme-color" content="#0f172a">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -23,7 +23,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260814-12', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=20260814-13', { updateViaCache: 'none' })
             .then(async reg => {
               await reg.update();
               const prime = () => {
@@ -97,6 +97,28 @@
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
         .header-brand { display: flex; align-items: center; gap: 12px; }
         .header-brand img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+
+        .sync-status-pill {
+            display:inline-flex; align-items:center; gap:7px; min-height:34px; padding:6px 10px;
+            border-radius:999px; border:1px solid var(--border-color); background:rgba(148,163,184,.08);
+            color:#cbd5e1; font-size:.74rem; font-weight:800; white-space:nowrap; cursor:default;
+            transition:background .18s ease,border-color .18s ease,color .18s ease,opacity .18s ease;
+        }
+        .sync-status-pill .sync-dot { width:8px; height:8px; border-radius:50%; background:#94a3b8; box-shadow:0 0 0 3px rgba(148,163,184,.10); flex:0 0 auto; }
+        .sync-status-pill.synced { color:#86efac; border-color:rgba(34,197,94,.30); background:rgba(34,197,94,.08); }
+        .sync-status-pill.synced .sync-dot { background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.12); }
+        .sync-status-pill.pending { color:#fcd34d; border-color:rgba(245,158,11,.32); background:rgba(245,158,11,.08); cursor:pointer; }
+        .sync-status-pill.pending .sync-dot { background:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.12); }
+        .sync-status-pill.offline { color:#fca5a5; border-color:rgba(239,68,68,.32); background:rgba(239,68,68,.08); }
+        .sync-status-pill.offline .sync-dot { background:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.12); }
+        .sync-status-pill.syncing { color:#93c5fd; border-color:rgba(59,130,246,.34); background:rgba(59,130,246,.10); }
+        .sync-status-pill.syncing .sync-dot { background:#3b82f6; animation:syncPulse 1s ease-in-out infinite; }
+        @keyframes syncPulse { 0%,100%{opacity:.45;transform:scale(.82)} 50%{opacity:1;transform:scale(1.15)} }
+        body.light-mode .sync-status-pill { color:#475569; background:#f8fafc; }
+        body.light-mode .sync-status-pill.synced { color:#15803d; background:#f0fdf4; }
+        body.light-mode .sync-status-pill.pending { color:#a16207; background:#fffbeb; }
+        body.light-mode .sync-status-pill.offline { color:#b91c1c; background:#fef2f2; }
+        body.light-mode .sync-status-pill.syncing { color:#1d4ed8; background:#eff6ff; }
 
         .super-user-badge {
             background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.75rem;
@@ -780,6 +802,8 @@
             .concurso-selector-bar { width: 100%; padding: 0.85rem; gap: 0.6rem; }
             .concurso-selector-bar select { flex: 1 1 220px; min-height: 46px; }
             .concurso-selector-bar .btn { min-height: 42px; justify-content: center; }
+            .sync-status-pill { min-height:38px; padding:6px 9px; font-size:.68rem; }
+            .sync-status-pill .sync-last { display:none; }
             .countdown-badge { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; }
 
             /* Barra de ações: duas colunas simétricas */
@@ -2526,6 +2550,11 @@
                 <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
                     Sem data de prova
                 </div>
+                <div id="syncStatusPill" class="sync-status-pill" role="status" aria-live="polite" title="Estado da sincronização">
+                    <span class="sync-dot" aria-hidden="true"></span>
+                    <span id="syncStatusText">Verificando…</span>
+                    <span id="syncStatusLast" class="sync-last"></span>
+                </div>
                 <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
             </div>
         </header>
@@ -3282,6 +3311,76 @@
         let customDailyHoursByWeekday = {0:2,1:2,2:2,3:2,4:2,5:2,6:2};
         let syncPromise = null;
         let dashboardLoadPromise = null;
+        let syncUiMode = 'idle';
+
+        function getLastSyncStorageKey() {
+            const uid = currentUser ? currentUser.id : 'guest';
+            return `last_successful_sync_${uid}`;
+        }
+
+        function setLastSuccessfulSyncNow() {
+            if (!currentUser) return;
+            localStorage.setItem(getLastSyncStorageKey(), new Date().toISOString());
+        }
+
+        function formatLastSyncLabel(iso) {
+            if (!iso) return '';
+            const date = new Date(iso);
+            if (Number.isNaN(date.getTime())) return '';
+            const now = new Date();
+            const sameDay = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+            const time = date.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+            if (sameDay) return `· ${time}`;
+            return `· ${date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' })} ${time}`;
+        }
+
+        function getPendingSyncCount() {
+            const state = getSyncState();
+            return (state.metadataDirty ? 1 : 0)
+                + Object.keys(state.flashcardsDirty || {}).length
+                + Object.keys(state.editalUpserts || {}).length
+                + (state.editalDeletes || []).length
+                + (state.flashcardDeletes || []).length
+                + (state.concursoDeletes || []).length;
+        }
+
+        function updateSyncIndicator() {
+            const pill = document.getElementById('syncStatusPill');
+            const text = document.getElementById('syncStatusText');
+            const last = document.getElementById('syncStatusLast');
+            if (!pill || !text || !last) return;
+
+            pill.className = 'sync-status-pill';
+            pill.onclick = null;
+            const pending = currentUser ? getPendingSyncCount() : 0;
+            const lastIso = currentUser ? localStorage.getItem(getLastSyncStorageKey()) : '';
+            last.textContent = '';
+
+            if (!navigator.onLine) {
+                pill.classList.add('offline');
+                text.textContent = pending ? `Offline · ${pending} pendência${pending === 1 ? '' : 's'}` : 'Offline';
+                pill.title = pending ? `${pending} alteração(ões) aguardando sincronização.` : 'Sem conexão. Os dados locais continuam disponíveis.';
+                return;
+            }
+            if (syncUiMode === 'syncing' || syncPromise) {
+                pill.classList.add('syncing');
+                text.textContent = 'Sincronizando…';
+                pill.title = 'Enviando e conferindo dados com o Supabase.';
+                return;
+            }
+            if (pending > 0) {
+                pill.classList.add('pending');
+                text.textContent = `${pending} pendência${pending === 1 ? '' : 's'}`;
+                last.textContent = formatLastSyncLabel(lastIso);
+                pill.title = 'Clique para tentar sincronizar agora.';
+                pill.onclick = () => forceFullSync({ target: null });
+                return;
+            }
+            pill.classList.add('synced');
+            text.textContent = 'Sincronizado';
+            last.textContent = formatLastSyncLabel(lastIso);
+            pill.title = lastIso ? `Última sincronização concluída: ${new Date(lastIso).toLocaleString('pt-BR')}` : 'Dados sem pendências locais.';
+        }
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -3330,6 +3429,7 @@
 
         function saveSyncState(state) {
             localStorage.setItem(getSyncStateStorageKey(), JSON.stringify(state));
+            updateSyncIndicator();
         }
 
         function setMetadataDirty(isDirty) {
@@ -3619,8 +3719,11 @@
                     ? 'Modo Offline — suas alterações estão protegidas e aguardam sincronização.'
                     : 'Modo Offline — os dados continuam disponíveis neste dispositivo.';
                 banner.style.display = 'block';
+                syncUiMode = 'idle';
+                updateSyncIndicator();
             } else {
                 banner.style.display = 'none';
+                updateSyncIndicator();
                 if (currentUser) syncAllWithSupabase().catch(error => console.warn('Sincronização adiada:', error));
             }
         }
@@ -5936,6 +6039,8 @@
             if (!currentUser) return;
             if (syncPromise) return syncPromise;
 
+            syncUiMode = 'syncing';
+            updateSyncIndicator();
             syncPromise = (async () => {
                 // Exclusões de concursos vêm primeiro para impedir que dados removidos
                 // sejam baixados novamente antes da limpeza remota terminar.
@@ -5966,9 +6071,12 @@
 
             try {
                 await syncPromise;
+                if (!hasPendingSync()) setLastSuccessfulSyncNow();
             } finally {
                 syncPromise = null;
+                syncUiMode = 'idle';
                 updateOnlineStatusBannerOnly();
+                updateSyncIndicator();
             }
         }
 
@@ -5982,12 +6090,15 @@
             } else {
                 banner.style.display = 'none';
             }
+            updateSyncIndicator();
         }
 
         async function forceFullSync(evt) {
             if (!currentUser) return alert('Você precisa estar logado para sincronizar.');
             const btn = evt ? evt.target : null;
             if (btn) btn.innerText = 'Sincronizando...';
+            syncUiMode = 'syncing';
+            updateSyncIndicator();
             try {
                 await syncAllWithSupabase();
                 if (hasPendingSync()) throw new Error('Algumas alterações continuam aguardando conexão com o servidor.');
@@ -5999,6 +6110,8 @@
                 alert('Erro ao sincronizar: ' + message);
             } finally {
                 if (btn) btn.innerText = 'Sincronizar Agora';
+                if (!syncPromise) syncUiMode = 'idle';
+                updateSyncIndicator();
             }
         }
 
@@ -9559,6 +9672,7 @@
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-dashboard').style.display = 'block';
             updateOnlineStatusBannerOnly();
+            updateSyncIndicator();
             if (dashboardLoadPromise) return;
             dashboardLoadPromise = loadData().catch(error => {
                 console.error('Falha ao carregar o painel:', error);
