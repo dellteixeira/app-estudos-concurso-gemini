@@ -10896,21 +10896,22 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const { data:sessionData, error:sessionError } = await supabaseClient.auth.getSession();
                 if (sessionError || !sessionData?.session?.access_token) throw new Error('Não foi possível obter uma sessão válida para excluir a conta.');
 
-                const response = await fetch('/api/account/delete', {
-                    method:'POST',
-                    headers:{
-                        'content-type':'application/json',
-                        'authorization':`Bearer ${sessionData.session.access_token}`
-                    },
-                    body:'{}'
+                // V9.54: exclusão permanente migrou para Supabase Edge Function.
+                // A função recebe automaticamente o JWT da sessão pelo supabase-js,
+                // identifica o próprio usuário e nunca aceita user_id arbitrário do navegador.
+                const { data:payload, error:functionError } = await supabaseClient.functions.invoke('delete-account', {
+                    body: { confirm: true }
                 });
-                let payload = {};
-                try { payload = await response.json(); } catch (_) {}
-                if (!response.ok) {
-                    if (payload?.code === 'ACCOUNT_DELETE_NOT_CONFIGURED') {
-                        throw new Error('A exclusão permanente ainda precisa do segredo SUPABASE_SECRET_KEY configurado no Cloudflare Worker.');
+                if (functionError) {
+                    const contextMessage = functionError?.context?.error || functionError?.context?.message || '';
+                    const message = payload?.error || contextMessage || functionError.message || 'Falha ao executar a função segura de exclusão.';
+                    if (/not found|404|function.*delete-account/i.test(message)) {
+                        throw new Error('A Edge Function delete-account ainda não foi publicada no Supabase. Publique a função fornecida com a V9.54 e tente novamente.');
                     }
-                    throw new Error(payload?.error || `Servidor respondeu ${response.status}.`);
+                    throw new Error(message);
+                }
+                if (!payload?.deleted) {
+                    throw new Error(payload?.error || 'O Supabase não confirmou a exclusão permanente da conta.');
                 }
 
                 // A conta já foi removida no servidor. Daqui em diante, toda limpeza
