@@ -3690,7 +3690,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.53',
+                    appVersion:'9.55',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -10610,15 +10610,21 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function checkAuthAndSync() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session && session.user) {
-                currentUser = session.user;
-                prepareAuthenticatedUserContext(currentUser);
-                checkSuperUserStatus();
-                showDashboard();
-            } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-                document.getElementById('app-dashboard').style.display = 'none';
+            try {
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                const session = data?.session || null;
+                if (session?.user) {
+                    currentUser = session.user;
+                    prepareAuthenticatedUserContext(currentUser);
+                    checkSuperUserStatus();
+                    showDashboard();
+                } else {
+                    showCleanAuthScreen();
+                }
+            } catch (error) {
+                console.warn('Falha ao recuperar sessão inicial:', error);
+                showCleanAuthScreen('Não foi possível restaurar a sessão. Entre novamente.');
             }
         }
 
@@ -10635,9 +10641,21 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
             if (!email || !password) return alert('Preencha e-mail e senha.');
-            const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) alert('Erro ao cadastrar: ' + error.message);
-            else alert('Cadastro realizado com sucesso! Clique em Entrar.');
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) return alert('Erro ao cadastrar: ' + error.message);
+
+            // Se a confirmação de e-mail estiver desativada no Supabase, o cadastro
+            // já retorna uma sessão válida. Nesse caso, inicia imediatamente um
+            // contexto limpo para o novo user_id. Com confirmação ativa, session é null.
+            if (data?.session?.user) {
+                currentUser = data.session.user;
+                prepareAuthenticatedUserContext(currentUser);
+                checkSuperUserStatus();
+                showDashboard();
+                return appNotice('Conta criada e conectada com sucesso.', { title:'Bem-vindo' });
+            }
+
+            return appNotice('Cadastro realizado. Verifique seu e-mail para confirmar a conta e depois entre no Painel.', { title:'Confirme seu e-mail' });
         }
 
         function openAccountModal() {
@@ -10935,17 +10953,16 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            currentUser = null; isSuperUser = false;
-            activeUserContextId = null;
-            userContextGeneration += 1;
-            dashboardLoadPromise = null;
-            syncPromise = null;
-            syncUiMode = 'idle';
-            resetInMemoryUserState();
-            currentConcurso = 'Concurso Geral';
-            document.getElementById('app-dashboard').style.display = 'none';
-            document.getElementById('auth-screen').style.display = 'flex';
+            try {
+                // Logout local: sai somente desta sessão/dispositivo, sem derrubar
+                // outras sessões legítimas do mesmo usuário em outro aparelho.
+                const { error } = await supabaseClient.auth.signOut({ scope:'local' });
+                if (error) throw error;
+            } catch (error) {
+                console.warn('Falha no signOut remoto/local; limpando a interface por segurança:', error);
+            }
+            showCleanAuthScreen();
+            clearSupabaseAuthStorage();
         }
 
         function checkSuperUserStatus() {
@@ -10968,11 +10985,18 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (session && session.user) {
+            if (session?.user) {
                 currentUser = session.user;
                 prepareAuthenticatedUserContext(currentUser);
                 checkSuperUserStatus();
                 showDashboard();
+                return;
+            }
+
+            // SIGNED_OUT também pode ocorrer por expiração, revogação ou exclusão
+            // da conta em outro contexto. Nunca deixe o dashboard visível sem sessão.
+            if (event === 'SIGNED_OUT' || !session) {
+                showCleanAuthScreen();
             }
         });
 
