@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-47-mobile-layout-polish-20260814';
+const CACHE_NAME = 'painel-estudos-v9-48-long-topic-study-plans-20260814';
 
 const APP_SHELL = [
   './',
