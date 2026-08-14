@@ -234,6 +234,15 @@
         .btn-study-theory { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:#fff; }
         .btn-study-questions { background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; }
         .btn-study-theory:hover,.btn-study-questions:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(14,165,233,.18); }
+        .day-topic-controls-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; }
+        .day-topic-status-inline { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .day-topic-status-inline label { font-size:.8rem; display:flex; align-items:center; gap:4px; white-space:nowrap; }
+        .day-topic-inline-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .day-topic-inline-actions .btn,
+        .day-topic-controls-row .btn { min-height:34px; padding:.45rem .72rem; font-size:.82rem; border-radius:11px; white-space:nowrap; }
+        .btn-study-legal { background:linear-gradient(135deg,#14b86f,#22c55e); color:#062814; white-space:nowrap; }
+        .btn-study-legal:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(34,197,94,.18); }
+        .day-modal-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; }
         .study-mode-badge { display:inline-flex; align-items:center; padding:2px 8px; margin-right:5px; border-radius:999px; font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.04em; background:rgba(14,165,233,.13); color:#7dd3fc; border:1px solid rgba(14,165,233,.25); }
         .study-progress-breakdown { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:8px 0 14px; }
         .study-progress-mini { border:1px solid var(--border-color); border-radius:12px; padding:9px 12px; background:rgba(15,23,42,.16); }
@@ -2418,7 +2427,6 @@
         }
 
         /* V9.35 — Lei Seca integrada + conclusão manual de sessão */
-        .btn-study-legal { white-space:nowrap; }
         #completeFocusBtn:disabled { opacity:.45; cursor:not-allowed; }
         @media (max-width:700px) {
             #modalLegalReading { align-items:flex-end; padding:0; }
@@ -2427,7 +2435,14 @@
             .pomodoro-actions { display:grid !important; grid-template-columns:1fr 1fr; }
             .pomodoro-actions .btn { width:100%; }
             .study-launch-controls { flex-wrap:wrap; }
-            .btn-study-legal { flex:1 1 100%; }
+            .day-topic-controls-row { gap:6px; }
+            .day-topic-status-inline { width:100%; gap:8px; }
+            .day-topic-inline-actions { width:100%; gap:6px; }
+            .day-topic-inline-actions .btn,
+            .day-topic-controls-row .btn { padding:.42rem .62rem; font-size:.79rem; }
+            .btn-study-legal { flex:0 1 auto; }
+            .day-modal-footer { flex-direction:row; align-items:center; }
+            .day-modal-footer .btn { flex:1 1 0; justify-content:center; }
         }
 
     </style>
@@ -2976,11 +2991,13 @@
             <div id="dayModalSummary" style="font-size:0.82rem; color:#93c5fd; font-weight:700;"></div>
             <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
             <div id="dayTopicsContainer"></div>
-            <div id="addNewTopicArea" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
-                <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico a Este Dia</button>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
+            <div class="day-modal-footer" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
+                <div id="addNewTopicArea">
+                    <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico</button>
+                </div>
+                <div class="modal-actions" style="margin-top:0;">
+                    <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
+                </div>
             </div>
         </div>
     </div>
@@ -4146,23 +4163,27 @@
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
                         <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong>${advanceBadge}${futureStudyHint}</div>
-                        <div style="display:flex; gap:10px; align-items:center;">
+                        <div class="day-topic-controls-row">
                             ${matchedItem ? `
-                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                                    <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'teoria', ${matchedItem.teoria})"> Teoria
-                                </label>
-                                <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                                    <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
-                                </label>
+                                <div class="day-topic-status-inline">
+                                    <label>
+                                        <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'teoria', ${matchedItem.teoria})"> Teoria
+                                    </label>
+                                    <label>
+                                        <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
+                                    </label>
+                                </div>
                             ` : ''}
                             ${matchedItem ? `<div class="study-launch-controls">
                                 <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
                                 <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">▶ Teoria</button>
                                 <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">▶ Questões</button>
-                                ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-success btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">⚖ Lei Seca</button>` : ''}
+                                ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">⚖ Lei Seca</button>` : ''}
                             </div>` : ''}
-                            <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
+                            <div class="day-topic-inline-actions">
+                                <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
+                            </div>
                         </div>
                         <div id="editArea_${idx}" style="width:100%; display:none;"></div>
                     </div>
@@ -4302,7 +4323,7 @@
 
         function resetAddTopicArea() {
             const container = document.getElementById('addNewTopicArea');
-            container.innerHTML = `<button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico a Este Dia</button>`;
+            container.innerHTML = `<button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico</button>`;
         }
 
         async function confirmAddTopicWithSwap() {
