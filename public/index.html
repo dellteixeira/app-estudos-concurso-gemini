@@ -2820,6 +2820,18 @@
         </div>
     </div>
 
+    <!-- MODAL INTERNO DE CONFIRMAÇÃO / AVISO (não depende de confirm/alert do navegador) -->
+    <div class="modal-overlay" id="modalAppDialog" style="z-index:1400;">
+        <div class="modal" style="max-width:560px;">
+            <h3 id="appDialogTitle">Confirmar ação</h3>
+            <div id="appDialogMessage" style="white-space:pre-line; line-height:1.55; color:var(--text-color);"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="appDialogCancelBtn" onclick="resolveAppDialog(false)">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="appDialogConfirmBtn" data-enter-default="true" onclick="resolveAppDialog(true)">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL SELEÇÃO DO TIPO DE PREENCHIMENTO DO CRONOGRAMA -->
     <div class="modal-overlay" id="modalSelectCronogramaType">
         <div class="modal">
@@ -3405,6 +3417,68 @@
         // V9.13 — atalhos globais consistentes em todo o app.
         // ESC fecha somente a camada/modal visível mais alta; ENTER executa a ação padrão
         // do contexto atual sem interferir em textarea, select, contenteditable ou botões nativos.
+        let appDialogResolver = null;
+
+        function resolveAppDialog(result) {
+            const modal = document.getElementById('modalAppDialog');
+            if (modal) modal.style.display = 'none';
+            const resolver = appDialogResolver;
+            appDialogResolver = null;
+            if (resolver) resolver(!!result);
+        }
+
+        function appConfirm(message, options = {}) {
+            const modal = document.getElementById('modalAppDialog');
+            if (!modal) return Promise.resolve(false);
+            // Se um diálogo anterior ainda estiver pendente, encerra-o como cancelado.
+            if (appDialogResolver) {
+                const previous = appDialogResolver;
+                appDialogResolver = null;
+                try { previous(false); } catch (_) {}
+            }
+            const title = document.getElementById('appDialogTitle');
+            const text = document.getElementById('appDialogMessage');
+            const cancelBtn = document.getElementById('appDialogCancelBtn');
+            const confirmBtn = document.getElementById('appDialogConfirmBtn');
+            if (title) title.textContent = options.title || 'Confirmar ação';
+            if (text) text.textContent = String(message || '');
+            if (cancelBtn) {
+                cancelBtn.style.display = '';
+                cancelBtn.textContent = options.cancelText || 'Cancelar';
+            }
+            if (confirmBtn) {
+                confirmBtn.textContent = options.confirmText || 'Confirmar';
+                confirmBtn.className = `btn ${options.danger ? 'btn-danger' : (options.confirmClass || 'btn-primary')}`;
+            }
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => confirmBtn?.focus());
+            return new Promise(resolve => { appDialogResolver = resolve; });
+        }
+
+        function appNotice(message, options = {}) {
+            const modal = document.getElementById('modalAppDialog');
+            if (!modal) return Promise.resolve(true);
+            if (appDialogResolver) {
+                const previous = appDialogResolver;
+                appDialogResolver = null;
+                try { previous(false); } catch (_) {}
+            }
+            const title = document.getElementById('appDialogTitle');
+            const text = document.getElementById('appDialogMessage');
+            const cancelBtn = document.getElementById('appDialogCancelBtn');
+            const confirmBtn = document.getElementById('appDialogConfirmBtn');
+            if (title) title.textContent = options.title || 'Painel de Estudos';
+            if (text) text.textContent = String(message || '');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            if (confirmBtn) {
+                confirmBtn.textContent = options.confirmText || 'OK';
+                confirmBtn.className = `btn ${options.confirmClass || 'btn-primary'}`;
+            }
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => confirmBtn?.focus());
+            return new Promise(resolve => { appDialogResolver = () => resolve(true); });
+        }
+
         function getTopVisibleModalOverlay() {
             const visible = [...document.querySelectorAll('.modal-overlay')].filter(el => {
                 const cs = getComputedStyle(el);
@@ -3422,6 +3496,7 @@
         function closeModalByKeyboard(modal) {
             if (!modal) return false;
             const closers = {
+                modalAppDialog: () => resolveAppDialog(false),
                 modalSelectCronogramaType: () => closeModalSelectCronogramaType(),
                 modalMentorisMethod: () => closeModalMentorisMethod(),
                 modalConfigHorarios: () => closeModalConfigHorarios(),
@@ -5335,18 +5410,19 @@
         }
 
         async function reorganizarMateriasCronograma() {
-            if (!editalItems.length) return alert('Não há matérias no edital atual para reorganizar.');
+            if (!editalItems.length) { await appNotice('Não há matérias no edital atual para reorganizar.'); return; }
             const metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             const contestMeta = metadata[currentConcurso];
             const oldSchedule = contestMeta.dateSchedule || {};
             const todayKey = getLocalDateKey(new Date());
             const pendingSequence = buildWeightedPendingSequence(editalItems, metadata);
-            if (!pendingSequence.length) return alert('Todos os tópicos do edital já foram estudados. Não há matérias pendentes para redistribuir.');
+            if (!pendingSequence.length) { await appNotice('Todos os tópicos do edital já foram estudados. Não há matérias pendentes para redistribuir.'); return; }
 
-            const ok = confirm(
+            const ok = await appConfirm(
                 `Reorganizar ${pendingSequence.length} tópicos pendentes a partir de hoje?\n\n` +
-                'O histórico dos dias anteriores será preservado. As matérias serão intercaladas conforme o peso do edital; quando não houver peso explícito, será usada a prioridade da matéria. Tópicos adicionados manualmente também serão incluídos.'
+                'O histórico dos dias anteriores será preservado. As matérias serão intercaladas conforme o peso do edital; quando não houver peso explícito, será usada a prioridade da matéria. Tópicos adicionados manualmente também serão incluídos.',
+                { title:'Reorganizar Matérias', confirmText:'Reorganizar', confirmClass:'btn-primary' }
             );
             if (!ok) return;
 
@@ -5417,7 +5493,7 @@
             await saveConcursosMetadata(metadata);
             renderMonthCalendar();
             renderPomodoroDailyCounter();
-            alert('Cronograma reorganizado. O histórico anterior foi preservado e os tópicos pendentes foram redistribuídos por peso/prioridade.');
+            await appNotice('Cronograma reorganizado. O histórico anterior foi preservado e os tópicos pendentes foram redistribuídos por peso/prioridade.', { title:'Reorganização concluída' });
         }
 
         async function limparCronogramaMesAtual() {
@@ -5447,14 +5523,15 @@
                 renderSubjectStudyHours();
                 renderChart();
                 updateModernOverview();
-                alert('O cronograma deste concurso já está vazio e sem meta ativa.');
+                await appNotice('O cronograma deste concurso já está vazio e sem meta ativa.', { title:'Cronograma vazio' });
                 return;
             }
 
-            const confirmar = confirm(
+            const confirmar = await appConfirm(
                 `Deseja limpar TODO o cronograma de "${currentConcurso}"?\n\n` +
-                'Isso removerá todos os agendamentos e revisões futuras, zerará a meta diária, apagará as sessões de Teoria/Questões vinculadas ao planejamento e reconciliará o Progresso Geral.\n\n' +
-                'Os flashcards, anotações e o edital verticalizado serão preservados.'
+                'Isso removerá todos os agendamentos e revisões futuras, zerará a meta diária, apagará as sessões de estudo vinculadas ao planejamento e reconciliará o Progresso Geral.\n\n' +
+                'Os flashcards, anotações e o edital verticalizado serão preservados.',
+                { title:'Limpar Cronograma', confirmText:'Limpar tudo', danger:true }
             );
             if (!confirmar) return;
 
@@ -5533,7 +5610,7 @@
                 catch (error) { console.warn('Reset do progresso mantido na fila de sincronização:', error); }
             }
 
-            alert(`Cronograma de "${currentConcurso}" totalmente limpo e sincronizado.\n\nAgendamentos removidos: ${scheduledCount}\nSessões de estudo removidas: ${sessionCount}\nTópicos de Teoria/Questões zerados: ${changedItems.length}.`);
+            await appNotice(`Cronograma de "${currentConcurso}" totalmente limpo e sincronizado.\n\nAgendamentos removidos: ${scheduledCount}\nSessões de estudo removidas: ${sessionCount}\nTópicos de Teoria/Questões zerados: ${changedItems.length}.`, { title:'Cronograma limpo' });
         }
 
         async function limparMateriasEstudadas() {
@@ -5542,7 +5619,7 @@
             );
 
             if (itensDoConcurso.length === 0) {
-                alert('Não há matérias neste concurso para limpar.');
+                await appNotice('Não há matérias neste concurso para limpar.');
                 return;
             }
 
@@ -5552,13 +5629,14 @@
             );
 
             if (marcados.length === 0) {
-                alert('Todas as matérias deste concurso já estão marcadas como não estudadas.');
+                await appNotice('Todas as matérias deste concurso já estão marcadas como não estudadas.');
                 return;
             }
 
-            const confirmar = confirm(
+            const confirmar = await appConfirm(
                 `Deseja marcar novamente como não estudados os ${marcados.length} tópicos já concluídos/revisados de "${currentConcurso}"?\n\n` +
-                'O cronograma não será apagado. Apenas Teoria, Questões e Revisões serão desmarcadas.'
+                'O cronograma não será apagado. Apenas Teoria, Questões e Revisões serão desmarcadas.',
+                { title:'Limpar Matérias', confirmText:'Desmarcar estudos', danger:true }
             );
             if (!confirmar) return;
 
@@ -5595,7 +5673,7 @@
                 );
             }
 
-            alert(`${marcados.length} tópicos foram marcados novamente como não estudados.`);
+            await appNotice(`${marcados.length} tópicos foram marcados novamente como não estudados.`, { title:'Matérias atualizadas' });
         }
 
         function filterDelayedList(type, btn) {
