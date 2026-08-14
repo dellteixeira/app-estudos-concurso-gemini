@@ -120,6 +120,17 @@
         body.light-mode .sync-status-pill.offline { color:#b91c1c; background:#fef2f2; }
         body.light-mode .sync-status-pill.syncing { color:#1d4ed8; background:#eff6ff; }
 
+        /* V9.46 — backup local automático + recuperação */
+        .backup-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .backup-slot { border:1px solid var(--border-color); border-radius:12px; padding:14px; background:rgba(255,255,255,.025); }
+        .backup-slot h4 { margin:0 0 6px; color:var(--header-materia-text); font-size:.95rem; }
+        .backup-slot-time { font-size:.78rem; color:#94a3b8; margin-bottom:8px; }
+        .backup-slot-stats { font-size:.78rem; line-height:1.55; color:var(--text-color); opacity:.9; }
+        .backup-slot-empty { color:#94a3b8; font-size:.82rem; padding:.6rem 0; }
+        .backup-help { font-size:.8rem; line-height:1.5; color:#94a3b8; padding:10px 12px; border:1px solid var(--border-color); border-radius:10px; background:rgba(59,130,246,.05); }
+        body.light-mode .backup-slot { background:#f8fafc; }
+        @media (max-width:700px) { .backup-grid { grid-template-columns:1fr; } }
+
         .super-user-badge {
             background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.75rem;
             font-weight: 800; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
@@ -2586,6 +2597,7 @@
             </label>
             <button class="btn-action" onclick="handleActionButton(this, openModalAnaliseEditalIA)">✦ Analisar Edital com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
+            <button class="btn-action" onclick="handleActionButton(this, openBackupManager)">Backup / Restaurar</button>
             <button class="btn-action" onclick="handleActionButton(this, clearData)">Limpar Edital Atual</button>
             <button class="btn-action" onclick="handleActionButton(this, toggleDarkMode)">Modo Claro/Escuro</button>
         </div>
@@ -2897,6 +2909,34 @@
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" id="appDialogCancelBtn" onclick="resolveAppDialog(false)">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="appDialogConfirmBtn" data-enter-default="true" onclick="resolveAppDialog(true)">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.46 — BACKUP LOCAL / RECUPERAÇÃO -->
+    <div class="modal-overlay" id="modalBackupManager" style="z-index:1350;">
+        <div class="modal" style="max-width:760px;">
+            <h3>Backup e Recuperação Local</h3>
+            <div class="backup-help">
+                O Painel mantém automaticamente dois snapshots locais: <strong>Atual</strong> e <strong>Anterior</strong>.
+                Eles protegem concursos, edital verticalizado, cronograma, sessões, horas, progresso, revisões, anotações, flashcards e Lei Seca.
+                PDFs anexados não são duplicados neste backup porque permanecem no armazenamento de arquivos do próprio app.
+            </div>
+            <div class="backup-grid">
+                <div class="backup-slot">
+                    <h4>Backup Atual</h4>
+                    <div id="backupCurrentInfo" class="backup-slot-empty">Verificando…</div>
+                    <button id="restoreCurrentBackupBtn" class="btn btn-primary btn-sm" type="button" onclick="restoreLocalBackup('current')" disabled>Restaurar Atual</button>
+                </div>
+                <div class="backup-slot">
+                    <h4>Backup Anterior</h4>
+                    <div id="backupPreviousInfo" class="backup-slot-empty">Verificando…</div>
+                    <button id="restorePreviousBackupBtn" class="btn btn-secondary btn-sm" type="button" onclick="restoreLocalBackup('previous')" disabled>Restaurar Anterior</button>
+                </div>
+            </div>
+            <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap;">
+                <button class="btn btn-success" type="button" onclick="createBackupNow()">Criar Backup Agora</button>
+                <button class="btn btn-secondary" type="button" onclick="closeBackupManager()">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -3313,6 +3353,263 @@
         let dashboardLoadPromise = null;
         let syncUiMode = 'idle';
 
+        // =========================================================
+        // V9.46 — BACKUP LOCAL AUTOMÁTICO / RECUPERAÇÃO
+        // =========================================================
+        const LOCAL_BACKUP_DB = 'painel-estudos-backups';
+        const LOCAL_BACKUP_STORE = 'snapshots';
+        let localBackupTimer = null;
+        let backupRestoreInProgress = false;
+        let localBackupWritePromise = null;
+
+        function openLocalBackupDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(LOCAL_BACKUP_DB, 1);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(LOCAL_BACKUP_STORE)) {
+                        db.createObjectStore(LOCAL_BACKUP_STORE, { keyPath:'key' });
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('Não foi possível abrir o armazenamento de backups.'));
+            });
+        }
+
+        async function readLocalBackup(slot = 'current') {
+            if (!currentUser) return null;
+            const db = await openLocalBackupDatabase();
+            return new Promise((resolve, reject) => {
+                const key = `${currentUser.id}:${slot}`;
+                const request = db.transaction(LOCAL_BACKUP_STORE, 'readonly').objectStore(LOCAL_BACKUP_STORE).get(key);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error('Não foi possível ler o backup.'));
+            });
+        }
+
+        async function writeLocalBackup(record) {
+            const db = await openLocalBackupDatabase();
+            return new Promise((resolve, reject) => {
+                const request = db.transaction(LOCAL_BACKUP_STORE, 'readwrite').objectStore(LOCAL_BACKUP_STORE).put(record);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error || new Error('Não foi possível gravar o backup.'));
+            });
+        }
+
+        function collectLegacyPomodoroState(uid) {
+            const result = {};
+            const prefixes = [`pomodoro_daily_minutes_${uid}_`, `pomodoro_extra_minutes_${uid}_`];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && prefixes.some(prefix => key.startsWith(prefix))) result[key] = localStorage.getItem(key);
+            }
+            return result;
+        }
+
+        function getBackupCoreState() {
+            if (!currentUser) return null;
+            const uid = currentUser.id;
+            let metadata = {};
+            let edital = [];
+            try { metadata = JSON.parse(localStorage.getItem(`concursos_metadata_${uid}`) || '{}'); } catch (_) {}
+            try { edital = JSON.parse(localStorage.getItem(`edital_offline_data_${uid}`) || '[]'); } catch (_) {}
+            return {
+                concursosMetadata: metadata,
+                editalItems: Array.isArray(edital) ? edital : [],
+                lastStudiedConcurso: localStorage.getItem('last_studied_concurso') || currentConcurso || 'Concurso Geral',
+                pomodoroLegacy: collectLegacyPomodoroState(uid)
+            };
+        }
+
+        function backupFingerprint(core) {
+            const raw = JSON.stringify(core || {});
+            let hash = 2166136261;
+            for (let i = 0; i < raw.length; i++) {
+                hash ^= raw.charCodeAt(i);
+                hash = Math.imul(hash, 16777619);
+            }
+            return `${raw.length}:${(hash >>> 0).toString(16)}`;
+        }
+
+        async function createLocalBackupSnapshot(reason = 'alteração automática', options = {}) {
+            if (!currentUser || backupRestoreInProgress) return null;
+            if (localBackupWritePromise && !options.force) return localBackupWritePromise;
+            const run = async () => {
+                const core = getBackupCoreState();
+                if (!core) return null;
+                const fingerprint = backupFingerprint(core);
+                const current = await readLocalBackup('current');
+                if (!options.force && current?.fingerprint === fingerprint) return current;
+                if (current) {
+                    await writeLocalBackup({ ...current, key:`${currentUser.id}:previous`, slot:'previous' });
+                }
+                const snapshot = {
+                    key:`${currentUser.id}:current`,
+                    slot:'current',
+                    schemaVersion:1,
+                    appVersion:'9.46',
+                    userId:currentUser.id,
+                    createdAt:new Date().toISOString(),
+                    reason:String(reason || 'alteração automática'),
+                    fingerprint,
+                    core
+                };
+                await writeLocalBackup(snapshot);
+                return snapshot;
+            };
+            localBackupWritePromise = run().finally(() => { localBackupWritePromise = null; });
+            return localBackupWritePromise;
+        }
+
+        function scheduleLocalBackup(reason = 'alteração automática', delay = 1400) {
+            if (!currentUser || backupRestoreInProgress) return;
+            clearTimeout(localBackupTimer);
+            localBackupTimer = setTimeout(() => {
+                createLocalBackupSnapshot(reason).catch(error => console.warn('Backup local adiado:', error));
+            }, delay);
+        }
+
+        function countBackupStats(snapshot) {
+            const core = snapshot?.core || {};
+            const metadata = core.concursosMetadata || {};
+            const realContests = Object.keys(metadata).filter(name => name && name !== 'Concurso Geral');
+            const edital = Array.isArray(core.editalItems) ? core.editalItems : [];
+            let flashcards = 0;
+            let sessions = 0;
+            Object.values(metadata).forEach(contest => {
+                flashcards += Array.isArray(contest?.flashcards) ? contest.flashcards.length : 0;
+                sessions += Array.isArray(contest?.studySessions) ? contest.studySessions.length : 0;
+            });
+            return { concursos:realContests.length, topicos:edital.length, flashcards, sessions };
+        }
+
+        function renderBackupSlot(elementId, buttonId, snapshot) {
+            const box = document.getElementById(elementId);
+            const btn = document.getElementById(buttonId);
+            if (!box || !btn) return;
+            if (!snapshot) {
+                box.className = 'backup-slot-empty';
+                box.textContent = 'Nenhum backup disponível ainda.';
+                btn.disabled = true;
+                return;
+            }
+            const stats = countBackupStats(snapshot);
+            const date = new Date(snapshot.createdAt);
+            box.className = '';
+            box.innerHTML = `<div class="backup-slot-time">${escapeHtml(date.toLocaleString('pt-BR'))}</div><div class="backup-slot-stats">${stats.concursos} concurso(s) · ${stats.topicos} tópico(s)<br>${stats.flashcards} flashcard(s) · ${stats.sessions} sessão(ões)<br><span style="opacity:.7">${escapeHtml(snapshot.reason || 'backup automático')}</span></div>`;
+            btn.disabled = false;
+        }
+
+        async function refreshBackupManager() {
+            try {
+                const [current, previous] = await Promise.all([readLocalBackup('current'), readLocalBackup('previous')]);
+                renderBackupSlot('backupCurrentInfo', 'restoreCurrentBackupBtn', current);
+                renderBackupSlot('backupPreviousInfo', 'restorePreviousBackupBtn', previous);
+            } catch (error) {
+                console.warn('Não foi possível exibir os backups:', error);
+                renderBackupSlot('backupCurrentInfo', 'restoreCurrentBackupBtn', null);
+                renderBackupSlot('backupPreviousInfo', 'restorePreviousBackupBtn', null);
+            }
+        }
+
+        function openBackupManager() {
+            const modal = document.getElementById('modalBackupManager');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            refreshBackupManager();
+        }
+
+        function closeBackupManager() {
+            const modal = document.getElementById('modalBackupManager');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function createBackupNow() {
+            try {
+                await createLocalBackupSnapshot('backup manual');
+                await refreshBackupManager();
+                await appNotice('Backup local criado com sucesso.', { title:'Backup concluído' });
+            } catch (error) {
+                await appNotice(`Não foi possível criar o backup: ${error.message}`, { title:'Falha no backup' });
+            }
+        }
+
+        function collectFlashcardIds(metadata) {
+            const ids = new Set();
+            Object.values(metadata || {}).forEach(contest => {
+                (contest?.flashcards || []).forEach(fc => { if (fc?.id) ids.add(String(fc.id)); });
+            });
+            return ids;
+        }
+
+        async function restoreLocalBackup(slot) {
+            if (!currentUser) return;
+            const snapshot = await readLocalBackup(slot);
+            if (!snapshot?.core) return appNotice('Este backup não está disponível.', { title:'Backup indisponível' });
+            const ok = await appConfirm(
+                `Restaurar o Backup ${slot === 'previous' ? 'Anterior' : 'Atual'}?
+
+O estado local atual será substituído. Antes da restauração, o Painel preservará automaticamente uma cópia de segurança do estado presente. Depois, as alterações restauradas entrarão na fila normal de sincronização com o Supabase.`,
+                { title:'Restaurar backup', confirmText:'Restaurar', danger:true }
+            );
+            if (!ok) return;
+
+            const uid = currentUser.id;
+            const oldMetadata = getConcursosMetadata();
+            const oldEdital = (() => { try { return JSON.parse(localStorage.getItem(getEditalLocalStorageKey()) || '[]'); } catch (_) { return []; } })();
+            const selectedSnapshot = JSON.parse(JSON.stringify(snapshot));
+
+            try {
+                await createLocalBackupSnapshot('estado antes da restauração', { force:true });
+                backupRestoreInProgress = true;
+                clearTimeout(localBackupTimer);
+
+                const core = selectedSnapshot.core;
+                const restoredMetadata = core.concursosMetadata || {};
+                const restoredEdital = Array.isArray(core.editalItems) ? core.editalItems : [];
+                localStorage.setItem(`concursos_metadata_${uid}`, JSON.stringify(restoredMetadata));
+                localStorage.setItem(`edital_offline_data_${uid}`, JSON.stringify(restoredEdital));
+                localStorage.setItem('last_studied_concurso', core.lastStudiedConcurso || 'Concurso Geral');
+
+                const pomodoroPrefixes = [`pomodoro_daily_minutes_${uid}_`, `pomodoro_extra_minutes_${uid}_`];
+                const removeKeys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && pomodoroPrefixes.some(prefix => key.startsWith(prefix))) removeKeys.push(key);
+                }
+                removeKeys.forEach(key => localStorage.removeItem(key));
+                Object.entries(core.pomodoroLegacy || {}).forEach(([key, value]) => localStorage.setItem(key, String(value)));
+
+                const restoredIds = new Set(restoredEdital.map(item => String(item.id)));
+                const oldIds = new Set((Array.isArray(oldEdital) ? oldEdital : []).map(item => String(item.id)));
+                const oldFlashIds = collectFlashcardIds(oldMetadata);
+                const restoredFlashIds = collectFlashcardIds(restoredMetadata);
+                const oldContests = new Set(Object.keys(oldMetadata || {}).filter(name => name !== 'Concurso Geral'));
+                const restoredContests = new Set(Object.keys(restoredMetadata || {}).filter(name => name !== 'Concurso Geral'));
+
+                const restoredSync = {
+                    metadataDirty:true,
+                    flashcardsDirty:{},
+                    editalUpserts:{},
+                    editalDeletes:[...oldIds].filter(id => !restoredIds.has(id)),
+                    flashcardDeletes:[...oldFlashIds].filter(id => !restoredFlashIds.has(id)),
+                    concursoDeletes:[...oldContests].filter(name => !restoredContests.has(name))
+                };
+                restoredEdital.forEach(item => { if (item?.id != null) restoredSync.editalUpserts[String(item.id)] = { ...item, id:String(item.id) }; });
+                Object.entries(restoredMetadata).forEach(([name, contest]) => {
+                    if (Array.isArray(contest?.flashcards) && contest.flashcards.length) restoredSync.flashcardsDirty[name] = true;
+                });
+                localStorage.setItem(`pending_sync_${uid}`, JSON.stringify(restoredSync));
+                localStorage.removeItem(`last_successful_sync_${uid}`);
+
+                await appNotice('Backup restaurado. O Painel será recarregado e o estado recuperado entrará na fila de sincronização.', { title:'Restauração concluída' });
+                location.reload();
+            } catch (error) {
+                backupRestoreInProgress = false;
+                await appNotice(`Não foi possível restaurar o backup: ${error.message}`, { title:'Falha na restauração' });
+            }
+        }
+
         function getLastSyncStorageKey() {
             const uid = currentUser ? currentUser.id : 'guest';
             return `last_successful_sync_${uid}`;
@@ -3648,6 +3945,7 @@
                 modalPromptIA: () => closeModalPromptIA(),
                 modalNovoConcurso: () => closeModalNovoConcurso(),
                 modalDayContent: () => closeModalDayContent(),
+                modalBackupManager: () => closeBackupManager(),
                 modalLegalReading: () => closeLegalReadingModal(),
                 modalEditarFlashcard: () => closeModalEditarFlashcard(),
                 modalFiltroEstudoFC: () => closeModalFiltroEstudoFlashcards(),
@@ -3745,6 +4043,7 @@
             const key = getConcursosMetadataStorageKey();
             localStorage.setItem(key, JSON.stringify(data));
             setMetadataDirty(true);
+            scheduleLocalBackup('alteração em concursos / planejamento');
 
             if (navigator.onLine && currentUser) {
                 try {
@@ -6007,6 +6306,7 @@
                     }
                 }, 250);
             }
+            scheduleLocalBackup('estado inicial carregado', 2200);
         }
 
         async function flushPendingConcursoDeletes() {
@@ -6131,6 +6431,7 @@
 
         function saveEditalToLocalStorage() {
             localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
+            scheduleLocalBackup('alteração no edital verticalizado');
         }
 
         async function saveEditalItemToCloud(item) {
