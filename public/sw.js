@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-31-adaptive-study-queue-20260813';
+const CACHE_NAME = 'painel-estudos-v9-32-mobile-compact-revision-24730-20260813';
 
 const APP_SHELL = [
   './manifest.json',
