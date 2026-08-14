@@ -58,3 +58,13 @@ V9.52 — Account Backup Cleanup
 - Backup / Restaurar permanece acessível em Conta > Seus dados.
 - No mobile, a grade de ferramentas mantém duas colunas e o último item ocupa a linha completa, reduzindo ruído visual.
 - Nenhuma lógica de backup, restauração, Supabase ou IndexedDB foi alterada.
+
+V9.53 — EXCLUSÃO PERMANENTE DE CONTA / LIMPEZA ESTRITA
+- "Apagar todos os dados" foi explicitamente separado de "Excluir minha conta".
+- A exclusão permanente remove primeiro os dados de estudo pela RPC delete_my_study_data() e depois remove o usuário do Supabase Auth por endpoint protegido no Cloudflare Worker.
+- O frontend nunca recebe nem armazena a chave administrativa do Supabase.
+- Após exclusão confirmada, o app limpa dados locais do usuário, PDFs, todos os snapshots de backup vinculados ao user_id, chaves legadas conhecidas, sessão Supabase e estado em memória; em seguida volta imediatamente à tela de login e recarrega em contexto anônimo.
+- O endpoint /api/account/delete exige Bearer token válido do próprio usuário.
+- CONFIGURAÇÃO OBRIGATÓRIA NO CLOUDFLARE: adicionar um Secret chamado SUPABASE_SECRET_KEY com uma Secret API Key do Supabase (sb_secret_...). Alternativamente, por compatibilidade, SUPABASE_SERVICE_ROLE_KEY também é aceito.
+- Nunca colocar SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY no public/index.html, wrangler.jsonc versionado ou qualquer arquivo servido ao navegador.
+- A RPC delete_my_study_data() da V9.51 continua obrigatória para a exclusão transacional dos dados antes da remoção de auth.users.
