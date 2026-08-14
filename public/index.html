@@ -280,6 +280,17 @@
         .day-topic-controls-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; }
         .day-topic-status-inline { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
         .day-topic-status-inline label { font-size:.8rem; display:flex; align-items:center; gap:4px; white-space:nowrap; }
+        .topic-plan-summary { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:6px; font-size:.72rem; color:#94a3b8; }
+        .topic-plan-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:999px; border:1px solid rgba(56,189,248,.28); background:rgba(14,165,233,.08); color:#7dd3fc; font-weight:800; }
+        .topic-plan-pill.done { border-color:rgba(34,197,94,.32); background:rgba(34,197,94,.09); color:#86efac; }
+        .topic-plan-progress { width:min(280px,100%); height:5px; border-radius:999px; overflow:hidden; background:rgba(148,163,184,.16); }
+        .topic-plan-progress > span { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#2563eb,#0ea5e9); }
+        .topic-plan-editor-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+        .topic-plan-editor-grid label { display:flex; flex-direction:column; gap:5px; font-size:.72rem; color:#93c5fd; font-weight:800; }
+        .topic-plan-editor-grid input,.topic-plan-editor-grid select { width:100%; min-width:0; }
+        .topic-plan-editor-help { font-size:.74rem; line-height:1.4; color:#94a3b8; }
+        .edital-topic-plan-note { display:block; margin-top:4px; font-size:.68rem; color:#7dd3fc; font-weight:700; }
+        @media (max-width:640px){ .topic-plan-editor-grid{grid-template-columns:1fr;} }
         .day-topic-inline-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
         .day-topic-inline-actions .btn,
         .day-topic-controls-row .btn { min-height:34px; padding:.45rem .72rem; font-size:.82rem; border-radius:11px; white-space:nowrap; }
@@ -2477,6 +2488,18 @@
             background: #ffffff;
             border-color: #dfe8f0;
         }
+        body.light-mode .topic-plan-pill {
+            background: #eef7ff;
+            border-color: #bfdcff;
+            color: #1667a8;
+        }
+        body.light-mode .topic-plan-pill.done {
+            background: #edf9f1;
+            border-color: #b9e5c8;
+            color: #237a45;
+        }
+        body.light-mode .topic-plan-progress { background:#e4edf5; }
+        body.light-mode .edital-topic-plan-note { color:#1667a8; }
         body.light-mode .note-card-title {
             color: #26384a;
         }
@@ -4668,6 +4691,302 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             startScheduledTopicStudy(idx, suggestion.activityType, true);
         }
 
+        function getTopicStudyPlanStore(contestMeta, create = false) {
+            if (!contestMeta) return null;
+            if (!contestMeta.topicStudyPlans && create) contestMeta.topicStudyPlans = {};
+            return contestMeta.topicStudyPlans || null;
+        }
+
+        function getTopicStudyPlan(item, contestMeta = null) {
+            if (!item) return null;
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const store = getTopicStudyPlanStore(contest, false);
+            if (!store) return null;
+            return store[String(item.id)] || store[getStudyTopicKey(item.materia, item.assunto)] || null;
+        }
+
+        function getTopicStudySessionsForPlan(item, contestMeta = null, activityType = 'teoria') {
+            if (!item) return [];
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const sessions = Array.isArray(contest.studySessions) ? contest.studySessions : [];
+            const key = getStudyTopicKey(item.materia, item.assunto);
+            return sessions.filter(session => getStudySessionTopicKey(session) === key && (session?.activityType || 'teoria') === activityType);
+        }
+
+        function getTopicStudyPlanProgress(item, contestMeta = null) {
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const plan = getTopicStudyPlan(item, contest);
+            if (!plan) return null;
+            const mode = ['sessions','minutes','lessons'].includes(plan.mode) ? plan.mode : 'sessions';
+            let current = 0;
+            let target = Math.max(1, Number(plan.target) || 1);
+            const theorySessions = getTopicStudySessionsForPlan(item, contest, 'teoria');
+            if (mode === 'minutes') current = theorySessions.reduce((sum, session) => sum + Math.max(0, Number(session?.minutes) || 0), 0);
+            else if (mode === 'lessons') current = Math.max(0, Number(plan.completedLessons) || 0);
+            else current = theorySessions.length;
+            const pct = Math.max(0, Math.min(100, Math.round((current / target) * 100)));
+            return { plan, mode, current, target, pct, complete: current >= target };
+        }
+
+        function formatTopicStudyPlanProgress(item, contestMeta = null) {
+            const progress = getTopicStudyPlanProgress(item, contestMeta);
+            if (!progress) return '';
+            let label = '';
+            if (progress.mode === 'minutes') label = `${Math.min(progress.current, progress.target)} / ${progress.target} min`;
+            else if (progress.mode === 'lessons') label = `Aula ${Math.min(progress.current + (progress.complete ? 0 : 1), progress.target)} de ${progress.target} · ${progress.current}/${progress.target} concluídas`;
+            else label = `Bloco ${Math.min(progress.current + (progress.complete ? 0 : 1), progress.target)} de ${progress.target} · ${progress.current}/${progress.target} sessões`;
+            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? '✓ Teoria planejada concluída' : escapeHtml(label)}</span><span>${progress.pct}%</span><span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
+        }
+
+        function getTopicStudyPlanBadgeHtml(item, contestMeta = null) {
+            const progress = getTopicStudyPlanProgress(item, contestMeta);
+            if (!progress) return '';
+            const unit = progress.mode === 'minutes' ? 'min' : (progress.mode === 'lessons' ? 'aulas' : 'sessões');
+            return `<span class="edital-topic-plan-note">Plano de Teoria: ${Math.min(progress.current, progress.target)}/${progress.target} ${unit} · ${progress.pct}%${progress.complete ? ' · concluído' : ' · em andamento'}</span>`;
+        }
+
+        function getStudyPlanDayCapacity(contestMeta, dateObj) {
+            const cfg = contestMeta?.scheduleConfig || {};
+            const dow = dateObj.getDay();
+            const method = Number(cfg.method || contestMeta?.pomodoroScheduleMethod || 0);
+            if (method === 1) {
+                if (dow === 6 && cfg.includeSaturday === false) return 0;
+                if (dow === 0 && cfg.includeSunday === false) return 0;
+                return Math.max(1, Number(cfg.dailySlots) || Number(contestMeta?.pomodoroDailyTargetHours) || 1);
+            }
+            const weekdays = Array.isArray(cfg.weekdays) && cfg.weekdays.length ? cfg.weekdays : [1,2,3,4,5];
+            if (!weekdays.includes(dow)) return 0;
+            if (cfg.customDailyHoursByWeekday) return Math.max(1, Math.round(Number(cfg.customDailyHoursByWeekday[dow]) || 1));
+            return Math.max(1, Number(cfg.dailySlots) || Number(contestMeta?.pomodoroDailyTargetHours) || 1);
+        }
+
+        function findNextStudyPlanDate(contestMeta, afterDateKey, topicText) {
+            const schedule = contestMeta.dateSchedule || (contestMeta.dateSchedule = {});
+            const date = new Date(`${afterDateKey}T00:00:00`);
+            for (let safety = 0; safety < 3660; safety++) {
+                date.setDate(date.getDate() + 1);
+                const capacity = getStudyPlanDayCapacity(contestMeta, date);
+                if (!capacity) continue;
+                const dateKey = getLocalDateKey(date);
+                const dayItems = Array.isArray(schedule[dateKey]) ? schedule[dateKey] : [];
+                if (dayItems.some(raw => !isRevisionScheduleText(raw) && normalizeScheduledTopicForStudy(raw) === topicText)) return dateKey;
+                return dateKey;
+            }
+            return null;
+        }
+
+        function topicHasRecordedStudy(topicText, contestMeta) {
+            const sessions = Array.isArray(contestMeta?.studySessions) ? contestMeta.studySessions : [];
+            return sessions.some(session => getStudySessionTopicKey(session) === topicText && Math.max(0, Number(session?.minutes) || 0) > 0);
+        }
+
+        function insertStudyPlanContinuationWithReflow(contestMeta, dateKey, topicText, safety = 0) {
+            if (!contestMeta || !dateKey || !topicText || safety > 500) return dateKey;
+            const schedule = contestMeta.dateSchedule || (contestMeta.dateSchedule = {});
+            if (!schedule[dateKey]) schedule[dateKey] = [];
+            if (schedule[dateKey].some(raw => !isRevisionScheduleText(raw) && normalizeScheduledTopicForStudy(raw) === topicText)) return dateKey;
+            const dateObj = new Date(`${dateKey}T00:00:00`);
+            const capacity = Math.max(1, getStudyPlanDayCapacity(contestMeta, dateObj) || 1);
+            const normalItems = schedule[dateKey].filter(raw => !isRevisionScheduleText(raw));
+            let displaced = null;
+            if (normalItems.length >= capacity) {
+                for (let i = schedule[dateKey].length - 1; i >= 0; i--) {
+                    const raw = schedule[dateKey][i];
+                    if (isRevisionScheduleText(raw)) continue;
+                    const candidate = normalizeScheduledTopicForStudy(raw);
+                    if (!candidate || candidate === topicText || topicHasRecordedStudy(candidate, contestMeta)) continue;
+                    displaced = candidate;
+                    schedule[dateKey].splice(i, 1);
+                    break;
+                }
+            }
+            insertNormalTopicBeforeRevisions(schedule, dateKey, topicText);
+            if (displaced) {
+                const nextDate = findNextStudyPlanDate(contestMeta, dateKey, displaced);
+                if (nextDate && nextDate !== dateKey) {
+                    reanchorTopicRevisions(schedule, displaced, nextDate, contestMeta);
+                    insertStudyPlanContinuationWithReflow(contestMeta, nextDate, displaced, safety + 1);
+                }
+            }
+            return dateKey;
+        }
+
+        function removeFutureNormalTopicOccurrences(dateSchedule, topicText, afterDateKey) {
+            Object.keys(dateSchedule || {}).forEach(dateKey => {
+                if (dateKey <= afterDateKey || !Array.isArray(dateSchedule[dateKey])) return;
+                dateSchedule[dateKey] = dateSchedule[dateKey].filter(raw => isRevisionScheduleText(raw) || normalizeScheduledTopicForStudy(raw) !== topicText);
+                if (!dateSchedule[dateKey].length) delete dateSchedule[dateKey];
+            });
+        }
+
+        function ensureTopicStudyPlanContinuation(contestMeta, item, afterDateKey) {
+            if (!contestMeta || !item) return null;
+            const progress = getTopicStudyPlanProgress(item, contestMeta);
+            if (!progress || progress.complete) return null;
+            const topicText = getStudyTopicKey(item.materia, item.assunto);
+            const schedule = contestMeta.dateSchedule || (contestMeta.dateSchedule = {});
+            const existing = Object.keys(schedule).sort().find(dateKey => dateKey > afterDateKey && (schedule[dateKey] || []).some(raw => !isRevisionScheduleText(raw) && normalizeScheduledTopicForStudy(raw) === topicText));
+            if (existing) return existing;
+            const nextDate = findNextStudyPlanDate(contestMeta, afterDateKey, topicText);
+            if (!nextDate) return null;
+            insertStudyPlanContinuationWithReflow(contestMeta, nextDate, topicText);
+            return nextDate;
+        }
+
+        function reconcileTopicStudyPlanAfterSession(metadata, context) {
+            if (!context || context.activityType !== 'teoria' || !metadata?.[currentConcurso]) return null;
+            const contest = metadata[currentConcurso];
+            const item = allEditalItems.find(candidate => {
+                if ((candidate.concurso || 'Concurso Geral') !== currentConcurso) return false;
+                if (context.itemId && String(candidate.id) === String(context.itemId)) return true;
+                return getStudyTopicKey(candidate.materia, candidate.assunto) === getStudyTopicKey(context.materia, context.assunto);
+            });
+            if (!item) return null;
+            const progress = getTopicStudyPlanProgress(item, contest);
+            if (!progress) return null;
+            const todayKey = getLocalDateKey();
+            const topicText = getStudyTopicKey(item.materia, item.assunto);
+            if (progress.complete) {
+                removeFutureNormalTopicOccurrences(contest.dateSchedule || {}, topicText, todayKey);
+                reanchorTopicRevisions(contest.dateSchedule || (contest.dateSchedule = {}), topicText, todayKey, contest);
+                return { ...progress, continuationDate:null };
+            }
+            removeTopicRevisionsFromSchedule(contest.dateSchedule || (contest.dateSchedule = {}), topicText);
+            const continuationDate = ensureTopicStudyPlanContinuation(contest, item, todayKey);
+            return { ...progress, continuationDate };
+        }
+
+        function showStudyPlanEditor(idx) {
+            const editArea = document.getElementById(`editArea_${idx}`);
+            if (!editArea) return;
+            const metadata = getConcursosMetadata();
+            const raw = metadata[currentConcurso]?.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const item = editalItems.find(i => getStudyTopicKey(i.materia, i.assunto) === clean);
+            if (!item) return alert('Este item não está vinculado ao edital verticalizado.');
+            const plan = getTopicStudyPlan(item, metadata[currentConcurso] || {}) || { mode:'sessions', target:6, sessionMinutes:Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40') || 40), completedLessons:0 };
+            editArea.style.display = 'block';
+            editArea.innerHTML = `
+                <div class="edit-selector-box">
+                    <strong style="color:var(--modern-blue-2);">Planejar assunto longo</strong>
+                    <div class="topic-plan-editor-help">O assunto continua sendo uma única linha do edital. O plano controla somente quantas sessões, minutos ou aulas de Teoria serão necessários antes de marcar a Teoria como concluída.</div>
+                    <div class="topic-plan-editor-grid">
+                        <label>Modo
+                            <select id="studyPlanMode_${idx}" onchange="updateStudyPlanEditorFields(${idx})">
+                                <option value="sessions" ${plan.mode === 'sessions' ? 'selected' : ''}>Sessões / blocos</option>
+                                <option value="minutes" ${plan.mode === 'minutes' ? 'selected' : ''}>Carga em minutos</option>
+                                <option value="lessons" ${plan.mode === 'lessons' ? 'selected' : ''}>Número de aulas</option>
+                            </select>
+                        </label>
+                        <label id="studyPlanTargetLabel_${idx}">Quantidade
+                            <input id="studyPlanTarget_${idx}" type="number" min="1" max="999" value="${Math.max(1, Number(plan.target) || 1)}">
+                        </label>
+                        <label>Sessão padrão (min)
+                            <input id="studyPlanSession_${idx}" type="number" min="1" max="240" value="${Math.max(1, Number(plan.sessionMinutes) || 40)}">
+                        </label>
+                    </div>
+                    <div id="studyPlanLessonStatus_${idx}" class="topic-plan-editor-help"></div>
+                    <div style="display:flex; justify-content:flex-end; gap:7px; flex-wrap:wrap;">
+                        ${getTopicStudyPlan(item, metadata[currentConcurso] || {}) ? `<button class="btn btn-danger btn-sm" onclick="removeTopicStudyPlan(${idx})">Remover plano</button>` : ''}
+                        <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
+                        <button class="btn btn-success btn-sm" onclick="saveTopicStudyPlan(${idx})">Salvar plano</button>
+                    </div>
+                </div>`;
+            updateStudyPlanEditorFields(idx);
+        }
+
+        function updateStudyPlanEditorFields(idx) {
+            const mode = document.getElementById(`studyPlanMode_${idx}`)?.value || 'sessions';
+            const label = document.getElementById(`studyPlanTargetLabel_${idx}`);
+            const status = document.getElementById(`studyPlanLessonStatus_${idx}`);
+            if (label) label.firstChild.textContent = mode === 'minutes' ? 'Carga total de Teoria (min) ' : (mode === 'lessons' ? 'Número de aulas ' : 'Número de sessões ');
+            if (status) status.textContent = mode === 'lessons' ? 'No modo Aulas, o tempo continua sendo registrado pelo Pomodoro. Use “✓ Aula” no cartão diário apenas quando terminar uma aula inteira.' : 'O progresso é calculado automaticamente a partir das sessões de Teoria registradas no Pomodoro.';
+        }
+
+        async function saveTopicStudyPlan(idx) {
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || (metadata[currentConcurso] = {});
+            const raw = contest.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const item = allEditalItems.find(i => (i.concurso || 'Concurso Geral') === currentConcurso && getStudyTopicKey(i.materia, i.assunto) === clean);
+            if (!item) return alert('Este item não está vinculado ao edital verticalizado.');
+            const mode = document.getElementById(`studyPlanMode_${idx}`)?.value || 'sessions';
+            const target = Math.max(1, Math.min(999, parseInt(document.getElementById(`studyPlanTarget_${idx}`)?.value || '1') || 1));
+            const sessionMinutes = Math.max(1, Math.min(240, parseInt(document.getElementById(`studyPlanSession_${idx}`)?.value || '40') || 40));
+            const store = getTopicStudyPlanStore(contest, true);
+            const previous = store[String(item.id)] || {};
+            store[String(item.id)] = {
+                mode,
+                target,
+                sessionMinutes,
+                completedLessons: mode === 'lessons' ? Math.max(0, Number(previous.completedLessons) || 0) : 0,
+                createdAt: previous.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            const progress = getTopicStudyPlanProgress(item, contest);
+            const nextTheory = !!progress?.complete;
+            const theoryChanged = !!item.teoria !== nextTheory;
+            item.teoria = nextTheory;
+            const topicText = getStudyTopicKey(item.materia, item.assunto);
+            if (nextTheory) {
+                removeFutureNormalTopicOccurrences(contest.dateSchedule || {}, topicText, getLocalDateKey());
+                reanchorTopicRevisions(contest.dateSchedule || (contest.dateSchedule = {}), topicText, getLocalDateKey(), contest);
+            } else {
+                removeTopicRevisionsFromSchedule(contest.dateSchedule || (contest.dateSchedule = {}), topicText);
+                ensureTopicStudyPlanContinuation(contest, item, activeSelectedDateKey || getLocalDateKey());
+            }
+            await saveConcursosMetadata(metadata);
+            if (theoryChanged) await saveEditalItemToCloud(item);
+            filterDataByConcurso();
+            renderDayTopicsList();
+            renderMonthCalendar();
+        }
+
+        async function removeTopicStudyPlan(idx) {
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || {};
+            const raw = contest.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const item = allEditalItems.find(i => (i.concurso || 'Concurso Geral') === currentConcurso && getStudyTopicKey(i.materia, i.assunto) === clean);
+            if (!item) return;
+            const ok = await appConfirm('Remover o planejamento em blocos deste assunto? O histórico de sessões será preservado.', { title:'Remover plano do assunto', confirmText:'Remover', confirmClass:'btn-danger' });
+            if (!ok) return;
+            const store = getTopicStudyPlanStore(contest, false);
+            if (store) delete store[String(item.id)];
+            await saveConcursosMetadata(metadata);
+            renderDayTopicsList();
+            filterDataByConcurso();
+        }
+
+        async function completeTopicStudyLesson(idx) {
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || {};
+            const raw = contest.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const item = allEditalItems.find(i => (i.concurso || 'Concurso Geral') === currentConcurso && getStudyTopicKey(i.materia, i.assunto) === clean);
+            if (!item) return;
+            const plan = getTopicStudyPlan(item, contest);
+            if (!plan || plan.mode !== 'lessons') return;
+            plan.completedLessons = Math.min(Math.max(1, Number(plan.target) || 1), Math.max(0, Number(plan.completedLessons) || 0) + 1);
+            plan.updatedAt = new Date().toISOString();
+            const progress = getTopicStudyPlanProgress(item, contest);
+            const previousTheory = !!item.teoria;
+            item.teoria = !!progress?.complete;
+            const topicText = getStudyTopicKey(item.materia, item.assunto);
+            if (progress?.complete) {
+                removeFutureNormalTopicOccurrences(contest.dateSchedule || {}, topicText, getLocalDateKey());
+                reanchorTopicRevisions(contest.dateSchedule || (contest.dateSchedule = {}), topicText, getLocalDateKey(), contest);
+            } else {
+                removeTopicRevisionsFromSchedule(contest.dateSchedule || (contest.dateSchedule = {}), topicText);
+                ensureTopicStudyPlanContinuation(contest, item, getLocalDateKey());
+            }
+            await saveConcursosMetadata(metadata);
+            if (previousTheory !== item.teoria) await saveEditalItemToCloud(item);
+            filterDataByConcurso();
+            renderDayTopicsList();
+            renderMonthCalendar();
+        }
+
         function renderDayTopicsList() {
             const container = document.getElementById('dayTopicsContainer');
             if (!container || !activeSelectedDateKey) return;
@@ -4690,9 +5009,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const advanceHistory = !isRevisionScheduleText(topicoStr) ? getLatestAdvanceHistory(cleanTop, activeSelectedDateKey) : null;
                 const advanceBadge = advanceHistory ? `<span style="display:inline-flex; margin-left:8px; padding:2px 7px; border-radius:999px; font-size:.68rem; color:#7dd3fc; border:1px solid rgba(56,189,248,.3); background:rgba(14,165,233,.08);">Antecipado de ${formatDateKeyShort(advanceHistory.plannedDateKey)}</span>` : '';
                 const futureStudyHint = activeSelectedDateKey > getLocalDateKey() && matchedItem && !isRevisionScheduleText(topicoStr) ? `<span style="display:block; margin-top:3px; font-size:.68rem; opacity:.58;">Estudar agora pode antecipar este tópico com reflow do futuro.</span>` : '';
+                const studyPlanSummary = matchedItem && !isRevisionScheduleText(topicoStr) ? formatTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {}) : '';
+                const studyPlan = matchedItem ? getTopicStudyPlan(matchedItem, metadata[currentConcurso] || {}) : null;
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong>${advanceBadge}${futureStudyHint}</div>
+                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong>${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
                         <div class="day-topic-controls-row">
                             ${matchedItem ? `
                                 <div class="day-topic-status-inline">
@@ -4705,12 +5026,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 </div>
                             ` : ''}
                             ${matchedItem ? `<div class="study-launch-controls">
-                                <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
+                                <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
                                 <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">▶ Teoria</button>
                                 <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">▶ Questões</button>
                                 ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">⚖ Lei Seca</button>` : ''}
                             </div>` : ''}
                             <div class="day-topic-inline-actions">
+                                ${matchedItem && !isRevisionScheduleText(topicoStr) ? `<button class="btn btn-info btn-sm" onclick="showStudyPlanEditor(${idx})">Planejar</button>` : ''}
+                                ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})">✓ Aula</button>` : ''}
                                 <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
                             </div>
@@ -7129,7 +7452,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 <td>
                                     <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority(decodeURIComponent('${safeId}'), this.value)" title="Prioridade do Assunto">
                                 </td>
-                                <td style="text-align: left; padding-left: 1.5rem;">${escapeHtml(item.assunto)}</td>
+                                <td style="text-align: left; padding-left: 1.5rem;">${escapeHtml(item.assunto)}${getTopicStudyPlanBadgeHtml(item, getConcursosMetadata()[currentConcurso] || {})}</td>
                                 <td data-study-control="true"><span class="revision-model-note">Teoria</span><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'teoria', ${item.teoria})"></td>
                                 <td data-study-control="true"><span class="revision-model-note">Questões</span><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'questoes', ${item.questoes})"></td>
                                 ${revisionCells}
@@ -7164,6 +7487,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         async function toggleCheck(id, field, currentValue) {
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
+                if (field === 'teoria' && !currentValue) {
+                    const progress = getTopicStudyPlanProgress(item, getConcursosMetadata()[currentConcurso] || {});
+                    if (progress && !progress.complete) {
+                        await appNotice('Este assunto possui um plano de Teoria ainda em andamento. Conclua os blocos/minutos/aulas planejados ou remova o plano antes de marcar a Teoria como concluída.', { title:'Plano de estudo em andamento' });
+                        filterDataByConcurso();
+                        return;
+                    }
+                }
                 item[field] = !currentValue;
                 await saveEditalItemToCloud(item);
                 filterDataByConcurso();
@@ -7588,6 +7919,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!item) return false;
 
             const field = context.activityType === 'questoes' ? 'questoes' : 'teoria';
+            if (field === 'teoria') {
+                const contest = getConcursosMetadata()[currentConcurso] || {};
+                const planProgress = getTopicStudyPlanProgress(item, contest);
+                if (planProgress && !planProgress.complete) return false;
+            }
             if (item[field]) return false;
             item[field] = true;
             saveEditalToLocalStorage();
@@ -7678,6 +8014,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 advanced: !!adaptiveResult,
                 createdAt: new Date().toISOString()
             });
+            const topicPlanResult = reconcileTopicStudyPlanAfterSession(metadata, context);
             await saveConcursosMetadata(metadata);
 
             const progressChanged = markEditalProgressFromStudyContext(context);
