@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-53-permanent-account-deletion-20260814';
+const CACHE_NAME = 'painel-estudos-v9-54-supabase-self-service-delete-20260814';
 
 const APP_SHELL = [
   './',
