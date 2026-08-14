@@ -1,1 +1,0 @@
-# app-estudos-concurso-gemini
