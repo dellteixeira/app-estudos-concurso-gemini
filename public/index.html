@@ -131,6 +131,23 @@
         body.light-mode .backup-slot { background:#f8fafc; }
         @media (max-width:700px) { .backup-grid { grid-template-columns:1fr; } }
 
+        /* V9.51 — Minha Conta / segurança / exclusão total */
+        .account-summary { display:flex; flex-direction:column; gap:5px; padding:12px 14px; border:1px solid var(--border-color); border-radius:12px; background:rgba(59,130,246,.05); }
+        .account-summary-label { color:#94a3b8; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+        .account-summary-email { color:var(--text-color); font-weight:800; overflow-wrap:anywhere; }
+        .account-section { margin-top:14px; padding:14px; border:1px solid var(--border-color); border-radius:12px; background:rgba(255,255,255,.02); }
+        .account-section h4 { margin:0 0 10px; color:var(--header-materia-text); }
+        .account-danger-zone { border-color:rgba(239,68,68,.5); background:rgba(239,68,68,.055); }
+        .account-danger-zone h4 { color:#f87171; }
+        .account-inline-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+        .account-inline-actions .btn { justify-content:center; }
+        .account-field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .account-field-grid .full { grid-column:1 / -1; }
+        .account-helper { color:#94a3b8; font-size:.78rem; line-height:1.45; margin-top:7px; }
+        body.light-mode .account-section { background:#f8fafc; }
+        body.light-mode .account-summary { background:#eff6ff; }
+        @media (max-width:620px) { .account-field-grid { grid-template-columns:1fr; } .account-field-grid .full { grid-column:auto; } }
+
         .super-user-badge {
             background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.75rem;
             font-weight: 800; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
@@ -1613,6 +1630,7 @@
             .concurso-selector-bar .btn-primary,
             .concurso-selector-bar .countdown-badge,
             .concurso-selector-bar .sync-status-pill,
+            .concurso-selector-bar .btn-account-header,
             .concurso-selector-bar .btn-logout-header {
                 width:100% !important;
                 min-width:0 !important;
@@ -1631,7 +1649,8 @@
             .concurso-selector-bar .btn-primary { grid-column:1 !important; }
             .concurso-selector-bar .countdown-badge { grid-column:2 !important; }
             .concurso-selector-bar .sync-status-pill { grid-column:1 !important; }
-            .concurso-selector-bar .btn-logout-header { grid-column:2 !important; }
+            .concurso-selector-bar .btn-account-header { grid-column:2 !important; }
+            .concurso-selector-bar .btn-logout-header { grid-column:1 / -1 !important; }
             .concurso-selector-bar .sync-last { display:none !important; }
 
             /* Sessão de flashcards: caixa mais respirada e ações proporcionais */
@@ -1685,6 +1704,7 @@
             .concurso-selector-bar .btn-primary,
             .concurso-selector-bar .countdown-badge,
             .concurso-selector-bar .sync-status-pill,
+            .concurso-selector-bar .btn-account-header,
             .concurso-selector-bar .btn-logout-header {
                 min-height:40px !important;
                 height:40px !important;
@@ -2694,6 +2714,7 @@
                     <span id="syncStatusText">Verificando…</span>
                     <span id="syncStatusLast" class="sync-last"></span>
                 </div>
+                <button class="btn btn-secondary btn-sm btn-account-header" type="button" onclick="openAccountModal()" title="Abrir dados e segurança da conta">Conta</button>
                 <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
             </div>
         </header>
@@ -3037,6 +3058,69 @@
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" id="appDialogCancelBtn" onclick="resolveAppDialog(false)">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="appDialogConfirmBtn" data-enter-default="true" onclick="resolveAppDialog(true)">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.51 — MINHA CONTA / SEGURANÇA / EXCLUSÃO TOTAL -->
+    <div class="modal-overlay" id="modalAccount" style="z-index:1360;">
+        <div class="modal" style="max-width:720px;">
+            <h3>Minha Conta</h3>
+            <div class="account-summary">
+                <span class="account-summary-label">E-mail da conta</span>
+                <span class="account-summary-email" id="accountUserEmail">—</span>
+            </div>
+
+            <section class="account-section">
+                <h4>Segurança</h4>
+                <div class="account-field-grid">
+                    <div class="form-group full">
+                        <label for="accountCurrentPassword">Senha atual</label>
+                        <input type="password" id="accountCurrentPassword" autocomplete="current-password" placeholder="Confirme sua senha atual">
+                    </div>
+                    <div class="form-group">
+                        <label for="accountNewPassword">Nova senha</label>
+                        <input type="password" id="accountNewPassword" autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
+                    </div>
+                    <div class="form-group">
+                        <label for="accountConfirmPassword">Confirmar nova senha</label>
+                        <input type="password" id="accountConfirmPassword" autocomplete="new-password" placeholder="Repita a nova senha">
+                    </div>
+                </div>
+                <div class="account-inline-actions">
+                    <button class="btn btn-primary" type="button" onclick="changeAccountPassword()">Alterar senha</button>
+                </div>
+                <div class="account-helper">A senha atual é validada antes da alteração. A conta permanece conectada após a troca.</div>
+            </section>
+
+            <section class="account-section">
+                <h4>Seus dados</h4>
+                <div class="account-helper">Você pode criar ou restaurar os backups locais já existentes antes de qualquer operação destrutiva.</div>
+                <div class="account-inline-actions">
+                    <button class="btn btn-secondary" type="button" onclick="openBackupFromAccount()">Backup / Restaurar</button>
+                </div>
+            </section>
+
+            <section class="account-section account-danger-zone">
+                <h4>Zona de perigo</h4>
+                <p style="margin:0; line-height:1.5; font-size:.86rem;">Exclui permanentemente <strong>todos os dados de estudo desta conta</strong> no Supabase e neste dispositivo: concursos, edital, cronogramas, sessões, horas, revisões, anotações, flashcards, configurações, PDFs locais, filas offline e backups. <strong>O login e o e-mail são preservados.</strong></p>
+                <div class="account-field-grid" style="margin-top:12px;">
+                    <div class="form-group">
+                        <label for="accountDeletePassword">Senha atual</label>
+                        <input type="password" id="accountDeletePassword" autocomplete="current-password" placeholder="Confirme sua senha">
+                    </div>
+                    <div class="form-group">
+                        <label for="accountDeleteConfirmation">Digite EXCLUIR</label>
+                        <input type="text" id="accountDeleteConfirmation" autocomplete="off" spellcheck="false" placeholder="EXCLUIR">
+                    </div>
+                </div>
+                <div class="account-inline-actions">
+                    <button class="btn btn-danger" type="button" onclick="deleteAllAccountStudyData()">Excluir todos os dados</button>
+                </div>
+            </section>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeAccountModal()">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -3451,7 +3535,7 @@
         let allEditalItems = [];
         let editalItems = [];
         let openMaterias = {}; 
-        let currentConcurso = localStorage.getItem('last_studied_concurso') || 'Concurso Geral';
+        let currentConcurso = 'Concurso Geral';
         let metadataCache = {};
         let flashcardsList = [];
         let activeObjectUrl = null;
@@ -3542,7 +3626,7 @@
             return {
                 concursosMetadata: metadata,
                 editalItems: Array.isArray(edital) ? edital : [],
-                lastStudiedConcurso: localStorage.getItem('last_studied_concurso') || currentConcurso || 'Concurso Geral',
+                lastStudiedConcurso: getLastStudiedConcurso() || currentConcurso || 'Concurso Geral',
                 pomodoroLegacy: collectLegacyPomodoroState(uid)
             };
         }
@@ -3573,7 +3657,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.46',
+                    appVersion:'9.51',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -3695,7 +3779,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const restoredEdital = Array.isArray(core.editalItems) ? core.editalItems : [];
                 localStorage.setItem(`concursos_metadata_${uid}`, JSON.stringify(restoredMetadata));
                 localStorage.setItem(`edital_offline_data_${uid}`, JSON.stringify(restoredEdital));
-                localStorage.setItem('last_studied_concurso', core.lastStudiedConcurso || 'Concurso Geral');
+                setLastStudiedConcurso(core.lastStudiedConcurso || 'Concurso Geral');
 
                 const pomodoroPrefixes = [`pomodoro_daily_minutes_${uid}_`, `pomodoro_extra_minutes_${uid}_`];
                 const removeKeys = [];
@@ -4072,6 +4156,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 modalNovoConcurso: () => closeModalNovoConcurso(),
                 modalDayContent: () => closeModalDayContent(),
                 modalBackupManager: () => closeBackupManager(),
+                modalAccount: () => closeAccountModal(),
                 modalLegalReading: () => closeLegalReadingModal(),
                 modalEditarFlashcard: () => closeModalEditarFlashcard(),
                 modalFiltroEstudoFC: () => closeModalFiltroEstudoFlashcards(),
@@ -4153,6 +4238,79 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
+
+        // V9.50 — isolamento local estrito entre contas no mesmo navegador.
+        // A seleção do último concurso deixa de ser uma chave global compartilhada
+        // e passa a pertencer exclusivamente ao usuário autenticado.
+        let activeUserContextId = null;
+        let userContextGeneration = 0;
+
+        function getLastStudiedConcursoStorageKey(userId = currentUser?.id) {
+            return userId ? `last_studied_concurso_${userId}` : null;
+        }
+
+        function getLastStudiedConcurso() {
+            const key = getLastStudiedConcursoStorageKey();
+            if (!key) return 'Concurso Geral';
+            return localStorage.getItem(key) || 'Concurso Geral';
+        }
+
+        function setLastStudiedConcurso(nome) {
+            const key = getLastStudiedConcursoStorageKey();
+            if (!key) return;
+            localStorage.setItem(key, String(nome || 'Concurso Geral'));
+        }
+
+        function resetInMemoryUserState() {
+            allEditalItems = [];
+            editalItems = [];
+            metadataCache = {};
+            flashcardsList = [];
+            openMaterias = {};
+            openFcFolders = {};
+            activeFcMateriaFilter = '';
+            activeFcAssuntoFilter = '';
+            currentEditingNoteIndex = null;
+            editingFcIndex = null;
+            studyQueue = [];
+            currentStudyIdx = 0;
+            showingAnswer = false;
+            activeSelectedDateKey = null;
+            clearActiveStudyContext();
+        }
+
+        function prepareAuthenticatedUserContext(user) {
+            const nextId = user?.id || null;
+            if (!nextId) return;
+            if (activeUserContextId !== nextId) {
+                userContextGeneration += 1;
+                dashboardLoadPromise = null;
+                syncPromise = null;
+                syncUiMode = 'idle';
+                resetInMemoryUserState();
+                activeUserContextId = nextId;
+            }
+            currentConcurso = getLastStudiedConcurso();
+        }
+
+        function isAuthenticatedUserContextCurrent(userId, generation = userContextGeneration) {
+            return !!currentUser && currentUser.id === userId && activeUserContextId === userId && userContextGeneration === generation;
+        }
+
+        function ensureCurrentConcursoForUser() {
+            const metadata = getConcursosMetadata();
+            const real = new Set();
+            Object.keys(metadata || {}).forEach(nome => { if (!isSystemConcurso(nome)) real.add(nome); });
+            allEditalItems.forEach(item => {
+                const nome = item?.concurso || 'Concurso Geral';
+                if (!isSystemConcurso(nome)) real.add(nome);
+            });
+            const list = [...real].sort((a,b) => a.localeCompare(b, 'pt-BR', { sensitivity:'base' }));
+            if (!list.includes(currentConcurso)) {
+                currentConcurso = list[0] || 'Concurso Geral';
+                setLastStudiedConcurso(currentConcurso);
+            }
+        }
 
         function getConcursosMetadataStorageKey() {
             const uid = currentUser ? currentUser.id : 'guest';
@@ -6751,6 +6909,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             // MOBILE-FIRST: mostra imediatamente o que já está salvo no aparelho.
             loadLocalMetadata();
             loadLocalEditalData();
+            ensureCurrentConcursoForUser();
             filterDataByConcurso();
             initMonthYearSelectors();
             renderMonthCalendar();
@@ -6765,7 +6924,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             // A nuvem atualiza a interface depois, sem bloquear a primeira renderização.
             if (navigator.onLine && currentUser) {
+                const loadUserId = currentUser.id;
+                const loadGeneration = userContextGeneration;
                 scheduleBackgroundTask(async () => {
+                    if (!isAuthenticatedUserContextCurrent(loadUserId, loadGeneration)) return;
                     try {
                         await syncAllWithSupabase();
                     } catch (error) {
@@ -6804,6 +6966,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         async function syncAllWithSupabase() {
             if (!currentUser) return;
+            const syncUserId = currentUser.id;
+            const syncGeneration = userContextGeneration;
             if (syncPromise) return syncPromise;
 
             syncUiMode = 'syncing';
@@ -6812,7 +6976,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 // Exclusões de concursos vêm primeiro para impedir que dados removidos
                 // sejam baixados novamente antes da limpeza remota terminar.
                 await flushPendingConcursoDeletes();
+                if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 await flushPendingEdital();
+                if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 const stateAfterEdital = getSyncState();
                 if (Object.keys(stateAfterEdital.editalUpserts).length > 0 || stateAfterEdital.editalDeletes.length > 0) {
                     throw new Error('Ainda existem alterações do edital aguardando envio.');
@@ -6821,15 +6987,19 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const { data, error } = await runSupabaseRequest(() => supabaseClient
                     .from('edital')
                     .select('*')
-                    .eq('user_id', currentUser.id)
+                    .eq('user_id', syncUserId)
                     .order('prioridade', { ascending: true }));
 
+                if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 if (error) throw new Error(`Falha ao baixar edital: ${error.message}`);
                 allEditalItems = (data || []).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
                 saveEditalToLocalStorage();
 
                 await loadConcursosMetadata();
+                if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 await flushAllPendingFlashcards();
+                if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
+                ensureCurrentConcursoForUser();
                 filterDataByConcurso();
                 renderMonthCalendar();
                 loadNotesData();
@@ -7058,7 +7228,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function changeConcurso(val) {
             if (!val) return;
             currentConcurso = val;
-            localStorage.setItem('last_studied_concurso', currentConcurso);
+            setLastStudiedConcurso(currentConcurso);
             filterDataByConcurso();
             renderMonthCalendar();
             loadNotesData();
@@ -7089,7 +7259,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             await saveConcursosMetadata(metadata);
 
             currentConcurso = nome;
-            localStorage.setItem('last_studied_concurso', currentConcurso);
+            setLastStudiedConcurso(currentConcurso);
             document.getElementById('inputNomeConcurso').value = '';
             document.getElementById('inputDataConcurso').value = '';
             closeModalNovoConcurso();
@@ -7124,7 +7294,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             setFlashcardsDirty(true);
 
             currentConcurso = nomeFormatado;
-            localStorage.setItem('last_studied_concurso', currentConcurso);
+            setLastStudiedConcurso(currentConcurso);
             changeConcurso(currentConcurso);
             if (navigator.onLine && currentUser) syncAllWithSupabase().catch(error => console.warn('Renomeação aguardando sincronização:', error));
             alert(`Concurso renomeado com sucesso para "${nomeFormatado}".`);
@@ -7162,7 +7332,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
                 // 4) Troca de concurso e renderiza imediatamente — percepção instantânea para o usuário.
                 currentConcurso = 'Concurso Geral';
-                localStorage.setItem('last_studied_concurso', currentConcurso);
+                setLastStudiedConcurso(currentConcurso);
                 changeConcurso(currentConcurso);
 
                 // 5) O anexo é local; sua limpeza não precisa bloquear a interface.
@@ -7602,7 +7772,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     if (!targetConcurso) return alert("Nome do concurso é obrigatório para importação.");
 
                     currentConcurso = targetConcurso.trim();
-                    localStorage.setItem('last_studied_concurso', currentConcurso);
+                    setLastStudiedConcurso(currentConcurso);
 
                     let metadata = getConcursosMetadata();
                     if (!metadata[currentConcurso]) {
@@ -10410,6 +10580,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session && session.user) {
                 currentUser = session.user;
+                prepareAuthenticatedUserContext(currentUser);
                 checkSuperUserStatus();
                 showDashboard();
             } else {
@@ -10424,7 +10595,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!email || !password) return alert('Preencha e-mail e senha.');
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) alert('Erro ao entrar: ' + error.message);
-            else { currentUser = data.user; checkSuperUserStatus(); showDashboard(); }
+            else { currentUser = data.user; prepareAuthenticatedUserContext(currentUser); checkSuperUserStatus(); showDashboard(); }
         }
 
         async function handleSignUp() {
@@ -10436,9 +10607,189 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             else alert('Cadastro realizado com sucesso! Clique em Entrar.');
         }
 
+        function openAccountModal() {
+            if (!currentUser) return appNotice('Você precisa estar conectado para acessar a conta.', { title:'Conta indisponível' });
+            const email = document.getElementById('accountUserEmail');
+            if (email) email.textContent = currentUser.email || 'E-mail não disponível';
+            ['accountCurrentPassword','accountNewPassword','accountConfirmPassword','accountDeletePassword','accountDeleteConfirmation'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            const modal = document.getElementById('modalAccount');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeAccountModal() {
+            const modal = document.getElementById('modalAccount');
+            if (modal) modal.style.display = 'none';
+            ['accountCurrentPassword','accountNewPassword','accountConfirmPassword','accountDeletePassword','accountDeleteConfirmation'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }
+
+        function openBackupFromAccount() {
+            closeAccountModal();
+            openBackupManager();
+        }
+
+        async function verifyCurrentAccountPassword(password) {
+            if (!currentUser?.email) throw new Error('A sessão atual não possui um e-mail disponível.');
+            const result = await supabaseClient.auth.signInWithPassword({ email:currentUser.email, password });
+            if (result.error) throw new Error('Senha atual inválida.');
+            if (!result.data?.user || result.data.user.id !== currentUser.id) throw new Error('Não foi possível confirmar a identidade desta conta.');
+            currentUser = result.data.user;
+            prepareAuthenticatedUserContext(currentUser);
+            return true;
+        }
+
+        async function changeAccountPassword() {
+            if (!currentUser) return;
+            const currentPassword = document.getElementById('accountCurrentPassword')?.value || '';
+            const newPassword = document.getElementById('accountNewPassword')?.value || '';
+            const confirmPassword = document.getElementById('accountConfirmPassword')?.value || '';
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                return appNotice('Preencha a senha atual, a nova senha e a confirmação.', { title:'Alterar senha' });
+            }
+            if (newPassword.length < 8) return appNotice('A nova senha deve ter pelo menos 8 caracteres.', { title:'Senha muito curta' });
+            if (newPassword !== confirmPassword) return appNotice('A confirmação da nova senha não corresponde.', { title:'Senhas diferentes' });
+            if (newPassword === currentPassword) return appNotice('Escolha uma nova senha diferente da senha atual.', { title:'Senha sem alteração' });
+
+            const ok = await appConfirm('Alterar a senha desta conta agora?', { title:'Confirmar alteração de senha', confirmText:'Alterar senha' });
+            if (!ok) return;
+            try {
+                await verifyCurrentAccountPassword(currentPassword);
+                const { data, error } = await supabaseClient.auth.updateUser({ password:newPassword });
+                if (error) throw error;
+                if (data?.user) currentUser = data.user;
+                ['accountCurrentPassword','accountNewPassword','accountConfirmPassword'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.value = '';
+                });
+                await appNotice('Senha alterada com sucesso.', { title:'Segurança da conta' });
+            } catch (error) {
+                await appNotice(`Não foi possível alterar a senha: ${error.message}`, { title:'Falha ao alterar senha' });
+            }
+        }
+
+        async function deleteIndexedDbRecordsForUser(uid) {
+            // PDFs/anexos do edital.
+            try {
+                const db = await openEditalFilesDatabase();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction('editalFiles', 'readwrite');
+                    const store = tx.objectStore('editalFiles');
+                    const req = store.openCursor();
+                    req.onsuccess = () => {
+                        const cursor = req.result;
+                        if (!cursor) return;
+                        const key = String(cursor.key || cursor.value?.key || '');
+                        if (key.startsWith(`edital_file_${uid}_`)) cursor.delete();
+                        cursor.continue();
+                    };
+                    req.onerror = () => reject(req.error || new Error('Falha ao limpar PDFs locais.'));
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error || new Error('Falha ao limpar PDFs locais.'));
+                    tx.onabort = () => reject(tx.error || new Error('Limpeza de PDFs cancelada.'));
+                });
+                db.close();
+            } catch (error) {
+                console.warn('Limpeza do IndexedDB de arquivos:', error);
+                throw error;
+            }
+
+            // Backups Atual/Anterior deste usuário.
+            try {
+                const db = await openLocalBackupDatabase();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(LOCAL_BACKUP_STORE, 'readwrite');
+                    const store = tx.objectStore(LOCAL_BACKUP_STORE);
+                    store.delete(`${uid}:current`);
+                    store.delete(`${uid}:previous`);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error || new Error('Falha ao limpar backups locais.'));
+                    tx.onabort = () => reject(tx.error || new Error('Limpeza de backups cancelada.'));
+                });
+                db.close();
+            } catch (error) {
+                console.warn('Limpeza do IndexedDB de backups:', error);
+                throw error;
+            }
+        }
+
+        async function clearLocalStudyDataForUser(uid) {
+            clearTimeout(localBackupTimer);
+            backupRestoreInProgress = true;
+            const exactKeys = new Set([
+                `concursos_metadata_${uid}`,
+                `edital_offline_data_${uid}`,
+                `pending_sync_${uid}`,
+                `last_studied_concurso_${uid}`,
+                `last_successful_sync_${uid}`
+            ]);
+            const prefixes = [
+                `pomodoro_daily_minutes_${uid}_`,
+                `pomodoro_extra_minutes_${uid}_`,
+                `edital_file_${uid}_`
+            ];
+            const remove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (exactKeys.has(key) || prefixes.some(prefix => key.startsWith(prefix)))) remove.push(key);
+            }
+            remove.forEach(key => localStorage.removeItem(key));
+            await deleteIndexedDbRecordsForUser(uid);
+        }
+
+        async function deleteAllAccountStudyData() {
+            if (!currentUser) return;
+            if (!navigator.onLine) {
+                return appNotice('Esta operação exige conexão com a internet para apagar primeiro os dados no Supabase. Nenhum dado foi removido.', { title:'Conexão necessária' });
+            }
+            const password = document.getElementById('accountDeletePassword')?.value || '';
+            const confirmation = (document.getElementById('accountDeleteConfirmation')?.value || '').trim();
+            if (!password) return appNotice('Informe sua senha atual para confirmar a exclusão.', { title:'Confirmação necessária' });
+            if (confirmation !== 'EXCLUIR') return appNotice('Digite exatamente EXCLUIR para liberar a operação.', { title:'Confirmação necessária' });
+
+            const ok = await appConfirm(
+                'Esta operação apagará permanentemente todos os seus dados de estudo no Supabase e neste dispositivo, inclusive PDFs e backups locais. O login será preservado.\n\nEsta ação não pode ser desfeita. Continuar?',
+                { title:'Excluir todos os dados', confirmText:'Excluir permanentemente', danger:true }
+            );
+            if (!ok) return;
+
+            const uid = currentUser.id;
+            try {
+                await verifyCurrentAccountPassword(password);
+                const { data, error } = await supabaseClient.rpc('delete_my_study_data');
+                if (error) {
+                    if (/function .*delete_my_study_data|Could not find the function|PGRST202/i.test(error.message || '')) {
+                        throw new Error('A função segura delete_my_study_data ainda não está instalada no Supabase. Execute o SQL fornecido com a V9.51 e tente novamente.');
+                    }
+                    throw error;
+                }
+                await clearLocalStudyDataForUser(uid);
+                resetInMemoryUserState();
+                currentConcurso = 'Concurso Geral';
+                metadataCache = {};
+                console.info('Exclusão de dados concluída:', data || {});
+                closeAccountModal();
+                await appNotice('Todos os dados de estudo foram excluídos. Sua conta e seu e-mail foram preservados. O Painel será reiniciado em estado limpo.', { title:'Dados excluídos' });
+                location.reload();
+            } catch (error) {
+                backupRestoreInProgress = false;
+                await appNotice(`A exclusão não foi concluída: ${error.message}`, { title:'Falha na exclusão' });
+            }
+        }
+
         async function handleLogout() {
             await supabaseClient.auth.signOut();
             currentUser = null; isSuperUser = false;
+            activeUserContextId = null;
+            userContextGeneration += 1;
+            dashboardLoadPromise = null;
+            syncPromise = null;
+            syncUiMode = 'idle';
+            resetInMemoryUserState();
+            currentConcurso = 'Concurso Geral';
             document.getElementById('app-dashboard').style.display = 'none';
             document.getElementById('auth-screen').style.display = 'flex';
         }
@@ -10465,6 +10816,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
                 currentUser = session.user;
+                prepareAuthenticatedUserContext(currentUser);
                 checkSuperUserStatus();
                 showDashboard();
             }
