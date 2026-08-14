@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-43-zero-build-offline-20260814';
+const CACHE_NAME = 'painel-estudos-v9-44-auth-vendor-recovery-20260814';
 
 const APP_SHELL = [
   './',
