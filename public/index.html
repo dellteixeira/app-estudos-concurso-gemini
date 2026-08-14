@@ -4329,28 +4329,26 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!dataInicioStr) return alert('Escolha a data de início.');
 
             const strategyKey = document.getElementById('m2RevisionStrategy').value;
-            const sortedByPriority = getSortedEditalItems();
             let currDate = new Date(dataInicioStr + "T00:00:00");
-            let itemIdx = 0;
 
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             metadata[currentConcurso].dateSchedule = {};
+            const interleaveState = createWeightedInterleavingState(editalItems, metadata, { pendingOnly:false });
 
-            while (itemIdx < sortedByPriority.length) {
+            while (countWeightedInterleavingRemaining(interleaveState)) {
                 const dayOfWeek = currDate.getDay();
                 if (selectedWeekdays.includes(dayOfWeek)) {
                     const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
                     if (!metadata[currentConcurso].dateSchedule[dateKey]) metadata[currentConcurso].dateSchedule[dateKey] = [];
                     const dayHours = getMethod2HoursForWeekday(dayOfWeek);
+                    const usedMateriasToday = new Set();
                     for (let s = 0; s < dayHours; s++) {
-                        if (itemIdx < sortedByPriority.length) {
-                            const it = sortedByPriority[itemIdx];
-                            const topicText = `${it.materia} - ${it.assunto}`;
-                            metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
-                            applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
-                            itemIdx++;
-                        }
+                        const it = takeWeightedInterleavedItem(interleaveState, usedMateriasToday);
+                        if (!it) break;
+                        const topicText = `${it.materia} - ${it.assunto}`;
+                        metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
+                        applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
                     }
                 }
                 currDate.setDate(currDate.getDate() + 1);
@@ -4380,7 +4378,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!dataInicioStr) return alert('Escolha a data de início.');
 
             const strategyKey = document.getElementById('m1RevisionStrategy').value;
-            const sortedByPriority = getSortedEditalItems();
             const incSab = document.getElementById('cfgIncluirSabado').checked;
             const incDom = document.getElementById('cfgIncluirDomingo').checked;
             const dailySlots = ['cfgManhaQtd', 'cfgTardeQtd', 'cfgNoiteQtd']
@@ -4389,31 +4386,28 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (dailySlots < 1) return alert('Informe pelo menos 1 hora de estudo em algum turno.');
 
             let currDate = new Date(dataInicioStr + "T00:00:00");
-            let itemIdx = 0;
 
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             metadata[currentConcurso].dateSchedule = {};
+            const interleaveState = createWeightedInterleavingState(editalItems, metadata, { pendingOnly:false });
 
-            while (itemIdx < sortedByPriority.length) {
+            while (countWeightedInterleavingRemaining(interleaveState)) {
                 const dayOfWeek = currDate.getDay();
-                let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
                 let canStudy = true;
                 if (dayOfWeek === 6 && !incSab) canStudy = false;
                 if (dayOfWeek === 0 && !incDom) canStudy = false;
 
                 if (canStudy) {
                     const dateKey = `${currDate.getFullYear()}-${String(currDate.getMonth() + 1).padStart(2, '0')}-${String(currDate.getDate()).padStart(2, '0')}`;
-                    const slots = dailySlots;
                     if (!metadata[currentConcurso].dateSchedule[dateKey]) metadata[currentConcurso].dateSchedule[dateKey] = [];
-                    for (let s = 0; s < slots; s++) {
-                        if (itemIdx < sortedByPriority.length) {
-                            const it = sortedByPriority[itemIdx];
-                            const topicText = `${it.materia} - ${it.assunto}`;
-                            metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
-                            applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
-                            itemIdx++;
-                        }
+                    const usedMateriasToday = new Set();
+                    for (let s = 0; s < dailySlots; s++) {
+                        const it = takeWeightedInterleavedItem(interleaveState, usedMateriasToday);
+                        if (!it) break;
+                        const topicText = `${it.materia} - ${it.assunto}`;
+                        metadata[currentConcurso].dateSchedule[dateKey].push(topicText);
+                        applySpacedRevisions(metadata[currentConcurso].dateSchedule, currDate, topicText, strategyKey);
                     }
                 }
                 currDate.setDate(currDate.getDate() + 1);
@@ -6229,13 +6223,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (Number.isFinite(explicit) && explicit > 0) return explicit;
             const itemWeight = items.map(i => Number(i.peso)).find(v => Number.isFinite(v) && v > 0);
             if (itemWeight) return itemWeight;
-            const priority = Math.max(1, Math.min(3, Number(items[0]?.prioridade) || 2));
-            return 4 - priority; // P1=3, P2=2, P3=1 quando o edital não fornece peso explícito.
+            const priority = Math.max(1, Math.min(4, Number(items[0]?.prioridade) || 2));
+            return 5 - priority; // P1=4, P2=3, P3=2, P4=1.
         }
 
-        function buildWeightedPendingSequence(items, metadata) {
+        function createWeightedInterleavingState(items, metadata, { pendingOnly = true } = {}) {
             const grouped = new Map();
-            items.filter(item => !(item.teoria || item.questoes)).forEach(item => {
+            const source = pendingOnly ? items.filter(item => !(item.teoria && item.questoes)) : [...items];
+            source.forEach(item => {
                 const key = item.materia || 'Geral';
                 if (!grouped.has(key)) grouped.set(key, []);
                 grouped.get(key).push(item);
@@ -6243,22 +6238,66 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const queues = [...grouped.entries()].map(([materia, topicItems]) => ({
                 materia,
                 items: [...topicItems].sort((a,b) => (a.assunto_prioridade||1)-(b.assunto_prioridade||1)),
-                weight: getMateriaScheduleWeight(materia, topicItems, metadata),
+                weight: Math.max(0.25, getMateriaScheduleWeight(materia, topicItems, metadata)),
                 served: 0,
-                priority: Math.min(...topicItems.map(i => Number(i.prioridade)||2))
+                lastTurn: -1,
+                priority: Math.max(1, Math.min(4, Math.min(...topicItems.map(i => Number(i.prioridade)||2))))
             }));
+            return { queues, turn: 0, lastMateria: null };
+        }
+
+        function countWeightedInterleavingRemaining(state) {
+            return (state?.queues || []).reduce((sum, queue) => sum + queue.items.length, 0);
+        }
+
+        function takeWeightedInterleavedItem(state, usedMateriasToday = new Set()) {
+            if (!state) return null;
+            let available = state.queues.filter(q => q.items.length);
+            if (!available.length) return null;
+
+            // 1) Evita repetir a mesma disciplina consecutivamente quando houver alternativa.
+            if (state.lastMateria && available.some(q => q.materia !== state.lastMateria)) {
+                available = available.filter(q => q.materia !== state.lastMateria);
+            }
+
+            // 2) Dentro do dia, tenta usar disciplinas diferentes antes de repetir alguma.
+            const unseenToday = available.filter(q => !usedMateriasToday.has(q.materia));
+            if (unseenToday.length) available = unseenToday;
+
+            // 3) Fair-share ponderado: P1 aparece com maior frequência que P2/P3/P4,
+            // sem criar blocos consecutivos da mesma matéria. Tempo sem aparecer desempata.
+            available.sort((a,b) => {
+                const ratioA = a.served / a.weight;
+                const ratioB = b.served / b.weight;
+                if (Math.abs(ratioA - ratioB) > 1e-9) return ratioA - ratioB;
+                const waitA = state.turn - a.lastTurn;
+                const waitB = state.turn - b.lastTurn;
+                if (waitA !== waitB) return waitB - waitA;
+                if (a.priority !== b.priority) return a.priority - b.priority;
+                return a.materia.localeCompare(b.materia, 'pt-BR');
+            });
+
+            const chosen = available[0];
+            const item = chosen.items.shift();
+            chosen.served += 1;
+            chosen.lastTurn = state.turn++;
+            state.lastMateria = chosen.materia;
+            usedMateriasToday.add(chosen.materia);
+            return item;
+        }
+
+        function buildWeightedPendingSequence(items, metadata) {
+            const state = createWeightedInterleavingState(items, metadata, { pendingOnly:true });
             const result = [];
-            while (queues.some(q => q.items.length)) {
-                const available = queues.filter(q => q.items.length);
-                available.sort((a,b) => {
-                    const ratio = (a.served / a.weight) - (b.served / b.weight);
-                    if (Math.abs(ratio) > 1e-9) return ratio;
-                    if (a.priority !== b.priority) return a.priority - b.priority;
-                    return a.materia.localeCompare(b.materia, 'pt-BR');
-                });
-                const chosen = available[0];
-                result.push(chosen.items.shift());
-                chosen.served += 1;
+            const used = new Set();
+            while (countWeightedInterleavingRemaining(state)) {
+                const item = takeWeightedInterleavedItem(state, used);
+                if (!item) break;
+                result.push(item);
+                // Esta função não conhece a capacidade diária; reinicia a diversidade
+                // quando todas as disciplinas ainda disponíveis já passaram pelo ciclo.
+                const activeCount = state.queues.filter(q => q.items.length).length;
+                if (activeCount && used.size >= activeCount) used.clear();
             }
             return result;
         }
@@ -6290,11 +6329,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const contestMeta = metadata[currentConcurso];
             const oldSchedule = contestMeta.dateSchedule || {};
             const todayKey = getLocalDateKey(new Date());
-            const pendingSequence = buildWeightedPendingSequence(editalItems, metadata);
-            if (!pendingSequence.length) { await appNotice('Todos os tópicos do edital já foram estudados. Não há matérias pendentes para redistribuir.'); return; }
+            const pendingState = createWeightedInterleavingState(editalItems, metadata, { pendingOnly:true });
+            const pendingCount = countWeightedInterleavingRemaining(pendingState);
+            if (!pendingCount) { await appNotice('Todos os tópicos do edital já foram estudados. Não há matérias pendentes para redistribuir.'); return; }
 
             const ok = await appConfirm(
-                `Reorganizar ${pendingSequence.length} tópicos pendentes a partir de hoje?\n\n` +
+                `Reorganizar ${pendingCount} tópicos pendentes a partir de hoje?\n\n` +
                 'O histórico dos dias anteriores será preservado. As matérias serão intercaladas conforme o peso do edital; quando não houver peso explícito, será usada a prioridade da matéria. Tópicos adicionados manualmente também serão incluídos.',
                 { title:'Reorganizar Matérias', confirmText:'Reorganizar', confirmClass:'btn-primary' }
             );
@@ -6329,9 +6369,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             });
 
             let currDate = new Date(todayKey + 'T00:00:00');
-            let index = 0;
             let safety = 0;
-            while (index < pendingSequence.length && safety < 5000) {
+            while (countWeightedInterleavingRemaining(pendingState) && safety < 5000) {
                 safety++;
                 const dow = currDate.getDay();
                 let canStudy;
@@ -6344,8 +6383,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const dateKey = getLocalDateKey(currDate);
                     const slotsForDay = customDailyHours ? Math.max(1, Math.round(Number(customDailyHours[dow]) || 1)) : dailySlots;
                     if (!rebuilt[dateKey]) rebuilt[dateKey] = [];
-                    for (let slot=0; slot<slotsForDay && index<pendingSequence.length; slot++) {
-                        const item = pendingSequence[index++];
+                    const usedMateriasToday = new Set();
+                    for (let slot=0; slot<slotsForDay; slot++) {
+                        const item = takeWeightedInterleavedItem(pendingState, usedMateriasToday);
+                        if (!item) break;
                         const topicText = `${item.materia} - ${item.assunto}`;
                         if (!rebuilt[dateKey].includes(topicText)) rebuilt[dateKey].push(topicText);
                         applySpacedRevisions(rebuilt, currDate, topicText, revisionStrategy);
@@ -6367,7 +6408,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             await saveConcursosMetadata(metadata);
             renderMonthCalendar();
             renderPomodoroDailyCounter();
-            await appNotice('Cronograma reorganizado. O histórico anterior foi preservado e os tópicos pendentes foram redistribuídos por peso/prioridade.', { title:'Reorganização concluída' });
+            await appNotice('Cronograma reorganizado. O histórico anterior foi preservado e os tópicos pendentes foram intercalados por disciplina com prioridade ponderada P1–P4, evitando repetição consecutiva quando houver alternativa.', { title:'Reorganização concluída' });
         }
 
         async function limparCronogramaMesAtual() {
