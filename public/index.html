@@ -2429,7 +2429,9 @@
         /* V9.38 — reordenação manual de matérias por arraste */
         .materia-header-row { cursor: grab; user-select: none; }
         .materia-header-row:active { cursor: grabbing; }
-        .materia-header-row.materia-dragging { opacity:.52; transform:scale(.995); }
+        .materia-header-row { cursor:grab; user-select:none; }
+        .materia-header-row:active { cursor:grabbing; }
+        .materia-header-row.materia-dragging { opacity:.52; transform:scale(.995); cursor:grabbing; }
         .materia-header-row.materia-drop-target { outline:2px solid var(--primary-blue); outline-offset:-2px; box-shadow:0 0 0 3px rgba(14,165,233,.12) inset; }
         .materia-drag-hint { display:inline-flex; align-items:center; margin-left:8px; font-size:.66rem; opacity:.48; font-weight:700; white-space:nowrap; }
         @media (max-width:700px) {
@@ -2641,6 +2643,7 @@
                     <input type="number" id="prioridade" placeholder="Prioridade" value="1" min="1">
                     <div class="edital-manual-actions">
                         <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
+                        <button type="button" class="btn btn-secondary" onclick="exportMateriasConteudos()" title="Exportar matérias e assuntos do concurso atual em JSON">Exportar Matérias</button>
                         <button type="button" class="btn btn-danger" onclick="excluirMateriaEspecifica()">Excluir Matéria</button>
                     </div>
                 </form>
@@ -6322,9 +6325,7 @@
         }
 
         let draggedMateriaName = null;
-        let materiaTouchTimer = null;
-        let materiaTouchSource = null;
-        let materiaTouchTarget = null;
+        let materiaPointerState = null;
         let suppressMateriaClickUntil = 0;
 
         function getStoredMateriaOrder() {
@@ -6336,13 +6337,14 @@
         function buildDisplayedMateriaOrder(materiasMap) {
             const names = Object.keys(materiasMap);
             const fallback = [...names].sort((a, b) => {
-                const pa = materiasMap[a].prioridade || 1;
-                const pb = materiasMap[b].prioridade || 1;
+                const pa = clampMateriaPriority(materiasMap[a].prioridade || 1);
+                const pb = clampMateriaPriority(materiasMap[b].prioridade || 1);
                 if (pa !== pb) return pa - pb;
                 return names.indexOf(a) - names.indexOf(b);
             });
             const stored = getStoredMateriaOrder().filter(name => names.includes(name));
             const missing = fallback.filter(name => !stored.includes(name));
+            // Quando já existe ordem manual, ela é soberana. A prioridade não volta a ordenar a lista.
             return stored.length ? [...stored, ...missing] : fallback;
         }
 
@@ -6372,18 +6374,23 @@
             return normalizedPriority;
         }
 
-        async function moveMateriaToPosition(sourceName, targetName) {
+        async function moveMateriaToPosition(sourceName, targetName, placeAfter = false) {
             if (!sourceName || !targetName || sourceName === targetName) return;
-            const currentRows = [...document.querySelectorAll('#edital-list .materia-header-row')];
-            const order = currentRows.map(row => decodeURIComponent(row.dataset.materia || '')).filter(Boolean);
+            const materiasMap = {};
+            editalItems.forEach(item => {
+                const mat = item.materia || 'Geral';
+                if (!materiasMap[mat]) materiasMap[mat] = { prioridade: item.prioridade || 1 };
+            });
+            const order = buildDisplayedMateriaOrder(materiasMap);
             const sourceIndex = order.indexOf(sourceName);
-            const targetIndex = order.indexOf(targetName);
-            if (sourceIndex < 0 || targetIndex < 0) return;
+            const targetIndexBefore = order.indexOf(targetName);
+            if (sourceIndex < 0 || targetIndexBefore < 0) return;
 
-            // A matéria movida assume a prioridade da faixa/disciplinada de destino.
-            // A prioridade do assunto permanece independente e não é modificada.
+            // A matéria movida herda a prioridade da matéria de destino, mas a ordem visual é independente.
             const targetPriority = getMateriaPriority(targetName);
             order.splice(sourceIndex, 1);
+            let targetIndex = order.indexOf(targetName);
+            if (placeAfter) targetIndex += 1;
             order.splice(targetIndex, 0, sourceName);
 
             await applyMateriaPriority(sourceName, targetPriority);
@@ -6400,102 +6407,142 @@
             toggleMateria(materiaName);
         }
 
-        function handleMateriaDragStart(event, materiaName) {
-            if (event.target.closest('input,button,select,a,label')) {
-                event.preventDefault();
-                return;
-            }
-            draggedMateriaName = materiaName;
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', materiaName);
-            requestAnimationFrame(() => event.currentTarget.classList.add('materia-dragging'));
-        }
-
-        function handleMateriaDragOver(event) {
-            if (!draggedMateriaName) return;
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            document.querySelectorAll('.materia-header-row.materia-drop-target').forEach(r => r.classList.remove('materia-drop-target'));
-            event.currentTarget.classList.add('materia-drop-target');
-        }
-
-        async function handleMateriaDrop(event, targetName) {
-            event.preventDefault();
-            const sourceName = draggedMateriaName || event.dataTransfer.getData('text/plain');
-            suppressMateriaClickUntil = Date.now() + 350;
-            cleanupMateriaDragVisuals();
-            draggedMateriaName = null;
-            await moveMateriaToPosition(sourceName, targetName);
-        }
-
         function cleanupMateriaDragVisuals() {
             document.querySelectorAll('.materia-header-row.materia-dragging,.materia-header-row.materia-drop-target').forEach(r => {
                 r.classList.remove('materia-dragging','materia-drop-target');
             });
+            document.body.classList.remove('materia-touch-dragging');
         }
 
-        function handleMateriaDragEnd() {
-            draggedMateriaName = null;
-            cleanupMateriaDragVisuals();
+        function activateMateriaPointerDrag(state) {
+            if (!state || state.active) return;
+            state.active = true;
+            draggedMateriaName = state.sourceName;
+            state.sourceRow.classList.add('materia-dragging');
+            if (state.pointerType !== 'mouse') document.body.classList.add('materia-touch-dragging');
+            suppressMateriaClickUntil = Date.now() + 700;
+            try { state.sourceRow.setPointerCapture(state.pointerId); } catch (_) {}
+            if (state.pointerType !== 'mouse' && navigator.vibrate) navigator.vibrate(25);
         }
 
-        function bindMateriaTouchReorder() {
+        function bindMateriaPointerReorder() {
             document.querySelectorAll('#edital-list .materia-header-row').forEach(row => {
                 row.addEventListener('pointerdown', event => {
-                    if (event.pointerType === 'mouse' || event.target.closest('input,button,select,a,label')) return;
-                    clearTimeout(materiaTouchTimer);
-                    materiaTouchSource = row;
-                    materiaTouchTarget = row;
-                    const startX = event.clientX;
-                    const startY = event.clientY;
-                    materiaTouchTimer = setTimeout(() => {
-                        draggedMateriaName = decodeURIComponent(row.dataset.materia || '');
-                        row.classList.add('materia-dragging');
-                        document.body.classList.add('materia-touch-dragging');
-                        if (navigator.vibrate) navigator.vibrate(30);
-                    }, 420);
-                    row._materiaStartX = startX;
-                    row._materiaStartY = startY;
+                    if (event.button !== undefined && event.button !== 0) return;
+                    if (event.target.closest('input,button,select,a,label')) return;
+                    const sourceName = decodeURIComponent(row.dataset.materia || '');
+                    if (!sourceName) return;
+                    const state = {
+                        sourceRow: row,
+                        sourceName,
+                        pointerId: event.pointerId,
+                        pointerType: event.pointerType || 'mouse',
+                        startX: event.clientX,
+                        startY: event.clientY,
+                        active: false,
+                        targetRow: row,
+                        placeAfter: false,
+                        timer: null
+                    };
+                    materiaPointerState = state;
+                    if (state.pointerType !== 'mouse') {
+                        state.timer = setTimeout(() => activateMateriaPointerDrag(state), 380);
+                    }
                 });
 
                 row.addEventListener('pointermove', event => {
-                    if (event.pointerType === 'mouse') return;
-                    if (!draggedMateriaName) {
-                        const dx = Math.abs(event.clientX - (row._materiaStartX || event.clientX));
-                        const dy = Math.abs(event.clientY - (row._materiaStartY || event.clientY));
-                        if (dx > 10 || dy > 10) clearTimeout(materiaTouchTimer);
-                        return;
+                    const state = materiaPointerState;
+                    if (!state || state.pointerId !== event.pointerId) return;
+                    const dx = event.clientX - state.startX;
+                    const dy = event.clientY - state.startY;
+                    const distance = Math.hypot(dx, dy);
+                    if (!state.active) {
+                        if (state.pointerType === 'mouse' && distance >= 6) {
+                            activateMateriaPointerDrag(state);
+                        } else if (state.pointerType !== 'mouse' && distance > 12) {
+                            clearTimeout(state.timer);
+                            materiaPointerState = null;
+                            return;
+                        } else {
+                            return;
+                        }
                     }
                     event.preventDefault();
-                    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest?.('.materia-header-row');
-                    if (target && target !== materiaTouchTarget) {
-                        materiaTouchTarget?.classList.remove('materia-drop-target');
-                        materiaTouchTarget = target;
-                        materiaTouchTarget.classList.add('materia-drop-target');
-                    }
+                    const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest?.('.materia-header-row');
+                    if (!hit) return;
+                    document.querySelectorAll('.materia-header-row.materia-drop-target').forEach(r => r.classList.remove('materia-drop-target'));
+                    state.targetRow = hit;
+                    hit.classList.add('materia-drop-target');
+                    const rect = hit.getBoundingClientRect();
+                    state.placeAfter = event.clientY > rect.top + rect.height / 2;
                 });
 
-                const finishTouch = async event => {
-                    clearTimeout(materiaTouchTimer);
-                    if (!draggedMateriaName) {
-                        materiaTouchSource = null;
-                        materiaTouchTarget = null;
-                        return;
-                    }
+                const finishPointer = async event => {
+                    const state = materiaPointerState;
+                    if (!state || state.pointerId !== event.pointerId) return;
+                    clearTimeout(state.timer);
+                    materiaPointerState = null;
+                    if (!state.active) return;
                     event.preventDefault();
-                    const source = draggedMateriaName;
-                    const target = decodeURIComponent(materiaTouchTarget?.dataset?.materia || '');
-                    suppressMateriaClickUntil = Date.now() + 500;
+                    const targetName = decodeURIComponent(state.targetRow?.dataset?.materia || '');
+                    const sourceName = state.sourceName;
+                    const placeAfter = !!state.placeAfter;
+                    draggedMateriaName = null;
+                    suppressMateriaClickUntil = Date.now() + 600;
+                    cleanupMateriaDragVisuals();
+                    try { state.sourceRow.releasePointerCapture(state.pointerId); } catch (_) {}
+                    if (targetName && targetName !== sourceName) await moveMateriaToPosition(sourceName, targetName, placeAfter);
+                };
+                row.addEventListener('pointerup', finishPointer);
+                row.addEventListener('pointercancel', event => {
+                    const state = materiaPointerState;
+                    if (!state || state.pointerId !== event.pointerId) return;
+                    clearTimeout(state.timer);
+                    materiaPointerState = null;
                     draggedMateriaName = null;
                     cleanupMateriaDragVisuals();
-                    document.body.classList.remove('materia-touch-dragging');
-                    materiaTouchSource = null;
-                    materiaTouchTarget = null;
-                    if (source && target && source !== target) await moveMateriaToPosition(source, target);
-                };
-                row.addEventListener('pointerup', finishTouch);
-                row.addEventListener('pointercancel', finishTouch);
+                });
             });
+        }
+
+        function exportMateriasConteudos() {
+            const groups = {};
+            editalItems.forEach(item => {
+                const materia = item.materia || 'Geral';
+                if (!groups[materia]) groups[materia] = [];
+                groups[materia].push(item);
+            });
+            const order = buildDisplayedMateriaOrder(Object.fromEntries(Object.entries(groups).map(([name, items]) => [name, { prioridade: items[0]?.prioridade || 1 }])));
+            const materias = order.map(materia => {
+                const items = [...(groups[materia] || [])].sort((a,b) => (a.assunto_prioridade || 1) - (b.assunto_prioridade || 1));
+                return {
+                    materia,
+                    prioridade: clampMateriaPriority(items[0]?.prioridade || 1),
+                    assuntos: items.map(item => ({
+                        nome: item.assunto,
+                        prioridade: item.assunto_prioridade || 1
+                    }))
+                };
+            });
+            if (!materias.length) return alert('Não há matérias para exportar neste concurso.');
+            const payload = {
+                tipo: 'painel_estudos_materias',
+                versao: 1,
+                origemConcurso: currentConcurso,
+                exportadoEm: new Date().toISOString(),
+                materiaOrder: order,
+                materias
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const safeContest = String(currentConcurso || 'concurso').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'');
+            a.href = url;
+            a.download = `materias_${safeContest || 'concurso'}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 500);
         }
 
         function renderTable() {
@@ -6523,7 +6570,7 @@
                 const activeRevisionOffsets = getActiveRevisionOffsets();
                 const dynamicColspan = 4 + activeRevisionOffsets.length;
                 tbody.innerHTML += `
-                    <tr class="materia-header-row" draggable="true" data-materia="${safeMateriaHandler}" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))" ondragstart="handleMateriaDragStart(event, decodeURIComponent('${safeMateriaHandler}'))" ondragover="handleMateriaDragOver(event)" ondrop="handleMateriaDrop(event, decodeURIComponent('${safeMateriaHandler}'))" ondragend="handleMateriaDragEnd()">
+                    <tr class="materia-header-row" data-materia="${safeMateriaHandler}" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))">
                         <td onclick="event.stopPropagation()">
                             <input type="number" class="priority-input" value="${clampMateriaPriority(group.prioridade)}" min="1" max="4" step="1" onchange="updateMateriaPriority(decodeURIComponent('${safeMateriaHandler}'), this.value)" title="Prioridade da disciplina (1 a 4)">
                         </td>
@@ -6565,7 +6612,7 @@
                     });
                 }
             });
-            bindMateriaTouchReorder();
+            bindMateriaPointerReorder();
         }
 
         function toggleMateria(materiaName) { openMaterias[materiaName] = !openMaterias[materiaName]; renderTable(); }
@@ -6669,7 +6716,7 @@
                     if (Array.isArray(listMaterias)) {
                         listMaterias.forEach((matObj, idxMat) => {
                             let mName = matObj.materia || matObj.disciplina || matObj.nome || matObj.titulo || `Matéria ${idxMat + 1}`;
-                            let prio = parseInt(matObj.prioridade || matObj.ordem || (idxMat + 1));
+                            let prio = clampMateriaPriority(matObj.prioridade || matObj.ordem || (idxMat + 1));
                             let listAssuntos = matObj.assuntos || matObj.topicos || matObj.conteudos || matObj.itens || [];
 
                             if (Array.isArray(listAssuntos)) {
@@ -6681,7 +6728,7 @@
                                         materia: mName, 
                                         assunto: assuntoText,
                                         prioridade: prio, 
-                                        assunto_prioridade: idxAss + 1, 
+                                        assunto_prioridade: (typeof assuntoItem === 'object' && assuntoItem ? (parseInt(assuntoItem.prioridade || assuntoItem.assunto_prioridade || (idxAss + 1)) || (idxAss + 1)) : (idxAss + 1)), 
                                         concurso: currentConcurso,
                                         user_id: currentUser ? currentUser.id : null,
                                         teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
@@ -6696,6 +6743,15 @@
                     }
 
                     if (formattedData.length > 0) {
+                        if (Array.isArray(rawData?.materiaOrder)) {
+                            const importedNames = new Set(formattedData.map(item => item.materia));
+                            const importedOrder = rawData.materiaOrder.filter(name => importedNames.has(name));
+                            const remainingNames = [...importedNames].filter(name => !importedOrder.includes(name));
+                            metadata = getConcursosMetadata();
+                            if (!metadata[currentConcurso]) metadata[currentConcurso] = { dataProva: null, dateSchedule: {} };
+                            metadata[currentConcurso].materiaOrder = [...importedOrder, ...remainingNames];
+                            await saveConcursosMetadata(metadata);
+                        }
                         saveEditalToLocalStorage();
                         formattedData.forEach(queueEditalUpsert);
 
