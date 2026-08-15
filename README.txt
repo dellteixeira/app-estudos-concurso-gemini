@@ -136,3 +136,15 @@ V9.60 — RETENTION SCHEDULER + INTERFACE TEXT-ONLY
 - Mantida intercalação de disciplinas para evitar monotonia.
 - Removidos ícones/emoji visíveis de nomes, botões, navegação e rótulos; permanece apenas o símbolo gráfico do app.
 - Mobile refinado para navegação textual e cartões de recomendação mais compactos.
+
+
+V9.61 — ACTIVE RECALL ENGINE
+- Questões passam a alimentar diretamente o Retention Engine por desempenho objetivo.
+- Usuário informa somente total resolvido e acertos; erros e aproveitamento são calculados automaticamente.
+- Amostras maiores têm maior confiança e impacto; 2/2 não equivale a 45/50.
+- Resultado recalibra estabilidade, dificuldade, retenção e próxima revisão.
+- Sessões de Questões abrem o registro de desempenho ao concluir o Pomodoro.
+- Resultado de questões externas pode ser registrado sem contabilizar minutos.
+- Revisões adaptativas por questões usam o desempenho objetivo no lugar da avaliação subjetiva.
+- Integração com Tenho tempo agora e modal do dia.
+- Interface mobile responsiva e textual, sem novos ícones.
