@@ -195,3 +195,7 @@ V9.65.3 - Corrige Limpar Edital Atual com exclusao local imediata + fila Supabas
 
 
 V9.65.3 — correções de ações do concurso, Limpar Edital Atual e remoção da redundância Tenho tempo agora no topo.
+
+V9.65.4 — reordenação fluida de matérias por Pointer Events: clique/segure e arraste, ghost visual, marcador de inserção, autoscroll, long-press mobile e ordem manual soberana entre matérias com a mesma prioridade.
+
+V9.65.5 — ordem das barras do cabeçalho invertida: controles do concurso acima e navegação principal abaixo, mantendo mobile inalterado.
