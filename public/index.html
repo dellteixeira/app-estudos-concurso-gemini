@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Meu Painel de Estudos</title>
+    <title>Estudo Adaptativo Inteligente</title>
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260814-13">
@@ -17,7 +17,7 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Estudos">
+    <meta name="apple-mobile-web-app-title" content="Estudo Adaptativo Inteligente">
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script>
@@ -2795,6 +2795,38 @@
             #tab-flashcards .flashcard-study-actions .btn,
             #tab-flashcards .btn { flex:0 1 auto; max-width:100%; }
         }
+
+        /* V9.63 — identidade visual e proximidade da prova */
+        .header-brand { --brand-mark-size:42px; align-items:center; }
+        .header-brand img { width:var(--brand-mark-size) !important; height:var(--brand-mark-size) !important; flex:0 0 var(--brand-mark-size) !important; }
+        .header-brand-copy { height:var(--brand-mark-size); min-width:0; display:flex; align-items:center; justify-content:flex-start; }
+        .header-brand-copy h2 {
+            margin:0 !important;
+            height:var(--brand-mark-size);
+            line-height:var(--brand-mark-size) !important;
+            font-size:clamp(.98rem,2.1vw,1.55rem) !important;
+            font-weight:800;
+            letter-spacing:-.03em;
+            white-space:nowrap;
+            overflow:hidden;
+            text-overflow:ellipsis;
+        }
+        .exam-phase-strip {
+            display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+            margin:0 0 10px; padding:.6rem .72rem; border:1px solid var(--modern-border,var(--border-color));
+            border-radius:10px; background:rgba(59,130,246,.055); font-size:.74rem; line-height:1.35;
+        }
+        .exam-phase-strip strong { font-size:.78rem; color:var(--text-color); }
+        .exam-phase-strip span { color:var(--modern-muted,#94a3b8); }
+        @media (max-width:900px) {
+            .header-brand { --brand-mark-size:38px; }
+            .header-brand-copy h2 { font-size:clamp(.84rem,3.15vw,1.18rem) !important; }
+        }
+        @media (max-width:520px) {
+            .header-brand { --brand-mark-size:36px; gap:8px; }
+            .header-brand-copy h2 { font-size:clamp(.78rem,3.35vw,.98rem) !important; }
+            .exam-phase-strip { padding:.52rem .58rem; font-size:.69rem; }
+        }
 </style>
 </head>
 <body>
@@ -2804,7 +2836,7 @@
     <div id="pwa-install-banner" role="status" aria-live="polite">
         <div class="pwa-install-inner">
             <div class="pwa-install-copy">
-                <strong id="pwaInstallTitle">Instalar Painel de Estudos</strong>
+                <strong id="pwaInstallTitle">Instalar Estudo Adaptativo Inteligente</strong>
                 <span id="pwaInstallText">Instale o app para abrir em tela cheia e facilitar o uso offline.</span>
             </div>
             <div class="pwa-install-actions">
@@ -2836,8 +2868,7 @@
             <div class="header-brand">
                 <img src="icon-192.png" alt="Símbolo Estudos">
                 <div class="header-brand-copy">
-                    <h2>Painel de Estudos</h2>
-                    <span>Seu planner inteligente para concursos</span>
+                    <h2>Estudo Adaptativo Inteligente</h2>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
             </div>
@@ -2888,6 +2919,7 @@
                 </div>
                 <button class="btn btn-secondary btn-sm" type="button" onclick="openOpportunityStudyModal()">Estudar agora</button>
             </div>
+            <div id="retentionExamPhase" class="exam-phase-strip"><strong>Estratégia da prova</strong><span>Data da prova não definida.</span></div>
             <div class="retention-metric-grid">
                 <div class="retention-metric"><span>Retenção média</span><strong id="retentionDiagAverage">—</strong></div>
                 <div class="retention-metric"><span>Assuntos em risco</span><strong id="retentionDiagRisk">0</strong></div>
@@ -4415,7 +4447,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const text = document.getElementById('appDialogMessage');
             const cancelBtn = document.getElementById('appDialogCancelBtn');
             const confirmBtn = document.getElementById('appDialogConfirmBtn');
-            if (title) title.textContent = options.title || 'Painel de Estudos';
+            if (title) title.textContent = options.title || 'Estudo Adaptativo Inteligente';
             if (text) text.textContent = String(message || '');
             if (cancelBtn) cancelBtn.style.display = 'none';
             if (confirmBtn) {
@@ -4833,22 +4865,31 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function getContestDaysUntilExam(contestMeta, at = new Date()) {
             const raw = contestMeta?.dataProva;
-            if (!raw) return null;
-            const exam = new Date(`${raw}T23:59:59`);
-            if (!Number.isFinite(exam.getTime())) return null;
-            return Math.ceil((exam.getTime() - at.getTime()) / 86400000);
+            if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+            const [y,m,d] = raw.split('-').map(Number);
+            const examDay = Date.UTC(y, m - 1, d);
+            const currentDay = Date.UTC(at.getFullYear(), at.getMonth(), at.getDate());
+            if (!Number.isFinite(examDay) || !Number.isFinite(currentDay)) return null;
+            return Math.round((examDay - currentDay) / 86400000);
+        }
+
+        // V9.63 — a proximidade da prova altera o comportamento do motor, não apenas o score bruto.
+        function getExamPhaseProfile(contestMeta, at = new Date()) {
+            const days = getContestDaysUntilExam(contestMeta, at);
+            if (days == null) return { days:null, key:'undated', label:'Sem data de prova', score:0, theoryBoost:0, questionBoost:0, reviewBoost:0, lawBoost:0, newTheoryPenalty:0, guidance:'Defina a data da prova para ativar a estratégia progressiva.' };
+            if (days < 0) return { days, key:'finished', label:'Prova realizada', score:0, theoryBoost:0, questionBoost:0, reviewBoost:0, lawBoost:0, newTheoryPenalty:0, guidance:'A data cadastrada já passou.' };
+            if (days === 0) return { days, key:'exam-day', label:'Dia da prova', score:260, theoryBoost:-320, questionBoost:80, reviewBoost:360, lawBoost:220, newTheoryPenalty:-420, guidance:'Somente recuperação leve e pontos críticos. Evite conteúdo novo.' };
+            if (days <= 7) return { days, key:'final', label:'Reta final', score:230, theoryBoost:-170, questionBoost:260, reviewBoost:310, lawBoost:180, newTheoryPenalty:-260, guidance:'Priorize revisões críticas, questões, erros recorrentes e lei seca.' };
+            if (days <= 14) return { days, key:'intensive', label:'Revisão intensiva', score:180, theoryBoost:-90, questionBoost:210, reviewBoost:230, lawBoost:125, newTheoryPenalty:-150, guidance:'Reduza teoria nova e aumente recuperação ativa e revisões.' };
+            if (days <= 30) return { days, key:'intensive', label:'Revisão intensiva', score:135, theoryBoost:-35, questionBoost:155, reviewBoost:165, lawBoost:85, newTheoryPenalty:-75, guidance:'Questões e revisões ganham mais espaço sem abandonar lacunas importantes.' };
+            if (days <= 60) return { days, key:'acceleration', label:'Aceleração', score:85, theoryBoost:15, questionBoost:95, reviewBoost:90, lawBoost:45, newTheoryPenalty:-20, guidance:'Equilibre fechamento do edital com questões e revisões frequentes.' };
+            if (days <= 120) return { days, key:'consolidation', label:'Consolidação', score:45, theoryBoost:55, questionBoost:50, reviewBoost:45, lawBoost:20, newTheoryPenalty:0, guidance:'Consolide teoria, avance o edital e aumente gradualmente a recuperação ativa.' };
+            return { days, key:'construction', label:'Construção', score:18, theoryBoost:105, questionBoost:15, reviewBoost:20, lawBoost:10, newTheoryPenalty:0, guidance:'Priorize construção sólida da teoria e cobertura progressiva do edital.' };
         }
 
         function getRetentionSchedulerExamScore(contestMeta, at = new Date()) {
-            const days = getContestDaysUntilExam(contestMeta, at);
-            if (days == null) return { days:null, score:0 };
-            if (days < 0) return { days, score:0 };
-            if (days <= 7) return { days, score:220 };
-            if (days <= 15) return { days, score:170 };
-            if (days <= 30) return { days, score:125 };
-            if (days <= 60) return { days, score:80 };
-            if (days <= 120) return { days, score:40 };
-            return { days, score:15 };
+            const phase = getExamPhaseProfile(contestMeta, at);
+            return { days:phase.days, score:phase.score, phase };
         }
 
         function getRetentionSchedulerWeight(item, contestMeta) {
@@ -4889,12 +4930,22 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 memory: retention == null ? 0 : Math.max(0, (100 - retention) * (isRevision ? 6.5 : 2.2)),
                 due: isRevision ? (due ? 340 + Math.min(300, overdueDays * 34) : 80) : 0,
                 exam: Math.round(exam.score * (isRevision ? 1.25 : (activityType === 'questoes' ? .75 : .40))),
+                examPhase: 0,
                 continuation: continuation ? 160 : 0,
                 recentPenalty: recentMaterias[0] === item?.materia ? -120 : (recentMaterias.includes(item?.materia) ? -45 : 0),
                 timeFit: 0,
                 context: 0,
                 questionPerformance: 0
             };
+
+            const phase = exam.phase || getExamPhaseProfile(contest, now);
+            if (isRevision) components.examPhase += phase.reviewBoost || 0;
+            if (activityType === 'questoes') components.examPhase += phase.questionBoost || 0;
+            if (activityType === 'teoria') {
+                components.examPhase += phase.theoryBoost || 0;
+                if (!state?.lastStudyAt) components.examPhase += phase.newTheoryPenalty || 0;
+            }
+            if (activityType === 'lei_seca') components.examPhase += phase.lawBoost || 0;
 
             if (activityType === 'questoes' && Number.isFinite(Number(state?.questionStats?.lastAccuracy))) {
                 const lastAccuracy = Number(state.questionStats.lastAccuracy);
@@ -4925,6 +4976,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 due,
                 overdueDays,
                 daysUntilExam: exam.days,
+                examPhase: phase.key,
+                examPhaseLabel: phase.label,
+                examGuidance: phase.guidance,
                 continuation,
                 suggestedMinutes,
                 questionAccuracy: Number.isFinite(Number(state?.questionStats?.lastAccuracy)) ? Number(state.questionStats.lastAccuracy) : null
@@ -5032,7 +5086,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (hint) {
                 hint.textContent = isFlexibleOpportunityMode(contest)
                     ? `Modo flexível ativo • Hoje: ${dayMode==='full'?'estudo completo':dayMode==='review'?'somente revisão':'descanso'}. Nenhum horário fixo é necessário.`
-                    : 'Você pode usar esta função mesmo com cronograma tradicional. O Retention Scheduler cruza memória, prioridade, peso, prova e progresso.';
+                    : (() => { const phase=getExamPhaseProfile(contest); return `Você pode usar esta função mesmo com cronograma tradicional. Fase atual: ${phase.label}. ${phase.guidance}`; })();
             }
             if (isFlexibleOpportunityMode(contest) && dayMode==='rest' && !opportunityIgnoreDayMode) {
                 opportunityRecommendations=[];
@@ -5047,7 +5101,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             container.innerHTML = opportunityRecommendations.map((rec,idx) => {
                 const kindLabel = rec.kind==='flashcards'?'Flashcards':rec.isRevision?'Revisão':rec.activityType==='questoes'?'Questões':'Teoria';
                 const retentionBadge = Number.isFinite(rec.retention) ? `<span class="opportunity-badge">Memória ${Math.round(rec.retention)}%</span>` : '';
-                const examBadge = Number.isFinite(rec.scheduler?.daysUntilExam) && rec.scheduler.daysUntilExam >= 0 && rec.scheduler.daysUntilExam <= 30 ? `<span class="opportunity-badge">Prova em ${rec.scheduler.daysUntilExam}d</span>` : '';
+                const examBadge = Number.isFinite(rec.scheduler?.daysUntilExam) && rec.scheduler.daysUntilExam >= 0 && rec.scheduler.daysUntilExam <= 60 ? `<span class="opportunity-badge">${escapeHtml(rec.scheduler.examPhaseLabel || 'Prova')} · ${rec.scheduler.daysUntilExam}d</span>` : '';
                 const questionBadge = rec.activityType==='questoes' && Number.isFinite(rec.scheduler?.questionAccuracy) ? `<span class="opportunity-badge">Último desempenho ${Math.round(rec.scheduler.questionAccuracy)}%</span>` : '';
                 const actions = rec.kind==='study' && rec.activityType==='questoes'
                     ? `<div class="opportunity-question-actions"><button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button><button class="btn btn-secondary btn-sm" onclick="registerOpportunityQuestionResult(${idx})">Registrar resultado</button></div>`
@@ -6880,7 +6934,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 alert(`${added} flashcard(s) importado(s) para "${currentConcurso}".${duplicates ? `\n${duplicates} duplicado(s) ignorado(s).` : ''}`);
             } catch (error) {
                 console.error('Falha ao importar flashcards:', error);
-                alert('Não foi possível importar este arquivo de flashcards. Verifique se ele é um JSON exportado pelo Painel de Estudos.');
+                alert('Não foi possível importar este arquivo de flashcards. Verifique se ele é um JSON exportado pelo Estudo Adaptativo Inteligente.');
             } finally {
                 if (input) input.value = '';
             }
@@ -8706,7 +8760,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const dataStr = metadata[currentConcurso]?.dataProva;
             if (!dataStr) { badge.textContent = "Data da prova não definida"; updateConcursoActionState(); return; }
             const diffDias = Math.ceil((new Date(dataStr + "T00:00:00") - new Date()) / (1000 * 60 * 60 * 24));
-            badge.textContent = diffDias < 0 ? "Prova realizada" : (diffDias === 0 ? "Prova HOJE!" : `Faltam ${diffDias} dias`);
+            const phase = getExamPhaseProfile(metadata[currentConcurso] || {});
+            badge.textContent = diffDias < 0 ? "Prova realizada" : (diffDias === 0 ? "Prova hoje · Reta final" : `${diffDias} dia${diffDias===1?'':'s'} · ${phase.label}`);
             updateConcursoActionState();
         }
 
@@ -12611,8 +12666,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const set = (id,value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
             if (!hasRealCurrentConcurso()) {
                 set('retentionDiagAverage','—'); set('retentionDiagRisk','0'); set('retentionDiagOverdue','0'); set('retentionDiagMastered','0');
+                const phaseBox=document.getElementById('retentionExamPhase'); if(phaseBox) phaseBox.innerHTML='<strong>Estratégia da prova</strong><span>Crie ou selecione um concurso para ativar a estratégia progressiva.</span>';
                 const list=document.getElementById('retentionDiagnosticRiskList'); if(list) list.innerHTML='<div class="retention-empty">Crie ou selecione um concurso para iniciar o diagnóstico.</div>';
                 retentionDiagnosticRows=[]; return;
+            }
+            const phase = getExamPhaseProfile(getConcursosMetadata()[currentConcurso] || {});
+            const phaseBox = document.getElementById('retentionExamPhase');
+            if (phaseBox) {
+                const dayText = phase.days == null ? '' : (phase.days < 0 ? '' : phase.days === 0 ? 'Hoje' : `${phase.days} dia${phase.days===1?'':'s'}`);
+                phaseBox.innerHTML = `<strong>${escapeHtml(phase.label)}${dayText?` · ${escapeHtml(dayText)}`:''}</strong><span>${escapeHtml(phase.guidance)}</span>`;
             }
             const diag = buildRetentionDiagnostics();
             set('retentionDiagAverage', Number.isFinite(diag.avg) ? `${Math.round(diag.avg)}%` : '—');
@@ -12734,7 +12796,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 message.textContent = 'Abra o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.';
                 installBtn.style.display = 'none';
             } else {
-                title.textContent = 'Instalar Painel de Estudos';
+                title.textContent = 'Instalar Estudo Adaptativo Inteligente';
                 message.textContent = 'Instale o app para abrir em tela cheia e facilitar o uso offline.';
                 installBtn.style.display = '';
             }
