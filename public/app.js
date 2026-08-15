@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.66.0',
+                    appVersion:'9.66.2',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -466,6 +466,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function getSyncState() {
             const emptyState = {
                 metadataDirty: false,
+                metadataRevision: 0,
                 flashcardsDirty: {},
                 editalUpserts: {},
                 editalDeletes: [],
@@ -498,6 +499,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function setMetadataDirty(isDirty) {
             const state = getSyncState();
             state.metadataDirty = !!isDirty;
+            if (isDirty) state.metadataRevision = Math.max(0, Number(state.metadataRevision) || 0) + 1;
             saveSyncState(state);
         }
 
@@ -1001,14 +1003,27 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         async function flushPendingMetadata() {
             const state = getSyncState();
             if (!state.metadataDirty || !navigator.onLine || !currentUser) return;
+            // Captura uma revisão e um snapshot consistentes. Se outra alteração local acontecer
+            // enquanto o upload estiver em andamento, a revisão muda e NÃO limpamos o dirty flag.
+            const syncRevision = Math.max(0, Number(state.metadataRevision) || 0);
+            const metadataSnapshot = getConcursosMetadata();
             const result = await runSupabaseRequest(() => supabaseClient.from('user_settings').upsert({
                 user_id: currentUser.id,
                 setting_key: 'concursos_metadata',
-                setting_value: getConcursosMetadata(),
+                setting_value: metadataSnapshot,
                 updated_at: new Date().toISOString()
             }, { onConflict: 'user_id,setting_key' }));
             throwIfSupabaseError(result, 'Falha ao sincronizar configurações pendentes');
-            setMetadataDirty(false);
+            const latestState = getSyncState();
+            const latestRevision = Math.max(0, Number(latestState.metadataRevision) || 0);
+            if (latestRevision === syncRevision) {
+                latestState.metadataDirty = false;
+                saveSyncState(latestState);
+            } else {
+                latestState.metadataDirty = true;
+                saveSyncState(latestState);
+                scheduleMetadataSync(250);
+            }
         }
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
@@ -6398,6 +6413,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 }
             }
             await saveConcursosMetadata(metadata);
+            // studySessions é a fonte canônica: atualize os contadores imediatamente após a gravação local.
+            renderSubjectStudyHours();
+            renderPomodoroDailyCounter();
+            updateModernOverview();
             if (context.activityType === 'questoes') {
                 openQuestionPerformanceModal({
                     sessionId:recordedSession.id, materia:recordedSession.materia, assunto:recordedSession.assunto, itemId:context.itemId,
@@ -6757,7 +6776,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             isTimerPaused = false;
             updatePauseButton();
 
-            timerInterval = setInterval(() => {
+            timerInterval = setInterval(async () => {
                 if (timeLeft > 0) {
                     timeLeft--;
                     updateDisplay();
@@ -6771,25 +6790,33 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     if (timerMode === 'focus') {
                         if (focusSessionCommitted) { updatePauseButton(); return; }
                         focusSessionCommitted = true;
+                        const sessionMinutes = Math.max(0, Number(currentFocusCycleMinutes) || 0);
                         const studiedBefore = getDailyPomodoroMinutes();
                         const targetMinutes = Math.round(getPomodoroDailyTargetHours() * 60);
-                        const studiedAfter = studiedBefore + currentFocusCycleMinutes;
+                        const studiedAfter = studiedBefore + sessionMinutes;
                         if (targetMinutes > 0) {
                             const extraBefore = Math.max(0, studiedBefore - targetMinutes);
                             const extraAfter = Math.max(0, studiedAfter - targetMinutes);
                             const newExtraMinutes = Math.max(0, extraAfter - extraBefore);
                             if (newExtraMinutes > 0) addDailyPomodoroExtraMinutes(newExtraMinutes);
                         }
-                        setDailyPomodoroMinutes(studiedAfter);
-                        if (activeStudyContext && activeStudyContext.concurso === currentConcurso) {
-                            const finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
-                            recordStudyMinutesForContext(currentFocusCycleMinutes, finalContext);
-                            updateLegalReadingBlockAfterSession(finalContext);
+                        let finalContext = null;
+                        if (activeStudyContext && activeStudyContext.concurso === currentConcurso && sessionMinutes > 0) {
+                            finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
+                            try {
+                                await recordStudyMinutesForContext(sessionMinutes, finalContext);
+                                await updateLegalReadingBlockAfterSession(finalContext);
+                            } catch (error) {
+                                console.error('Falha ao registrar sessão concluída:', error);
+                                await appNotice('A sessão terminou, mas houve uma falha ao registrar o tempo. Os dados locais foram preservados quando possível. Tente sincronizar novamente.', { title:'Falha ao contabilizar tempo' });
+                            }
                         }
+                        // Compatibilidade com o contador legado; a fonte canônica permanece studySessions.
+                        setDailyPomodoroMinutes(getDailyPomodoroMinutes());
                         currentFocusCycleMinutes = 0;
                         updatePauseButton();
                         playPomodoroCompletionBell();
-                        const needsPostSessionFeedback = activeStudyContext?.activityType === 'questoes' || !!(activeStudyContext?.isRevision && isAdaptiveRetentionStrategy());
+                        const needsPostSessionFeedback = finalContext?.activityType === 'questoes' || !!(finalContext?.isRevision && isAdaptiveRetentionStrategy());
                         if (!needsPostSessionFeedback) setTimeout(() => alert('Foco Finalizado!'), 2300);
                     } else {
                         currentFocusCycleMinutes = 0;
