@@ -191,4 +191,7 @@ V9.65.1 — Reorganização Adaptativa de Matérias
 - Diversidade diária e bloqueio de repetição consecutiva permanecem ativos.
 - Mensagens de confirmação e conclusão foram atualizadas para refletir a lógica real do scheduler.
 
-V9.65.2 - Corrige Limpar Edital Atual com exclusao local imediata + fila Supabase e anexa a navegacao principal a barra de concurso.
+V9.65.3 - Corrige Limpar Edital Atual com exclusao local imediata + fila Supabase e anexa a navegacao principal a barra de concurso.
+
+
+V9.65.3 — correções de ações do concurso, Limpar Edital Atual e remoção da redundância Tenho tempo agora no topo.
