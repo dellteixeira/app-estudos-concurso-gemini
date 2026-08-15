@@ -128,3 +128,11 @@ V9.59 — ESTUDO POR OPORTUNIDADE / FLEXIBLE AVAILABILITY
 - Retenção Adaptativa agenda revisões respeitando dias de descanso.
 - Modo flexível usa o cronograma apenas para revisões; conteúdo novo é escolhido sob demanda.
 - Layout responsivo otimizado para mobile.
+
+
+V9.60 — RETENTION SCHEDULER + INTERFACE TEXT-ONLY
+- Score único combina prioridade, peso, retenção, revisão vencida, proximidade da prova, continuidade, tempo disponível e diversidade.
+- Score aplicado ao Estudo por Oportunidade e à ordenação interna das filas ponderadas do cronograma.
+- Mantida intercalação de disciplinas para evitar monotonia.
+- Removidos ícones/emoji visíveis de nomes, botões, navegação e rótulos; permanece apenas o símbolo gráfico do app.
+- Mobile refinado para navegação textual e cartões de recomendação mais compactos.
