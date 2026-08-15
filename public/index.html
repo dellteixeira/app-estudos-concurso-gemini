@@ -797,6 +797,28 @@
             .adaptive-review-feedback-grid { grid-template-columns:1fr; }
             .adaptive-review-rating { min-height:70px; padding:11px 12px; }
         }
+
+
+        /* V9.61 — Active Recall Engine / desempenho em questões */
+        .question-performance-summary { display:flex; flex-direction:column; gap:6px; padding:13px 14px; border:1px solid var(--border-color); border-radius:12px; background:rgba(59,130,246,.06); margin-bottom:12px; }
+        .question-performance-summary strong { color:var(--header-materia-text); font-size:.96rem; overflow-wrap:anywhere; }
+        .question-performance-summary span { color:#94a3b8; font-size:.78rem; line-height:1.45; }
+        .question-performance-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .question-performance-result { margin-top:10px; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:rgba(255,255,255,.025); font-size:.82rem; line-height:1.5; }
+        .question-performance-result strong { color:var(--header-materia-text); }
+        .question-performance-actions { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:14px; }
+        .question-performance-actions .btn { justify-content:center; }
+        .opportunity-question-actions { display:flex; gap:6px; flex-wrap:wrap; }
+        .btn-register-question-result { white-space:normal; }
+        body.light-mode .question-performance-result { background:#fff; }
+        @media (max-width:620px) {
+            .question-performance-grid { grid-template-columns:1fr; }
+            .question-performance-actions { display:grid; grid-template-columns:1fr; }
+            .question-performance-actions .btn { width:100%; min-height:44px; }
+            .btn-register-question-result { flex:1 1 100%; min-height:42px; }
+            .opportunity-question-actions { width:100%; display:grid; grid-template-columns:1fr 1fr; }
+            .opportunity-question-actions .btn { width:100%; white-space:normal; }
+        }
         @media (max-width:900px) {
             .custom-daily-hours-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
             #tab-edital tbody tr:not(.materia-header-row) { grid-template-columns:68px 1fr !important; }
@@ -2998,7 +3020,7 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
                     <h3>Anotações e Caderno de Resumos</h3>
-                    <button class="btn btn-primary" onclick="openModalNovaNota()">+ Incluir Nota</button>
+                    <button class="btn btn-primary" onclick="openModalNovaNota()">Incluir Nota</button>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -3473,6 +3495,32 @@
         </div>
     </div>
 
+    <!-- V9.61 — ACTIVE RECALL ENGINE / RESULTADO DE QUESTÕES -->
+    <div class="modal-overlay" id="modalQuestionPerformance" style="z-index:1420;">
+        <div class="modal" style="max-width:650px;">
+            <h3>Registrar desempenho em questões</h3>
+            <div class="question-performance-summary">
+                <strong id="questionPerformanceTopic">—</strong>
+                <span id="questionPerformanceMeta">Informe apenas o total resolvido e os acertos. O Painel calcula os erros e o impacto na retenção.</span>
+            </div>
+            <div class="question-performance-grid">
+                <div class="form-group">
+                    <label for="questionPerformanceTotal">Questões resolvidas</label>
+                    <input id="questionPerformanceTotal" type="number" min="1" max="500" inputmode="numeric" placeholder="Ex.: 20" oninput="updateQuestionPerformancePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="questionPerformanceCorrect">Acertos</label>
+                    <input id="questionPerformanceCorrect" type="number" min="0" max="500" inputmode="numeric" placeholder="Ex.: 14" oninput="updateQuestionPerformancePreview()">
+                </div>
+            </div>
+            <div class="question-performance-result" id="questionPerformancePreview">Informe os dois valores para calcular o aproveitamento.</div>
+            <div class="question-performance-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeQuestionPerformanceModal()">Registrar depois</button>
+                <button class="btn btn-primary" type="button" onclick="submitQuestionPerformance()" data-enter-default="true">Salvar desempenho</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL GERENCIAR CONTEÚDO DO DIA -->
     <div class="modal-overlay" id="modalDayContent">
         <div class="modal">
@@ -3482,7 +3530,7 @@
             <div id="dayTopicsContainer"></div>
             <div class="day-modal-footer" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
                 <div id="addNewTopicArea">
-                    <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico</button>
+                    <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">Adicionar Novo Tópico</button>
                 </div>
                 <div class="modal-actions" style="margin-top:0;">
                     <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
@@ -4349,6 +4397,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 modalBackupManager: () => closeBackupManager(),
                 modalAccount: () => closeAccountModal(),
                 modalAdaptiveReviewFeedback: () => {},
+                modalQuestionPerformance: () => closeQuestionPerformanceModal(),
                 modalLegalReading: () => closeLegalReadingModal(),
                 modalEditarFlashcard: () => closeModalEditarFlashcard(),
                 modalFiltroEstudoFC: () => closeModalFiltroEstudoFlashcards(),
@@ -4468,6 +4517,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             currentStudyIdx = 0;
             showingAnswer = false;
             activeSelectedDateKey = null;
+            pendingAdaptiveReviewFeedback = null;
+            pendingQuestionPerformance = null;
             clearActiveStudyContext();
         }
 
@@ -4716,7 +4767,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         // O score combina relevância estratégica do edital, memória, proximidade da prova,
         // continuidade, tempo disponível e diversidade. É usado tanto no modo oportunidade
         // quanto para ordenar os tópicos dentro das filas do cronograma tradicional.
-        const RETENTION_SCHEDULER_VERSION = 1;
+        const RETENTION_SCHEDULER_VERSION = 2;
 
         function getContestDaysUntilExam(contestMeta, at = new Date()) {
             const raw = contestMeta?.dataProva;
@@ -4779,8 +4830,19 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 continuation: continuation ? 160 : 0,
                 recentPenalty: recentMaterias[0] === item?.materia ? -120 : (recentMaterias.includes(item?.materia) ? -45 : 0),
                 timeFit: 0,
-                context: 0
+                context: 0,
+                questionPerformance: 0
             };
+
+            if (activityType === 'questoes' && Number.isFinite(Number(state?.questionStats?.lastAccuracy))) {
+                const lastAccuracy = Number(state.questionStats.lastAccuracy);
+                const confidence = Math.max(0.08, Math.min(1, Number(state.questionStats.confidence) || 0.25));
+                if (lastAccuracy < 40) components.questionPerformance += Math.round(260 * confidence);
+                else if (lastAccuracy < 60) components.questionPerformance += Math.round(185 * confidence);
+                else if (lastAccuracy < 75) components.questionPerformance += Math.round(105 * confidence);
+                else if (lastAccuracy < 90) components.questionPerformance += Math.round(35 * confidence);
+                else components.questionPerformance -= Math.round(45 * confidence);
+            }
 
             if (availableMinutes > 0) {
                 const ratio = availableMinutes / Math.max(1, suggestedMinutes);
@@ -4802,7 +4864,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 overdueDays,
                 daysUntilExam: exam.days,
                 continuation,
-                suggestedMinutes
+                suggestedMinutes,
+                questionAccuracy: Number.isFinite(Number(state?.questionStats?.lastAccuracy)) ? Number(state.questionStats.lastAccuracy) : null
             };
         }
 
@@ -4880,7 +4943,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const idealMinutes = Number(plan?.sessionMinutes) || (activityType === 'teoria' ? 40 : 20);
                     const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:false, activityType, availableMinutes:minutes, suggestedMinutes:idealMinutes, contextMode, recentMaterias });
                     const score = 430 + scheduler.total;
-                    candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, isRevision:false, score, scheduler, minutes:suggested, reason:isContinuation?'Continuar assunto já iniciado':(activityType==='questoes'?'Prática de recuperação por questões':'Próximo conteúdo prioritário') });
+                    const questionReason = activityType==='questoes' && Number.isFinite(scheduler.questionAccuracy)
+                        ? `Questões prioritárias: desempenho recente ${Math.round(scheduler.questionAccuracy)}%`
+                        : 'Prática de recuperação por questões';
+                    candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, isRevision:false, score, scheduler, minutes:suggested, reason:isContinuation?'Continuar assunto já iniciado':(activityType==='questoes'?questionReason:'Próximo conteúdo prioritário') });
                 });
             }
 
@@ -4913,14 +4979,18 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
             opportunityRecommendations = buildOpportunityRecommendations();
             if (!opportunityRecommendations.length) {
-                container.innerHTML='<div class="opportunity-empty">Não encontrei uma revisão ou atividade elegível para este momento. Você pode alterar o tempo/contexto ou revisar seus flashcards manualmente.</div>';
+                container.innerHTML='<div class="opportunity-empty">Não encontrei uma revisão ou atividade elegível para este momento. Você pode alterar o tempo/contexto ou registrar uma bateria de questões em um assunto do cronograma.</div>';
                 return;
             }
             container.innerHTML = opportunityRecommendations.map((rec,idx) => {
                 const kindLabel = rec.kind==='flashcards'?'Flashcards':rec.isRevision?'Revisão':rec.activityType==='questoes'?'Questões':'Teoria';
                 const retentionBadge = Number.isFinite(rec.retention) ? `<span class="opportunity-badge">Memória ${Math.round(rec.retention)}%</span>` : '';
                 const examBadge = Number.isFinite(rec.scheduler?.daysUntilExam) && rec.scheduler.daysUntilExam >= 0 && rec.scheduler.daysUntilExam <= 30 ? `<span class="opportunity-badge">Prova em ${rec.scheduler.daysUntilExam}d</span>` : '';
-                return `<div class="opportunity-card"><div class="opportunity-card-top"><div><div class="opportunity-card-title">${escapeHtml(rec.materia)} — ${escapeHtml(rec.assunto)}</div><div class="opportunity-card-meta">${escapeHtml(rec.reason)} · sugestão de ${Math.max(1,Math.round(rec.minutes||opportunitySelectedMinutes))} min</div><div class="opportunity-card-badges"><span class="opportunity-badge">${kindLabel}</span>${retentionBadge}${examBadge}${rec.scheduler?.continuation?'<span class="opportunity-badge">Em andamento</span>':''}${rec.flashcardCount?`<span class="opportunity-badge">${rec.flashcardCount} cards</span>`:''}</div></div><button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button></div></div>`;
+                const questionBadge = rec.activityType==='questoes' && Number.isFinite(rec.scheduler?.questionAccuracy) ? `<span class="opportunity-badge">Último desempenho ${Math.round(rec.scheduler.questionAccuracy)}%</span>` : '';
+                const actions = rec.kind==='study' && rec.activityType==='questoes'
+                    ? `<div class="opportunity-question-actions"><button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button><button class="btn btn-secondary btn-sm" onclick="registerOpportunityQuestionResult(${idx})">Registrar resultado</button></div>`
+                    : `<button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button>`;
+                return `<div class="opportunity-card"><div class="opportunity-card-top"><div><div class="opportunity-card-title">${escapeHtml(rec.materia)} — ${escapeHtml(rec.assunto)}</div><div class="opportunity-card-meta">${escapeHtml(rec.reason)} · sugestão de ${Math.max(1,Math.round(rec.minutes||opportunitySelectedMinutes))} min</div><div class="opportunity-card-badges"><span class="opportunity-badge">${kindLabel}</span>${retentionBadge}${examBadge}${questionBadge}${rec.scheduler?.continuation?'<span class="opportunity-badge">Em andamento</span>':''}${rec.flashcardCount?`<span class="opportunity-badge">${rec.flashcardCount} cards</span>`:''}</div></div>${actions}</div></div>`;
             }).join('');
         }
 
@@ -4950,6 +5020,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if(editalTabButton) switchTab('tab-edital',editalTabButton);
             clearInterval(timerInterval); timerInterval=null; timerMode='focus'; timerHasStarted=false; isTimerPaused=false; currentFocusCycleMinutes=0; focusSessionCommitted=false; timeLeft=requestedMinutes*60; currentTimerTotalSeconds=timeLeft; updateDisplay(); updatePauseButton();
             requestAnimationFrame(()=>{ const pomodoro=document.querySelector('.pomodoro-card'); if(pomodoro) pomodoro.scrollIntoView({behavior:'smooth',block:'center'}); startTimer(); });
+        }
+
+        function registerOpportunityQuestionResult(index) {
+            const rec = opportunityRecommendations[index];
+            if (!rec || rec.activityType !== 'questoes') return;
+            closeOpportunityStudyModal();
+            openQuestionPerformanceModal({ materia:rec.materia, assunto:rec.assunto, itemId:rec.itemId, dateKey:getLocalDateKey(), isRevision:!!rec.isRevision, source:'opportunity_manual' });
         }
 
         function startOpportunityRecommendation(index) {
@@ -5771,6 +5848,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
                                 <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">Teoria</button>
                                 <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">Questões</button>
+                                <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})">Registrar resultado</button>
                                 ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">Lei Seca</button>` : ''}
                             </div>` : ''}
                             <div class="day-topic-inline-actions">
@@ -5813,7 +5891,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     </div>
                     <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
                         <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
-                        <button class="btn btn-info btn-sm" onclick="addManualTopicToDay(${idx})">+ Inserir Manualmente</button>
+                        <button class="btn btn-info btn-sm" onclick="addManualTopicToDay(${idx})">Inserir Manualmente</button>
                         <button class="btn btn-success btn-sm" onclick="confirmEditTopicWithSwap(${idx})">Salvar / Trocar Assunto</button>
                     </div>
                 </div>
@@ -5918,7 +5996,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function resetAddTopicArea() {
             const container = document.getElementById('addNewTopicArea');
-            container.innerHTML = `<button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">+ Adicionar Novo Tópico</button>`;
+            container.innerHTML = `<button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">Adicionar Novo Tópico</button>`;
         }
 
         async function confirmAddTopicWithSwap() {
@@ -8762,11 +8840,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         // Núcleo inspirado na curva de esquecimento, executando em modo sombra:
         // calcula retenção/estabilidade por assunto sem substituir ainda o cronograma
         // ou as revisões tradicionais. A V9.58 poderá usar estes dados para reagendamento.
-        const RETENTION_ENGINE_SCHEMA_VERSION = 2;
+        const RETENTION_ENGINE_SCHEMA_VERSION = 3;
         const RETENTION_TARGET_DEFAULT = 0.82;
         const RETENTION_MIN_STABILITY_DAYS = 0.75;
         const RETENTION_MAX_STABILITY_DAYS = 3650;
         let pendingAdaptiveReviewFeedback = null;
+        let pendingQuestionPerformance = null;
 
         function getRetentionEngine(contestMeta, create = false) {
             if (!contestMeta) return null;
@@ -8814,6 +8893,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     sessionCount: 0,
                     lastActivityType: null,
                     activityCounts: { teoria:0, questoes:0, lei_seca:0 },
+                    questionStats: { attempts:0, total:0, correct:0, errors:0, lastAccuracy:null, averageAccuracy:null, confidence:0, lastAt:null },
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
@@ -8888,6 +8968,208 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
             state.updatedAt = new Date().toISOString();
             return state;
+        }
+
+        function normalizeQuestionPerformance(total, correct) {
+            const qTotal = Math.max(1, Math.min(500, Math.round(Number(total) || 0)));
+            const qCorrect = Math.max(0, Math.min(qTotal, Math.round(Number(correct) || 0)));
+            const errors = qTotal - qCorrect;
+            const accuracy = Math.round((qCorrect / qTotal) * 1000) / 10;
+            const confidence = Math.max(0.08, Math.min(1, 1 - Math.exp(-qTotal / 12)));
+            let rating = 'good';
+            if (accuracy < 45) rating = 'forgot';
+            else if (accuracy < 70) rating = 'hard';
+            else if (accuracy < 90) rating = 'good';
+            else rating = 'easy';
+            return { total:qTotal, correct:qCorrect, errors, accuracy, confidence, rating };
+        }
+
+        function getQuestionPerformanceBand(performance) {
+            const accuracy = Number(performance?.accuracy) || 0;
+            if (accuracy >= 90) return { label:'Domínio alto', recommendation:'A próxima revisão pode ser mais espaçada.' };
+            if (accuracy >= 75) return { label:'Bom domínio', recommendation:'Mantenha a revisão no intervalo calculado.' };
+            if (accuracy >= 60) return { label:'Retenção intermediária', recommendation:'Vale revisar novamente em prazo menor.' };
+            if (accuracy >= 40) return { label:'Retenção baixa', recommendation:'Priorize nova recuperação ativa e revisão próxima.' };
+            return { label:'Desempenho crítico', recommendation:'Reestude os pontos frágeis antes de uma nova bateria.' };
+        }
+
+        function applyQuestionPerformanceToState(state, performance, eventDate, engine) {
+            if (!state || !performance) return state;
+            const p = normalizeQuestionPerformance(performance.total, performance.correct);
+            const currentStability = Math.max(RETENTION_MIN_STABILITY_DAYS, Number(state.stability) || RETENTION_MIN_STABILITY_DAYS);
+            let baseFactor = 1;
+            let difficultyDelta = 0;
+            if (p.accuracy < 40) { baseFactor = 0.48; difficultyDelta = 1.15; }
+            else if (p.accuracy < 60) { baseFactor = 0.78; difficultyDelta = 0.65; }
+            else if (p.accuracy < 75) { baseFactor = 1.08; difficultyDelta = 0.12; }
+            else if (p.accuracy < 90) { baseFactor = 1.48; difficultyDelta = -0.32; }
+            else { baseFactor = 2.05; difficultyDelta = -0.68; }
+
+            // Amostras pequenas influenciam menos. Ex.: 2/2 não equivale a 45/50.
+            const blendedFactor = 1 + (baseFactor - 1) * p.confidence;
+            state.stability = Math.max(RETENTION_MIN_STABILITY_DAYS, Math.min(RETENTION_MAX_STABILITY_DAYS, currentStability * blendedFactor));
+            state.difficulty = Math.max(1, Math.min(10, (Number(state.difficulty) || 5) + difficultyDelta * p.confidence));
+            if (!state.questionStats || typeof state.questionStats !== 'object') {
+                state.questionStats = { attempts:0, total:0, correct:0, errors:0, lastAccuracy:null, averageAccuracy:null, confidence:0, lastAt:null };
+            }
+            const qs = state.questionStats;
+            qs.attempts = Math.max(0, Number(qs.attempts) || 0) + 1;
+            qs.total = Math.max(0, Number(qs.total) || 0) + p.total;
+            qs.correct = Math.max(0, Number(qs.correct) || 0) + p.correct;
+            qs.errors = Math.max(0, Number(qs.errors) || 0) + p.errors;
+            qs.lastAccuracy = p.accuracy;
+            qs.averageAccuracy = qs.total > 0 ? Math.round((qs.correct / qs.total) * 1000) / 10 : null;
+            qs.confidence = p.confidence;
+            qs.lastAt = eventDate.toISOString();
+            state.lastRating = p.rating;
+            if (p.accuracy < 45) state.lapseCount = Math.max(0, Number(state.lapseCount) || 0) + 1;
+            state.retention = Math.max(20, Math.min(100, p.accuracy + (100 - p.accuracy) * (1 - p.confidence) * 0.25));
+            state.lastReviewAt = eventDate.toISOString();
+            if (p.accuracy < 40) state.nextReviewAt = new Date(eventDate.getTime() + 86400000).toISOString();
+            else if (p.accuracy < 60) state.nextReviewAt = new Date(eventDate.getTime() + 2 * 86400000).toISOString();
+            else state.nextReviewAt = estimateNextRetentionReviewAt(state, eventDate, engine?.targetRetention);
+            state.updatedAt = new Date().toISOString();
+            return state;
+        }
+
+        function openQuestionPerformanceModal(options = {}) {
+            const materia = String(options.materia || '').trim();
+            const assunto = String(options.assunto || '').trim();
+            if (!materia || !assunto) return;
+            pendingQuestionPerformance = {
+                sessionId: options.sessionId || null,
+                materia,
+                assunto,
+                itemId: options.itemId || null,
+                dateKey: options.dateKey || getLocalDateKey(),
+                isRevision: !!options.isRevision,
+                source: options.source || 'manual'
+            };
+            const topic = document.getElementById('questionPerformanceTopic');
+            const meta = document.getElementById('questionPerformanceMeta');
+            const total = document.getElementById('questionPerformanceTotal');
+            const correct = document.getElementById('questionPerformanceCorrect');
+            if (topic) topic.textContent = `${materia} — ${assunto}`;
+            if (meta) meta.textContent = options.sessionId
+                ? 'A sessão foi contabilizada. Informe apenas quantas questões resolveu e quantas acertou.'
+                : 'Informe o resultado da bateria de questões, mesmo que tenha sido resolvida fora do Painel.';
+            if (total) total.value = '';
+            if (correct) correct.value = '';
+            updateQuestionPerformancePreview();
+            const modal = document.getElementById('modalQuestionPerformance');
+            if (modal) modal.style.display = 'flex';
+            setTimeout(() => total?.focus(), 120);
+        }
+
+        function closeQuestionPerformanceModal() {
+            const pending = pendingQuestionPerformance;
+            pendingQuestionPerformance = null;
+            const modal = document.getElementById('modalQuestionPerformance');
+            if (modal) modal.style.display = 'none';
+            // Se era uma revisão adaptativa e o usuário deixou o resultado para depois,
+            // ainda permitimos a avaliação subjetiva para não quebrar a curva.
+            if (pending?.isRevision && pending?.sessionId) {
+                const contest = getConcursosMetadata()[currentConcurso] || {};
+                const session = (contest.studySessions || []).find(s => s?.id === pending.sessionId);
+                if (session && !session.questionPerformance && isAdaptiveRetentionStrategy(contest)) {
+                    openAdaptiveReviewFeedback(session, { materia:pending.materia, assunto:pending.assunto, isRevision:true, activityType:'questoes' });
+                }
+            }
+        }
+
+        function updateQuestionPerformancePreview() {
+            const preview = document.getElementById('questionPerformancePreview');
+            const totalRaw = Number(document.getElementById('questionPerformanceTotal')?.value);
+            const correctRaw = Number(document.getElementById('questionPerformanceCorrect')?.value);
+            if (!preview) return;
+            if (!Number.isFinite(totalRaw) || totalRaw < 1 || !Number.isFinite(correctRaw) || correctRaw < 0) {
+                preview.textContent = 'Informe os dois valores para calcular o aproveitamento.';
+                return;
+            }
+            if (correctRaw > totalRaw) {
+                preview.innerHTML = '<strong>Confira os valores:</strong> os acertos não podem ser maiores que o total de questões.';
+                return;
+            }
+            const p = normalizeQuestionPerformance(totalRaw, correctRaw);
+            const band = getQuestionPerformanceBand(p);
+            preview.innerHTML = `<strong>${p.correct}/${p.total} corretas · ${p.errors} erros · ${p.accuracy}% de aproveitamento</strong><br>${band.label}. ${band.recommendation}`;
+        }
+
+        async function submitQuestionPerformance() {
+            const pending = pendingQuestionPerformance;
+            if (!pending) return;
+            const totalRaw = Number(document.getElementById('questionPerformanceTotal')?.value);
+            const correctRaw = Number(document.getElementById('questionPerformanceCorrect')?.value);
+            if (!Number.isFinite(totalRaw) || totalRaw < 1) return appNotice('Informe quantas questões foram resolvidas.', { title:'Questões' });
+            if (!Number.isFinite(correctRaw) || correctRaw < 0 || correctRaw > totalRaw) return appNotice('Informe uma quantidade válida de acertos.', { title:'Questões' });
+            const performance = normalizeQuestionPerformance(totalRaw, correctRaw);
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso];
+            if (!contest) return;
+            if (!Array.isArray(contest.studySessions)) contest.studySessions = [];
+            let session = pending.sessionId ? contest.studySessions.find(s => s?.id === pending.sessionId) : null;
+            if (!session) {
+                session = {
+                    id:`questions_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+                    dateKey:pending.dateKey || getLocalDateKey(),
+                    scheduledDateKey:pending.dateKey || getLocalDateKey(),
+                    plannedDateKey:pending.dateKey || getLocalDateKey(),
+                    materia:pending.materia,
+                    assunto:pending.assunto,
+                    activityType:'questoes',
+                    isRevision:!!pending.isRevision,
+                    minutes:0,
+                    source:'questions_manual',
+                    performanceOnly:true,
+                    createdAt:new Date().toISOString()
+                };
+                contest.studySessions.push(session);
+            }
+            session.questionPerformance = performance;
+            session.questionTotal = performance.total;
+            session.questionCorrect = performance.correct;
+            session.questionErrors = performance.errors;
+            session.questionAccuracy = performance.accuracy;
+            rebuildRetentionEngineForContest(contest);
+            const state = getRetentionTopicState(contest, pending.materia, pending.assunto, false);
+            const item = allEditalItems.find(i => (i.concurso || 'Concurso Geral') === currentConcurso && getStudyTopicKey(i.materia,i.assunto) === getStudyTopicKey(pending.materia,pending.assunto));
+            if (item && !item.questoes) {
+                item.questoes = true;
+                saveEditalToLocalStorage();
+                queueEditalUpsert(item);
+            }
+            let nextDateKey = null;
+            if (isAdaptiveRetentionStrategy(contest) && state) {
+                const topicKey = getStudyTopicKey(pending.materia,pending.assunto);
+                if (pending.isRevision) {
+                    markAdaptiveRetentionReviewCompleted(contest, pending.dateKey || getLocalDateKey(), topicKey, performance.rating, session.id);
+                    clearAdaptiveReviewsForTopicThrough(contest, pending.materia, pending.assunto, pending.dateKey || getLocalDateKey());
+                }
+                nextDateKey = scheduleNextAdaptiveRetentionReview(contest, state, pending.dateKey || getLocalDateKey());
+            }
+            await saveConcursosMetadata(metadata);
+            pendingQuestionPerformance = null;
+            const modal = document.getElementById('modalQuestionPerformance');
+            if (modal) modal.style.display = 'none';
+            filterDataByConcurso();
+            renderMonthCalendar();
+            renderDayTopicsList();
+            updateModernOverview();
+            renderSubjectStudyHours();
+            const band = getQuestionPerformanceBand(performance);
+            const nextText = nextDateKey ? ` Próxima revisão: ${formatDateKeyShort(nextDateKey)}.` : '';
+            await appNotice(`${performance.accuracy}% de aproveitamento (${performance.correct}/${performance.total}). ${band.label}.${nextText}`, { title:'Desempenho registrado' });
+        }
+
+        function openManualQuestionPerformanceForScheduledTopic(idx) {
+            if (!activeSelectedDateKey) return;
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const raw = contest?.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            if (!raw) return;
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const matched = editalItems.find(i => `${i.materia} - ${i.assunto}` === clean);
+            if (!matched) return appNotice('Este item não está vinculado ao edital verticalizado.', { title:'Questões' });
+            openQuestionPerformanceModal({ materia:matched.materia, assunto:matched.assunto, itemId:matched.id, dateKey:getLocalDateKey(), isRevision:isRevisionScheduleText(raw), source:'scheduled_manual' });
         }
 
         function isAdaptiveRetentionStrategy(contestMeta = null) {
@@ -9041,7 +9323,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             state.lastStudyAt = eventDate.toISOString();
             state.retention = 100;
             state.nextReviewAt = estimateNextRetentionReviewAt(state, eventDate, engine?.targetRetention);
-            if (session.retentionRating) applyRetentionRatingToState(state, session.retentionRating, eventDate, engine);
+            if (session.questionPerformance) applyQuestionPerformanceToState(state, session.questionPerformance, eventDate, engine);
+            else if (session.retentionRating) applyRetentionRatingToState(state, session.retentionRating, eventDate, engine);
             state.updatedAt = new Date().toISOString();
             return state;
         }
@@ -9071,6 +9354,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     stability:RETENTION_MIN_STABILITY_DAYS, difficulty:5, retention:100,
                     reviewCount:0, lapseCount:0, lastRating:null, ratingCounts:{ forgot:0, hard:0, good:0, easy:0 }, totalMinutes:0, sessionCount:0,
                     lastActivityType:null, activityCounts:{ teoria:0, questoes:0, lei_seca:0 },
+                    questionStats:{ attempts:0, total:0, correct:0, errors:0, lastAccuracy:null, averageAccuracy:null, confidence:0, lastAt:null },
                     createdAt:getRetentionEventDate(session).toISOString(), updatedAt:new Date().toISOString()
                 };
                 engine.topics[key] = state;
@@ -9296,7 +9580,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 }
             }
             await saveConcursosMetadata(metadata);
-            if (isAdaptiveRetentionStrategy(metadata[currentConcurso]) && context.isRevision) {
+            if (context.activityType === 'questoes') {
+                openQuestionPerformanceModal({
+                    sessionId:recordedSession.id, materia:recordedSession.materia, assunto:recordedSession.assunto, itemId:context.itemId,
+                    dateKey:recordedSession.dateKey, isRevision:!!context.isRevision, source:'pomodoro'
+                });
+            } else if (isAdaptiveRetentionStrategy(metadata[currentConcurso]) && context.isRevision) {
                 openAdaptiveReviewFeedback(recordedSession, context);
             }
 
@@ -9682,8 +9971,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         currentFocusCycleMinutes = 0;
                         updatePauseButton();
                         playPomodoroCompletionBell();
-                        const needsAdaptiveFeedback = !!(activeStudyContext?.isRevision && isAdaptiveRetentionStrategy());
-                        if (!needsAdaptiveFeedback) setTimeout(() => alert('Foco Finalizado!'), 2300);
+                        const needsPostSessionFeedback = activeStudyContext?.activityType === 'questoes' || !!(activeStudyContext?.isRevision && isAdaptiveRetentionStrategy());
+                        if (!needsPostSessionFeedback) setTimeout(() => alert('Foco Finalizado!'), 2300);
                     } else {
                         currentFocusCycleMinutes = 0;
                         updatePauseButton();
@@ -9900,8 +10189,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             updateDisplay();
             renderPomodoroDailyCounter();
             playPomodoroCompletionBell();
-            const needsAdaptiveFeedback = !!(finalContext?.isRevision && isAdaptiveRetentionStrategy());
-            if (!needsAdaptiveFeedback) setTimeout(() => alert(`Sessão concluída: ${completedMinutes} min contabilizados.`), 500);
+            const needsPostSessionFeedback = finalContext?.activityType === 'questoes' || !!(finalContext?.isRevision && isAdaptiveRetentionStrategy());
+            if (!needsPostSessionFeedback) setTimeout(() => alert(`Sessão concluída: ${completedMinutes} min contabilizados.`), 500);
         }
 
         function startFocusTimer() {
