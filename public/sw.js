@@ -1,5 +1,5 @@
-const APP_VERSION = '9.66.3';
-const CACHE_NAME = 'estudo-adaptativo-v9-66-3-auditoria-sessoes-grafico-20260815';
+const APP_VERSION = '9.66.4';
+const CACHE_NAME = 'estudo-adaptativo-v9-66-4-ux-aulas-tempo-20260815';
 
 const APP_SHELL = [
   './',
