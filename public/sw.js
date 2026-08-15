@@ -1,4 +1,4 @@
-const CACHE_NAME = 'estudo-adaptativo-v9-65-5-barras-invertidas-20260815';
+const CACHE_NAME = 'estudo-adaptativo-v9-65-6-auditoria-consolidada-20260815';
 
 const APP_SHELL = [
   './',
@@ -7,7 +7,9 @@ const APP_SHELL = [
   './vendor/supabase.js',
   './vendor/chart.umd.min.js',
   './vendor/pdf.min.js',
-  './vendor/pdf.worker.min.js'
+  './vendor/pdf.worker.min.js',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 async function primeOfflineAssets() {
