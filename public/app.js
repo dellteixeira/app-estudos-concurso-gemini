@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.66.4',
+                    appVersion:'9.66.5',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -2397,10 +2397,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                     <label>
                                         <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
                                     </label>
+                                    ${!adaptiveReviewDone ? `<label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label>` : ''}
                                 </div>
                             ` : ''}
                             ${matchedItem && !adaptiveReviewDone ? `<div class="study-launch-controls">
-                                <label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label>
                                 <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions">Estudar Teoria</button>
                                 <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions">Estudar Questões</button>
                                 <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})" title="Registra desempenho de questões feitas fora do timer, sem adicionar minutos">Registrar questões externas</button>
