@@ -2796,6 +2796,33 @@
             #tab-flashcards .btn { flex:0 1 auto; max-width:100%; }
         }
 
+        /* V9.65 — Pontos críticos e revisão por camadas */
+        .critical-queue-head { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin:.15rem 0 .55rem; }
+        .critical-queue-head strong { font-size:.82rem; color:var(--text-color); }
+        .critical-queue-head span { color:var(--modern-muted,#94a3b8); font-size:.68rem; text-align:right; }
+        .critical-rank { width:24px; height:24px; border:1px solid var(--modern-border,var(--border-color)); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.68rem; font-weight:800; flex:0 0 24px; }
+        .retention-risk-row.v965 { grid-template-columns:auto minmax(0,1fr) auto auto; }
+        .critical-layer-label { color:var(--modern-muted,#94a3b8); font-size:.66rem; margin-top:3px; }
+        .layered-review-summary { display:flex; flex-direction:column; gap:5px; padding:.8rem; border:1px solid var(--modern-border,var(--border-color)); border-radius:10px; margin:.6rem 0 .8rem; }
+        .layered-review-summary strong { font-size:.94rem; overflow-wrap:anywhere; }
+        .layered-review-summary span { color:var(--modern-muted,#94a3b8); font-size:.75rem; line-height:1.45; }
+        .layered-review-list { display:grid; gap:7px; }
+        .layered-review-step { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:9px; align-items:center; padding:.7rem; border:1px solid var(--modern-border,var(--border-color)); border-radius:10px; background:rgba(255,255,255,.018); }
+        .layered-review-step.recommended { border-color:rgba(59,130,246,.65); background:rgba(59,130,246,.07); }
+        .layered-review-number { width:26px; height:26px; border-radius:7px; border:1px solid var(--modern-border,var(--border-color)); display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:850; }
+        .layered-review-content strong { display:block; font-size:.79rem; }
+        .layered-review-content span { display:block; margin-top:2px; color:var(--modern-muted,#94a3b8); font-size:.68rem; line-height:1.35; }
+        .layered-review-actions { display:flex; justify-content:flex-end; gap:7px; margin-top:.85rem; flex-wrap:wrap; }
+        @media (max-width:700px) {
+            .critical-queue-head { align-items:flex-start; flex-direction:column; gap:3px; }
+            .critical-queue-head span { text-align:left; }
+            .retention-risk-row.v965 { grid-template-columns:auto minmax(0,1fr) auto; gap:7px; }
+            .retention-risk-row.v965 .btn { grid-column:2 / -1; justify-self:start; }
+            .layered-review-step { grid-template-columns:auto minmax(0,1fr); padding:.62rem; }
+            .layered-review-step .btn { grid-column:2; justify-self:start; }
+            .layered-review-actions .btn { min-height:34px; padding:.38rem .7rem; width:auto; }
+        }
+
         /* V9.64 — Recuperação Ativa Inteligente */
         .active-recall-method-line { margin-top:6px; color:var(--text-color); font-size:.74rem; font-weight:800; }
         .active-recall-method-line span { color:#93c5fd; }
@@ -2943,6 +2970,7 @@
                 <div class="retention-metric"><span>Revisões vencidas</span><strong id="retentionDiagOverdue">0</strong></div>
                 <div class="retention-metric"><span>Assuntos dominados</span><strong id="retentionDiagMastered">0</strong></div>
             </div>
+            <div class="critical-queue-head"><strong>Pontos críticos</strong><span>Ordem calculada por risco, prioridade, retenção e desempenho.</span></div>
             <div id="retentionDiagnosticRiskList" class="retention-risk-list"></div>
         </section>
 
@@ -3596,6 +3624,22 @@
         </div>
     </div>
 
+    <!-- V9.65 — REVISÃO POR CAMADAS -->
+    <div class="modal-overlay" id="modalLayeredReview" style="z-index:1440;">
+        <div class="modal" style="max-width:720px;">
+            <h3>Revisão por camadas</h3>
+            <div class="layered-review-summary">
+                <strong id="layeredReviewTopic">—</strong>
+                <span id="layeredReviewMeta">Comece pela intervenção menos custosa capaz de recuperar o conteúdo.</span>
+            </div>
+            <div id="layeredReviewSteps" class="layered-review-list"></div>
+            <div class="layered-review-actions">
+                <button class="btn btn-secondary btn-sm" type="button" onclick="closeLayeredReviewModal()">Fechar (ESC)</button>
+                <button class="btn btn-primary btn-sm" type="button" id="layeredReviewStartRecommended" onclick="startRecommendedLayeredReview()" data-enter-default="true">Iniciar camada recomendada</button>
+            </div>
+        </div>
+    </div>
+
     <!-- V9.58 — FEEDBACK DE REVISÃO ADAPTATIVA -->
     <div class="modal-overlay" id="modalAdaptiveReviewFeedback" style="z-index:1410;">
         <div class="modal" style="max-width:680px;">
@@ -3628,7 +3672,7 @@
             <h3>Registrar desempenho em questões</h3>
             <div class="question-performance-summary">
                 <strong id="questionPerformanceTopic">—</strong>
-                <span id="questionPerformanceMeta">Informe apenas o total resolvido e os acertos. O Painel calcula os erros e o impacto na retenção.</span>
+                <span id="questionPerformanceMeta">Informe apenas o total resolvido e os acertos. O sistema calcula os erros e o impacto na retenção.</span>
             </div>
             <div class="question-performance-grid">
                 <div class="form-group">
@@ -5272,7 +5316,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!item) return appNotice('O assunto recomendado não foi encontrado no edital.', { title:'Tenho tempo agora' });
             const requestedMinutes = Math.max(1,Math.min(240,Math.round(Number(rec.minutes)||opportunitySelectedMinutes)));
             const focusInput=document.getElementById('focoMin'); if(focusInput) focusInput.value=requestedMinutes;
-            activeStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:getLocalDateKey(),plannedDateKey:getLocalDateKey(),adaptiveAdvance:false,isRevision:!!rec.isRevision,activityType:rec.activityType==='questoes'?'questoes':'teoria',recoveryMethod:rec.recoveryMethod||rec.method||null,source:'opportunity' };
+            activeStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:getLocalDateKey(),plannedDateKey:getLocalDateKey(),adaptiveAdvance:false,isRevision:!!rec.isRevision,activityType:rec.activityType==='questoes'?'questoes':'teoria',recoveryMethod:rec.recoveryMethod||rec.method||null,layer:rec.layer||null,source:rec.source||'opportunity' };
             renderActiveStudyContext();
             closeOpportunityStudyModal();
             const editalTabButton=[...document.querySelectorAll('.tab-btn')].find(btn=>/edital verticalizado/i.test(btn.textContent||''));
@@ -9089,7 +9133,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const advanceNote = activeStudyContext.adaptiveAdvance && activeStudyContext.plannedDateKey
                 ? `<span style="margin-left:8px; font-size:.72rem; color:#7dd3fc;">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
                 : '';
-            const modeLabel = activeStudyContext.recoveryMethod === 'revisao_ativa' ? 'Revisão ativa' : (activeStudyContext.recoveryMethod === 'reestudo' ? 'Reestudo de teoria' : (activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria')));
+            const modeLabel = activeStudyContext.recoveryMethod === 'revisao_curta' ? 'Revisão curta' : (activeStudyContext.recoveryMethod === 'revisao_ativa' ? 'Revisão ativa' : (activeStudyContext.recoveryMethod === 'reestudo' ? 'Reestudo de teoria' : (activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria'))));
             const legalNote = activeStudyContext.activityType === 'lei_seca' && activeStudyContext.norma
                 ? `<span style="margin-left:8px;font-size:.72rem;opacity:.8;">${escapeHtml(activeStudyContext.norma)}${activeStudyContext.articleStart ? ` · arts. ${escapeHtml(activeStudyContext.articleStart)}${activeStudyContext.articleEnd ? `–${escapeHtml(activeStudyContext.articleEnd)}` : ''}` : ''}</span>`
                 : '';
@@ -9120,7 +9164,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         // Núcleo inspirado na curva de esquecimento, executando em modo sombra:
         // calcula retenção/estabilidade por assunto sem substituir ainda o cronograma
         // ou as revisões tradicionais. A V9.58 poderá usar estes dados para reagendamento.
-        const RETENTION_ENGINE_SCHEMA_VERSION = 4;
+        const RETENTION_ENGINE_SCHEMA_VERSION = 5;
         const RETENTION_TARGET_DEFAULT = 0.82;
         const RETENTION_MIN_STABILITY_DAYS = 0.75;
         const RETENTION_MAX_STABILITY_DAYS = 3650;
@@ -9200,7 +9244,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function estimateInitialRetentionStability(session) {
             const minutes = Math.max(1, Number(session?.minutes) || 1);
             const activity = session?.activityType || 'teoria';
-            const activityFactor = session?.recoveryMethod === 'revisao_ativa' ? 1.22 : (activity === 'questoes' ? 1.18 : (activity === 'lei_seca' ? 0.92 : 1));
+            const activityFactor = ['revisao_ativa','revisao_curta'].includes(session?.recoveryMethod) ? 1.16 : (activity === 'questoes' ? 1.18 : (activity === 'lei_seca' ? 0.92 : 1));
             const durationFactor = Math.max(0.72, Math.min(1.45, Math.sqrt(minutes / 40)));
             return Math.max(RETENTION_MIN_STABILITY_DAYS, Math.min(14, 5.1 * activityFactor * durationFactor));
         }
@@ -9438,7 +9482,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderSubjectStudyHours();
             const band = getQuestionPerformanceBand(performance);
             const nextText = nextDateKey ? ` Próxima revisão: ${formatDateKeyShort(nextDateKey)}.` : '';
-            await appNotice(`${performance.accuracy}% de aproveitamento (${performance.correct}/${performance.total}). ${band.label}.${nextText}`, { title:'Desempenho registrado' });
+            const layerEscalation = session?.reviewLayer && performance.accuracy < 70
+                ? ` Próxima camada sugerida: ${Number(session.reviewLayer) >= 3 ? 'Reestudo de teoria' : 'Questões'}.`
+                : '';
+            await appNotice(`${performance.accuracy}% de aproveitamento (${performance.correct}/${performance.total}). ${band.label}.${layerEscalation}${nextText}`, { title:'Desempenho registrado' });
         }
 
         function openManualQuestionPerformanceForScheduledTopic(idx) {
@@ -9562,7 +9609,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderDayTopicsList();
             updateModernOverview();
             const nextText = nextDateKey ? ` Próxima revisão: ${formatDateKeyShort(nextDateKey)}.` : '';
-            await appNotice(`${getRetentionRatingLabel(normalized)} registrado.${nextText}`, { title:'Memória recalibrada' });
+            const currentLayer = Number(session?.reviewLayer) || 0;
+            const nextLayerLabel = currentLayer === 1 ? 'Revisão curta' : (currentLayer === 2 ? 'Questões' : (currentLayer === 3 ? 'Reestudo de teoria' : ''));
+            const layerEscalation = nextLayerLabel && ['forgot','hard'].includes(normalized) ? ` Próxima camada sugerida: ${nextLayerLabel}.` : '';
+            await appNotice(`${getRetentionRatingLabel(normalized)} registrado.${layerEscalation}${nextText}`, { title:'Memória recalibrada' });
         }
 
         function applyRetentionSessionToState(state, session, engine) {
@@ -9572,7 +9622,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const previousRetention = previousStudyAt && Number.isFinite(previousStudyAt.getTime())
                 ? calculateRetentionFromState(state, eventDate)
                 : 100;
-            const activity = session.recoveryMethod === 'revisao_ativa' ? 'revisao_ativa' : (session.activityType === 'questoes' ? 'questoes' : (session.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'));
+            const activity = ['revisao_ativa','revisao_curta'].includes(session.recoveryMethod) ? 'revisao_ativa' : (session.activityType === 'questoes' ? 'questoes' : (session.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'));
             const minutes = Math.max(0, Number(session.minutes) || 0);
             const priorSessions = Math.max(0, Number(state.sessionCount) || 0);
 
@@ -9715,6 +9765,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (!affected.has(key)) return;
                 if (!sessionState.has(key)) sessionState.set(key, { teoria:false, questoes:false });
                 const state = sessionState.get(key);
+                if (session?.isRevision && ['revisao_ativa','revisao_curta','reestudo'].includes(session?.recoveryMethod)) return;
                 if (session?.activityType === 'questoes') state.questoes = true;
                 else if (session?.activityType === 'teoria') state.teoria = true;
             });
@@ -9741,7 +9792,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function markEditalProgressFromStudyContext(context) {
             if (!context || context.concurso !== currentConcurso || context.activityType === 'lei_seca') return false;
-            if (context.isRevision && ['revisao_ativa','reestudo'].includes(context.recoveryMethod)) return false;
+            if (context.isRevision && ['revisao_ativa','revisao_curta','reestudo'].includes(context.recoveryMethod)) return false;
             const item = allEditalItems.find(candidate => {
                 if ((candidate.concurso || 'Concurso Geral') !== currentConcurso) return false;
                 if (context.itemId && String(candidate.id) === String(context.itemId)) return true;
@@ -9839,6 +9890,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 activityType: context.activityType === 'questoes' ? 'questoes' : (context.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'),
                 isRevision: !!context.isRevision,
                 recoveryMethod: context.recoveryMethod || null,
+                reviewLayer: context.layer || null,
                 legalBlockId: context.legalBlockId || null,
                 norma: context.norma || null,
                 articleStart: context.articleStart || null,
@@ -12787,6 +12839,77 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         let retentionDiagnosticRows = [];
+        let pendingLayeredReview = null;
+
+        function getLayeredReviewPlan(row, item, options = {}) {
+            const contest = options.contest || getConcursosMetadata()[currentConcurso] || {};
+            const state = row?.state || getRetentionTopicState(contest,item?.materia,item?.assunto,false);
+            const retention = Number.isFinite(Number(row?.retention)) ? Number(row.retention) : (state?.lastStudyAt ? calculateRetentionFromState(state,new Date()) : 100);
+            const accuracy = Number.isFinite(Number(row?.questionAccuracy)) ? Number(row.questionAccuracy) : (Number.isFinite(Number(state?.questionStats?.lastAccuracy)) ? Number(state.questionStats.lastAccuracy) : null);
+            const confidence = Math.max(0,Math.min(1,Number(state?.questionStats?.confidence)||0));
+            const overdue = !!row?.overdue;
+            const forgot = state?.lastRating === 'forgot';
+            let recommendedLayer = 1;
+            let reason = 'Comece testando a recuperação sem consultar material.';
+            if (forgot || retention < 40 || (accuracy != null && confidence >= .25 && accuracy < 45)) {
+                recommendedLayer = 4;
+                reason = 'Há evidência forte de perda do conteúdo; o reestudo é mais eficiente do que insistir em recuperação superficial.';
+            } else if (item?.teoria && (accuracy == null || accuracy < 75) && retention < 72) {
+                recommendedLayer = 3;
+                reason = 'A teoria já existe, mas os sinais de domínio ainda pedem teste objetivo por questões.';
+            } else if (overdue || retention < 82) {
+                recommendedLayer = 2;
+                reason = 'Uma revisão curta tende a recuperar o assunto sem exigir reestudo completo.';
+            }
+            const layers = [
+                { layer:1, label:'Recuperação mental', minutes:5, description:'Tente explicar conceitos, regras e exceções sem consultar o material.' },
+                { layer:2, label:'Revisão curta', minutes:10, description:'Consulte apenas resumo, anotação ou ponto central e confirme o que faltou.' },
+                { layer:3, label:'Questões', minutes:20, description:'Resolva uma bateria curta e registre total de questões e acertos.' },
+                { layer:4, label:'Reestudo de teoria', minutes:30, description:'Reconstrua o conteúdo quando a retenção ou o desempenho indicarem perda relevante.' }
+            ];
+            return { recommendedLayer, reason, retention, accuracy, layers };
+        }
+
+        function openLayeredReviewModal(index) {
+            const row = retentionDiagnosticRows[index];
+            if (!row?.state) return;
+            const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === row.state.key);
+            if (!item) return appNotice('Este assunto não está mais disponível no edital atual.', { title:'Pontos críticos' });
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const plan = getLayeredReviewPlan(row,item,{contest});
+            pendingLayeredReview = { index, row, item, plan };
+            const topic=document.getElementById('layeredReviewTopic');
+            const meta=document.getElementById('layeredReviewMeta');
+            const steps=document.getElementById('layeredReviewSteps');
+            if(topic) topic.textContent=`${item.materia} — ${item.assunto}`;
+            const perf = plan.accuracy == null ? '' : ` · Questões ${Math.round(plan.accuracy)}%`;
+            if(meta) meta.textContent=`Retenção ${Math.round(plan.retention)}%${perf}. ${plan.reason}`;
+            if(steps) steps.innerHTML=plan.layers.map(layer=>`<div class="layered-review-step ${layer.layer===plan.recommendedLayer?'recommended':''}"><div class="layered-review-number">${layer.layer}</div><div class="layered-review-content"><strong>${escapeHtml(layer.label)}${layer.layer===plan.recommendedLayer?' · recomendada':''}</strong><span>${escapeHtml(layer.description)} · ${layer.minutes} min sugeridos</span></div><button class="btn btn-secondary btn-sm" type="button" onclick="startLayeredReviewLayer(${layer.layer})">Iniciar</button></div>`).join('');
+            const modal=document.getElementById('modalLayeredReview'); if(modal) modal.style.display='flex';
+        }
+
+        function closeLayeredReviewModal() {
+            const modal=document.getElementById('modalLayeredReview'); if(modal) modal.style.display='none';
+            pendingLayeredReview=null;
+        }
+
+        function startRecommendedLayeredReview() {
+            const layer=pendingLayeredReview?.plan?.recommendedLayer;
+            if(layer) startLayeredReviewLayer(layer);
+        }
+
+        function startLayeredReviewLayer(layer) {
+            const pending=pendingLayeredReview; if(!pending?.item) return;
+            const item=pending.item;
+            const def=pending.plan.layers.find(x=>x.layer===Number(layer)); if(!def) return;
+            const base={kind:'study',materia:item.materia,assunto:item.assunto,itemId:item.id,isRevision:true,minutes:def.minutes,source:'layered_review',layer:Number(layer)};
+            const modal=document.getElementById('modalLayeredReview'); if(modal) modal.style.display='none';
+            pendingLayeredReview=null;
+            if(Number(layer)===1) return openActiveRecallGuide({...base,activityType:'revisao_ativa',method:'revisao_ativa',methodLabel:'Recuperação mental',recoveryMethod:'revisao_ativa'});
+            if(Number(layer)===2) return launchOpportunityPomodoro({...base,activityType:'teoria',method:'revisao_curta',methodLabel:'Revisão curta',recoveryMethod:'revisao_curta'});
+            if(Number(layer)===3) return launchOpportunityPomodoro({...base,activityType:'questoes',method:'questoes',methodLabel:'Questões',recoveryMethod:'questoes'});
+            return launchOpportunityPomodoro({...base,activityType:'teoria',method:'reestudo',methodLabel:'Reestudo de teoria',recoveryMethod:'reestudo'});
+        }
 
         function buildRetentionDiagnostics() {
             const contest = getConcursosMetadata()[currentConcurso] || {};
@@ -12799,8 +12922,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const overdue = !!(nextAt && Number.isFinite(nextAt.getTime()) && nextAt < now);
                 const overdueDays = overdue ? Math.max(0, Math.floor((now - nextAt) / 86400000)) : 0;
                 const questionAccuracy = Number.isFinite(Number(state?.questionStats?.lastAccuracy)) ? Number(state.questionStats.lastAccuracy) : null;
-                const riskScore = (100-retention) + (overdue ? 28 + Math.min(30,overdueDays*3) : 0) + (questionAccuracy!=null && questionAccuracy<60 ? (60-questionAccuracy)*.7 : 0);
-                return { state, retention, nextAt, overdue, overdueDays, questionAccuracy, riskScore };
+                const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === state.key);
+                const schedulerScore = item ? computeRetentionSchedulerScore(item,{contest,now,state,isRevision:true,activityType:'revisao_ativa',availableMinutes:20,suggestedMinutes:15}).total : 0;
+                const prioritySignal = Math.max(0,Math.min(50,schedulerScore/25));
+                const riskScore = (100-retention) + (overdue ? 28 + Math.min(30,overdueDays*3) : 0) + (questionAccuracy!=null && questionAccuracy<60 ? (60-questionAccuracy)*.7 : 0) + prioritySignal;
+                return { state, retention, nextAt, overdue, overdueDays, questionAccuracy, riskScore, schedulerScore };
             });
             const avg = rows.length ? rows.reduce((sum,row)=>sum+row.retention,0)/rows.length : null;
             const risk = rows.filter(row => row.retention < 70 || row.overdue || (row.questionAccuracy!=null && row.questionAccuracy<60));
@@ -12843,12 +12969,17 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
             list.innerHTML=retentionDiagnosticRows.map((row,index)=>{
                 const state=row.state;
+                const item=editalItems.find(i=>getStudyTopicKey(i.materia,i.assunto)===state.key);
+                const plan=item?getLayeredReviewPlan(row,item):null;
                 const status=row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
-                return `<div class="retention-risk-row"><div><div class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</div><div class="retention-risk-meta">${escapeHtml(status)}</div></div><div class="retention-risk-value">${Math.round(row.retention)}%</div><button class="btn btn-secondary btn-sm" type="button" onclick="startRetentionDiagnosticTopic(${index})">Estudar</button></div>`;
+                const layerDef=plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
+                const layerText=plan?`Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}`:'Revisão adaptativa';
+                return `<div class="retention-risk-row v965"><div class="critical-rank">${index+1}</div><div><div class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</div><div class="retention-risk-meta">${escapeHtml(status)}</div><div class="critical-layer-label">${escapeHtml(layerText)}</div></div><div class="retention-risk-value">${Math.round(row.retention)}%</div><button class="btn btn-secondary btn-sm" type="button" onclick="openLayeredReviewModal(${index})">Revisar</button></div>`;
             }).join('');
         }
 
         function startRetentionDiagnosticTopic(index) {
+            return openLayeredReviewModal(index);
             const row=retentionDiagnosticRows[index]; if(!row?.state) return;
             const state=row.state;
             const item=editalItems.find(i=>getStudyTopicKey(i.materia,i.assunto)===state.key);
