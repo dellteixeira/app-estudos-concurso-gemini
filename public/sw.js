@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-62-retention-diagnostics-ux-20260815';
+const CACHE_NAME = 'estudo-adaptativo-v9-63-proximidade-prova-20260815';
 
 const APP_SHELL = [
   './',
