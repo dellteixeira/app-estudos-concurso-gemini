@@ -1228,6 +1228,15 @@
             z-index: 120;
             box-shadow: 0 12px 34px rgba(0,0,0,.16);
         }
+        .header-control-stack {
+            width:100%; display:flex; flex-direction:column; gap:8px; flex:1 0 100%;
+        }
+        .header-control-stack .header-nav-tabs,
+        .header-control-stack .concurso-selector-bar { width:100%; margin:0; }
+        .header-control-stack .header-nav-tabs {
+            position:relative; top:auto; z-index:auto; box-shadow:none; flex-wrap:nowrap;
+        }
+        .header-control-stack .concurso-selector-bar { border-radius:15px; }
         .header-brand img { width: 42px; height: 42px; border: 2px solid rgba(19,168,255,.45); }
         .header-brand-copy { display:flex; flex-direction:column; min-width:0; }
         .header-brand-copy h2 { line-height:1.05; letter-spacing:-.025em; }
@@ -1465,7 +1474,7 @@
 
         /* Navegação principal desktop acompanha a rolagem e estaciona sob o cabeçalho. */
         @media (min-width: 901px) {
-            .nav-tabs {
+            .nav-tabs:not(.header-nav-tabs) {
                 position: sticky;
                 top: var(--desktop-tabs-sticky-top, 112px);
                 z-index: 110;
@@ -1484,6 +1493,7 @@
             .header-brand-copy h2 { font-size:1.18rem; }
             .header-brand-copy span { display:none; }
             .mobile-tools-toggle { display:inline-flex; width:44px; height:44px; align-items:center; justify-content:center; border:1px solid var(--modern-border); background:var(--modern-surface-2); color:#fff; border-radius:12px; font-size:1.15rem; }
+            .header-control-stack { gap:0; }
             .concurso-selector-bar { order:3; margin-top:8px; padding:.65rem; }
             .concurso-selector-bar label { display:none; }
             .concurso-selector-bar .btn-warning, .concurso-selector-bar .btn-danger { display:none; }
@@ -2918,23 +2928,31 @@
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
-            <div class="concurso-selector-bar">
-                <label><strong>Concurso:</strong></label>
-                <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
-                <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
-                <button id="btnRenomearConcurso" class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
-                <button id="btnExcluirConcurso" class="btn btn-danger btn-sm" onclick="removerConcursoAtual(this)">Excluir</button>
-                
-                <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
-                    Sem data de prova
+            <div class="header-control-stack">
+                <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
+                    <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
+                    <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
+                    <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
+                    <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
                 </div>
-                <div id="syncStatusPill" class="sync-status-pill" role="status" aria-live="polite" title="Estado da sincronização">
-                    <span class="sync-dot" aria-hidden="true"></span>
-                    <span id="syncStatusText">Verificando…</span>
-                    <span id="syncStatusLast" class="sync-last"></span>
+                <div class="concurso-selector-bar">
+                    <label><strong>Concurso:</strong></label>
+                    <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
+                    <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
+                    <button id="btnRenomearConcurso" class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
+                    <button id="btnExcluirConcurso" class="btn btn-danger btn-sm" onclick="removerConcursoAtual(this)">Excluir</button>
+                    
+                    <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
+                        Sem data de prova
+                    </div>
+                    <div id="syncStatusPill" class="sync-status-pill" role="status" aria-live="polite" title="Estado da sincronização">
+                        <span class="sync-dot" aria-hidden="true"></span>
+                        <span id="syncStatusText">Verificando…</span>
+                        <span id="syncStatusLast" class="sync-last"></span>
+                    </div>
+                    <button class="btn btn-secondary btn-sm btn-account-header" type="button" onclick="openAccountModal()" title="Abrir dados e segurança da conta">Conta</button>
+                    <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
                 </div>
-                <button class="btn btn-secondary btn-sm btn-account-header" type="button" onclick="openAccountModal()" title="Abrir dados e segurança da conta">Conta</button>
-                <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
             </div>
         </header>
 
@@ -2985,15 +3003,8 @@
             </label>
             <button class="btn-action" onclick="handleActionButton(this, openModalAnaliseEditalIA)">Analisar Edital com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
-            <button class="btn-action" onclick="handleActionButton(this, clearData)">Limpar Edital Atual</button>
+            <button class="btn-action" type="button" onclick="clearData()">Limpar Edital Atual</button>
             <button class="btn-action" onclick="handleActionButton(this, toggleDarkMode)">Modo Claro/Escuro</button>
-        </div>
-
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
-            <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
-            <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
-            <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
         </div>
 
         <!-- TAB 1: EDITAL VERTICALIZADO -->
@@ -8920,26 +8931,95 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function clearData() {
-            if (!hasRealCurrentConcurso()) return appNotice('Selecione um concurso real antes de limpar o edital.', { title:'Limpar Edital Atual' });
-            const count = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso).length;
-            if (!count) return appNotice('O edital atual já está vazio.', { title:'Limpar Edital Atual' });
+            if (!hasRealCurrentConcurso()) {
+                await appNotice('Selecione um concurso real antes de limpar o edital.', { title:'Limpar Edital Atual' });
+                return;
+            }
+
+            const concursoAlvo = currentConcurso;
+            const toRemove = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === concursoAlvo);
+            const count = toRemove.length;
+            if (!count) {
+                await appNotice('O edital atual já está vazio.', { title:'Limpar Edital Atual' });
+                return;
+            }
 
             const first = await appConfirm(
-                `Você está prestes a apagar ${count} tópico${count===1?'':'s'} do edital "${currentConcurso}". Esta ação remove as matérias e assuntos do edital atual.`,
-                { title:'Proteger contra exclusão acidental', confirmText:'Continuar', danger:true }
+                `Você está prestes a apagar ${count} tópico${count===1?'':'s'} do edital "${concursoAlvo}". Matérias e assuntos deste concurso serão removidos.`,
+                { title:'Limpar Edital Atual', confirmText:'Continuar', danger:true }
             );
             if (!first) return;
+
             const second = await appConfirm(
-                `Confirma a exclusão do edital "${currentConcurso}"? Esta ação não pode ser desfeita pelo botão Voltar.`,
+                `Confirma a exclusão completa do edital "${concursoAlvo}"? O histórico de estudo já registrado será preservado, mas os tópicos do edital não poderão ser recuperados pelo botão Voltar.`,
                 { title:'Confirmação final', confirmText:'Apagar edital', danger:true }
             );
             if (!second) return;
 
-            const toRemove = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-            for (const item of toRemove) await deleteEditalItemFromCloud(item.id);
+            const ids = toRemove.map(item => String(item.id));
+            const idSet = new Set(ids);
+
+            // Primeiro aplica a exclusão localmente em uma única operação. Isso garante resposta
+            // imediata inclusive offline; a fila de sincronização cuida do Supabase depois.
+            allEditalItems = allEditalItems.filter(item => !idSet.has(String(item.id)));
+            const syncState = getSyncState();
+            ids.forEach(id => {
+                delete syncState.editalUpserts[id];
+                if (!syncState.editalDeletes.includes(id)) syncState.editalDeletes.push(id);
+            });
+            saveSyncState(syncState);
+            saveEditalToLocalStorage();
+
+            // Remove somente metadados derivados dos tópicos apagados. Horas/sessões históricas
+            // permanecem intactas, pois studySessions é a fonte canônica do tempo estudado.
+            const metadata = getConcursosMetadata();
+            const contest = metadata[concursoAlvo];
+            if (contest) {
+                if (contest.adaptiveRevisionProgress) {
+                    ids.forEach(id => delete contest.adaptiveRevisionProgress[id]);
+                }
+                if (contest.topicStudyPlans) {
+                    ids.forEach(id => delete contest.topicStudyPlans[id]);
+                }
+                await saveConcursosMetadata(metadata);
+            }
+
             filterDataByConcurso();
+            renderMonthCalendar();
             updateModernOverview();
-            await appNotice('O edital atual foi apagado.', { title:'Edital limpo' });
+            renderRetentionDiagnostics?.();
+            updateSyncIndicator();
+
+            let cloudPending = false;
+            if (navigator.onLine && currentUser) {
+                try {
+                    for (const batch of chunkArray(ids, 100)) {
+                        const result = await runSupabaseRequest(() => supabaseClient.from('edital').delete()
+                            .in('id', batch)
+                            .eq('user_id', currentUser.id));
+                        throwIfSupabaseError(result, 'Falha ao excluir edital no servidor');
+
+                        const latest = getSyncState();
+                        const confirmed = new Set(batch.map(String));
+                        latest.editalDeletes = latest.editalDeletes.filter(id => !confirmed.has(String(id)));
+                        saveSyncState(latest);
+                    }
+                    setLastSuccessfulSyncNow();
+                } catch (error) {
+                    cloudPending = true;
+                    console.warn('Edital removido localmente; exclusão mantida na fila de sincronização:', error);
+                }
+            } else {
+                cloudPending = true;
+            }
+
+            updateSyncIndicator();
+            await appNotice(
+                cloudPending
+                    ? `O edital "${concursoAlvo}" foi limpo neste dispositivo. A exclusão no servidor ficará pendente até a próxima sincronização.`
+                    : `O edital "${concursoAlvo}" foi apagado com sucesso.`,
+                { title:'Edital limpo' }
+            );
         }
 
         async function importJSON(event) {
