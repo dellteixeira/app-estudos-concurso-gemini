@@ -165,3 +165,12 @@ V9.63 — PROXIMIDADE DA PROVA + NOVA IDENTIDADE
 - Cada fase altera de verdade o peso de Teoria, Questões, Revisões e Lei Seca, além de reduzir conteúdo novo na reta final.
 - Retenção e Diagnóstico mostra a fase atual e orientação estratégica.
 - Tenho tempo agora passa a considerar a fase da prova nas recomendações.
+
+
+V9.64 — Recuperação Ativa Inteligente
+- Motor escolhe Questões, Flashcards, Revisão Ativa, Lei Seca, Reestudo ou Teoria.
+- Decisão usa retenção, desempenho, tempo, contexto, fase da prova e recursos disponíveis.
+- Revisão ativa guiada genérica funciona mesmo sem flashcards.
+- Retenção Engine schema 4 registra revisao_ativa sem marcar teoria do edital indevidamente.
+- Retenção e Diagnóstico também usa o seletor de método.
+- Interface preservada sem ícones e responsiva no mobile.
