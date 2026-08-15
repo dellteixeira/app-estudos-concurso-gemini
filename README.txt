@@ -190,3 +190,5 @@ V9.65.1 — Reorganização Adaptativa de Matérias
 - Fair-share deixa de ser o fator dominante; passa a funcionar apenas como mecanismo de equilíbrio/frequência atendida.
 - Diversidade diária e bloqueio de repetição consecutiva permanecem ativos.
 - Mensagens de confirmação e conclusão foram atualizadas para refletir a lógica real do scheduler.
+
+V9.65.2 - Corrige Limpar Edital Atual com exclusao local imediata + fila Supabase e anexa a navegacao principal a barra de concurso.
