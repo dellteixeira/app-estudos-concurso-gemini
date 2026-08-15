@@ -4796,16 +4796,27 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function buildDisplayedMateriaOrder(materiasMap) {
             const names = Object.keys(materiasMap);
-            const fallback = [...names].sort((a, b) => {
-                const pa = clampMateriaPriority(materiasMap[a].prioridade || 1);
-                const pb = clampMateriaPriority(materiasMap[b].prioridade || 1);
-                if (pa !== pb) return pa - pb;
-                return names.indexOf(a) - names.indexOf(b);
-            });
+            if (!names.length) return [];
+
+            // Regra canônica de exibição:
+            // 1) a prioridade da matéria é sempre soberana: P1, P2, P3, P4;
+            // 2) a ordem manual é preservada apenas ENTRE matérias da mesma prioridade;
+            // 3) matérias novas, ainda ausentes de materiaOrder, entram ao fim do seu próprio bloco de prioridade.
             const stored = getStoredMateriaOrder().filter(name => names.includes(name));
-            const missing = fallback.filter(name => !stored.includes(name));
-            // A ordem manual é soberana mesmo quando duas matérias possuem a mesma prioridade.
-            return stored.length ? [...stored, ...missing] : fallback;
+            const storedIndex = new Map(stored.map((name, index) => [name, index]));
+            const naturalIndex = new Map(names.map((name, index) => [name, index]));
+
+            return [...names].sort((a, b) => {
+                const pa = clampMateriaPriority(materiasMap[a]?.prioridade || 1);
+                const pb = clampMateriaPriority(materiasMap[b]?.prioridade || 1);
+                if (pa !== pb) return pa - pb;
+
+                const aStored = storedIndex.has(a);
+                const bStored = storedIndex.has(b);
+                if (aStored && bStored) return storedIndex.get(a) - storedIndex.get(b);
+                if (aStored !== bStored) return aStored ? -1 : 1;
+                return naturalIndex.get(a) - naturalIndex.get(b);
+            });
         }
 
         async function persistMateriaOrder(order) {
@@ -5074,7 +5085,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const materiasMap = {};
             editalItems.forEach(item => {
                 const mat = item.materia || 'Geral';
-                if (!materiasMap[mat]) materiasMap[mat] = { items: [], prioridade: item.prioridade || 1 };
+                const itemPriority = clampMateriaPriority(item.prioridade || 1);
+                if (!materiasMap[mat]) materiasMap[mat] = { items: [], prioridade: itemPriority };
+                else materiasMap[mat].prioridade = Math.min(clampMateriaPriority(materiasMap[mat].prioridade), itemPriority);
                 materiasMap[mat].items.push(item);
             });
 
