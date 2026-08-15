@@ -7426,6 +7426,87 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return 5 - priority; // P1=4, P2=3, P3=2, P4=1.
         }
 
+        // V9.65.1 — Score adaptativo da matéria.
+        // A frequência entre disciplinas passa a reagir ao estado real de aprendizagem,
+        // e não apenas ao peso/fair-share. O resultado é normalizado em 0–100.
+        function computeMateriaAdaptiveScore(materia, topicItems, metadata) {
+            const contest = metadata?.[currentConcurso] || {};
+            const now = new Date();
+            const items = Array.isArray(topicItems) ? topicItems : [];
+            if (!items.length) return { total:0, adaptiveWeight:1, components:{} };
+
+            const explicitWeight = Math.max(0.25, getMateriaScheduleWeight(materia, items, metadata));
+            const priority = Math.max(1, Math.min(4, Math.min(...items.map(i => Number(i.prioridade) || 2))));
+            const phase = getExamPhaseProfile(contest, now);
+
+            let retentionSum = 0;
+            let retentionCount = 0;
+            let overdueCount = 0;
+            let overdueDaysSum = 0;
+            let questionRiskSum = 0;
+            let questionCount = 0;
+            let topicScoreSum = 0;
+            let topicScorePeak = 0;
+
+            items.forEach(item => {
+                const state = getRetentionTopicState(contest, item?.materia, item?.assunto, false);
+                const retention = state?.lastStudyAt ? calculateRetentionFromState(state, now) : null;
+                if (Number.isFinite(retention)) {
+                    retentionSum += retention;
+                    retentionCount++;
+                }
+
+                const nextAt = state?.nextReviewAt ? new Date(state.nextReviewAt) : null;
+                if (nextAt && Number.isFinite(nextAt.getTime()) && nextAt <= now) {
+                    overdueCount++;
+                    overdueDaysSum += Math.max(0, (now.getTime() - nextAt.getTime()) / 86400000);
+                }
+
+                const accuracy = Number(state?.questionStats?.lastAccuracy);
+                if (Number.isFinite(accuracy)) {
+                    const confidence = Math.max(0.08, Math.min(1, Number(state?.questionStats?.confidence) || 0.25));
+                    questionRiskSum += Math.max(0, 100 - accuracy) * confidence;
+                    questionCount++;
+                }
+
+                const score = computeRetentionSchedulerScore(item, { contest, now }).total;
+                topicScoreSum += score;
+                topicScorePeak = Math.max(topicScorePeak, score);
+            });
+
+            const avgRetention = retentionCount ? retentionSum / retentionCount : null;
+            const avgQuestionRisk = questionCount ? questionRiskSum / questionCount : 0;
+            const avgTopicScore = topicScoreSum / items.length;
+            const avgOverdueDays = overdueCount ? overdueDaysSum / overdueCount : 0;
+            const overdueRatio = overdueCount / items.length;
+
+            const components = {
+                // Peso continua relevante, porém deixou de comandar sozinho a distribuição.
+                weight: Math.min(18, explicitWeight * 3.2),
+                priority: (5 - priority) * 5.5,
+                retentionRisk: avgRetention == null ? 4 : Math.min(24, Math.max(0, 100 - avgRetention) * 0.24),
+                overdue: Math.min(22, overdueRatio * 18 + Math.min(8, avgOverdueDays * 0.8)),
+                questions: Math.min(16, avgQuestionRisk * 0.16),
+                topicUrgency: Math.min(16, (avgTopicScore * 0.008) + (topicScorePeak * 0.004)),
+                examPhase: Math.min(8, Math.max(0, Number(phase?.score) || 0) * 0.025)
+            };
+
+            const raw = Object.values(components).reduce((sum, value) => sum + Number(value || 0), 0);
+            const total = Math.max(0, Math.min(100, raw));
+            // 1–5.5: matérias urgentes podem aparecer mais vezes, sem bloquear as demais.
+            const adaptiveWeight = Math.max(1, Math.min(5.5, 1 + total / 22));
+            return {
+                total,
+                adaptiveWeight,
+                components,
+                avgRetention,
+                avgQuestionRisk,
+                overdueCount,
+                priority,
+                explicitWeight
+            };
+        }
+
         function createWeightedInterleavingState(items, metadata, { pendingOnly = true } = {}) {
             const grouped = new Map();
             const source = pendingOnly ? items.filter(item => !(item.teoria && item.questoes)) : [...items];
@@ -7442,10 +7523,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     if (Math.abs(scoreA-scoreB) > 1e-9) return scoreB-scoreA;
                     return (a.assunto_prioridade||1)-(b.assunto_prioridade||1);
                 });
+                const materiaAdaptive = computeMateriaAdaptiveScore(materia, topicItems, metadata);
                 return {
                     materia,
                     items: sortedItems,
+                    // Mantido para compatibilidade/diagnóstico; a seleção usa adaptiveWeight.
                     weight: Math.max(0.25, getMateriaScheduleWeight(materia, topicItems, metadata)),
+                    adaptiveWeight: materiaAdaptive.adaptiveWeight,
+                    adaptiveScore: materiaAdaptive.total,
+                    adaptiveComponents: materiaAdaptive.components,
                     served: 0,
                     lastTurn: -1,
                     priority: Math.max(1, Math.min(4, Math.min(...topicItems.map(i => Number(i.prioridade)||2)))),
@@ -7473,15 +7559,22 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const unseenToday = available.filter(q => !usedMateriasToday.has(q.materia));
             if (unseenToday.length) available = unseenToday;
 
-            // 3) Fair-share ponderado: P1 aparece com maior frequência que P2/P3/P4,
-            // sem criar blocos consecutivos da mesma matéria. Tempo sem aparecer desempata.
+            // 3) Seleção híbrida adaptativa. Urgência da matéria domina a decisão,
+            // enquanto frequência já atendida reduz progressivamente sua pressão.
+            // O tempo de espera impede que matérias de menor risco sejam esquecidas.
             available.sort((a,b) => {
-                const ratioA = a.served / a.weight;
-                const ratioB = b.served / b.weight;
-                if (Math.abs(ratioA - ratioB) > 1e-9) return ratioA - ratioB;
-                const waitA = state.turn - a.lastTurn;
-                const waitB = state.turn - b.lastTurn;
-                if (waitA !== waitB) return waitB - waitA;
+                const waitA = Math.max(0, state.turn - a.lastTurn);
+                const waitB = Math.max(0, state.turn - b.lastTurn);
+                const pressureA = (a.adaptiveScore || 0) * 8
+                    + Math.min(220, waitA * 32)
+                    + Math.min(120, (a.schedulerScore || 0) * 0.06)
+                    - (a.served / Math.max(1, a.adaptiveWeight || 1)) * 185;
+                const pressureB = (b.adaptiveScore || 0) * 8
+                    + Math.min(220, waitB * 32)
+                    + Math.min(120, (b.schedulerScore || 0) * 0.06)
+                    - (b.served / Math.max(1, b.adaptiveWeight || 1)) * 185;
+                if (Math.abs(pressureA - pressureB) > 1e-9) return pressureB - pressureA;
+                if (Math.abs((a.adaptiveScore||0)-(b.adaptiveScore||0)) > 1e-9) return (b.adaptiveScore||0)-(a.adaptiveScore||0);
                 if (Math.abs((a.schedulerScore||0)-(b.schedulerScore||0)) > 1e-9) return (b.schedulerScore||0)-(a.schedulerScore||0);
                 if (a.priority !== b.priority) return a.priority - b.priority;
                 return a.materia.localeCompare(b.materia, 'pt-BR');
@@ -7550,7 +7643,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const ok = await appConfirm(
                 `Reorganizar ${pendingCount} tópicos pendentes a partir de hoje?\n\n` +
-                'O histórico dos dias anteriores será preservado. As matérias serão intercaladas conforme o peso do edital; quando não houver peso explícito, será usada a prioridade da matéria. Tópicos adicionados manualmente também serão incluídos.',
+                'O histórico dos dias anteriores será preservado. A redistribuição será adaptativa: o sistema combinará peso, prioridade P1–P4, retenção, revisões vencidas, desempenho em questões, urgência dos tópicos e proximidade da prova. Também evitará repetir a mesma matéria consecutivamente quando houver alternativa. Tópicos adicionados manualmente serão incluídos.',
                 { title:'Reorganizar Matérias', confirmText:'Reorganizar', confirmClass:'btn-primary' }
             );
             if (!ok) return;
@@ -7623,7 +7716,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             await saveConcursosMetadata(metadata);
             renderMonthCalendar();
             renderPomodoroDailyCounter();
-            await appNotice('Cronograma reorganizado. O histórico anterior foi preservado e os tópicos pendentes foram intercalados por disciplina com prioridade ponderada P1–P4, evitando repetição consecutiva quando houver alternativa.', { title:'Reorganização concluída' });
+            await appNotice('Cronograma reorganizado de forma adaptativa. O histórico anterior foi preservado e a frequência das matérias foi recalculada com peso, prioridade, retenção, revisões vencidas, desempenho em questões, urgência dos tópicos e proximidade da prova. A diversidade entre disciplinas continua protegida.', { title:'Reorganização concluída' });
         }
 
         async function limparCronogramaMesAtual() {
