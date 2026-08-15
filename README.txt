@@ -174,3 +174,12 @@ V9.64 — Recuperação Ativa Inteligente
 - Retenção Engine schema 4 registra revisao_ativa sem marcar teoria do edital indevidamente.
 - Retenção e Diagnóstico também usa o seletor de método.
 - Interface preservada sem ícones e responsiva no mobile.
+
+
+V9.65 — Pontos Críticos e Revisão por Camadas
+- Fila de pontos críticos ordenada por retenção, atraso, desempenho e sinal do Retention Scheduler.
+- Quatro camadas: recuperação mental, revisão curta, questões e reestudo de teoria.
+- Recomendação da camada inicial com base em evidência de domínio, sem obrigar reestudo completo.
+- Integração com Retention Engine, desempenho em questões e sessões canônicas.
+- Revisões curtas não concluem indevidamente a teoria do edital.
+- Interface textual, compacta e responsiva para mobile.
