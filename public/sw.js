@@ -1,4 +1,5 @@
-const CACHE_NAME = 'estudo-adaptativo-v9-65-6-auditoria-consolidada-20260815';
+const APP_VERSION = '9.65.7';
+const CACHE_NAME = 'estudo-adaptativo-v9-65-7-controle-atualizacao-pwa-20260815';
 
 const APP_SHELL = [
   './',
@@ -12,7 +13,7 @@ const APP_SHELL = [
   './icon-512.png'
 ];
 
-async function primeOfflineAssets() {
+async function primeOfflineAssets(cleanupOldCaches = false) {
   const cache = await caches.open(CACHE_NAME);
   const results = await Promise.allSettled(APP_SHELL.map(async asset => {
     const response = await fetch(asset, { cache: 'reload' });
@@ -20,7 +21,7 @@ async function primeOfflineAssets() {
     await cache.put(asset, response.clone());
   }));
   const ready = results.every(result => result.status === 'fulfilled');
-  if (ready) {
+  if (ready && cleanupOldCaches) {
     const names = await caches.keys();
     await Promise.all(names.map(name => name === CACHE_NAME ? false : caches.delete(name)));
   }
@@ -28,17 +29,24 @@ async function primeOfflineAssets() {
 }
 
 self.addEventListener('install', event => {
-  self.skipWaiting();
-  event.waitUntil(primeOfflineAssets().catch(() => false));
+  event.waitUntil(primeOfflineAssets(false).catch(() => false));
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim().then(() => primeOfflineAssets().catch(() => false)));
+  event.waitUntil(self.clients.claim().then(() => primeOfflineAssets(true).catch(() => false)));
 });
 
 self.addEventListener('message', event => {
   if (event.data?.type === 'PRIME_OFFLINE_ASSETS') {
-    event.waitUntil(primeOfflineAssets().catch(() => false));
+    event.waitUntil(primeOfflineAssets(true).catch(() => false));
+    return;
+  }
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+  if (event.data?.type === 'GET_APP_VERSION' && event.source) {
+    event.source.postMessage({ type: 'APP_VERSION', version: APP_VERSION });
   }
 });
 
