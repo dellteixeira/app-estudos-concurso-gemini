@@ -2711,18 +2711,62 @@
             #tab-edital tbody tr.adaptive-edital-row input[type="checkbox"] { width:20px; height:20px; }
         }
 
-        /* V9.38 — reordenação manual de matérias por arraste */
-        .materia-header-row { cursor: grab; user-select: none; }
-        .materia-header-row:active { cursor: grabbing; }
-        .materia-header-row { cursor:grab; user-select:none; }
+        /* V9.65.4 — reordenação fluida de matérias por Pointer Events */
+        .materia-header-row {
+            cursor:grab;
+            user-select:none;
+            -webkit-user-select:none;
+            transition:transform .14s ease, opacity .14s ease, box-shadow .14s ease, filter .14s ease;
+        }
+        .materia-header-row:hover { filter:brightness(1.035); }
         .materia-header-row:active { cursor:grabbing; }
-        .materia-header-row.materia-dragging { opacity:.52; transform:scale(.995); cursor:grabbing; }
-        .materia-header-row.materia-drop-target { outline:2px solid var(--primary-blue); outline-offset:-2px; box-shadow:0 0 0 3px rgba(14,165,233,.12) inset; }
-        .materia-drag-hint { display:inline-flex; align-items:center; margin-left:8px; font-size:.66rem; opacity:.48; font-weight:700; white-space:nowrap; }
+        .materia-header-row.materia-dragging {
+            opacity:.28;
+            transform:scale(.995);
+            cursor:grabbing;
+        }
+        .materia-header-row.materia-drop-before {
+            box-shadow:inset 0 3px 0 var(--primary-blue), 0 -4px 12px rgba(14,165,233,.14);
+        }
+        .materia-header-row.materia-drop-after {
+            box-shadow:inset 0 -3px 0 var(--primary-blue), 0 4px 12px rgba(14,165,233,.14);
+        }
+        .materia-drag-hint {
+            display:inline-flex;
+            align-items:center;
+            margin-left:8px;
+            font-size:.66rem;
+            opacity:.52;
+            font-weight:700;
+            white-space:nowrap;
+        }
+        .materia-drag-ghost {
+            position:fixed;
+            z-index:99999;
+            pointer-events:none;
+            display:flex;
+            align-items:center;
+            min-height:58px;
+            padding:10px 16px;
+            border:1px solid rgba(56,189,248,.45);
+            border-radius:14px;
+            background:rgba(10,31,53,.97);
+            color:#fff;
+            box-shadow:0 18px 50px rgba(0,0,0,.36), 0 0 0 1px rgba(56,189,248,.12) inset;
+            font-weight:800;
+            letter-spacing:.01em;
+            transform:scale(1.01);
+            will-change:top,left,transform;
+        }
+        body.materia-touch-dragging {
+            overflow:hidden;
+            overscroll-behavior:none;
+        }
+        body.materia-touch-dragging * { cursor:grabbing !important; }
         @media (max-width:700px) {
-            .materia-header-row { touch-action: pan-y; }
+            .materia-header-row { touch-action:pan-y; }
             .materia-drag-hint { font-size:.6rem; margin-left:5px; }
-            body.materia-touch-dragging { overflow:hidden; }
+            .materia-drag-ghost { min-height:54px; padding:9px 12px; border-radius:12px; font-size:.9rem; }
         }
 
         /* V9.35 — Lei Seca integrada + conclusão manual de sessão */
@@ -2929,12 +2973,6 @@
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
             <div class="header-control-stack">
-                <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
-                    <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
-                    <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
-                    <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
-                    <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
-                </div>
                 <div class="concurso-selector-bar">
                     <label><strong>Concurso:</strong></label>
                     <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
@@ -2952,6 +2990,12 @@
                     </div>
                     <button class="btn btn-secondary btn-sm btn-account-header" type="button" onclick="openAccountModal()" title="Abrir dados e segurança da conta">Conta</button>
                     <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
+                </div>
+                <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
+                    <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
+                    <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
+                    <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
+                    <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
                 </div>
             </div>
         </header>
@@ -8652,6 +8696,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         let draggedMateriaName = null;
         let materiaPointerState = null;
         let suppressMateriaClickUntil = 0;
+        let materiaGlobalDragHandlersBound = false;
 
         function getStoredMateriaOrder() {
             const metadata = getConcursosMetadata();
@@ -8669,7 +8714,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             });
             const stored = getStoredMateriaOrder().filter(name => names.includes(name));
             const missing = fallback.filter(name => !stored.includes(name));
-            // Quando já existe ordem manual, ela é soberana. A prioridade não volta a ordenar a lista.
+            // A ordem manual é soberana mesmo quando duas matérias possuem a mesma prioridade.
             return stored.length ? [...stored, ...missing] : fallback;
         }
 
@@ -8711,7 +8756,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const targetIndexBefore = order.indexOf(targetName);
             if (sourceIndex < 0 || targetIndexBefore < 0) return;
 
-            // A matéria movida herda a prioridade da matéria de destino, mas a ordem visual é independente.
+            // A matéria movida herda a prioridade da matéria de destino. A posição manual permanece independente.
             const targetPriority = getMateriaPriority(targetName);
             order.splice(sourceIndex, 1);
             let targetIndex = order.indexOf(targetName);
@@ -8733,30 +8778,139 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         function cleanupMateriaDragVisuals() {
-            document.querySelectorAll('.materia-header-row.materia-dragging,.materia-header-row.materia-drop-target').forEach(r => {
-                r.classList.remove('materia-dragging','materia-drop-target');
+            document.querySelectorAll('.materia-header-row.materia-dragging,.materia-header-row.materia-drop-before,.materia-header-row.materia-drop-after').forEach(r => {
+                r.classList.remove('materia-dragging','materia-drop-before','materia-drop-after');
             });
+            document.querySelectorAll('.materia-drag-ghost').forEach(el => el.remove());
             document.body.classList.remove('materia-touch-dragging');
         }
 
-        function activateMateriaPointerDrag(state) {
+        function createMateriaDragGhost(state, clientX, clientY) {
+            const rect = state.sourceRow.getBoundingClientRect();
+            const ghost = document.createElement('div');
+            ghost.className = 'materia-drag-ghost';
+            ghost.textContent = state.sourceName;
+            const width = Math.min(rect.width, Math.max(260, window.innerWidth - 24));
+            ghost.style.width = `${width}px`;
+            ghost.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`;
+            ghost.style.top = `${Math.max(8, clientY - Math.min(rect.height / 2, 32))}px`;
+            document.body.appendChild(ghost);
+            state.ghost = ghost;
+            state.ghostOffsetY = Math.min(rect.height / 2, 32);
+        }
+
+        function positionMateriaGhost(state, clientY) {
+            if (!state?.ghost) return;
+            const ghostRect = state.ghost.getBoundingClientRect();
+            const maxTop = Math.max(8, window.innerHeight - ghostRect.height - 8);
+            const top = Math.max(8, Math.min(clientY - (state.ghostOffsetY || 28), maxTop));
+            state.ghost.style.top = `${top}px`;
+        }
+
+        function updateMateriaDropTarget(state, clientX, clientY) {
+            document.querySelectorAll('.materia-header-row.materia-drop-before,.materia-header-row.materia-drop-after').forEach(r => {
+                r.classList.remove('materia-drop-before','materia-drop-after');
+            });
+            const hit = document.elementFromPoint(clientX, clientY)?.closest?.('#edital-list .materia-header-row');
+            if (!hit) return;
+            state.targetRow = hit;
+            const rect = hit.getBoundingClientRect();
+            state.placeAfter = clientY > rect.top + rect.height / 2;
+            hit.classList.add(state.placeAfter ? 'materia-drop-after' : 'materia-drop-before');
+        }
+
+        function autoScrollMateriaDrag(clientY) {
+            const edge = Math.min(110, Math.max(70, window.innerHeight * .12));
+            if (clientY < edge) {
+                const speed = Math.max(5, Math.round((edge - clientY) / 5));
+                window.scrollBy({ top: -speed, behavior: 'auto' });
+            } else if (clientY > window.innerHeight - edge) {
+                const speed = Math.max(5, Math.round((clientY - (window.innerHeight - edge)) / 5));
+                window.scrollBy({ top: speed, behavior: 'auto' });
+            }
+        }
+
+        function activateMateriaPointerDrag(state, event) {
             if (!state || state.active) return;
             state.active = true;
             draggedMateriaName = state.sourceName;
             state.sourceRow.classList.add('materia-dragging');
-            if (state.pointerType !== 'mouse') document.body.classList.add('materia-touch-dragging');
-            suppressMateriaClickUntil = Date.now() + 700;
+            document.body.classList.add('materia-touch-dragging');
+            suppressMateriaClickUntil = Date.now() + 900;
             try { state.sourceRow.setPointerCapture(state.pointerId); } catch (_) {}
-            if (state.pointerType !== 'mouse' && navigator.vibrate) navigator.vibrate(25);
+            createMateriaDragGhost(state, event?.clientX ?? state.startX, event?.clientY ?? state.startY);
+            updateMateriaDropTarget(state, event?.clientX ?? state.startX, event?.clientY ?? state.startY);
+            if (state.pointerType !== 'mouse' && navigator.vibrate) navigator.vibrate(18);
+        }
+
+        async function finishMateriaPointerDrag(event, cancelled = false) {
+            const state = materiaPointerState;
+            if (!state || (event && state.pointerId !== event.pointerId)) return;
+            clearTimeout(state.timer);
+            materiaPointerState = null;
+            if (!state.active) return;
+
+            event?.preventDefault?.();
+            event?.stopPropagation?.();
+            const targetName = decodeURIComponent(state.targetRow?.dataset?.materia || '');
+            const sourceName = state.sourceName;
+            const placeAfter = !!state.placeAfter;
+            draggedMateriaName = null;
+            suppressMateriaClickUntil = Date.now() + 800;
+            cleanupMateriaDragVisuals();
+            try { state.sourceRow.releasePointerCapture(state.pointerId); } catch (_) {}
+            if (!cancelled && targetName && targetName !== sourceName) {
+                await moveMateriaToPosition(sourceName, targetName, placeAfter);
+            }
+        }
+
+        function ensureMateriaGlobalDragHandlers() {
+            if (materiaGlobalDragHandlersBound) return;
+            materiaGlobalDragHandlersBound = true;
+
+            document.addEventListener('pointermove', event => {
+                const state = materiaPointerState;
+                if (!state || state.pointerId !== event.pointerId) return;
+                const dx = event.clientX - state.startX;
+                const dy = event.clientY - state.startY;
+                const distance = Math.hypot(dx, dy);
+
+                if (!state.active) {
+                    if (state.pointerType === 'mouse') {
+                        if (distance < 4) return;
+                        activateMateriaPointerDrag(state, event);
+                    } else {
+                        // Antes do long-press, um gesto vertical normal continua rolando a página.
+                        if (distance > 11) {
+                            clearTimeout(state.timer);
+                            materiaPointerState = null;
+                            return;
+                        }
+                        return;
+                    }
+                }
+
+                event.preventDefault();
+                positionMateriaGhost(state, event.clientY);
+                updateMateriaDropTarget(state, event.clientX, event.clientY);
+                autoScrollMateriaDrag(event.clientY);
+            }, { passive:false, capture:true });
+
+            document.addEventListener('pointerup', event => finishMateriaPointerDrag(event, false), { capture:true });
+            document.addEventListener('pointercancel', event => finishMateriaPointerDrag(event, true), { capture:true });
         }
 
         function bindMateriaPointerReorder() {
+            ensureMateriaGlobalDragHandlers();
             document.querySelectorAll('#edital-list .materia-header-row').forEach(row => {
+                if (row.dataset.dragBound === '1') return;
+                row.dataset.dragBound = '1';
                 row.addEventListener('pointerdown', event => {
                     if (event.button !== undefined && event.button !== 0) return;
                     if (event.target.closest('input,button,select,a,label')) return;
                     const sourceName = decodeURIComponent(row.dataset.materia || '');
                     if (!sourceName) return;
+
                     const state = {
                         sourceRow: row,
                         sourceName,
@@ -8767,66 +8921,18 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         active: false,
                         targetRow: row,
                         placeAfter: false,
-                        timer: null
+                        timer: null,
+                        ghost: null
                     };
                     materiaPointerState = state;
+
                     if (state.pointerType !== 'mouse') {
-                        state.timer = setTimeout(() => activateMateriaPointerDrag(state), 380);
+                        // Long-press curto: rápido o bastante para parecer imediato, mas sem bloquear o scroll normal.
+                        state.timer = setTimeout(() => {
+                            if (materiaPointerState === state) activateMateriaPointerDrag(state, event);
+                        }, 220);
                     }
-                });
-
-                row.addEventListener('pointermove', event => {
-                    const state = materiaPointerState;
-                    if (!state || state.pointerId !== event.pointerId) return;
-                    const dx = event.clientX - state.startX;
-                    const dy = event.clientY - state.startY;
-                    const distance = Math.hypot(dx, dy);
-                    if (!state.active) {
-                        if (state.pointerType === 'mouse' && distance >= 6) {
-                            activateMateriaPointerDrag(state);
-                        } else if (state.pointerType !== 'mouse' && distance > 12) {
-                            clearTimeout(state.timer);
-                            materiaPointerState = null;
-                            return;
-                        } else {
-                            return;
-                        }
-                    }
-                    event.preventDefault();
-                    const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest?.('.materia-header-row');
-                    if (!hit) return;
-                    document.querySelectorAll('.materia-header-row.materia-drop-target').forEach(r => r.classList.remove('materia-drop-target'));
-                    state.targetRow = hit;
-                    hit.classList.add('materia-drop-target');
-                    const rect = hit.getBoundingClientRect();
-                    state.placeAfter = event.clientY > rect.top + rect.height / 2;
-                });
-
-                const finishPointer = async event => {
-                    const state = materiaPointerState;
-                    if (!state || state.pointerId !== event.pointerId) return;
-                    clearTimeout(state.timer);
-                    materiaPointerState = null;
-                    if (!state.active) return;
-                    event.preventDefault();
-                    const targetName = decodeURIComponent(state.targetRow?.dataset?.materia || '');
-                    const sourceName = state.sourceName;
-                    const placeAfter = !!state.placeAfter;
-                    draggedMateriaName = null;
-                    suppressMateriaClickUntil = Date.now() + 600;
-                    cleanupMateriaDragVisuals();
-                    try { state.sourceRow.releasePointerCapture(state.pointerId); } catch (_) {}
-                    if (targetName && targetName !== sourceName) await moveMateriaToPosition(sourceName, targetName, placeAfter);
-                };
-                row.addEventListener('pointerup', finishPointer);
-                row.addEventListener('pointercancel', event => {
-                    const state = materiaPointerState;
-                    if (!state || state.pointerId !== event.pointerId) return;
-                    clearTimeout(state.timer);
-                    materiaPointerState = null;
-                    draggedMateriaName = null;
-                    cleanupMateriaDragVisuals();
-                });
+                }, { passive:true });
             });
         }
 
@@ -8903,7 +9009,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             <div class="materia-header-content">
                                 <span class="materia-header-main">
                                     <strong class="materia-header-title">${escapeHtml(materiaName)}</strong>
-                                    <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${clampMateriaPriority(group.prioridade)}<span class="materia-drag-hint">arraste para reordenar e alterar prioridade</span></span>
+                                    <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${clampMateriaPriority(group.prioridade)}<span class="materia-drag-hint">segure e arraste para mover</span></span>
                                 </span>
                                 <span class="materia-header-right">
                                     <span class="materia-progress-ring" style="--pct:${materiaPct}"><span>${materiaPct}%</span></span>
