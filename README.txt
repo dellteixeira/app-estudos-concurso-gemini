@@ -117,3 +117,14 @@ V9.58 — ADAPTIVE REVIEWS
 - O reagendamento respeita os dias de estudo configurados pelo cronograma atual.
 - Revisões adaptativas concluídas permanecem visíveis no calendário como concluídas.
 - Layout do feedback é responsivo para mobile.
+
+
+V9.59 — ESTUDO POR OPORTUNIDADE / FLEXIBLE AVAILABILITY
+- Novo Preenchimento 3 sem horários e sem meta diária fixa.
+- Cada dia pode ser Estudo completo, Somente revisão ou Descanso.
+- Novo botão “Tenho tempo agora” com 5/10/20/40/60+ min.
+- Contextos: qualquer situação, deslocamento, caminhada e foco total.
+- Recomendações cruzam retenção, prioridade, progresso, continuidade e flashcards.
+- Retenção Adaptativa agenda revisões respeitando dias de descanso.
+- Modo flexível usa o cronograma apenas para revisões; conteúdo novo é escolhido sob demanda.
+- Layout responsivo otimizado para mobile.
