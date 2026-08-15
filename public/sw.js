@@ -1,10 +1,13 @@
-const APP_VERSION = '9.65.7';
-const CACHE_NAME = 'estudo-adaptativo-v9-65-7-controle-atualizacao-pwa-20260815';
+const APP_VERSION = '9.66.0';
+const CACHE_NAME = 'estudo-adaptativo-v9-66-performance-consistencia-seguranca-20260815';
 
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './app.css',
+  './app.js',
+  './pwa-update.js',
   './vendor/supabase.js',
   './vendor/chart.umd.min.js',
   './vendor/pdf.min.js',
