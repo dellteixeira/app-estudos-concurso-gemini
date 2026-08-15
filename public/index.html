@@ -2994,7 +2994,6 @@
 
         <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
         <div class="action-bar">
-            <button class="btn-action" onclick="openOpportunityStudyModal()">Tenho tempo agora</button>
             <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalViewEdital)">Ver / Anexar Edital PDF</button>
             <label class="btn-action" style="cursor: pointer;">
@@ -3151,7 +3150,6 @@
 
                     <div class="calendar-primary-actions">
                         <button class="btn btn-primary" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
-                        <button class="btn opportunity-btn" onclick="openOpportunityStudyModal()">Tenho tempo agora</button>
                         <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
                         <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
                         <button class="btn btn-primary" onclick="reorganizarMateriasCronograma()">Reorganizar Matérias</button>
@@ -3300,6 +3298,22 @@
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" id="appDialogCancelBtn" onclick="resolveAppDialog(false)">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="appDialogConfirmBtn" data-enter-default="true" onclick="resolveAppDialog(true)">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIÁLOGO INTERNO DE ENTRADA — evita prompt() nativo e funciona melhor em PWA/mobile -->
+    <div class="modal-overlay" id="modalAppPrompt" style="z-index:1410;">
+        <div class="modal" style="max-width:560px;">
+            <h3 id="appPromptTitle">Editar</h3>
+            <div class="form-group">
+                <label id="appPromptLabel" for="appPromptInput">Valor</label>
+                <input id="appPromptInput" type="text" autocomplete="off">
+                <div id="appPromptHelp" class="account-helper" style="display:none;"></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="resolveAppPrompt(false)">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="appPromptConfirmBtn" data-enter-default="true" onclick="resolveAppPrompt(true)">Salvar</button>
             </div>
         </div>
     </div>
@@ -3568,7 +3582,7 @@
     <div class="modal-overlay" id="modalFlexibleStudyConfig" style="z-index:1400;">
         <div class="modal modal-large" style="max-width:860px;">
             <h3> Estudo por Oportunidade</h3>
-            <p style="font-size:.88rem;color:#94a3b8;line-height:1.5;">Você não precisa definir horários. Informe apenas como cada dia deve se comportar; quando surgir uma oportunidade, toque em <strong>Tenho tempo agora</strong>.</p>
+            <p style="font-size:.88rem;color:#94a3b8;line-height:1.5;">Você não precisa definir horários. Informe apenas como cada dia deve se comportar; quando surgir uma oportunidade, toque em <strong>Estudar agora</strong>.</p>
             <div class="form-group">
                 <label><strong>Data de início:</strong></label>
                 <input type="date" id="flexDataInicio">
@@ -3595,7 +3609,7 @@
     <!-- V9.59 — OPORTUNIDADE DE ESTUDO AGORA -->
     <div class="modal-overlay" id="modalOpportunityStudy" style="z-index:1420;">
         <div class="modal modal-large" style="max-width:820px;">
-            <h3> Tenho tempo agora</h3>
+            <h3>Estudar agora</h3>
             <p id="opportunityModeHint" style="font-size:.84rem;color:#94a3b8;line-height:1.45;">Diga quanto tempo você tem. O sistema cruza memória, desempenho, prioridade, fase da prova e contexto para escolher o assunto e o método de estudo.</p>
             <h4 style="color:var(--primary-blue);margin-top:.8rem;">Quanto tempo você tem?</h4>
             <div class="opportunity-time-grid">
@@ -4548,6 +4562,46 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return new Promise(resolve => { appDialogResolver = () => resolve(true); });
         }
 
+        let appPromptResolver = null;
+
+        function resolveAppPrompt(confirmed) {
+            const modal = document.getElementById('modalAppPrompt');
+            const input = document.getElementById('appPromptInput');
+            if (modal) modal.style.display = 'none';
+            const resolver = appPromptResolver;
+            appPromptResolver = null;
+            if (resolver) resolver(confirmed ? (input ? input.value : '') : null);
+        }
+
+        function appPrompt(options = {}) {
+            const modal = document.getElementById('modalAppPrompt');
+            const title = document.getElementById('appPromptTitle');
+            const label = document.getElementById('appPromptLabel');
+            const input = document.getElementById('appPromptInput');
+            const help = document.getElementById('appPromptHelp');
+            const confirmBtn = document.getElementById('appPromptConfirmBtn');
+            if (!modal || !input) return Promise.resolve(null);
+            if (appPromptResolver) {
+                const previous = appPromptResolver;
+                appPromptResolver = null;
+                try { previous(null); } catch (_) {}
+            }
+            if (title) title.textContent = options.title || 'Editar';
+            if (label) label.textContent = options.label || 'Valor';
+            input.type = options.type || 'text';
+            input.value = options.value == null ? '' : String(options.value);
+            input.placeholder = options.placeholder || '';
+            if (options.maxLength) input.maxLength = options.maxLength; else input.removeAttribute('maxlength');
+            if (help) {
+                help.textContent = options.help || '';
+                help.style.display = options.help ? '' : 'none';
+            }
+            if (confirmBtn) confirmBtn.textContent = options.confirmText || 'Salvar';
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => { input.focus(); if (input.type === 'text') input.select(); });
+            return new Promise(resolve => { appPromptResolver = resolve; });
+        }
+
         function getTopVisibleModalOverlay() {
             const visible = [...document.querySelectorAll('.modal-overlay')].filter(el => {
                 const cs = getComputedStyle(el);
@@ -4566,6 +4620,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!modal) return false;
             const closers = {
                 modalAppDialog: () => resolveAppDialog(false),
+                modalAppPrompt: () => resolveAppPrompt(false),
                 modalSelectCronogramaType: () => closeModalSelectCronogramaType(),
                 modalFlexibleStudyConfig: () => closeFlexibleStudyConfig(),
                 modalOpportunityStudy: () => closeOpportunityStudyModal(),
@@ -4911,13 +4966,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderMonthCalendar();
             renderPomodoroDailyCounter();
             filterDataByConcurso();
-            await appNotice('Modo flexível ativado. Você não possui meta diária nem horário obrigatório. Use “Tenho tempo agora” sempre que surgir uma oportunidade.', { title:'Estudo por Oportunidade ativo' });
+            await appNotice('Modo flexível ativado. Você não possui meta diária nem horário obrigatório. Use “Estudar agora” sempre que surgir uma oportunidade.', { title:'Estudo por Oportunidade ativo' });
         }
 
         function openOpportunityStudyModal() {
             if (!currentUser) return;
             if (!currentConcurso || currentConcurso === 'Concurso Geral' || !editalItems.length) {
-                return appNotice('Crie ou selecione um concurso com matérias antes de pedir uma sugestão.', { title:'Tenho tempo agora' });
+                return appNotice('Crie ou selecione um concurso com matérias antes de pedir uma sugestão.', { title:'Estudar agora' });
             }
             opportunityIgnoreDayMode = false;
             opportunitySelectedMinutes = 20;
@@ -5324,7 +5379,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function launchOpportunityPomodoro(rec) {
             const item = editalItems.find(i => String(i.id)===String(rec.itemId)) || editalItems.find(i => i.materia===rec.materia && i.assunto===rec.assunto);
-            if (!item) return appNotice('O assunto recomendado não foi encontrado no edital.', { title:'Tenho tempo agora' });
+            if (!item) return appNotice('O assunto recomendado não foi encontrado no edital.', { title:'Estudar agora' });
             const requestedMinutes = Math.max(1,Math.min(240,Math.round(Number(rec.minutes)||opportunitySelectedMinutes)));
             const focusInput=document.getElementById('focoMin'); if(focusInput) focusInput.value=requestedMinutes;
             activeStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:getLocalDateKey(),plannedDateKey:getLocalDateKey(),adaptiveAdvance:false,isRevision:!!rec.isRevision,activityType:rec.activityType==='questoes'?'questoes':'teoria',recoveryMethod:rec.recoveryMethod||rec.method||null,layer:rec.layer||null,source:rec.source||'opportunity' };
@@ -7642,7 +7697,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!editalItems.length) { await appNotice('Não há matérias no edital atual para reorganizar.'); return; }
             const metadata = getConcursosMetadata();
             if (isFlexibleOpportunityMode(metadata[currentConcurso] || {})) {
-                return appNotice('O modo Estudo por Oportunidade não usa uma fila rígida para reorganizar. A melhor próxima atividade é calculada no momento em que você toca em “Tenho tempo agora”.', { title:'Modo flexível' });
+                return appNotice('O modo Estudo por Oportunidade não usa uma fila rígida para reorganizar. A melhor próxima atividade é calculada no momento em que você toca em “Estudar agora”.', { title:'Modo flexível' });
             }
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             const contestMeta = metadata[currentConcurso];
@@ -8350,6 +8405,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return String(nome || '').trim().toLowerCase() === 'concurso geral';
         }
 
+        function hasRealCurrentConcurso() {
+            return !!String(currentConcurso || '').trim() && !isSystemConcurso(currentConcurso);
+        }
+
         function updateConcursoActionState() {
             const hasRealConcurso = !!currentConcurso && !isSystemConcurso(currentConcurso);
             const renameBtn = document.getElementById('btnRenomearConcurso');
@@ -8450,15 +8509,31 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function renomearConcursoAtual() {
-            if (isSystemConcurso(currentConcurso)) return;
-            const novoNome = prompt(`Digite o novo nome para o concurso "${currentConcurso}":`, currentConcurso);
-            if (!novoNome || !novoNome.trim() || novoNome.trim() === currentConcurso) return;
-
-            const nomeFormatado = novoNome.trim();
-            let metadata = getConcursosMetadata();
-            if (metadata[nomeFormatado]) return alert('Já existe um concurso cadastrado com esse nome.');
+            if (!hasRealCurrentConcurso()) {
+                await appNotice('Crie ou selecione um concurso antes de renomear.', { title:'Renomear concurso' });
+                return;
+            }
 
             const antigoNome = currentConcurso;
+            const novoNome = await appPrompt({
+                title:'Renomear concurso',
+                label:'Novo nome do concurso',
+                value:antigoNome,
+                maxLength:140,
+                confirmText:'Renomear'
+            });
+            if (novoNome === null) return;
+            const nomeFormatado = String(novoNome).trim();
+            if (!nomeFormatado || nomeFormatado === antigoNome) return;
+
+            let metadata = getConcursosMetadata();
+            const nomeJaExiste = Object.keys(metadata).some(nome => nome !== antigoNome && nome.localeCompare(nomeFormatado,'pt-BR',{sensitivity:'base'}) === 0)
+                || allEditalItems.some(item => (item.concurso || 'Concurso Geral') !== antigoNome && String(item.concurso || '').localeCompare(nomeFormatado,'pt-BR',{sensitivity:'base'}) === 0);
+            if (nomeJaExiste) {
+                await appNotice('Já existe um concurso cadastrado com esse nome.', { title:'Renomear concurso' });
+                return;
+            }
+
             metadata[nomeFormatado] = metadata[antigoNome] || { dataProva: null, dateSchedule: {} };
             delete metadata[antigoNome];
             await saveConcursosMetadata(metadata);
@@ -8474,76 +8549,82 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 }
             });
             saveEditalToLocalStorage();
-            setFlashcardsDirty(true);
+            setFlashcardsDirty(true, antigoNome);
+            setFlashcardsDirty(true, nomeFormatado);
 
             currentConcurso = nomeFormatado;
             setLastStudiedConcurso(currentConcurso);
             changeConcurso(currentConcurso);
             if (navigator.onLine && currentUser) syncAllWithSupabase().catch(error => console.warn('Renomeação aguardando sincronização:', error));
-            alert(`Concurso renomeado com sucesso para "${nomeFormatado}".`);
+            await appNotice(`Concurso renomeado para "${nomeFormatado}".`, { title:'Concurso atualizado' });
         }
 
         async function removerConcursoAtual(btn = null) {
-            if (isSystemConcurso(currentConcurso)) return;
-
-            const concursoRemovido = currentConcurso;
-            if (!confirm(`Deseja remover o concurso "${concursoRemovido}" e todos os seus itens?`)) return;
-
-            const originalButtonText = btn ? btn.textContent : '';
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = 'Excluindo...';
+            if (!hasRealCurrentConcurso()) {
+                await appNotice('Crie ou selecione um concurso antes de excluir.', { title:'Excluir concurso' });
+                return;
             }
 
-            try {
-                // 1) Marca a exclusão antes de alterar a interface. Se a rede falhar,
-                // a sincronização futura continuará sabendo que o concurso deve ser apagado.
-                queueConcursoDelete(concursoRemovido);
+            const concursoRemovido = currentConcurso;
+            const first = await appConfirm(
+                `Deseja excluir o concurso "${concursoRemovido}"? Esta ação remove matérias, assuntos, cronograma e dados vinculados ao concurso.`,
+                { title:'Excluir concurso', confirmText:'Continuar', danger:true }
+            );
+            if (!first) return;
+            const second = await appConfirm(
+                `Confirma a exclusão definitiva do concurso "${concursoRemovido}" deste aplicativo?`,
+                { title:'Confirmação final', confirmText:'Excluir concurso', danger:true }
+            );
+            if (!second) return;
 
-                // 2) Remove todos os tópicos da memória de uma só vez e grava o edital uma única vez.
-                allEditalItems = allEditalItems.filter(item =>
-                    (item.concurso || 'Concurso Geral') !== concursoRemovido
-                );
+            const originalButtonText = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = 'Excluindo...'; }
+
+            try {
+                queueConcursoDelete(concursoRemovido);
+                const idsRemovidos = allEditalItems
+                    .filter(item => (item.concurso || 'Concurso Geral') === concursoRemovido)
+                    .map(item => String(item.id));
+                const syncState = getSyncState();
+                idsRemovidos.forEach(id => {
+                    delete syncState.editalUpserts[id];
+                    if (!syncState.editalDeletes.includes(id)) syncState.editalDeletes.push(id);
+                });
+                saveSyncState(syncState);
+
+                allEditalItems = allEditalItems.filter(item => (item.concurso || 'Concurso Geral') !== concursoRemovido);
                 saveEditalToLocalStorage();
 
-                // 3) Remove metadados/cronograma/notas/flashcards localmente sem esperar rede.
                 const metadata = getConcursosMetadata();
                 delete metadata[concursoRemovido];
                 metadataCache = metadata;
                 localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadata));
                 setMetadataDirty(true);
 
-                // 4) Troca de concurso e renderiza imediatamente — percepção instantânea para o usuário.
-                currentConcurso = 'Concurso Geral';
-                setLastStudiedConcurso(currentConcurso);
-                changeConcurso(currentConcurso);
-
-                // 5) O anexo é local; sua limpeza não precisa bloquear a interface.
                 deleteEditalFileRecord(getEditalFileStorageKey(concursoRemovido))
                     .catch(error => console.warn('Anexo local será removido posteriormente:', error));
 
-                // 6) Exclusão remota em lote ocorre em segundo plano:
-                //    1 DELETE do edital + 1 DELETE dos flashcards por concurso.
+                const remaining = Object.keys(metadata).filter(nome => !isSystemConcurso(nome));
+                currentConcurso = remaining[0] || 'Concurso Geral';
+                setLastStudiedConcurso(currentConcurso);
+                filterDataByConcurso();
+                renderMonthCalendar();
+                updateModernOverview();
+                renderRetentionDiagnostics();
+
                 if (navigator.onLine && currentUser) {
                     scheduleBackgroundTask(async () => {
-                        try {
-                            await syncAllWithSupabase();
-                        } catch (error) {
-                            console.warn(`Exclusão de "${concursoRemovido}" mantida na fila:`, error);
-                            updateOnlineStatusBannerOnly();
-                        }
+                        try { await syncAllWithSupabase(); }
+                        catch (error) { console.warn(`Exclusão de "${concursoRemovido}" mantida na fila:`, error); updateOnlineStatusBannerOnly(); }
                     }, 50);
                 }
 
-                alert(`Concurso "${concursoRemovido}" removido do aplicativo. A limpeza na nuvem continuará automaticamente em segundo plano.`);
+                await appNotice(`Concurso "${concursoRemovido}" removido. A sincronização com a nuvem continuará automaticamente quando necessário.`, { title:'Concurso excluído' });
             } catch (error) {
                 console.error('Falha ao excluir concurso:', error);
-                alert('Não foi possível concluir a exclusão local: ' + error.message);
+                await appNotice('Não foi possível concluir a exclusão local: ' + error.message, { title:'Falha ao excluir' });
             } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = originalButtonText || 'Excluir';
-                }
+                if (btn) { btn.disabled = false; btn.textContent = originalButtonText || 'Excluir'; }
             }
         }
 
@@ -9131,15 +9212,26 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function editarDataProva() {
-            if (isSystemConcurso(currentConcurso)) return;
-            let metadata = getConcursosMetadata();
-            const novaData = prompt(`Data da prova (AAAA-MM-DD):`, metadata[currentConcurso]?.dataProva || '');
-            if (novaData !== null) {
-                if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-                metadata[currentConcurso].dataProva = novaData.trim() || null;
-                await saveConcursosMetadata(metadata);
-                updateCountdownBadge();
+            if (!hasRealCurrentConcurso()) {
+                await appNotice('Crie ou selecione um concurso antes de definir a data da prova.', { title:'Data da prova' });
+                return;
             }
+            const metadata = getConcursosMetadata();
+            const novaData = await appPrompt({
+                title:'Data da prova',
+                label:'Data',
+                type:'date',
+                value:metadata[currentConcurso]?.dataProva || '',
+                help:'Deixe o campo vazio para remover a data cadastrada.',
+                confirmText:'Salvar data'
+            });
+            if (novaData === null) return;
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            metadata[currentConcurso].dataProva = String(novaData).trim() || null;
+            await saveConcursosMetadata(metadata);
+            updateCountdownBadge();
+            renderRetentionDiagnostics();
+            renderMonthCalendar();
         }
 
         let chartRenderSequence = 0;
@@ -10348,7 +10440,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 progressEl.style.width = '0%';
                 const contest = getConcursosMetadata()[currentConcurso] || {};
                 statusEl.textContent = isFlexibleOpportunityMode(contest)
-                    ? 'Modo flexível ativo • estude quando surgir uma oportunidade. Use “Tenho tempo agora”.'
+                    ? 'Modo flexível ativo • estude quando surgir uma oportunidade. Use “Estudar agora”.'
                     : 'Gere um cronograma para definir a meta diária ou use o modo Estudo por Oportunidade.';
                 return;
             }
