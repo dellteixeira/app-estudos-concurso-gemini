@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-57-retention-engine-core-20260814';
+const CACHE_NAME = 'painel-estudos-v9-58-adaptive-reviews-20260814';
 
 const APP_SHELL = [
   './',
