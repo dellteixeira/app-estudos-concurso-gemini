@@ -754,6 +754,26 @@
         .custom-day-hours strong { min-width:34px; color:var(--modern-blue-soft); }
         .custom-day-hours input { width:72px; margin-left:auto; }
         .revision-model-note { display:none; color:var(--modern-muted); font-size:.68rem; font-weight:700; }
+
+        /* V9.58 — Feedback de revisão adaptativa */
+        .adaptive-review-feedback-summary { display:flex; flex-direction:column; gap:6px; margin:8px 0 14px; padding:14px; border:1px solid var(--border-color); border-radius:12px; background:rgba(59,130,246,.06); }
+        .adaptive-review-feedback-summary strong { color:var(--header-materia-text); font-size:1rem; overflow-wrap:anywhere; }
+        .adaptive-review-feedback-summary span { color:#94a3b8; font-size:.82rem; line-height:1.45; }
+        .adaptive-review-feedback-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .adaptive-review-rating { display:flex; flex-direction:column; align-items:flex-start; gap:5px; min-height:86px; padding:13px; border-radius:12px; border:1px solid var(--border-color); background:rgba(15,23,42,.7); color:var(--text-color); cursor:pointer; text-align:left; transition:transform .15s ease,border-color .15s ease,background .15s ease; }
+        .adaptive-review-rating:hover { transform:translateY(-1px); border-color:rgba(96,165,250,.65); }
+        .adaptive-review-rating strong { font-size:.94rem; }
+        .adaptive-review-rating span { font-size:.74rem; opacity:.75; line-height:1.35; }
+        .adaptive-review-rating.forgot { border-color:rgba(239,68,68,.48); }
+        .adaptive-review-rating.hard { border-color:rgba(245,158,11,.48); }
+        .adaptive-review-rating.good { border-color:rgba(59,130,246,.48); }
+        .adaptive-review-rating.easy { border-color:rgba(34,197,94,.48); }
+        .adaptive-review-feedback-note { margin-top:12px; color:#94a3b8; font-size:.76rem; line-height:1.45; }
+        body.light-mode .adaptive-review-rating { background:#fff; }
+        @media (max-width:620px) {
+            .adaptive-review-feedback-grid { grid-template-columns:1fr; }
+            .adaptive-review-rating { min-height:70px; padding:11px 12px; }
+        }
         @media (max-width:900px) {
             .custom-daily-hours-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
             #tab-edital tbody tr:not(.materia-header-row) { grid-template-columns:68px 1fr !important; }
@@ -3252,6 +3272,7 @@
             <div class="form-group">
                 <select id="m2RevisionStrategy" style="width:100%;">
                     <option value="nenhuma">Sem Revisão Espaçada</option>
+                    <option value="retencao_adaptativa">🧠 Retenção Adaptativa — Ebbinghaus + desempenho</option>
                     <option value="revisao24730" selected>Revisão 1d, 7d e 30d</option>
                     <option value="classica">Revisão Clássica (7d, 30d, 90d)</option>
                     <option value="bimestral">Revisão Bimestral (1d, 15d, 30d, 60d)</option>
@@ -3305,6 +3326,7 @@
                 <label><strong>Estratégia de Revisões:</strong></label>
                 <select id="m1RevisionStrategy" style="width:100%;">
                     <option value="nenhuma">Sem revisões automáticas</option>
+                    <option value="retencao_adaptativa">🧠 Retenção Adaptativa — Ebbinghaus + desempenho</option>
                     <option value="revisao24730" selected>1d, 7d e 30d — revisão recomendada</option>
                     <option value="classica">Clássica — 7d, 30d e 90d</option>
                     <option value="bimestral">Bimestral — 1d, 15d, 30d e 60d</option>
@@ -3318,6 +3340,32 @@
                 <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
                 <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma 🚀</button>
             </div>
+        </div>
+    </div>
+
+    <!-- V9.58 — FEEDBACK DE REVISÃO ADAPTATIVA -->
+    <div class="modal-overlay" id="modalAdaptiveReviewFeedback" style="z-index:1410;">
+        <div class="modal" style="max-width:680px;">
+            <h3>🧠 Como foi esta revisão?</h3>
+            <div class="adaptive-review-feedback-summary">
+                <strong id="adaptiveReviewFeedbackTopic">—</strong>
+                <span id="adaptiveReviewFeedbackMeta">Avalie o quanto conseguiu recuperar o conteúdo sem ajuda.</span>
+            </div>
+            <div class="adaptive-review-feedback-grid">
+                <button class="adaptive-review-rating forgot" type="button" onclick="submitAdaptiveReviewFeedback('forgot')">
+                    <strong>Esqueci</strong><span>Não consegui recuperar o conteúdo.</span>
+                </button>
+                <button class="adaptive-review-rating hard" type="button" onclick="submitAdaptiveReviewFeedback('hard')">
+                    <strong>Difícil</strong><span>Lembrei com bastante esforço.</span>
+                </button>
+                <button class="adaptive-review-rating good" type="button" onclick="submitAdaptiveReviewFeedback('good')">
+                    <strong>Bom</strong><span>Recuperei bem o conteúdo.</span>
+                </button>
+                <button class="adaptive-review-rating easy" type="button" onclick="submitAdaptiveReviewFeedback('easy')">
+                    <strong>Fácil</strong><span>Lembrei rapidamente e com segurança.</span>
+                </button>
+            </div>
+            <div class="adaptive-review-feedback-note">A avaliação recalibra automaticamente a dificuldade, a estabilidade da memória e a próxima revisão.</div>
         </div>
     </div>
 
@@ -3552,6 +3600,7 @@
 
         const STRATEGIES_MAP = {
             nenhuma: [],
+            retencao_adaptativa: [],
             revisao24730: [1, 7, 30],
             classica: [7, 30, 90],
             bimestral: [1, 15, 30, 60],
@@ -3688,7 +3737,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.57',
+                    appVersion:'9.58',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -4188,6 +4237,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 modalDayContent: () => closeModalDayContent(),
                 modalBackupManager: () => closeBackupManager(),
                 modalAccount: () => closeAccountModal(),
+                modalAdaptiveReviewFeedback: () => {},
                 modalLegalReading: () => closeLegalReadingModal(),
                 modalEditarFlashcard: () => closeModalEditarFlashcard(),
                 modalFiltroEstudoFC: () => closeModalFiltroEstudoFlashcards(),
@@ -4488,6 +4538,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         function applySpacedRevisions(dateSchedule, baseDateObj, topicText, strategyKey) {
+            if (strategyKey === 'retencao_adaptativa') return;
             const daysOffset = STRATEGIES_MAP[strategyKey] || STRATEGIES_MAP.classica;
             daysOffset.forEach(offset => {
                 let revDate = new Date(baseDateObj);
@@ -4552,6 +4603,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 weekdays: [...selectedWeekdays], dailySlots: useCustomDailyHours ? null : selectedDailyHoursSlots,
                 customDailyHoursByWeekday: useCustomDailyHours ? Object.fromEntries(selectedWeekdays.map(dayIdx => [dayIdx, getMethod2HoursForWeekday(dayIdx)])) : null
             };
+            getRetentionEngine(metadata[currentConcurso], true).mode = strategyKey === 'retencao_adaptativa' ? 'adaptive' : 'shadow';
             await saveConcursosMetadata(metadata);
             closeModalMentorisMethod();
             renderMonthCalendar();
@@ -4608,6 +4660,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 method: 1, startDate: dataInicioStr, revisionStrategy: strategyKey,
                 includeSaturday: incSab, includeSunday: incDom, dailySlots
             };
+            getRetentionEngine(metadata[currentConcurso], true).mode = strategyKey === 'retencao_adaptativa' ? 'adaptive' : 'shadow';
             await saveConcursosMetadata(metadata);
             closeModalConfigHorarios();
             renderMonthCalendar();
@@ -5186,7 +5239,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
 
             topics.forEach((topicoStr, idx) => {
-                const cleanTop = topicoStr.replace(/^🔄 Rev \(\d+d\): /, '');
+                const cleanTop = normalizeScheduledTopicForStudy(topicoStr);
                 const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
                 const safeMatchedId = matchedItem ? encodeHandlerValue(matchedItem.id) : '';
                 const advanceHistory = !isRevisionScheduleText(topicoStr) ? getLatestAdvanceHistory(cleanTop, activeSelectedDateKey) : null;
@@ -5194,9 +5247,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const futureStudyHint = activeSelectedDateKey > getLocalDateKey() && matchedItem && !isRevisionScheduleText(topicoStr) ? `<span style="display:block; margin-top:3px; font-size:.68rem; opacity:.58;">Estudar agora pode antecipar este tópico com reflow do futuro.</span>` : '';
                 const studyPlanSummary = matchedItem && !isRevisionScheduleText(topicoStr) ? formatTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {}) : '';
                 const studyPlan = matchedItem ? getTopicStudyPlan(matchedItem, metadata[currentConcurso] || {}) : null;
+                const adaptiveReviewDone = isAdaptiveRetentionReviewText(topicoStr) && getAdaptiveRetentionReviewCompletion(metadata[currentConcurso] || {}, activeSelectedDateKey, cleanTop);
+                const adaptiveReviewBadge = adaptiveReviewDone ? `<span style="display:inline-flex;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:.68rem;color:#86efac;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);">✓ Revisada</span>` : '';
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong>${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
+                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong>${adaptiveReviewBadge}${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
                         <div class="day-topic-controls-row">
                             ${matchedItem ? `
                                 <div class="day-topic-status-inline">
@@ -5208,7 +5263,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                     </label>
                                 </div>
                             ` : ''}
-                            ${matchedItem ? `<div class="study-launch-controls">
+                            ${matchedItem && !adaptiveReviewDone ? `<div class="study-launch-controls">
                                 <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
                                 <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">▶ Teoria</button>
                                 <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">▶ Questões</button>
@@ -6378,9 +6433,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderMonthCalendar();
         }
 
-        function getScheduledItemStudyState(scheduleText, editalLookup = null) {
+        function getScheduledItemStudyState(scheduleText, editalLookup = null, dateKey = null) {
             const text = String(scheduleText || '');
-            const cleanTop = text.replace(/^🔄 Rev \((?:24h|\d+d)\): /, '');
+            const cleanTop = normalizeScheduledTopicForStudy(text);
             const isRevision = text.startsWith('🔄 Rev');
             const lookup = editalLookup || new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
             const matchedItem = lookup.get(cleanTop);
@@ -6391,9 +6446,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             let done = false;
             if (isRevision) {
-                const match = text.match(/🔄 Rev \((24h|\d+d)\):/);
-                const offset = match ? (match[1] === '24h' ? 1 : Number(match[1].replace('d',''))) : null;
-                done = offset ? getAdaptiveRevisionCompletion(matchedItem, offset) : false;
+                if (isAdaptiveRetentionReviewText(text)) {
+                    const contest = getConcursosMetadata()[currentConcurso] || {};
+                    done = dateKey ? getAdaptiveRetentionReviewCompletion(contest, dateKey, cleanTop) : false;
+                } else {
+                    const match = text.match(/🔄 Rev \((24h|\d+d)\):/);
+                    const offset = match ? (match[1] === '24h' ? 1 : Number(match[1].replace('d',''))) : null;
+                    done = offset ? getAdaptiveRevisionCompletion(matchedItem, offset) : false;
+                }
             } else {
                 // O estudo-base só está concluído quando as duas etapas foram realizadas.
                 done = !!(matchedItem.teoria && matchedItem.questoes);
@@ -6402,9 +6462,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return { done, isRevision, matched: true, cleanTop, matchedItem };
         }
 
-        function getPendingScheduledItems(items, editalLookup = null) {
+        function getPendingScheduledItems(items, editalLookup = null, dateKey = null) {
             if (!Array.isArray(items)) return [];
-            return items.filter(it => !getScheduledItemStudyState(it, editalLookup).done);
+            return items.filter(it => !getScheduledItemStudyState(it, editalLookup, dateKey).done);
         }
 
         function renderMonthCalendar() {
@@ -6436,7 +6496,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const badgeParts = [];
 
                 items.forEach(it => {
-                    const state = getScheduledItemStudyState(it, editalLookup);
+                    const state = getScheduledItemStudyState(it, editalLookup, dateKey);
                     if (state.isRevision) revisionCount++;
                     if (state.done) completedCount++;
                     badgeParts.push(`<div class="clean-subject-badge ${state.done ? 'done' : (state.isRevision ? 'rev' : '')}">${escapeHtml(it)}</div>`);
@@ -6929,7 +6989,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
             const scheduleWithPending = Object.keys(dateSchedule).sort().map(dKey => ({
                 date: dKey,
-                items: getPendingScheduledItems(dateSchedule[dKey], editalLookup)
+                items: getPendingScheduledItems(dateSchedule[dKey], editalLookup, dKey)
             }));
 
             const count = scheduleWithPending
@@ -8136,7 +8196,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         function normalizeScheduledTopicForStudy(rawText) {
-            return String(rawText || '').replace(/^🔄 Rev \((?:24h|\d+d)\):\s*/, '').trim();
+            return String(rawText || '').replace(/^🔄 Rev \((?:24h|\d+d|Adaptativa)\):\s*/, '').trim();
         }
 
         function renderActiveStudyContext() {
@@ -8182,10 +8242,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         // Núcleo inspirado na curva de esquecimento, executando em modo sombra:
         // calcula retenção/estabilidade por assunto sem substituir ainda o cronograma
         // ou as revisões tradicionais. A V9.58 poderá usar estes dados para reagendamento.
-        const RETENTION_ENGINE_SCHEMA_VERSION = 1;
+        const RETENTION_ENGINE_SCHEMA_VERSION = 2;
         const RETENTION_TARGET_DEFAULT = 0.82;
         const RETENTION_MIN_STABILITY_DAYS = 0.75;
         const RETENTION_MAX_STABILITY_DAYS = 3650;
+        let pendingAdaptiveReviewFeedback = null;
 
         function getRetentionEngine(contestMeta, create = false) {
             if (!contestMeta) return null;
@@ -8227,6 +8288,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     retention: 100,
                     reviewCount: 0,
                     lapseCount: 0,
+                    lastRating: null,
+                    ratingCounts: { forgot:0, hard:0, good:0, easy:0 },
                     totalMinutes: 0,
                     sessionCount: 0,
                     lastActivityType: null,
@@ -8270,6 +8333,154 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return next.toISOString();
         }
 
+        function normalizeRetentionRating(rating) {
+            return ['forgot','hard','good','easy'].includes(String(rating || '')) ? String(rating) : null;
+        }
+
+        function getRetentionRatingLabel(rating) {
+            return ({ forgot:'Esqueci', hard:'Difícil', good:'Bom', easy:'Fácil' })[rating] || rating;
+        }
+
+        function applyRetentionRatingToState(state, rating, eventDate, engine) {
+            const normalized = normalizeRetentionRating(rating);
+            if (!state || !normalized) return state;
+            const currentStability = Math.max(RETENTION_MIN_STABILITY_DAYS, Number(state.stability) || RETENTION_MIN_STABILITY_DAYS);
+            let stabilityFactor = 1;
+            let difficultyDelta = 0;
+            if (normalized === 'forgot') { stabilityFactor = 0.42; difficultyDelta = 1.35; }
+            if (normalized === 'hard') { stabilityFactor = 1.18; difficultyDelta = 0.45; }
+            if (normalized === 'good') { stabilityFactor = 1.95; difficultyDelta = -0.35; }
+            if (normalized === 'easy') { stabilityFactor = 2.70; difficultyDelta = -0.75; }
+
+            state.stability = Math.max(RETENTION_MIN_STABILITY_DAYS, Math.min(RETENTION_MAX_STABILITY_DAYS, currentStability * stabilityFactor));
+            state.difficulty = Math.max(1, Math.min(10, (Number(state.difficulty) || 5) + difficultyDelta));
+            if (!state.ratingCounts || typeof state.ratingCounts !== 'object') state.ratingCounts = { forgot:0, hard:0, good:0, easy:0 };
+            state.ratingCounts[normalized] = Math.max(0, Number(state.ratingCounts[normalized]) || 0) + 1;
+            state.lastRating = normalized;
+            if (normalized === 'forgot') state.lapseCount = Math.max(0, Number(state.lapseCount) || 0) + 1;
+            state.retention = 100;
+            state.lastReviewAt = eventDate.toISOString();
+            if (normalized === 'forgot') {
+                const next = new Date(eventDate.getTime() + 86400000);
+                state.nextReviewAt = next.toISOString();
+            } else {
+                state.nextReviewAt = estimateNextRetentionReviewAt(state, eventDate, engine?.targetRetention);
+            }
+            state.updatedAt = new Date().toISOString();
+            return state;
+        }
+
+        function isAdaptiveRetentionStrategy(contestMeta = null) {
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            return contest?.scheduleConfig?.revisionStrategy === 'retencao_adaptativa' || contest?.retentionEngine?.mode === 'adaptive';
+        }
+
+        function isAdaptiveRetentionReviewText(text) {
+            return /^🔄 Rev \(Adaptativa\):/.test(String(text || ''));
+        }
+
+        function dateKeyFromDate(date) {
+            const d = date instanceof Date ? date : new Date(date);
+            if (!Number.isFinite(d.getTime())) return getLocalDateKey();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        function isRetentionStudyDayAllowed(date, contestMeta) {
+            const cfg = contestMeta?.scheduleConfig || {};
+            const day = date.getDay();
+            if (cfg.method === 2 && Array.isArray(cfg.weekdays) && cfg.weekdays.length) return cfg.weekdays.includes(day);
+            if (cfg.method === 1) {
+                if (day === 6 && cfg.includeSaturday === false) return false;
+                if (day === 0 && cfg.includeSunday === false) return false;
+            }
+            return true;
+        }
+
+        function resolveAdaptiveReviewDate(nextReviewAt, contestMeta) {
+            let date = new Date(nextReviewAt || Date.now() + 86400000);
+            if (!Number.isFinite(date.getTime())) date = new Date(Date.now() + 86400000);
+            date.setHours(12,0,0,0);
+            const today = new Date(); today.setHours(12,0,0,0);
+            if (date <= today) date = new Date(today.getTime() + 86400000);
+            for (let i=0; i<21 && !isRetentionStudyDayAllowed(date, contestMeta); i++) date.setDate(date.getDate()+1);
+            return date;
+        }
+
+        function removeFutureAdaptiveRetentionReviews(dateSchedule, topicText, preserveThroughKey = getLocalDateKey()) {
+            Object.keys(dateSchedule || {}).forEach(dateKey => {
+                if (dateKey <= preserveThroughKey || !Array.isArray(dateSchedule[dateKey])) return;
+                dateSchedule[dateKey] = dateSchedule[dateKey].filter(raw => !(isAdaptiveRetentionReviewText(raw) && normalizeScheduledTopicForStudy(raw) === topicText));
+                if (!dateSchedule[dateKey].length) delete dateSchedule[dateKey];
+            });
+        }
+
+        function scheduleNextAdaptiveRetentionReview(contestMeta, state, preserveThroughKey = getLocalDateKey()) {
+            if (!contestMeta || !state || !state.nextReviewAt) return null;
+            if (!contestMeta.dateSchedule || typeof contestMeta.dateSchedule !== 'object') contestMeta.dateSchedule = {};
+            const topicText = getStudyTopicKey(state.materia, state.assunto);
+            removeFutureAdaptiveRetentionReviews(contestMeta.dateSchedule, topicText, preserveThroughKey);
+            const targetDate = resolveAdaptiveReviewDate(state.nextReviewAt, contestMeta);
+            const dateKey = dateKeyFromDate(targetDate);
+            if (!contestMeta.dateSchedule[dateKey]) contestMeta.dateSchedule[dateKey] = [];
+            const reviewText = `🔄 Rev (Adaptativa): ${topicText}`;
+            if (!contestMeta.dateSchedule[dateKey].includes(reviewText)) contestMeta.dateSchedule[dateKey].push(reviewText);
+            state.nextReviewAt = new Date(`${dateKey}T12:00:00`).toISOString();
+            return dateKey;
+        }
+
+        function markAdaptiveRetentionReviewCompleted(contestMeta, dateKey, topicKey, rating, sessionId) {
+            if (!contestMeta.adaptiveRetentionReviewProgress) contestMeta.adaptiveRetentionReviewProgress = {};
+            if (!contestMeta.adaptiveRetentionReviewProgress[dateKey]) contestMeta.adaptiveRetentionReviewProgress[dateKey] = {};
+            contestMeta.adaptiveRetentionReviewProgress[dateKey][topicKey] = {
+                completed:true, rating, sessionId:sessionId || null, completedAt:new Date().toISOString()
+            };
+        }
+
+        function getAdaptiveRetentionReviewCompletion(contestMeta, dateKey, topicKey) {
+            return !!contestMeta?.adaptiveRetentionReviewProgress?.[dateKey]?.[topicKey]?.completed;
+        }
+
+        function openAdaptiveReviewFeedback(session, context) {
+            pendingAdaptiveReviewFeedback = { sessionId:session?.id || null, dateKey:session?.dateKey || getLocalDateKey(), materia:session?.materia, assunto:session?.assunto, context:{...(context||{})} };
+            const topic = document.getElementById('adaptiveReviewFeedbackTopic');
+            const meta = document.getElementById('adaptiveReviewFeedbackMeta');
+            if (topic) topic.textContent = `${session?.materia || ''} — ${session?.assunto || ''}`;
+            if (meta) {
+                const before = Number(session?.retentionBefore);
+                meta.textContent = Number.isFinite(before)
+                    ? `Retenção estimada antes da revisão: ${Math.round(before)}%. Como foi recuperar esse conteúdo?`
+                    : 'Como foi recuperar esse conteúdo?';
+            }
+            const modal = document.getElementById('modalAdaptiveReviewFeedback');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        async function submitAdaptiveReviewFeedback(rating) {
+            const normalized = normalizeRetentionRating(rating);
+            const pending = pendingAdaptiveReviewFeedback;
+            if (!normalized || !pending) return;
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso];
+            if (!contest) return;
+            const session = (contest.studySessions || []).find(item => item?.id === pending.sessionId);
+            if (!session) return appNotice('A sessão desta revisão não foi encontrada.', { title:'Revisão adaptativa' });
+            session.retentionRating = normalized;
+            rebuildRetentionEngineForContest(contest);
+            const state = getRetentionTopicState(contest, pending.materia, pending.assunto, false);
+            const topicKey = getStudyTopicKey(pending.materia, pending.assunto);
+            markAdaptiveRetentionReviewCompleted(contest, pending.dateKey, topicKey, normalized, pending.sessionId);
+            const nextDateKey = state ? scheduleNextAdaptiveRetentionReview(contest, state, pending.dateKey) : null;
+            await saveConcursosMetadata(metadata);
+            pendingAdaptiveReviewFeedback = null;
+            const modal = document.getElementById('modalAdaptiveReviewFeedback');
+            if (modal) modal.style.display = 'none';
+            renderMonthCalendar();
+            renderDayTopicsList();
+            updateModernOverview();
+            const nextText = nextDateKey ? ` Próxima revisão: ${formatDateKeyShort(nextDateKey)}.` : '';
+            await appNotice(`${getRetentionRatingLabel(normalized)} registrado.${nextText}`, { title:'Memória recalibrada' });
+        }
+
         function applyRetentionSessionToState(state, session, engine) {
             if (!state || !session) return state;
             const eventDate = getRetentionEventDate(session);
@@ -8308,6 +8519,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             state.lastStudyAt = eventDate.toISOString();
             state.retention = 100;
             state.nextReviewAt = estimateNextRetentionReviewAt(state, eventDate, engine?.targetRetention);
+            if (session.retentionRating) applyRetentionRatingToState(state, session.retentionRating, eventDate, engine);
             state.updatedAt = new Date().toISOString();
             return state;
         }
@@ -8335,7 +8547,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     assunto: String(session?.assunto || '').trim(),
                     lastStudyAt:null, lastReviewAt:null, nextReviewAt:null,
                     stability:RETENTION_MIN_STABILITY_DAYS, difficulty:5, retention:100,
-                    reviewCount:0, lapseCount:0, totalMinutes:0, sessionCount:0,
+                    reviewCount:0, lapseCount:0, lastRating:null, ratingCounts:{ forgot:0, hard:0, good:0, easy:0 }, totalMinutes:0, sessionCount:0,
                     lastActivityType:null, activityCounts:{ teoria:0, questoes:0, lei_seca:0 },
                     createdAt:getRetentionEventDate(session).toISOString(), updatedAt:new Date().toISOString()
                 };
@@ -8356,6 +8568,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (needsRebuild && sessions.length) {
                     rebuildRetentionEngineForContest(contest);
                     changed = true;
+                } else if (needsRebuild && engine) {
+                    engine.schemaVersion = RETENTION_ENGINE_SCHEMA_VERSION;
+                    if (!engine.topics || typeof engine.topics !== 'object') engine.topics = {};
+                    engine.updatedAt = new Date().toISOString();
+                    changed = true;
                 } else if (!engine && options.createEmpty) {
                     getRetentionEngine(contest, true);
                     changed = true;
@@ -8368,6 +8585,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!contestMeta || !session) return null;
             const engine = getRetentionEngine(contestMeta, true);
             const state = getRetentionTopicState(contestMeta, session.materia, session.assunto, true);
+            if (session.retentionBefore == null && state?.lastStudyAt) session.retentionBefore = calculateRetentionFromState(state, getRetentionEventDate(session));
             applyRetentionSessionToState(state, session, engine);
             engine.updatedAt = new Date().toISOString();
             return state;
@@ -8525,6 +8743,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
 
             const recordedSession = {
+                id: `study_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
                 dateKey: actualDateKey,
                 scheduledDateKey: adaptiveResult ? actualDateKey : (context.dateKey || null),
                 plannedDateKey,
@@ -8542,9 +8761,16 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 createdAt: new Date().toISOString()
             };
             metadata[currentConcurso].studySessions.push(recordedSession);
-            registerRetentionStudyEvent(metadata[currentConcurso], recordedSession);
+            const retentionState = registerRetentionStudyEvent(metadata[currentConcurso], recordedSession);
+            let adaptiveReviewDateKey = null;
+            if (isAdaptiveRetentionStrategy(metadata[currentConcurso]) && !context.isRevision && retentionState) {
+                adaptiveReviewDateKey = scheduleNextAdaptiveRetentionReview(metadata[currentConcurso], retentionState, actualDateKey);
+            }
             const topicPlanResult = reconcileTopicStudyPlanAfterSession(metadata, context);
             await saveConcursosMetadata(metadata);
+            if (isAdaptiveRetentionStrategy(metadata[currentConcurso]) && context.isRevision) {
+                openAdaptiveReviewFeedback(recordedSession, context);
+            }
 
             const progressChanged = markEditalProgressFromStudyContext(context);
             if (adaptiveResult) {
@@ -8559,6 +8785,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             } else {
                 renderSubjectStudyHours();
                 updateModernOverview();
+                if (adaptiveReviewDateKey) renderMonthCalendar();
             }
         }
 
@@ -8924,7 +9151,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         currentFocusCycleMinutes = 0;
                         updatePauseButton();
                         playPomodoroCompletionBell();
-                        setTimeout(() => alert('Foco Finalizado!'), 2300);
+                        const needsAdaptiveFeedback = !!(activeStudyContext?.isRevision && isAdaptiveRetentionStrategy());
+                        if (!needsAdaptiveFeedback) setTimeout(() => alert('Foco Finalizado!'), 2300);
                     } else {
                         currentFocusCycleMinutes = 0;
                         updatePauseButton();
@@ -9141,7 +9369,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             updateDisplay();
             renderPomodoroDailyCounter();
             playPomodoroCompletionBell();
-            setTimeout(() => alert(`Sessão concluída: ${completedMinutes} min contabilizados.`), 500);
+            const needsAdaptiveFeedback = !!(finalContext?.isRevision && isAdaptiveRetentionStrategy());
+            if (!needsAdaptiveFeedback) setTimeout(() => alert(`Sessão concluída: ${completedMinutes} min contabilizados.`), 500);
         }
 
         function startFocusTimer() {
