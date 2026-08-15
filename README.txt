@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V9.66.4 — UX de Aulas e Transparência de Tempo
+ESTUDO ADAPTATIVO INTELIGENTE — V9.66.5 — Layout Compacto das Ações de Estudo
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -270,3 +270,13 @@ V9.66.4 — UX DE AULAS E TRANSPARÊNCIA DE TEMPO (15/08/2026)
 - Tooltips deixam explícito que sessões de estudo contabilizam minutos e que concluir aula não adiciona tempo.
 - studySessions permanece como fonte canônica do tempo; nenhum schema, RLS ou contrato de sincronização foi alterado.
 - CACHE_NAME: estudo-adaptativo-v9-66-4-ux-aulas-tempo-20260815.
+
+
+V9.66.5 — LAYOUT COMPACTO DAS AÇÕES DE ESTUDO (15/08/2026)
+- No cartão diário, "Sessão [N] min" foi movido para a mesma faixa dos checkboxes Teoria e Questões.
+- Estudar Teoria, Estudar Questões, Registrar questões externas e Lei Seca ficam alinhados em uma única linha no desktop quando disponíveis.
+- Os botões de estudo foram compactados sem alterar funções, eventos ou contabilização em studySessions.
+- No mobile (até 700 px), os quatro botões passam para grade 2x2, evitando rolagem horizontal e mantendo boa área de toque.
+- Em telas muito estreitas (até 390 px), tipografia, campo de minutos e espaçamentos recebem compactação adicional.
+- Supabase, RLS, schema, sincronização e Worker permanecem inalterados.
+- CACHE_NAME: estudo-adaptativo-v9-66-5-layout-acoes-cronograma-20260815.
