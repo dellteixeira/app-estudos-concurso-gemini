@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.66.3',
+                    appVersion:'9.66.4',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -2082,14 +2082,30 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return { plan, mode, current, target, pct, complete: current >= target };
         }
 
+        function getTopicRecordedStudyMinutes(item, contestMeta = null) {
+            if (!item) return 0;
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const sessions = Array.isArray(contest.studySessions) ? contest.studySessions : [];
+            const key = getStudyTopicKey(item.materia, item.assunto);
+            return sessions.reduce((sum, session) => {
+                if (getStudySessionTopicKey(session) !== key) return sum;
+                return sum + Math.max(0, Number(session?.minutes) || 0);
+            }, 0);
+        }
+
         function formatTopicStudyPlanProgress(item, contestMeta = null) {
-            const progress = getTopicStudyPlanProgress(item, contestMeta);
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const progress = getTopicStudyPlanProgress(item, contest);
             if (!progress) return '';
             let label = '';
             if (progress.mode === 'minutes') label = `${Math.min(progress.current, progress.target)} / ${progress.target} min`;
             else if (progress.mode === 'lessons') label = `Aula ${Math.min(progress.current + (progress.complete ? 0 : 1), progress.target)} de ${progress.target} · ${progress.current}/${progress.target} concluídas`;
             else label = `Bloco ${Math.min(progress.current + (progress.complete ? 0 : 1), progress.target)} de ${progress.target} · ${progress.current}/${progress.target} sessões`;
-            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Teoria planejada concluída' : escapeHtml(label)}</span><span>${progress.pct}%</span><span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
+            const recordedMinutes = getTopicRecordedStudyMinutes(item, contest);
+            const lessonMetrics = progress.mode === 'lessons'
+                ? `<span class="topic-plan-study-time" title="Soma das sessões registradas em studySessions para este assunto">Tempo estudado neste assunto: <strong>${escapeHtml(formatStudyMinutes(recordedMinutes))}</strong></span><span class="topic-plan-progress-label">Progresso das aulas: ${progress.pct}%</span>`
+                : `<span class="topic-plan-progress-label">${progress.pct}%</span>`;
+            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Teoria planejada concluída' : escapeHtml(label)}</span>${lessonMetrics}<span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
         }
 
         function getTopicStudyPlanBadgeHtml(item, contestMeta = null) {
@@ -2384,15 +2400,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 </div>
                             ` : ''}
                             ${matchedItem && !adaptiveReviewDone ? `<div class="study-launch-controls">
-                                <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
-                                <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">Teoria</button>
-                                <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">Questões</button>
-                                <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})">Registrar resultado</button>
+                                <label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label>
+                                <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions">Estudar Teoria</button>
+                                <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions">Estudar Questões</button>
+                                <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})" title="Registra desempenho de questões feitas fora do timer, sem adicionar minutos">Registrar questões externas</button>
                                 ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">Lei Seca</button>` : ''}
                             </div>` : ''}
                             <div class="day-topic-inline-actions">
                                 ${matchedItem && !isRevisionScheduleText(topicoStr) ? `<button class="btn btn-info btn-sm" onclick="showStudyPlanEditor(${idx})">Planejar</button>` : ''}
-                                ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})">Aula concluída</button>` : ''}
+                                ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})" title="Marca uma aula inteira como concluída. Este botão não adiciona minutos.">✓ Concluir esta aula</button>` : ''}
                                 <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
                             </div>
