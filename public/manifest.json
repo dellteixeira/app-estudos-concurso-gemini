@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "short_name": "Estudos",
-  "name": "Meu Painel de Estudos - Concursos",
-  "description": "Painel de estudos para concursos com edital verticalizado, cronograma, anotações, flashcards e sincronização online/offline.",
+  "short_name": "Estudo Adaptativo",
+  "name": "Estudo Adaptativo Inteligente",
+  "description": "Estudo adaptativo para concursos com retenção, cronograma inteligente, edital verticalizado, questões, flashcards e sincronização online/offline.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
