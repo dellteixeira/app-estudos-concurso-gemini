@@ -148,3 +148,11 @@ V9.61 — ACTIVE RECALL ENGINE
 - Revisões adaptativas por questões usam o desempenho objetivo no lugar da avaliação subjetiva.
 - Integração com Tenho tempo agora e modal do dia.
 - Interface mobile responsiva e textual, sem novos ícones.
+
+
+V9.62 — RETENÇÃO E DIAGNÓSTICO + UX COMPACTA
+- Painel de retenção média, risco, revisões vencidas e domínio.
+- Ranking de até 5 assuntos que mais exigem atenção, com ação Estudar.
+- Limpar Edital Atual agora exige duas confirmações internas consecutivas.
+- Botões principais de Cronograma, Flashcards e Estudo Ativo foram compactados seguindo o padrão do botão Importar Flashcards.
+- Ajustes responsivos específicos para mobile.
