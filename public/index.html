@@ -10,7 +10,8 @@
     <title>Estudo Adaptativo Inteligente</title>
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
-    <link rel="manifest" href="manifest.json?v=20260815-9656">
+    <link rel="manifest" href="manifest.json?v=20260815-9657">
+    <meta name="app-version" content="9.65.7">
     <meta name="theme-color" content="#0f172a">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -21,23 +22,115 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script>
+      window.APP_VERSION = '9.65.7';
+      window.__pwaRegistration = null;
+      window.__pwaUpdateRequested = false;
+      window.__pwaUpdateCheckTimer = null;
+
+      function setPwaUpdateBannerVisible(visible) {
+        const banner = document.getElementById('pwa-update-banner');
+        if (!banner) return;
+        banner.classList.toggle('visible', Boolean(visible));
+      }
+
+      function announcePwaUpdate(registration) {
+        if (!registration) return;
+        window.__pwaRegistration = registration;
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          setPwaUpdateBannerVisible(true);
+        }
+      }
+
+      async function checkForPwaUpdate() {
+        const reg = window.__pwaRegistration;
+        if (!reg || !navigator.onLine) return;
+        try {
+          await reg.update();
+          announcePwaUpdate(reg);
+        } catch (err) {
+          console.warn('Falha ao verificar atualização do app:', err);
+        }
+      }
+
+      function attachPwaUpdateLifecycle(reg) {
+        if (!reg || reg.__updateLifecycleAttached) return;
+        reg.__updateLifecycleAttached = true;
+        window.__pwaRegistration = reg;
+
+        announcePwaUpdate(reg);
+
+        reg.addEventListener('updatefound', () => {
+          const worker = reg.installing;
+          if (!worker) return;
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+              announcePwaUpdate(reg);
+            }
+          });
+        });
+      }
+
+      async function applyPwaUpdate() {
+        const reg = window.__pwaRegistration;
+        if (!reg) return;
+        window.__pwaUpdateRequested = true;
+        setPwaUpdateBannerVisible(false);
+        try {
+          if (!reg.waiting) await reg.update();
+          const waiting = reg.waiting;
+          if (waiting) {
+            waiting.postMessage({ type: 'SKIP_WAITING' });
+          } else {
+            window.__pwaUpdateRequested = false;
+            setPwaUpdateBannerVisible(true);
+          }
+        } catch (err) {
+          window.__pwaUpdateRequested = false;
+          setPwaUpdateBannerVisible(true);
+          console.error('Erro ao aplicar atualização do app:', err);
+        }
+      }
+
       if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!window.__pwaUpdateRequested) return;
+          window.__pwaUpdateRequested = false;
+          window.location.reload();
+        });
+
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260815-9656', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=20260815-9657', { updateViaCache: 'none' })
             .then(async reg => {
-              await reg.update();
+              attachPwaUpdateLifecycle(reg);
+              await checkForPwaUpdate();
+
               const prime = () => {
-                const worker = navigator.serviceWorker.controller || reg.active || reg.waiting;
+                const worker = navigator.serviceWorker.controller || reg.active;
                 if (worker) worker.postMessage({ type: 'PRIME_OFFLINE_ASSETS' });
               };
               prime();
-              navigator.serviceWorker.ready.then(prime).catch(() => {});
-              window.addEventListener('online', prime);
+              navigator.serviceWorker.ready.then(readyReg => {
+                attachPwaUpdateLifecycle(readyReg);
+                prime();
+              }).catch(() => {});
+
+              window.addEventListener('online', () => {
+                prime();
+                checkForPwaUpdate();
+              });
+
+              document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') checkForPwaUpdate();
+              });
+
+              window.__pwaUpdateCheckTimer = window.setInterval(checkForPwaUpdate, 5 * 60 * 1000);
               return reg;
             })
             .catch(err => console.error('Erro no Service Worker:', err));
         });
       }
+
+      window.applyPwaUpdate = applyPwaUpdate;
     </script>
 
     <script src="./vendor/supabase.js"></script>
@@ -859,6 +952,47 @@
         }
 
         #pwa-install-banner.visible { display: block; }
+
+        #pwa-update-banner {
+            display:none;
+            position:fixed;
+            left:50%;
+            bottom:18px;
+            transform:translateX(-50%);
+            z-index:2600;
+            width:min(620px, calc(100% - 28px));
+            background:var(--card-bg);
+            color:var(--text-color);
+            border:1px solid var(--primary-blue);
+            border-radius:14px;
+            box-shadow:0 16px 38px rgba(0,0,0,.34);
+            padding:10px 12px;
+        }
+        #pwa-update-banner.visible { display:block; }
+        .pwa-update-inner { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .pwa-update-copy { min-width:0; font-size:.82rem; line-height:1.35; }
+        .pwa-update-copy strong { display:block; font-size:.88rem; color:var(--text-color); margin-bottom:2px; }
+        .pwa-update-copy span { color:#94a3b8; }
+        .pwa-update-actions { flex:0 0 auto; display:flex; gap:7px; }
+        .app-version-badge {
+            display:inline-flex; align-items:center; justify-content:center;
+            min-height:26px; padding:3px 8px; border-radius:999px;
+            border:1px solid var(--border-color); color:#94a3b8;
+            background:rgba(148,163,184,.06); font-size:.68rem; font-weight:800;
+            white-space:nowrap;
+        }
+        body.light-mode .pwa-update-copy span, body.light-mode .app-version-badge { color:#64748b; }
+        @media (max-width:900px) {
+            #pwa-update-banner { bottom:calc(76px + env(safe-area-inset-bottom, 0px)); width:calc(100% - 18px); padding:10px; }
+            .pwa-update-inner { align-items:stretch; }
+            .pwa-update-actions .btn { min-height:38px; padding:.4rem .65rem; font-size:.75rem; }
+        }
+        @media (max-width:520px) {
+            .pwa-update-inner { flex-direction:column; gap:8px; }
+            .pwa-update-actions { width:100%; }
+            .pwa-update-actions .btn { width:100%; }
+            .app-version-badge { font-size:.62rem; min-height:24px; padding:2px 6px; }
+        }
 
         .pwa-install-inner {
             max-width: 1300px;
@@ -2931,6 +3065,18 @@
 
     <div id="offline-banner">Modo Offline - As alterações serão salvas localmente e sincronizadas quando houver conexão.</div>
 
+    <div id="pwa-update-banner" role="status" aria-live="polite" aria-atomic="true">
+        <div class="pwa-update-inner">
+            <div class="pwa-update-copy">
+                <strong>Nova versão disponível</strong>
+                <span>Atualize para usar a versão mais recente do aplicativo.</span>
+            </div>
+            <div class="pwa-update-actions">
+                <button class="btn btn-primary btn-sm" type="button" onclick="applyPwaUpdate()">Atualizar agora</button>
+            </div>
+        </div>
+    </div>
+
     <div id="pwa-install-banner" role="status" aria-live="polite">
         <div class="pwa-install-inner">
             <div class="pwa-install-copy">
@@ -2969,6 +3115,7 @@
                     <h2>Estudo Adaptativo Inteligente</h2>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
+                <span class="app-version-badge" title="Versão em execução">V9.65.7</span>
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
@@ -4135,7 +4282,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.60',
+                    appVersion:'9.65.7',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
