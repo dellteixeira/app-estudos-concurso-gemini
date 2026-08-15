@@ -2796,6 +2796,23 @@
             #tab-flashcards .btn { flex:0 1 auto; max-width:100%; }
         }
 
+        /* V9.64 — Recuperação Ativa Inteligente */
+        .active-recall-method-line { margin-top:6px; color:var(--text-color); font-size:.74rem; font-weight:800; }
+        .active-recall-method-line span { color:#93c5fd; }
+        .active-recall-guide { display:grid; gap:8px; margin:12px 0; }
+        .active-recall-prompt { padding:10px 11px; border:1px solid var(--modern-border,var(--border-color)); border-radius:10px; background:rgba(255,255,255,.025); line-height:1.45; font-size:.82rem; }
+        .active-recall-summary { padding:10px 11px; border:1px solid var(--modern-border,var(--border-color)); border-radius:10px; background:rgba(37,99,235,.07); }
+        .active-recall-summary strong { display:block; margin-bottom:3px; }
+        .active-recall-summary span { color:var(--modern-muted,#94a3b8); font-size:.76rem; line-height:1.4; }
+        body.light-mode .active-recall-prompt { background:#fff; }
+        body.light-mode .active-recall-summary { background:#eff6ff; }
+        @media (max-width:640px) {
+            .active-recall-guide { gap:7px; }
+            .active-recall-prompt { padding:9px 10px; font-size:.78rem; }
+            #modalActiveRecallGuide .modal-actions { display:grid; grid-template-columns:1fr; }
+            #modalActiveRecallGuide .modal-actions .btn { width:100%; }
+        }
+
         /* V9.63 — identidade visual e proximidade da prova */
         .header-brand { --brand-mark-size:42px; align-items:center; }
         .header-brand img { width:var(--brand-mark-size) !important; height:var(--brand-mark-size) !important; flex:0 0 var(--brand-mark-size) !important; }
@@ -3540,7 +3557,7 @@
     <div class="modal-overlay" id="modalOpportunityStudy" style="z-index:1420;">
         <div class="modal modal-large" style="max-width:820px;">
             <h3> Tenho tempo agora</h3>
-            <p id="opportunityModeHint" style="font-size:.84rem;color:#94a3b8;line-height:1.45;">Diga quanto tempo você tem. O Retention Scheduler cruza memória, prioridade, peso, prova, progresso e contexto.</p>
+            <p id="opportunityModeHint" style="font-size:.84rem;color:#94a3b8;line-height:1.45;">Diga quanto tempo você tem. O sistema cruza memória, desempenho, prioridade, fase da prova e contexto para escolher o assunto e o método de estudo.</p>
             <h4 style="color:var(--primary-blue);margin-top:.8rem;">Quanto tempo você tem?</h4>
             <div class="opportunity-time-grid">
                 <button class="opportunity-time-btn" data-minutes="5" onclick="selectOpportunityMinutes(5,this)">5 min</button>
@@ -3559,6 +3576,22 @@
             <div id="opportunityRecommendations" class="opportunity-recommendations"></div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" type="button" onclick="closeOpportunityStudyModal()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.64 — REVISÃO ATIVA GUIADA -->
+    <div class="modal-overlay" id="modalActiveRecallGuide" style="z-index:1430;">
+        <div class="modal" style="max-width:700px;">
+            <h3>Revisão ativa guiada</h3>
+            <div class="active-recall-summary">
+                <strong id="activeRecallGuideTopic">—</strong>
+                <span id="activeRecallGuideMeta">Tente responder sem consultar o material. Depois use a sessão de foco para conferir e consolidar o conteúdo.</span>
+            </div>
+            <div id="activeRecallGuidePrompts" class="active-recall-guide"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeActiveRecallGuide()">Cancelar (ESC)</button>
+                <button class="btn btn-primary" type="button" onclick="startGuidedActiveRecallSession()" data-enter-default="true">Iniciar revisão</button>
             </div>
         </div>
     </div>
@@ -3889,6 +3922,7 @@
         let opportunitySelectedMinutes = 20;
         let opportunitySelectedContext = 'any';
         let opportunityRecommendations = [];
+        let pendingGuidedActiveRecall = null;
         let opportunityIgnoreDayMode = false;
         let syncPromise = null;
         let dashboardLoadPromise = null;
@@ -4480,6 +4514,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 modalSelectCronogramaType: () => closeModalSelectCronogramaType(),
                 modalFlexibleStudyConfig: () => closeFlexibleStudyConfig(),
                 modalOpportunityStudy: () => closeOpportunityStudyModal(),
+                modalActiveRecallGuide: () => closeActiveRecallGuide(),
                 modalMentorisMethod: () => closeModalMentorisMethod(),
                 modalConfigHorarios: () => closeModalConfigHorarios(),
                 modalNovaNota: () => closeModalNovaNota(),
@@ -4998,6 +5033,112 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return (contest?.studySessions || []).slice().sort((a,b) => getRetentionEventDate(b) - getRetentionEventDate(a)).slice(0,limit).map(s => s?.materia).filter(Boolean);
         }
 
+        // V9.64 — escolhe o método de recuperação, não apenas o assunto.
+        function getActiveRecallMethodRecommendation(item, options = {}) {
+            const contest = options.contest || getConcursosMetadata()[currentConcurso] || {};
+            const now = options.now instanceof Date ? options.now : new Date();
+            const state = options.state || getRetentionTopicState(contest,item?.materia,item?.assunto,false);
+            const retention = state?.lastStudyAt ? calculateRetentionFromState(state,now) : null;
+            const minutes = Math.max(5, Number(options.minutes) || 20);
+            const contextMode = options.contextMode || 'any';
+            const isRevision = !!options.isRevision;
+            const cards = countFlashcardsForTopic(item?.materia,item?.assunto);
+            const legal = isLegalStudyMateria(item?.materia);
+            const phase = getExamPhaseProfile(contest,now);
+            const accuracy = Number.isFinite(Number(state?.questionStats?.lastAccuracy)) ? Number(state.questionStats.lastAccuracy) : null;
+            const confidence = Math.max(0,Math.min(1,Number(state?.questionStats?.confidence)||0));
+            const forgotRecently = state?.lastRating === 'forgot';
+            const theoryDone = !!item?.teoria;
+            const questionsDone = !!item?.questoes;
+            const lowKnowledge = forgotRecently || (retention != null && retention < 43) || (accuracy != null && confidence >= .25 && accuracy < 45);
+            const shortWindow = minutes <= 10;
+            const mobileContext = contextMode === 'walking' || contextMode === 'transit';
+
+            // Retenção muito baixa pede reconstrução do conhecimento quando houver condições.
+            if (lowKnowledge && !mobileContext && minutes >= 20) {
+                return { method:'reestudo', label:'Reestudo de teoria', activityType:'teoria', minutes:Math.min(minutes, Math.max(20, Number(getTopicStudyPlan(item,contest)?.sessionMinutes)||40)), reason:'Retenção ou desempenho indicam perda relevante do conteúdo.' };
+            }
+            // Janelas muito curtas e deslocamento favorecem recuperação leve.
+            if ((shortWindow || mobileContext) && cards > 0) {
+                return { method:'flashcards', label:'Flashcards', activityType:'flashcards', minutes:Math.min(minutes,15), reason:`Há ${cards} flashcard${cards===1?'':'s'} disponível${cards===1?'':'is'} para recuperação rápida.`, flashcardCount:cards };
+            }
+            if (shortWindow || mobileContext) {
+                return { method:'revisao_ativa', label:'Revisão ativa', activityType:'revisao_ativa', minutes:Math.min(minutes,15), reason:'Janela curta favorece recuperação mental sem releitura extensa.' };
+            }
+            // Na reta final, matéria normativa ganha Lei Seca quando a teoria básica já existe.
+            if (legal && theoryDone && ['final','exam-day','intensive'].includes(phase.key) && minutes >= 10 && contextMode !== 'walking') {
+                return { method:'lei_seca', label:'Lei Seca', activityType:'lei_seca', minutes:Math.min(minutes,25), reason:`${phase.label}: leitura normativa ganha prioridade para conteúdo jurídico.` };
+            }
+            // Questões são o padrão de recuperação quando a teoria já foi estudada.
+            if (theoryDone && (!questionsDone || isRevision || accuracy == null || accuracy < 90)) {
+                const reason = accuracy == null ? 'A teoria já foi estudada; use questões para testar recuperação.' : `Último desempenho em questões: ${Math.round(accuracy)}%.`;
+                return { method:'questoes', label:'Questões', activityType:'questoes', minutes:Math.min(minutes,20), reason };
+            }
+            if (cards > 0 && isRevision) {
+                return { method:'flashcards', label:'Flashcards', activityType:'flashcards', minutes:Math.min(minutes,15), reason:`Revisão rápida com ${cards} card${cards===1?'':'s'} do assunto.`, flashcardCount:cards };
+            }
+            if (isRevision) {
+                return { method:'revisao_ativa', label:'Revisão ativa', activityType:'revisao_ativa', minutes:Math.min(minutes,15), reason:'Recupere conceitos essenciais antes de consultar o material.' };
+            }
+            return { method:'teoria', label:'Teoria', activityType:'teoria', minutes:Math.min(minutes, Number(getTopicStudyPlan(item,contest)?.sessionMinutes)||40), reason:'Conteúdo ainda precisa de construção teórica.' };
+        }
+
+        function getActiveRecallMethodLabel(rec) {
+            return rec?.methodLabel || ({ questoes:'Questões', flashcards:'Flashcards', revisao_ativa:'Revisão ativa', lei_seca:'Lei Seca', reestudo:'Reestudo de teoria', teoria:'Teoria' })[rec?.method] || 'Estudo';
+        }
+
+        function buildActiveRecallPrompts(materia, assunto) {
+            const subject=String(assunto||'este assunto').trim();
+            const discipline=String(materia||'a matéria').trim();
+            return [
+                `Explique, sem consultar material, o que você considera essencial em “${subject}”.`,
+                `Liste os principais conceitos, regras, etapas ou elementos relacionados a “${subject}”.`,
+                `Quais diferenças, exceções ou pegadinhas poderiam aparecer em uma questão de ${discipline}?`,
+                `Crie mentalmente um exemplo prático e tente aplicar “${subject}” a ele.`
+            ];
+        }
+
+        function openActiveRecallGuide(rec) {
+            pendingGuidedActiveRecall = rec ? {...rec} : null;
+            if (!pendingGuidedActiveRecall) return;
+            const topic=document.getElementById('activeRecallGuideTopic');
+            const meta=document.getElementById('activeRecallGuideMeta');
+            const prompts=document.getElementById('activeRecallGuidePrompts');
+            if(topic) topic.textContent=`${rec.materia} — ${rec.assunto}`;
+            if(meta) meta.textContent=`Tente recuperar o conteúdo sem ajuda por ${Math.max(5,Math.round(Number(rec.minutes)||10))} min. Ao concluir, o feedback recalibrará a próxima revisão.`;
+            if(prompts) prompts.innerHTML=buildActiveRecallPrompts(rec.materia,rec.assunto).map((text,i)=>`<div class="active-recall-prompt"><strong>${i+1}.</strong> ${escapeHtml(text)}</div>`).join('');
+            document.getElementById('modalActiveRecallGuide').style.display='flex';
+        }
+
+        function closeActiveRecallGuide() {
+            const modal=document.getElementById('modalActiveRecallGuide'); if(modal) modal.style.display='none';
+            pendingGuidedActiveRecall=null;
+        }
+
+        function startGuidedActiveRecallSession() {
+            const rec=pendingGuidedActiveRecall; if(!rec) return;
+            const modal=document.getElementById('modalActiveRecallGuide'); if(modal) modal.style.display='none';
+            pendingGuidedActiveRecall=null;
+            launchOpportunityPomodoro({ ...rec, activityType:'teoria', isRevision:true, recoveryMethod:'revisao_ativa', method:'revisao_ativa', methodLabel:'Revisão ativa' });
+        }
+
+        function openLegalReadingForOpportunity(rec) {
+            const item = editalItems.find(i => String(i.id)===String(rec?.itemId)) || editalItems.find(i => i.materia===rec?.materia && i.assunto===rec?.assunto);
+            if(!item) return appNotice('O assunto recomendado não foi encontrado no edital.',{title:'Lei Seca'});
+            if(!isLegalStudyMateria(item.materia)) return appNotice('Lei Seca está disponível apenas para matérias jurídicas ou normativas.',{title:'Lei Seca'});
+            const todayKey=getLocalDateKey();
+            pendingLegalStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:todayKey,plannedDateKey:todayKey,adaptiveAdvance:false,activityType:'lei_seca',isRevision:!!rec?.isRevision,source:'active_recall' };
+            document.getElementById('legalReadingContext').innerHTML=`<strong>${escapeHtml(item.materia)}</strong> — ${escapeHtml(item.assunto)}`;
+            document.getElementById('legalReadingNorm').value='';
+            document.getElementById('legalReadingStartArticle').value='';
+            document.getElementById('legalReadingEndArticle').value='';
+            document.getElementById('legalReadingMinutes').value=Math.max(5,Math.round(Number(rec?.minutes)||15));
+            document.getElementById('legalReadingSaveBlock').checked=true;
+            renderLegalReadingBlockOptions(item.materia);
+            closeOpportunityStudyModal();
+            document.getElementById('modalLegalReading').style.display='flex';
+        }
+
         function buildOpportunityRecommendations(minutes = opportunitySelectedMinutes, contextMode = opportunitySelectedContext) {
             const metadata = getConcursosMetadata();
             const contest = metadata[currentConcurso] || {};
@@ -5020,10 +5161,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (!due && retention > 72) return;
                 const key = `review::${state.key}`;
                 if (seen.has(key)) return; seen.add(key);
-                const suggested = Math.min(minutes, Math.max(5, minutes <= 10 ? minutes : 15));
-                const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:true, activityType:'questoes', availableMinutes:minutes, suggestedMinutes:suggested, contextMode, recentMaterias });
-                const score = 900 + scheduler.total;
-                candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:'questoes', isRevision:true, retention, due, score, scheduler, minutes:suggested, reason:due?'Revisão vencida ou prevista para agora':'Retenção estimada abaixo do alvo' });
+                const methodRec = getActiveRecallMethodRecommendation(item,{ contest,now,state,isRevision:true,minutes,contextMode });
+                const suggested = Math.max(5,Math.min(minutes,Number(methodRec.minutes)||15));
+                const scoreActivity = methodRec.activityType === 'revisao_ativa' || methodRec.activityType === 'flashcards' ? 'questoes' : methodRec.activityType;
+                const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:true, activityType:scoreActivity, availableMinutes:minutes, suggestedMinutes:suggested, contextMode, recentMaterias });
+                const score = 900 + scheduler.total + (methodRec.method==='reestudo'?80:methodRec.method==='revisao_ativa'?45:0);
+                candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:methodRec.activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:true, retention, due, score, scheduler, minutes:suggested, reason:`${due?'Revisão vencida ou prevista para agora':'Retenção estimada abaixo do alvo'} ${methodRec.reason}`.trim() });
             });
 
             if (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly) {
@@ -5051,18 +5194,17 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const plan = getTopicStudyPlan(item,contest);
                     const progress = getTopicStudyPlanProgress(item,contest);
                     const isContinuation = !!(plan && progress && !progress.complete && Number(progress.current || 0) > 0);
-                    let activityType = !item.teoria ? 'teoria' : 'questoes';
-                    if (minutes <= 20 && item.teoria) activityType = 'questoes';
-                    if (contextMode === 'walking' && activityType === 'teoria') return;
-                    const suggested = Math.max(5, Math.min(minutes, Number(plan?.sessionMinutes) || (activityType === 'teoria' ? 40 : 20)));
                     const state = getRetentionTopicState(contest,item.materia,item.assunto,false);
-                    const idealMinutes = Number(plan?.sessionMinutes) || (activityType === 'teoria' ? 40 : 20);
-                    const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:false, activityType, availableMinutes:minutes, suggestedMinutes:idealMinutes, contextMode, recentMaterias });
-                    const score = 430 + scheduler.total;
-                    const questionReason = activityType==='questoes' && Number.isFinite(scheduler.questionAccuracy)
-                        ? `Questões prioritárias: desempenho recente ${Math.round(scheduler.questionAccuracy)}%`
-                        : 'Prática de recuperação por questões';
-                    candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, isRevision:false, score, scheduler, minutes:suggested, reason:isContinuation?'Continuar assunto já iniciado':(activityType==='questoes'?questionReason:'Próximo conteúdo prioritário') });
+                    const methodRec = getActiveRecallMethodRecommendation(item,{ contest,now,state,isRevision:false,minutes,contextMode });
+                    if (contextMode === 'walking' && ['teoria','reestudo','lei_seca'].includes(methodRec.method)) return;
+                    const activityType=methodRec.activityType;
+                    const suggested = Math.max(5,Math.min(minutes,Number(methodRec.minutes)||20));
+                    const scoreActivity = activityType === 'revisao_ativa' || activityType === 'flashcards' ? 'questoes' : activityType;
+                    const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:false, activityType:scoreActivity, availableMinutes:minutes, suggestedMinutes:suggested, contextMode, recentMaterias });
+                    let score = 430 + scheduler.total;
+                    if(methodRec.method==='reestudo') score += 95;
+                    if(methodRec.method==='revisao_ativa') score += 40;
+                    candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:false, score, scheduler, minutes:suggested, reason:isContinuation && methodRec.method==='teoria'?'Continuar assunto já iniciado':methodRec.reason });
                 });
             }
 
@@ -5099,14 +5241,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 return;
             }
             container.innerHTML = opportunityRecommendations.map((rec,idx) => {
-                const kindLabel = rec.kind==='flashcards'?'Flashcards':rec.isRevision?'Revisão':rec.activityType==='questoes'?'Questões':'Teoria';
+                const kindLabel = rec.isRevision ? 'Revisão' : 'Estudo';
+                const methodLabel = getActiveRecallMethodLabel(rec);
                 const retentionBadge = Number.isFinite(rec.retention) ? `<span class="opportunity-badge">Memória ${Math.round(rec.retention)}%</span>` : '';
                 const examBadge = Number.isFinite(rec.scheduler?.daysUntilExam) && rec.scheduler.daysUntilExam >= 0 && rec.scheduler.daysUntilExam <= 60 ? `<span class="opportunity-badge">${escapeHtml(rec.scheduler.examPhaseLabel || 'Prova')} · ${rec.scheduler.daysUntilExam}d</span>` : '';
                 const questionBadge = rec.activityType==='questoes' && Number.isFinite(rec.scheduler?.questionAccuracy) ? `<span class="opportunity-badge">Último desempenho ${Math.round(rec.scheduler.questionAccuracy)}%</span>` : '';
-                const actions = rec.kind==='study' && rec.activityType==='questoes'
+                const actions = rec.activityType==='questoes'
                     ? `<div class="opportunity-question-actions"><button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button><button class="btn btn-secondary btn-sm" onclick="registerOpportunityQuestionResult(${idx})">Registrar resultado</button></div>`
                     : `<button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button>`;
-                return `<div class="opportunity-card"><div class="opportunity-card-top"><div><div class="opportunity-card-title">${escapeHtml(rec.materia)} — ${escapeHtml(rec.assunto)}</div><div class="opportunity-card-meta">${escapeHtml(rec.reason)} · sugestão de ${Math.max(1,Math.round(rec.minutes||opportunitySelectedMinutes))} min</div><div class="opportunity-card-badges"><span class="opportunity-badge">${kindLabel}</span>${retentionBadge}${examBadge}${questionBadge}${rec.scheduler?.continuation?'<span class="opportunity-badge">Em andamento</span>':''}${rec.flashcardCount?`<span class="opportunity-badge">${rec.flashcardCount} cards</span>`:''}</div></div>${actions}</div></div>`;
+                return `<div class="opportunity-card"><div class="opportunity-card-top"><div><div class="opportunity-card-title">${escapeHtml(rec.materia)} — ${escapeHtml(rec.assunto)}</div><div class="active-recall-method-line">Método recomendado: <span>${escapeHtml(methodLabel)}</span></div><div class="opportunity-card-meta">${escapeHtml(rec.reason)} · sugestão de ${Math.max(1,Math.round(rec.minutes||opportunitySelectedMinutes))} min</div><div class="opportunity-card-badges"><span class="opportunity-badge">${kindLabel}</span>${retentionBadge}${examBadge}${questionBadge}${rec.scheduler?.continuation?'<span class="opportunity-badge">Em andamento</span>':''}${rec.flashcardCount?`<span class="opportunity-badge">${rec.flashcardCount} cards</span>`:''}</div></div>${actions}</div></div>`;
             }).join('');
         }
 
@@ -5129,7 +5272,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!item) return appNotice('O assunto recomendado não foi encontrado no edital.', { title:'Tenho tempo agora' });
             const requestedMinutes = Math.max(1,Math.min(240,Math.round(Number(rec.minutes)||opportunitySelectedMinutes)));
             const focusInput=document.getElementById('focoMin'); if(focusInput) focusInput.value=requestedMinutes;
-            activeStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:getLocalDateKey(),plannedDateKey:getLocalDateKey(),adaptiveAdvance:false,isRevision:!!rec.isRevision,activityType:rec.activityType==='questoes'?'questoes':'teoria',source:'opportunity' };
+            activeStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:getLocalDateKey(),plannedDateKey:getLocalDateKey(),adaptiveAdvance:false,isRevision:!!rec.isRevision,activityType:rec.activityType==='questoes'?'questoes':'teoria',recoveryMethod:rec.recoveryMethod||rec.method||null,source:'opportunity' };
             renderActiveStudyContext();
             closeOpportunityStudyModal();
             const editalTabButton=[...document.querySelectorAll('.tab-btn')].find(btn=>/edital verticalizado/i.test(btn.textContent||''));
@@ -5147,12 +5290,17 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function startOpportunityRecommendation(index) {
             const rec=opportunityRecommendations[index]; if(!rec) return;
-            if(rec.kind==='flashcards') {
+            if(rec.kind==='flashcards' || rec.method==='flashcards') {
                 const cards=flashcardsList.filter(fc=>fc?.materia===rec.materia && fc?.assunto===rec.assunto);
                 if(!cards.length) return appNotice('Os flashcards desta recomendação não estão mais disponíveis.',{title:'Flashcards'});
                 closeOpportunityStudyModal();
                 return startStudyModalWithList(cards,`oportunidade:${rec.materia}:${rec.assunto}`);
             }
+            if(rec.method==='revisao_ativa' || rec.activityType==='revisao_ativa') {
+                closeOpportunityStudyModal();
+                return openActiveRecallGuide(rec);
+            }
+            if(rec.method==='lei_seca' || rec.activityType==='lei_seca') return openLegalReadingForOpportunity(rec);
             launchOpportunityPomodoro(rec);
         }
 
@@ -8941,7 +9089,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const advanceNote = activeStudyContext.adaptiveAdvance && activeStudyContext.plannedDateKey
                 ? `<span style="margin-left:8px; font-size:.72rem; color:#7dd3fc;">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
                 : '';
-            const modeLabel = activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria');
+            const modeLabel = activeStudyContext.recoveryMethod === 'revisao_ativa' ? 'Revisão ativa' : (activeStudyContext.recoveryMethod === 'reestudo' ? 'Reestudo de teoria' : (activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria')));
             const legalNote = activeStudyContext.activityType === 'lei_seca' && activeStudyContext.norma
                 ? `<span style="margin-left:8px;font-size:.72rem;opacity:.8;">${escapeHtml(activeStudyContext.norma)}${activeStudyContext.articleStart ? ` · arts. ${escapeHtml(activeStudyContext.articleStart)}${activeStudyContext.articleEnd ? `–${escapeHtml(activeStudyContext.articleEnd)}` : ''}` : ''}</span>`
                 : '';
@@ -8972,7 +9120,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         // Núcleo inspirado na curva de esquecimento, executando em modo sombra:
         // calcula retenção/estabilidade por assunto sem substituir ainda o cronograma
         // ou as revisões tradicionais. A V9.58 poderá usar estes dados para reagendamento.
-        const RETENTION_ENGINE_SCHEMA_VERSION = 3;
+        const RETENTION_ENGINE_SCHEMA_VERSION = 4;
         const RETENTION_TARGET_DEFAULT = 0.82;
         const RETENTION_MIN_STABILITY_DAYS = 0.75;
         const RETENTION_MAX_STABILITY_DAYS = 3650;
@@ -9024,7 +9172,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     totalMinutes: 0,
                     sessionCount: 0,
                     lastActivityType: null,
-                    activityCounts: { teoria:0, questoes:0, lei_seca:0 },
+                    activityCounts: { teoria:0, questoes:0, lei_seca:0, revisao_ativa:0 },
                     questionStats: { attempts:0, total:0, correct:0, errors:0, lastAccuracy:null, averageAccuracy:null, confidence:0, lastAt:null },
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
@@ -9052,7 +9200,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function estimateInitialRetentionStability(session) {
             const minutes = Math.max(1, Number(session?.minutes) || 1);
             const activity = session?.activityType || 'teoria';
-            const activityFactor = activity === 'questoes' ? 1.18 : (activity === 'lei_seca' ? 0.92 : 1);
+            const activityFactor = session?.recoveryMethod === 'revisao_ativa' ? 1.22 : (activity === 'questoes' ? 1.18 : (activity === 'lei_seca' ? 0.92 : 1));
             const durationFactor = Math.max(0.72, Math.min(1.45, Math.sqrt(minutes / 40)));
             return Math.max(RETENTION_MIN_STABILITY_DAYS, Math.min(14, 5.1 * activityFactor * durationFactor));
         }
@@ -9424,7 +9572,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const previousRetention = previousStudyAt && Number.isFinite(previousStudyAt.getTime())
                 ? calculateRetentionFromState(state, eventDate)
                 : 100;
-            const activity = session.activityType === 'questoes' ? 'questoes' : (session.activityType === 'lei_seca' ? 'lei_seca' : 'teoria');
+            const activity = session.recoveryMethod === 'revisao_ativa' ? 'revisao_ativa' : (session.activityType === 'questoes' ? 'questoes' : (session.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'));
             const minutes = Math.max(0, Number(session.minutes) || 0);
             const priorSessions = Math.max(0, Number(state.sessionCount) || 0);
 
@@ -9432,7 +9580,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 state.stability = estimateInitialRetentionStability(session);
             } else {
                 const elapsedDays = Math.max(0, (eventDate.getTime() - previousStudyAt.getTime()) / 86400000);
-                const activityBoost = activity === 'questoes' ? 0.10 : (activity === 'lei_seca' ? 0.03 : 0.06);
+                const activityBoost = activity === 'questoes' ? 0.10 : (activity === 'revisao_ativa' ? 0.13 : (activity === 'lei_seca' ? 0.03 : 0.06));
                 const spacingBoost = Math.min(0.22, elapsedDays * 0.018);
                 const retrievalBoost = Math.max(0, Math.min(0.18, (100 - previousRetention) / 250));
                 const sameDayFactor = elapsedDays < 0.5 ? 1.035 : 1;
@@ -9449,7 +9597,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             state.sessionCount = priorSessions + 1;
             state.totalMinutes = Math.max(0, Number(state.totalMinutes) || 0) + minutes;
-            if (!state.activityCounts || typeof state.activityCounts !== 'object') state.activityCounts = { teoria:0, questoes:0, lei_seca:0 };
+            if (!state.activityCounts || typeof state.activityCounts !== 'object') state.activityCounts = { teoria:0, questoes:0, lei_seca:0, revisao_ativa:0 };
             state.activityCounts[activity] = Math.max(0, Number(state.activityCounts[activity]) || 0) + 1;
             state.lastActivityType = activity;
             state.lastStudyAt = eventDate.toISOString();
@@ -9485,7 +9633,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     lastStudyAt:null, lastReviewAt:null, nextReviewAt:null,
                     stability:RETENTION_MIN_STABILITY_DAYS, difficulty:5, retention:100,
                     reviewCount:0, lapseCount:0, lastRating:null, ratingCounts:{ forgot:0, hard:0, good:0, easy:0 }, totalMinutes:0, sessionCount:0,
-                    lastActivityType:null, activityCounts:{ teoria:0, questoes:0, lei_seca:0 },
+                    lastActivityType:null, activityCounts:{ teoria:0, questoes:0, lei_seca:0, revisao_ativa:0 },
                     questionStats:{ attempts:0, total:0, correct:0, errors:0, lastAccuracy:null, averageAccuracy:null, confidence:0, lastAt:null },
                     createdAt:getRetentionEventDate(session).toISOString(), updatedAt:new Date().toISOString()
                 };
@@ -9593,6 +9741,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function markEditalProgressFromStudyContext(context) {
             if (!context || context.concurso !== currentConcurso || context.activityType === 'lei_seca') return false;
+            if (context.isRevision && ['revisao_ativa','reestudo'].includes(context.recoveryMethod)) return false;
             const item = allEditalItems.find(candidate => {
                 if ((candidate.concurso || 'Concurso Geral') !== currentConcurso) return false;
                 if (context.itemId && String(candidate.id) === String(context.itemId)) return true;
@@ -9689,6 +9838,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 assunto: context.assunto,
                 activityType: context.activityType === 'questoes' ? 'questoes' : (context.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'),
                 isRevision: !!context.isRevision,
+                recoveryMethod: context.recoveryMethod || null,
                 legalBlockId: context.legalBlockId || null,
                 norma: context.norma || null,
                 articleStart: context.articleStart || null,
@@ -12704,9 +12854,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const item=editalItems.find(i=>getStudyTopicKey(i.materia,i.assunto)===state.key);
             if(!item) return appNotice('Este assunto não está mais disponível no edital atual.', { title:'Retenção e Diagnóstico' });
             const isRevision=!!(row.overdue || row.retention<70);
-            const activityType=item.teoria ? 'questoes' : 'teoria';
-            const rec={ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, isRevision, minutes:activityType==='questoes'?15:40 };
-            launchOpportunityPomodoro(rec);
+            const contest=getConcursosMetadata()[currentConcurso]||{};
+            const retentionState=getRetentionTopicState(contest,item.materia,item.assunto,false);
+            const methodRec=getActiveRecallMethodRecommendation(item,{contest,state:retentionState,isRevision,minutes:20,contextMode:'any'});
+            const rec={ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:methodRec.activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision, minutes:methodRec.minutes||20, reason:methodRec.reason };
+            opportunityRecommendations=[rec];
+            startOpportunityRecommendation(0);
         }
 
         function updateModernOverview() {
