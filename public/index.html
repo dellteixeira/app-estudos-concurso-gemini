@@ -10,7 +10,7 @@
     <title>Estudo Adaptativo Inteligente</title>
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
-    <link rel="manifest" href="manifest.json?v=20260814-13">
+    <link rel="manifest" href="manifest.json?v=20260815-9656">
     <meta name="theme-color" content="#0f172a">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -23,7 +23,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=20260814-13', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=20260815-9656', { updateViaCache: 'none' })
             .then(async reg => {
               await reg.update();
               const prime = () => {
@@ -3827,7 +3827,7 @@
             <h3 style="margin-bottom:0;">Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
                 <strong>Universal Parser V9.20 — análise estrutural adaptativa do edital.</strong><br>
-                O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
+                O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade usa a escala <strong>P1 = máxima</strong>, <strong>P2 = alta</strong>, <strong>P3 = média</strong> e <strong>P4 = baixa</strong>, sempre com sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
             <div class="form-group" style="margin-top:0.8rem;">
@@ -9104,7 +9104,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const newItem = {
                 id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                materia, assunto, prioridade, assunto_prioridade: 1, peso: Math.max(1, 4 - Math.min(3, prioridade)), concurso: currentConcurso,
+                materia, assunto, prioridade: clampMateriaPriority(prioridade), assunto_prioridade: 1, peso: 5 - clampMateriaPriority(prioridade), concurso: currentConcurso,
                 user_id: currentUser ? currentUser.id : null,
                 teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
             };
@@ -12296,7 +12296,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const materias = Array.isArray(root.materias) ? root.materias : [];
             const cleanMaterias = materias.map((mat, idx) => {
                 const materia = String(mat.materia || mat.nome || `Matéria ${idx + 1}`).trim();
-                const prioridade = Math.min(3, Math.max(1, parseInt(mat.prioridade) || 2));
+                const prioridade = Math.min(4, Math.max(1, parseInt(mat.prioridade) || 2));
                 const pesoNum = Number(mat.peso);
                 const peso = Number.isFinite(pesoNum) && pesoNum >= 0 ? pesoNum : 1.0;
                 const assuntos = (Array.isArray(mat.assuntos) ? mat.assuntos : [])
