@@ -156,3 +156,12 @@ V9.62 — RETENÇÃO E DIAGNÓSTICO + UX COMPACTA
 - Limpar Edital Atual agora exige duas confirmações internas consecutivas.
 - Botões principais de Cronograma, Flashcards e Estudo Ativo foram compactados seguindo o padrão do botão Importar Flashcards.
 - Ajustes responsivos específicos para mobile.
+
+V9.63 — PROXIMIDADE DA PROVA + NOVA IDENTIDADE
+- Nome do aplicativo alterado para Estudo Adaptativo Inteligente.
+- Subtítulo antigo removido; título passa a usar a mesma altura estrutural do símbolo do app, com escala responsiva no mobile.
+- Manifest/PWA atualizado para a nova identidade.
+- Retention Scheduler passa a trabalhar por fases conforme a distância da prova: Construção, Consolidação, Aceleração, Revisão intensiva, Reta final e Dia da prova.
+- Cada fase altera de verdade o peso de Teoria, Questões, Revisões e Lei Seca, além de reduzir conteúdo novo na reta final.
+- Retenção e Diagnóstico mostra a fase atual e orientação estratégica.
+- Tenho tempo agora passa a considerar a fase da prova nas recomendações.
