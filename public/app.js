@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.66.2',
+                    appVersion:'9.66.3',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -4322,6 +4322,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             // Flashcards locais também aparecem antes de qualquer espera de rede.
             const localMetadata = getConcursosMetadata();
+            const progressMigration = migrateStudySessionProgressV9663(localMetadata);
+            if (progressMigration.changed) {
+                editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+                renderTable();
+                renderChartNow();
+                renderMonthCalendar();
+            }
             const retentionMigrated = ensureRetentionEngineForAllContests(localMetadata);
             if (retentionMigrated) {
                 // Migração transparente: deriva o núcleo de retenção do histórico canônico
@@ -4413,7 +4420,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 await loadConcursosMetadata();
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 const syncedMetadata = getConcursosMetadata();
-                if (ensureRetentionEngineForAllContests(syncedMetadata)) await saveConcursosMetadata(syncedMetadata);
+                const progressMigration = migrateStudySessionProgressV9663(syncedMetadata);
+                if (progressMigration.changed) saveEditalToLocalStorage();
+                if (ensureRetentionEngineForAllContests(syncedMetadata) || progressMigration.metadataChanged) await saveConcursosMetadata(syncedMetadata);
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 await flushAllPendingFlashcards();
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
@@ -5496,40 +5505,110 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const topicCount = editalItems.length;
             const theoryDone = editalItems.filter(i => !!i.teoria).length;
             const questionsDone = editalItems.filter(i => !!i.questoes).length;
-            const theoryContribution = topicCount ? Math.round((theoryDone / topicCount) * 50) : 0;
-            const questionsContribution = topicCount ? Math.round((questionsDone / topicCount) * 50) : 0;
-            const totalStudyProgress = Math.min(100, theoryContribution + questionsContribution);
+            const theoryContributionRaw = topicCount ? (theoryDone / topicCount) * 50 : 0;
+            const questionsContributionRaw = topicCount ? (questionsDone / topicCount) * 50 : 0;
+            const totalStudyProgressRaw = Math.min(100, theoryContributionRaw + questionsContributionRaw);
+            const formatContribution = value => value > 0 && value < 1 ? value.toFixed(1) : String(Math.round(value));
+            const formatOverall = value => value > 0 && value < 1 ? value.toFixed(1) : String(Math.round(value));
             const theoryEl = document.getElementById('studyTheoryProgress');
             const questionsEl = document.getElementById('studyQuestionsProgress');
             const totalEl = document.getElementById('studyTotalProgress');
-            if (theoryEl) theoryEl.textContent = `${theoryContribution} / 50%`;
-            if (questionsEl) questionsEl.textContent = `${questionsContribution} / 50%`;
-            if (totalEl) totalEl.textContent = `${totalStudyProgress}%`;
+            if (theoryEl) theoryEl.textContent = `${formatContribution(theoryContributionRaw)} / 50%`;
+            if (questionsEl) questionsEl.textContent = `${formatContribution(questionsContributionRaw)} / 50%`;
+            if (totalEl) totalEl.textContent = `${formatOverall(totalStudyProgressRaw)}%`;
 
             const labels = Object.keys(counts);
             const percentData = labels.map(l => Math.round((counts[l].concluido / (counts[l].total || 1)) * 100));
-            const barColors = labels.map((_, idx) => PALETA_SOLIDAS[idx % PALETA_SOLIDAS.length]);
+            const gradientPairs = [
+                ['#ff9f0a','#ff2d55'], ['#00e5d4','#5b4dff'], ['#ff2aa3','#8b2cff'], ['#ffb000','#ff4d6d'],
+                ['#11d9f3','#3267ff'], ['#ff3b9a','#9b2cff'], ['#00d9d2','#8b2cff'], ['#ffb000','#ff2d55']
+            ];
+            const chartHeight = Math.max(180, canvas.clientHeight || canvas.height || 180);
+            const barGradients = labels.map((_, idx) => {
+                const pair = gradientPairs[idx % gradientPairs.length];
+                const gradient = ctx.createLinearGradient(0, chartHeight, 0, 0);
+                gradient.addColorStop(0, pair[1]);
+                gradient.addColorStop(1, pair[0]);
+                return gradient;
+            });
 
             if (legendGrid) {
                 legendGrid.innerHTML = labels.map((mName, idx) => {
-                    const color = PALETA_SOLIDAS[idx % PALETA_SOLIDAS.length];
+                    const pair = gradientPairs[idx % gradientPairs.length];
                     return `
                         <div class="chart-legend-item">
-                            <span class="chart-legend-color" style="background-color: ${color};"></span>
+                            <span class="chart-legend-color" style="background:linear-gradient(180deg, ${pair[0]}, ${pair[1]});"></span>
                             <span>${escapeHtml(mName)} (${percentData[idx]}%)</span>
                         </div>
                     `;
                 }).join('');
             }
 
+            const progressRailPlugin = {
+                id: 'progressRailPlugin',
+                beforeDatasetsDraw(chart) {
+                    const meta = chart.getDatasetMeta(0);
+                    const area = chart.chartArea;
+                    if (!meta?.data?.length || !area) return;
+                    const chartCtx = chart.ctx;
+                    chartCtx.save();
+                    chartCtx.fillStyle = 'rgba(112, 103, 118, 0.42)';
+                    meta.data.forEach(bar => {
+                        const width = Math.max(18, Math.min(30, Number(bar.width) || 24));
+                        const x = bar.x - width / 2;
+                        const y = area.top;
+                        const h = Math.max(1, area.bottom - area.top);
+                        const radius = width / 2;
+                        chartCtx.beginPath();
+                        if (typeof chartCtx.roundRect === 'function') chartCtx.roundRect(x, y, width, h, radius);
+                        else {
+                            chartCtx.moveTo(x + radius, y);
+                            chartCtx.arcTo(x + width, y, x + width, y + radius, radius);
+                            chartCtx.arcTo(x + width, y + h, x + width - radius, y + h, radius);
+                            chartCtx.arcTo(x, y + h, x, y + h - radius, radius);
+                            chartCtx.arcTo(x, y, x + radius, y, radius);
+                        }
+                        chartCtx.fill();
+                    });
+                    chartCtx.restore();
+                }
+            };
+
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
-                    datasets: [{ label: 'Progresso %', data: percentData, backgroundColor: barColors }]
+                    labels,
+                    datasets: [{
+                        label: 'Progresso %',
+                        data: percentData,
+                        backgroundColor: barGradients,
+                        borderRadius: 999,
+                        borderSkipped: false,
+                        maxBarThickness: 30,
+                        minBarLength: 2,
+                        categoryPercentage: 0.76,
+                        barPercentage: 0.72
+                    }]
                 },
-                options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, max: 100 } } }
+                plugins: [progressRailPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 420, easing: 'easeOutQuart' },
+                    layout: { padding: { top: 6, right: 6, bottom: 2, left: 6 } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            displayColors: false,
+                            callbacks: { label: context => `${context.parsed.y}% concluído` }
+                        }
+                    },
+                    scales: {
+                        x: { display: false, grid: { display: false }, border: { display: false } },
+                        y: { display: false, beginAtZero: true, max: 100, grid: { display: false }, border: { display: false } }
+                    }
+                }
             });
         }
 
@@ -6254,6 +6333,61 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             keysToRemove.forEach(key => localStorage.removeItem(key));
         }
 
+        function migrateStudySessionProgressV9663(metadata = getConcursosMetadata()) {
+            const contest = metadata?.[currentConcurso];
+            if (!contest || typeof contest !== 'object') return { changed:false, metadataChanged:false };
+            if (!contest.migrations || typeof contest.migrations !== 'object') contest.migrations = {};
+            if (contest.migrations.studySessionProgressV9663) return { changed:false, metadataChanged:false };
+
+            const sessionState = new Map();
+            const sessions = Array.isArray(contest.studySessions) ? contest.studySessions : [];
+            sessions.forEach(session => {
+                const minutes = Math.max(0, Number(session?.minutes) || 0);
+                if (!minutes) return;
+                if (session?.isRevision && ['revisao_ativa','revisao_curta','reestudo'].includes(session?.recoveryMethod)) return;
+                const key = getStudySessionTopicKey(session);
+                if (!key) return;
+                if (!sessionState.has(key)) sessionState.set(key, { teoria:false, questoes:false });
+                const state = sessionState.get(key);
+                if (session?.activityType === 'questoes') state.questoes = true;
+                else if ((session?.activityType || 'teoria') === 'teoria') state.teoria = true;
+            });
+
+            let changed = false;
+            allEditalItems.forEach(item => {
+                if ((item.concurso || 'Concurso Geral') !== currentConcurso) return;
+                const state = sessionState.get(getStudyTopicKey(item.materia, item.assunto));
+                if (!state) return;
+
+                let shouldMarkTheory = !!state.teoria;
+                if (shouldMarkTheory) {
+                    const planProgress = getTopicStudyPlanProgress(item, contest);
+                    if (planProgress) shouldMarkTheory = !!planProgress.complete;
+                }
+                if (shouldMarkTheory && !item.teoria) {
+                    item.teoria = true;
+                    queueEditalUpsert(item);
+                    changed = true;
+                }
+                if (state.questoes && !item.questoes) {
+                    item.questoes = true;
+                    queueEditalUpsert(item);
+                    changed = true;
+                }
+            });
+
+            contest.migrations.studySessionProgressV9663 = new Date().toISOString();
+            if (changed) {
+                saveEditalToLocalStorage();
+                if (navigator.onLine && currentUser) scheduleEditalSync(250);
+            }
+            metadataCache = metadata;
+            localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadata));
+            setMetadataDirty(true);
+            scheduleMetadataSync(300);
+            return { changed, metadataChanged:true };
+        }
+
         function reconcileEditalStudyFlagsFromSessions(topicKeys) {
             const affected = topicKeys instanceof Set ? topicKeys : new Set(topicKeys || []);
             if (!affected.size) return 0;
@@ -6309,6 +6443,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             item[field] = true;
             saveEditalToLocalStorage();
             queueEditalUpsert(item);
+            if (navigator.onLine && currentUser) scheduleEditalSync(250);
             return true;
         }
 
@@ -6367,7 +6502,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         async function recordStudyMinutesForContext(minutes, context = activeStudyContext) {
             const amount = Math.max(0, Math.round(Number(minutes) || 0));
-            if (!amount || !context || context.concurso !== currentConcurso) return;
+            if (!amount || !context || context.concurso !== currentConcurso) return null;
             const metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = { dataProva:null, dateSchedule:{} };
             if (!Array.isArray(metadata[currentConcurso].studySessions)) metadata[currentConcurso].studySessions = [];
@@ -6413,10 +6548,44 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 }
             }
             await saveConcursosMetadata(metadata);
-            // studySessions é a fonte canônica: atualize os contadores imediatamente após a gravação local.
+
+            // Atualiza o progresso do edital somente depois que studySessions foi persistido localmente.
+            // Para planos por sessões/minutos, isso permite que a sessão recém-gravada conclua o plano.
+            const progressChanged = markEditalProgressFromStudyContext(context);
+
+            if (adaptiveResult) {
+                activeStudyContext = { ...context, dateKey: actualDateKey, plannedDateKey, adaptiveAdvance:false };
+            }
+
+            // Atualização síncrona da interface: não depende de requestIdleCallback para refletir
+            // minutos, checkboxes e gráfico ao término do Pomodoro.
+            editalItems = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+            renderTable();
+            renderChartNow();
             renderSubjectStudyHours();
             renderPomodoroDailyCounter();
             updateModernOverview();
+            renderMonthCalendar();
+            if (activeSelectedDateKey) renderDayTopicsList();
+            renderActiveStudyContext();
+
+            window.__studyDiagnostics = {
+                lastSessionId: recordedSession.id,
+                lastSessionMinutes: recordedSession.minutes,
+                lastSessionActivity: recordedSession.activityType,
+                lastSessionMateria: recordedSession.materia,
+                lastSessionAssunto: recordedSession.assunto,
+                progressChanged,
+                sessionCount: getStudySessions().length,
+                recordedAt: recordedSession.createdAt
+            };
+
+            const linkedItem = allEditalItems.find(candidate => String(candidate.id) === String(context.itemId || ''));
+            const linkedPlan = linkedItem ? getTopicStudyPlan(linkedItem, metadata[currentConcurso] || {}) : null;
+            if (context.activityType === 'teoria' && linkedPlan?.mode === 'lessons' && !progressChanged) {
+                window.__studyDiagnostics.lessonPlanAwaitingManualCompletion = true;
+            }
+
             if (context.activityType === 'questoes') {
                 openQuestionPerformanceModal({
                     sessionId:recordedSession.id, materia:recordedSession.materia, assunto:recordedSession.assunto, itemId:context.itemId,
@@ -6426,21 +6595,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 openAdaptiveReviewFeedback(recordedSession, context);
             }
 
-            const progressChanged = markEditalProgressFromStudyContext(context);
-            if (adaptiveResult) {
-                activeStudyContext = { ...context, dateKey: actualDateKey, plannedDateKey, adaptiveAdvance:false };
-                filterDataByConcurso();
-                renderMonthCalendar();
-                renderPomodoroDailyCounter();
-                renderActiveStudyContext();
-            } else if (progressChanged) {
-                filterDataByConcurso();
-                renderMonthCalendar();
-            } else {
-                renderSubjectStudyHours();
-                updateModernOverview();
-                if (adaptiveReviewDateKey) renderMonthCalendar();
-            }
+            return recordedSession;
         }
 
         async function removeStudySessionsForDate(dateKey = getLocalDateKey()) {
@@ -6804,7 +6959,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         if (activeStudyContext && activeStudyContext.concurso === currentConcurso && sessionMinutes > 0) {
                             finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
                             try {
-                                await recordStudyMinutesForContext(sessionMinutes, finalContext);
+                                const committedSession = await recordStudyMinutesForContext(sessionMinutes, finalContext);
+                                if (!committedSession) throw new Error('A sessão não pôde ser vinculada ao concurso atual.');
                                 await updateLegalReadingBlockAfterSession(finalContext);
                             } catch (error) {
                                 console.error('Falha ao registrar sessão concluída:', error);
@@ -7023,7 +7179,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             isTimerPaused = false;
             focusSessionCommitted = true;
             const finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
-            await recordStudyMinutesForContext(completedMinutes, finalContext);
+            const committedSession = await recordStudyMinutesForContext(completedMinutes, finalContext);
+            if (!committedSession) {
+                focusSessionCommitted = false;
+                return appNotice('Não foi possível vincular esta sessão ao concurso atual. Reabra o tópico pelo cronograma e tente novamente.', { title:'Sessão não contabilizada' });
+            }
             await updateLegalReadingBlockAfterSession(finalContext);
 
             currentFocusCycleMinutes = 0;
