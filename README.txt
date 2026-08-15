@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V9.66.2 — Correção da Contabilização de Horas
+ESTUDO ADAPTATIVO INTELIGENTE — V9.66.3 — Auditoria de Sessões e Gráfico de Progresso
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -249,3 +249,13 @@ V9.66.2 — CORREÇÃO DA CONTABILIZAÇÃO DE HORAS (15/08/2026)
 - Sincronização de concursos_metadata ganhou revisão monotônica para impedir que um upload antigo limpe o dirty flag de uma alteração mais nova.
 - Se os metadados mudarem durante um upload, a nova revisão permanece pendente e é reenviada automaticamente.
 - CACHE_NAME: estudo-adaptativo-v9-66-2-contabilizacao-horas-20260815.
+
+
+V9.66.3 — AUDITORIA DE SESSÕES E GRÁFICO DE PROGRESSO (15/08/2026)
+- Registro do Pomodoro passa a confirmar explicitamente o commit de studySessions.
+- Contadores, checkboxes, tabela, modal diário e gráfico são atualizados imediatamente após a gravação local.
+- Redução de dependência de renderização em idle callback para feedback pós-sessão.
+- Diagnóstico local window.__studyDiagnostics guarda somente o último commit para depuração.
+- Progresso geral exibe frações abaixo de 1% em vez de arredondar silenciosamente para 0%.
+- Gráfico redesenhado com trilhos verticais arredondados e preenchimentos em gradiente, seguindo a referência visual enviada.
+- CACHE_NAME: estudo-adaptativo-v9-66-3-auditoria-sessoes-grafico-20260815.
