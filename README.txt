@@ -106,3 +106,14 @@ V9.57 — RETENTION ENGINE CORE
 - Remoção de sessões e limpeza de cronograma reconciliam o motor de retenção.
 - Dados ficam dentro de concursos_metadata, portanto entram automaticamente em Supabase user_settings, offline e Backup/Restaurar.
 - Próxima etapa prevista: V9.58 — feedback Esqueci/Difícil/Bom/Fácil + reagendamento adaptativo.
+
+
+V9.58 — ADAPTIVE REVIEWS
+- Nova estratégia opcional Retenção Adaptativa nos dois métodos de cronograma.
+- Revisões fixas deixam de ser pré-geradas quando o modo adaptativo é escolhido.
+- Cada sessão de estudo agenda a próxima revisão a partir do Retention Engine.
+- Após uma revisão, feedback Esqueci / Difícil / Bom / Fácil recalibra estabilidade, dificuldade, lapses e próxima revisão.
+- O feedback fica persistido no studySessions e é reproduzível em rebuild do motor.
+- O reagendamento respeita os dias de estudo configurados pelo cronograma atual.
+- Revisões adaptativas concluídas permanecem visíveis no calendário como concluídas.
+- Layout do feedback é responsivo para mobile.
