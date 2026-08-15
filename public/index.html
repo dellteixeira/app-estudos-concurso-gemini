@@ -1531,13 +1531,13 @@
                 background:rgba(8,25,42,.94); backdrop-filter:blur(18px); border:1px solid var(--modern-border);
                 border-radius:18px; padding:6px; box-shadow:0 14px 40px rgba(0,0,0,.34);
             }
-            .mobile-nav-btn { border:0; background:transparent; color:var(--modern-muted); min-height:54px; border-radius:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:.64rem; font-weight:750; }
+            .mobile-nav-btn { border:0; background:transparent; color:var(--modern-muted); min-height:50px; border-radius:13px; display:flex; align-items:center; justify-content:center; padding:7px 4px; font-size:.69rem; font-weight:800; line-height:1.15; text-align:center; }
             .mobile-nav-btn .nav-ico { font-size:1.2rem; line-height:1; }
             .mobile-nav-btn.active { color:#fff; background:rgba(19,168,255,.13); }
             .context-fab {
                 display:flex; position:fixed; right:18px; bottom:calc(84px + env(safe-area-inset-bottom,0px)); z-index:480;
-                width:54px; height:54px; border:0; border-radius:18px; align-items:center; justify-content:center;
-                background:linear-gradient(135deg,var(--modern-blue-2),var(--modern-blue)); color:#fff; font-size:1.7rem;
+                min-width:64px; height:46px; padding:0 14px; border:0; border-radius:14px; align-items:center; justify-content:center;
+                background:linear-gradient(135deg,var(--modern-blue-2),var(--modern-blue)); color:#fff; font-size:.76rem; font-weight:850;
                 box-shadow:0 14px 30px rgba(19,168,255,.3); cursor:pointer;
             }
         }
@@ -1645,8 +1645,8 @@
             .context-fab {
                 right:16px;
                 bottom:calc(92px + env(safe-area-inset-bottom,0px));
-                width:52px; height:52px;
-                border-radius:16px;
+                min-width:62px; width:auto; height:44px;
+                border-radius:14px;
             }
             body { scroll-padding-bottom:130px; }
         }
@@ -2712,6 +2712,22 @@
             .day-modal-footer .btn { flex:1 1 0; justify-content:center; }
         }
 
+    
+        /* V9.60 — mobile text-only + scheduler */
+        @media (max-width: 640px) {
+            .opportunity-card { padding:11px; }
+            .opportunity-card-title { font-size:.91rem; }
+            .opportunity-card-meta { font-size:.72rem; }
+            .opportunity-card-badges { gap:5px; }
+            .opportunity-badge { font-size:.64rem; padding:3px 6px; }
+            .opportunity-time-grid, .opportunity-context-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .opportunity-time-btn, .opportunity-context-btn { min-height:44px; font-size:.76rem; }
+            .mobile-tools-toggle { font-size:.72rem; font-weight:850; width:auto; min-width:54px; padding:0 10px; }
+            .day-num-header .btn { min-width:42px; font-size:.64rem !important; padding:0 5px !important; }
+        }
+
+    
+        .sync-dot { display:none !important; }
     </style>
 </head>
 <body>
@@ -2758,7 +2774,7 @@
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
             </div>
-            <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">☰</button>
+            <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
             <div class="concurso-selector-bar">
                 <label><strong>Concurso:</strong></label>
@@ -2782,7 +2798,7 @@
 
         <section class="modern-command-center" aria-label="Busca e ferramentas">
             <div class="modern-search-shell">
-                <span class="modern-search-icon">⌕</span>
+                
                 <input id="globalStudySearch" type="search" placeholder="Pesquisar matéria, assunto, flashcard ou anotação..." autocomplete="off" oninput="runGlobalStudySearch(this.value)" onfocus="runGlobalStudySearch(this.value)">
             </div>
             <div id="globalSearchResults" class="global-search-results"></div>
@@ -2799,14 +2815,14 @@
 
         <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
         <div class="action-bar">
-            <button class="btn-action" onclick="openOpportunityStudyModal()">⚡ Tenho tempo agora</button>
+            <button class="btn-action" onclick="openOpportunityStudyModal()">Tenho tempo agora</button>
             <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalViewEdital)">Ver / Anexar Edital PDF</button>
             <label class="btn-action" style="cursor: pointer;">
                 Importar JSON
                 <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="handleActionButton(this.parentElement, importJSON, event)">
             </label>
-            <button class="btn-action" onclick="handleActionButton(this, openModalAnaliseEditalIA)">✦ Analisar Edital com IA</button>
+            <button class="btn-action" onclick="handleActionButton(this, openModalAnaliseEditalIA)">Analisar Edital com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, clearData)">Limpar Edital Atual</button>
             <button class="btn-action" onclick="handleActionButton(this, toggleDarkMode)">Modo Claro/Escuro</button>
@@ -2839,7 +2855,7 @@
                         <button class="btn btn-primary" id="startTimerBtn" onclick="startFocusTimer()">Foco</button>
                         <button class="btn btn-info" id="intervalTimerBtn" onclick="startIntervalTimer()">Intervalo</button>
                         <button class="btn btn-warning" id="pauseTimerBtn" onclick="togglePauseTimer()" disabled>Pausar</button>
-                        <button class="btn btn-success" id="completeFocusBtn" onclick="completeFocusSessionNow()" disabled>✓ Concluir sessão</button>
+                        <button class="btn btn-success" id="completeFocusBtn" onclick="completeFocusSessionNow()" disabled>Concluir sessão</button>
                         <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
                     </div>
                     <div class="timer-settings">
@@ -2872,7 +2888,7 @@
                                 <span class="active-study-context-label">Estudando agora</span>
                                 <span class="active-study-context-title" id="activeStudyContextTitle"></span>
                             </div>
-                            <button class="active-study-context-clear" type="button" onclick="clearActiveStudyContext()" title="Desvincular matéria">✕</button>
+                            <button class="active-study-context-clear" type="button" onclick="clearActiveStudyContext()" title="Desvincular matéria">Limpar</button>
                         </div>
                         <button class="btn btn-danger btn-sm pomodoro-reset-hours" type="button" onclick="resetDailyPomodoroHours()">Resetar Horas do Dia</button>
                     </div>
@@ -2963,7 +2979,7 @@
 
                     <div class="calendar-primary-actions">
                         <button class="btn btn-primary" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
-                        <button class="btn opportunity-btn" onclick="openOpportunityStudyModal()">⚡ Tenho tempo agora</button>
+                        <button class="btn opportunity-btn" onclick="openOpportunityStudyModal()">Tenho tempo agora</button>
                         <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
                         <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
                         <button class="btn btn-primary" onclick="reorganizarMateriasCronograma()">Reorganizar Matérias</button>
@@ -3041,13 +3057,13 @@
         </div>
 
         <nav class="mobile-bottom-nav" aria-label="Navegação principal mobile">
-            <button class="mobile-nav-btn active" type="button" data-tab="tab-edital" onclick="mobileSwitchTab('tab-edital', this)"><span class="nav-ico">▤</span><span>Edital</span></button>
-            <button class="mobile-nav-btn" type="button" data-tab="tab-calendario" onclick="mobileSwitchTab('tab-calendario', this)"><span class="nav-ico">▦</span><span>Cronograma</span></button>
-            <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" onclick="mobileSwitchTab('tab-flashcards', this)"><span class="nav-ico">◇</span><span>Flashcards</span></button>
-            <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" onclick="mobileSwitchTab('tab-anotacoes', this)"><span class="nav-ico">✎</span><span>Anotações</span></button>
-            <button class="mobile-nav-btn" type="button" onclick="toggleModernTools()"><span class="nav-ico">•••</span><span>Mais</span></button>
+            <button class="mobile-nav-btn active" type="button" data-tab="tab-edital" onclick="mobileSwitchTab('tab-edital', this)"><span>Edital</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-calendario" onclick="mobileSwitchTab('tab-calendario', this)"><span>Cronograma</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" onclick="mobileSwitchTab('tab-flashcards', this)"><span>Flashcards</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" onclick="mobileSwitchTab('tab-anotacoes', this)"><span>Anotações</span></button>
+            <button class="mobile-nav-btn" type="button" onclick="toggleModernTools()"><span>Mais</span></button>
         </nav>
-        <button id="contextFab" class="context-fab" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo">+</button>
+        <button id="contextFab" class="context-fab" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo">Novo</button>
     </div>
 
     <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
@@ -3241,7 +3257,7 @@
                         <strong>Preenchimento 1: Horários Definidos por Turnos</strong>
                         <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Define início e carga horária exata para Manhã, Tarde e Noite.</p>
                     </div>
-                    ➔
+                    
                 </div>
 
                 <div class="hours-option-card" onclick="chooseCronogramaType(2)">
@@ -3249,7 +3265,7 @@
                         <strong>Preenchimento 2: Dias da Semana + Carga Horária Diária</strong>
                         <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Selecione os dias ativos e a quantidade de horas gerais disponíveis.</p>
                     </div>
-                    ➔
+                    
                 </div>
 
                 <div class="hours-option-card" onclick="chooseCronogramaType(3)">
@@ -3257,7 +3273,7 @@
                         <strong>Preenchimento 3: Estudo por Oportunidade</strong>
                         <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Sem horário e sem meta diária fixa. O app escolhe a melhor atividade quando você disser quanto tempo tem agora.</p>
                     </div>
-                    ⚡
+                    
                 </div>
             </div>
 
@@ -3290,11 +3306,11 @@
 
             <h4 style="color: var(--primary-blue); margin-top: 1rem;">Quanto tempo por dia você consegue estudar?</h4>
             <div id="hoursSelectionContainer">
-                <div class="hours-option-card" onclick="selectHoursOption(this, 1)"><span>⏱️ Até 1h por dia</span></div>
-                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)"><span>⏱️ Até 2h por dia</span></div>
-                <div class="hours-option-card" onclick="selectHoursOption(this, 4)"><span>⏱️ Até 4h por dia</span></div>
-                <div class="hours-option-card" onclick="selectHoursOption(this, 5)"><span>🔥 5h ou mais (Modo Hardcore)</span></div>
-                <div class="hours-option-card" onclick="selectCustomDailyHoursOption(this)"><span>⚙️ Personalizar horas por dia da semana</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 1)"><span>Até 1h por dia</span></div>
+                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)"><span>Até 2h por dia</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 4)"><span>Até 4h por dia</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 5)"><span>5h ou mais</span></div>
+                <div class="hours-option-card" onclick="selectCustomDailyHoursOption(this)"><span>Personalizar horas por dia da semana</span></div>
             </div>
             <div id="customDailyHoursPanel" class="custom-daily-hours-panel" style="display:none;">
                 <div class="custom-hours-help">Informe quantas horas livres você realmente possui em cada dia selecionado.</div>
@@ -3305,7 +3321,7 @@
             <div class="form-group">
                 <select id="m2RevisionStrategy" style="width:100%;">
                     <option value="nenhuma">Sem Revisão Espaçada</option>
-                    <option value="retencao_adaptativa">🧠 Retenção Adaptativa — Ebbinghaus + desempenho</option>
+                    <option value="retencao_adaptativa">Retenção Adaptativa — Ebbinghaus + desempenho</option>
                     <option value="revisao24730" selected>Revisão 1d, 7d e 30d</option>
                     <option value="classica">Revisão Clássica (7d, 30d, 90d)</option>
                     <option value="bimestral">Revisão Bimestral (1d, 15d, 30d, 60d)</option>
@@ -3317,7 +3333,7 @@
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalMentorisMethod()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="gerarCronogramaMetodo2()">Gerar Cronograma 🚀</button>
+                <button class="btn btn-success" onclick="gerarCronogramaMetodo2()">Gerar Cronograma</button>
             </div>
         </div>
     </div>
@@ -3359,7 +3375,7 @@
                 <label><strong>Estratégia de Revisões:</strong></label>
                 <select id="m1RevisionStrategy" style="width:100%;">
                     <option value="nenhuma">Sem revisões automáticas</option>
-                    <option value="retencao_adaptativa">🧠 Retenção Adaptativa — Ebbinghaus + desempenho</option>
+                    <option value="retencao_adaptativa">Retenção Adaptativa — Ebbinghaus + desempenho</option>
                     <option value="revisao24730" selected>1d, 7d e 30d — revisão recomendada</option>
                     <option value="classica">Clássica — 7d, 30d e 90d</option>
                     <option value="bimestral">Bimestral — 1d, 15d, 30d e 60d</option>
@@ -3371,7 +3387,7 @@
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma 🚀</button>
+                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma</button>
             </div>
         </div>
     </div>
@@ -3379,7 +3395,7 @@
     <!-- V9.59 — CONFIGURAÇÃO DO ESTUDO POR OPORTUNIDADE -->
     <div class="modal-overlay" id="modalFlexibleStudyConfig" style="z-index:1400;">
         <div class="modal modal-large" style="max-width:860px;">
-            <h3>⚡ Estudo por Oportunidade</h3>
+            <h3> Estudo por Oportunidade</h3>
             <p style="font-size:.88rem;color:#94a3b8;line-height:1.5;">Você não precisa definir horários. Informe apenas como cada dia deve se comportar; quando surgir uma oportunidade, toque em <strong>Tenho tempo agora</strong>.</p>
             <div class="form-group">
                 <label><strong>Data de início:</strong></label>
@@ -3393,13 +3409,13 @@
             <div class="form-group">
                 <label><strong>Estratégia de revisão:</strong></label>
                 <select id="flexRevisionStrategy" style="width:100%;">
-                    <option value="retencao_adaptativa" selected>🧠 Retenção Adaptativa — recomendado</option>
+                    <option value="retencao_adaptativa" selected>Retenção Adaptativa — recomendado</option>
                     <option value="nenhuma">Sem revisões automáticas</option>
                 </select>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" type="button" onclick="closeFlexibleStudyConfig()">Cancelar (ESC)</button>
-                <button class="btn btn-success" type="button" onclick="activateFlexibleStudyMode()">Ativar modo flexível ⚡</button>
+                <button class="btn btn-success" type="button" onclick="activateFlexibleStudyMode()">Ativar modo flexível </button>
             </div>
         </div>
     </div>
@@ -3407,8 +3423,8 @@
     <!-- V9.59 — OPORTUNIDADE DE ESTUDO AGORA -->
     <div class="modal-overlay" id="modalOpportunityStudy" style="z-index:1420;">
         <div class="modal modal-large" style="max-width:820px;">
-            <h3>⚡ Tenho tempo agora</h3>
-            <p id="opportunityModeHint" style="font-size:.84rem;color:#94a3b8;line-height:1.45;">Diga quanto tempo você tem. O Painel cruza retenção, prioridade, progresso e contexto.</p>
+            <h3> Tenho tempo agora</h3>
+            <p id="opportunityModeHint" style="font-size:.84rem;color:#94a3b8;line-height:1.45;">Diga quanto tempo você tem. O Retention Scheduler cruza memória, prioridade, peso, prova, progresso e contexto.</p>
             <h4 style="color:var(--primary-blue);margin-top:.8rem;">Quanto tempo você tem?</h4>
             <div class="opportunity-time-grid">
                 <button class="opportunity-time-btn" data-minutes="5" onclick="selectOpportunityMinutes(5,this)">5 min</button>
@@ -3420,9 +3436,9 @@
             <h4 style="color:var(--primary-blue);margin-top:.7rem;">Onde / como você está?</h4>
             <div class="opportunity-context-grid">
                 <button class="opportunity-context-btn selected" data-context="any" onclick="selectOpportunityContext('any',this)">Qualquer situação</button>
-                <button class="opportunity-context-btn" data-context="transit" onclick="selectOpportunityContext('transit',this)">🚌 Em deslocamento</button>
-                <button class="opportunity-context-btn" data-context="walking" onclick="selectOpportunityContext('walking',this)">🚶 Caminhando</button>
-                <button class="opportunity-context-btn" data-context="focus" onclick="selectOpportunityContext('focus',this)">🎯 Com foco total</button>
+                <button class="opportunity-context-btn" data-context="transit" onclick="selectOpportunityContext('transit',this)">Em deslocamento</button>
+                <button class="opportunity-context-btn" data-context="walking" onclick="selectOpportunityContext('walking',this)">Caminhando</button>
+                <button class="opportunity-context-btn" data-context="focus" onclick="selectOpportunityContext('focus',this)">Com foco total</button>
             </div>
             <div id="opportunityRecommendations" class="opportunity-recommendations"></div>
             <div class="modal-actions">
@@ -3434,7 +3450,7 @@
     <!-- V9.58 — FEEDBACK DE REVISÃO ADAPTATIVA -->
     <div class="modal-overlay" id="modalAdaptiveReviewFeedback" style="z-index:1410;">
         <div class="modal" style="max-width:680px;">
-            <h3>🧠 Como foi esta revisão?</h3>
+            <h3>Como foi esta revisão?</h3>
             <div class="adaptive-review-feedback-summary">
                 <strong id="adaptiveReviewFeedbackTopic">—</strong>
                 <span id="adaptiveReviewFeedbackMeta">Avalie o quanto conseguiu recuperar o conteúdo sem ajuda.</span>
@@ -3479,7 +3495,7 @@
     <!-- MODAL ANALISAR EDITAL COM IA — UNIVERSAL PARSER V8 -->
     <div class="modal-overlay" id="modalLegalReading">
         <div class="modal" style="max-width:720px;">
-            <h3>⚖ Lei Seca</h3>
+            <h3>Lei Seca</h3>
             <div id="legalReadingContext" style="font-size:.9rem; opacity:.82;"></div>
             <div class="form-group">
                 <label>Blocos cadastrados para esta matéria</label>
@@ -3513,14 +3529,14 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeLegalReadingModal()">Cancelar</button>
-                <button class="btn btn-primary" data-enter-default="true" onclick="startLegalReadingStudy()">▶ Iniciar Lei Seca</button>
+                <button class="btn btn-primary" data-enter-default="true" onclick="startLegalReadingStudy()">Iniciar Lei Seca</button>
             </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="modalAnaliseEditalIA">
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
-            <h3 style="margin-bottom:0;">✦ Analisar Edital com IA</h3>
+            <h3 style="margin-bottom:0;">Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
                 <strong>Universal Parser V9.20 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade <strong>1 = alta</strong>, <strong>2 = média</strong> e <strong>3 = baixa</strong> ainda usa apenas sinais do próprio edital.
@@ -3592,7 +3608,7 @@
             <div class="modal-actions flashcard-study-modal-actions">
                 <button class="btn btn-secondary" onclick="closeStudyModal()">Sair do Treino</button>
                 <button class="btn btn-info" onclick="toggleStudyCardAnswer()">Virar Cartão</button>
-                <button class="btn btn-primary" onclick="nextStudyCard()">Próximo ➔</button>
+                <button class="btn btn-primary" onclick="nextStudyCard()">Próximo </button>
             </div>
         </div>
     </div>
@@ -3830,7 +3846,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.59',
+                    appVersion:'9.60',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -4644,8 +4660,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 noFixedHours:true,
                 startDate,
                 revisionStrategy,
+                schedulerMode:'retention_v1',
                 flexibleDayModes:modes
             };
+            contest.retentionScheduler = { version:RETENTION_SCHEDULER_VERSION, enabled:true, updatedAt:new Date().toISOString() };
             const retentionEngine = getRetentionEngine(contest, true);
             retentionEngine.mode = revisionStrategy === 'retencao_adaptativa' ? 'adaptive' : 'shadow';
             if (revisionStrategy === 'retencao_adaptativa') {
@@ -4694,10 +4712,103 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderOpportunityRecommendations();
         }
 
+        // V9.60 — Retention Scheduler: score único de decisão de estudo.
+        // O score combina relevância estratégica do edital, memória, proximidade da prova,
+        // continuidade, tempo disponível e diversidade. É usado tanto no modo oportunidade
+        // quanto para ordenar os tópicos dentro das filas do cronograma tradicional.
+        const RETENTION_SCHEDULER_VERSION = 1;
+
+        function getContestDaysUntilExam(contestMeta, at = new Date()) {
+            const raw = contestMeta?.dataProva;
+            if (!raw) return null;
+            const exam = new Date(`${raw}T23:59:59`);
+            if (!Number.isFinite(exam.getTime())) return null;
+            return Math.ceil((exam.getTime() - at.getTime()) / 86400000);
+        }
+
+        function getRetentionSchedulerExamScore(contestMeta, at = new Date()) {
+            const days = getContestDaysUntilExam(contestMeta, at);
+            if (days == null) return { days:null, score:0 };
+            if (days < 0) return { days, score:0 };
+            if (days <= 7) return { days, score:220 };
+            if (days <= 15) return { days, score:170 };
+            if (days <= 30) return { days, score:125 };
+            if (days <= 60) return { days, score:80 };
+            if (days <= 120) return { days, score:40 };
+            return { days, score:15 };
+        }
+
+        function getRetentionSchedulerWeight(item, contestMeta) {
+            const explicit = Number(contestMeta?.materiaWeights?.[item?.materia]);
+            if (Number.isFinite(explicit) && explicit > 0) return Math.max(.25, Math.min(8, explicit));
+            const itemWeight = Number(item?.peso);
+            if (Number.isFinite(itemWeight) && itemWeight > 0) return Math.max(.25, Math.min(8, itemWeight));
+            const p = Math.max(1, Math.min(4, Number(item?.prioridade) || 2));
+            return 5 - p;
+        }
+
+        function computeRetentionSchedulerScore(item, options = {}) {
+            const contest = options.contest || getConcursosMetadata()[currentConcurso] || {};
+            const now = options.now instanceof Date ? options.now : new Date();
+            const p = Math.max(1, Math.min(4, Number(item?.prioridade) || 2));
+            const subjectP = Math.max(1, Math.min(20, Number(item?.assunto_prioridade) || 1));
+            const weight = getRetentionSchedulerWeight(item, contest);
+            const state = options.state || getRetentionTopicState(contest, item?.materia, item?.assunto, false);
+            const retention = state?.lastStudyAt ? calculateRetentionFromState(state, now) : null;
+            const nextAt = state?.nextReviewAt ? new Date(state.nextReviewAt) : null;
+            const due = !!(nextAt && Number.isFinite(nextAt.getTime()) && nextAt <= now);
+            const overdueDays = due ? Math.max(0, (now.getTime() - nextAt.getTime()) / 86400000) : 0;
+            const exam = getRetentionSchedulerExamScore(contest, now);
+            const plan = getTopicStudyPlan(item, contest);
+            const progress = getTopicStudyPlanProgress(item, contest);
+            const continuation = !!(plan && progress && !progress.complete && Number(progress.current || 0) > 0);
+            const recentMaterias = options.recentMaterias || [];
+            const activityType = options.activityType || (!item?.teoria ? 'teoria' : 'questoes');
+            const availableMinutes = Number(options.availableMinutes) || 0;
+            const suggestedMinutes = Math.max(5, Number(options.suggestedMinutes) || Number(plan?.sessionMinutes) || (activityType === 'teoria' ? 40 : 20));
+            const contextMode = options.contextMode || 'any';
+            const isRevision = !!options.isRevision;
+
+            const components = {
+                priority: (5 - p) * 150,
+                subjectPriority: Math.max(0, 70 - (subjectP - 1) * 5),
+                weight: Math.min(260, weight * 42),
+                memory: retention == null ? 0 : Math.max(0, (100 - retention) * (isRevision ? 6.5 : 2.2)),
+                due: isRevision ? (due ? 340 + Math.min(300, overdueDays * 34) : 80) : 0,
+                exam: Math.round(exam.score * (isRevision ? 1.25 : (activityType === 'questoes' ? .75 : .40))),
+                continuation: continuation ? 160 : 0,
+                recentPenalty: recentMaterias[0] === item?.materia ? -120 : (recentMaterias.includes(item?.materia) ? -45 : 0),
+                timeFit: 0,
+                context: 0
+            };
+
+            if (availableMinutes > 0) {
+                const ratio = availableMinutes / Math.max(1, suggestedMinutes);
+                if (ratio >= 1) components.timeFit = 90;
+                else if (ratio >= .65) components.timeFit = 35;
+                else components.timeFit = -Math.min(220, (1 - ratio) * 260);
+            }
+            if (contextMode === 'focus' && activityType === 'teoria' && availableMinutes >= 40) components.context += 100;
+            if ((contextMode === 'walking' || contextMode === 'transit') && activityType === 'teoria') components.context -= 190;
+            if ((contextMode === 'walking' || contextMode === 'transit') && isRevision) components.context += 60;
+            if (availableMinutes > 0 && availableMinutes <= 10 && activityType === 'teoria') components.context -= 130;
+
+            const total = Object.values(components).reduce((sum, value) => sum + Number(value || 0), 0);
+            return {
+                total,
+                components,
+                retention,
+                due,
+                overdueDays,
+                daysUntilExam: exam.days,
+                continuation,
+                suggestedMinutes
+            };
+        }
+
         function getOpportunityPriorityScore(item) {
-            const p = Math.max(1, Math.min(4, Number(item?.prioridade) || 1));
-            const subjectP = Math.max(1, Math.min(10, Number(item?.assunto_prioridade) || 1));
-            return (5 - p) * 120 + Math.max(0, 35 - subjectP * 3);
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            return computeRetentionSchedulerScore(item, { contest }).total;
         }
 
         function countFlashcardsForTopic(materia, assunto) {
@@ -4730,9 +4841,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (!due && retention > 72) return;
                 const key = `review::${state.key}`;
                 if (seen.has(key)) return; seen.add(key);
-                const overdueDays = due ? Math.max(0, (now - nextAt) / 86400000) : 0;
-                const score = 900 + getOpportunityPriorityScore(item) + (100 - retention) * 5 + Math.min(220, overdueDays * 25);
-                candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:'questoes', isRevision:true, retention, due, score, minutes:Math.min(minutes, Math.max(5, minutes <= 10 ? minutes : 15)), reason:due?'Revisão vencida ou prevista para agora':'Retenção estimada abaixo do alvo' });
+                const suggested = Math.min(minutes, Math.max(5, minutes <= 10 ? minutes : 15));
+                const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:true, activityType:'questoes', availableMinutes:minutes, suggestedMinutes:suggested, contextMode, recentMaterias });
+                const score = 900 + scheduler.total;
+                candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:'questoes', isRevision:true, retention, due, score, scheduler, minutes:suggested, reason:due?'Revisão vencida ou prevista para agora':'Retenção estimada abaixo do alvo' });
             });
 
             if (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly) {
@@ -4743,11 +4855,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const retention = state ? calculateRetentionFromState(state,now) : 75;
                     const key = `flash::${getStudyTopicKey(item.materia,item.assunto)}`;
                     if (seen.has(key)) return; seen.add(key);
-                    let score = 560 + getOpportunityPriorityScore(item) + (100-retention)*2;
-                    if (contextMode === 'walking') score += 260;
-                    if (contextMode === 'transit') score += 180;
-                    if (minutes <= 10) score += 160;
-                    candidates.push({ kind:'flashcards', materia:item.materia, assunto:item.assunto, itemId:item.id, flashcardCount:count, retention, score, minutes, reason:`${count} flashcard${count===1?'':'s'} disponível${count===1?'':'is'} para recuperação ativa` });
+                    const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:true, activityType:'questoes', availableMinutes:minutes, suggestedMinutes:Math.min(minutes, 15), contextMode, recentMaterias });
+                    let score = 520 + scheduler.total;
+                    if (contextMode === 'walking') score += 210;
+                    if (contextMode === 'transit') score += 150;
+                    if (minutes <= 10) score += 140;
+                    candidates.push({ kind:'flashcards', materia:item.materia, assunto:item.assunto, itemId:item.id, flashcardCount:count, retention, score, scheduler, minutes, reason:`${count} flashcard${count===1?'':'s'} disponível${count===1?'':'is'} para recuperação ativa` });
                 });
             }
 
@@ -4762,14 +4875,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     let activityType = !item.teoria ? 'teoria' : 'questoes';
                     if (minutes <= 20 && item.teoria) activityType = 'questoes';
                     if (contextMode === 'walking' && activityType === 'teoria') return;
-                    let score = 430 + getOpportunityPriorityScore(item) + (isContinuation ? 170 : 0);
-                    if (recentMaterias[0] === item.materia) score -= 110;
-                    if (recentMaterias.includes(item.materia)) score -= 30;
-                    if (contextMode === 'focus' && minutes >= 40 && activityType === 'teoria') score += 130;
-                    if ((contextMode === 'walking' || contextMode === 'transit') && activityType === 'teoria') score -= 190;
-                    if (minutes <= 10 && activityType === 'teoria') score -= 150;
                     const suggested = Math.max(5, Math.min(minutes, Number(plan?.sessionMinutes) || (activityType === 'teoria' ? 40 : 20)));
-                    candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, isRevision:false, score, minutes:suggested, reason:isContinuation?'Continuar assunto já iniciado':(activityType==='questoes'?'Prática de recuperação por questões':'Próximo conteúdo prioritário') });
+                    const state = getRetentionTopicState(contest,item.materia,item.assunto,false);
+                    const idealMinutes = Number(plan?.sessionMinutes) || (activityType === 'teoria' ? 40 : 20);
+                    const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:false, activityType, availableMinutes:minutes, suggestedMinutes:idealMinutes, contextMode, recentMaterias });
+                    const score = 430 + scheduler.total;
+                    candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, isRevision:false, score, scheduler, minutes:suggested, reason:isContinuation?'Continuar assunto já iniciado':(activityType==='questoes'?'Prática de recuperação por questões':'Próximo conteúdo prioritário') });
                 });
             }
 
@@ -4793,7 +4904,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (hint) {
                 hint.textContent = isFlexibleOpportunityMode(contest)
                     ? `Modo flexível ativo • Hoje: ${dayMode==='full'?'estudo completo':dayMode==='review'?'somente revisão':'descanso'}. Nenhum horário fixo é necessário.`
-                    : 'Você pode usar esta função mesmo com cronograma tradicional. O Painel cruza retenção, prioridade e progresso.';
+                    : 'Você pode usar esta função mesmo com cronograma tradicional. O Retention Scheduler cruza memória, prioridade, peso, prova e progresso.';
             }
             if (isFlexibleOpportunityMode(contest) && dayMode==='rest' && !opportunityIgnoreDayMode) {
                 opportunityRecommendations=[];
@@ -4807,8 +4918,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
             container.innerHTML = opportunityRecommendations.map((rec,idx) => {
                 const kindLabel = rec.kind==='flashcards'?'Flashcards':rec.isRevision?'Revisão':rec.activityType==='questoes'?'Questões':'Teoria';
-                const retentionBadge = Number.isFinite(rec.retention) ? `<span class="opportunity-badge">Memória ~${Math.round(rec.retention)}%</span>` : '';
-                return `<div class="opportunity-card"><div class="opportunity-card-top"><div><div class="opportunity-card-title">${escapeHtml(rec.materia)} — ${escapeHtml(rec.assunto)}</div><div class="opportunity-card-meta">${escapeHtml(rec.reason)} · sugestão de ${Math.max(1,Math.round(rec.minutes||opportunitySelectedMinutes))} min</div><div class="opportunity-card-badges"><span class="opportunity-badge">${kindLabel}</span>${retentionBadge}${rec.flashcardCount?`<span class="opportunity-badge">${rec.flashcardCount} cards</span>`:''}</div></div><button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button></div></div>`;
+                const retentionBadge = Number.isFinite(rec.retention) ? `<span class="opportunity-badge">Memória ${Math.round(rec.retention)}%</span>` : '';
+                const examBadge = Number.isFinite(rec.scheduler?.daysUntilExam) && rec.scheduler.daysUntilExam >= 0 && rec.scheduler.daysUntilExam <= 30 ? `<span class="opportunity-badge">Prova em ${rec.scheduler.daysUntilExam}d</span>` : '';
+                return `<div class="opportunity-card"><div class="opportunity-card-top"><div><div class="opportunity-card-title">${escapeHtml(rec.materia)} — ${escapeHtml(rec.assunto)}</div><div class="opportunity-card-meta">${escapeHtml(rec.reason)} · sugestão de ${Math.max(1,Math.round(rec.minutes||opportunitySelectedMinutes))} min</div><div class="opportunity-card-badges"><span class="opportunity-badge">${kindLabel}</span>${retentionBadge}${examBadge}${rec.scheduler?.continuation?'<span class="opportunity-badge">Em andamento</span>':''}${rec.flashcardCount?`<span class="opportunity-badge">${rec.flashcardCount} cards</span>`:''}</div></div><button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button></div></div>`;
             }).join('');
         }
 
@@ -4980,10 +5092,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             metadata[currentConcurso].pomodoroDailyTargetHours = fallbackTarget;
             metadata[currentConcurso].pomodoroScheduleMethod = 2;
             metadata[currentConcurso].scheduleConfig = {
-                method: 2, startDate: dataInicioStr, revisionStrategy: strategyKey,
+                method: 2, startDate: dataInicioStr, revisionStrategy: strategyKey, schedulerMode:'retention_v1',
                 weekdays: [...selectedWeekdays], dailySlots: useCustomDailyHours ? null : selectedDailyHoursSlots,
                 customDailyHoursByWeekday: useCustomDailyHours ? Object.fromEntries(selectedWeekdays.map(dayIdx => [dayIdx, getMethod2HoursForWeekday(dayIdx)])) : null
             };
+            metadata[currentConcurso].retentionScheduler = { version:RETENTION_SCHEDULER_VERSION, enabled:true, updatedAt:new Date().toISOString() };
             getRetentionEngine(metadata[currentConcurso], true).mode = strategyKey === 'retencao_adaptativa' ? 'adaptive' : 'shadow';
             await saveConcursosMetadata(metadata);
             closeModalMentorisMethod();
@@ -5038,9 +5151,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             metadata[currentConcurso].pomodoroDailyTargetHours = dailySlots;
             metadata[currentConcurso].pomodoroScheduleMethod = 1;
             metadata[currentConcurso].scheduleConfig = {
-                method: 1, startDate: dataInicioStr, revisionStrategy: strategyKey,
+                method: 1, startDate: dataInicioStr, revisionStrategy: strategyKey, schedulerMode:'retention_v1',
                 includeSaturday: incSab, includeSunday: incDom, dailySlots
             };
+            metadata[currentConcurso].retentionScheduler = { version:RETENTION_SCHEDULER_VERSION, enabled:true, updatedAt:new Date().toISOString() };
             getRetentionEngine(metadata[currentConcurso], true).mode = strategyKey === 'retencao_adaptativa' ? 'adaptive' : 'shadow';
             await saveConcursosMetadata(metadata);
             closeModalConfigHorarios();
@@ -5048,6 +5162,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderPomodoroDailyCounter();
             filterDataByConcurso();
             alert(`Cronograma Método 1 gerado com sucesso! Meta diária do Pomodoro: ${dailySlots}h.`);
+        }
+
+        function formatScheduledItemForDisplay(text) {
+            return String(text || '')
+                .replace(/^🔄\s*/, '')
+                .replace(/^Rev\s*\(/, 'Revisão (')
+                .trim();
         }
 
         function openModalDayContent(dateKey) {
@@ -5239,7 +5360,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             <div style="margin-top:4px; font-size:.88rem; opacity:.88;">${escapeHtml(suggestion.topicText)} · planejado para ${formatDateKeyShort(suggestion.dateKey)}</div>
                             <div style="margin-top:3px; font-size:.76rem; opacity:.65;">Ao concluir, o tópico será antecipado e apenas a fila futura será ajustada. A meta diária permanece inalterada.</div>
                         </div>
-                        <button class="btn btn-primary btn-sm" onclick="startAdaptiveSuggestedStudy()">▶ Adiantar próximo estudo</button>
+                        <button class="btn btn-primary btn-sm" onclick="startAdaptiveSuggestedStudy()">Adiantar próximo estudo</button>
                     </div>
                 </div>
             `);
@@ -5352,7 +5473,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (progress.mode === 'minutes') label = `${Math.min(progress.current, progress.target)} / ${progress.target} min`;
             else if (progress.mode === 'lessons') label = `Aula ${Math.min(progress.current + (progress.complete ? 0 : 1), progress.target)} de ${progress.target} · ${progress.current}/${progress.target} concluídas`;
             else label = `Bloco ${Math.min(progress.current + (progress.complete ? 0 : 1), progress.target)} de ${progress.target} · ${progress.current}/${progress.target} sessões`;
-            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? '✓ Teoria planejada concluída' : escapeHtml(label)}</span><span>${progress.pct}%</span><span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
+            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Teoria planejada concluída' : escapeHtml(label)}</span><span>${progress.pct}%</span><span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
         }
 
         function getTopicStudyPlanBadgeHtml(item, contestMeta = null) {
@@ -5519,7 +5640,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const label = document.getElementById(`studyPlanTargetLabel_${idx}`);
             const status = document.getElementById(`studyPlanLessonStatus_${idx}`);
             if (label) label.firstChild.textContent = mode === 'minutes' ? 'Carga total de Teoria (min) ' : (mode === 'lessons' ? 'Número de aulas ' : 'Número de sessões ');
-            if (status) status.textContent = mode === 'lessons' ? 'No modo Aulas, o tempo continua sendo registrado pelo Pomodoro. Use “✓ Aula” no cartão diário apenas quando terminar uma aula inteira.' : 'O progresso é calculado automaticamente a partir das sessões de Teoria registradas no Pomodoro.';
+            if (status) status.textContent = mode === 'lessons' ? 'No modo Aulas, o tempo continua sendo registrado pelo Pomodoro. Use “Aula concluída” no cartão diário apenas quando terminar uma aula inteira.' : 'O progresso é calculado automaticamente a partir das sessões de Teoria registradas no Pomodoro.';
         }
 
         async function saveTopicStudyPlan(idx) {
@@ -5631,10 +5752,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const studyPlanSummary = matchedItem && !isRevisionScheduleText(topicoStr) ? formatTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {}) : '';
                 const studyPlan = matchedItem ? getTopicStudyPlan(matchedItem, metadata[currentConcurso] || {}) : null;
                 const adaptiveReviewDone = isAdaptiveRetentionReviewText(topicoStr) && getAdaptiveRetentionReviewCompletion(metadata[currentConcurso] || {}, activeSelectedDateKey, cleanTop);
-                const adaptiveReviewBadge = adaptiveReviewDone ? `<span style="display:inline-flex;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:.68rem;color:#86efac;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);">✓ Revisada</span>` : '';
+                const adaptiveReviewBadge = adaptiveReviewDone ? `<span style="display:inline-flex;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:.68rem;color:#86efac;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);">Revisada</span>` : '';
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(topicoStr)}</strong>${adaptiveReviewBadge}${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
+                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(formatScheduledItemForDisplay(topicoStr))}</strong>${adaptiveReviewBadge}${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
                         <div class="day-topic-controls-row">
                             ${matchedItem ? `
                                 <div class="day-topic-status-inline">
@@ -5648,13 +5769,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             ` : ''}
                             ${matchedItem && !adaptiveReviewDone ? `<div class="study-launch-controls">
                                 <input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}" title="Minutos de foco">
-                                <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">▶ Teoria</button>
-                                <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">▶ Questões</button>
-                                ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">⚖ Lei Seca</button>` : ''}
+                                <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')">Teoria</button>
+                                <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')">Questões</button>
+                                ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">Lei Seca</button>` : ''}
                             </div>` : ''}
                             <div class="day-topic-inline-actions">
                                 ${matchedItem && !isRevisionScheduleText(topicoStr) ? `<button class="btn btn-info btn-sm" onclick="showStudyPlanEditor(${idx})">Planejar</button>` : ''}
-                                ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})">✓ Aula</button>` : ''}
+                                ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})">Aula concluída</button>` : ''}
                                 <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button>
                             </div>
@@ -6284,7 +6405,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const safeAssHandler = encodeHandlerValue(assName);
                     subfoldersHtml += `
                         <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), decodeURIComponent('${safeAssHandler}'))">
-                            <span style="font-size:0.9rem; font-weight:600;">📑 ${escapeHtml(assName)}</span>
+                            <span style="font-size:0.9rem; font-weight:600;">${escapeHtml(assName)}</span>
                             <span style="font-size:0.8rem; opacity:0.8;">${count} cartões</span>
                         </div>
                     `;
@@ -6300,7 +6421,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <span class="anki-folder-count">${matData.total} cartões</span>
                                 <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria">Abrir Caixa</button>
-                                <span>${isOpen ? '▼' : '►'}</span>
+                                <span>${isOpen ? 'Fechar' : 'Abrir'}</span>
                             </div>
                         </div>
                         ${isOpen ? `<div class="anki-subfolder-list">${subfoldersHtml}</div>` : ''}
@@ -6359,8 +6480,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${escapeHtml(fc.resposta)}</p>
                             </div>
                             <div style="display:flex; gap:6px; flex-shrink:0;">
-                                <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard">Editar ✏️</button>
-                                <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir 🗑️</button>
+                                <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir</button>
                             </div>
                         </div>
                     `;
@@ -6369,7 +6490,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 container.innerHTML += `
                     <div style="margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--primary-blue);">
                         <h4 style="color:var(--header-materia-text); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-                            <span>📦 Caixa Aberta: ${escapeHtml(mName)}</span>
+                            <span>${escapeHtml(mName)}</span>
                             <span style="font-size:0.8rem; font-weight:normal;">(${grouped[mName].length} cartões)</span>
                         </h4>
                         ${cardsHtml}
@@ -6882,7 +7003,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const state = getScheduledItemStudyState(it, editalLookup, dateKey);
                     if (state.isRevision) revisionCount++;
                     if (state.done) completedCount++;
-                    badgeParts.push(`<div class="clean-subject-badge ${state.done ? 'done' : (state.isRevision ? 'rev' : '')}">${escapeHtml(it)}</div>`);
+                    badgeParts.push(`<div class="clean-subject-badge ${state.done ? 'done' : (state.isRevision ? 'rev' : '')}">${escapeHtml(formatScheduledItemForDisplay(it))}</div>`);
                 });
 
                 const allDone = items.length > 0 && completedCount === items.length;
@@ -6890,14 +7011,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const studyDayStateClass = allDone ? 'study-completed' : (isOverdue ? 'study-overdue' : '');
                 const mobileClass = allDone ? 'done' : (isOverdue ? 'late' : (revisionCount > 0 ? 'rev' : ''));
                 const mobileMeta = items.length > 0
-                    ? `<div class="month-day-mobile-meta"><span class="month-day-mobile-count ${mobileClass}" title="${items.length} itens agendados">${allDone ? '✓' : items.length}</span></div>`
+                    ? `<div class="month-day-mobile-meta"><span class="month-day-mobile-count ${mobileClass}" title="${items.length} itens agendados">${allDone ? 'Concluído' : items.length}</span></div>`
                     : '<div class="month-day-mobile-meta"></div>';
 
                 htmlParts.push(`
                     <div class="month-day-cell ${isToday ? 'today' : ''} ${studyDayStateClass}" data-date-key="${dateKey}" onclick="openModalDayContent('${dateKey}')" role="button" tabindex="0" aria-label="Dia ${day}, ${items.length} itens agendados">
                         <div class="day-num-header">
                             <span>${day}</span>
-                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Abrir dia" tabindex="-1">+</button>
+                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Abrir dia" tabindex="-1">Abrir</button>
                         </div>
                         <div class="day-badges-scroll">${badgeParts.join('')}</div>
                         ${mobileMeta}
@@ -6927,14 +7048,24 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (!grouped.has(key)) grouped.set(key, []);
                 grouped.get(key).push(item);
             });
-            const queues = [...grouped.entries()].map(([materia, topicItems]) => ({
-                materia,
-                items: [...topicItems].sort((a,b) => (a.assunto_prioridade||1)-(b.assunto_prioridade||1)),
-                weight: Math.max(0.25, getMateriaScheduleWeight(materia, topicItems, metadata)),
-                served: 0,
-                lastTurn: -1,
-                priority: Math.max(1, Math.min(4, Math.min(...topicItems.map(i => Number(i.prioridade)||2))))
-            }));
+            const contest = metadata?.[currentConcurso] || {};
+            const queues = [...grouped.entries()].map(([materia, topicItems]) => {
+                const sortedItems = [...topicItems].sort((a,b) => {
+                    const scoreA = computeRetentionSchedulerScore(a, { contest }).total;
+                    const scoreB = computeRetentionSchedulerScore(b, { contest }).total;
+                    if (Math.abs(scoreA-scoreB) > 1e-9) return scoreB-scoreA;
+                    return (a.assunto_prioridade||1)-(b.assunto_prioridade||1);
+                });
+                return {
+                    materia,
+                    items: sortedItems,
+                    weight: Math.max(0.25, getMateriaScheduleWeight(materia, topicItems, metadata)),
+                    served: 0,
+                    lastTurn: -1,
+                    priority: Math.max(1, Math.min(4, Math.min(...topicItems.map(i => Number(i.prioridade)||2)))),
+                    schedulerScore: sortedItems.length ? computeRetentionSchedulerScore(sortedItems[0], { contest }).total : 0
+                };
+            });
             return { queues, turn: 0, lastMateria: null };
         }
 
@@ -6965,12 +7096,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const waitA = state.turn - a.lastTurn;
                 const waitB = state.turn - b.lastTurn;
                 if (waitA !== waitB) return waitB - waitA;
+                if (Math.abs((a.schedulerScore||0)-(b.schedulerScore||0)) > 1e-9) return (b.schedulerScore||0)-(a.schedulerScore||0);
                 if (a.priority !== b.priority) return a.priority - b.priority;
                 return a.materia.localeCompare(b.materia, 'pt-BR');
             });
 
             const chosen = available[0];
             const item = chosen.items.shift();
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            chosen.schedulerScore = chosen.items.length ? computeRetentionSchedulerScore(chosen.items[0], { contest }).total : 0;
             chosen.served += 1;
             chosen.lastTurn = state.turn++;
             state.lastMateria = chosen.materia;
@@ -7420,7 +7554,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     itemsHtml += `
                         <div class="delayed-card">
                             <div class="delayed-card-info">
-                                <p class="delayed-item-link" role="button" tabindex="0" title="Abrir este dia no cronograma" onclick="openScheduledDayFromDelayed('${group.date}', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScheduledDayFromDelayed('${group.date}', event);}">${escapeHtml(it)}</p>
+                                <p class="delayed-item-link" role="button" tabindex="0" title="Abrir este dia no cronograma" onclick="openScheduledDayFromDelayed('${group.date}', event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScheduledDayFromDelayed('${group.date}', event);}">${escapeHtml(formatScheduledItemForDisplay(it))}</p>
                                 <span class="delayed-tag">${escapeHtml(currentConcurso)}</span>
                             </div>
                         </div>`;
@@ -7434,7 +7568,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 ${timingBadge}
                                 <span class="delayed-day-count">${escapeHtml(itemCountText)}</span>
                             </span>
-                            <span class="delayed-day-chevron">⌄</span>
+                            
                         </button>
                         <div class="delayed-day-content">${itemsHtml}</div>
                     </div>`;
@@ -8198,7 +8332,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             <div class="materia-header-content">
                                 <span class="materia-header-main">
                                     <strong class="materia-header-title">${escapeHtml(materiaName)}</strong>
-                                    <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${clampMateriaPriority(group.prioridade)}<span class="materia-drag-hint">↕ arraste para reordenar e alterar prioridade</span></span>
+                                    <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${clampMateriaPriority(group.prioridade)}<span class="materia-drag-hint">arraste para reordenar e alterar prioridade</span></span>
                                 </span>
                                 <span class="materia-header-right">
                                     <span class="materia-progress-ring" style="--pct:${materiaPct}"><span>${materiaPct}%</span></span>
