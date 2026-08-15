@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V9.66.3 — Auditoria de Sessões e Gráfico de Progresso
+ESTUDO ADAPTATIVO INTELIGENTE — V9.66.4 — UX de Aulas e Transparência de Tempo
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -259,3 +259,14 @@ V9.66.3 — AUDITORIA DE SESSÕES E GRÁFICO DE PROGRESSO (15/08/2026)
 - Progresso geral exibe frações abaixo de 1% em vez de arredondar silenciosamente para 0%.
 - Gráfico redesenhado com trilhos verticais arredondados e preenchimentos em gradiente, seguindo a referência visual enviada.
 - CACHE_NAME: estudo-adaptativo-v9-66-3-auditoria-sessoes-grafico-20260815.
+
+
+V9.66.4 — UX DE AULAS E TRANSPARÊNCIA DE TEMPO (15/08/2026)
+- Mudança incremental sobre a V9.66.3.
+- No modo Número de aulas, o cartão diário mostra o tempo total já registrado para o assunto em studySessions, separado do percentual de aulas concluídas.
+- O percentual foi rotulado como 'Progresso das aulas' para evitar confusão com horas estudadas.
+- Campo de duração agora aparece como 'Sessão [N] min'.
+- Botões renomeados para 'Estudar Teoria', 'Estudar Questões', 'Registrar questões externas' e '✓ Concluir esta aula'.
+- Tooltips deixam explícito que sessões de estudo contabilizam minutos e que concluir aula não adiciona tempo.
+- studySessions permanece como fonte canônica do tempo; nenhum schema, RLS ou contrato de sincronização foi alterado.
+- CACHE_NAME: estudo-adaptativo-v9-66-4-ux-aulas-tempo-20260815.
