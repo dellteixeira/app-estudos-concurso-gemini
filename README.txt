@@ -68,3 +68,41 @@ V9.53 — EXCLUSÃO PERMANENTE DE CONTA / LIMPEZA ESTRITA
 - CONFIGURAÇÃO OBRIGATÓRIA NO CLOUDFLARE: adicionar um Secret chamado SUPABASE_SECRET_KEY com uma Secret API Key do Supabase (sb_secret_...). Alternativamente, por compatibilidade, SUPABASE_SERVICE_ROLE_KEY também é aceito.
 - Nunca colocar SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY no public/index.html, wrangler.jsonc versionado ou qualquer arquivo servido ao navegador.
 - A RPC delete_my_study_data() da V9.51 continua obrigatória para a exclusão transacional dos dados antes da remoção de auth.users.
+
+V9.54 — EXCLUSÃO PERMANENTE MIGRADA PARA SUPABASE EDGE FUNCTION
+- Remove a dependência de SUPABASE_SECRET_KEY no Cloudflare Worker para excluir contas.
+- O frontend chama a Edge Function autenticada `delete-account` via supabase.functions.invoke().
+- A função identifica exclusivamente o usuário pelo JWT da própria sessão; não recebe user_id arbitrário.
+- A RPC `delete_my_study_data()` continua apagando os dados de estudo de forma transacional e com SECURITY INVOKER.
+- Depois, a Edge Function usa a credencial administrativa fornecida automaticamente pelo ambiente hospedado do Supabase para remover auth.users.
+- Após confirmação do servidor, o app limpa dados locais, IndexedDB, backups, sessão e memória, e retorna imediatamente ao login.
+- O endpoint Cloudflare `/api/account/delete` foi removido e `/api/account/*` deixou de ser interceptado pelo Worker.
+- O Secret SUPABASE_SECRET_KEY no Cloudflare não é mais necessário para exclusão de conta.
+
+
+V9.55 — Auth Lifecycle Audit
+- SIGNED_OUT/session null agora retorna imediatamente à tela de login.
+- Logout usa scope local para não encerrar sessões em outros dispositivos.
+- Primeiro cadastro trata corretamente projetos com ou sem confirmação de e-mail.
+- Backup local registra appVersion 9.55.
+
+
+V9.56 — Flashcard Smart Shuffle
+- Removida a criação manual de flashcard individual da tela principal.
+- Matéria e assunto permanecem como destino da importação rápida em lote.
+- Todo início de treino agora embaralha os cartões com Fisher-Yates.
+- Treino filtrado por matéria/assunto também é embaralhado.
+- O sistema evita repetir o mesmo primeiro cartão e a mesma sequência da sessão anterior quando houver alternativas.
+- Histórico de embaralhamento é isolado por usuário e concurso e removido na exclusão dos dados da conta.
+- Backup local registra appVersion 9.56.
+
+V9.57 — RETENTION ENGINE CORE
+- Introduz motor de retenção em modo sombra, sem substituir o cronograma/revisões atuais.
+- Estado individual por matéria/assunto: lastStudyAt, lastReviewAt, nextReviewAt, stability, difficulty, retention, reviewCount, lapseCount, totalMinutes, sessionCount e activityCounts.
+- Retenção estimada por decaimento exponencial e estabilidade em dias.
+- Novas sessões em studySessions alimentam automaticamente o motor.
+- Histórico existente é migrado/reconstruído automaticamente a partir de studySessions.
+- Sessões de revisão programada passam a registrar isRevision.
+- Remoção de sessões e limpeza de cronograma reconciliam o motor de retenção.
+- Dados ficam dentro de concursos_metadata, portanto entram automaticamente em Supabase user_settings, offline e Backup/Restaurar.
+- Próxima etapa prevista: V9.58 — feedback Esqueci/Difícil/Bom/Fácil + reagendamento adaptativo.
