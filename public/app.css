@@ -254,7 +254,10 @@
         .btn-study-start { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:white; }
         .btn-study-start:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(14,165,233,.22); }
         .study-launch-controls { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
-        .study-minutes-input { width:68px; min-width:68px; padding:.5rem .45rem; border:1px solid var(--border-color); border-radius:9px; background:var(--input-bg); color:var(--text-color); text-align:center; font-weight:800; }
+        .study-session-minutes-label { display:flex; align-items:center; gap:6px; font-size:.72rem; color:#93c5fd; font-weight:800; white-space:nowrap; }
+        .study-minutes-field { display:inline-flex; align-items:center; gap:4px; padding-right:7px; border:1px solid var(--border-color); border-radius:9px; background:var(--input-bg); color:#94a3b8; }
+        .study-minutes-input { width:54px; min-width:54px; padding:.5rem .25rem .5rem .45rem; border:0; outline:0; background:transparent; color:var(--text-color); text-align:center; font-weight:800; }
+        .study-minutes-field:focus-within { border-color:rgba(56,189,248,.65); box-shadow:0 0 0 2px rgba(14,165,233,.08); }
         .btn-study-theory { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:#fff; }
         .btn-study-questions { background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; }
         .btn-study-theory:hover,.btn-study-questions:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(14,165,233,.18); }
@@ -264,6 +267,9 @@
         .topic-plan-summary { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:6px; font-size:.72rem; color:#94a3b8; }
         .topic-plan-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:999px; border:1px solid rgba(56,189,248,.28); background:rgba(14,165,233,.08); color:#7dd3fc; font-weight:800; }
         .topic-plan-pill.done { border-color:rgba(34,197,94,.32); background:rgba(34,197,94,.09); color:#86efac; }
+        .topic-plan-study-time { flex-basis:100%; font-size:.72rem; color:#93c5fd; }
+        .topic-plan-study-time strong { color:var(--text-color); }
+        .topic-plan-progress-label { font-size:.72rem; color:#94a3b8; font-weight:700; }
         .topic-plan-progress { width:min(280px,100%); height:5px; border-radius:999px; overflow:hidden; background:rgba(148,163,184,.16); }
         .topic-plan-progress > span { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#2563eb,#0ea5e9); }
         .topic-plan-editor-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
@@ -284,7 +290,7 @@
         .study-progress-mini span { display:block; font-size:.68rem; color:#94a3b8; font-weight:800; text-transform:uppercase; }
         .study-progress-mini strong { display:block; margin-top:2px; font-size:1rem; color:var(--text-color); }
         .subject-hours-detail { font-size:.68rem; color:#94a3b8; margin-top:2px; }
-        @media (max-width:640px){ .study-progress-breakdown{grid-template-columns:1fr 1fr 1fr;} .study-launch-controls{gap:5px;} .study-minutes-input{width:58px; min-width:58px;} }
+        @media (max-width:640px){ .study-progress-breakdown{grid-template-columns:1fr 1fr 1fr;} .study-launch-controls{gap:5px;} .study-session-minutes-label{width:100%; justify-content:flex-start;} .study-minutes-input{width:50px; min-width:50px;} }
         @media (max-width: 760px) {
             .active-study-context { align-items:flex-start; }
             .subject-hours-name { font-size:.72rem; }
