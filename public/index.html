@@ -3688,7 +3688,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.56',
+                    appVersion:'9.57',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -6679,6 +6679,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 contest.pomodoroDailyTargetHours = 0;
                 contest.pomodoroScheduleMethod = null;
                 contest.adaptiveRevisionProgress = {};
+                contest.retentionEngine = {
+                    schemaVersion: RETENTION_ENGINE_SCHEMA_VERSION,
+                    mode:'shadow', targetRetention:RETENTION_TARGET_DEFAULT, topics:{},
+                    createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+                };
                 delete contest.scheduleConfig;
                 await saveConcursosMetadata(metadata);
                 renderMonthCalendar();
@@ -6707,6 +6712,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             contest.pomodoroDailyTargetHours = 0;
             contest.pomodoroScheduleMethod = null;
             contest.adaptiveRevisionProgress = {};
+            contest.retentionEngine = {
+                schemaVersion: RETENTION_ENGINE_SCHEMA_VERSION,
+                mode:'shadow', targetRetention:RETENTION_TARGET_DEFAULT, topics:{},
+                createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+            };
             delete contest.scheduleConfig;
 
             // Remove resíduos legados de Pomodoro específicos do concurso.
@@ -7008,6 +7018,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             // Flashcards locais também aparecem antes de qualquer espera de rede.
             const localMetadata = getConcursosMetadata();
+            const retentionMigrated = ensureRetentionEngineForAllContests(localMetadata);
+            if (retentionMigrated) {
+                // Migração transparente: deriva o núcleo de retenção do histórico canônico
+                // sem alterar cronograma/revisões atuais. Persistência ocorre em segundo plano.
+                localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(localMetadata));
+                metadataCache = localMetadata;
+                setMetadataDirty(true);
+                scheduleBackgroundTask(() => saveConcursosMetadata(localMetadata), 900);
+            }
             flashcardsList = localMetadata[currentConcurso]?.flashcards || [];
             populateFcMateriaDropdown();
             renderFlashcardFolders();
@@ -7087,6 +7106,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 saveEditalToLocalStorage();
 
                 await loadConcursosMetadata();
+                if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
+                const syncedMetadata = getConcursosMetadata();
+                if (ensureRetentionEngineForAllContests(syncedMetadata)) await saveConcursosMetadata(syncedMetadata);
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 await flushAllPendingFlashcards();
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
@@ -8156,6 +8178,208 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return getStudyTopicKey(session?.materia, session?.assunto);
         }
 
+        // V9.57 — Retention Engine Core
+        // Núcleo inspirado na curva de esquecimento, executando em modo sombra:
+        // calcula retenção/estabilidade por assunto sem substituir ainda o cronograma
+        // ou as revisões tradicionais. A V9.58 poderá usar estes dados para reagendamento.
+        const RETENTION_ENGINE_SCHEMA_VERSION = 1;
+        const RETENTION_TARGET_DEFAULT = 0.82;
+        const RETENTION_MIN_STABILITY_DAYS = 0.75;
+        const RETENTION_MAX_STABILITY_DAYS = 3650;
+
+        function getRetentionEngine(contestMeta, create = false) {
+            if (!contestMeta) return null;
+            if (!contestMeta.retentionEngine && create) {
+                contestMeta.retentionEngine = {
+                    schemaVersion: RETENTION_ENGINE_SCHEMA_VERSION,
+                    mode: 'shadow',
+                    targetRetention: RETENTION_TARGET_DEFAULT,
+                    topics: {},
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+            }
+            const engine = contestMeta.retentionEngine || null;
+            if (engine && create) {
+                if (!engine.topics || typeof engine.topics !== 'object') engine.topics = {};
+                if (!Number.isFinite(Number(engine.targetRetention))) engine.targetRetention = RETENTION_TARGET_DEFAULT;
+                engine.schemaVersion = RETENTION_ENGINE_SCHEMA_VERSION;
+                engine.mode = engine.mode || 'shadow';
+            }
+            return engine;
+        }
+
+        function getRetentionTopicState(contestMeta, materia, assunto, create = false) {
+            const engine = getRetentionEngine(contestMeta, create);
+            if (!engine) return null;
+            const key = getStudyTopicKey(materia, assunto);
+            if (!key) return null;
+            if (!engine.topics[key] && create) {
+                engine.topics[key] = {
+                    key,
+                    materia: String(materia || '').trim(),
+                    assunto: String(assunto || '').trim(),
+                    lastStudyAt: null,
+                    lastReviewAt: null,
+                    nextReviewAt: null,
+                    stability: RETENTION_MIN_STABILITY_DAYS,
+                    difficulty: 5,
+                    retention: 100,
+                    reviewCount: 0,
+                    lapseCount: 0,
+                    totalMinutes: 0,
+                    sessionCount: 0,
+                    lastActivityType: null,
+                    activityCounts: { teoria:0, questoes:0, lei_seca:0 },
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+            }
+            return engine.topics[key] || null;
+        }
+
+        function getRetentionEventDate(session) {
+            const raw = session?.createdAt || (session?.dateKey ? `${session.dateKey}T12:00:00` : null);
+            const date = raw ? new Date(raw) : new Date();
+            return Number.isFinite(date.getTime()) ? date : new Date();
+        }
+
+        function calculateRetentionFromState(state, at = new Date()) {
+            if (!state?.lastStudyAt) return 0;
+            const last = new Date(state.lastStudyAt);
+            const now = at instanceof Date ? at : new Date(at);
+            if (!Number.isFinite(last.getTime()) || !Number.isFinite(now.getTime())) return 0;
+            const elapsedDays = Math.max(0, (now.getTime() - last.getTime()) / 86400000);
+            const stability = Math.max(RETENTION_MIN_STABILITY_DAYS, Number(state.stability) || RETENTION_MIN_STABILITY_DAYS);
+            return Math.max(0, Math.min(100, Math.round(Math.exp(-elapsedDays / stability) * 1000) / 10));
+        }
+
+        function estimateInitialRetentionStability(session) {
+            const minutes = Math.max(1, Number(session?.minutes) || 1);
+            const activity = session?.activityType || 'teoria';
+            const activityFactor = activity === 'questoes' ? 1.18 : (activity === 'lei_seca' ? 0.92 : 1);
+            const durationFactor = Math.max(0.72, Math.min(1.45, Math.sqrt(minutes / 40)));
+            return Math.max(RETENTION_MIN_STABILITY_DAYS, Math.min(14, 5.1 * activityFactor * durationFactor));
+        }
+
+        function estimateNextRetentionReviewAt(state, eventDate, targetRetention = RETENTION_TARGET_DEFAULT) {
+            const stability = Math.max(RETENTION_MIN_STABILITY_DAYS, Number(state?.stability) || RETENTION_MIN_STABILITY_DAYS);
+            const target = Math.max(0.55, Math.min(0.95, Number(targetRetention) || RETENTION_TARGET_DEFAULT));
+            const intervalDays = Math.max(1, -stability * Math.log(target));
+            const next = new Date(eventDate.getTime() + intervalDays * 86400000);
+            return next.toISOString();
+        }
+
+        function applyRetentionSessionToState(state, session, engine) {
+            if (!state || !session) return state;
+            const eventDate = getRetentionEventDate(session);
+            const previousStudyAt = state.lastStudyAt ? new Date(state.lastStudyAt) : null;
+            const previousRetention = previousStudyAt && Number.isFinite(previousStudyAt.getTime())
+                ? calculateRetentionFromState(state, eventDate)
+                : 100;
+            const activity = session.activityType === 'questoes' ? 'questoes' : (session.activityType === 'lei_seca' ? 'lei_seca' : 'teoria');
+            const minutes = Math.max(0, Number(session.minutes) || 0);
+            const priorSessions = Math.max(0, Number(state.sessionCount) || 0);
+
+            if (priorSessions === 0) {
+                state.stability = estimateInitialRetentionStability(session);
+            } else {
+                const elapsedDays = Math.max(0, (eventDate.getTime() - previousStudyAt.getTime()) / 86400000);
+                const activityBoost = activity === 'questoes' ? 0.10 : (activity === 'lei_seca' ? 0.03 : 0.06);
+                const spacingBoost = Math.min(0.22, elapsedDays * 0.018);
+                const retrievalBoost = Math.max(0, Math.min(0.18, (100 - previousRetention) / 250));
+                const sameDayFactor = elapsedDays < 0.5 ? 1.035 : 1;
+                const growth = sameDayFactor * (1.12 + activityBoost + spacingBoost + retrievalBoost);
+                state.stability = Math.max(
+                    RETENTION_MIN_STABILITY_DAYS,
+                    Math.min(RETENTION_MAX_STABILITY_DAYS, (Number(state.stability) || RETENTION_MIN_STABILITY_DAYS) * growth)
+                );
+                if (session.isRevision || elapsedDays >= 0.75) {
+                    state.reviewCount = Math.max(0, Number(state.reviewCount) || 0) + 1;
+                    state.lastReviewAt = eventDate.toISOString();
+                }
+            }
+
+            state.sessionCount = priorSessions + 1;
+            state.totalMinutes = Math.max(0, Number(state.totalMinutes) || 0) + minutes;
+            if (!state.activityCounts || typeof state.activityCounts !== 'object') state.activityCounts = { teoria:0, questoes:0, lei_seca:0 };
+            state.activityCounts[activity] = Math.max(0, Number(state.activityCounts[activity]) || 0) + 1;
+            state.lastActivityType = activity;
+            state.lastStudyAt = eventDate.toISOString();
+            state.retention = 100;
+            state.nextReviewAt = estimateNextRetentionReviewAt(state, eventDate, engine?.targetRetention);
+            state.updatedAt = new Date().toISOString();
+            return state;
+        }
+
+        function rebuildRetentionEngineForContest(contestMeta) {
+            if (!contestMeta) return false;
+            const sessions = Array.isArray(contestMeta.studySessions) ? contestMeta.studySessions.slice() : [];
+            const oldEngine = contestMeta.retentionEngine;
+            const engine = {
+                schemaVersion: RETENTION_ENGINE_SCHEMA_VERSION,
+                mode: oldEngine?.mode || 'shadow',
+                targetRetention: Math.max(0.55, Math.min(0.95, Number(oldEngine?.targetRetention) || RETENTION_TARGET_DEFAULT)),
+                topics: {},
+                createdAt: oldEngine?.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                rebuiltFromHistoryAt: new Date().toISOString()
+            };
+            sessions.sort((a,b) => getRetentionEventDate(a) - getRetentionEventDate(b));
+            sessions.forEach(session => {
+                const key = getStudySessionTopicKey(session);
+                if (!key) return;
+                const state = engine.topics[key] || {
+                    key,
+                    materia: String(session?.materia || '').trim(),
+                    assunto: String(session?.assunto || '').trim(),
+                    lastStudyAt:null, lastReviewAt:null, nextReviewAt:null,
+                    stability:RETENTION_MIN_STABILITY_DAYS, difficulty:5, retention:100,
+                    reviewCount:0, lapseCount:0, totalMinutes:0, sessionCount:0,
+                    lastActivityType:null, activityCounts:{ teoria:0, questoes:0, lei_seca:0 },
+                    createdAt:getRetentionEventDate(session).toISOString(), updatedAt:new Date().toISOString()
+                };
+                engine.topics[key] = state;
+                applyRetentionSessionToState(state, session, engine);
+            });
+            contestMeta.retentionEngine = engine;
+            return true;
+        }
+
+        function ensureRetentionEngineForAllContests(metadata, options = {}) {
+            let changed = false;
+            Object.values(metadata || {}).forEach(contest => {
+                if (!contest || typeof contest !== 'object') return;
+                const sessions = Array.isArray(contest.studySessions) ? contest.studySessions : [];
+                const engine = contest.retentionEngine;
+                const needsRebuild = options.force || !engine || Number(engine.schemaVersion) !== RETENTION_ENGINE_SCHEMA_VERSION;
+                if (needsRebuild && sessions.length) {
+                    rebuildRetentionEngineForContest(contest);
+                    changed = true;
+                } else if (!engine && options.createEmpty) {
+                    getRetentionEngine(contest, true);
+                    changed = true;
+                }
+            });
+            return changed;
+        }
+
+        function registerRetentionStudyEvent(contestMeta, session) {
+            if (!contestMeta || !session) return null;
+            const engine = getRetentionEngine(contestMeta, true);
+            const state = getRetentionTopicState(contestMeta, session.materia, session.assunto, true);
+            applyRetentionSessionToState(state, session, engine);
+            engine.updatedAt = new Date().toISOString();
+            return state;
+        }
+
+        function getTopicRetentionState(materia, assunto, contestMeta = null) {
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const state = getRetentionTopicState(contest, materia, assunto, false);
+            if (!state) return null;
+            return { ...state, retention: calculateRetentionFromState(state, new Date()) };
+        }
+
         function getScheduledStudyTopicKey(rawText) {
             return normalizeScheduledTopicForStudy(rawText);
         }
@@ -8300,13 +8524,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 adaptiveResult = await applyAdaptiveScheduleAdvance(metadata, { ...context, plannedDateKey });
             }
 
-            metadata[currentConcurso].studySessions.push({
+            const recordedSession = {
                 dateKey: actualDateKey,
                 scheduledDateKey: adaptiveResult ? actualDateKey : (context.dateKey || null),
                 plannedDateKey,
                 materia: context.materia,
                 assunto: context.assunto,
                 activityType: context.activityType === 'questoes' ? 'questoes' : (context.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'),
+                isRevision: !!context.isRevision,
                 legalBlockId: context.legalBlockId || null,
                 norma: context.norma || null,
                 articleStart: context.articleStart || null,
@@ -8315,7 +8540,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 source: adaptiveResult ? 'pomodoro_advanced' : 'pomodoro',
                 advanced: !!adaptiveResult,
                 createdAt: new Date().toISOString()
-            });
+            };
+            metadata[currentConcurso].studySessions.push(recordedSession);
+            registerRetentionStudyEvent(metadata[currentConcurso], recordedSession);
             const topicPlanResult = reconcileTopicStudyPlanAfterSession(metadata, context);
             await saveConcursosMetadata(metadata);
 
@@ -8340,6 +8567,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const contest = metadata[currentConcurso];
             if (!contest || !Array.isArray(contest.studySessions)) return;
             contest.studySessions = contest.studySessions.filter(s => s?.dateKey !== dateKey);
+            rebuildRetentionEngineForContest(contest);
             await saveConcursosMetadata(metadata);
             renderSubjectStudyHours();
             updateModernOverview();
@@ -8381,6 +8609,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 dateKey: adaptiveAdvance ? todayKey : activeSelectedDateKey,
                 plannedDateKey,
                 adaptiveAdvance: isFutureStudy && adaptiveAdvance,
+                isRevision: isRevisionScheduleText(raw),
                 activityType: activityType === 'questoes' ? 'questoes' : (activityType === 'lei_seca' ? 'lei_seca' : 'teoria')
             };
             renderActiveStudyContext();
