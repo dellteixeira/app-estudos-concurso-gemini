@@ -183,3 +183,10 @@ V9.65 — Pontos Críticos e Revisão por Camadas
 - Integração com Retention Engine, desempenho em questões e sessões canônicas.
 - Revisões curtas não concluem indevidamente a teoria do edital.
 - Interface textual, compacta e responsiva para mobile.
+
+V9.65.1 — Reorganização Adaptativa de Matérias
+- O botão Reorganizar Matérias passa a usar score híbrido explícito por disciplina.
+- O score combina peso, prioridade P1-P4, risco médio de retenção, revisões vencidas, desempenho recente em questões, urgência dos tópicos e proximidade da prova.
+- Fair-share deixa de ser o fator dominante; passa a funcionar apenas como mecanismo de equilíbrio/frequência atendida.
+- Diversidade diária e bloqueio de repetição consecutiva permanecem ativos.
+- Mensagens de confirmação e conclusão foram atualizadas para refletir a lógica real do scheduler.
