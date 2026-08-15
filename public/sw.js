@@ -1,5 +1,5 @@
-const APP_VERSION = '9.66.0';
-const CACHE_NAME = 'estudo-adaptativo-v9-66-performance-consistencia-seguranca-20260815';
+const APP_VERSION = '9.66.1';
+const CACHE_NAME = 'estudo-adaptativo-v9-66-1-prioridade-materias-20260815';
 
 const APP_SHELL = [
   './',
