@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-59-flexible-opportunity-study-20260815';
+const CACHE_NAME = 'painel-estudos-v9-60-retention-scheduler-text-only-20260815';
 
 const APP_SHELL = [
   './',
