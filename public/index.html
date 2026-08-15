@@ -1626,6 +1626,12 @@
         }
 
 
+        /* V9.56 — importação de flashcards otimizada para mobile */
+        @media (max-width: 640px) {
+            .flashcard-bulk-targets { display:grid !important; grid-template-columns:1fr; gap:8px !important; }
+            .flashcard-bulk-targets select { width:100%; min-width:0 !important; }
+        }
+
         /* V9.47 — refinamento mobile: cabeçalho e treino de flashcards */
         .flashcard-study-modal-actions { width:100%; justify-content:space-between; align-items:stretch; gap:8px; }
         .flashcard-study-modal-actions .btn { justify-content:center; min-width:0; }
@@ -2956,15 +2962,8 @@
 
                 <div style="background: rgba(0,0,0,0.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem;">
                     <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">Importação Rápida via Texto (Colar em Lote)</h4>
-                    <p style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 8px;">Você pode colar o texto diretamente na caixa abaixo estruturado assim:</p>
-                    <div style="font-size: 0.82rem; line-height: 1.45; opacity: 0.88; margin-bottom: 10px;">
-                    </div>
-                    <textarea id="fcPasteTextArea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza" style="min-height: 120px; font-family: monospace; font-size: 0.88rem; margin-bottom: 10px;"></textarea>
-                    <button class="btn btn-success" onclick="processPastedFlashcardsText()">Converter Texto em Flashcards</button>
-                </div>
-
-                <form onsubmit="addFlashcard(event)" style="display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <p style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 10px;">Escolha a matéria e o assunto que receberão os cartões e cole o conteúdo em lote.</p>
+                    <div class="flashcard-bulk-targets" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
                         <select id="fcMateriaSelect" onchange="updateFcAssuntoOptions()" style="flex:1; min-width: 180px;">
                             <option value="">Selecione a Matéria (Opcional)</option>
                         </select>
@@ -2972,10 +2971,9 @@
                             <option value="">Selecione o Assunto (Opcional)</option>
                         </select>
                     </div>
-                    <input type="text" id="fcPergunta" placeholder="Frente / Pergunta (ex: Qual o prazo do recurso?)" required>
-                    <input type="text" id="fcResposta" placeholder="Verso / Resposta (ex: 15 dias úteis)" required>
-                    <button type="submit" class="btn btn-primary" style="width:fit-content;">Criar Flashcard Individual</button>
-                </form>
+                    <textarea id="fcPasteTextArea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza" style="min-height: 120px; font-family: monospace; font-size: 0.88rem; margin-bottom: 10px;"></textarea>
+                    <button class="btn btn-success" onclick="processPastedFlashcardsText()">Converter Texto em Flashcards</button>
+                </div>
 
                 <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:10px;">
                     <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px; margin:0;">
@@ -3690,7 +3688,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.55',
+                    appVersion:'9.56',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -5977,27 +5975,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             await saveFlashcardsData();
         }
 
-        async function addFlashcard(e) {
-            e.preventDefault();
-            const materia = document.getElementById('fcMateriaSelect').value;
-            const assunto = document.getElementById('fcAssuntoSelect').value;
-            const pergunta = document.getElementById('fcPergunta').value.trim();
-            const resposta = document.getElementById('fcResposta').value.trim();
-            if (!pergunta || !resposta) return;
-
-            const newFc = {
-                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
-                materia, assunto, pergunta, resposta
-            };
-
-            flashcardsList.push(newFc);
-            document.getElementById('fcPergunta').value = '';
-            document.getElementById('fcResposta').value = '';
-            renderFlashcardFolders();
-            renderFlashcards();
-            await saveFlashcardsData();
-        }
-
         async function removeFlashcard(idx) {
             if (confirm('Deseja apagar este flashcard individualmente?')) {
                 const removed = flashcardsList.splice(idx, 1);
@@ -6234,6 +6211,97 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             setAssuntos.forEach(ass => { assSel.innerHTML += `<option value="${escapeHtml(ass)}">${escapeHtml(ass)}</option>`; });
         }
 
+        function getFlashcardShuffleHistoryKey() {
+            const uid = currentUser?.id || 'guest';
+            return `flashcard_shuffle_history_${uid}`;
+        }
+
+        function getFlashcardStudyToken(fc) {
+            if (fc?.id) return String(fc.id);
+            return [fc?.materia, fc?.assunto, fc?.pergunta, fc?.resposta]
+                .map(v => String(v || '').trim().toLocaleLowerCase('pt-BR'))
+                .join('\u241f');
+        }
+
+        function getSecureRandomIndex(maxExclusive) {
+            if (maxExclusive <= 1) return 0;
+            try {
+                if (window.crypto?.getRandomValues) {
+                    const range = 0x100000000;
+                    const limit = range - (range % maxExclusive);
+                    const buffer = new Uint32Array(1);
+                    do window.crypto.getRandomValues(buffer); while (buffer[0] >= limit);
+                    return buffer[0] % maxExclusive;
+                }
+            } catch (_) {}
+            return Math.floor(Math.random() * maxExclusive);
+        }
+
+        function fisherYatesShuffle(list) {
+            const shuffled = [...list];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = getSecureRandomIndex(i + 1);
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function readFlashcardShuffleHistory() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(getFlashcardShuffleHistoryKey()) || '{}');
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function saveFlashcardShuffleHistory(history) {
+            try {
+                const entries = Object.entries(history || {})
+                    .sort((a, b) => Number(b[1]?.at || 0) - Number(a[1]?.at || 0))
+                    .slice(0, 40);
+                localStorage.setItem(getFlashcardShuffleHistoryKey(), JSON.stringify(Object.fromEntries(entries)));
+            } catch (_) {}
+        }
+
+        function shuffleFlashcardsForStudy(list, deckKey = 'all') {
+            const source = Array.isArray(list) ? [...list] : [];
+            if (source.length <= 1) return source;
+
+            const history = readFlashcardShuffleHistory();
+            const scopedKey = `${currentConcurso || 'sem-concurso'}::${deckKey}`;
+            const previous = history[scopedKey] || null;
+            let shuffled = source;
+
+            for (let attempt = 0; attempt < 8; attempt++) {
+                shuffled = fisherYatesShuffle(source);
+                const tokens = shuffled.map(getFlashcardStudyToken);
+                const signature = tokens.join('\u241e');
+                const firstToken = tokens[0] || '';
+                const firstChanged = !previous?.first || firstToken !== previous.first;
+                const orderChanged = !previous?.signature || signature !== previous.signature;
+                if (firstChanged && orderChanged) break;
+            }
+
+            // Com mais de um cartão, evita deliberadamente começar pelo mesmo cartão da sessão anterior.
+            if (previous?.first && getFlashcardStudyToken(shuffled[0]) === previous.first) {
+                const swapIndex = shuffled.findIndex((fc, idx) => idx > 0 && getFlashcardStudyToken(fc) !== previous.first);
+                if (swapIndex > 0) [shuffled[0], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[0]];
+            }
+
+            let tokens = shuffled.map(getFlashcardStudyToken);
+            let signature = tokens.join('\u241e');
+            if (previous?.signature && signature === previous.signature && shuffled.length > 2) {
+                shuffled = [...shuffled.slice(1), shuffled[0]];
+                tokens = shuffled.map(getFlashcardStudyToken);
+                signature = tokens.join('\u241e');
+            }
+
+            history[scopedKey] = { first: tokens[0] || '', signature, at: Date.now() };
+            saveFlashcardShuffleHistory(history);
+            return shuffled;
+        }
+
         function startFilteredStudyModal() {
             const targetMateria = document.getElementById('studyFilterMateria').value;
             const targetAssunto = document.getElementById('studyFilterAssunto').value;
@@ -6243,27 +6311,17 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (filteredCards.length === 0) return alert('Nenhum flashcard encontrado para o filtro.');
 
             closeModalFiltroEstudoFlashcards();
-            startStudyModalWithList(filteredCards);
+            const deckKey = `filtro:${targetMateria || '*'}:${targetAssunto || '*'}`;
+            startStudyModalWithList(filteredCards, deckKey);
         }
 
         function startShuffleStudyModal() {
-            if (flashcardsList.length === 0) return alert('Cadastre ou importe flashcards antes de iniciar o estudo.');
-            const groupedByMateria = {};
-            flashcardsList.forEach(fc => {
-                const mKey = fc.materia || 'Geral / Sem Matéria';
-                if (!groupedByMateria[mKey]) groupedByMateria[mKey] = [];
-                groupedByMateria[mKey].push(fc);
-            });
-            const shuffledList = [];
-            Object.keys(groupedByMateria).forEach(mName => {
-                const shuffledMateriaCards = [...groupedByMateria[mName]].sort(() => Math.random() - 0.5);
-                shuffledList.push(...shuffledMateriaCards);
-            });
-            startStudyModalWithList(shuffledList);
+            if (flashcardsList.length === 0) return alert('Importe flashcards antes de iniciar o estudo.');
+            startStudyModalWithList(flashcardsList, 'todos');
         }
 
-        function startStudyModalWithList(list) {
-            studyQueue = [...list];
+        function startStudyModalWithList(list, deckKey = 'todos') {
+            studyQueue = shuffleFlashcardsForStudy(list, deckKey);
             currentStudyIdx = 0;
             showingAnswer = false;
             updateStudyModalCard();
@@ -10782,7 +10840,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 `edital_offline_data_${uid}`,
                 `pending_sync_${uid}`,
                 `last_studied_concurso_${uid}`,
-                `last_successful_sync_${uid}`
+                `last_successful_sync_${uid}`,
+                `flashcard_shuffle_history_${uid}`
             ]);
             const prefixes = [
                 `pomodoro_daily_minutes_${uid}_`,
@@ -11148,7 +11207,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 'tab-edital':'Adicionar tópico',
                 'tab-calendario':'Preencher cronograma',
                 'tab-anotacoes':'Nova anotação',
-                'tab-flashcards':'Novo flashcard'
+                'tab-flashcards':'Importar flashcards'
             };
             fab.setAttribute('aria-label', labels[active] || 'Adicionar');
             fab.title = labels[active] || 'Adicionar';
@@ -11159,8 +11218,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (active === 'tab-anotacoes') return openModalNovaNota();
             if (active === 'tab-calendario') return openModalSelectCronogramaType();
             if (active === 'tab-flashcards') {
-                document.getElementById('fcPergunta')?.scrollIntoView({behavior:'smooth', block:'center'});
-                setTimeout(() => document.getElementById('fcPergunta')?.focus(), 350);
+                document.getElementById('fcMateriaSelect')?.scrollIntoView({behavior:'smooth', block:'center'});
+                setTimeout(() => document.getElementById('fcMateriaSelect')?.focus(), 350);
                 return;
             }
             document.getElementById('materia')?.scrollIntoView({behavior:'smooth', block:'center'});
@@ -11360,7 +11419,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         window.downloadEditalFile = downloadEditalFile;
         window.removerEditalFile = removerEditalFile;
         window.forceFullSync = forceFullSync;
-        window.addFlashcard = addFlashcard;
         window.removeFlashcard = removeFlashcard;
         window.openEditarFlashcardModal = openEditarFlashcardModal;
         window.closeModalEditarFlashcard = closeModalEditarFlashcard;
