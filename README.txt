@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V9.66.1 — Correção da Ordenação por Prioridade
+ESTUDO ADAPTATIVO INTELIGENTE — V9.66.2 — Correção da Contabilização de Horas
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -241,3 +241,11 @@ V9.66.1 — CORREÇÃO DA ORDENAÇÃO POR PRIORIDADE (15/08/2026)
 - A ordem manual por arraste continua soberana apenas entre matérias da mesma prioridade.
 - Matérias novas entram automaticamente no bloco correto de prioridade, mesmo quando já existe materiaOrder salvo.
 - Ao arrastar para outro bloco, a matéria continua herdando a prioridade do destino.
+
+
+V9.66.2 — CORREÇÃO DA CONTABILIZAÇÃO DE HORAS (15/08/2026)
+- Encerramento automático do Pomodoro agora aguarda a gravação canônica em studySessions antes de concluir o fluxo.
+- Contadores de horas, estudado hoje e horas por matéria atualizam imediatamente após a persistência local.
+- Sincronização de concursos_metadata ganhou revisão monotônica para impedir que um upload antigo limpe o dirty flag de uma alteração mais nova.
+- Se os metadados mudarem durante um upload, a nova revisão permanece pendente e é reenviada automaticamente.
+- CACHE_NAME: estudo-adaptativo-v9-66-2-contabilizacao-horas-20260815.
