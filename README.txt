@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V9.66 — Performance, Consistência e Segurança
+ESTUDO ADAPTATIVO INTELIGENTE — V9.66.1 — Correção da Ordenação por Prioridade
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -220,7 +220,7 @@ V9.65.7 — CONTROLE DE ATUALIZAÇÃO DO PWA
 - Mantém updateViaCache='none' e cache-busting da URL do sw.js para reduzir retenção de versão antiga em Firefox/Chromium.
 - CACHE_NAME: estudo-adaptativo-v9-65-7-controle-atualizacao-pwa-20260815.
 
-V9.66 — PERFORMANCE, CONSISTÊNCIA E SEGURANÇA (15/08/2026)
+V9.66.1 — PERFORMANCE, CONSISTÊNCIA E SEGURANÇA (15/08/2026)
 - Modularização de baixo risco: CSS principal em public/app.css, lógica principal em public/app.js e ciclo de atualização PWA em public/pwa-update.js.
 - public/index.html reduzido drasticamente para acelerar parsing inicial e permitir cache/revalidação independente de CSS e JavaScript.
 - Sincronização local-first por delta: metadados, edital e flashcards são persistidos localmente de imediato e alterações rápidas são agrupadas antes do envio ao Supabase.
@@ -234,3 +234,10 @@ V9.66 — PERFORMANCE, CONSISTÊNCIA E SEGURANÇA (15/08/2026)
 - Rate limiting oficial da Cloudflare no endpoint /api/ai/analisar-edital: 12 solicitações por usuário a cada 60 segundos por localização Cloudflare.
 - Service Worker inclui app.css, app.js e pwa-update.js no app shell offline.
 - Supabase/RLS e studySessions permanecem sem mudança de contrato.
+
+
+V9.66.1 — CORREÇÃO DA ORDENAÇÃO POR PRIORIDADE (15/08/2026)
+- Prioridade da matéria volta a ser a regra soberana de exibição: P1, P2, P3 e P4.
+- A ordem manual por arraste continua soberana apenas entre matérias da mesma prioridade.
+- Matérias novas entram automaticamente no bloco correto de prioridade, mesmo quando já existe materiaOrder salvo.
+- Ao arrastar para outro bloco, a matéria continua herdando a prioridade do destino.
