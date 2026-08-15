@@ -199,3 +199,23 @@ V9.65.3 — correções de ações do concurso, Limpar Edital Atual e remoção 
 V9.65.4 — reordenação fluida de matérias por Pointer Events: clique/segure e arraste, ghost visual, marcador de inserção, autoscroll, long-press mobile e ordem manual soberana entre matérias com a mesma prioridade.
 
 V9.65.5 — ordem das barras do cabeçalho invertida: controles do concurso acima e navegação principal abaixo, mantendo mobile inalterado.
+
+
+V9.65.6 — AUDITORIA CONSOLIDADA
+- Auditoria estática e estrutural completa sobre a V9.65.5.
+- Escala de prioridade unificada em P1–P4 no frontend e no Cloudflare Worker/Workers AI.
+- Criação manual de matéria passa a usar peso coerente P1=4, P2=3, P3=2, P4=1.
+- Normalização do preview/importador de IA aceita P4.
+- Cache-busting do manifest/service worker atualizado.
+- Ícones do PWA incluídos no app shell offline.
+- Mantidas as correções anteriores de concursos, Limpar Edital Atual, drag fluido e barras invertidas.
+
+
+V9.65.7 — CONTROLE DE ATUALIZAÇÃO DO PWA
+- Exibe permanentemente a versão atual (V9.65.7) no cabeçalho.
+- Detecta Service Worker novo sem ativá-lo silenciosamente.
+- Mostra aviso 'Nova versão disponível' com botão 'Atualizar agora'.
+- Ao confirmar, envia SKIP_WAITING ao Worker novo e recarrega apenas após controllerchange.
+- Verifica atualizações ao abrir, ao voltar para a aba, ao recuperar conexão e a cada 5 minutos.
+- Mantém updateViaCache='none' e cache-busting da URL do sw.js para reduzir retenção de versão antiga em Firefox/Chromium.
+- CACHE_NAME: estudo-adaptativo-v9-65-7-controle-atualizacao-pwa-20260815.
