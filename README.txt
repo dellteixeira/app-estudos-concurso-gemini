@@ -1,6 +1,6 @@
-PAINEL DE ESTUDOS — V9.49 — Intercalação Ponderada de Disciplinas
-Base incremental: V9.47 — Mobile Layout Polish
-Data: 14/08/2026
+ESTUDO ADAPTATIVO INTELIGENTE — V9.66 — Performance, Consistência e Segurança
+Base incremental: V9.65.7 — Controle de Atualização do PWA
+Data: 15/08/2026
 
 V9.46 — Backup local automático + recuperação
 
@@ -219,3 +219,18 @@ V9.65.7 — CONTROLE DE ATUALIZAÇÃO DO PWA
 - Verifica atualizações ao abrir, ao voltar para a aba, ao recuperar conexão e a cada 5 minutos.
 - Mantém updateViaCache='none' e cache-busting da URL do sw.js para reduzir retenção de versão antiga em Firefox/Chromium.
 - CACHE_NAME: estudo-adaptativo-v9-65-7-controle-atualizacao-pwa-20260815.
+
+V9.66 — PERFORMANCE, CONSISTÊNCIA E SEGURANÇA (15/08/2026)
+- Modularização de baixo risco: CSS principal em public/app.css, lógica principal em public/app.js e ciclo de atualização PWA em public/pwa-update.js.
+- public/index.html reduzido drasticamente para acelerar parsing inicial e permitir cache/revalidação independente de CSS e JavaScript.
+- Sincronização local-first por delta: metadados, edital e flashcards são persistidos localmente de imediato e alterações rápidas são agrupadas antes do envio ao Supabase.
+- Sincronização completa cancela timers de delta antes do flush, reduzindo requisições duplicadas e condições de corrida.
+- Busca global com debounce para evitar recalcular resultados a cada tecla.
+- Renderização do Edital Verticalizado passou a montar HTML em memória e aplicar ao DOM em uma única operação.
+- Telemetria de performance estritamente local em window.__appPerformance, sem envio de dados para terceiros.
+- Importações JSON e flashcards agora possuem limite de arquivo, profundidade, complexidade, quantidade de itens, tamanho de campos e bloqueio de chaves perigosas.
+- Novo public/_headers com CSP, HSTS, anti-framing, nosniff, Referrer-Policy e Permissions-Policy para os assets servidos pela Cloudflare.
+- Worker endurecido com Content-Type obrigatório, limite de payload, normalização de entradas e limites para matérias/tópicos.
+- Rate limiting oficial da Cloudflare no endpoint /api/ai/analisar-edital: 12 solicitações por usuário a cada 60 segundos por localização Cloudflare.
+- Service Worker inclui app.css, app.js e pwa-update.js no app shell offline.
+- Supabase/RLS e studySessions permanecem sem mudança de contrato.
