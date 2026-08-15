@@ -1,5 +1,5 @@
-const APP_VERSION = '9.66.4';
-const CACHE_NAME = 'estudo-adaptativo-v9-66-4-ux-aulas-tempo-20260815';
+const APP_VERSION = '9.66.5';
+const CACHE_NAME = 'estudo-adaptativo-v9-66-5-layout-acoes-cronograma-20260815';
 
 const APP_SHELL = [
   './',
