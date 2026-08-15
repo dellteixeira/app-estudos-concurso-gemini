@@ -2750,7 +2750,52 @@
 
     
         .sync-dot { display:none !important; }
-    </style>
+    
+        /* V9.62 — Diagnóstico de retenção + ações compactas */
+        .retention-diagnostic-panel { margin:0 0 1.25rem; padding:1rem; border:1px solid var(--modern-border, var(--border-color)); border-radius:14px; background:var(--card-bg); }
+        .retention-diagnostic-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:.85rem; }
+        .retention-diagnostic-head h3 { margin:0; }
+        .retention-diagnostic-subtitle { margin:.25rem 0 0; color:var(--modern-muted,#94a3b8); font-size:.78rem; line-height:1.4; }
+        .retention-metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
+        .retention-metric { padding:.7rem .75rem; border:1px solid var(--modern-border,var(--border-color)); border-radius:10px; background:rgba(255,255,255,.025); min-width:0; }
+        .retention-metric span { display:block; color:var(--modern-muted,#94a3b8); font-size:.68rem; font-weight:700; margin-bottom:3px; }
+        .retention-metric strong { display:block; font-size:1.05rem; color:var(--text-color); overflow-wrap:anywhere; }
+        .retention-risk-list { display:grid; gap:6px; }
+        .retention-risk-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; align-items:center; padding:.58rem .68rem; border:1px solid var(--modern-border,var(--border-color)); border-radius:9px; }
+        .retention-risk-title { font-size:.78rem; font-weight:750; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .retention-risk-meta { color:var(--modern-muted,#94a3b8); font-size:.68rem; margin-top:2px; }
+        .retention-risk-value { font-size:.76rem; font-weight:800; white-space:nowrap; }
+        .retention-empty { color:var(--modern-muted,#94a3b8); font-size:.78rem; padding:.6rem 0; }
+
+        /* Guia de densidade: equivalente aos botões compactos de Importar Flashcards. */
+        .calendar-primary-actions { display:flex !important; flex-wrap:wrap; width:auto !important; gap:6px !important; }
+        .calendar-primary-actions .btn,
+        #tab-flashcards .flashcard-study-actions .btn,
+        #tab-flashcards .btn,
+        .retention-diagnostic-panel .btn {
+            width:auto !important;
+            min-width:0 !important;
+            min-height:30px !important;
+            height:auto !important;
+            padding:.28rem .62rem !important;
+            font-size:.76rem !important;
+            line-height:1.15 !important;
+            border-radius:7px !important;
+            white-space:normal;
+        }
+        .flashcard-study-actions { display:flex !important; flex-wrap:wrap; gap:6px !important; width:auto !important; }
+
+        @media (max-width:700px) {
+            .retention-diagnostic-panel { padding:.82rem; border-radius:12px; }
+            .retention-metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .retention-risk-row { grid-template-columns:minmax(0,1fr) auto; }
+            .retention-risk-row .btn { grid-column:1 / -1; justify-self:start; }
+            .calendar-primary-actions { width:100% !important; align-items:flex-start; }
+            .calendar-primary-actions .btn,
+            #tab-flashcards .flashcard-study-actions .btn,
+            #tab-flashcards .btn { flex:0 1 auto; max-width:100%; }
+        }
+</style>
 </head>
 <body>
 
@@ -2833,6 +2878,23 @@
             <div class="overview-card success"><span class="overview-label">Estudado Hoje</span><strong class="overview-value" id="modernOverviewToday">00:00</strong><span class="overview-hint">Pomodoro concluído</span></div>
             <div class="overview-card"><span class="overview-label">Meta Diária</span><strong class="overview-value" id="modernOverviewTarget">—</strong><span class="overview-hint">planejamento atual</span></div>
             <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">teoria + questões + lei seca · todas as matérias</span></div>
+        </section>
+
+        <section class="retention-diagnostic-panel" id="retentionDiagnosticPanel" aria-label="Retenção e diagnóstico">
+            <div class="retention-diagnostic-head">
+                <div>
+                    <h3>Retenção e Diagnóstico</h3>
+                    <p class="retention-diagnostic-subtitle">Memória estimada a partir das sessões, revisões e desempenho em questões.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="openOpportunityStudyModal()">Estudar agora</button>
+            </div>
+            <div class="retention-metric-grid">
+                <div class="retention-metric"><span>Retenção média</span><strong id="retentionDiagAverage">—</strong></div>
+                <div class="retention-metric"><span>Assuntos em risco</span><strong id="retentionDiagRisk">0</strong></div>
+                <div class="retention-metric"><span>Revisões vencidas</span><strong id="retentionDiagOverdue">0</strong></div>
+                <div class="retention-metric"><span>Assuntos dominados</span><strong id="retentionDiagMastered">0</strong></div>
+            </div>
+            <div id="retentionDiagnosticRiskList" class="retention-risk-list"></div>
         </section>
 
         <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
@@ -8519,11 +8581,26 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function clearData() {
-            if (confirm(`Apagar todos os tópicos do edital "${currentConcurso}"?`)) {
-                const toRemove = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
-                for (let i of toRemove) await deleteEditalItemFromCloud(i.id);
-                filterDataByConcurso();
-            }
+            if (!hasRealCurrentConcurso()) return appNotice('Selecione um concurso real antes de limpar o edital.', { title:'Limpar Edital Atual' });
+            const count = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso).length;
+            if (!count) return appNotice('O edital atual já está vazio.', { title:'Limpar Edital Atual' });
+
+            const first = await appConfirm(
+                `Você está prestes a apagar ${count} tópico${count===1?'':'s'} do edital "${currentConcurso}". Esta ação remove as matérias e assuntos do edital atual.`,
+                { title:'Proteger contra exclusão acidental', confirmText:'Continuar', danger:true }
+            );
+            if (!first) return;
+            const second = await appConfirm(
+                `Confirma a exclusão do edital "${currentConcurso}"? Esta ação não pode ser desfeita pelo botão Voltar.`,
+                { title:'Confirmação final', confirmText:'Apagar edital', danger:true }
+            );
+            if (!second) return;
+
+            const toRemove = allEditalItems.filter(i => (i.concurso || 'Concurso Geral') === currentConcurso);
+            for (const item of toRemove) await deleteEditalItemFromCloud(item.id);
+            filterDataByConcurso();
+            updateModernOverview();
+            await appNotice('O edital atual foi apagado.', { title:'Edital limpo' });
         }
 
         async function importJSON(event) {
@@ -12504,6 +12581,72 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             setTimeout(() => document.getElementById('materia')?.focus(), 350);
         }
 
+        let retentionDiagnosticRows = [];
+
+        function buildRetentionDiagnostics() {
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const engine = getRetentionEngine(contest, false);
+            const now = new Date();
+            const states = Object.values(engine?.topics || {}).filter(state => state?.lastStudyAt);
+            const rows = states.map(state => {
+                const retention = Math.max(0, Math.min(100, calculateRetentionFromState(state, now)));
+                const nextAt = state.nextReviewAt ? new Date(state.nextReviewAt) : null;
+                const overdue = !!(nextAt && Number.isFinite(nextAt.getTime()) && nextAt < now);
+                const overdueDays = overdue ? Math.max(0, Math.floor((now - nextAt) / 86400000)) : 0;
+                const questionAccuracy = Number.isFinite(Number(state?.questionStats?.lastAccuracy)) ? Number(state.questionStats.lastAccuracy) : null;
+                const riskScore = (100-retention) + (overdue ? 28 + Math.min(30,overdueDays*3) : 0) + (questionAccuracy!=null && questionAccuracy<60 ? (60-questionAccuracy)*.7 : 0);
+                return { state, retention, nextAt, overdue, overdueDays, questionAccuracy, riskScore };
+            });
+            const avg = rows.length ? rows.reduce((sum,row)=>sum+row.retention,0)/rows.length : null;
+            const risk = rows.filter(row => row.retention < 70 || row.overdue || (row.questionAccuracy!=null && row.questionAccuracy<60));
+            const overdue = rows.filter(row => row.overdue);
+            const mastered = rows.filter(row => row.retention >= 85 && !row.overdue && (row.questionAccuracy==null || row.questionAccuracy>=75));
+            risk.sort((a,b)=>b.riskScore-a.riskScore || a.retention-b.retention);
+            return { rows, avg, risk, overdue, mastered };
+        }
+
+        function renderRetentionDiagnostics() {
+            const panel = document.getElementById('retentionDiagnosticPanel');
+            if (!panel) return;
+            const set = (id,value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
+            if (!hasRealCurrentConcurso()) {
+                set('retentionDiagAverage','—'); set('retentionDiagRisk','0'); set('retentionDiagOverdue','0'); set('retentionDiagMastered','0');
+                const list=document.getElementById('retentionDiagnosticRiskList'); if(list) list.innerHTML='<div class="retention-empty">Crie ou selecione um concurso para iniciar o diagnóstico.</div>';
+                retentionDiagnosticRows=[]; return;
+            }
+            const diag = buildRetentionDiagnostics();
+            set('retentionDiagAverage', Number.isFinite(diag.avg) ? `${Math.round(diag.avg)}%` : '—');
+            set('retentionDiagRisk', diag.risk.length);
+            set('retentionDiagOverdue', diag.overdue.length);
+            set('retentionDiagMastered', diag.mastered.length);
+            retentionDiagnosticRows = diag.risk.slice(0,5);
+            const list=document.getElementById('retentionDiagnosticRiskList'); if(!list) return;
+            if (!diag.rows.length) {
+                list.innerHTML='<div class="retention-empty">Ainda não há sessões suficientes para estimar retenção. O diagnóstico aparecerá conforme você estudar.</div>';
+                return;
+            }
+            if (!retentionDiagnosticRows.length) {
+                list.innerHTML='<div class="retention-empty">Nenhum assunto está em risco neste momento.</div>';
+                return;
+            }
+            list.innerHTML=retentionDiagnosticRows.map((row,index)=>{
+                const state=row.state;
+                const status=row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
+                return `<div class="retention-risk-row"><div><div class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</div><div class="retention-risk-meta">${escapeHtml(status)}</div></div><div class="retention-risk-value">${Math.round(row.retention)}%</div><button class="btn btn-secondary btn-sm" type="button" onclick="startRetentionDiagnosticTopic(${index})">Estudar</button></div>`;
+            }).join('');
+        }
+
+        function startRetentionDiagnosticTopic(index) {
+            const row=retentionDiagnosticRows[index]; if(!row?.state) return;
+            const state=row.state;
+            const item=editalItems.find(i=>getStudyTopicKey(i.materia,i.assunto)===state.key);
+            if(!item) return appNotice('Este assunto não está mais disponível no edital atual.', { title:'Retenção e Diagnóstico' });
+            const isRevision=!!(row.overdue || row.retention<70);
+            const activityType=item.teoria ? 'questoes' : 'teoria';
+            const rec={ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, isRevision, minutes:activityType==='questoes'?15:40 };
+            launchOpportunityPomodoro(rec);
+        }
+
         function updateModernOverview() {
             const topics = editalItems || [];
             const checks = ['teoria','questoes'];
@@ -12521,6 +12664,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             set('modernOverviewToday', today);
             set('modernOverviewTarget', target === 'Sem meta' ? '—' : target);
             set('modernOverviewStudiedHours', formatStudyMinutes(getTotalRecordedStudyMinutes()));
+            renderRetentionDiagnostics();
         }
 
         document.addEventListener('click', (event) => {
@@ -12746,6 +12890,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         window.selectOpportunityContext = selectOpportunityContext;
         window.ignoreFlexibleRestForOpportunity = ignoreFlexibleRestForOpportunity;
         window.startOpportunityRecommendation = startOpportunityRecommendation;
+        window.startRetentionDiagnosticTopic = startRetentionDiagnosticTopic;
         window.showEditTopicDropdown = showEditTopicDropdown;
         window.updateEditAssuntoDropdown = updateEditAssuntoDropdown;
         window.confirmEditTopicWithSwap = confirmEditTopicWithSwap;
