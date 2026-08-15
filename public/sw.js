@@ -1,4 +1,4 @@
-const CACHE_NAME = 'estudo-adaptativo-v9-65-2-nav-edital-fix-20260815';
+const CACHE_NAME = 'estudo-adaptativo-v9-65-3-botoes-edital-fix-20260815';
 
 const APP_SHELL = [
   './',
