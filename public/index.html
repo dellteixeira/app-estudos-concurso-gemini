@@ -755,6 +755,29 @@
         .custom-day-hours input { width:72px; margin-left:auto; }
         .revision-model-note { display:none; color:var(--modern-muted); font-size:.68rem; font-weight:700; }
 
+
+        /* V9.59 — Estudo por Oportunidade / disponibilidade flexível */
+        .opportunity-btn { background:linear-gradient(135deg,#0ea5e9,#2563eb); color:#fff; border-color:rgba(96,165,250,.55); font-weight:800; }
+        .flex-day-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; margin:10px 0 4px; }
+        .flex-day-card { display:flex; flex-direction:column; gap:6px; min-width:0; padding:9px; border:1px solid var(--border-color); border-radius:10px; background:rgba(255,255,255,.025); }
+        .flex-day-card strong { text-align:center; color:var(--header-materia-text); font-size:.76rem; }
+        .flex-day-card select { min-width:0; width:100%; font-size:.74rem; padding:6px; }
+        .opportunity-time-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin:12px 0; }
+        .opportunity-time-btn,.opportunity-context-btn { border:1px solid var(--border-color); border-radius:10px; background:rgba(15,23,42,.65); color:var(--text-color); padding:10px 8px; cursor:pointer; font-weight:800; }
+        .opportunity-time-btn.selected,.opportunity-context-btn.selected { border-color:#60a5fa; background:rgba(37,99,235,.2); color:#bfdbfe; }
+        .opportunity-context-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:8px 0 14px; }
+        .opportunity-recommendations { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+        .opportunity-card { padding:13px; border:1px solid var(--border-color); border-radius:12px; background:rgba(255,255,255,.025); }
+        .opportunity-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+        .opportunity-card-title { font-weight:850; color:var(--header-materia-text); line-height:1.35; overflow-wrap:anywhere; }
+        .opportunity-card-meta { margin-top:5px; color:#94a3b8; font-size:.76rem; line-height:1.45; }
+        .opportunity-card-badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+        .opportunity-badge { display:inline-flex; padding:3px 7px; border-radius:999px; font-size:.68rem; font-weight:800; border:1px solid rgba(96,165,250,.3); color:#bfdbfe; background:rgba(37,99,235,.08); }
+        .opportunity-empty { padding:16px; border:1px dashed var(--border-color); border-radius:12px; color:#94a3b8; text-align:center; line-height:1.5; }
+        body.light-mode .opportunity-time-btn,body.light-mode .opportunity-context-btn,body.light-mode .opportunity-card,body.light-mode .flex-day-card { background:#fff; }
+        @media (max-width:780px) { .flex-day-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .opportunity-time-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .opportunity-context-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media (max-width:480px) { .opportunity-time-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .opportunity-card-top { flex-direction:column; } .opportunity-card-top .btn { width:100%; } }
+
         /* V9.58 — Feedback de revisão adaptativa */
         .adaptive-review-feedback-summary { display:flex; flex-direction:column; gap:6px; margin:8px 0 14px; padding:14px; border:1px solid var(--border-color); border-radius:12px; background:rgba(59,130,246,.06); }
         .adaptive-review-feedback-summary strong { color:var(--header-materia-text); font-size:1rem; overflow-wrap:anywhere; }
@@ -2776,6 +2799,7 @@
 
         <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
         <div class="action-bar">
+            <button class="btn-action" onclick="openOpportunityStudyModal()">⚡ Tenho tempo agora</button>
             <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalViewEdital)">Ver / Anexar Edital PDF</button>
             <label class="btn-action" style="cursor: pointer;">
@@ -2939,6 +2963,7 @@
 
                     <div class="calendar-primary-actions">
                         <button class="btn btn-primary" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
+                        <button class="btn opportunity-btn" onclick="openOpportunityStudyModal()">⚡ Tenho tempo agora</button>
                         <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
                         <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
                         <button class="btn btn-primary" onclick="reorganizarMateriasCronograma()">Reorganizar Matérias</button>
@@ -3226,6 +3251,14 @@
                     </div>
                     ➔
                 </div>
+
+                <div class="hours-option-card" onclick="chooseCronogramaType(3)">
+                    <div>
+                        <strong>Preenchimento 3: Estudo por Oportunidade</strong>
+                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Sem horário e sem meta diária fixa. O app escolhe a melhor atividade quando você disser quanto tempo tem agora.</p>
+                    </div>
+                    ⚡
+                </div>
             </div>
 
             <div class="modal-actions">
@@ -3339,6 +3372,61 @@
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
                 <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.59 — CONFIGURAÇÃO DO ESTUDO POR OPORTUNIDADE -->
+    <div class="modal-overlay" id="modalFlexibleStudyConfig" style="z-index:1400;">
+        <div class="modal modal-large" style="max-width:860px;">
+            <h3>⚡ Estudo por Oportunidade</h3>
+            <p style="font-size:.88rem;color:#94a3b8;line-height:1.5;">Você não precisa definir horários. Informe apenas como cada dia deve se comportar; quando surgir uma oportunidade, toque em <strong>Tenho tempo agora</strong>.</p>
+            <div class="form-group">
+                <label><strong>Data de início:</strong></label>
+                <input type="date" id="flexDataInicio">
+            </div>
+            <h4 style="color:var(--primary-blue);margin-top:.8rem;">Como cada dia deve funcionar?</h4>
+            <div id="flexibleDayModesGrid" class="flex-day-grid"></div>
+            <div style="font-size:.76rem;color:#94a3b8;line-height:1.45;margin:8px 0 14px;">
+                <strong>Estudo completo:</strong> conteúdo novo + revisões. <strong>Somente revisão:</strong> recuperação ativa/flashcards/revisões. <strong>Descanso:</strong> o app não sugere estudo, salvo se você decidir ignorar o descanso naquele momento.
+            </div>
+            <div class="form-group">
+                <label><strong>Estratégia de revisão:</strong></label>
+                <select id="flexRevisionStrategy" style="width:100%;">
+                    <option value="retencao_adaptativa" selected>🧠 Retenção Adaptativa — recomendado</option>
+                    <option value="nenhuma">Sem revisões automáticas</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeFlexibleStudyConfig()">Cancelar (ESC)</button>
+                <button class="btn btn-success" type="button" onclick="activateFlexibleStudyMode()">Ativar modo flexível ⚡</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.59 — OPORTUNIDADE DE ESTUDO AGORA -->
+    <div class="modal-overlay" id="modalOpportunityStudy" style="z-index:1420;">
+        <div class="modal modal-large" style="max-width:820px;">
+            <h3>⚡ Tenho tempo agora</h3>
+            <p id="opportunityModeHint" style="font-size:.84rem;color:#94a3b8;line-height:1.45;">Diga quanto tempo você tem. O Painel cruza retenção, prioridade, progresso e contexto.</p>
+            <h4 style="color:var(--primary-blue);margin-top:.8rem;">Quanto tempo você tem?</h4>
+            <div class="opportunity-time-grid">
+                <button class="opportunity-time-btn" data-minutes="5" onclick="selectOpportunityMinutes(5,this)">5 min</button>
+                <button class="opportunity-time-btn" data-minutes="10" onclick="selectOpportunityMinutes(10,this)">10 min</button>
+                <button class="opportunity-time-btn selected" data-minutes="20" onclick="selectOpportunityMinutes(20,this)">20 min</button>
+                <button class="opportunity-time-btn" data-minutes="40" onclick="selectOpportunityMinutes(40,this)">40 min</button>
+                <button class="opportunity-time-btn" data-minutes="60" onclick="selectOpportunityMinutes(60,this)">60+ min</button>
+            </div>
+            <h4 style="color:var(--primary-blue);margin-top:.7rem;">Onde / como você está?</h4>
+            <div class="opportunity-context-grid">
+                <button class="opportunity-context-btn selected" data-context="any" onclick="selectOpportunityContext('any',this)">Qualquer situação</button>
+                <button class="opportunity-context-btn" data-context="transit" onclick="selectOpportunityContext('transit',this)">🚌 Em deslocamento</button>
+                <button class="opportunity-context-btn" data-context="walking" onclick="selectOpportunityContext('walking',this)">🚶 Caminhando</button>
+                <button class="opportunity-context-btn" data-context="focus" onclick="selectOpportunityContext('focus',this)">🎯 Com foco total</button>
+            </div>
+            <div id="opportunityRecommendations" class="opportunity-recommendations"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeOpportunityStudyModal()">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -3639,6 +3727,11 @@
         let selectedDailyHoursSlots = 2;
         let useCustomDailyHours = false;
         let customDailyHoursByWeekday = {0:2,1:2,2:2,3:2,4:2,5:2,6:2};
+        let flexibleDayModes = {0:'full',1:'full',2:'full',3:'full',4:'full',5:'full',6:'full'};
+        let opportunitySelectedMinutes = 20;
+        let opportunitySelectedContext = 'any';
+        let opportunityRecommendations = [];
+        let opportunityIgnoreDayMode = false;
         let syncPromise = null;
         let dashboardLoadPromise = null;
         let syncUiMode = 'idle';
@@ -3737,7 +3830,7 @@
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.58',
+                    appVersion:'9.59',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -4227,6 +4320,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const closers = {
                 modalAppDialog: () => resolveAppDialog(false),
                 modalSelectCronogramaType: () => closeModalSelectCronogramaType(),
+                modalFlexibleStudyConfig: () => closeFlexibleStudyConfig(),
+                modalOpportunityStudy: () => closeOpportunityStudyModal(),
                 modalMentorisMethod: () => closeModalMentorisMethod(),
                 modalConfigHorarios: () => closeModalConfigHorarios(),
                 modalNovaNota: () => closeModalNovaNota(),
@@ -4467,7 +4562,293 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function chooseCronogramaType(typeNum) {
             closeModalSelectCronogramaType();
             if (typeNum === 1) openModalConfigHorarios();
-            else openModalMentorisMethod();
+            else if (typeNum === 2) openModalMentorisMethod();
+            else openFlexibleStudyConfig();
+        }
+
+        function getDefaultFlexibleDayModes() {
+            return {0:'full',1:'full',2:'full',3:'full',4:'full',5:'full',6:'full'};
+        }
+
+        function openFlexibleStudyConfig() {
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const cfg = contest.scheduleConfig || {};
+            const start = document.getElementById('flexDataInicio');
+            if (start) start.value = cfg.method === 3 && cfg.startDate ? cfg.startDate : getLocalDateKey();
+            flexibleDayModes = { ...getDefaultFlexibleDayModes(), ...(cfg.method === 3 && cfg.flexibleDayModes ? cfg.flexibleDayModes : {}) };
+            const strategy = document.getElementById('flexRevisionStrategy');
+            if (strategy) strategy.value = cfg.method === 3 && cfg.revisionStrategy ? cfg.revisionStrategy : 'retencao_adaptativa';
+            renderFlexibleDayModes();
+            document.getElementById('modalFlexibleStudyConfig').style.display = 'flex';
+        }
+
+        function closeFlexibleStudyConfig() {
+            const modal = document.getElementById('modalFlexibleStudyConfig');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function renderFlexibleDayModes() {
+            const grid = document.getElementById('flexibleDayModesGrid');
+            if (!grid) return;
+            const labels = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+            grid.innerHTML = labels.map((label, idx) => {
+                const value = flexibleDayModes[idx] || 'full';
+                return `<label class="flex-day-card"><strong>${label}</strong><select onchange="setFlexibleDayMode(${idx},this.value)">
+                    <option value="full" ${value==='full'?'selected':''}>Estudo completo</option>
+                    <option value="review" ${value==='review'?'selected':''}>Só revisão</option>
+                    <option value="rest" ${value==='rest'?'selected':''}>Descanso</option>
+                </select></label>`;
+            }).join('');
+        }
+
+        function setFlexibleDayMode(dayIdx, value) {
+            flexibleDayModes[dayIdx] = ['full','review','rest'].includes(value) ? value : 'full';
+        }
+
+        function isFlexibleOpportunityMode(contestMeta = null) {
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            return Number(contest?.scheduleConfig?.method) === 3 || contest?.scheduleConfig?.availabilityMode === 'opportunity';
+        }
+
+        function getFlexibleDayMode(date = new Date(), contestMeta = null) {
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            if (!isFlexibleOpportunityMode(contest)) return 'full';
+            const modes = contest?.scheduleConfig?.flexibleDayModes || getDefaultFlexibleDayModes();
+            return modes[date.getDay()] || 'full';
+        }
+
+        async function activateFlexibleStudyMode() {
+            if (editalItems.length === 0) return appNotice('Sua lista de edital está vazia.', { title:'Modo flexível' });
+            const startDate = document.getElementById('flexDataInicio')?.value || getLocalDateKey();
+            const revisionStrategy = document.getElementById('flexRevisionStrategy')?.value || 'retencao_adaptativa';
+            const modes = { ...getDefaultFlexibleDayModes(), ...flexibleDayModes };
+            if (Object.values(modes).every(value => value === 'rest')) {
+                return appNotice('Marque pelo menos um dia como Estudo completo ou Somente revisão.', { title:'Modo flexível' });
+            }
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || (metadata[currentConcurso] = {});
+            const hadSchedule = Object.values(contest.dateSchedule || {}).some(items => Array.isArray(items) && items.length);
+            if (hadSchedule) {
+                const ok = await appConfirm('Ativar o Estudo por Oportunidade removerá a fila futura rígida do cronograma. Seu histórico, horas, progresso e retenção serão preservados. Continuar?', { title:'Ativar modo flexível', confirmText:'Ativar modo flexível' });
+                if (!ok) return;
+            }
+            const todayKey = getLocalDateKey();
+            const previousSchedule = contest.dateSchedule || {};
+            // Preserva o histórico visual anterior a hoje; remove apenas a fila rígida atual/futura.
+            contest.dateSchedule = Object.fromEntries(Object.entries(previousSchedule).filter(([dateKey]) => dateKey < todayKey));
+            contest.pomodoroDailyTargetHours = 0;
+            contest.pomodoroScheduleMethod = 3;
+            contest.scheduleConfig = {
+                method:3,
+                availabilityMode:'opportunity',
+                noFixedHours:true,
+                startDate,
+                revisionStrategy,
+                flexibleDayModes:modes
+            };
+            const retentionEngine = getRetentionEngine(contest, true);
+            retentionEngine.mode = revisionStrategy === 'retencao_adaptativa' ? 'adaptive' : 'shadow';
+            if (revisionStrategy === 'retencao_adaptativa') {
+                Object.values(retentionEngine.topics || {}).forEach(state => {
+                    if (state?.nextReviewAt) scheduleNextAdaptiveRetentionReview(contest, state, getLocalDateKey());
+                });
+            }
+            await saveConcursosMetadata(metadata);
+            closeFlexibleStudyConfig();
+            renderMonthCalendar();
+            renderPomodoroDailyCounter();
+            filterDataByConcurso();
+            await appNotice('Modo flexível ativado. Você não possui meta diária nem horário obrigatório. Use “Tenho tempo agora” sempre que surgir uma oportunidade.', { title:'Estudo por Oportunidade ativo' });
+        }
+
+        function openOpportunityStudyModal() {
+            if (!currentUser) return;
+            if (!currentConcurso || currentConcurso === 'Concurso Geral' || !editalItems.length) {
+                return appNotice('Crie ou selecione um concurso com matérias antes de pedir uma sugestão.', { title:'Tenho tempo agora' });
+            }
+            opportunityIgnoreDayMode = false;
+            opportunitySelectedMinutes = 20;
+            opportunitySelectedContext = 'any';
+            document.querySelectorAll('.opportunity-time-btn').forEach(btn => btn.classList.toggle('selected', Number(btn.dataset.minutes) === 20));
+            document.querySelectorAll('.opportunity-context-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.context === 'any'));
+            document.getElementById('modalOpportunityStudy').style.display = 'flex';
+            renderOpportunityRecommendations();
+        }
+
+        function closeOpportunityStudyModal() {
+            const modal = document.getElementById('modalOpportunityStudy');
+            if (modal) modal.style.display = 'none';
+            opportunityRecommendations = [];
+            opportunityIgnoreDayMode = false;
+        }
+
+        function selectOpportunityMinutes(minutes, elem) {
+            opportunitySelectedMinutes = Math.max(5, Math.min(120, Number(minutes) || 20));
+            document.querySelectorAll('.opportunity-time-btn').forEach(btn => btn.classList.toggle('selected', btn === elem));
+            renderOpportunityRecommendations();
+        }
+
+        function selectOpportunityContext(context, elem) {
+            opportunitySelectedContext = ['any','transit','walking','focus'].includes(context) ? context : 'any';
+            document.querySelectorAll('.opportunity-context-btn').forEach(btn => btn.classList.toggle('selected', btn === elem));
+            renderOpportunityRecommendations();
+        }
+
+        function getOpportunityPriorityScore(item) {
+            const p = Math.max(1, Math.min(4, Number(item?.prioridade) || 1));
+            const subjectP = Math.max(1, Math.min(10, Number(item?.assunto_prioridade) || 1));
+            return (5 - p) * 120 + Math.max(0, 35 - subjectP * 3);
+        }
+
+        function countFlashcardsForTopic(materia, assunto) {
+            return flashcardsList.filter(fc => fc?.materia === materia && (!assunto || fc?.assunto === assunto)).length;
+        }
+
+        function getRecentStudyMaterias(contest, limit = 4) {
+            return (contest?.studySessions || []).slice().sort((a,b) => getRetentionEventDate(b) - getRetentionEventDate(a)).slice(0,limit).map(s => s?.materia).filter(Boolean);
+        }
+
+        function buildOpportunityRecommendations(minutes = opportunitySelectedMinutes, contextMode = opportunitySelectedContext) {
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || {};
+            const now = new Date();
+            const todayKey = getLocalDateKey(now);
+            const dayMode = getFlexibleDayMode(now, contest);
+            const reviewOnly = isFlexibleOpportunityMode(contest) && dayMode === 'review' && !opportunityIgnoreDayMode;
+            if (isFlexibleOpportunityMode(contest) && dayMode === 'rest' && !opportunityIgnoreDayMode) return [];
+            const recentMaterias = getRecentStudyMaterias(contest);
+            const candidates = [];
+            const seen = new Set();
+            const engine = getRetentionEngine(contest, false);
+
+            Object.values(engine?.topics || {}).forEach(state => {
+                const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === state.key);
+                if (!item || !state?.lastStudyAt) return;
+                const retention = calculateRetentionFromState(state, now);
+                const nextAt = state.nextReviewAt ? new Date(state.nextReviewAt) : null;
+                const due = nextAt && Number.isFinite(nextAt.getTime()) && nextAt <= new Date(`${todayKey}T23:59:59`);
+                if (!due && retention > 72) return;
+                const key = `review::${state.key}`;
+                if (seen.has(key)) return; seen.add(key);
+                const overdueDays = due ? Math.max(0, (now - nextAt) / 86400000) : 0;
+                const score = 900 + getOpportunityPriorityScore(item) + (100 - retention) * 5 + Math.min(220, overdueDays * 25);
+                candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:'questoes', isRevision:true, retention, due, score, minutes:Math.min(minutes, Math.max(5, minutes <= 10 ? minutes : 15)), reason:due?'Revisão vencida ou prevista para agora':'Retenção estimada abaixo do alvo' });
+            });
+
+            if (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly) {
+                editalItems.forEach(item => {
+                    const count = countFlashcardsForTopic(item.materia,item.assunto);
+                    if (!count) return;
+                    const state = getRetentionTopicState(contest,item.materia,item.assunto,false);
+                    const retention = state ? calculateRetentionFromState(state,now) : 75;
+                    const key = `flash::${getStudyTopicKey(item.materia,item.assunto)}`;
+                    if (seen.has(key)) return; seen.add(key);
+                    let score = 560 + getOpportunityPriorityScore(item) + (100-retention)*2;
+                    if (contextMode === 'walking') score += 260;
+                    if (contextMode === 'transit') score += 180;
+                    if (minutes <= 10) score += 160;
+                    candidates.push({ kind:'flashcards', materia:item.materia, assunto:item.assunto, itemId:item.id, flashcardCount:count, retention, score, minutes, reason:`${count} flashcard${count===1?'':'s'} disponível${count===1?'':'is'} para recuperação ativa` });
+                });
+            }
+
+            if (!reviewOnly) {
+                editalItems.forEach(item => {
+                    if (item.teoria && item.questoes) return;
+                    const key = `normal::${getStudyTopicKey(item.materia,item.assunto)}`;
+                    if (seen.has(key)) return; seen.add(key);
+                    const plan = getTopicStudyPlan(item,contest);
+                    const progress = getTopicStudyPlanProgress(item,contest);
+                    const isContinuation = !!(plan && progress && !progress.complete && Number(progress.current || 0) > 0);
+                    let activityType = !item.teoria ? 'teoria' : 'questoes';
+                    if (minutes <= 20 && item.teoria) activityType = 'questoes';
+                    if (contextMode === 'walking' && activityType === 'teoria') return;
+                    let score = 430 + getOpportunityPriorityScore(item) + (isContinuation ? 170 : 0);
+                    if (recentMaterias[0] === item.materia) score -= 110;
+                    if (recentMaterias.includes(item.materia)) score -= 30;
+                    if (contextMode === 'focus' && minutes >= 40 && activityType === 'teoria') score += 130;
+                    if ((contextMode === 'walking' || contextMode === 'transit') && activityType === 'teoria') score -= 190;
+                    if (minutes <= 10 && activityType === 'teoria') score -= 150;
+                    const suggested = Math.max(5, Math.min(minutes, Number(plan?.sessionMinutes) || (activityType === 'teoria' ? 40 : 20)));
+                    candidates.push({ kind:'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, isRevision:false, score, minutes:suggested, reason:isContinuation?'Continuar assunto já iniciado':(activityType==='questoes'?'Prática de recuperação por questões':'Próximo conteúdo prioritário') });
+                });
+            }
+
+            candidates.sort((a,b) => b.score-a.score || String(a.materia).localeCompare(String(b.materia),'pt-BR'));
+            const picked=[];
+            const materias=new Set();
+            for (const c of candidates) {
+                if (picked.length>=3) break;
+                if (materias.has(c.materia) && candidates.some(x => !materias.has(x.materia) && !picked.includes(x))) continue;
+                picked.push(c); materias.add(c.materia);
+            }
+            return picked.length ? picked : candidates.slice(0,3);
+        }
+
+        function renderOpportunityRecommendations() {
+            const container = document.getElementById('opportunityRecommendations');
+            const hint = document.getElementById('opportunityModeHint');
+            if (!container) return;
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const dayMode = getFlexibleDayMode(new Date(),contest);
+            if (hint) {
+                hint.textContent = isFlexibleOpportunityMode(contest)
+                    ? `Modo flexível ativo • Hoje: ${dayMode==='full'?'estudo completo':dayMode==='review'?'somente revisão':'descanso'}. Nenhum horário fixo é necessário.`
+                    : 'Você pode usar esta função mesmo com cronograma tradicional. O Painel cruza retenção, prioridade e progresso.';
+            }
+            if (isFlexibleOpportunityMode(contest) && dayMode==='rest' && !opportunityIgnoreDayMode) {
+                opportunityRecommendations=[];
+                container.innerHTML = `<div class="opportunity-empty">Hoje está marcado como <strong>Descanso</strong>.<br>O Painel respeitou essa escolha.<div style="margin-top:10px;"><button class="btn btn-secondary btn-sm" onclick="ignoreFlexibleRestForOpportunity()">Estudar mesmo assim desta vez</button></div></div>`;
+                return;
+            }
+            opportunityRecommendations = buildOpportunityRecommendations();
+            if (!opportunityRecommendations.length) {
+                container.innerHTML='<div class="opportunity-empty">Não encontrei uma revisão ou atividade elegível para este momento. Você pode alterar o tempo/contexto ou revisar seus flashcards manualmente.</div>';
+                return;
+            }
+            container.innerHTML = opportunityRecommendations.map((rec,idx) => {
+                const kindLabel = rec.kind==='flashcards'?'Flashcards':rec.isRevision?'Revisão':rec.activityType==='questoes'?'Questões':'Teoria';
+                const retentionBadge = Number.isFinite(rec.retention) ? `<span class="opportunity-badge">Memória ~${Math.round(rec.retention)}%</span>` : '';
+                return `<div class="opportunity-card"><div class="opportunity-card-top"><div><div class="opportunity-card-title">${escapeHtml(rec.materia)} — ${escapeHtml(rec.assunto)}</div><div class="opportunity-card-meta">${escapeHtml(rec.reason)} · sugestão de ${Math.max(1,Math.round(rec.minutes||opportunitySelectedMinutes))} min</div><div class="opportunity-card-badges"><span class="opportunity-badge">${kindLabel}</span>${retentionBadge}${rec.flashcardCount?`<span class="opportunity-badge">${rec.flashcardCount} cards</span>`:''}</div></div><button class="btn btn-success btn-sm" onclick="startOpportunityRecommendation(${idx})">Iniciar agora</button></div></div>`;
+            }).join('');
+        }
+
+        function ignoreFlexibleRestForOpportunity() {
+            opportunityIgnoreDayMode = true;
+            renderOpportunityRecommendations();
+        }
+
+        function clearAdaptiveReviewsForTopicThrough(contest, materia, assunto, throughKey = getLocalDateKey()) {
+            const topicText = getStudyTopicKey(materia,assunto);
+            Object.keys(contest?.dateSchedule || {}).forEach(dateKey => {
+                if (dateKey > throughKey || !Array.isArray(contest.dateSchedule[dateKey])) return;
+                contest.dateSchedule[dateKey] = contest.dateSchedule[dateKey].filter(raw => !(isAdaptiveRetentionReviewText(raw) && normalizeScheduledTopicForStudy(raw)===topicText));
+                if (!contest.dateSchedule[dateKey].length) delete contest.dateSchedule[dateKey];
+            });
+        }
+
+        function launchOpportunityPomodoro(rec) {
+            const item = editalItems.find(i => String(i.id)===String(rec.itemId)) || editalItems.find(i => i.materia===rec.materia && i.assunto===rec.assunto);
+            if (!item) return appNotice('O assunto recomendado não foi encontrado no edital.', { title:'Tenho tempo agora' });
+            const requestedMinutes = Math.max(1,Math.min(240,Math.round(Number(rec.minutes)||opportunitySelectedMinutes)));
+            const focusInput=document.getElementById('focoMin'); if(focusInput) focusInput.value=requestedMinutes;
+            activeStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:getLocalDateKey(),plannedDateKey:getLocalDateKey(),adaptiveAdvance:false,isRevision:!!rec.isRevision,activityType:rec.activityType==='questoes'?'questoes':'teoria',source:'opportunity' };
+            renderActiveStudyContext();
+            closeOpportunityStudyModal();
+            const editalTabButton=[...document.querySelectorAll('.tab-btn')].find(btn=>/edital verticalizado/i.test(btn.textContent||''));
+            if(editalTabButton) switchTab('tab-edital',editalTabButton);
+            clearInterval(timerInterval); timerInterval=null; timerMode='focus'; timerHasStarted=false; isTimerPaused=false; currentFocusCycleMinutes=0; focusSessionCommitted=false; timeLeft=requestedMinutes*60; currentTimerTotalSeconds=timeLeft; updateDisplay(); updatePauseButton();
+            requestAnimationFrame(()=>{ const pomodoro=document.querySelector('.pomodoro-card'); if(pomodoro) pomodoro.scrollIntoView({behavior:'smooth',block:'center'}); startTimer(); });
+        }
+
+        function startOpportunityRecommendation(index) {
+            const rec=opportunityRecommendations[index]; if(!rec) return;
+            if(rec.kind==='flashcards') {
+                const cards=flashcardsList.filter(fc=>fc?.materia===rec.materia && fc?.assunto===rec.assunto);
+                if(!cards.length) return appNotice('Os flashcards desta recomendação não estão mais disponíveis.',{title:'Flashcards'});
+                closeOpportunityStudyModal();
+                return startStudyModalWithList(cards,`oportunidade:${rec.materia}:${rec.assunto}`);
+            }
+            launchOpportunityPomodoro(rec);
         }
 
         function openModalMentorisMethod() {
@@ -4985,6 +5366,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const cfg = contestMeta?.scheduleConfig || {};
             const dow = dateObj.getDay();
             const method = Number(cfg.method || contestMeta?.pomodoroScheduleMethod || 0);
+            if (method === 3) return 0;
             if (method === 1) {
                 if (dow === 6 && cfg.includeSaturday === false) return 0;
                 if (dow === 0 && cfg.includeSunday === false) return 0;
@@ -5088,6 +5470,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 return { ...progress, continuationDate:null };
             }
             removeTopicRevisionsFromSchedule(contest.dateSchedule || (contest.dateSchedule = {}), topicText);
+            if (isFlexibleOpportunityMode(contest)) return { ...progress, continuationDate:null, flexiblePending:true };
             const continuationDate = ensureTopicStudyPlanContinuation(contest, item, todayKey);
             return { ...progress, continuationDate };
         }
@@ -6634,6 +7017,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         async function reorganizarMateriasCronograma() {
             if (!editalItems.length) { await appNotice('Não há matérias no edital atual para reorganizar.'); return; }
             const metadata = getConcursosMetadata();
+            if (isFlexibleOpportunityMode(metadata[currentConcurso] || {})) {
+                return appNotice('O modo Estudo por Oportunidade não usa uma fila rígida para reorganizar. A melhor próxima atividade é calculada no momento em que você toca em “Tenho tempo agora”.', { title:'Modo flexível' });
+            }
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             const contestMeta = metadata[currentConcurso];
             const oldSchedule = contestMeta.dateSchedule || {};
@@ -8388,6 +8774,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function isRetentionStudyDayAllowed(date, contestMeta) {
             const cfg = contestMeta?.scheduleConfig || {};
             const day = date.getDay();
+            if (cfg.method === 3) return (cfg.flexibleDayModes?.[day] || 'full') !== 'rest';
             if (cfg.method === 2 && Array.isArray(cfg.weekdays) && cfg.weekdays.length) return cfg.weekdays.includes(day);
             if (cfg.method === 1) {
                 if (day === 6 && cfg.includeSaturday === false) return false;
@@ -8469,6 +8856,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const state = getRetentionTopicState(contest, pending.materia, pending.assunto, false);
             const topicKey = getStudyTopicKey(pending.materia, pending.assunto);
             markAdaptiveRetentionReviewCompleted(contest, pending.dateKey, topicKey, normalized, pending.sessionId);
+            clearAdaptiveReviewsForTopicThrough(contest, pending.materia, pending.assunto, pending.dateKey);
             const nextDateKey = state ? scheduleNextAdaptiveRetentionReview(contest, state, pending.dateKey) : null;
             await saveConcursosMetadata(metadata);
             pendingAdaptiveReviewFeedback = null;
@@ -8762,11 +9150,17 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             };
             metadata[currentConcurso].studySessions.push(recordedSession);
             const retentionState = registerRetentionStudyEvent(metadata[currentConcurso], recordedSession);
+            const topicPlanResult = reconcileTopicStudyPlanAfterSession(metadata, context);
             let adaptiveReviewDateKey = null;
             if (isAdaptiveRetentionStrategy(metadata[currentConcurso]) && !context.isRevision && retentionState) {
-                adaptiveReviewDateKey = scheduleNextAdaptiveRetentionReview(metadata[currentConcurso], retentionState, actualDateKey);
+                // Assuntos longos só iniciam a curva de revisão quando a Teoria planejada
+                // estiver completa. Enquanto houver blocos/aulas pendentes, a prioridade é continuidade.
+                if (!topicPlanResult || topicPlanResult.complete) {
+                    adaptiveReviewDateKey = scheduleNextAdaptiveRetentionReview(metadata[currentConcurso], retentionState, actualDateKey);
+                } else {
+                    removeTopicRevisionsFromSchedule(metadata[currentConcurso].dateSchedule || {}, getStudyTopicKey(context.materia, context.assunto));
+                }
             }
-            const topicPlanResult = reconcileTopicStudyPlanAfterSession(metadata, context);
             await saveConcursosMetadata(metadata);
             if (isAdaptiveRetentionStrategy(metadata[currentConcurso]) && context.isRevision) {
                 openAdaptiveReviewFeedback(recordedSession, context);
@@ -9022,7 +9416,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!targetMinutes) {
                 targetEl.textContent = 'Sem meta';
                 progressEl.style.width = '0%';
-                statusEl.textContent = 'Gere um cronograma pelos métodos 1 ou 2 para definir a meta diária.';
+                const contest = getConcursosMetadata()[currentConcurso] || {};
+                statusEl.textContent = isFlexibleOpportunityMode(contest)
+                    ? 'Modo flexível ativo • estude quando surgir uma oportunidade. Use “Tenho tempo agora”.'
+                    : 'Gere um cronograma para definir a meta diária ou use o modo Estudo por Oportunidade.';
                 return;
             }
 
@@ -11916,6 +12313,16 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         window.setCustomDailyHours = setCustomDailyHours;
         window.toggleAdaptiveRevision = toggleAdaptiveRevision;
         window.gerarCronogramaMetodo2 = gerarCronogramaMetodo2;
+        window.openFlexibleStudyConfig = openFlexibleStudyConfig;
+        window.closeFlexibleStudyConfig = closeFlexibleStudyConfig;
+        window.setFlexibleDayMode = setFlexibleDayMode;
+        window.activateFlexibleStudyMode = activateFlexibleStudyMode;
+        window.openOpportunityStudyModal = openOpportunityStudyModal;
+        window.closeOpportunityStudyModal = closeOpportunityStudyModal;
+        window.selectOpportunityMinutes = selectOpportunityMinutes;
+        window.selectOpportunityContext = selectOpportunityContext;
+        window.ignoreFlexibleRestForOpportunity = ignoreFlexibleRestForOpportunity;
+        window.startOpportunityRecommendation = startOpportunityRecommendation;
         window.showEditTopicDropdown = showEditTopicDropdown;
         window.updateEditAssuntoDropdown = updateEditAssuntoDropdown;
         window.confirmEditTopicWithSwap = confirmEditTopicWithSwap;
