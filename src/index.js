@@ -1,6 +1,11 @@
 // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const MAX_TEXT_CHARS = 110000;
+const MAX_REQUEST_BYTES = 512 * 1024;
+const MAX_MATERIAS = 120;
+const MAX_TOPICS_TOTAL = 5000;
+const MAX_MATERIA_CHARS = 180;
+const MAX_ASSUNTO_CHARS = 1200;
 
 const VENDOR_ROUTES = {
   "/vendor/supabase.js": {
@@ -88,14 +93,22 @@ const prioritySchema = {
   required: ["materias"]
 };
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
-    }
+function json(data, status = 200, extraHeaders = {}) {
+  const headers = new Headers({
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer"
   });
+  for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
+function cleanText(value, maxLength) {
+  return String(value || "")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .trim()
+    .slice(0, maxLength);
 }
 
 function fold(value) {
@@ -191,18 +204,21 @@ function sanitizeLockedMaterias(input) {
   const clean = [];
   const seen = new Set();
 
-  for (const item of items) {
-    const materia = String(item?.materia || "").trim();
+  let topicCount = 0;
+  for (const item of items.slice(0, MAX_MATERIAS)) {
+    const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);
     if (!materia) continue;
 
     const assuntos = [];
     const topicSeen = new Set();
     for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {
-      const assunto = String(value || "").trim();
+      if (topicCount >= MAX_TOPICS_TOTAL) break;
+      const assunto = cleanText(value, MAX_ASSUNTO_CHARS);
       const key = fold(assunto);
       if (!assunto || topicSeen.has(key)) continue;
       topicSeen.add(key);
       assuntos.push(assunto);
+      topicCount++;
     }
     if (!assuntos.length) continue;
 
@@ -245,22 +261,51 @@ function mergePriorityOnly(lockedMaterias, aiResult) {
 }
 
 async function analyzeEdital(request, env) {
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return json({ error: "Content-Type deve ser application/json." }, 415);
+  }
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > MAX_REQUEST_BYTES) {
+    return json({ error: "Requisição excede o limite de segurança." }, 413);
+  }
+
   const user = await authenticateSupabaseUser(request, env);
   if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
 
+  if (env.AI_RATE_LIMITER?.limit) {
+    const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:analisar-edital` });
+    if (!success) {
+      return json({ error: "Muitas análises em sequência. Aguarde um minuto e tente novamente." }, 429, { "retry-after": "60" });
+    }
+  }
+
   let body;
   try {
-    body = await request.json();
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+      return json({ error: "Requisição excede o limite de segurança." }, 413);
+    }
+    body = JSON.parse(rawBody);
   } catch {
     return json({ error: "Corpo JSON inválido." }, 400);
   }
 
-  const concurso = String(body?.concurso || "").trim();
-  const banca = String(body?.banca || "").trim();
-  const fileName = String(body?.fileName || "Edital.pdf").trim();
-  const cargoLabel = String(body?.cargo?.label || body?.cargo || "").trim();
-  const rawText = String(body?.text || "").trim();
-  const lockedMaterias = sanitizeLockedMaterias(body?.lockedMaterias);
+  const rawLockedMaterias = Array.isArray(body?.lockedMaterias) ? body.lockedMaterias : [];
+  if (rawLockedMaterias.length > MAX_MATERIAS) {
+    return json({ error: "Quantidade de matérias excede o limite de segurança." }, 413);
+  }
+  const rawTopicCount = rawLockedMaterias.reduce((sum, item) => sum + (Array.isArray(item?.assuntos) ? item.assuntos.length : 0), 0);
+  if (rawTopicCount > MAX_TOPICS_TOTAL) {
+    return json({ error: "Quantidade de tópicos excede o limite de segurança." }, 413);
+  }
+
+  const concurso = cleanText(body?.concurso, 200);
+  const banca = cleanText(body?.banca, 120);
+  const fileName = cleanText(body?.fileName || "Edital.pdf", 240);
+  const cargoLabel = cleanText(body?.cargo?.label || body?.cargo, 240);
+  const rawText = cleanText(body?.text, MAX_TEXT_CHARS + 1);
+  const lockedMaterias = sanitizeLockedMaterias(rawLockedMaterias);
 
   if (!lockedMaterias.length) {
     return json({ error: "O frontend não enviou matérias/assuntos determinísticos válidos para o cargo selecionado." }, 422);
