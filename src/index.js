@@ -78,7 +78,7 @@ const prioritySchema = {
         type: "object",
         properties: {
           materia: { type: "string" },
-          prioridade: { type: "integer", minimum: 1, maximum: 3 },
+          prioridade: { type: "integer", minimum: 1, maximum: 4 },
           peso: { type: "number", minimum: 0 }
         },
         required: ["materia", "prioridade", "peso"]
@@ -212,7 +212,7 @@ function sanitizeLockedMaterias(input) {
 
     clean.push({
       materia,
-      prioridade: Math.min(3, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
       peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,
       assuntos
     });
@@ -226,7 +226,7 @@ function mergePriorityOnly(lockedMaterias, aiResult) {
     const name = String(item?.materia || "").trim();
     if (!name) continue;
     scores.set(fold(name), {
-      prioridade: Math.min(3, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
       peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null
     });
   }
@@ -284,8 +284,8 @@ REGRAS ABSOLUTAS:
 4. NÃO renomeie matérias.
 5. NÃO gere assuntos.
 6. A lista de matérias fornecida está BLOQUEADA.
-7. Sua única tarefa é atribuir prioridade 1, 2 ou 3 e peso numérico às matérias usando SOMENTE sinais existentes no edital recebido.
-8. Se o texto não permitir diferenciar, use prioridade 2.
+7. Sua única tarefa é atribuir prioridade 1, 2, 3 ou 4 e peso numérico às matérias usando SOMENTE sinais existentes no edital recebido.
+8. Se o texto não permitir diferenciar, use prioridade 2. A escala é P1 = prioridade máxima, P2 = alta, P3 = média e P4 = baixa.
 9. Se o peso já estiver explicitamente indicado no texto/quadro de provas, respeite-o.
 10. Não use histórico da banca; ele não está disponível nesta fase.
 11. Retorne somente JSON no schema solicitado.
