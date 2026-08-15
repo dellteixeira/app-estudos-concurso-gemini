@@ -1,4 +1,4 @@
-const CACHE_NAME = 'painel-estudos-v9-55-auth-lifecycle-audit-20260814';
+const CACHE_NAME = 'painel-estudos-v9-56-flashcard-smart-shuffle-20260814';
 
 const APP_SHELL = [
   './',
