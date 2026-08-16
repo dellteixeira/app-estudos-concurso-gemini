@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.1.2 — Busca Modal e Gradientes por Matéria
+ESTUDO ADAPTATIVO INTELIGENTE — V10.2.0 — Busca Modal e Gradientes por Matéria
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -359,3 +359,13 @@ V10.1.2 — BUSCA MODAL E GRADIENTES POR MATÉRIA (16/08/2026)
 - Cada matéria do gráfico/legenda passa a receber gradiente próprio, distribuído pelo círculo cromático para reduzir repetições.
 - Cabeçalho ganha mais espaço útil e elimina campo de busca comprimido.
 - CACHE_NAME: estudo-adaptativo-v10-1-2-busca-modal-gradientes-materias-20260816.
+
+
+V10.2.0 — AUDITORIA MOBILE DE LAYOUT (16/08/2026)
+- Cabeçalho mobile: Conta, Modo Claro/Escuro e Sair alinhados em uma única linha.
+- Gráfico de progresso mobile: barras e trilhos mais finos, espaçamento ampliado e legenda refinada.
+- Formulário manual do edital: Matéria, Assunto e Importância na mesma linha; Matéria/Assunto abrem editor mobile dedicado.
+- Cronograma: seis ações principais mantidas em uma única linha com rótulos compactos em até duas linhas.
+- Flashcards: dois botões de estudo alinhados em uma única linha.
+- Auditoria adicional de overflow, FAB, áreas de toque e contenção de componentes.
+- CACHE_NAME: estudo-adaptativo-v10-2-0-auditoria-mobile-layout-20260816.
