@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.1.1',
+                    appVersion:'10.1.2',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -5533,13 +5533,20 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const labels = Object.keys(counts);
             const percentData = labels.map(l => Math.round((counts[l].concluido / (counts[l].total || 1)) * 100));
-            const gradientPairs = [
-                ['#ff9f0a','#ff2d55'], ['#00e5d4','#5b4dff'], ['#ff2aa3','#8b2cff'], ['#ffb000','#ff4d6d'],
-                ['#11d9f3','#3267ff'], ['#ff3b9a','#9b2cff'], ['#00d9d2','#8b2cff'], ['#ffb000','#ff2d55']
-            ];
+            // V10.1.2 — cada matéria recebe um gradiente próprio e estável na ordem do edital.
+            // O ângulo áureo distribui os matizes pelo círculo cromático e reduz repetições visuais.
+            const subjectGradientPair = (idx) => {
+                const hueA = Math.round((idx * 137.508 + 12) % 360);
+                const hueB = Math.round((hueA + 42 + (idx % 3) * 11) % 360);
+                return [
+                    `hsl(${hueA} 92% 57%)`,
+                    `hsl(${hueB} 88% 51%)`
+                ];
+            };
+            const gradientPairs = labels.map((_, idx) => subjectGradientPair(idx));
             const chartHeight = Math.max(180, canvas.clientHeight || canvas.height || 180);
             const barGradients = labels.map((_, idx) => {
-                const pair = gradientPairs[idx % gradientPairs.length];
+                const pair = gradientPairs[idx];
                 const gradient = ctx.createLinearGradient(0, chartHeight, 0, 0);
                 gradient.addColorStop(0, pair[1]);
                 gradient.addColorStop(1, pair[0]);
@@ -5548,10 +5555,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             if (legendGrid) {
                 legendGrid.innerHTML = labels.map((mName, idx) => {
-                    const pair = gradientPairs[idx % gradientPairs.length];
+                    const pair = gradientPairs[idx];
                     return `
-                        <div class="chart-legend-item">
-                            <span class="chart-legend-color" style="background:linear-gradient(180deg, ${pair[0]}, ${pair[1]});"></span>
+                        <div class="chart-legend-item" style="--subject-gradient:linear-gradient(135deg, ${pair[0]}, ${pair[1]});">
+                            <span class="chart-legend-color" style="background:var(--subject-gradient);"></span>
                             <span>${escapeHtml(mName)} (${percentData[idx]}%)</span>
                         </div>
                     `;
@@ -9419,6 +9426,31 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             } catch (_) { return []; }
         }
 
+        function openGlobalSearchModal() {
+            const modal = document.getElementById('modalGlobalSearch');
+            const input = document.getElementById('globalStudySearch');
+            const results = document.getElementById('globalSearchResults');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            if (results) {
+                results.innerHTML = '<div class="global-search-empty">Digite ao menos 2 caracteres para pesquisar.</div>';
+                results.classList.add('visible');
+            }
+            setTimeout(() => {
+                if (input) {
+                    input.focus();
+                    if ((input.value || '').trim().length >= 2) runGlobalStudySearch(input.value);
+                }
+            }, 40);
+        }
+
+        function closeGlobalSearchModal() {
+            const modal = document.getElementById('modalGlobalSearch');
+            const results = document.getElementById('globalSearchResults');
+            if (modal) modal.style.display = 'none';
+            if (results) results.classList.remove('visible');
+        }
+
         let globalSearchTimer = null;
         function scheduleGlobalStudySearch(rawTerm, delay = 140) {
             if (globalSearchTimer) clearTimeout(globalSearchTimer);
@@ -9432,7 +9464,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const box = document.getElementById('globalSearchResults');
             if (!box) return;
             const term = (rawTerm || '').trim().toLocaleLowerCase('pt-BR');
-            if (term.length < 2) { box.classList.remove('visible'); box.innerHTML = ''; return; }
+            if (term.length < 2) { box.innerHTML = '<div class="global-search-empty">Digite ao menos 2 caracteres para pesquisar.</div>'; box.classList.add('visible'); return; }
 
             const results = [];
             editalItems.forEach(item => {
@@ -9471,6 +9503,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (result?.action) result.action();
             const box = document.getElementById('globalSearchResults');
             if (box) box.classList.remove('visible');
+            closeGlobalSearchModal();
         }
 
         function findDesktopTabButton(tabId) {
@@ -9708,8 +9741,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         document.addEventListener('click', (event) => {
-            const results = document.getElementById('globalSearchResults');
-            if (results && !event.target.closest('.modern-command-center')) results.classList.remove('visible');
+            const modal = document.getElementById('modalGlobalSearch');
+            if (modal && event.target === modal) closeGlobalSearchModal();
         });
 
         window.addEventListener('load', () => {
