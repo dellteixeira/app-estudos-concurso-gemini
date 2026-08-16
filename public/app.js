@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.5.3',
+                    appVersion:'10.5.5',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -2391,22 +2391,18 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         <div class="day-topic-controls-row">
                             ${matchedItem ? `
                                 <div class="day-topic-status-inline">
-                                    <label>
-                                        <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'teoria', ${matchedItem.teoria})"> Teoria
-                                    </label>
-                                    <label>
-                                        <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
-                                    </label>
-                                    ${!adaptiveReviewDone ? `<label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label>` : `<button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia">Apagar</button>`}
+                                    <div class="study-status-checks">
+                                        <label>
+                                            <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'teoria', ${matchedItem.teoria})"> Teoria
+                                        </label>
+                                        <label>
+                                            <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
+                                        </label>
+                                    </div>
+                                    ${!adaptiveReviewDone ? `<div class="study-session-action-row"><label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label><div class="study-launch-controls study-launch-controls-primary"><button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions" data-mobile-label="Estudar Teoria">Estudar Teoria</button><button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions" data-mobile-label="Estudar Questões">Estudar Questões</button></div></div>` : `<button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia">Apagar</button>`}
                                 </div>
                             ` : ''}
                             ${matchedItem && !adaptiveReviewDone ? `
-                                <div class="study-session-topline">
-                                    <div class="study-launch-controls study-launch-controls-primary">
-                                        <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions" data-mobile-label="Estudar Teoria">Estudar Teoria</button>
-                                        <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions" data-mobile-label="Estudar Questões">Estudar Questões</button>
-                                    </div>
-                                </div>
                                 <div class="study-launch-controls study-launch-controls-secondary">
                                     <button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia" data-mobile-label="Apagar">Apagar</button>
                                     ${matchedItem && !isRevisionScheduleText(topicoStr) ? `<button class="btn btn-info btn-sm" onclick="showStudyPlanEditor(${idx})" data-mobile-label="Planejar">Planejar</button>` : ''}
