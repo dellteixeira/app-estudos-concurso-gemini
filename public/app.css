@@ -5800,3 +5800,77 @@ body.light-mode .global-search-modal-results.global-search-results { background:
         padding: .42rem .34rem !important;
     }
 }
+
+
+/* V10.5.3 — ajustes estritamente pontuais solicitados */
+.day-extra-counter {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    min-height: 28px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    border: 1px dashed rgba(117,151,179,.34);
+    background: rgba(255,255,255,.03);
+    color: rgba(210,225,238,.92);
+    font-size: .72rem;
+    font-weight: 800;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+.day-extra-counter.is-empty {
+    visibility: hidden;
+}
+.clean-subject-more {
+    display: none !important;
+}
+.day-num-header {
+    align-items: center !important;
+}
+.day-open-btn {
+    display: none !important;
+}
+
+@media (min-width: 901px) {
+    .study-session-topline {
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+    }
+    .study-session-topline .day-topic-status-inline {
+        flex: 0 1 auto !important;
+        width: auto !important;
+        align-items: center !important;
+    }
+    .study-session-topline .study-launch-controls-primary {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        margin-left: 2px !important;
+    }
+    .study-session-topline .study-launch-controls-primary .btn {
+        min-width: 150px !important;
+    }
+    .study-launch-controls-secondary {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    .study-launch-controls-secondary .btn {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+    }
+    .study-launch-controls-secondary .btn-register-question-result {
+        order: 4 !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .day-extra-counter {
+        min-width: 28px;
+        min-height: 22px;
+        padding: 2px 6px;
+        font-size: .66rem;
+        border-radius: 8px;
+    }
+}
