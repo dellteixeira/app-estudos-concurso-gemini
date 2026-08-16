@@ -3044,3 +3044,84 @@
                 padding:.38rem .34rem;
             }
         }
+
+
+        /* V9.66.6 — Reorganização visual das ações do cronograma */
+        .study-session-delete-group {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            flex:0 0 auto;
+            white-space:nowrap;
+        }
+        .btn-topic-delete-inline {
+            min-height:32px !important;
+            padding:.38rem .58rem !important;
+            font-size:.76rem !important;
+            border-radius:9px !important;
+            line-height:1.1;
+        }
+        .study-launch-controls {
+            grid-template-columns:repeat(6, max-content);
+            gap:5px;
+        }
+        .study-launch-controls .btn {
+            min-height:32px;
+            padding:.36rem .54rem;
+            font-size:.74rem;
+            border-radius:9px;
+        }
+        .lesson-only-action {
+            width:100%;
+            margin-top:0;
+        }
+
+        @media (max-width:700px) {
+            .day-topic-status-inline {
+                flex-wrap:wrap;
+                justify-content:flex-start;
+            }
+            .study-session-delete-group {
+                margin-left:auto;
+                gap:5px;
+            }
+            .day-topic-status-inline .study-session-minutes-label {
+                margin-left:0;
+            }
+            .study-launch-controls {
+                grid-template-columns:repeat(3, minmax(0,1fr));
+                gap:6px;
+            }
+            .study-launch-controls .btn {
+                min-height:36px;
+                width:100%;
+                min-width:0;
+                padding:.4rem .34rem;
+                font-size:.70rem;
+                white-space:normal;
+                text-align:center;
+                justify-content:center;
+            }
+        }
+
+        @media (max-width:480px) {
+            .day-topic-status-inline {
+                gap:6px;
+            }
+            .study-session-delete-group {
+                width:100%;
+                margin-left:0;
+                justify-content:flex-start;
+            }
+            .study-launch-controls {
+                grid-template-columns:repeat(2, minmax(0,1fr));
+            }
+            .study-launch-controls .btn {
+                font-size:.72rem;
+            }
+            .btn-topic-delete-inline {
+                min-height:34px !important;
+                padding:.38rem .54rem !important;
+                font-size:.72rem !important;
+            }
+        }
