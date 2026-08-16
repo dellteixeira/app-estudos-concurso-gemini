@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.3.0',
+                    appVersion:'10.5.0',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -3555,6 +3555,21 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderMonthCalendar();
         }
 
+        function goToCurrentMonth() {
+            const now = new Date();
+            selectedMonth = now.getMonth();
+            selectedYear = now.getFullYear();
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+            if (monthSelect) monthSelect.value = String(selectedMonth);
+            if (yearSelect) {
+                const hasYear = Array.from(yearSelect.options).some(opt => Number(opt.value) === selectedYear);
+                if (!hasYear) initMonthYearSelectors();
+                yearSelect.value = String(selectedYear);
+            }
+            renderMonthCalendar();
+        }
+
         function getScheduledItemStudyState(scheduleText, editalLookup = null, dateKey = null) {
             const text = String(scheduleText || '');
             const cleanTop = normalizeScheduledTopicForStudy(text);
@@ -3589,6 +3604,16 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return items.filter(it => !getScheduledItemStudyState(it, editalLookup, dateKey).done);
         }
 
+        function renderCalendarFooterSummary(summary) {
+            const el = document.getElementById('calendarFooterSummary');
+            if (!el) return;
+            el.innerHTML = `
+                <div class="calendar-footer-summary-item"><strong>${summary.activeDays}</strong><span>Dias com estudos</span></div>
+                <div class="calendar-footer-summary-item"><strong>${summary.completed}/${summary.total}</strong><span>Tarefas concluídas</span></div>
+                <div class="calendar-footer-summary-item"><strong>${summary.average}%</strong><span>Progresso médio</span></div>
+            `;
+        }
+
         function renderMonthCalendar() {
             const __calendarStarted = performance.now();
             const grid = document.getElementById('monthCalendarGrid');
@@ -3602,9 +3627,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const isCurrentMonth = todayObj.getMonth() === selectedMonth && todayObj.getFullYear() === selectedYear;
             const todayKey = getLocalDateKey(todayObj);
 
-            // Índice para evitar procurar repetidamente o mesmo tópico em toda a lista do edital.
             const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
             const htmlParts = [];
+            const monthSummary = { activeDays: 0, total: 0, completed: 0, average: 0 };
 
             for (let i = 0; i < firstDay; i++) {
                 htmlParts.push('<div class="month-day-cell other-month" aria-hidden="true"></div>');
@@ -3618,35 +3643,58 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 let revisionCount = 0;
                 const badgeParts = [];
 
-                items.forEach(it => {
+                items.forEach((it, index) => {
                     const state = getScheduledItemStudyState(it, editalLookup, dateKey);
                     if (state.isRevision) revisionCount++;
                     if (state.done) completedCount++;
-                    badgeParts.push(`<div class="clean-subject-badge ${state.done ? 'done' : (state.isRevision ? 'rev' : '')}">${escapeHtml(formatScheduledItemForDisplay(it))}</div>`);
+                    if (index < 2) {
+                        badgeParts.push(`<div class="clean-subject-badge ${state.done ? 'done' : (state.isRevision ? 'rev' : '')}">${escapeHtml(formatScheduledItemForDisplay(it))}</div>`);
+                    }
                 });
+
+                if (items.length > 2) {
+                    badgeParts.push(`<div class="clean-subject-more">+${items.length - 2}</div>`);
+                }
 
                 const allDone = items.length > 0 && completedCount === items.length;
                 const isOverdue = items.length > 0 && dateKey < todayKey && !allDone;
-                const studyDayStateClass = allDone ? 'study-completed' : (isOverdue ? 'study-overdue' : '');
+                const studyDayStateClass = allDone ? 'study-completed' : (isOverdue ? 'study-overdue' : (items.length > 0 ? 'study-active' : 'study-empty'));
                 const mobileClass = allDone ? 'done' : (isOverdue ? 'late' : (revisionCount > 0 ? 'rev' : ''));
+                const completionPercent = items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;
                 const mobileMeta = items.length > 0
-                    ? `<div class="month-day-mobile-meta"><span class="month-day-mobile-count ${mobileClass}" title="${items.length} itens agendados">${allDone ? 'Concluído' : items.length}</span></div>`
-                    : '<div class="month-day-mobile-meta"></div>';
+                    ? `<div class="month-day-mobile-meta"><span class="month-day-mobile-count ${mobileClass}" title="${items.length} itens agendados">${allDone ? 'Concluído' : `${completedCount}/${items.length}`}</span></div>`
+                    : '<div class="month-day-mobile-meta"><span class="month-day-mobile-empty"></span></div>';
+                const progressMeta = items.length > 0
+                    ? `
+                        <div class="day-progress-summary">
+                            <span>${completedCount} / ${items.length}</span>
+                            <div class="day-progress-track"><div class="day-progress-fill" style="width:${completionPercent}%"></div></div>
+                        </div>
+                    `
+                    : '<div class="day-empty-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>';
+
+                if (items.length > 0) {
+                    monthSummary.activeDays += 1;
+                    monthSummary.total += items.length;
+                    monthSummary.completed += completedCount;
+                }
 
                 htmlParts.push(`
                     <div class="month-day-cell ${isToday ? 'today' : ''} ${studyDayStateClass}" data-date-key="${dateKey}" onclick="openModalDayContent('${dateKey}')" role="button" tabindex="0" aria-label="Dia ${day}, ${items.length} itens agendados">
                         <div class="day-num-header">
-                            <span>${day}</span>
-                            <button class="btn btn-secondary btn-sm" style="padding:0 4px; font-size:0.7rem;" title="Abrir dia" tabindex="-1">Abrir</button>
+                            <span class="day-num-value">${day}</span>
+                            <button class="btn btn-secondary btn-sm day-open-btn" style="padding:0 8px; font-size:0.72rem;" title="Abrir dia" tabindex="-1">Abrir</button>
                         </div>
-                        <div class="day-badges-scroll">${badgeParts.join('')}</div>
+                        ${progressMeta}
+                        <div class="day-badges-scroll ${items.length === 0 ? 'is-empty' : ''}">${badgeParts.join('')}</div>
                         ${mobileMeta}
                     </div>
                 `);
             }
 
-            // Uma única escrita no DOM reduz reflows/repaints, especialmente em celulares.
             grid.innerHTML = htmlParts.join('');
+            monthSummary.average = monthSummary.total > 0 ? Math.round((monthSummary.completed / monthSummary.total) * 1000) / 10 : 0;
+            renderCalendarFooterSummary(monthSummary);
             const __calendarDuration = performance.now() - __calendarStarted;
             if (__calendarDuration >= 16) recordLocalPerformance('measure', 'renderMonthCalendar', __calendarDuration);
             renderDelayedPanel();
@@ -9630,8 +9678,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 'tab-anotacoes':'Nova anotação',
                 'tab-flashcards':'Importar flashcards'
             };
-            fab.setAttribute('aria-label', labels[active] || 'Adicionar');
-            fab.title = labels[active] || 'Adicionar';
+            const actionLabel = labels[active] || 'Adicionar';
+            fab.setAttribute('aria-label', actionLabel);
+            fab.title = actionLabel;
+            const textNode = fab.querySelector('span');
+            if (textNode) textNode.textContent = active === 'tab-calendario' ? 'Preencher' : active === 'tab-anotacoes' ? 'Nova nota' : active === 'tab-flashcards' ? 'Importar' : 'Novo';
         }
 
         function handleContextFab() {
@@ -10001,6 +10052,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         window.closeModalEditarFlashcard = closeModalEditarFlashcard;
         window.salvarEdicaoFlashcard = salvarEdicaoFlashcard;
         window.onMonthYearChange = onMonthYearChange;
+        window.goToCurrentMonth = goToCurrentMonth;
         window.limparCronogramaMesAtual = limparCronogramaMesAtual;
         window.limparMateriasEstudadas = limparMateriasEstudadas;
         window.filterDelayedList = filterDelayedList;
