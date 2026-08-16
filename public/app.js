@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.1.2',
+                    appVersion:'10.2.0',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -2401,15 +2401,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 </div>
                             ` : ''}
                             ${matchedItem && !adaptiveReviewDone ? `<div class="study-launch-controls">
-                                <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions">Estudar Teoria</button>
-                                <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions">Estudar Questões</button>
-                                <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})" title="Registra desempenho de questões feitas fora do timer, sem adicionar minutos">Registrar questões externas</button>
-                                ${matchedItem && !isRevisionScheduleText(topicoStr) ? `<button class="btn btn-info btn-sm" onclick="showStudyPlanEditor(${idx})">Planejar</button>` : ''}
-                                <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button>
-                                ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})">Lei Seca</button>` : ''}
+                                <button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions" data-mobile-label="Estudar Teoria">Estudar Teoria</button>
+                                <button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions" data-mobile-label="Estudar Questões">Estudar Questões</button>
+                                <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})" title="Registra desempenho de questões feitas fora do timer, sem adicionar minutos" data-mobile-label="Questões externas">Registrar questões externas</button>
+                                ${matchedItem && !isRevisionScheduleText(topicoStr) ? `<button class="btn btn-info btn-sm" onclick="showStudyPlanEditor(${idx})" data-mobile-label="Planejar">Planejar</button>` : ''}
+                                <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button>
+                                ${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})" data-mobile-label="Lei Seca">Lei Seca</button>` : ''}
                             </div>` : ''}
                             ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<div class="day-topic-inline-actions lesson-only-action"><button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})" title="Marca uma aula inteira como concluída. Este botão não adiciona minutos.">✓ Concluir esta aula</button></div>` : ''}
-                            ${!matchedItem ? `<div class="day-topic-inline-actions fallback-topic-actions"><button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button></div>` : (adaptiveReviewDone ? `<div class="day-topic-inline-actions fallback-topic-actions"><button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})">Editar</button></div>` : '')}
+                            ${!matchedItem ? `<div class="day-topic-inline-actions fallback-topic-actions"><button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button></div>` : (adaptiveReviewDone ? `<div class="day-topic-inline-actions fallback-topic-actions"><button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button></div>` : '')}
                         </div>
                         <div id="editArea_${idx}" style="width:100%; display:none;"></div>
                     </div>
@@ -2750,7 +2750,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         </div>
                         <div class="note-card-body" style="white-space:pre-wrap;">${escapeHtml(nota.conteudo)}</div>
                         <div class="note-card-actions">
-                            <button class="btn btn-secondary btn-sm" onclick="editNota(${globalIndex})">Editar</button>
+                            <button class="btn btn-secondary btn-sm" onclick="editNota(${globalIndex})" data-mobile-label="Editar">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteNota(${globalIndex})">Excluir</button>
                         </div>
                     </div>
@@ -3096,7 +3096,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${escapeHtml(fc.resposta)}</p>
                             </div>
                             <div style="display:flex; gap:6px; flex-shrink:0;">
-                                <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard">Editar</button>
+                                <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard" data-mobile-label="Editar">Editar</button>
                                 <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir</button>
                             </div>
                         </div>
@@ -5565,6 +5565,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 }).join('');
             }
 
+            const compactMobileChart = window.innerWidth <= 720;
+
             const progressRailPlugin = {
                 id: 'progressRailPlugin',
                 beforeDatasetsDraw(chart) {
@@ -5573,9 +5575,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     if (!meta?.data?.length || !area) return;
                     const chartCtx = chart.ctx;
                     chartCtx.save();
-                    chartCtx.fillStyle = 'rgba(112, 103, 118, 0.42)';
+                    chartCtx.fillStyle = compactMobileChart ? 'rgba(112, 126, 144, 0.22)' : 'rgba(112, 103, 118, 0.42)';
                     meta.data.forEach(bar => {
-                        const width = Math.max(18, Math.min(30, Number(bar.width) || 24));
+                        const width = compactMobileChart ? Math.max(7, Math.min(12, Number(bar.width) || 10)) : Math.max(18, Math.min(30, Number(bar.width) || 24));
                         const x = bar.x - width / 2;
                         const y = area.top;
                         const h = Math.max(1, area.bottom - area.top);
@@ -5606,10 +5608,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         backgroundColor: barGradients,
                         borderRadius: 999,
                         borderSkipped: false,
-                        maxBarThickness: 30,
+                        maxBarThickness: compactMobileChart ? 12 : 30,
                         minBarLength: 2,
-                        categoryPercentage: 0.76,
-                        barPercentage: 0.72
+                        categoryPercentage: compactMobileChart ? 0.56 : 0.76,
+                        barPercentage: compactMobileChart ? 0.52 : 0.72
                     }]
                 },
                 plugins: [progressRailPlugin],
@@ -9424,6 +9426,47 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const metadata = getConcursosMetadata();
                 return metadata[currentConcurso]?.structuredNotes || [];
             } catch (_) { return []; }
+        }
+
+        let activeMobileEditalFieldId = null;
+
+        function openMobileEditalFieldEditor(fieldId, sourceInput) {
+            if (window.innerWidth > 700) return;
+            const modal = document.getElementById('modalMobileEditalField');
+            const editor = document.getElementById('mobileEditalFieldInput');
+            const title = document.getElementById('mobileEditalFieldTitle');
+            const help = document.getElementById('mobileEditalFieldHelp');
+            const original = document.getElementById(fieldId);
+            if (!modal || !editor || !original) return;
+            activeMobileEditalFieldId = fieldId;
+            if (sourceInput && typeof sourceInput.blur === 'function') sourceInput.blur();
+            const isMateria = fieldId === 'materia';
+            if (title) title.textContent = isMateria ? 'Matéria' : 'Assunto';
+            if (help) help.textContent = isMateria ? 'Digite o nome da matéria.' : 'Digite o nome do assunto.';
+            editor.value = original.value || '';
+            editor.placeholder = isMateria ? 'Ex.: Direito Administrativo' : 'Ex.: Atos Administrativos';
+            modal.style.display = 'flex';
+            setTimeout(() => { editor.focus(); editor.select(); }, 50);
+        }
+
+        function closeMobileEditalFieldEditor(applyValue = false) {
+            const modal = document.getElementById('modalMobileEditalField');
+            const editor = document.getElementById('mobileEditalFieldInput');
+            if (applyValue && activeMobileEditalFieldId && editor) {
+                const original = document.getElementById(activeMobileEditalFieldId);
+                if (original) {
+                    original.value = editor.value.trim();
+                    original.dispatchEvent(new Event('input', { bubbles:true }));
+                    original.dispatchEvent(new Event('change', { bubbles:true }));
+                }
+            }
+            if (modal) modal.style.display = 'none';
+            activeMobileEditalFieldId = null;
+        }
+
+        function handleMobileEditalFieldKeydown(event) {
+            if (event.key === 'Enter') { event.preventDefault(); closeMobileEditalFieldEditor(true); }
+            if (event.key === 'Escape') { event.preventDefault(); closeMobileEditalFieldEditor(false); }
         }
 
         function openGlobalSearchModal() {
