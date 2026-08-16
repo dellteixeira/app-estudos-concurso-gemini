@@ -4926,3 +4926,547 @@ body.light-mode .global-search-modal-results.global-search-results { background:
     }
     .critical-queue-head span { text-align:left !important; }
 }
+
+/* V10.4.0 — Pomodoro, retenção e calendário refinados */
+.dashboard-panel-title {
+    font-size: 1.28rem !important;
+    line-height: 1.1 !important;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px !important;
+}
+
+#intervalTimerBtn,
+#completeFocusBtn {
+    background: linear-gradient(135deg, rgba(34,211,238,.22), rgba(83,227,213,.16)) !important;
+    border-color: rgba(83,227,213,.45) !important;
+    color: #bffaf3 !important;
+    box-shadow: none !important;
+}
+#intervalTimerBtn:disabled,
+#completeFocusBtn:disabled {
+    opacity: .52;
+    filter: saturate(.8);
+}
+
+.retention-diagnostic-panel {
+    grid-template-columns: minmax(240px, .95fr) minmax(360px, 1.25fr) minmax(420px, 1.6fr);
+    grid-template-areas:
+        "head metrics critical"
+        "head phase risk";
+    gap: 10px;
+    align-items: stretch;
+}
+.retention-diagnostic-head {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-content: space-between;
+    justify-items: start;
+    padding: 2px 0;
+}
+.retention-diagnostic-head h3 {
+    font-size: 1.2rem;
+    line-height: 1.08;
+    margin-bottom: 6px;
+}
+.retention-diagnostic-subtitle {
+    font-size: .78rem;
+    line-height: 1.4;
+    margin-bottom: 6px;
+    color: rgba(225,235,245,.82);
+    display: block;
+}
+.retention-diagnostic-helper {
+    margin: 0;
+    font-size: .71rem;
+    line-height: 1.45;
+    color: rgba(176,199,218,.78);
+    max-width: 28ch;
+}
+.retention-diagnostic-head .btn {
+    margin-top: 12px;
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: .76rem;
+}
+.retention-metric-grid {
+    gap: 8px;
+    align-content: start;
+}
+.retention-metric {
+    min-height: 72px;
+    padding: 10px 11px;
+}
+.retention-metric span {
+    font-size: .69rem;
+    white-space: normal;
+    line-height: 1.25;
+}
+.retention-metric strong { font-size: 1.15rem; }
+.exam-phase-strip {
+    min-height: 58px;
+    padding: 10px 12px;
+}
+.exam-phase-strip strong { font-size: .76rem; }
+.exam-phase-strip span { font-size: .72rem; white-space: normal; line-height: 1.35; }
+.critical-queue-head {
+    min-height: 58px;
+    padding: 10px 12px;
+    justify-content: space-between;
+}
+.critical-queue-head strong { font-size: .8rem; }
+.critical-queue-head span { font-size: .7rem; white-space: normal; text-align: right; }
+.retention-risk-list {
+    min-height: 110px;
+    max-height: 110px;
+    padding-right: 2px;
+}
+.retention-risk-item {
+    padding: 10px 11px;
+    font-size: .72rem;
+}
+
+.calendar-shell-card {
+    padding: 16px !important;
+}
+.calendar-shell-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.calendar-shell-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+.calendar-shell-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.3rem;
+    background: linear-gradient(180deg, rgba(13,29,50,.96), rgba(11,24,43,.84));
+    border: 1px solid rgba(83,227,213,.28);
+    box-shadow: inset 0 0 0 1px rgba(83,227,213,.06);
+}
+.calendar-shell-title h3 {
+    margin: 0;
+    font-size: 1.28rem;
+    line-height: 1.08;
+}
+.calendar-shell-title p {
+    margin: 3px 0 0;
+    font-size: .82rem;
+    color: rgba(191,208,223,.8);
+}
+.calendar-shell-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.calendar-month-selectors {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.calendar-month-selectors label {
+    font-size: .76rem;
+    color: rgba(205,220,235,.8);
+}
+.calendar-primary-actions {
+    margin-bottom: 12px;
+    justify-content: flex-start;
+}
+.month-calendar-header {
+    margin-bottom: 10px;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: .73rem;
+    color: rgba(170,201,230,.88);
+}
+.month-grid {
+    gap: 10px;
+}
+.month-day-cell {
+    height: 176px;
+    padding: 10px 10px 9px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(13,29,50,.72), rgba(10,22,39,.84));
+    border: 1px solid rgba(117,151,179,.18);
+    box-shadow: inset 0 0 0 1px rgba(83,227,213,.02);
+    gap: 7px;
+}
+.month-day-cell:hover {
+    border-color: rgba(83,227,213,.42);
+    background: linear-gradient(180deg, rgba(15,33,56,.82), rgba(10,24,42,.92));
+}
+.month-day-cell.today {
+    border: 1px solid rgba(83,227,213,.74);
+    box-shadow: 0 0 0 1px rgba(83,227,213,.14), inset 0 0 24px rgba(83,227,213,.06);
+    background: linear-gradient(180deg, rgba(12,35,50,.92), rgba(8,25,40,.94));
+}
+.month-day-cell.study-active .day-num-value,
+.month-day-cell.today .day-num-value { color: #6feee2; }
+.month-day-cell.study-completed {
+    border-color: rgba(16,185,129,.4) !important;
+    background: linear-gradient(180deg, rgba(8,36,34,.65), rgba(7,26,31,.85)) !important;
+}
+.month-day-cell.study-overdue {
+    border-color: rgba(244,114,182,.35) !important;
+    background: linear-gradient(180deg, rgba(44,20,34,.65), rgba(20,17,32,.9)) !important;
+}
+.day-num-header {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    align-items: flex-start;
+}
+.day-num-value {
+    font-size: 1.15rem;
+    line-height: 1;
+    color: #f8fbff;
+}
+.day-open-btn {
+    min-height: 32px !important;
+    padding: 0 10px !important;
+    border-radius: 10px !important;
+    font-size: .72rem !important;
+    border-color: rgba(117,151,179,.22) !important;
+    background: rgba(11,27,45,.6) !important;
+}
+.day-progress-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 1px;
+}
+.day-progress-summary span {
+    font-size: .72rem;
+    font-weight: 700;
+    color: rgba(228,240,250,.88);
+}
+.day-progress-track {
+    height: 4px;
+    width: 100%;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(98,117,138,.2);
+}
+.day-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #22d3ee, #53e3d5);
+}
+.day-empty-dots {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding-top: 14px;
+    opacity: .35;
+}
+.day-empty-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(123,154,187,.48);
+}
+.day-badges-scroll {
+    gap: 6px;
+    padding-right: 2px;
+}
+.day-badges-scroll.is-empty {
+    justify-content: flex-end;
+}
+.clean-subject-badge,
+.clean-subject-more {
+    min-height: 28px;
+    border-radius: 8px;
+    font-size: .72rem;
+    padding: 4px 8px;
+}
+.clean-subject-badge {
+    background: rgba(29,78,216,.12);
+    border-color: rgba(76,132,255,.45);
+    color: #bcd9ff;
+}
+.clean-subject-badge.done {
+    text-decoration: none;
+    background: rgba(16,185,129,.18);
+    border-color: rgba(16,185,129,.55);
+    color: #94f3cc;
+}
+.clean-subject-badge.rev {
+    background: rgba(168,85,247,.16);
+    border-color: rgba(192,132,252,.48);
+    color: #e1c7ff;
+}
+.clean-subject-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    font-weight: 700;
+    color: rgba(210,225,238,.88);
+    border: 1px dashed rgba(117,151,179,.34);
+    background: rgba(255,255,255,.03);
+}
+.calendar-footer-bar {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(117,151,179,.14);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.calendar-footer-legend {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.calendar-legend-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: .72rem;
+    color: rgba(197,214,229,.88);
+}
+.calendar-legend-item::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(117,151,179,.4);
+}
+.calendar-legend-item.selected::before { background: #53e3d5; }
+.calendar-legend-item.progress::before { background: linear-gradient(90deg, #22d3ee, #53e3d5); }
+.calendar-legend-item.activity::before { background: #4c84ff; }
+.calendar-legend-item.idle::before { background: rgba(117,151,179,.38); }
+.calendar-footer-summary {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+.calendar-footer-summary-item {
+    min-width: 110px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.025);
+    border: 1px solid rgba(117,151,179,.15);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.calendar-footer-summary-item strong {
+    font-size: 1.02rem;
+    color: #f8fbff;
+}
+.calendar-footer-summary-item span {
+    font-size: .7rem;
+    color: rgba(186,206,224,.78);
+}
+
+@media (max-width: 900px) {
+    .dashboard-panel-title { font-size: 1.16rem !important; }
+    .retention-diagnostic-panel {
+        grid-template-columns: 1fr;
+        grid-template-areas: "head" "metrics" "phase" "critical" "risk";
+    }
+    .retention-diagnostic-head { gap: 10px; }
+    .retention-diagnostic-helper { max-width: none; }
+    .retention-risk-list { min-height: 96px; max-height: 130px; }
+    .calendar-shell-top,
+    .calendar-shell-nav,
+    .calendar-month-selectors { width: 100%; }
+    .calendar-shell-nav { justify-content: space-between; }
+    .calendar-month-selectors label { width: 100%; }
+    .month-day-cell {
+        height: 76px;
+        padding: 6px 5px;
+        border-radius: 12px;
+        gap: 2px;
+    }
+    .day-progress-summary,
+    .day-empty-dots,
+    #monthCalendarGrid .clean-subject-badge,
+    #monthCalendarGrid .clean-subject-more,
+    #monthCalendarGrid .day-badges-scroll { display: none !important; }
+    #monthCalendarGrid .month-day-mobile-meta {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+    }
+    .calendar-footer-bar { flex-direction: column; align-items: stretch; }
+    .calendar-footer-summary { width: 100%; }
+    .calendar-footer-summary-item { flex: 1 1 30%; min-width: 0; }
+}
+
+@media (max-width: 520px) {
+    .calendar-shell-card { padding: 13px !important; }
+    .calendar-shell-title h3 { font-size: 1.1rem; }
+    .calendar-shell-title p { font-size: .74rem; }
+    .calendar-shell-icon { width: 40px; height: 40px; border-radius: 12px; }
+    .calendar-primary-actions .btn { min-height: 42px; font-size: .74rem; }
+    .month-calendar-header { gap: 4px; font-size: .62rem; }
+    .calendar-footer-legend { gap: 10px; }
+    .calendar-legend-item { font-size: .66rem; }
+    .calendar-footer-summary-item { padding: 9px 10px; }
+}
+
+
+/* =========================================================
+   V10.5.0 — AUDITORIA MOBILE CONSOLIDADA
+   Corrige ocupação do cabeçalho, dock de ação contextual e
+   harmoniza espaçamentos sem alterar regras de negócio.
+   ========================================================= */
+@media (max-width: 900px) {
+    html, body { overflow-x: hidden; }
+    #app-dashboard {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px 10px calc(92px + env(safe-area-inset-bottom,0px)) !important;
+    }
+    header.modern-header {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        grid-template-columns: minmax(0,1fr) auto !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+    .header-brand {
+        grid-column: 1 !important;
+        width: 100%;
+        min-width: 0;
+        padding-bottom: 0 !important;
+    }
+    .mobile-tools-toggle {
+        grid-column: 2 !important;
+        align-self: center;
+    }
+    .header-control-stack {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 4px 0 0 !important;
+        gap: 7px !important;
+    }
+    .header-control-stack .concurso-selector-bar {
+        width: 100% !important;
+        max-width: none !important;
+        box-sizing: border-box;
+        margin: 0 !important;
+        padding: 10px !important;
+    }
+    .concurso-selector-bar select { max-width: none !important; }
+    .header-utility-cluster { width: 100% !important; }
+    .header-account-actions {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+        gap: 6px !important;
+    }
+    .header-account-actions .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 4px !important;
+        white-space: normal !important;
+        line-height: 1.05 !important;
+    }
+    .btn-search-header { width: 100% !important; }
+
+    .study-overview-grid {
+        width: 100%;
+        gap: 8px !important;
+    }
+    .overview-card {
+        min-width: 0;
+        padding: 11px !important;
+    }
+    .overview-hint {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .retention-diagnostic-panel {
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .exam-phase-strip,
+    .critical-queue-head,
+    .retention-metric { min-width: 0; }
+    .exam-phase-strip span,
+    .critical-queue-head span {
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+
+    /* A ação contextual deixa de flutuar sobre os cards e passa a integrar a navegação. */
+    .mobile-bottom-nav {
+        grid-template-columns: repeat(6,minmax(0,1fr)) !important;
+        gap: 2px !important;
+        padding: 6px !important;
+        left: 10px !important;
+        right: 10px !important;
+        bottom: calc(8px + env(safe-area-inset-bottom,0px)) !important;
+    }
+    .mobile-nav-btn {
+        min-width: 0 !important;
+        padding: 7px 2px !important;
+        font-size: .64rem !important;
+        line-height: 1.05 !important;
+    }
+    .context-fab,
+    #contextFab.mobile-context-action {
+        position: static !important;
+        inset: auto !important;
+        transform: none !important;
+        display: flex !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 50px !important;
+        padding: 7px 2px !important;
+        border-radius: 13px !important;
+        box-shadow: none !important;
+        background: rgba(83,227,213,.12) !important;
+        color: #75eade !important;
+        border: 1px solid rgba(83,227,213,.18) !important;
+        font-size: .64rem !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .calendar-shell-card,
+    #tab-edital .card,
+    #tab-calendario .card,
+    #tab-flashcards .card,
+    #tab-anotacoes .card { max-width: 100%; box-sizing: border-box; }
+}
+
+@media (max-width: 430px) {
+    #app-dashboard { padding-left: 8px !important; padding-right: 8px !important; }
+    header.modern-header { padding: 10px !important; }
+    .header-brand-copy h2 { font-size: 1rem !important; }
+    .app-version-badge { font-size: .6rem !important; padding: 4px 6px !important; }
+    .header-account-actions .btn { font-size: .62rem !important; }
+    .mobile-nav-btn,
+    #contextFab.mobile-context-action { font-size: .58rem !important; }
+    .overview-card { min-height: 78px !important; padding: 10px !important; }
+}
