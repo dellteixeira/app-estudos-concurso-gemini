@@ -1,5 +1,5 @@
-const APP_VERSION = '10.5.5';
-const CACHE_NAME = 'estudo-adaptativo-v10-5-5-pomodoro-botoes-secundarios-20260816';
+const APP_VERSION = '10.5.7';
+const CACHE_NAME = 'estudo-adaptativo-v10-5-7-cache-busting-assets-20260816';
 
 const APP_SHELL = [
   './',
@@ -90,6 +90,24 @@ self.addEventListener('fetch', event => {
   }
 
   if (request.method === 'GET') {
+    const isCoreAsset = url.origin === self.location.origin && [
+      '/app.js', '/app.css', '/pwa-update.js', '/sw.js'
+    ].some(path => url.pathname.endsWith(path));
+
+    if (isCoreAsset) {
+      event.respondWith(
+        fetch(request, { cache: 'no-store' })
+          .then(response => {
+            if (response?.ok) {
+              caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
+            }
+            return response;
+          })
+          .catch(async () => (await caches.match(request)) || (await caches.match(url.pathname.replace(/^\//, './'))))
+      );
+      return;
+    }
+
     event.respondWith(
       caches.match(request).then(cached => {
         const networkFetch = fetch(request)
