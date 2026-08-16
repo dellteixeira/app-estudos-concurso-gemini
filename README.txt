@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V9.66.6 — Reorganização Visual das Ações do Cronograma
+ESTUDO ADAPTATIVO INTELIGENTE — V9.66.8 — Refinamento Premium do Cabeçalho
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -292,3 +292,23 @@ V9.66.6 — REORGANIZAÇÃO VISUAL DAS AÇÕES DO CRONOGRAMA (15/08/2026)
 - O botão ✓ Concluir esta aula permanece separado quando o planejamento usa Número de aulas.
 - studySessions, Supabase, RLS, schema, sincronização e Worker permanecem inalterados.
 - CACHE_NAME: estudo-adaptativo-v9-66-6-layout-acoes-cronograma-20260815.
+
+
+V9.66.7 — CABEÇALHO COM BUSCA INTEGRADA E REORDENAÇÃO DE AÇÕES (16/08/2026)
+- Barra de pesquisa movida para o cabeçalho, ao lado da ação Sair.
+- Botão Modo Claro/Escuro reposicionado entre Conta e Sair.
+- Barra de ações principal limpa, removendo o atalho duplicado de tema.
+- Layout do cabeçalho reorganizado para melhor equilíbrio visual no desktop.
+- No mobile, o cabeçalho passa a organizar Conta, Modo, Sair e Busca em grade responsiva, sem rolagem horizontal.
+- CACHE_NAME: estudo-adaptativo-v9-66-7-header-busca-botoes-20260816.
+
+
+V9.66.8 — REFINAMENTO PREMIUM DO CABEÇALHO (16/08/2026)
+- Cabeçalho reorganizado em bloco de gestão do concurso/status e cluster de utilidades.
+- Conta, Modo Claro/Escuro e Sair agrupados visualmente; pesquisa permanece imediatamente ao lado de Sair no desktop.
+- Busca recebeu largura adaptativa, ícone discreto, foco visual e dropdown com ancoragem local.
+- Melhor equilíbrio de espaçamento, alturas e densidade dos controles em telas grandes.
+- Entre 901 e 1500 px, cluster de utilidades quebra para uma segunda faixa sem comprimir o seletor do concurso.
+- No mobile, Conta/Modo/Sair formam três colunas e a pesquisa ocupa uma linha completa abaixo.
+- Tema claro recebeu ajustes equivalentes de contraste e acabamento.
+- CACHE_NAME: estudo-adaptativo-v9-66-8-header-premium-20260816.
