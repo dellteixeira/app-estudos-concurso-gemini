@@ -1,5 +1,5 @@
-const APP_VERSION = '10.1.1';
-const CACHE_NAME = 'estudo-adaptativo-v10-1-1-fixes-cronograma-flashcards-20260816';
+const APP_VERSION = '10.1.2';
+const CACHE_NAME = 'estudo-adaptativo-v10-1-2-busca-modal-gradientes-materias-20260816';
 
 const APP_SHELL = [
   './',
