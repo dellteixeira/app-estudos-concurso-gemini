@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.5.10',
+                    appVersion:'10.6.1',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -1225,11 +1225,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const exam = getRetentionSchedulerExamScore(contest, now);
             const plan = getTopicStudyPlan(item, contest);
             const progress = getTopicStudyPlanProgress(item, contest);
-            const continuation = !!(plan && progress && !progress.complete && Number(progress.current || 0) > 0);
+            const continuation = !!(plan && progress && (!progress.complete || !isContentAcquired(item)) && Number(progress.current || 0) > 0);
             const recentMaterias = options.recentMaterias || [];
-            const activityType = options.activityType || (!item?.teoria ? 'teoria' : 'questoes');
+            const activityType = options.activityType || (isContentAcquired(item) ? 'questoes' : getPreferredAcquisitionActivity(item));
             const availableMinutes = Number(options.availableMinutes) || 0;
-            const suggestedMinutes = Math.max(5, Number(options.suggestedMinutes) || Number(plan?.sessionMinutes) || (activityType === 'teoria' ? 40 : 20));
+            const suggestedMinutes = Math.max(5, Number(options.suggestedMinutes) || Number(plan?.sessionMinutes) || (['teoria','videoaula'].includes(activityType) ? 40 : 20));
             const contextMode = options.contextMode || 'any';
             const isRevision = !!options.isRevision;
 
@@ -1251,7 +1251,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const phase = exam.phase || getExamPhaseProfile(contest, now);
             if (isRevision) components.examPhase += phase.reviewBoost || 0;
             if (activityType === 'questoes') components.examPhase += phase.questionBoost || 0;
-            if (activityType === 'teoria') {
+            if (['teoria','videoaula'].includes(activityType)) {
                 components.examPhase += phase.theoryBoost || 0;
                 if (!state?.lastStudyAt) components.examPhase += phase.newTheoryPenalty || 0;
             }
@@ -1273,10 +1273,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 else if (ratio >= .65) components.timeFit = 35;
                 else components.timeFit = -Math.min(220, (1 - ratio) * 260);
             }
-            if (contextMode === 'focus' && activityType === 'teoria' && availableMinutes >= 40) components.context += 100;
-            if ((contextMode === 'walking' || contextMode === 'transit') && activityType === 'teoria') components.context -= 190;
+            if (contextMode === 'focus' && ['teoria','videoaula'].includes(activityType) && availableMinutes >= 40) components.context += 100;
+            if ((contextMode === 'walking' || contextMode === 'transit') && ['teoria','videoaula'].includes(activityType)) components.context -= 190;
             if ((contextMode === 'walking' || contextMode === 'transit') && isRevision) components.context += 60;
-            if (availableMinutes > 0 && availableMinutes <= 10 && activityType === 'teoria') components.context -= 130;
+            if (availableMinutes > 0 && availableMinutes <= 10 && ['teoria','videoaula'].includes(activityType)) components.context -= 130;
 
             const total = Object.values(components).reduce((sum, value) => sum + Number(value || 0), 0);
             return {
@@ -1323,7 +1323,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const accuracy = Number.isFinite(Number(state?.questionStats?.lastAccuracy)) ? Number(state.questionStats.lastAccuracy) : null;
             const confidence = Math.max(0,Math.min(1,Number(state?.questionStats?.confidence)||0));
             const forgotRecently = state?.lastRating === 'forgot';
-            const theoryDone = !!item?.teoria;
+            const acquisition = getContentAcquisitionState(item);
+            const theoryDone = acquisition.teoria;
+            const videoDone = acquisition.videoaula;
+            const contentDone = acquisition.complete;
             const questionsDone = !!item?.questoes;
             const lowKnowledge = forgotRecently || (retention != null && retention < 43) || (accuracy != null && confidence >= .25 && accuracy < 45);
             const shortWindow = minutes <= 10;
@@ -1331,7 +1334,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             // Retenção muito baixa pede reconstrução do conhecimento quando houver condições.
             if (lowKnowledge && !mobileContext && minutes >= 20) {
-                return { method:'reestudo', label:'Reestudo de teoria', activityType:'teoria', minutes:Math.min(minutes, Math.max(20, Number(getTopicStudyPlan(item,contest)?.sessionMinutes)||40)), reason:'Retenção ou desempenho indicam perda relevante do conteúdo.' };
+                let reinforcement = getPreferredAcquisitionActivity(item);
+                if (acquisition.method === 'automatico') {
+                    if (theoryDone && !videoDone) reinforcement = 'videoaula';
+                    else if (videoDone && !theoryDone) reinforcement = 'teoria';
+                }
+                const isVideo = reinforcement === 'videoaula';
+                return { method:isVideo?'videoaula':'reestudo', label:isVideo?'Vídeoaula de reforço':'Reestudo de teoria', activityType:reinforcement, minutes:Math.min(minutes, Math.max(20, Number(getTopicStudyPlan(item,contest)?.sessionMinutes)||40)), reason:isVideo?'Retenção ou desempenho baixos após o estudo indicam que uma explicação em vídeo pode reforçar o conteúdo.':'Retenção ou desempenho indicam perda relevante do conteúdo.' };
             }
             // Janelas muito curtas e deslocamento favorecem recuperação leve.
             if ((shortWindow || mobileContext) && cards > 0) {
@@ -1341,12 +1350,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 return { method:'revisao_ativa', label:'Revisão ativa', activityType:'revisao_ativa', minutes:Math.min(minutes,15), reason:'Janela curta favorece recuperação mental sem releitura extensa.' };
             }
             // Na reta final, matéria normativa ganha Lei Seca quando a teoria básica já existe.
-            if (legal && theoryDone && ['final','exam-day','intensive'].includes(phase.key) && minutes >= 10 && contextMode !== 'walking') {
+            if (legal && contentDone && ['final','exam-day','intensive'].includes(phase.key) && minutes >= 10 && contextMode !== 'walking') {
                 return { method:'lei_seca', label:'Lei Seca', activityType:'lei_seca', minutes:Math.min(minutes,25), reason:`${phase.label}: leitura normativa ganha prioridade para conteúdo jurídico.` };
             }
             // Questões são o padrão de recuperação quando a teoria já foi estudada.
-            if (theoryDone && (!questionsDone || isRevision || accuracy == null || accuracy < 90)) {
-                const reason = accuracy == null ? 'A teoria já foi estudada; use questões para testar recuperação.' : `Último desempenho em questões: ${Math.round(accuracy)}%.`;
+            if (contentDone && (!questionsDone || isRevision || accuracy == null || accuracy < 90)) {
+                const reason = accuracy == null ? 'A etapa de conteúdo já foi estudada; use questões para testar recuperação.' : `Último desempenho em questões: ${Math.round(accuracy)}%.`;
                 return { method:'questoes', label:'Questões', activityType:'questoes', minutes:Math.min(minutes,20), reason };
             }
             if (cards > 0 && isRevision) {
@@ -1355,11 +1364,16 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (isRevision) {
                 return { method:'revisao_ativa', label:'Revisão ativa', activityType:'revisao_ativa', minutes:Math.min(minutes,15), reason:'Recupere conceitos essenciais antes de consultar o material.' };
             }
+            const acquisitionActivity = getPreferredAcquisitionActivity(item);
+            if (acquisitionActivity === 'videoaula') {
+                const reason = acquisition.method === 'videoaula' ? 'Este assunto está configurado para aquisição por Vídeoaula.' : 'A modalidade Vídeoaula ainda é necessária para completar a aquisição deste assunto.';
+                return { method:'videoaula', label:'Vídeoaula', activityType:'videoaula', minutes:Math.min(minutes, Number(getTopicStudyPlan(item,contest)?.sessionMinutes)||40), reason };
+            }
             return { method:'teoria', label:'Teoria', activityType:'teoria', minutes:Math.min(minutes, Number(getTopicStudyPlan(item,contest)?.sessionMinutes)||40), reason:'Conteúdo ainda precisa de construção teórica.' };
         }
 
         function getActiveRecallMethodLabel(rec) {
-            return rec?.methodLabel || ({ questoes:'Questões', flashcards:'Flashcards', revisao_ativa:'Revisão ativa', lei_seca:'Lei Seca', reestudo:'Reestudo de teoria', teoria:'Teoria' })[rec?.method] || 'Estudo';
+            return rec?.methodLabel || ({ questoes:'Questões', flashcards:'Flashcards', revisao_ativa:'Revisão ativa', lei_seca:'Lei Seca', videoaula:'Vídeoaula', reestudo:'Reestudo de teoria', teoria:'Teoria' })[rec?.method] || 'Estudo';
         }
 
         function buildActiveRecallPrompts(materia, assunto) {
@@ -1463,7 +1477,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             if (!reviewOnly) {
                 editalItems.forEach(item => {
-                    if (item.teoria && item.questoes) return;
+                    if (isContentAcquired(item) && item.questoes) return;
                     const key = `normal::${getStudyTopicKey(item.materia,item.assunto)}`;
                     if (seen.has(key)) return; seen.add(key);
                     const plan = getTopicStudyPlan(item,contest);
@@ -1471,7 +1485,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const isContinuation = !!(plan && progress && !progress.complete && Number(progress.current || 0) > 0);
                     const state = getRetentionTopicState(contest,item.materia,item.assunto,false);
                     const methodRec = getActiveRecallMethodRecommendation(item,{ contest,now,state,isRevision:false,minutes,contextMode });
-                    if (contextMode === 'walking' && ['teoria','reestudo','lei_seca'].includes(methodRec.method)) return;
+                    if (contextMode === 'walking' && ['teoria','videoaula','reestudo','lei_seca'].includes(methodRec.method)) return;
                     const activityType=methodRec.activityType;
                     const suggested = Math.max(5,Math.min(minutes,Number(methodRec.minutes)||20));
                     const scoreActivity = activityType === 'revisao_ativa' || activityType === 'flashcards' ? 'questoes' : activityType;
@@ -1479,7 +1493,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     let score = 430 + scheduler.total;
                     if(methodRec.method==='reestudo') score += 95;
                     if(methodRec.method==='revisao_ativa') score += 40;
-                    candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:false, score, scheduler, minutes:suggested, reason:isContinuation && methodRec.method==='teoria'?'Continuar assunto já iniciado':methodRec.reason });
+                    candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:false, score, scheduler, minutes:suggested, reason:isContinuation && ['teoria','videoaula'].includes(methodRec.method)?'Continuar assunto já iniciado':methodRec.reason });
                 });
             }
 
@@ -1547,7 +1561,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!item) return appNotice('O assunto recomendado não foi encontrado no edital.', { title:'Estudar agora' });
             const requestedMinutes = Math.max(1,Math.min(240,Math.round(Number(rec.minutes)||opportunitySelectedMinutes)));
             const focusInput=document.getElementById('focoMin'); if(focusInput) focusInput.value=requestedMinutes;
-            activeStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:getLocalDateKey(),plannedDateKey:getLocalDateKey(),adaptiveAdvance:false,isRevision:!!rec.isRevision,activityType:rec.activityType==='questoes'?'questoes':'teoria',recoveryMethod:rec.recoveryMethod||rec.method||null,layer:rec.layer||null,source:rec.source||'opportunity' };
+            activeStudyContext={ concurso:currentConcurso,materia:item.materia,assunto:item.assunto,itemId:item.id,dateKey:getLocalDateKey(),plannedDateKey:getLocalDateKey(),adaptiveAdvance:false,isRevision:!!rec.isRevision,activityType:rec.activityType==='questoes'?'questoes':(rec.activityType==='videoaula'?'videoaula':'teoria'),recoveryMethod:rec.recoveryMethod||rec.method||null,layer:rec.layer||null,source:rec.source||'opportunity' };
             renderActiveStudyContext();
             closeOpportunityStudyModal();
             const editalTabButton=[...document.querySelectorAll('.tab-btn')].find(btn=>/edital verticalizado/i.test(btn.textContent||''));
@@ -1922,7 +1936,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const topicText = normalizeScheduledTopicForStudy(raw);
                     if (!topicText || topicText === excludedTopic) continue;
                     const state = getScheduledItemStudyState(raw, editalLookup);
-                    const started = !!(state.matchedItem && (state.matchedItem.teoria || state.matchedItem.questoes));
+                    const started = !!(state.matchedItem && (state.matchedItem.teoria || state.matchedItem.videoaula || state.matchedItem.questoes));
                     if (!state.done && !started) return { dateKey, index, topicText };
                 }
             }
@@ -1955,7 +1969,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const next = findNextMovableFutureTopic(dateSchedule, todayKey, editalLookup);
             if (!next) return null;
             const item = editalLookup.get(next.topicText);
-            const activityType = item?.teoria ? 'questoes' : 'teoria';
+            const activityType = isContentAcquired(item) ? 'questoes' : getPreferredAcquisitionActivity(item);
             return { ...next, item, activityType };
         }
 
@@ -2045,6 +2059,56 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             startScheduledTopicStudy(idx, suggestion.activityType, true);
         }
 
+        const CONTENT_METHODS = ['automatico','teoria','videoaula','ambos'];
+
+        function normalizeContentMethod(value) {
+            const method = String(value || 'automatico').trim().toLowerCase();
+            return CONTENT_METHODS.includes(method) ? method : 'automatico';
+        }
+
+        function getContentMethod(item) {
+            return normalizeContentMethod(item?.metodo_conteudo);
+        }
+
+        function getContentAcquisitionState(item) {
+            const method = getContentMethod(item);
+            const teoria = !!item?.teoria;
+            const videoaula = !!item?.videoaula;
+            let fraction = 0;
+            if (method === 'teoria') fraction = teoria ? 1 : 0;
+            else if (method === 'videoaula') fraction = videoaula ? 1 : 0;
+            else if (method === 'ambos') fraction = (teoria ? 0.5 : 0) + (videoaula ? 0.5 : 0);
+            else fraction = (teoria || videoaula) ? 1 : 0;
+            return { method, teoria, videoaula, fraction, complete:fraction >= 1 };
+        }
+
+        function isContentAcquired(item) {
+            return getContentAcquisitionState(item).complete;
+        }
+
+        function getProjectedContentAcquisitionState(item, activityType = null) {
+            if (!item) return getContentAcquisitionState(item);
+            const projected = { ...item };
+            if (activityType === 'teoria') projected.teoria = true;
+            if (activityType === 'videoaula') projected.videoaula = true;
+            return getContentAcquisitionState(projected);
+        }
+
+        function getPreferredAcquisitionActivity(item, options = {}) {
+            const acquisition = getContentAcquisitionState(item);
+            if (acquisition.method === 'videoaula') return 'videoaula';
+            if (acquisition.method === 'teoria') return 'teoria';
+            if (acquisition.method === 'ambos') {
+                if (!acquisition.teoria) return 'teoria';
+                if (!acquisition.videoaula) return 'videoaula';
+                return options.reinforcement === 'videoaula' ? 'videoaula' : 'teoria';
+            }
+            if (options.reinforcement === 'videoaula' && !acquisition.videoaula) return 'videoaula';
+            if (options.reinforcement === 'teoria' && !acquisition.teoria) return 'teoria';
+            if (!acquisition.teoria && !acquisition.videoaula) return 'teoria';
+            return acquisition.videoaula && !acquisition.teoria ? 'videoaula' : 'teoria';
+        }
+
         function getTopicStudyPlanStore(contestMeta, create = false) {
             if (!contestMeta) return null;
             if (!contestMeta.topicStudyPlans && create) contestMeta.topicStudyPlans = {};
@@ -2072,14 +2136,21 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const plan = getTopicStudyPlan(item, contest);
             if (!plan) return null;
             const mode = ['sessions','minutes','lessons'].includes(plan.mode) ? plan.mode : 'sessions';
+            const contentMethod = getContentMethod(item);
             let current = 0;
-            let target = Math.max(1, Number(plan.target) || 1);
+            const target = Math.max(1, Number(plan.target) || 1);
             const theorySessions = getTopicStudySessionsForPlan(item, contest, 'teoria');
-            if (mode === 'minutes') current = theorySessions.reduce((sum, session) => sum + Math.max(0, Number(session?.minutes) || 0), 0);
+            const videoSessions = getTopicStudySessionsForPlan(item, contest, 'videoaula');
+            const qualifyingSessions = contentMethod === 'teoria'
+                ? theorySessions
+                : contentMethod === 'videoaula'
+                    ? videoSessions
+                    : [...theorySessions, ...videoSessions];
+            if (mode === 'minutes') current = qualifyingSessions.reduce((sum, session) => sum + Math.max(0, Number(session?.minutes) || 0), 0);
             else if (mode === 'lessons') current = Math.max(0, Number(plan.completedLessons) || 0);
-            else current = theorySessions.length;
+            else current = qualifyingSessions.length;
             const pct = Math.max(0, Math.min(100, Math.round((current / target) * 100)));
-            return { plan, mode, current, target, pct, complete: current >= target };
+            return { plan, mode, current, target, pct, complete: current >= target, contentMethod };
         }
 
         function getTopicRecordedStudyMinutes(item, contestMeta = null) {
@@ -2105,14 +2176,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const lessonMetrics = progress.mode === 'lessons'
                 ? `<span class="topic-plan-study-time" title="Soma das sessões registradas em studySessions para este assunto">Tempo estudado neste assunto: <strong>${escapeHtml(formatStudyMinutes(recordedMinutes))}</strong></span><span class="topic-plan-progress-label">Progresso das aulas: ${progress.pct}%</span>`
                 : `<span class="topic-plan-progress-label">${progress.pct}%</span>`;
-            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Teoria planejada concluída' : escapeHtml(label)}</span>${lessonMetrics}<span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
+            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Conteúdo planejado concluído' : escapeHtml(label)}</span>${lessonMetrics}<span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
         }
 
         function getTopicStudyPlanBadgeHtml(item, contestMeta = null) {
             const progress = getTopicStudyPlanProgress(item, contestMeta);
             if (!progress) return '';
             const unit = progress.mode === 'minutes' ? 'min' : (progress.mode === 'lessons' ? 'aulas' : 'sessões');
-            return `<span class="edital-topic-plan-note">Plano de Teoria: ${Math.min(progress.current, progress.target)}/${progress.target} ${unit} · ${progress.pct}%${progress.complete ? ' · concluído' : ' · em andamento'}</span>`;
+            return `<span class="edital-topic-plan-note">Plano de Conteúdo: ${Math.min(progress.current, progress.target)}/${progress.target} ${unit} · ${progress.pct}%${progress.complete ? ' · concluído' : ' · em andamento'}</span>`;
         }
 
         function getStudyPlanDayCapacity(contestMeta, dateObj) {
@@ -2190,10 +2261,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             });
         }
 
-        function ensureTopicStudyPlanContinuation(contestMeta, item, afterDateKey) {
+        function ensureTopicStudyPlanContinuation(contestMeta, item, afterDateKey, forceContinuation = false) {
             if (!contestMeta || !item) return null;
             const progress = getTopicStudyPlanProgress(item, contestMeta);
-            if (!progress || progress.complete) return null;
+            if (!progress || (progress.complete && !forceContinuation)) return null;
             const topicText = getStudyTopicKey(item.materia, item.assunto);
             const schedule = contestMeta.dateSchedule || (contestMeta.dateSchedule = {});
             const existing = Object.keys(schedule).sort().find(dateKey => dateKey > afterDateKey && (schedule[dateKey] || []).some(raw => !isRevisionScheduleText(raw) && normalizeScheduledTopicForStudy(raw) === topicText));
@@ -2205,7 +2276,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         function reconcileTopicStudyPlanAfterSession(metadata, context) {
-            if (!context || context.activityType !== 'teoria' || !metadata?.[currentConcurso]) return null;
+            if (!context || !['teoria','videoaula'].includes(context.activityType) || !metadata?.[currentConcurso]) return null;
             const contest = metadata[currentConcurso];
             const item = allEditalItems.find(candidate => {
                 if ((candidate.concurso || 'Concurso Geral') !== currentConcurso) return false;
@@ -2213,19 +2284,23 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 return getStudyTopicKey(candidate.materia, candidate.assunto) === getStudyTopicKey(context.materia, context.assunto);
             });
             if (!item) return null;
+            const method = getContentMethod(item);
+            if ((method === 'teoria' && context.activityType !== 'teoria') || (method === 'videoaula' && context.activityType !== 'videoaula')) return null;
             const progress = getTopicStudyPlanProgress(item, contest);
             if (!progress) return null;
             const todayKey = getLocalDateKey();
             const topicText = getStudyTopicKey(item.materia, item.assunto);
-            if (progress.complete) {
+            const projectedAcquisition = getProjectedContentAcquisitionState(item, context.activityType);
+            const acquisitionReady = projectedAcquisition.complete;
+            if (progress.complete && acquisitionReady) {
                 removeFutureNormalTopicOccurrences(contest.dateSchedule || {}, topicText, todayKey);
                 reanchorTopicRevisions(contest.dateSchedule || (contest.dateSchedule = {}), topicText, todayKey, contest);
-                return { ...progress, continuationDate:null };
+                return { ...progress, complete:true, acquisitionComplete:true, continuationDate:null };
             }
             removeTopicRevisionsFromSchedule(contest.dateSchedule || (contest.dateSchedule = {}), topicText);
-            if (isFlexibleOpportunityMode(contest)) return { ...progress, continuationDate:null, flexiblePending:true };
-            const continuationDate = ensureTopicStudyPlanContinuation(contest, item, todayKey);
-            return { ...progress, continuationDate };
+            if (isFlexibleOpportunityMode(contest)) return { ...progress, complete:false, acquisitionComplete:acquisitionReady, continuationDate:null, flexiblePending:true };
+            const continuationDate = ensureTopicStudyPlanContinuation(contest, item, todayKey, progress.complete && !acquisitionReady);
+            return { ...progress, complete:false, acquisitionComplete:acquisitionReady, continuationDate };
         }
 
         function showStudyPlanEditor(idx) {
@@ -2236,15 +2311,26 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const clean = normalizeScheduledTopicForStudy(raw);
             const item = editalItems.find(i => getStudyTopicKey(i.materia, i.assunto) === clean);
             if (!item) return alert('Este item não está vinculado ao edital verticalizado.');
-            const plan = getTopicStudyPlan(item, metadata[currentConcurso] || {}) || { mode:'sessions', target:6, sessionMinutes:Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40') || 40), completedLessons:0 };
+            const existingPlan = getTopicStudyPlan(item, metadata[currentConcurso] || {});
+            const plan = existingPlan || { mode:'none', target:6, sessionMinutes:Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40') || 40), completedLessons:0 };
+            const contentMethod = getContentMethod(item);
             editArea.style.display = 'block';
             editArea.innerHTML = `
                 <div class="edit-selector-box">
                     <strong style="color:var(--modern-blue-2);">Planejar assunto longo</strong>
-                    <div class="topic-plan-editor-help">O assunto continua sendo uma única linha do edital. O plano controla somente quantas sessões, minutos ou aulas de Teoria serão necessários antes de marcar a Teoria como concluída.</div>
+                    <div class="topic-plan-editor-help">O assunto continua sendo uma única linha do edital. O plano controla a carga da etapa de conteúdo. No modo Automático, Teoria ou Vídeoaula podem completar os 50% de aquisição; Questões continuam valendo os outros 50%.</div>
                     <div class="topic-plan-editor-grid">
+                        <label>Método de conteúdo
+                            <select id="studyPlanContentMethod_${idx}" onchange="updateStudyPlanEditorFields(${idx})">
+                                <option value="automatico" ${contentMethod === 'automatico' ? 'selected' : ''}>Automático</option>
+                                <option value="teoria" ${contentMethod === 'teoria' ? 'selected' : ''}>Teoria</option>
+                                <option value="videoaula" ${contentMethod === 'videoaula' ? 'selected' : ''}>Vídeoaula</option>
+                                <option value="ambos" ${contentMethod === 'ambos' ? 'selected' : ''}>Teoria + Vídeoaula</option>
+                            </select>
+                        </label>
                         <label>Modo
                             <select id="studyPlanMode_${idx}" onchange="updateStudyPlanEditorFields(${idx})">
+                                <option value="none" ${plan.mode === 'none' ? 'selected' : ''}>Sem carga fixa</option>
                                 <option value="sessions" ${plan.mode === 'sessions' ? 'selected' : ''}>Sessões / blocos</option>
                                 <option value="minutes" ${plan.mode === 'minutes' ? 'selected' : ''}>Carga em minutos</option>
                                 <option value="lessons" ${plan.mode === 'lessons' ? 'selected' : ''}>Número de aulas</option>
@@ -2259,7 +2345,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     </div>
                     <div id="studyPlanLessonStatus_${idx}" class="topic-plan-editor-help"></div>
                     <div style="display:flex; justify-content:flex-end; gap:7px; flex-wrap:wrap;">
-                        ${getTopicStudyPlan(item, metadata[currentConcurso] || {}) ? `<button class="btn btn-danger btn-sm" onclick="removeTopicStudyPlan(${idx})">Remover plano</button>` : ''}
+                        ${existingPlan ? `<button class="btn btn-danger btn-sm" onclick="removeTopicStudyPlan(${idx})">Remover plano</button>` : ''}
                         <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
                         <button class="btn btn-success btn-sm" onclick="saveTopicStudyPlan(${idx})">Salvar plano</button>
                     </div>
@@ -2268,11 +2354,24 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         function updateStudyPlanEditorFields(idx) {
-            const mode = document.getElementById(`studyPlanMode_${idx}`)?.value || 'sessions';
+            const mode = document.getElementById(`studyPlanMode_${idx}`)?.value || 'none';
+            const contentMethod = normalizeContentMethod(document.getElementById(`studyPlanContentMethod_${idx}`)?.value || 'automatico');
             const label = document.getElementById(`studyPlanTargetLabel_${idx}`);
+            const targetInput = document.getElementById(`studyPlanTarget_${idx}`);
+            const sessionInput = document.getElementById(`studyPlanSession_${idx}`);
             const status = document.getElementById(`studyPlanLessonStatus_${idx}`);
-            if (label) label.firstChild.textContent = mode === 'minutes' ? 'Carga total de Teoria (min) ' : (mode === 'lessons' ? 'Número de aulas ' : 'Número de sessões ');
-            if (status) status.textContent = mode === 'lessons' ? 'No modo Aulas, o tempo continua sendo registrado pelo Pomodoro. Use “Aula concluída” no cartão diário apenas quando terminar uma aula inteira.' : 'O progresso é calculado automaticamente a partir das sessões de Teoria registradas no Pomodoro.';
+            const noFixedLoad = mode === 'none';
+            if (label) label.firstChild.textContent = mode === 'minutes' ? 'Carga total de conteúdo (min) ' : (mode === 'lessons' ? 'Número de aulas ' : (mode === 'none' ? 'Quantidade ' : 'Número de sessões '));
+            if (targetInput) targetInput.disabled = noFixedLoad;
+            if (sessionInput) sessionInput.disabled = noFixedLoad;
+            if (status) {
+                const methodText = contentMethod === 'automatico' ? 'Automático: Teoria ou Vídeoaula completam a aquisição.' : contentMethod === 'teoria' ? 'Teoria: apenas a etapa Teoria completa a aquisição.' : contentMethod === 'videoaula' ? 'Vídeoaula: a aula gravada completa a aquisição.' : 'Teoria + Vídeoaula: cada modalidade vale metade dos 50% de aquisição.';
+                status.textContent = noFixedLoad
+                    ? `${methodText} Sem carga fixa: o método é salvo sem criar obrigação de número de sessões.`
+                    : mode === 'lessons'
+                        ? `${methodText} O tempo continua sendo registrado pelo Pomodoro; use “Aula concluída” apenas ao terminar uma aula inteira.`
+                        : `${methodText} O progresso do plano é calculado a partir das sessões de aquisição registradas no Pomodoro.`;
+            }
         }
 
         async function saveTopicStudyPlan(idx) {
@@ -2282,33 +2381,40 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const clean = normalizeScheduledTopicForStudy(raw);
             const item = allEditalItems.find(i => (i.concurso || 'Concurso Geral') === currentConcurso && getStudyTopicKey(i.materia, i.assunto) === clean);
             if (!item) return alert('Este item não está vinculado ao edital verticalizado.');
-            const mode = document.getElementById(`studyPlanMode_${idx}`)?.value || 'sessions';
+            const mode = document.getElementById(`studyPlanMode_${idx}`)?.value || 'none';
+            const contentMethod = normalizeContentMethod(document.getElementById(`studyPlanContentMethod_${idx}`)?.value || 'automatico');
             const target = Math.max(1, Math.min(999, parseInt(document.getElementById(`studyPlanTarget_${idx}`)?.value || '1') || 1));
             const sessionMinutes = Math.max(1, Math.min(240, parseInt(document.getElementById(`studyPlanSession_${idx}`)?.value || '40') || 40));
             const store = getTopicStudyPlanStore(contest, true);
             const previous = store[String(item.id)] || {};
-            store[String(item.id)] = {
-                mode,
-                target,
-                sessionMinutes,
-                completedLessons: mode === 'lessons' ? Math.max(0, Number(previous.completedLessons) || 0) : 0,
-                createdAt: previous.createdAt || new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            const progress = getTopicStudyPlanProgress(item, contest);
-            const nextTheory = !!progress?.complete;
-            const theoryChanged = !!item.teoria !== nextTheory;
-            item.teoria = nextTheory;
-            const topicText = getStudyTopicKey(item.materia, item.assunto);
-            if (nextTheory) {
-                removeFutureNormalTopicOccurrences(contest.dateSchedule || {}, topicText, getLocalDateKey());
-                reanchorTopicRevisions(contest.dateSchedule || (contest.dateSchedule = {}), topicText, getLocalDateKey(), contest);
+            if (mode === 'none') {
+                delete store[String(item.id)];
             } else {
-                removeTopicRevisionsFromSchedule(contest.dateSchedule || (contest.dateSchedule = {}), topicText);
-                ensureTopicStudyPlanContinuation(contest, item, activeSelectedDateKey || getLocalDateKey());
+                store[String(item.id)] = {
+                    mode,
+                    target,
+                    sessionMinutes,
+                    completedLessons: mode === 'lessons' ? Math.max(0, Number(previous.completedLessons) || 0) : 0,
+                    createdAt: previous.createdAt || new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+            }
+            const previousMethod = getContentMethod(item);
+            item.metodo_conteudo = contentMethod;
+            const progress = getTopicStudyPlanProgress(item, contest);
+            const acquisition = getContentAcquisitionState(item);
+            const topicText = getStudyTopicKey(item.materia, item.assunto);
+            if (mode !== 'none') {
+                if (acquisition.complete) {
+                    removeFutureNormalTopicOccurrences(contest.dateSchedule || {}, topicText, getLocalDateKey());
+                    reanchorTopicRevisions(contest.dateSchedule || (contest.dateSchedule = {}), topicText, getLocalDateKey(), contest);
+                } else {
+                    removeTopicRevisionsFromSchedule(contest.dateSchedule || (contest.dateSchedule = {}), topicText);
+                    ensureTopicStudyPlanContinuation(contest, item, activeSelectedDateKey || getLocalDateKey(), !!progress?.complete && !acquisition.complete);
+                }
             }
             await saveConcursosMetadata(metadata);
-            if (theoryChanged) await saveEditalItemToCloud(item);
+            if (previousMethod !== contentMethod) await saveEditalItemToCloud(item);
             filterDataByConcurso();
             renderDayTopicsList();
             renderMonthCalendar();
@@ -2343,17 +2449,27 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             plan.updatedAt = new Date().toISOString();
             const progress = getTopicStudyPlanProgress(item, contest);
             const previousTheory = !!item.teoria;
-            item.teoria = !!progress?.complete;
-            const topicText = getStudyTopicKey(item.materia, item.assunto);
+            const previousVideo = !!item.videoaula;
             if (progress?.complete) {
+                const method = getContentMethod(item);
+                if (method === 'videoaula') item.videoaula = true;
+                else if (method === 'teoria') item.teoria = true;
+                else if (method === 'automatico') {
+                    const theorySessions = getTopicStudySessionsForPlan(item, contest, 'teoria').length;
+                    const videoSessions = getTopicStudySessionsForPlan(item, contest, 'videoaula').length;
+                    if (videoSessions > theorySessions) item.videoaula = true; else item.teoria = true;
+                }
+            }
+            const topicText = getStudyTopicKey(item.materia, item.assunto);
+            if (getContentAcquisitionState(item).complete && progress?.complete) {
                 removeFutureNormalTopicOccurrences(contest.dateSchedule || {}, topicText, getLocalDateKey());
                 reanchorTopicRevisions(contest.dateSchedule || (contest.dateSchedule = {}), topicText, getLocalDateKey(), contest);
             } else {
                 removeTopicRevisionsFromSchedule(contest.dateSchedule || (contest.dateSchedule = {}), topicText);
-                ensureTopicStudyPlanContinuation(contest, item, getLocalDateKey());
+                ensureTopicStudyPlanContinuation(contest, item, getLocalDateKey(), !!progress?.complete && !getContentAcquisitionState(item).complete);
             }
             await saveConcursosMetadata(metadata);
-            if (previousTheory !== item.teoria) await saveEditalItemToCloud(item);
+            if (previousTheory !== item.teoria || previousVideo !== item.videoaula) await saveEditalItemToCloud(item);
             filterDataByConcurso();
             renderDayTopicsList();
             renderMonthCalendar();
@@ -2398,8 +2514,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                         <label>
                                             <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
                                         </label>
+                                        <label>
+                                            <input type="checkbox" ${matchedItem.videoaula ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'videoaula', ${matchedItem.videoaula})"> Vídeoaula
+                                        </label>
                                     </div>
-                                    ${!adaptiveReviewDone ? `<div class="study-session-action-row"><label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label><div class="study-launch-controls study-launch-controls-primary ${isLegalStudyMateria(matchedItem.materia) ? 'has-legal-action' : ''}"><button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions" data-mobile-label="Estudar Teoria">Estudar Teoria</button><button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions" data-mobile-label="Estudar Questões">Estudar Questões</button>${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})" data-mobile-label="Lei Seca">Lei Seca</button>` : ''}</div></div>` : `<button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia">Apagar</button>`}
+                                    ${!adaptiveReviewDone ? `<div class="study-session-action-row"><label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label><div class="study-launch-controls study-launch-controls-primary ${isLegalStudyMateria(matchedItem.materia) ? 'has-legal-action' : ''}"><button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions" data-mobile-label="Estudar Teoria">Estudar Teoria</button><button class="btn btn-sm btn-study-video" onclick="startScheduledTopicStudy(${idx}, 'videoaula')" title="Inicia uma sessão de Vídeoaula e contabiliza o tempo em studySessions" data-mobile-label="Vídeoaula">Vídeoaula</button><button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions" data-mobile-label="Estudar Questões">Estudar Questões</button>${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})" data-mobile-label="Lei Seca">Lei Seca</button>` : ''}</div></div>` : `<button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia">Apagar</button>`}
                                 </div>
                             ` : ''}
                             ${matchedItem && !adaptiveReviewDone ? `
@@ -3595,7 +3714,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 }
             } else {
                 // O estudo-base só está concluído quando as duas etapas foram realizadas.
-                done = !!(matchedItem.teoria && matchedItem.questoes);
+                done = !!(isContentAcquired(matchedItem) && matchedItem.questoes);
             }
 
             return { done, isRevision, matched: true, cleanTop, matchedItem };
@@ -3791,7 +3910,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function createWeightedInterleavingState(items, metadata, { pendingOnly = true } = {}) {
             const grouped = new Map();
-            const source = pendingOnly ? items.filter(item => !(item.teoria && item.questoes)) : [...items];
+            const source = pendingOnly ? items.filter(item => !(isContentAcquired(item) && item.questoes)) : [...items];
             source.forEach(item => {
                 const key = item.materia || 'Geral';
                 if (!grouped.has(key)) grouped.set(key, []);
@@ -3984,7 +4103,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     if (!raw.startsWith('🔄 Rev')) return false;
                     const topic = raw.replace(/^🔄 Rev \(\d+d\): /, '');
                     const item = editalByTopic.get(topic);
-                    return !!(item && (item.teoria || item.questoes || hasAnyAdaptiveRevisionCompletion(item, contestMeta)));
+                    return !!(item && (item.teoria || item.videoaula || item.questoes || hasAnyAdaptiveRevisionCompletion(item, contestMeta)));
                 });
                 if (preservedReviews.length) rebuilt[dateKey] = [...new Set(preservedReviews)];
             });
@@ -4122,9 +4241,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const changedItems = [];
             allEditalItems.forEach(item => {
                 if ((item.concurso || 'Concurso Geral') !== currentConcurso) return;
-                if (item.teoria || item.questoes || item.rev_24h || item.rev_7d || item.rev_30d) {
+                if (item.teoria || item.questoes || item.videoaula || item.rev_24h || item.rev_7d || item.rev_30d) {
                     item.teoria = false;
                     item.questoes = false;
+                    item.videoaula = false;
                     item.rev_24h = false;
                     item.rev_7d = false;
                     item.rev_30d = false;
@@ -4174,7 +4294,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const contestMeta = getConcursosMetadata()[currentConcurso] || {};
             const marcados = itensDoConcurso.filter(item =>
-                item.teoria || item.questoes || hasAnyAdaptiveRevisionCompletion(item, contestMeta)
+                item.teoria || item.videoaula || item.questoes || hasAnyAdaptiveRevisionCompletion(item, contestMeta)
             );
 
             if (marcados.length === 0) {
@@ -4184,7 +4304,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const confirmar = await appConfirm(
                 `Deseja marcar novamente como não estudados os ${marcados.length} tópicos já concluídos/revisados de "${currentConcurso}"?\n\n` +
-                'O cronograma não será apagado. Apenas Teoria, Questões e Revisões serão desmarcadas.',
+                'O cronograma não será apagado. Apenas Teoria, Vídeoaula, Questões e Revisões serão desmarcadas.',
                 { title:'Limpar Matérias', confirmText:'Desmarcar estudos', danger:true }
             );
             if (!confirmar) return;
@@ -4509,7 +4629,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 if (error) throw new Error(`Falha ao baixar edital: ${error.message}`);
-                allEditalItems = (data || []).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
+                allEditalItems = (data || []).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral', videoaula: !!item.videoaula, metodo_conteudo: normalizeContentMethod(item.metodo_conteudo) }));
                 saveEditalToLocalStorage();
 
                 await loadConcursosMetadata();
@@ -4583,7 +4703,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const local = localStorage.getItem(getEditalLocalStorageKey());
             if (local) {
                 try {
-                    allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral' }));
+                    allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral', videoaula: !!item.videoaula, metodo_conteudo: normalizeContentMethod(item.metodo_conteudo) }));
                 } catch(e) { allEditalItems = []; }
             }
         }
@@ -4636,6 +4756,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         concurso: item.concurso || currentConcurso,
                         teoria: !!item.teoria,
                         questoes: !!item.questoes,
+                        videoaula: !!item.videoaula,
+                        metodo_conteudo: getContentMethod(item),
                         rev_24h: !!item.rev_24h,
                         rev_7d: !!item.rev_7d,
                         rev_30d: !!item.rev_30d
@@ -5217,13 +5339,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const group = materiasMap[materiaName];
                 const isOpen = openMaterias[materiaName] === true;
                 const totalChecksMateria = Math.max(1, group.items.length * 2);
-                const doneChecksMateria = group.items.reduce((sum, topic) => sum + ['teoria','questoes'].filter(key => !!topic[key]).length, 0);
+                const doneChecksMateria = group.items.reduce((sum, topic) => sum + getContentAcquisitionState(topic).fraction + (topic.questoes ? 1 : 0), 0);
                 const materiaPct = Math.round((doneChecksMateria / totalChecksMateria) * 100);
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
                 const safeMateriaHandler = encodeHandlerValue(materiaName);
 
                 const activeRevisionOffsets = getActiveRevisionOffsets();
-                const dynamicColspan = 4 + activeRevisionOffsets.length;
+                const dynamicColspan = 5 + activeRevisionOffsets.length;
                 htmlParts.push(`
                     <tr class="materia-header-row" data-materia="${safeMateriaHandler}" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))">
                         <td onclick="event.stopPropagation()">
@@ -5260,6 +5382,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 <td style="text-align: left; padding-left: 1.5rem;">${escapeHtml(item.assunto)}${getTopicStudyPlanBadgeHtml(item, getConcursosMetadata()[currentConcurso] || {})}</td>
                                 <td data-study-control="true"><span class="revision-model-note">Teoria</span><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'teoria', ${item.teoria})"></td>
                                 <td data-study-control="true"><span class="revision-model-note">Questões</span><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'questoes', ${item.questoes})"></td>
+                                <td data-study-control="true"><span class="revision-model-note">Vídeoaula</span><input type="checkbox" ${item.videoaula ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'videoaula', ${item.videoaula})"></td>
                                 ${revisionCells}
                                 <td><button class="btn btn-danger btn-sm" onclick="clearRowCheckboxes(decodeURIComponent('${safeId}'))">Limpar</button></td>
                             </tr>
@@ -5297,10 +5420,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         async function toggleCheck(id, field, currentValue) {
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
-                if (field === 'teoria' && !currentValue) {
-                    const progress = getTopicStudyPlanProgress(item, getConcursosMetadata()[currentConcurso] || {});
+                if (['teoria','videoaula'].includes(field) && !currentValue) {
+                    const method = getContentMethod(item);
+                    const applies = method === 'automatico' || method === 'ambos' || method === field;
+                    const progress = applies ? getTopicStudyPlanProgress(item, getConcursosMetadata()[currentConcurso] || {}) : null;
                     if (progress && !progress.complete) {
-                        await appNotice('Este assunto possui um plano de Teoria ainda em andamento. Conclua os blocos/minutos/aulas planejados ou remova o plano antes de marcar a Teoria como concluída.', { title:'Plano de estudo em andamento' });
+                        await appNotice('Este assunto possui um plano de conteúdo ainda em andamento. Conclua os blocos/minutos/aulas planejados ou remova o plano antes de marcar esta etapa como concluída.', { title:'Plano de estudo em andamento' });
                         filterDataByConcurso();
                         return;
                     }
@@ -5315,7 +5440,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         async function clearRowCheckboxes(id) {
             const item = allEditalItems.find(i => String(i.id) === String(id));
             if (item) {
-                item.teoria = false; item.questoes = false; item.rev_24h = false; item.rev_7d = false; item.rev_30d = false;
+                item.teoria = false; item.questoes = false; item.videoaula = false; item.rev_24h = false; item.rev_7d = false; item.rev_30d = false;
                 const metadata = getConcursosMetadata();
                 const contest = metadata[currentConcurso] || (metadata[currentConcurso] = {});
                 if (contest.adaptiveRevisionProgress) delete contest.adaptiveRevisionProgress[String(item.id)];
@@ -5335,7 +5460,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                 materia, assunto, prioridade: clampMateriaPriority(prioridade), assunto_prioridade: 1, peso: 5 - clampMateriaPriority(prioridade), concurso: currentConcurso,
                 user_id: currentUser ? currentUser.id : null,
-                teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
+                teoria: false, questoes: false, videoaula: false, metodo_conteudo: 'automatico', rev_24h: false, rev_7d: false, rev_30d: false
             };
 
             allEditalItems.push(newItem);
@@ -5489,7 +5614,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                         assunto_prioridade: (typeof assuntoItem === 'object' && assuntoItem ? (parseInt(assuntoItem.prioridade || assuntoItem.assunto_prioridade || (idxAss + 1)) || (idxAss + 1)) : (idxAss + 1)), 
                                         concurso: currentConcurso,
                                         user_id: currentUser ? currentUser.id : null,
-                                        teoria: false, questoes: false, rev_24h: false, rev_7d: false, rev_30d: false
+                                        teoria: false, questoes: false, videoaula: false, metodo_conteudo: (typeof assuntoItem === 'object' && assuntoItem ? normalizeContentMethod(assuntoItem.metodo_conteudo || assuntoItem.metodoConteudo || 'automatico') : 'automatico'), rev_24h: false, rev_7d: false, rev_30d: false
                                     };
 
                                     formattedData.push(itemObj);
@@ -5597,14 +5722,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const mat = item.materia || 'Geral';
                 if (!counts[mat]) counts[mat] = { total: 0, concluido: 0 };
                 counts[mat].total += 2;
-                if (item.teoria) counts[mat].concluido++;
+                counts[mat].concluido += getContentAcquisitionState(item).fraction;
                 if (item.questoes) counts[mat].concluido++;
             });
 
             const topicCount = editalItems.length;
-            const theoryDone = editalItems.filter(i => !!i.teoria).length;
+            const acquisitionUnits = editalItems.reduce((sum,item) => sum + getContentAcquisitionState(item).fraction, 0);
             const questionsDone = editalItems.filter(i => !!i.questoes).length;
-            const theoryContributionRaw = topicCount ? (theoryDone / topicCount) * 50 : 0;
+            const theoryContributionRaw = topicCount ? (acquisitionUnits / topicCount) * 50 : 0;
             const questionsContributionRaw = topicCount ? (questionsDone / topicCount) * 50 : 0;
             const totalStudyProgressRaw = Math.min(100, theoryContributionRaw + questionsContributionRaw);
             const formatContribution = value => value > 0 && value < 1 ? value.toFixed(1) : String(Math.round(value));
@@ -5820,7 +5945,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const advanceNote = activeStudyContext.adaptiveAdvance && activeStudyContext.plannedDateKey
                 ? `<span style="margin-left:8px; font-size:.72rem; color:#7dd3fc;">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
                 : '';
-            const modeLabel = activeStudyContext.recoveryMethod === 'revisao_curta' ? 'Revisão curta' : (activeStudyContext.recoveryMethod === 'revisao_ativa' ? 'Revisão ativa' : (activeStudyContext.recoveryMethod === 'reestudo' ? 'Reestudo de teoria' : (activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria'))));
+            const modeLabel = activeStudyContext.recoveryMethod === 'revisao_curta' ? 'Revisão curta' : (activeStudyContext.recoveryMethod === 'revisao_ativa' ? 'Revisão ativa' : (activeStudyContext.recoveryMethod === 'reestudo' ? 'Reestudo de teoria' : (activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'videoaula' ? 'Vídeoaula' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria'))) ));
             const legalNote = activeStudyContext.activityType === 'lei_seca' && activeStudyContext.norma
                 ? `<span style="margin-left:8px;font-size:.72rem;opacity:.8;">${escapeHtml(activeStudyContext.norma)}${activeStudyContext.articleStart ? ` · arts. ${escapeHtml(activeStudyContext.articleStart)}${activeStudyContext.articleEnd ? `–${escapeHtml(activeStudyContext.articleEnd)}` : ''}` : ''}</span>`
                 : '';
@@ -5903,7 +6028,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     totalMinutes: 0,
                     sessionCount: 0,
                     lastActivityType: null,
-                    activityCounts: { teoria:0, questoes:0, lei_seca:0, revisao_ativa:0 },
+                    activityCounts: { teoria:0, videoaula:0, questoes:0, lei_seca:0, revisao_ativa:0 },
                     questionStats: { attempts:0, total:0, correct:0, errors:0, lastAccuracy:null, averageAccuracy:null, confidence:0, lastAt:null },
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
@@ -6309,7 +6434,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const previousRetention = previousStudyAt && Number.isFinite(previousStudyAt.getTime())
                 ? calculateRetentionFromState(state, eventDate)
                 : 100;
-            const activity = ['revisao_ativa','revisao_curta'].includes(session.recoveryMethod) ? 'revisao_ativa' : (session.activityType === 'questoes' ? 'questoes' : (session.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'));
+            const activity = ['revisao_ativa','revisao_curta'].includes(session.recoveryMethod) ? 'revisao_ativa' : (session.activityType === 'questoes' ? 'questoes' : (session.activityType === 'videoaula' ? 'videoaula' : (session.activityType === 'lei_seca' ? 'lei_seca' : 'teoria')));
             const minutes = Math.max(0, Number(session.minutes) || 0);
             const priorSessions = Math.max(0, Number(state.sessionCount) || 0);
 
@@ -6317,7 +6442,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 state.stability = estimateInitialRetentionStability(session);
             } else {
                 const elapsedDays = Math.max(0, (eventDate.getTime() - previousStudyAt.getTime()) / 86400000);
-                const activityBoost = activity === 'questoes' ? 0.10 : (activity === 'revisao_ativa' ? 0.13 : (activity === 'lei_seca' ? 0.03 : 0.06));
+                const activityBoost = activity === 'questoes' ? 0.10 : (activity === 'revisao_ativa' ? 0.13 : (activity === 'lei_seca' ? 0.03 : (activity === 'videoaula' ? 0.06 : 0.06)));
                 const spacingBoost = Math.min(0.22, elapsedDays * 0.018);
                 const retrievalBoost = Math.max(0, Math.min(0.18, (100 - previousRetention) / 250));
                 const sameDayFactor = elapsedDays < 0.5 ? 1.035 : 1;
@@ -6334,7 +6459,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             state.sessionCount = priorSessions + 1;
             state.totalMinutes = Math.max(0, Number(state.totalMinutes) || 0) + minutes;
-            if (!state.activityCounts || typeof state.activityCounts !== 'object') state.activityCounts = { teoria:0, questoes:0, lei_seca:0, revisao_ativa:0 };
+            if (!state.activityCounts || typeof state.activityCounts !== 'object') state.activityCounts = { teoria:0, videoaula:0, questoes:0, lei_seca:0, revisao_ativa:0 };
             state.activityCounts[activity] = Math.max(0, Number(state.activityCounts[activity]) || 0) + 1;
             state.lastActivityType = activity;
             state.lastStudyAt = eventDate.toISOString();
@@ -6370,7 +6495,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     lastStudyAt:null, lastReviewAt:null, nextReviewAt:null,
                     stability:RETENTION_MIN_STABILITY_DAYS, difficulty:5, retention:100,
                     reviewCount:0, lapseCount:0, lastRating:null, ratingCounts:{ forgot:0, hard:0, good:0, easy:0 }, totalMinutes:0, sessionCount:0,
-                    lastActivityType:null, activityCounts:{ teoria:0, questoes:0, lei_seca:0, revisao_ativa:0 },
+                    lastActivityType:null, activityCounts:{ teoria:0, videoaula:0, questoes:0, lei_seca:0, revisao_ativa:0 },
                     questionStats:{ attempts:0, total:0, correct:0, errors:0, lastAccuracy:null, averageAccuracy:null, confidence:0, lastAt:null },
                     createdAt:getRetentionEventDate(session).toISOString(), updatedAt:new Date().toISOString()
                 };
@@ -6456,9 +6581,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (session?.isRevision && ['revisao_ativa','revisao_curta','reestudo'].includes(session?.recoveryMethod)) return;
                 const key = getStudySessionTopicKey(session);
                 if (!key) return;
-                if (!sessionState.has(key)) sessionState.set(key, { teoria:false, questoes:false });
+                if (!sessionState.has(key)) sessionState.set(key, { teoria:false, videoaula:false, questoes:false });
                 const state = sessionState.get(key);
                 if (session?.activityType === 'questoes') state.questoes = true;
+                else if (session?.activityType === 'videoaula') state.videoaula = true;
                 else if ((session?.activityType || 'teoria') === 'teoria') state.teoria = true;
             });
 
@@ -6475,6 +6601,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 }
                 if (shouldMarkTheory && !item.teoria) {
                     item.teoria = true;
+                    queueEditalUpsert(item);
+                    changed = true;
+                }
+                if (state.videoaula && !item.videoaula) {
+                    item.videoaula = true;
                     queueEditalUpsert(item);
                     changed = true;
                 }
@@ -6505,10 +6636,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             getStudySessions().forEach(session => {
                 const key = getStudySessionTopicKey(session);
                 if (!affected.has(key)) return;
-                if (!sessionState.has(key)) sessionState.set(key, { teoria:false, questoes:false });
+                if (!sessionState.has(key)) sessionState.set(key, { teoria:false, videoaula:false, questoes:false });
                 const state = sessionState.get(key);
                 if (session?.isRevision && ['revisao_ativa','revisao_curta','reestudo'].includes(session?.recoveryMethod)) return;
                 if (session?.activityType === 'questoes') state.questoes = true;
+                else if (session?.activityType === 'videoaula') state.videoaula = true;
                 else if (session?.activityType === 'teoria') state.teoria = true;
             });
 
@@ -6517,11 +6649,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if ((item.concurso || 'Concurso Geral') !== currentConcurso) return;
                 const key = getStudyTopicKey(item.materia, item.assunto);
                 if (!affected.has(key)) return;
-                const state = sessionState.get(key) || { teoria:false, questoes:false };
+                const state = sessionState.get(key) || { teoria:false, videoaula:false, questoes:false };
                 const nextTeoria = !!state.teoria;
+                const nextVideoaula = !!state.videoaula;
                 const nextQuestoes = !!state.questoes;
-                if (!!item.teoria !== nextTeoria || !!item.questoes !== nextQuestoes) {
+                if (!!item.teoria !== nextTeoria || !!item.videoaula !== nextVideoaula || !!item.questoes !== nextQuestoes) {
                     item.teoria = nextTeoria;
+                    item.videoaula = nextVideoaula;
                     item.questoes = nextQuestoes;
                     queueEditalUpsert(item);
                     changed++;
@@ -6542,14 +6676,24 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             });
             if (!item) return false;
 
-            const field = context.activityType === 'questoes' ? 'questoes' : 'teoria';
-            if (field === 'teoria') {
+            const field = context.activityType === 'questoes' ? 'questoes' : (context.activityType === 'videoaula' ? 'videoaula' : 'teoria');
+            if (field === 'teoria' || field === 'videoaula') {
                 const contest = getConcursosMetadata()[currentConcurso] || {};
-                const planProgress = getTopicStudyPlanProgress(item, contest);
+                const method = getContentMethod(item);
+                const qualifiesForPlan = method === 'automatico' || method === 'ambos' || (method === 'teoria' && field === 'teoria') || (method === 'videoaula' && field === 'videoaula');
+                const planProgress = qualifiesForPlan ? getTopicStudyPlanProgress(item, contest) : null;
                 if (planProgress && !planProgress.complete) return false;
             }
-            if (item[field]) return false;
-            item[field] = true;
+            const method = getContentMethod(item);
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const planProgress = getTopicStudyPlanProgress(item, contest);
+            let changed = false;
+            if (method === 'ambos' && planProgress?.complete && (field === 'teoria' || field === 'videoaula')) {
+                if (getTopicStudySessionsForPlan(item, contest, 'teoria').length && !item.teoria) { item.teoria = true; changed = true; }
+                if (getTopicStudySessionsForPlan(item, contest, 'videoaula').length && !item.videoaula) { item.videoaula = true; changed = true; }
+            }
+            if (!item[field]) { item[field] = true; changed = true; }
+            if (!changed) return false;
             saveEditalToLocalStorage();
             queueEditalUpsert(item);
             if (navigator.onLine && currentUser) scheduleEditalSync(250);
@@ -6562,10 +6706,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const materia = String(session?.materia || '').trim();
                 const minutes = Math.max(0, Number(session?.minutes || 0));
                 if (!materia || !minutes) return;
-                if (!totals.has(materia)) totals.set(materia, { materia, minutes:0, teoria:0, questoes:0, leiSeca:0 });
+                if (!totals.has(materia)) totals.set(materia, { materia, minutes:0, teoria:0, videoaula:0, questoes:0, leiSeca:0 });
                 const row = totals.get(materia);
                 row.minutes += minutes;
                 if (session?.activityType === 'questoes') row.questoes += minutes;
+                else if (session?.activityType === 'videoaula') row.videoaula += minutes;
                 else if (session?.activityType === 'lei_seca') row.leiSeca += minutes;
                 else row.teoria += minutes;
             });
@@ -6574,7 +6719,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function getTotalRecordedStudyMinutes() {
             // Fonte canônica do total por matéria: soma todas as sessões de estudo
-            // registradas no concurso atual (Teoria + Questões + Lei Seca), sem incluir pausas/intervalos.
+            // registradas no concurso atual (Teoria + Vídeoaula + Questões + Lei Seca), sem incluir pausas/intervalos.
             return getSubjectStudyTotals().reduce((total, row) => total + Math.max(0, Number(row.minutes) || 0), 0);
         }
 
@@ -6590,18 +6735,18 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
             const max = Math.max(...totals.map(x => x.minutes), 1);
             const visible = totals.slice(0, 8);
-            const overall = totals.reduce((acc,row) => { acc.teoria += row.teoria || 0; acc.questoes += row.questoes || 0; acc.leiSeca += row.leiSeca || 0; return acc; }, {teoria:0,questoes:0,leiSeca:0});
-            const overallMinutes = overall.teoria + overall.questoes + overall.leiSeca;
+            const overall = totals.reduce((acc,row) => { acc.teoria += row.teoria || 0; acc.videoaula += row.videoaula || 0; acc.questoes += row.questoes || 0; acc.leiSeca += row.leiSeca || 0; return acc; }, {teoria:0,videoaula:0,questoes:0,leiSeca:0});
+            const overallMinutes = overall.teoria + overall.videoaula + overall.questoes + overall.leiSeca;
             if (distribution && overallMinutes > 0) {
                 const part = value => Math.round((value / overallMinutes) * 100);
-                distribution.innerHTML = `<strong>Distribuição das horas:</strong> Teoria ${part(overall.teoria)}% · Questões ${part(overall.questoes)}%${overall.leiSeca ? ` · Lei Seca ${part(overall.leiSeca)}%` : ''}`;
+                distribution.innerHTML = `<strong>Distribuição das horas:</strong> Teoria ${part(overall.teoria)}%${overall.videoaula ? ` · Vídeoaula ${part(overall.videoaula)}%` : ''} · Questões ${part(overall.questoes)}%${overall.leiSeca ? ` · Lei Seca ${part(overall.leiSeca)}%` : ''}`;
             }
             list.innerHTML = visible.map(row => {
                 const pct = Math.max(5, Math.round((row.minutes / max) * 100));
                 return `<div class="subject-hours-row">
                     <div class="subject-hours-main">
                         <div class="subject-hours-name"><span title="${escapeHtml(row.materia)}">${escapeHtml(row.materia)}</span></div>
-                        <div class="subject-hours-detail">Teoria ${formatStudyMinutes(row.teoria)} · Questões ${formatStudyMinutes(row.questoes)}${row.leiSeca ? ` · Lei Seca ${formatStudyMinutes(row.leiSeca)}` : ''}</div>
+                        <div class="subject-hours-detail">Teoria ${formatStudyMinutes(row.teoria)}${row.videoaula ? ` · Vídeoaula ${formatStudyMinutes(row.videoaula)}` : ''} · Questões ${formatStudyMinutes(row.questoes)}${row.leiSeca ? ` · Lei Seca ${formatStudyMinutes(row.leiSeca)}` : ''}</div>
                         <div class="subject-hours-track"><div class="subject-hours-fill" style="width:${pct}%"></div></div>
                     </div>
                     <div class="subject-hours-time">${formatStudyMinutes(row.minutes)}</div>
@@ -6630,7 +6775,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 plannedDateKey,
                 materia: context.materia,
                 assunto: context.assunto,
-                activityType: context.activityType === 'questoes' ? 'questoes' : (context.activityType === 'lei_seca' ? 'lei_seca' : 'teoria'),
+                activityType: context.activityType === 'questoes' ? 'questoes' : (context.activityType === 'videoaula' ? 'videoaula' : (context.activityType === 'lei_seca' ? 'lei_seca' : 'teoria')),
                 isRevision: !!context.isRevision,
                 recoveryMethod: context.recoveryMethod || null,
                 reviewLayer: context.layer || null,
@@ -6648,7 +6793,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const topicPlanResult = reconcileTopicStudyPlanAfterSession(metadata, context);
             let adaptiveReviewDateKey = null;
             if (isAdaptiveRetentionStrategy(metadata[currentConcurso]) && !context.isRevision && retentionState) {
-                // Assuntos longos só iniciam a curva de revisão quando a Teoria planejada
+                // Assuntos longos só iniciam a curva de revisão quando a aquisição planejada
                 // estiver completa. Enquanto houver blocos/aulas pendentes, a prioridade é continuidade.
                 if (!topicPlanResult || topicPlanResult.complete) {
                     adaptiveReviewDateKey = scheduleNextAdaptiveRetentionReview(metadata[currentConcurso], retentionState, actualDateKey);
@@ -6691,7 +6836,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const linkedItem = allEditalItems.find(candidate => String(candidate.id) === String(context.itemId || ''));
             const linkedPlan = linkedItem ? getTopicStudyPlan(linkedItem, metadata[currentConcurso] || {}) : null;
-            if (context.activityType === 'teoria' && linkedPlan?.mode === 'lessons' && !progressChanged) {
+            if (['teoria','videoaula'].includes(context.activityType) && linkedPlan?.mode === 'lessons' && !progressChanged) {
                 window.__studyDiagnostics.lessonPlanAwaitingManualCompletion = true;
             }
 
@@ -6755,7 +6900,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 plannedDateKey,
                 adaptiveAdvance: isFutureStudy && adaptiveAdvance,
                 isRevision: isRevisionScheduleText(raw),
-                activityType: activityType === 'questoes' ? 'questoes' : (activityType === 'lei_seca' ? 'lei_seca' : 'teoria')
+                activityType: activityType === 'questoes' ? 'questoes' : (activityType === 'videoaula' ? 'videoaula' : (activityType === 'lei_seca' ? 'lei_seca' : 'teoria'))
             };
             renderActiveStudyContext();
             closeModalDayContent();
@@ -6844,7 +6989,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function getGeneralPomodoroMinutes() {
             // "Horas Gerais" usa a mesma fonte canônica do card "Horas Estudadas":
-            // soma real de todas as sessões de foco (Teoria + Questões + Lei Seca) do concurso atual.
+            // soma real de todas as sessões de foco (Teoria + Vídeoaula + Questões + Lei Seca) do concurso atual.
             return getTotalRecordedStudyMinutes();
         }
 
@@ -7276,7 +7421,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         async function completeFocusSessionNow() {
             if (timerMode !== 'focus' || !timerHasStarted || focusSessionCommitted) return;
             if (!activeStudyContext || activeStudyContext.concurso !== currentConcurso) {
-                return alert('Inicie Teoria, Questões ou Lei Seca pelo cronograma antes de concluir uma sessão contabilizável.');
+                return alert('Inicie Teoria, Vídeoaula, Questões ou Lei Seca pelo cronograma antes de concluir uma sessão contabilizável.');
             }
             const elapsedSeconds = Math.max(0, (Number(currentTimerTotalSeconds) || 0) - (Number(timeLeft) || 0));
             const completedMinutes = Math.floor(elapsedSeconds / 60);
@@ -9713,18 +9858,20 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (forgot || retention < 40 || (accuracy != null && confidence >= .25 && accuracy < 45)) {
                 recommendedLayer = 4;
                 reason = 'Há evidência forte de perda do conteúdo; o reestudo é mais eficiente do que insistir em recuperação superficial.';
-            } else if (item?.teoria && (accuracy == null || accuracy < 75) && retention < 72) {
+            } else if (isContentAcquired(item) && (accuracy == null || accuracy < 75) && retention < 72) {
                 recommendedLayer = 3;
-                reason = 'A teoria já existe, mas os sinais de domínio ainda pedem teste objetivo por questões.';
+                reason = 'A etapa de conteúdo já existe, mas os sinais de domínio ainda pedem teste objetivo por questões.';
             } else if (overdue || retention < 82) {
                 recommendedLayer = 2;
                 reason = 'Uma revisão curta tende a recuperar o assunto sem exigir reestudo completo.';
             }
+            const acquisition = getContentAcquisitionState(item);
+            const reinforceWithVideo = acquisition.method === 'videoaula' || (acquisition.method === 'automatico' && acquisition.teoria && !acquisition.videoaula);
             const layers = [
                 { layer:1, label:'Recuperação mental', minutes:5, description:'Tente explicar conceitos, regras e exceções sem consultar o material.' },
                 { layer:2, label:'Revisão curta', minutes:10, description:'Consulte apenas resumo, anotação ou ponto central e confirme o que faltou.' },
                 { layer:3, label:'Questões', minutes:20, description:'Resolva uma bateria curta e registre total de questões e acertos.' },
-                { layer:4, label:'Reestudo de teoria', minutes:30, description:'Reconstrua o conteúdo quando a retenção ou o desempenho indicarem perda relevante.' }
+                { layer:4, label:reinforceWithVideo?'Vídeoaula de reforço':'Reestudo de teoria', minutes:30, activityType:reinforceWithVideo?'videoaula':'teoria', description:reinforceWithVideo?'Use uma explicação em vídeo para reconstruir o ponto que apresentou baixa retenção ou baixo desempenho.':'Reconstrua o conteúdo quando a retenção ou o desempenho indicarem perda relevante.' }
             ];
             return { recommendedLayer, reason, retention, accuracy, layers };
         }
@@ -9767,7 +9914,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if(Number(layer)===1) return openActiveRecallGuide({...base,activityType:'revisao_ativa',method:'revisao_ativa',methodLabel:'Recuperação mental',recoveryMethod:'revisao_ativa'});
             if(Number(layer)===2) return launchOpportunityPomodoro({...base,activityType:'teoria',method:'revisao_curta',methodLabel:'Revisão curta',recoveryMethod:'revisao_curta'});
             if(Number(layer)===3) return launchOpportunityPomodoro({...base,activityType:'questoes',method:'questoes',methodLabel:'Questões',recoveryMethod:'questoes'});
-            return launchOpportunityPomodoro({...base,activityType:'teoria',method:'reestudo',methodLabel:'Reestudo de teoria',recoveryMethod:'reestudo'});
+            const acquisitionActivity = def.activityType || 'teoria';
+            return launchOpportunityPomodoro({...base,activityType:acquisitionActivity,method:acquisitionActivity==='videoaula'?'videoaula':'reestudo',methodLabel:def.label,recoveryMethod:acquisitionActivity==='videoaula'?'videoaula':'reestudo'});
         }
 
         function buildRetentionDiagnostics() {
@@ -9854,9 +10002,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function updateModernOverview() {
             const topics = editalItems || [];
-            const checks = ['teoria','questoes'];
-            const done = topics.reduce((acc, item) => acc + checks.filter(k => !!item[k]).length, 0);
-            const total = topics.length * checks.length;
+            const acquisitionUnits = topics.reduce((acc,item) => acc + getContentAcquisitionState(item).fraction, 0);
+            const questionUnits = topics.reduce((acc,item) => acc + (item.questoes ? 1 : 0), 0);
+            const total = topics.length * 2;
+            const done = acquisitionUnits + questionUnits;
             const pct = total ? Math.round(done / total * 100) : 0;
             const delayedText = document.getElementById('delayedBadgeCount')?.textContent || '0';
             const delayed = (delayedText.match(/\d+/) || ['0'])[0];
