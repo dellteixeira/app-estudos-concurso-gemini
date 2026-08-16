@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.1.0 — Dashboard Composition
+ESTUDO ADAPTATIVO INTELIGENTE — V10.1.1 — Fixes Cronograma e Flashcards
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -343,3 +343,11 @@ V10.1.0 — ETAPA 2 / COMPOSIÇÃO E DENSIDADE DO DASHBOARD (16/08/2026)
 - Barra de ações compactada.
 - Breakpoints específicos para desktop intermediário, tablet e mobile.
 - CACHE_NAME: estudo-adaptativo-v10-1-0-dashboard-composition-20260816.
+
+
+V10.1.1 — FIXES CRONOGRAMA E FLASHCARDS (16/08/2026)
+- Botão Lei Seca ajustado para respeitar a largura da linha e os respiros do card no cronograma.
+- Botão Fechar (ESC) do modal de conteúdo do dia corrigido para ficar contido no layout, sem extrapolar o rodapé.
+- Cor do numeral/quantidade de cartões em Flashcards alinhada ao botão Abrir Caixa.
+- Ajustes responsivos adicionais para o cronograma e rodapé do modal.
+- CACHE_NAME: estudo-adaptativo-v10-1-1-fixes-cronograma-flashcards-20260816.
