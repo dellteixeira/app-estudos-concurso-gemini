@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.2.0 — Busca Modal e Gradientes por Matéria
+ESTUDO ADAPTATIVO INTELIGENTE — V10.3.0 — Busca Modal e Gradientes por Matéria
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -361,7 +361,7 @@ V10.1.2 — BUSCA MODAL E GRADIENTES POR MATÉRIA (16/08/2026)
 - CACHE_NAME: estudo-adaptativo-v10-1-2-busca-modal-gradientes-materias-20260816.
 
 
-V10.2.0 — AUDITORIA MOBILE DE LAYOUT (16/08/2026)
+V10.3.0 — AUDITORIA MOBILE DE LAYOUT (16/08/2026)
 - Cabeçalho mobile: Conta, Modo Claro/Escuro e Sair alinhados em uma única linha.
 - Gráfico de progresso mobile: barras e trilhos mais finos, espaçamento ampliado e legenda refinada.
 - Formulário manual do edital: Matéria, Assunto e Importância na mesma linha; Matéria/Assunto abrem editor mobile dedicado.
@@ -369,3 +369,12 @@ V10.2.0 — AUDITORIA MOBILE DE LAYOUT (16/08/2026)
 - Flashcards: dois botões de estudo alinhados em uma única linha.
 - Auditoria adicional de overflow, FAB, áreas de toque e contenção de componentes.
 - CACHE_NAME: estudo-adaptativo-v10-2-0-auditoria-mobile-layout-20260816.
+
+
+V10.3.0 — MINIMALISMO DO HEADER + CRONOGRAMA POR PRIORIDADE (16/08/2026)
+- Cabeçalho desktop reorganizado em uma única linha, com botões uniformes e visual mais minimalista.
+- Gráfico de Progresso Geral refinado com barras mais finas e discretas.
+- Removido o destaque ciano lateral das linhas adaptativas do edital.
+- Implementado aviso de reorganização inteligente do cronograma quando prioridades/ordem do Edital Verticalizado forem alteradas.
+- Diagnóstico de retenção redistribuído em uma composição mais equilibrada, preservando a responsividade mobile.
+- CACHE_NAME: estudo-adaptativo-v10-3-0-layout-minimal-prioridade-cronograma-20260816.
