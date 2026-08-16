@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.3.0">
+    <meta name="app-version" content="10.5.0">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -83,7 +83,7 @@
                     <h2>Estudo Adaptativo Inteligente</h2>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
-                <span class="app-version-badge" title="Versão em execução">V10.3.0</span>
+                <span class="app-version-badge" title="Versão em execução">V10.5.0</span>
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
@@ -139,6 +139,7 @@
                 <div>
                     <h3>Retenção e Diagnóstico</h3>
                     <p class="retention-diagnostic-subtitle">Memória estimada a partir das sessões, revisões e desempenho em questões.</p>
+                    <p class="retention-diagnostic-helper">A leitura do painel combina o histórico recente, a prioridade do edital e o comportamento de revisão para destacar onde vale estudar primeiro.</p>
                 </div>
                 <button class="btn btn-secondary btn-sm" type="button" onclick="openOpportunityStudyModal()">Estudar agora</button>
             </div>
@@ -170,7 +171,7 @@
         <div id="tab-edital" class="tab-content active">
             <div class="grid-top">
                 <div class="card pomodoro-card">
-                    <h3>Relógio Pomodoro</h3>
+                    <h3 class="dashboard-panel-title">Relógio Pomodoro</h3>
                     <div class="pomodoro-hero">
                         <div class="pomodoro-ring-shell">
                             <div class="pomodoro-ring" id="pomodoroRing" style="--timer-progress:0;">
@@ -186,7 +187,7 @@
                         <button class="btn btn-primary" id="startTimerBtn" onclick="startFocusTimer()">Foco</button>
                         <button class="btn btn-info" id="intervalTimerBtn" onclick="startIntervalTimer()">Intervalo</button>
                         <button class="btn btn-warning" id="pauseTimerBtn" onclick="togglePauseTimer()" disabled>Pausar</button>
-                        <button class="btn btn-success" id="completeFocusBtn" onclick="completeFocusSessionNow()" disabled>Concluir sessão</button>
+                        <button class="btn btn-info" id="completeFocusBtn" onclick="completeFocusSessionNow()" disabled>Concluir sessão</button>
                         <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
                     </div>
                     <div class="timer-settings">
@@ -226,7 +227,7 @@
                 </div>
 
                 <div class="card">
-                    <h3>Progresso Geral de Estudo (%)</h3>
+                    <h3 class="dashboard-panel-title">Progresso Geral de Estudo (%)</h3>
                     <div class="study-progress-breakdown">
                         <div class="study-progress-mini"><span>Teoria</span><strong id="studyTheoryProgress">0 / 50%</strong></div>
                         <div class="study-progress-mini"><span>Questões</span><strong id="studyQuestionsProgress">0 / 50%</strong></div>
@@ -298,28 +299,47 @@
                 <div id="delayedItemsContainer"></div>
             </div>
 
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-                    <h3>Cronograma</h3>
-
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <label><strong>Mês/Ano:</strong></label>
-                        <select id="monthSelect" onchange="onMonthYearChange()"></select>
-                        <select id="yearSelect" onchange="onMonthYearChange()"></select>
+            <div class="card calendar-shell-card">
+                <div class="calendar-shell-top">
+                    <div class="calendar-shell-title">
+                        <div class="calendar-shell-icon" aria-hidden="true">📅</div>
+                        <div>
+                            <h3>Calendário de Estudos</h3>
+                            <p>Sua jornada organizada, dia após dia.</p>
+                        </div>
                     </div>
 
-                    <div class="calendar-primary-actions">
-                        <button class="btn btn-primary" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
-                        <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
-                        <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
-                        <button class="btn btn-primary" onclick="reorganizarMateriasCronograma()">Reorganizar Matérias</button>
+                    <div class="calendar-shell-nav">
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="goToCurrentMonth()">Hoje</button>
+                        <div class="calendar-month-selectors">
+                            <label><strong>Mês/Ano:</strong></label>
+                            <select id="monthSelect" onchange="onMonthYearChange()"></select>
+                            <select id="yearSelect" onchange="onMonthYearChange()"></select>
+                        </div>
                     </div>
+                </div>
+
+                <div class="calendar-primary-actions">
+                    <button class="btn btn-primary" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
+                    <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
+                    <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
+                    <button class="btn btn-primary" onclick="reorganizarMateriasCronograma()">Reorganizar Matérias</button>
                 </div>
 
                 <div class="month-calendar-header">
                     <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
                 </div>
                 <div class="month-grid" id="monthCalendarGrid"></div>
+
+                <div class="calendar-footer-bar">
+                    <div class="calendar-footer-legend">
+                        <span class="calendar-legend-item selected">Dia selecionado</span>
+                        <span class="calendar-legend-item progress">Progresso do dia</span>
+                        <span class="calendar-legend-item activity">Dia com atividades</span>
+                        <span class="calendar-legend-item idle">Dia sem atividades</span>
+                    </div>
+                    <div class="calendar-footer-summary" id="calendarFooterSummary">Resumo do mês</div>
+                </div>
             </div>
         </div>
 
@@ -392,8 +412,8 @@
             <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" onclick="mobileSwitchTab('tab-flashcards', this)"><span>Flashcards</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" onclick="mobileSwitchTab('tab-anotacoes', this)"><span>Anotações</span></button>
             <button class="mobile-nav-btn" type="button" onclick="toggleModernTools()"><span>Mais</span></button>
+            <button id="contextFab" class="mobile-nav-btn mobile-context-action" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo"><span>Novo</span></button>
         </nav>
-        <button id="contextFab" class="context-fab" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo">Novo</button>
     </div>
 
     <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
