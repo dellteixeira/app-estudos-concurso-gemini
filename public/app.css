@@ -5470,3 +5470,333 @@ body.light-mode .global-search-modal-results.global-search-results { background:
     #contextFab.mobile-context-action { font-size: .58rem !important; }
     .overview-card { min-height: 78px !important; padding: 10px !important; }
 }
+
+
+/* V10.5.1 — Retenção e Diagnóstico alinhado ao layout de referência */
+.retention-diagnostic-helper {
+    display: none !important;
+}
+
+@media (min-width: 901px) {
+    .retention-diagnostic-panel {
+        display: grid !important;
+        grid-template-columns: minmax(320px, 1.02fr) minmax(530px, 1.55fr) minmax(480px, 1.65fr) !important;
+        grid-template-areas:
+            "head metrics critical"
+            "head phase critical" !important;
+        gap: 14px !important;
+        align-items: stretch !important;
+    }
+
+    .retention-diagnostic-head {
+        grid-area: head !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 18px !important;
+        padding-right: 8px !important;
+        min-width: 0 !important;
+    }
+
+    .retention-diagnostic-head > div {
+        min-width: 0;
+        max-width: 320px;
+    }
+
+    .retention-diagnostic-head h3 {
+        margin: 0 0 6px !important;
+        font-size: 1.28rem !important;
+        line-height: 1.08 !important;
+    }
+
+    .retention-diagnostic-subtitle {
+        margin: 0 !important;
+        max-width: 30ch !important;
+        font-size: .8rem !important;
+        line-height: 1.45 !important;
+        color: rgba(220,232,243,.88) !important;
+    }
+
+    .retention-diagnostic-head .btn {
+        margin-top: auto !important;
+        min-height: 38px !important;
+        padding: 0 16px !important;
+        font-size: .78rem !important;
+    }
+
+    .retention-metric-grid {
+        grid-area: metrics !important;
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        align-content: start !important;
+        min-width: 0 !important;
+    }
+
+    .retention-metric {
+        min-height: 110px !important;
+        padding: 14px 14px 12px !important;
+        border-radius: 14px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+    }
+
+    .retention-metric span {
+        font-size: .73rem !important;
+        line-height: 1.2 !important;
+        margin-bottom: 10px !important;
+        white-space: normal !important;
+    }
+
+    .retention-metric strong {
+        font-size: 1.55rem !important;
+        line-height: 1 !important;
+        margin-top: auto !important;
+    }
+
+    .exam-phase-strip {
+        grid-area: phase !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 16px !important;
+        min-height: 72px !important;
+        padding: 0 16px !important;
+        border-radius: 14px !important;
+        min-width: 0 !important;
+    }
+
+    .exam-phase-strip strong {
+        font-size: .98rem !important;
+        line-height: 1.15 !important;
+        white-space: nowrap !important;
+    }
+
+    .exam-phase-strip span {
+        font-size: .82rem !important;
+        line-height: 1.35 !important;
+        text-align: right !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        flex: 1 1 auto !important;
+    }
+
+    .critical-queue-head {
+        grid-area: critical !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        gap: 14px !important;
+        padding: 12px 14px !important;
+        margin: 0 !important;
+        border: 1px solid rgba(117,151,179,.16) !important;
+        border-radius: 14px !important;
+        background: rgba(255,255,255,.02) !important;
+        min-height: 40px !important;
+        align-self: start !important;
+    }
+
+    .critical-queue-head strong {
+        font-size: 1rem !important;
+        line-height: 1.1 !important;
+        white-space: nowrap !important;
+    }
+
+    .critical-queue-head span {
+        font-size: .74rem !important;
+        line-height: 1.35 !important;
+        text-align: right !important;
+        color: rgba(182,202,222,.76) !important;
+        max-width: 330px !important;
+    }
+
+    .retention-risk-list {
+        grid-area: critical !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-end !important;
+        min-height: 196px !important;
+        max-height: none !important;
+        padding: 70px 0 0 !important;
+        margin-top: -54px !important;
+        min-width: 0 !important;
+    }
+
+    .retention-empty {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        height: 100% !important;
+        min-height: 120px !important;
+        padding: 0 !important;
+        font-size: 1rem !important;
+        line-height: 1.42 !important;
+        color: rgba(220,232,243,.9) !important;
+    }
+
+    .retention-risk-item {
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .retention-diagnostic-panel {
+        grid-template-columns: 1fr !important;
+        grid-template-areas:
+            "head"
+            "phase"
+            "metrics"
+            "critical"
+            "risk" !important;
+    }
+
+    .retention-diagnostic-subtitle {
+        max-width: none !important;
+    }
+
+    .critical-queue-head {
+        margin-bottom: 0 !important;
+    }
+
+    .retention-risk-list {
+        margin-top: 0 !important;
+        padding-top: 8px !important;
+        min-height: 80px !important;
+        max-height: none !important;
+    }
+
+    .retention-empty {
+        padding-top: 0 !important;
+        font-size: .94rem !important;
+    }
+}
+
+
+/* V10.5.2 — ajustes pontuais do calendário e cronograma diário */
+.day-badges-scroll {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding-right: 0 !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+}
+.day-badges-scroll::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+.clean-subject-more {
+    align-self: flex-start !important;
+    margin-top: 0 !important;
+}
+.month-day-cell {
+    overflow: hidden !important;
+}
+
+.study-session-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+.study-session-topline .day-topic-status-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.study-session-topline .study-launch-controls-primary {
+    display: flex !important;
+    align-items: center;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+    flex: 0 0 auto;
+}
+.study-session-topline .study-launch-controls-primary .btn {
+    min-width: 132px;
+    white-space: nowrap !important;
+}
+.study-launch-controls-secondary {
+    display: flex !important;
+    align-items: center;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    margin-top: 4px;
+}
+.study-launch-controls-secondary .btn-register-question-result {
+    order: 4;
+}
+.study-launch-controls-legal-row {
+    display: flex !important;
+    width: 100% !important;
+    margin-top: 4px;
+}
+.study-launch-controls-legal-row .btn {
+    width: auto !important;
+}
+
+@media (max-width: 900px) {
+    .study-session-topline {
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .study-session-topline .day-topic-status-inline {
+        width: 100%;
+        gap: 8px;
+    }
+    .study-session-topline .study-launch-controls-primary {
+        width: 100% !important;
+        justify-content: flex-start;
+        gap: 6px !important;
+    }
+    .study-session-topline .study-launch-controls-primary .btn {
+        min-width: 0;
+        flex: 1 1 0;
+    }
+    .study-launch-controls-secondary {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+        gap: 6px !important;
+    }
+    .study-launch-controls-secondary .btn,
+    .study-launch-controls-legal-row .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        white-space: normal !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+    .study-launch-controls-legal-row {
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 560px) {
+    .day-topic-status-inline label {
+        font-size: .86rem;
+    }
+    .study-session-topline .study-launch-controls-primary {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+        width: 100% !important;
+    }
+    .study-session-topline .study-launch-controls-primary .btn {
+        min-height: 38px !important;
+        font-size: .72rem !important;
+        padding: .42rem .34rem !important;
+    }
+}
