@@ -1,5 +1,5 @@
-const APP_VERSION = '10.1.2';
-const CACHE_NAME = 'estudo-adaptativo-v10-1-2-busca-modal-gradientes-materias-20260816';
+const APP_VERSION = '10.2.0';
+const CACHE_NAME = 'estudo-adaptativo-v10-2-0-auditoria-mobile-layout-20260816';
 
 const APP_SHELL = [
   './',
