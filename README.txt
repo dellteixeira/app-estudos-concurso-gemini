@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.0.0 — Design System Dark Coaching UI
+ESTUDO ADAPTATIVO INTELIGENTE — V10.1.0 — Dashboard Composition
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -331,3 +331,15 @@ V10.0.0 — DESIGN SYSTEM DARK COACHING UI — ETAPA 1 (16/08/2026)
 - Nenhum módulo principal foi reposicionado nesta etapa.
 - Nenhuma alteração de lógica, banco, sincronização ou studySessions.
 - CACHE_NAME: estudo-adaptativo-v10-0-0-design-system-dark-coaching-20260816.
+
+
+V10.1.0 — ETAPA 2 / COMPOSIÇÃO E DENSIDADE DO DASHBOARD (16/08/2026)
+- Alteração exclusivamente visual, sem mudança de regras de negócio ou eventos.
+- Dashboard ampliado e alinhado em malha mais densa.
+- Cards de resumo compactados e padronizados.
+- Retenção e Diagnóstico reorganizado em faixa analítica horizontal no desktop.
+- Pomodoro reorganizado em composição compacta de duas colunas no desktop.
+- Painel de Progresso recebeu proporção maior e melhor aproveitamento vertical.
+- Barra de ações compactada.
+- Breakpoints específicos para desktop intermediário, tablet e mobile.
+- CACHE_NAME: estudo-adaptativo-v10-1-0-dashboard-composition-20260816.
