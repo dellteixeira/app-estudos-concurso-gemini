@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V9.66.8 — Refinamento Premium do Cabeçalho
+ESTUDO ADAPTATIVO INTELIGENTE — V10.0.0 — Design System Dark Coaching UI
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -312,3 +312,22 @@ V9.66.8 — REFINAMENTO PREMIUM DO CABEÇALHO (16/08/2026)
 - No mobile, Conta/Modo/Sair formam três colunas e a pesquisa ocupa uma linha completa abaixo.
 - Tema claro recebeu ajustes equivalentes de contraste e acabamento.
 - CACHE_NAME: estudo-adaptativo-v9-66-8-header-premium-20260816.
+
+
+V9.66.9 — PADRONIZAÇÃO DO CABEÇALHO E BUSCA CONTIDA (16/08/2026)
+- Padronização visual dos botões do cabeçalho: mesma altura, raio e linguagem visual.
+- Remoção do agrupamento visual inconsistente dos botões Conta/Modo/Sair; agora seguem padrão uniforme.
+- Barra de pesquisa ajustada para respeitar o espaço disponível da barra, com largura fluida e margem de segurança.
+- Cluster utilitário reorganizado para evitar estouro horizontal no desktop.
+- Breakpoints refinados para preservar o padrão visual no mobile.
+- CACHE_NAME: estudo-adaptativo-v9-66-9-header-padrao-busca-segura-20260816.
+
+
+V10.0.0 — DESIGN SYSTEM DARK COACHING UI — ETAPA 1 (16/08/2026)
+- Nova identidade visual baseada na referência fornecida: azul-preto profundo, superfícies em camadas e ciano/turquesa como acento principal.
+- Padronização global de cards, bordas, sombras, botões, inputs, tabelas, modais, barras de progresso e navegação.
+- Acentos secundários: violeta para contexto/status, âmbar para atenção e vermelho suave para ações destrutivas.
+- Redução de saturação e sombras para aparência mais técnica e premium.
+- Nenhum módulo principal foi reposicionado nesta etapa.
+- Nenhuma alteração de lógica, banco, sincronização ou studySessions.
+- CACHE_NAME: estudo-adaptativo-v10-0-0-design-system-dark-coaching-20260816.
