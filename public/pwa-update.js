@@ -1,4 +1,4 @@
-window.APP_VERSION = '9.66.6';
+window.APP_VERSION = '9.66.8';
       window.__pwaRegistration = null;
       window.__pwaUpdateRequested = false;
       window.__pwaUpdateCheckTimer = null;
