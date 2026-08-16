@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V9.66.5 — Layout Compacto das Ações de Estudo
+ESTUDO ADAPTATIVO INTELIGENTE — V9.66.6 — Reorganização Visual das Ações do Cronograma
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -280,3 +280,15 @@ V9.66.5 — LAYOUT COMPACTO DAS AÇÕES DE ESTUDO (15/08/2026)
 - Em telas muito estreitas (até 390 px), tipografia, campo de minutos e espaçamentos recebem compactação adicional.
 - Supabase, RLS, schema, sincronização e Worker permanecem inalterados.
 - CACHE_NAME: estudo-adaptativo-v9-66-5-layout-acoes-cronograma-20260815.
+
+
+V9.66.6 — REORGANIZAÇÃO VISUAL DAS AÇÕES DO CRONOGRAMA (15/08/2026)
+- Mudança incremental sobre a V9.66.5, sem alteração da lógica de estudo ou de sincronização.
+- Planejar e Editar foram movidos para a linha principal, imediatamente após Registrar questões externas.
+- Apagar foi movido para junto de Sessão [N] min, reduzindo uma linha visual do cartão.
+- No desktop, Estudar Teoria, Estudar Questões, Registrar questões externas, Planejar, Editar e Lei Seca formam uma faixa compacta quando disponíveis.
+- No mobile, a faixa de ações usa grade responsiva 3 colunas até 700 px e 2 colunas até 480 px, sem rolagem horizontal.
+- Em telas estreitas, Sessão [N] min e Apagar permanecem juntos e quebram como uma unidade para uma nova linha quando necessário.
+- O botão ✓ Concluir esta aula permanece separado quando o planejamento usa Número de aulas.
+- studySessions, Supabase, RLS, schema, sincronização e Worker permanecem inalterados.
+- CACHE_NAME: estudo-adaptativo-v9-66-6-layout-acoes-cronograma-20260815.
