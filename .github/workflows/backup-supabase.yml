@@ -1,0 +1,55 @@
+name: Backup Supabase
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 6 * * 0"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Create backup directory
+        run: mkdir -p backups
+
+      - name: Backup roles
+        run: |
+          supabase db dump \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            --role-only \
+            -f backups/roles.sql
+
+      - name: Backup schema
+        run: |
+          supabase db dump \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            -f backups/schema.sql
+
+      - name: Backup data
+        run: |
+          supabase db dump \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            --data-only \
+            --use-copy \
+            -f backups/data.sql
+
+      - name: Compact backup
+        run: |
+          tar -czf supabase-backup-${{ github.run_id }}.tar.gz backups
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: supabase-backup-${{ github.run_id }}.tar.gz
+          retention-days: 30
