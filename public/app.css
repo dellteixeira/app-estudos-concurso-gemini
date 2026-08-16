@@ -4329,3 +4329,124 @@ body.light-mode .critical-queue-head {
     background: #f6fafc;
     border-color: #dce6ec;
 }
+
+
+/* V10.1.1 — ajustes finos de contenção visual */
+.study-launch-controls {
+    display:flex !important;
+    flex-wrap:wrap !important;
+    align-items:center;
+    justify-content:flex-start;
+    gap:6px !important;
+    width:100%;
+    min-width:0;
+}
+.study-launch-controls .btn {
+    flex:0 1 auto;
+    max-width:100%;
+    min-width:0;
+    min-height:31px;
+    padding:.34rem .52rem;
+    font-size:.73rem;
+    border-radius:9px;
+    line-height:1.05;
+    white-space:nowrap;
+}
+.study-launch-controls .btn-register-question-result {
+    padding:.34rem .5rem;
+    font-size:.72rem;
+}
+.study-launch-controls .btn-study-legal {
+    padding:.34rem .5rem;
+    font-size:.72rem;
+}
+.day-topic-row,
+.day-topic-controls-row,
+.day-topic-inline-actions {
+    min-width:0;
+}
+
+.day-modal-footer {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+}
+.day-modal-footer > * {
+    min-width:0;
+    max-width:100%;
+}
+.day-modal-footer #addNewTopicArea {
+    flex:1 1 300px;
+}
+.day-modal-footer .modal-actions {
+    flex:0 1 auto;
+    margin-top:0;
+    min-width:0;
+}
+.day-modal-footer .modal-actions .btn {
+    max-width:100%;
+    white-space:nowrap;
+}
+
+.anki-folder-count,
+.anki-subfolder-item span:last-child {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:30px;
+    padding:4px 10px;
+    border-radius:999px;
+    background:#53e3d5 !important;
+    border:1px solid #68e9de !important;
+    color:#06191c !important;
+    font-size:.78rem !important;
+    font-weight:800 !important;
+    line-height:1;
+    opacity:1 !important;
+}
+
+@media (max-width:700px) {
+    .study-launch-controls {
+        display:grid !important;
+        grid-template-columns:repeat(3, minmax(0,1fr));
+        gap:6px !important;
+    }
+    .study-launch-controls .btn {
+        width:100%;
+        white-space:normal;
+        justify-content:center;
+        text-align:center;
+        min-height:35px;
+        padding:.38rem .34rem;
+        font-size:.70rem;
+    }
+    .day-modal-footer {
+        flex-direction:column;
+        align-items:stretch;
+    }
+    .day-modal-footer #addNewTopicArea,
+    .day-modal-footer .modal-actions,
+    .day-modal-footer .modal-actions .btn {
+        width:100%;
+    }
+    .day-modal-footer .modal-actions {
+        justify-content:stretch;
+    }
+}
+
+@media (max-width:480px) {
+    .study-launch-controls {
+        grid-template-columns:repeat(2, minmax(0,1fr));
+    }
+    .study-launch-controls .btn {
+        font-size:.71rem;
+    }
+    .anki-folder-count,
+    .anki-subfolder-item span:last-child {
+        min-height:28px;
+        padding:4px 9px;
+        font-size:.74rem !important;
+    }
+}
