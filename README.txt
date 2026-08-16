@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.1.1 — Fixes Cronograma e Flashcards
+ESTUDO ADAPTATIVO INTELIGENTE — V10.1.2 — Busca Modal e Gradientes por Matéria
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -351,3 +351,11 @@ V10.1.1 — FIXES CRONOGRAMA E FLASHCARDS (16/08/2026)
 - Cor do numeral/quantidade de cartões em Flashcards alinhada ao botão Abrir Caixa.
 - Ajustes responsivos adicionais para o cronograma e rodapé do modal.
 - CACHE_NAME: estudo-adaptativo-v10-1-1-fixes-cronograma-flashcards-20260816.
+
+
+V10.1.2 — BUSCA MODAL E GRADIENTES POR MATÉRIA (16/08/2026)
+- Busca inline do cabeçalho substituída por botão Pesquisar.
+- Botão abre diálogo dedicado de busca global com resultados do edital, anotações e flashcards.
+- Cada matéria do gráfico/legenda passa a receber gradiente próprio, distribuído pelo círculo cromático para reduzir repetições.
+- Cabeçalho ganha mais espaço útil e elimina campo de busca comprimido.
+- CACHE_NAME: estudo-adaptativo-v10-1-2-busca-modal-gradientes-materias-20260816.
