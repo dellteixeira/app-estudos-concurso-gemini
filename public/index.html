@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- TAGS ANTI-CACHE -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Estudo Adaptativo Inteligente</title>
+    <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
+
+    <link rel="manifest" href="manifest.json?v=20260815-9663">
+    <meta name="app-version" content="10.5.8">
+    <meta name="theme-color" content="#061321">
+    <meta name="color-scheme" content="dark light">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Estudo Adaptativo Inteligente">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="./pwa-update.js?v=10.5.8" defer></script>
+
+    <script src="./vendor/supabase.js" defer></script>
+    <script src="./vendor/chart.umd.min.js" defer></script>
+    <!-- PDF.js agora é carregado sob demanda ao abrir o visualizador de edital. -->
+    
+    <link rel="stylesheet" href="./app.css?v=10.5.8">
+</head>
+<body>
+
+    <div id="offline-banner">Modo Offline - As alterações serão salvas localmente e sincronizadas quando houver conexão.</div>
+
+    <div id="pwa-update-banner" role="status" aria-live="polite" aria-atomic="true">
+        <div class="pwa-update-inner">
+            <div class="pwa-update-copy">
+                <strong>Nova versão disponível</strong>
+                <span>Atualize para usar a versão mais recente do aplicativo.</span>
+            </div>
+            <div class="pwa-update-actions">
+                <button class="btn btn-primary btn-sm" type="button" onclick="applyPwaUpdate()">Atualizar agora</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pwa-install-banner" role="status" aria-live="polite">
+        <div class="pwa-install-inner">
+            <div class="pwa-install-copy">
+                <strong id="pwaInstallTitle">Instalar Estudo Adaptativo Inteligente</strong>
+                <span id="pwaInstallText">Instale o app para abrir em tela cheia e facilitar o uso offline.</span>
+            </div>
+            <div class="pwa-install-actions">
+                <button id="pwaInstallButton" class="btn btn-primary btn-sm" type="button" onclick="installPwaApp()">Instalar</button>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="dismissPwaBanner()">Agora não</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="auth-container">
+        <div class="auth-card">
+            <h2>Entrar no Sistema</h2>
+            <div style="margin-bottom: 1rem;">
+                <input type="email" id="email" placeholder="seu@email.com" style="width:100%; margin-bottom: 0.5rem;" required>
+                <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" style="width:100%;" required>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+                <button class="btn btn-primary" style="flex:1;" onclick="handleLogin()">Entrar</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="handleSignUp()">Cadastrar</button>
+            </div>
+            <div id="authStatusMessage" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.82rem; line-height:1.4; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.28); color:#86efac;"></div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="app-dashboard">
+        <header class="modern-header">
+            <div class="header-brand">
+                <img src="icon-192.png" alt="Símbolo Estudos">
+                <div class="header-brand-copy">
+                    <h2>Estudo Adaptativo Inteligente</h2>
+                </div>
+                <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
+                <span class="app-version-badge" title="Versão em execução">V10.5.8</span>
+            </div>
+            <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
+            
+            <div class="header-control-stack">
+                <div class="concurso-selector-bar">
+                    <label><strong>Concurso:</strong></label>
+                    <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
+                    <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
+                    <button id="btnRenomearConcurso" class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
+                    <button id="btnExcluirConcurso" class="btn btn-danger btn-sm" onclick="removerConcursoAtual(this)">Excluir</button>
+                    
+                    <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
+                        Sem data de prova
+                    </div>
+                    <div id="syncStatusPill" class="sync-status-pill" role="status" aria-live="polite" title="Estado da sincronização">
+                        <span class="sync-dot" aria-hidden="true"></span>
+                        <span id="syncStatusText">Verificando…</span>
+                        <span id="syncStatusLast" class="sync-last"></span>
+                    </div>
+                    <div class="header-utility-cluster" aria-label="Conta, aparência e pesquisa">
+                        <div class="header-account-actions">
+                            <button class="btn btn-secondary btn-sm btn-account-header" type="button" onclick="openAccountModal()" title="Abrir dados e segurança da conta">Conta</button>
+                            <button class="btn btn-secondary btn-sm btn-theme-header" type="button" onclick="toggleDarkMode()" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
+                            <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
+                        </div>
+                        <button class="btn btn-secondary btn-sm btn-search-header" type="button" onclick="openGlobalSearchModal()" title="Pesquisar matéria, assunto, flashcard ou anotação">
+                            <span class="btn-search-header-icon" aria-hidden="true">⌕</span>
+                            <span>Pesquisar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
+                    <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
+                    <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
+                    <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
+                    <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
+                </div>
+            </div>
+        </header>
+
+
+        <section class="study-overview-grid" aria-label="Resumo de estudos">
+            <div class="overview-card accent"><span class="overview-label">Progresso Geral</span><strong class="overview-value" id="modernOverviewProgress">0%</strong><span class="overview-hint">edital verticalizado</span></div>
+            <div class="overview-card"><span class="overview-label">Assuntos</span><strong class="overview-value" id="modernOverviewTopics">0</strong><span class="overview-hint">no concurso atual</span></div>
+            <div class="overview-card warning"><span class="overview-label">Revisões</span><strong class="overview-value" id="modernOverviewReviews">0</strong><span class="overview-hint">pendentes agora</span></div>
+            <div class="overview-card success"><span class="overview-label">Estudado Hoje</span><strong class="overview-value" id="modernOverviewToday">00:00</strong><span class="overview-hint">Pomodoro concluído</span></div>
+            <div class="overview-card"><span class="overview-label">Meta Diária</span><strong class="overview-value" id="modernOverviewTarget">—</strong><span class="overview-hint">planejamento atual</span></div>
+            <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">teoria + questões + lei seca · todas as matérias</span></div>
+        </section>
+
+        <section class="retention-diagnostic-panel" id="retentionDiagnosticPanel" aria-label="Retenção e diagnóstico">
+            <div class="retention-diagnostic-head">
+                <div>
+                    <h3>Retenção e Diagnóstico</h3>
+                    <p class="retention-diagnostic-subtitle">Memória estimada a partir das sessões, revisões e desempenho em questões.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="openOpportunityStudyModal()">Estudar agora</button>
+            </div>
+            <div id="retentionExamPhase" class="exam-phase-strip"><strong>Estratégia da prova</strong><span>Data da prova não definida.</span></div>
+            <div class="retention-metric-grid">
+                <div class="retention-metric"><span>Retenção média</span><strong id="retentionDiagAverage">—</strong></div>
+                <div class="retention-metric"><span>Assuntos em risco</span><strong id="retentionDiagRisk">0</strong></div>
+                <div class="retention-metric"><span>Revisões vencidas</span><strong id="retentionDiagOverdue">0</strong></div>
+                <div class="retention-metric"><span>Assuntos dominados</span><strong id="retentionDiagMastered">0</strong></div>
+            </div>
+            <div class="critical-queue-head"><strong>Pontos críticos</strong><span>Ordem calculada por risco, prioridade, retenção e desempenho.</span></div>
+            <div id="retentionDiagnosticRiskList" class="retention-risk-list"></div>
+        </section>
+
+        <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
+        <div class="action-bar">
+            <button class="btn-action" onclick="handleActionButton(this, forceFullSync)">Sincronizar Agora</button>
+            <button class="btn-action" onclick="handleActionButton(this, openModalViewEdital)">Ver / Anexar Edital PDF</button>
+            <label class="btn-action" style="cursor: pointer;">
+                Importar JSON
+                <input type="file" id="jsonInput" accept=".json" style="display: none;" onchange="handleActionButton(this.parentElement, importJSON, event)">
+            </label>
+            <button class="btn-action" onclick="handleActionButton(this, openModalAnaliseEditalIA)">Analisar Edital com IA</button>
+            <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
+            <button class="btn-action" type="button" onclick="clearData()">Limpar Edital Atual</button>
+                    </div>
+
+        <!-- TAB 1: EDITAL VERTICALIZADO -->
+        <div id="tab-edital" class="tab-content active">
+            <div class="grid-top">
+                <div class="card pomodoro-card">
+                    <h3 class="dashboard-panel-title">Relógio Pomodoro</h3>
+                    <div class="pomodoro-hero">
+                        <div class="pomodoro-ring-shell">
+                            <div class="pomodoro-ring" id="pomodoroRing" style="--timer-progress:0;">
+                                <div class="timer-display" id="timer" aria-live="polite">
+                                    <span class="timer-display-number">40</span>
+                                    <span class="timer-display-unit">min</span>
+                                    <span class="timer-display-meta">00s • foco</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pomodoro-actions">
+                        <button class="btn btn-primary" id="startTimerBtn" onclick="startFocusTimer()">Foco</button>
+                        <button class="btn btn-secondary" id="intervalTimerBtn" onclick="startIntervalTimer()">Intervalo</button>
+                        <button class="btn btn-warning" id="pauseTimerBtn" onclick="togglePauseTimer()" disabled>Pausar</button>
+                        <button class="btn btn-secondary" id="completeFocusBtn" onclick="completeFocusSessionNow()" disabled>Concluir sessão</button>
+                        <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
+                    </div>
+                    <div class="timer-settings">
+                        <label>Foco (min): <input type="number" id="focoMin" value="40" min="1" onchange="updateTimerSettings()"></label>
+                        <label>Intervalo (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
+                    </div>
+
+                    <div class="pomodoro-daily-panel">
+                        <h4>Horas Pomodoro do Dia</h4>
+                        <div class="pomodoro-daily-stats">
+                            <div class="pomodoro-daily-stat">
+                                <span class="pomodoro-daily-value" id="generalPomodoroTotal">00:00</span>
+                                <span class="pomodoro-daily-label">Horas Gerais</span>
+                            </div>
+                            <div class="pomodoro-daily-stat">
+                                <span class="pomodoro-daily-value" id="dailyPomodoroTotal">00:00</span>
+                                <span class="pomodoro-daily-label">Estudado Hoje</span>
+                            </div>
+                            <div class="pomodoro-daily-stat">
+                                <span class="pomodoro-daily-value" id="dailyPomodoroTarget">Sem meta</span>
+                                <span class="pomodoro-daily-label">Meta Diária</span>
+                            </div>
+                        </div>
+                        <div class="pomodoro-progress-track" aria-hidden="true">
+                            <div class="pomodoro-progress-fill" id="dailyPomodoroProgress"></div>
+                        </div>
+                        <div class="pomodoro-daily-status" id="dailyPomodoroStatus">Gere um cronograma para definir a meta diária.</div>
+                        <div class="active-study-context" id="activeStudyContextBox">
+                            <div class="active-study-context-copy">
+                                <span class="active-study-context-label">Estudando agora</span>
+                                <span class="active-study-context-title" id="activeStudyContextTitle"></span>
+                            </div>
+                            <button class="active-study-context-clear" type="button" onclick="clearActiveStudyContext()" title="Desvincular matéria">Limpar</button>
+                        </div>
+                        <button class="btn btn-danger btn-sm pomodoro-reset-hours" type="button" onclick="resetDailyPomodoroHours()">Resetar Horas do Dia</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="dashboard-panel-title">Progresso Geral de Estudo (%)</h3>
+                    <div class="study-progress-breakdown">
+                        <div class="study-progress-mini"><span>Teoria</span><strong id="studyTheoryProgress">0 / 50%</strong></div>
+                        <div class="study-progress-mini"><span>Questões</span><strong id="studyQuestionsProgress">0 / 50%</strong></div>
+                        <div class="study-progress-mini"><span>Total</span><strong id="studyTotalProgress">0%</strong></div>
+                    </div>
+                    <div class="progress-chart-shell"><canvas id="progressChart" height="180"></canvas></div>
+                    <div class="chart-legend-grid" id="chartLegendGrid"></div>
+                    <div class="subject-hours-panel">
+                        <h4>Horas por Matéria</h4>
+                        <div class="subject-hours-list" id="subjectStudyHoursList"></div>
+                        <div id="studyActivityDistribution" style="margin-top:12px;font-size:.78rem;opacity:.8;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 id="edital-title">Edital Agrupado por Matéria</h3>
+                
+                <form class="form-row edital-manual-form" onsubmit="addManualItem(event)">
+                    <input type="text" id="materia" placeholder="Matéria" required onfocus="openMobileEditalFieldEditor('materia', this)">
+                    <input type="text" id="assunto" placeholder="Assunto" required onfocus="openMobileEditalFieldEditor('assunto', this)">
+                    <input type="number" id="prioridade" placeholder="Importância" value="1" min="1" title="Nível de importância / prioridade">
+                    <div class="edital-manual-actions">
+                        <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
+                        <button type="button" class="btn btn-secondary" onclick="exportMateriasConteudos()" title="Exportar matérias e assuntos do concurso atual em JSON">Exportar Matérias</button>
+                        <button type="button" class="btn btn-danger" onclick="excluirMateriaEspecifica()">Excluir Matéria</button>
+                    </div>
+                </form>
+
+                <div class="edital-guide-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(true)">Expandir Todas as Guias</button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAllAccordions(false)">Recolher Todas as Guias</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr id="editalTableHeaderRow">
+                                <th style="width: 90px;">Prioridade</th>
+                                <th style="text-align: left; padding-left: 1rem;">Assunto</th>
+                                <th>Teoria</th>
+                                <th>Questões</th>
+                                <th>Rev. 1d</th>
+                                <th>Rev. 7d</th>
+                                <th>Rev. 30d</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="edital-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: CRONOGRAMA MENSAL EM GRADE -->
+        <div id="tab-calendario" class="tab-content">
+            <div class="delayed-panel">
+                <div class="delayed-header">
+                    <span class="delayed-title">Revisões / Matérias Agendadas</span>
+                    <span class="badge-delayed" id="delayedBadgeCount">0 pendentes</span>
+                </div>
+
+                <div class="filter-tabs">
+                    <button class="filter-tab active" onclick="filterDelayedList('hoje', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Hoje</button>
+                    <button class="filter-tab" onclick="filterDelayedList('atrasadas', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Atrasadas</button>
+                    <button class="filter-tab" onclick="filterDelayedList('proximas', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Próximas</button>
+                </div>
+
+                <div id="delayedItemsContainer"></div>
+            </div>
+
+            <div class="card calendar-shell-card">
+                <div class="calendar-shell-top">
+                    <div class="calendar-shell-title">
+                        <div class="calendar-shell-icon" aria-hidden="true">📅</div>
+                        <div>
+                            <h3>Calendário de Estudos</h3>
+                            <p>Sua jornada organizada, dia após dia.</p>
+                        </div>
+                    </div>
+
+                    <div class="calendar-shell-nav">
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="goToCurrentMonth()">Hoje</button>
+                        <div class="calendar-month-selectors">
+                            <label><strong>Mês/Ano:</strong></label>
+                            <select id="monthSelect" onchange="onMonthYearChange()"></select>
+                            <select id="yearSelect" onchange="onMonthYearChange()"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="calendar-primary-actions">
+                    <button class="btn btn-primary" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
+                    <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
+                    <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
+                    <button class="btn btn-primary" onclick="reorganizarMateriasCronograma()">Reorganizar Matérias</button>
+                </div>
+
+                <div class="month-calendar-header">
+                    <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                </div>
+                <div class="month-grid" id="monthCalendarGrid"></div>
+
+                <div class="calendar-footer-bar">
+                    <div class="calendar-footer-legend">
+                        <span class="calendar-legend-item selected">Dia selecionado</span>
+                        <span class="calendar-legend-item progress">Progresso do dia</span>
+                        <span class="calendar-legend-item activity">Dia com atividades</span>
+                        <span class="calendar-legend-item idle">Dia sem atividades</span>
+                    </div>
+                    <div class="calendar-footer-summary" id="calendarFooterSummary">Resumo do mês</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ANOTAÇÕES -->
+        <div id="tab-anotacoes" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+                    <h3>Anotações e Caderno de Resumos</h3>
+                    <button class="btn btn-primary" onclick="openModalNovaNota()">Incluir Nota</button>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label><strong>Selecione a Matéria:</strong></label>
+                    <select id="notesMateriaSelect" onchange="renderNotesList()"></select>
+                </div>
+
+                <div id="notesContainer"></div>
+            </div>
+        </div>
+
+        <!-- TAB 4: FLASHCARDS -->
+        <div id="tab-flashcards" class="tab-content">
+            <div class="card">
+                <div class="flashcards-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <h3>Flashcards e Estudo Ativo</h3>
+                    <div class="flashcard-study-actions">
+                        <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados</button>
+                        <button class="btn btn-info" onclick="openModalFiltroEstudoFlashcards()">Estudar Matéria / Assunto Específico</button>
+                    </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem;">
+                    <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">Importação Rápida via Texto (Colar em Lote)</h4>
+                    <p style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 10px;">Escolha a matéria e o assunto que receberão os cartões e cole o conteúdo em lote.</p>
+                    <div class="flashcard-bulk-targets" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                        <select id="fcMateriaSelect" onchange="updateFcAssuntoOptions()" style="flex:1; min-width: 180px;">
+                            <option value="">Selecione a Matéria (Opcional)</option>
+                        </select>
+                        <select id="fcAssuntoSelect" style="flex:1; min-width: 180px;">
+                            <option value="">Selecione o Assunto (Opcional)</option>
+                        </select>
+                    </div>
+                    <textarea id="fcPasteTextArea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza" style="min-height: 120px; font-family: monospace; font-size: 0.88rem; margin-bottom: 10px;"></textarea>
+                    <button class="btn btn-success" onclick="processPastedFlashcardsText()">Converter Texto em Flashcards</button>
+                </div>
+
+                <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:10px;">
+                    <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px; margin:0;">
+                        Flashcards Estilo Anki
+                    </h4>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="exportAllFlashcards()" title="Exportar todos os flashcards deste concurso organizados por matéria e assunto">Exportar Flashcards</button>
+                        <button class="btn btn-primary btn-sm" type="button" onclick="document.getElementById('flashcardsImportFile').click()" title="Importar flashcards exportados de outro concurso">Importar Flashcards</button>
+                        <input id="flashcardsImportFile" type="file" accept="application/json,.json" style="display:none;" onchange="importFlashcardsFromFile(event)">
+                        <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" onclick="setFlashcardViewFilter('', '')" style="display: none;">
+                            Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
+                        </button>
+                    </div>
+                </div>
+
+                <div id="flashcardFoldersContainer" style="margin-bottom: 1.5rem;"></div>
+
+                <div id="flashcardsContainer"></div>
+            </div>
+        </div>
+
+        <nav class="mobile-bottom-nav" aria-label="Navegação principal mobile">
+            <button class="mobile-nav-btn active" type="button" data-tab="tab-edital" onclick="mobileSwitchTab('tab-edital', this)"><span>Edital</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-calendario" onclick="mobileSwitchTab('tab-calendario', this)"><span>Cronograma</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" onclick="mobileSwitchTab('tab-flashcards', this)"><span>Flashcards</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" onclick="mobileSwitchTab('tab-anotacoes', this)"><span>Anotações</span></button>
+            <button class="mobile-nav-btn" type="button" onclick="toggleModernTools()"><span>Mais</span></button>
+            <button id="contextFab" class="mobile-nav-btn mobile-context-action" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo"><span>Novo</span></button>
+        </nav>
+    </div>
+
+    <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
+    <div class="modal-overlay" id="modalFiltroEstudoFC">
+        <div class="modal">
+            <h3>Estudo Focado de Flashcards</h3>
+            <p style="font-size:0.88rem; color:#94a3b8;">Escolha a matéria e/ou assunto específico que você deseja revisar agora:</p>
+            
+            <div class="form-group">
+                <label>Matéria para Estudo:</label>
+                <select id="studyFilterMateria" onchange="updateStudyFilterAssuntoOptions()">
+                    <option value="">Todas as Matérias</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Assunto Específico (Opcional):</label>
+                <select id="studyFilterAssunto">
+                    <option value="">Todos os Assuntos</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalFiltroEstudoFlashcards()">Cancelar (ESC)</button>
+                <button class="btn btn-purple" onclick="startFilteredStudyModal()">Iniciar Treino Focado</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR FLASHCARD -->
+    <div class="modal-overlay" id="modalEditarFlashcard">
+        <div class="modal">
+            <h3>Editar Flashcard</h3>
+            <div class="form-group">
+                <label>Matéria (Opcional)</label>
+                <input type="text" id="editFcMateria">
+            </div>
+            <div class="form-group">
+                <label>Assunto (Opcional)</label>
+                <input type="text" id="editFcAssunto">
+            </div>
+            <div class="form-group">
+                <label>Frente / Pergunta</label>
+                <textarea id="editFcPergunta" style="min-height:80px;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Verso / Resposta</label>
+                <textarea id="editFcResposta" style="min-height:80px;"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalEditarFlashcard()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="salvarEdicaoFlashcard()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INTERNO DE CONFIRMAÇÃO / AVISO (não depende de confirm/alert do navegador) -->
+    <div class="modal-overlay" id="modalAppDialog" style="z-index:1400;">
+        <div class="modal" style="max-width:560px;">
+            <h3 id="appDialogTitle">Confirmar ação</h3>
+            <div id="appDialogMessage" style="white-space:pre-line; line-height:1.55; color:var(--text-color);"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="appDialogCancelBtn" onclick="resolveAppDialog(false)">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="appDialogConfirmBtn" data-enter-default="true" onclick="resolveAppDialog(true)">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIÁLOGO INTERNO DE ENTRADA — evita prompt() nativo e funciona melhor em PWA/mobile -->
+    <div class="modal-overlay" id="modalAppPrompt" style="z-index:1410;">
+        <div class="modal" style="max-width:560px;">
+            <h3 id="appPromptTitle">Editar</h3>
+            <div class="form-group">
+                <label id="appPromptLabel" for="appPromptInput">Valor</label>
+                <input id="appPromptInput" type="text" autocomplete="off">
+                <div id="appPromptHelp" class="account-helper" style="display:none;"></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="resolveAppPrompt(false)">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="appPromptConfirmBtn" data-enter-default="true" onclick="resolveAppPrompt(true)">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.51 — MINHA CONTA / SEGURANÇA / EXCLUSÃO TOTAL -->
+    <div class="modal-overlay" id="modalAccount" style="z-index:1360;">
+        <div class="modal" style="max-width:720px;">
+            <h3>Minha Conta</h3>
+            <div class="account-summary">
+                <span class="account-summary-label">E-mail da conta</span>
+                <span class="account-summary-email" id="accountUserEmail">—</span>
+            </div>
+
+            <section class="account-section">
+                <h4>Segurança</h4>
+                <div class="account-field-grid">
+                    <div class="form-group full">
+                        <label for="accountCurrentPassword">Senha atual</label>
+                        <input type="password" id="accountCurrentPassword" autocomplete="current-password" placeholder="Confirme sua senha atual">
+                    </div>
+                    <div class="form-group">
+                        <label for="accountNewPassword">Nova senha</label>
+                        <input type="password" id="accountNewPassword" autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
+                    </div>
+                    <div class="form-group">
+                        <label for="accountConfirmPassword">Confirmar nova senha</label>
+                        <input type="password" id="accountConfirmPassword" autocomplete="new-password" placeholder="Repita a nova senha">
+                    </div>
+                </div>
+                <div class="account-inline-actions">
+                    <button class="btn btn-primary" type="button" onclick="changeAccountPassword()">Alterar senha</button>
+                </div>
+                <div class="account-helper">A senha atual é validada antes da alteração. A conta permanece conectada após a troca.</div>
+            </section>
+
+            <section class="account-section">
+                <h4>Seus dados</h4>
+                <div class="account-helper">Você pode criar ou restaurar os backups locais já existentes antes de qualquer operação destrutiva.</div>
+                <div class="account-inline-actions">
+                    <button class="btn btn-secondary" type="button" onclick="openBackupFromAccount()">Backup / Restaurar</button>
+                </div>
+            </section>
+
+            <section class="account-section account-danger-zone">
+                <h4>Zona de perigo</h4>
+
+                <div class="account-danger-action">
+                    <h5>Apagar dados e manter a conta</h5>
+                    <p>Remove concursos, edital, cronogramas, sessões, horas, revisões, anotações, flashcards, configurações, PDFs, filas offline e backups. Seu e-mail e login continuam ativos.</p>
+                    <div class="account-field-grid" style="margin-top:12px;">
+                        <div class="form-group">
+                            <label for="accountDeletePassword">Senha atual</label>
+                            <input type="password" id="accountDeletePassword" autocomplete="current-password" placeholder="Confirme sua senha">
+                        </div>
+                        <div class="form-group">
+                            <label for="accountDeleteConfirmation">Digite EXCLUIR</label>
+                            <input type="text" id="accountDeleteConfirmation" autocomplete="off" spellcheck="false" placeholder="EXCLUIR">
+                        </div>
+                    </div>
+                    <div class="account-inline-actions">
+                        <button class="btn btn-danger" type="button" onclick="deleteAllAccountStudyData()">Apagar todos os dados</button>
+                    </div>
+                </div>
+
+                <div class="account-danger-action">
+                    <h5>Excluir minha conta permanentemente</h5>
+                    <p>Remove todos os dados e também exclui o usuário do Supabase Auth. Depois disso, esta conta não poderá entrar novamente com o mesmo login/senha sem realizar um novo cadastro.</p>
+                    <div class="account-field-grid" style="margin-top:12px;">
+                        <div class="form-group">
+                            <label for="accountPermanentDeletePassword">Senha atual</label>
+                            <input type="password" id="accountPermanentDeletePassword" autocomplete="current-password" placeholder="Confirme sua senha">
+                        </div>
+                        <div class="form-group">
+                            <label for="accountPermanentDeleteConfirmation">Digite EXCLUIR CONTA</label>
+                            <input type="text" id="accountPermanentDeleteConfirmation" autocomplete="off" spellcheck="false" placeholder="EXCLUIR CONTA">
+                        </div>
+                    </div>
+                    <div class="account-inline-actions">
+                        <button class="btn btn-danger" type="button" onclick="deleteAccountPermanently()">Excluir minha conta</button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeAccountModal()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.46 — BACKUP LOCAL / RECUPERAÇÃO -->
+    <div class="modal-overlay" id="modalBackupManager" style="z-index:1350;">
+        <div class="modal" style="max-width:760px;">
+            <h3>Backup e Recuperação Local</h3>
+            <div class="backup-help">
+                O Painel mantém automaticamente dois snapshots locais: <strong>Atual</strong> e <strong>Anterior</strong>.
+                Eles protegem concursos, edital verticalizado, cronograma, sessões, horas, progresso, revisões, anotações, flashcards e Lei Seca.
+                PDFs anexados não são duplicados neste backup porque permanecem no armazenamento de arquivos do próprio app.
+            </div>
+            <div class="backup-grid">
+                <div class="backup-slot">
+                    <h4>Backup Atual</h4>
+                    <div id="backupCurrentInfo" class="backup-slot-empty">Verificando…</div>
+                    <button id="restoreCurrentBackupBtn" class="btn btn-primary btn-sm" type="button" onclick="restoreLocalBackup('current')" disabled>Restaurar Atual</button>
+                </div>
+                <div class="backup-slot">
+                    <h4>Backup Anterior</h4>
+                    <div id="backupPreviousInfo" class="backup-slot-empty">Verificando…</div>
+                    <button id="restorePreviousBackupBtn" class="btn btn-secondary btn-sm" type="button" onclick="restoreLocalBackup('previous')" disabled>Restaurar Anterior</button>
+                </div>
+            </div>
+            <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap;">
+                <button class="btn btn-success" type="button" onclick="createBackupNow()">Criar Backup Agora</button>
+                <button class="btn btn-secondary" type="button" onclick="closeBackupManager()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SELEÇÃO DO TIPO DE PREENCHIMENTO DO CRONOGRAMA -->
+    <div class="modal-overlay" id="modalSelectCronogramaType">
+        <div class="modal">
+            <h3>Escolha o Método de Preenchimento</h3>
+            <p style="font-size:0.9rem; opacity:0.85;">Selecione como prefere planejar sua rotina de estudos:</p>
+
+            <div style="display:flex; flex-direction:column; gap:12px; margin: 10px 0;">
+                <div class="hours-option-card" onclick="chooseCronogramaType(1)">
+                    <div>
+                        <strong>Preenchimento 1: Horários Definidos por Turnos</strong>
+                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Define início e carga horária exata para Manhã, Tarde e Noite.</p>
+                    </div>
+                    
+                </div>
+
+                <div class="hours-option-card" onclick="chooseCronogramaType(2)">
+                    <div>
+                        <strong>Preenchimento 2: Dias da Semana + Carga Horária Diária</strong>
+                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Selecione os dias ativos e a quantidade de horas gerais disponíveis.</p>
+                    </div>
+                    
+                </div>
+
+                <div class="hours-option-card" onclick="chooseCronogramaType(3)">
+                    <div>
+                        <strong>Preenchimento 3: Estudo por Oportunidade</strong>
+                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Sem horário e sem meta diária fixa. O app escolhe a melhor atividade quando você disser quanto tempo tem agora.</p>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalSelectCronogramaType()">Cancelar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MÉTODO 2: DIAS DA SEMANA E CARGA HORÁRIA -->
+    <div class="modal-overlay" id="modalMentorisMethod">
+        <div class="modal modal-large">
+            <h3>Configurar Rotina Semanal e Revisão Espaçada</h3>
+            
+            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
+                <label><strong>Data de Início do Cronograma:</strong></label>
+                <input type="date" id="m2DataInicio">
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Quais dias você pode estudar?</h4>
+            <div class="weekday-picker">
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 0)"><strong>D</strong><span>DOM</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 1)"><strong>S</strong><span>SEG</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 2)"><strong>T</strong><span>TER</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 3)"><strong>Q</strong><span>QUA</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 4)"><strong>Q</strong><span>QUI</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 5)"><strong>S</strong><span>SEX</span></div>
+                <div class="weekday-btn selected" onclick="toggleWeekdaySelect(this, 6)"><strong>S</strong><span>SÁB</span></div>
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Quanto tempo por dia você consegue estudar?</h4>
+            <div id="hoursSelectionContainer">
+                <div class="hours-option-card" onclick="selectHoursOption(this, 1)"><span>Até 1h por dia</span></div>
+                <div class="hours-option-card selected" onclick="selectHoursOption(this, 2)"><span>Até 2h por dia</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 4)"><span>Até 4h por dia</span></div>
+                <div class="hours-option-card" onclick="selectHoursOption(this, 5)"><span>5h ou mais</span></div>
+                <div class="hours-option-card" onclick="selectCustomDailyHoursOption(this)"><span>Personalizar horas por dia da semana</span></div>
+            </div>
+            <div id="customDailyHoursPanel" class="custom-daily-hours-panel" style="display:none;">
+                <div class="custom-hours-help">Informe quantas horas livres você realmente possui em cada dia selecionado.</div>
+                <div id="customDailyHoursGrid" class="custom-daily-hours-grid"></div>
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
+            <div class="form-group">
+                <select id="m2RevisionStrategy" style="width:100%;">
+                    <option value="nenhuma">Sem Revisão Espaçada</option>
+                    <option value="retencao_adaptativa">Retenção Adaptativa — Ebbinghaus + desempenho</option>
+                    <option value="revisao24730" selected>Revisão 1d, 7d e 30d</option>
+                    <option value="classica">Revisão Clássica (7d, 30d, 90d)</option>
+                    <option value="bimestral">Revisão Bimestral (1d, 15d, 30d, 60d)</option>
+                    <option value="curta">Revisão Curta (7d, 14d, 21d, 30d)</option>
+                    <option value="semestral">Revisão Semestral (1d, 7d, 28d, 90d, 180d)</option>
+                    <option value="intensiva">Revisão Intensiva (3d, 7d, 14d, 21d, 30d, 45d, 60d)</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalMentorisMethod()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="gerarCronogramaMetodo2()">Gerar Cronograma</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIGURAR HORÁRIOS E TURNOS (MÉTODO 1) -->
+    <div class="modal-overlay" id="modalConfigHorarios">
+        <div class="modal modal-large">
+            <h3>Configurar Horários e Turnos de Estudo (Método 1)</h3>
+            <p style="font-size:0.9rem; opacity:0.85;">
+                Configure seus horários de estudo. O sistema alocará <strong>100% dos tópicos organizados por PRIORIDADE</strong>.
+            </p>
+
+            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
+                <label><strong>Data de Início do Cronograma:</strong></label>
+                <input type="date" id="cfgDataInicio">
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Horários Padrão (Segunda a Sexta):</h4>
+            <div class="shift-box">
+                <span><strong>Manhã Início:</strong> <input type="time" id="cfgManhaInicio" value="10:00"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgManhaQtd" value="1" min="0" max="12" style="width:70px;"></span>
+            </div>
+            <div class="shift-box">
+                <span><strong>Tarde Início:</strong> <input type="time" id="cfgTardeInicio" value="13:00"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgTardeQtd" value="1" min="0" max="12" style="width:70px;"></span>
+            </div>
+            <div class="shift-box">
+                <span><strong>Noite Início:</strong> <input type="time" id="cfgNoiteInicio" value="21:00"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgNoiteQtd" value="1" min="0" max="12" style="width:70px;"></span>
+            </div>
+
+            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Dias de Estudo no Fim de Semana:</h4>
+            <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+                <label><input type="checkbox" id="cfgIncluirSabado" checked> Incluir Sábado</label>
+                <label><input type="checkbox" id="cfgIncluirDomingo" checked> Incluir Domingo</label>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+                <label><strong>Estratégia de Revisões:</strong></label>
+                <select id="m1RevisionStrategy" style="width:100%;">
+                    <option value="nenhuma">Sem revisões automáticas</option>
+                    <option value="retencao_adaptativa">Retenção Adaptativa — Ebbinghaus + desempenho</option>
+                    <option value="revisao24730" selected>1d, 7d e 30d — revisão recomendada</option>
+                    <option value="classica">Clássica — 7d, 30d e 90d</option>
+                    <option value="bimestral">Bimestral — 1d, 15d, 30d e 60d</option>
+                    <option value="curta">Curta — 7d, 14d, 21d e 30d</option>
+                    <option value="semestral">Semestral — 1d, 7d, 28d, 90d e 180d</option>
+                    <option value="intensiva">Intensiva — 3d, 7d, 14d, 21d, 30d, 45d e 60d</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.59 — CONFIGURAÇÃO DO ESTUDO POR OPORTUNIDADE -->
+    <div class="modal-overlay" id="modalFlexibleStudyConfig" style="z-index:1400;">
+        <div class="modal modal-large" style="max-width:860px;">
+            <h3> Estudo por Oportunidade</h3>
+            <p style="font-size:.88rem;color:#94a3b8;line-height:1.5;">Você não precisa definir horários. Informe apenas como cada dia deve se comportar; quando surgir uma oportunidade, toque em <strong>Estudar agora</strong>.</p>
+            <div class="form-group">
+                <label><strong>Data de início:</strong></label>
+                <input type="date" id="flexDataInicio">
+            </div>
+            <h4 style="color:var(--primary-blue);margin-top:.8rem;">Como cada dia deve funcionar?</h4>
+            <div id="flexibleDayModesGrid" class="flex-day-grid"></div>
+            <div style="font-size:.76rem;color:#94a3b8;line-height:1.45;margin:8px 0 14px;">
+                <strong>Estudo completo:</strong> conteúdo novo + revisões. <strong>Somente revisão:</strong> recuperação ativa/flashcards/revisões. <strong>Descanso:</strong> o app não sugere estudo, salvo se você decidir ignorar o descanso naquele momento.
+            </div>
+            <div class="form-group">
+                <label><strong>Estratégia de revisão:</strong></label>
+                <select id="flexRevisionStrategy" style="width:100%;">
+                    <option value="retencao_adaptativa" selected>Retenção Adaptativa — recomendado</option>
+                    <option value="nenhuma">Sem revisões automáticas</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeFlexibleStudyConfig()">Cancelar (ESC)</button>
+                <button class="btn btn-success" type="button" onclick="activateFlexibleStudyMode()">Ativar modo flexível </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.59 — OPORTUNIDADE DE ESTUDO AGORA -->
+    <div class="modal-overlay" id="modalOpportunityStudy" style="z-index:1420;">
+        <div class="modal modal-large" style="max-width:820px;">
+            <h3>Estudar agora</h3>
+            <p id="opportunityModeHint" style="font-size:.84rem;color:#94a3b8;line-height:1.45;">Diga quanto tempo você tem. O sistema cruza memória, desempenho, prioridade, fase da prova e contexto para escolher o assunto e o método de estudo.</p>
+            <h4 style="color:var(--primary-blue);margin-top:.8rem;">Quanto tempo você tem?</h4>
+            <div class="opportunity-time-grid">
+                <button class="opportunity-time-btn" data-minutes="5" onclick="selectOpportunityMinutes(5,this)">5 min</button>
+                <button class="opportunity-time-btn" data-minutes="10" onclick="selectOpportunityMinutes(10,this)">10 min</button>
+                <button class="opportunity-time-btn selected" data-minutes="20" onclick="selectOpportunityMinutes(20,this)">20 min</button>
+                <button class="opportunity-time-btn" data-minutes="40" onclick="selectOpportunityMinutes(40,this)">40 min</button>
+                <button class="opportunity-time-btn" data-minutes="60" onclick="selectOpportunityMinutes(60,this)">60+ min</button>
+            </div>
+            <h4 style="color:var(--primary-blue);margin-top:.7rem;">Onde / como você está?</h4>
+            <div class="opportunity-context-grid">
+                <button class="opportunity-context-btn selected" data-context="any" onclick="selectOpportunityContext('any',this)">Qualquer situação</button>
+                <button class="opportunity-context-btn" data-context="transit" onclick="selectOpportunityContext('transit',this)">Em deslocamento</button>
+                <button class="opportunity-context-btn" data-context="walking" onclick="selectOpportunityContext('walking',this)">Caminhando</button>
+                <button class="opportunity-context-btn" data-context="focus" onclick="selectOpportunityContext('focus',this)">Com foco total</button>
+            </div>
+            <div id="opportunityRecommendations" class="opportunity-recommendations"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeOpportunityStudyModal()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.64 — REVISÃO ATIVA GUIADA -->
+    <div class="modal-overlay" id="modalActiveRecallGuide" style="z-index:1430;">
+        <div class="modal" style="max-width:700px;">
+            <h3>Revisão ativa guiada</h3>
+            <div class="active-recall-summary">
+                <strong id="activeRecallGuideTopic">—</strong>
+                <span id="activeRecallGuideMeta">Tente responder sem consultar o material. Depois use a sessão de foco para conferir e consolidar o conteúdo.</span>
+            </div>
+            <div id="activeRecallGuidePrompts" class="active-recall-guide"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeActiveRecallGuide()">Cancelar (ESC)</button>
+                <button class="btn btn-primary" type="button" onclick="startGuidedActiveRecallSession()" data-enter-default="true">Iniciar revisão</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.65 — REVISÃO POR CAMADAS -->
+    <div class="modal-overlay" id="modalLayeredReview" style="z-index:1440;">
+        <div class="modal" style="max-width:720px;">
+            <h3>Revisão por camadas</h3>
+            <div class="layered-review-summary">
+                <strong id="layeredReviewTopic">—</strong>
+                <span id="layeredReviewMeta">Comece pela intervenção menos custosa capaz de recuperar o conteúdo.</span>
+            </div>
+            <div id="layeredReviewSteps" class="layered-review-list"></div>
+            <div class="layered-review-actions">
+                <button class="btn btn-secondary btn-sm" type="button" onclick="closeLayeredReviewModal()">Fechar (ESC)</button>
+                <button class="btn btn-primary btn-sm" type="button" id="layeredReviewStartRecommended" onclick="startRecommendedLayeredReview()" data-enter-default="true">Iniciar camada recomendada</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- V9.58 — FEEDBACK DE REVISÃO ADAPTATIVA -->
+    <div class="modal-overlay" id="modalAdaptiveReviewFeedback" style="z-index:1410;">
+        <div class="modal" style="max-width:680px;">
+            <h3>Como foi esta revisão?</h3>
+            <div class="adaptive-review-feedback-summary">
+                <strong id="adaptiveReviewFeedbackTopic">—</strong>
+                <span id="adaptiveReviewFeedbackMeta">Avalie o quanto conseguiu recuperar o conteúdo sem ajuda.</span>
+            </div>
+            <div class="adaptive-review-feedback-grid">
+                <button class="adaptive-review-rating forgot" type="button" onclick="submitAdaptiveReviewFeedback('forgot')">
+                    <strong>Esqueci</strong><span>Não consegui recuperar o conteúdo.</span>
+                </button>
+                <button class="adaptive-review-rating hard" type="button" onclick="submitAdaptiveReviewFeedback('hard')">
+                    <strong>Difícil</strong><span>Lembrei com bastante esforço.</span>
+                </button>
+                <button class="adaptive-review-rating good" type="button" onclick="submitAdaptiveReviewFeedback('good')">
+                    <strong>Bom</strong><span>Recuperei bem o conteúdo.</span>
+                </button>
+                <button class="adaptive-review-rating easy" type="button" onclick="submitAdaptiveReviewFeedback('easy')">
+                    <strong>Fácil</strong><span>Lembrei rapidamente e com segurança.</span>
+                </button>
+            </div>
+            <div class="adaptive-review-feedback-note">A avaliação recalibra automaticamente a dificuldade, a estabilidade da memória e a próxima revisão.</div>
+        </div>
+    </div>
+
+    <!-- V9.61 — ACTIVE RECALL ENGINE / RESULTADO DE QUESTÕES -->
+    <div class="modal-overlay" id="modalQuestionPerformance" style="z-index:1420;">
+        <div class="modal" style="max-width:650px;">
+            <h3>Registrar desempenho em questões</h3>
+            <div class="question-performance-summary">
+                <strong id="questionPerformanceTopic">—</strong>
+                <span id="questionPerformanceMeta">Informe apenas o total resolvido e os acertos. O sistema calcula os erros e o impacto na retenção.</span>
+            </div>
+            <div class="question-performance-grid">
+                <div class="form-group">
+                    <label for="questionPerformanceTotal">Questões resolvidas</label>
+                    <input id="questionPerformanceTotal" type="number" min="1" max="500" inputmode="numeric" placeholder="Ex.: 20" oninput="updateQuestionPerformancePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="questionPerformanceCorrect">Acertos</label>
+                    <input id="questionPerformanceCorrect" type="number" min="0" max="500" inputmode="numeric" placeholder="Ex.: 14" oninput="updateQuestionPerformancePreview()">
+                </div>
+            </div>
+            <div class="question-performance-result" id="questionPerformancePreview">Informe os dois valores para calcular o aproveitamento.</div>
+            <div class="question-performance-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeQuestionPerformanceModal()">Registrar depois</button>
+                <button class="btn btn-primary" type="button" onclick="submitQuestionPerformance()" data-enter-default="true">Salvar desempenho</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BUSCA GLOBAL -->
+    <div class="modal-overlay" id="modalGlobalSearch">
+        <div class="modal global-search-dialog" role="dialog" aria-modal="true" aria-labelledby="globalSearchDialogTitle">
+            <div class="global-search-dialog-head">
+                <div>
+                    <h3 id="globalSearchDialogTitle">Pesquisar</h3>
+                    <p>Busque matérias, assuntos, anotações e flashcards do concurso atual.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="closeGlobalSearchModal()">Fechar (ESC)</button>
+            </div>
+            <div class="modern-search-shell global-search-modal-shell">
+                <span class="header-search-mark" aria-hidden="true">⌕</span>
+                <input id="globalStudySearch" type="search" placeholder="Digite ao menos 2 caracteres..." autocomplete="off" oninput="scheduleGlobalStudySearch(this.value)" aria-label="Pesquisar no concurso atual">
+            </div>
+            <div id="globalSearchResults" class="global-search-results global-search-modal-results"></div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIÇÃO MOBILE — MATÉRIA / ASSUNTO -->
+    <div class="modal-overlay" id="modalMobileEditalField">
+        <div class="modal mobile-edital-field-dialog" role="dialog" aria-modal="true" aria-labelledby="mobileEditalFieldTitle">
+            <div class="global-search-dialog-head">
+                <div>
+                    <h3 id="mobileEditalFieldTitle">Editar campo</h3>
+                    <p id="mobileEditalFieldHelp">Digite o conteúdo com mais espaço.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="closeMobileEditalFieldEditor(false)">Cancelar</button>
+            </div>
+            <input id="mobileEditalFieldInput" type="text" autocomplete="off" onkeydown="handleMobileEditalFieldKeydown(event)">
+            <div class="modal-actions mobile-edital-field-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeMobileEditalFieldEditor(false)">Cancelar</button>
+                <button class="btn btn-primary" type="button" onclick="closeMobileEditalFieldEditor(true)" data-enter-default="true">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GERENCIAR CONTEÚDO DO DIA -->
+    <div class="modal-overlay" id="modalDayContent">
+        <div class="modal">
+            <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
+            <div id="dayModalSummary" style="font-size:0.82rem; color:#93c5fd; font-weight:700;"></div>
+            <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
+            <div id="dayTopicsContainer"></div>
+            <div class="day-modal-footer" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
+                <div id="addNewTopicArea">
+                    <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">Adicionar Novo Tópico</button>
+                </div>
+                <div class="modal-actions" style="margin-top:0;">
+                    <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL ANALISAR EDITAL COM IA — UNIVERSAL PARSER V8 -->
+    <div class="modal-overlay" id="modalLegalReading">
+        <div class="modal" style="max-width:720px;">
+            <h3>Lei Seca</h3>
+            <div id="legalReadingContext" style="font-size:.9rem; opacity:.82;"></div>
+            <div class="form-group">
+                <label>Blocos cadastrados para esta matéria</label>
+                <select id="legalReadingBlockSelect" onchange="fillLegalReadingFromSelectedBlock()">
+                    <option value="">Leitura livre / novo bloco</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Norma / diploma legal</label>
+                <input id="legalReadingNorm" type="text" placeholder="Ex.: Lei nº 11.343/2006 — Lei de Drogas">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Artigo inicial</label>
+                    <input id="legalReadingStartArticle" type="text" inputmode="numeric" placeholder="Ex.: 5">
+                </div>
+                <div class="form-group">
+                    <label>Artigo final previsto</label>
+                    <input id="legalReadingEndArticle" type="text" inputmode="numeric" placeholder="Ex.: 10">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Tempo de foco (min)</label>
+                <input id="legalReadingMinutes" type="number" min="1" max="240" value="40">
+            </div>
+            <label style="display:flex;gap:8px;align-items:center;font-size:.86rem;">
+                <input id="legalReadingSaveBlock" type="checkbox" checked> Salvar/atualizar este intervalo na biblioteca de Lei Seca
+            </label>
+            <div style="padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;font-size:.78rem;opacity:.78;">
+                Ao concluir a sessão antes do tempo, o app perguntará qual foi o último artigo efetivamente lido. As horas serão contabilizadas pela mesma base de Teoria e Questões.
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeLegalReadingModal()">Cancelar</button>
+                <button class="btn btn-primary" data-enter-default="true" onclick="startLegalReadingStudy()">Iniciar Lei Seca</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalAnaliseEditalIA">
+        <div class="modal modal-large" style="height:auto; max-height:92vh;">
+            <h3 style="margin-bottom:0;">Analisar Edital com IA</h3>
+            <div class="ai-edital-intro">
+                <strong>Universal Parser V9.20 — análise estrutural adaptativa do edital.</strong><br>
+                O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade usa a escala <strong>P1 = máxima</strong>, <strong>P2 = alta</strong>, <strong>P3 = média</strong> e <strong>P4 = baixa</strong>, sempre com sinais do próprio edital.
+            </div>
+            <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
+            <div class="form-group" style="margin-top:0.8rem;">
+                <label><strong>Cargo / Área / Especialidade:</strong></label>
+                <select id="selectAiCargo" disabled>
+                    <option value="">Detectando a estrutura do conteúdo programático...</option>
+                </select>
+                <small id="aiCargoHint" style="color:#94a3b8; line-height:1.35;">O Painel detectará automaticamente se o edital possui cargos separados ou um único conteúdo programático.</small>
+            </div>
+            <div class="form-group" style="margin-top:0.8rem;">
+                <label><strong>Banca examinadora (opcional nesta fase):</strong></label>
+                <input type="text" id="inputAiBanca" placeholder="Ex.: FCC, FGV, Cebraspe...">
+                <small style="color:#94a3b8; line-height:1.35;">A banca é enviada como contexto, mas a Fase 1 ainda não consulta automaticamente o histórico de questões. Não será inventada frequência histórica.</small>
+            </div>
+            <div id="aiEditalStatus" class="ai-analysis-status" aria-live="polite"></div>
+            <div id="aiEditalPreview" class="ai-analysis-preview"></div>
+            <div class="modal-actions" style="flex-wrap:wrap;">
+                <button class="btn btn-secondary" onclick="closeModalAnaliseEditalIA()">Fechar</button>
+                <button class="btn btn-info" id="btnExecutarAnaliseIA" data-enter-default="true" onclick="executarAnaliseEditalIA()">Analisar Agora</button>
+                <button class="btn btn-success" id="btnImportarAnaliseIA" onclick="importarAnaliseEditalIA()" disabled>Importar para o Edital</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INCLUIR / EDITAR NOTA -->
+    <div class="modal-overlay" id="modalNovaNota">
+        <div class="modal">
+            <h3 id="modalNotaTitle">Nova Nota</h3>
+            <div class="form-group">
+                <label><strong>Matéria Vinculada:</strong></label>
+                <select id="inputNotaMateria" onchange="populateNotaAssuntoDropdown()"></select>
+            </div>
+            <div class="form-group">
+                <label><strong>Assunto Vinculado:</strong></label>
+                <select id="inputNotaAssunto" onchange="handleNotaAssuntoChange()"></select>
+            </div>
+            <div class="form-group" id="notaTituloCustomGroup" style="display:none;">
+                <label><strong>Título da Anotação:</strong></label>
+                <input type="text" id="inputNotaTitulo" placeholder="Digite o título personalizado da anotação...">
+            </div>
+            <div class="form-group">
+                <label><strong>Conteúdo / Resumo / Dicas:</strong></label>
+                <textarea id="inputNotaConteudo" placeholder="Digite aqui o conteúdo da sua nota..." style="min-height:180px;"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalNovaNota()">Cancelar (ESC)</button>
+                <button class="btn btn-success" onclick="salvarNota()">Salvar Nota (ENTER)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ESTUDO FLASHCARDS EMBARALHADOS -->
+    <div class="modal-overlay" id="modalStudyFlashcards">
+        <div class="modal flashcard-study-modal">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 id="studyModalTitle">Sessão de Estudos</h3>
+                <span id="studyModalProgress" style="font-weight:700; color:var(--primary-blue);">0 / 0</span>
+            </div>
+            <div class="flashcard-meta" id="studyCardMeta"></div>
+            <div class="study-card-container" onclick="toggleStudyCardAnswer()">
+                <div class="study-card-inner">
+                    <p style="font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;" id="studyCardLabel">Pergunta (Clique para virar)</p>
+                    <h3 id="studyCardText" style="font-size:1.25rem; font-weight:700;"></h3>
+                </div>
+            </div>
+            <div class="modal-actions flashcard-study-modal-actions">
+                <button class="btn btn-secondary" onclick="closeStudyModal()">Sair do Treino</button>
+                <button class="btn btn-info" onclick="toggleStudyCardAnswer()">Virar Cartão</button>
+                <button class="btn btn-primary" onclick="nextStudyCard()">Próximo </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL VIEW EDITAL PDF -->
+    <div class="modal-overlay" id="modalViewEdital">
+        <div class="modal modal-large">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <h3 id="editalModalTitle">Documento do Edital</h3>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <label class="btn btn-success btn-sm" style="cursor: pointer;">
+                        Anexar Novo Arquivo
+                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" style="display: none;" onchange="uploadEditalFile(event)">
+                    </label>
+                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">Baixar Arquivo</button>
+                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Apagar Edital</button>
+                </div>
+            </div>
+            <div id="editalViewerContainer" style="flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
+                <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PROMPT IA -->
+    <div class="modal-overlay" id="modalPromptIA">
+        <div class="modal">
+            <h3>Prompt para Colar na IA</h3>
+            <div class="prompt-code-box" id="promptTextToCopy">Prompt:
+
+"Analise o edital/conteúdo programático em anexo e o histórico da banca examinadora [Insira a Banca]. Gere como resposta apenas um código JSON válido seguindo estritamente o formato:
+
+{
+  "concurso": "Nome do Concurso",
+  "materias": [
+    {
+      "materia": "Nome da Matéria",
+      "prioridade": 1,
+      "peso": 2.0,
+      "assuntos": [
+        "Assunto 1 mais cobrado",
+        "Assunto 2 mais cobrado"
+      ]
+    }
+  ]
+}"</div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="copyPromptToClipboard()">Copiar Prompt (ENTER)</button>
+                <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar (ESC)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NOVO CONCURSO -->
+    <div class="modal-overlay" id="modalNovoConcurso">
+        <div class="modal">
+            <h3>Cadastrar Novo Concurso</h3>
+            <div class="form-group">
+                <label for="inputNomeConcurso">Nome do Concurso / Cargo</label>
+                <input type="text" id="inputNomeConcurso" placeholder="Ex: TJ-CE Técnico Judiciário">
+            </div>
+            <div class="form-group">
+                <label for="inputDataConcurso">Data da Prova (Opcional)</label>
+                <input type="date" id="inputDataConcurso">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
+                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./app.js?v=10.5.8" defer></script>
+</body>
+</html>
