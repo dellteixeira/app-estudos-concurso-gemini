@@ -1,5 +1,5 @@
-const APP_VERSION = '10.5.8';
-const CACHE_NAME = 'estudo-adaptativo-v10-5-8-pomodoro-alinhamento-respiro-20260816';
+const APP_VERSION = '10.5.9';
+const CACHE_NAME = 'estudo-adaptativo-v10-5-9-pomodoro-alinhamento-titulo-20260816';
 
 const APP_SHELL = [
   './',
