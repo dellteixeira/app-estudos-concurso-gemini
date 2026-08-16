@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.3.0 — Busca Modal e Gradientes por Matéria
+ESTUDO ADAPTATIVO INTELIGENTE — V10.5.0 — Auditoria Mobile Consolidada
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -378,3 +378,17 @@ V10.3.0 — MINIMALISMO DO HEADER + CRONOGRAMA POR PRIORIDADE (16/08/2026)
 - Implementado aviso de reorganização inteligente do cronograma quando prioridades/ordem do Edital Verticalizado forem alteradas.
 - Diagnóstico de retenção redistribuído em uma composição mais equilibrada, preservando a responsividade mobile.
 - CACHE_NAME: estudo-adaptativo-v10-3-0-layout-minimal-prioridade-cronograma-20260816.
+
+
+V10.4.0 — CALENDÁRIO ESTILO PAINEL + AJUSTES DE POMODORO E DIAGNÓSTICO (16/08/2026)
+- Calendário mensal redesenhado com cabeçalho próprio, rodapé-resumo, progresso por dia e cards mais próximos da referência visual escolhida.
+- Painel Retenção e Diagnóstico reorganizado com distribuição em três áreas e texto auxiliar explicativo.
+- Pomodoro ajustado para padronizar hierarquia visual dos títulos e manter Intervalo/Concluir sessão com a mesma linguagem cromática.
+
+
+V10.5.0 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
+- Corrigido espaço lateral desperdiçado no cabeçalho mobile.
+- Ação contextual Novo integrada à barra inferior, eliminando sobreposição sobre os cards.
+- Ajustados alinhamentos, contenção horizontal, gaps e densidade visual em telas pequenas.
+- Auditoria conservadora das regras legadas de CSS documentada em RELATORIO_AUDITORIA_MOBILE_V10_5_0.txt.
+- CACHE_NAME: estudo-adaptativo-v10-5-0-auditoria-mobile-consolidada-20260816.
