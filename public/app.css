@@ -6294,3 +6294,69 @@ body.light-mode .global-search-modal-results.global-search-results { background:
     .retention-metric span { font-size: .65rem !important; }
     .retention-metric strong { font-size: 1.05rem !important; }
 }
+
+
+/* V10.6.0 — Vídeoaula como atividade incremental */
+.btn-study-video {
+    background: linear-gradient(135deg, rgba(14,165,233,.92), rgba(34,211,238,.82)) !important;
+    border-color: rgba(103,232,249,.55) !important;
+    color: #04181f !important;
+}
+.study-status-checks {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+.study-session-action-row .study-launch-controls-primary {
+    min-width:0;
+}
+.study-session-action-row .study-launch-controls-primary .btn {
+    min-width:0 !important;
+    flex:1 1 0 !important;
+    height:48px !important;
+}
+@media (max-width:900px) {
+    .study-status-checks { gap:8px; }
+    .study-session-action-row {
+        display:flex !important;
+        align-items:center !important;
+        gap:7px !important;
+        min-width:0 !important;
+    }
+    .study-session-action-row .study-session-minutes-label {
+        flex:0 0 auto !important;
+    }
+    .study-session-action-row .study-launch-controls-primary {
+        display:flex !important;
+        flex:1 1 auto !important;
+        width:auto !important;
+        min-width:0 !important;
+        gap:5px !important;
+    }
+    .study-session-action-row .study-launch-controls-primary .btn {
+        flex:1 1 0 !important;
+        min-width:0 !important;
+        height:42px !important;
+        padding:0 5px !important;
+        font-size:.64rem !important;
+        white-space:normal !important;
+        line-height:1.05 !important;
+    }
+}
+@media (max-width:520px) {
+    .study-status-checks label { font-size:.78rem; }
+    .study-session-action-row .study-launch-controls-primary .btn {
+        font-size:.58rem !important;
+        padding:0 3px !important;
+    }
+}
+
+
+/* V10.6.1 — método de aquisição no editor Planejar; sem alterações fora deste componente */
+@media (min-width: 901px) {
+    .topic-plan-editor-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+    .topic-plan-editor-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
