@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.1.2">
+    <meta name="app-version" content="10.2.0">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -83,7 +83,7 @@
                     <h2>Estudo Adaptativo Inteligente</h2>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
-                <span class="app-version-badge" title="Versão em execução">V10.1.2</span>
+                <span class="app-version-badge" title="Versão em execução">V10.2.0</span>
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
@@ -246,9 +246,9 @@
                 <h3 id="edital-title">Edital Agrupado por Matéria</h3>
                 
                 <form class="form-row edital-manual-form" onsubmit="addManualItem(event)">
-                    <input type="text" id="materia" placeholder="Matéria (ex: Direito Administrativo)" required>
-                    <input type="text" id="assunto" placeholder="Assunto (ex: Atos Administrativos)" required>
-                    <input type="number" id="prioridade" placeholder="Prioridade" value="1" min="1">
+                    <input type="text" id="materia" placeholder="Matéria" required onfocus="openMobileEditalFieldEditor('materia', this)">
+                    <input type="text" id="assunto" placeholder="Assunto" required onfocus="openMobileEditalFieldEditor('assunto', this)">
+                    <input type="number" id="prioridade" placeholder="Importância" value="1" min="1" title="Nível de importância / prioridade">
                     <div class="edital-manual-actions">
                         <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
                         <button type="button" class="btn btn-secondary" onclick="exportMateriasConteudos()" title="Exportar matérias e assuntos do concurso atual em JSON">Exportar Matérias</button>
@@ -892,6 +892,24 @@
                 <input id="globalStudySearch" type="search" placeholder="Digite ao menos 2 caracteres..." autocomplete="off" oninput="scheduleGlobalStudySearch(this.value)" aria-label="Pesquisar no concurso atual">
             </div>
             <div id="globalSearchResults" class="global-search-results global-search-modal-results"></div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIÇÃO MOBILE — MATÉRIA / ASSUNTO -->
+    <div class="modal-overlay" id="modalMobileEditalField">
+        <div class="modal mobile-edital-field-dialog" role="dialog" aria-modal="true" aria-labelledby="mobileEditalFieldTitle">
+            <div class="global-search-dialog-head">
+                <div>
+                    <h3 id="mobileEditalFieldTitle">Editar campo</h3>
+                    <p id="mobileEditalFieldHelp">Digite o conteúdo com mais espaço.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="closeMobileEditalFieldEditor(false)">Cancelar</button>
+            </div>
+            <input id="mobileEditalFieldInput" type="text" autocomplete="off" onkeydown="handleMobileEditalFieldKeydown(event)">
+            <div class="modal-actions mobile-edital-field-actions">
+                <button class="btn btn-secondary" type="button" onclick="closeMobileEditalFieldEditor(false)">Cancelar</button>
+                <button class="btn btn-primary" type="button" onclick="closeMobileEditalFieldEditor(true)" data-enter-default="true">Aplicar</button>
+            </div>
         </div>
     </div>
 
