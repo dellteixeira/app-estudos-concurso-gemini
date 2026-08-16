@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'9.66.8',
+                    appVersion:'10.0.0',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
