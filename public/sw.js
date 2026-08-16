@@ -1,5 +1,5 @@
-const APP_VERSION = '10.0.0';
-const CACHE_NAME = 'estudo-adaptativo-v10-0-0-design-system-dark-coaching-20260816';
+const APP_VERSION = '10.1.0';
+const CACHE_NAME = 'estudo-adaptativo-v10-1-0-dashboard-composition-20260816';
 
 const APP_SHELL = [
   './',
