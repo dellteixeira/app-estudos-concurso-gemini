@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.2.0',
+                    appVersion:'10.3.0',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -3862,7 +3862,34 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return max;
         }
 
-        async function reorganizarMateriasCronograma() {
+        function hasFutureScheduleItems(contestMeta) {
+            const todayKey = getLocalDateKey(new Date());
+            return Object.entries(contestMeta?.dateSchedule || {}).some(([dateKey, items]) => dateKey >= todayKey && Array.isArray(items) && items.length);
+        }
+
+        async function maybePromptPriorityScheduleRebuild(triggerSource = 'prioridades do edital') {
+            const metadata = getConcursosMetadata();
+            const contestMeta = metadata[currentConcurso] || {};
+            if (priorityDrivenSchedulePromptLock) return false;
+            if (isFlexibleOpportunityMode(contestMeta)) return false;
+            if (!hasFutureScheduleItems(contestMeta)) return false;
+            priorityDrivenSchedulePromptLock = true;
+            try {
+                const ok = await appConfirm(
+                    `As ${triggerSource} foram alteradas no Edital Verticalizado. Deseja reorganizar automaticamente o cronograma futuro com base nessas prioridades?\n\n` +
+                    'Se você aceitar, o sistema preservará o histórico já estudado e recalculará apenas a parte futura do cronograma. Se você não aceitar, o cronograma continuará como está e o aviso voltará a aparecer quando houver uma nova reorganização de prioridades.',
+                    { title:'Cronograma pode ser reorganizado', confirmText:'Aceitar reorganização', cancelText:'Manter como está', confirmClass:'btn-primary' }
+                );
+                if (!ok) return false;
+                await reorganizarMateriasCronograma({ skipConfirm:true, noticeContext:'priority-sync' });
+                return true;
+            } finally {
+                priorityDrivenSchedulePromptLock = false;
+            }
+        }
+
+        async function reorganizarMateriasCronograma(options = {}) {
+            const { skipConfirm = false, noticeContext = 'manual' } = options || {};
             if (!editalItems.length) { await appNotice('Não há matérias no edital atual para reorganizar.'); return; }
             const metadata = getConcursosMetadata();
             if (isFlexibleOpportunityMode(metadata[currentConcurso] || {})) {
@@ -3876,12 +3903,16 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const pendingCount = countWeightedInterleavingRemaining(pendingState);
             if (!pendingCount) { await appNotice('Todos os tópicos do edital já foram estudados. Não há matérias pendentes para redistribuir.'); return; }
 
-            const ok = await appConfirm(
-                `Reorganizar ${pendingCount} tópicos pendentes a partir de hoje?\n\n` +
-                'O histórico dos dias anteriores será preservado. A redistribuição será adaptativa: o sistema combinará peso, prioridade P1–P4, retenção, revisões vencidas, desempenho em questões, urgência dos tópicos e proximidade da prova. Também evitará repetir a mesma matéria consecutivamente quando houver alternativa. Tópicos adicionados manualmente serão incluídos.',
-                { title:'Reorganizar Matérias', confirmText:'Reorganizar', confirmClass:'btn-primary' }
-            );
-            if (!ok) return;
+            if (!skipConfirm) {
+                const ok = await appConfirm(
+                    `Reorganizar ${pendingCount} tópicos pendentes a partir de hoje?
+
+` +
+                    'O histórico dos dias anteriores será preservado. A redistribuição será adaptativa: o sistema combinará peso, prioridade P1–P4, retenção, revisões vencidas, desempenho em questões, urgência dos tópicos e proximidade da prova. Também evitará repetir a mesma matéria consecutivamente quando houver alternativa. Tópicos adicionados manualmente serão incluídos.',
+                    { title:'Reorganizar Matérias', confirmText:'Reorganizar', confirmClass:'btn-primary' }
+                );
+                if (!ok) return;
+            }
 
             const cfg = contestMeta.scheduleConfig || {};
             const dailySlots = Math.max(1, Number(cfg.dailySlots) || Number(contestMeta.pomodoroDailyTargetHours) || inferScheduleSlots(oldSchedule, todayKey) || 1);
@@ -3951,7 +3982,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             await saveConcursosMetadata(metadata);
             renderMonthCalendar();
             renderPomodoroDailyCounter();
-            await appNotice('Cronograma reorganizado de forma adaptativa. O histórico anterior foi preservado e a frequência das matérias foi recalculada com peso, prioridade, retenção, revisões vencidas, desempenho em questões, urgência dos tópicos e proximidade da prova. A diversidade entre disciplinas continua protegida.', { title:'Reorganização concluída' });
+            const successMessage = noticeContext === 'priority-sync'
+                ? 'O cronograma foi reorganizado com base nas prioridades do Edital Verticalizado. O histórico estudado foi preservado e a parte futura passou por uma redistribuição inteligente, considerando prioridades, retenção, revisões vencidas, desempenho, urgência dos tópicos e proximidade da prova.'
+                : 'Cronograma reorganizado de forma adaptativa. O histórico anterior foi preservado e a frequência das matérias foi recalculada com peso, prioridade, retenção, revisões vencidas, desempenho em questões, urgência dos tópicos e proximidade da prova. A diversidade entre disciplinas continua protegida.';
+            await appNotice(successMessage, { title:'Reorganização concluída' });
         }
 
         async function limparCronogramaMesAtual() {
@@ -4905,6 +4939,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             await applyMateriaPriority(sourceName, targetPriority);
             await persistMateriaOrder(order);
             filterDataByConcurso();
+            await maybePromptPriorityScheduleRebuild('ordem/prioridade das matérias');
         }
 
         function handleMateriaHeaderClick(event, materiaName) {
@@ -5171,7 +5206,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             return `<td data-study-control="true"><span class="revision-model-note">${offset}d</span><input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAdaptiveRevision(decodeURIComponent('${safeId}'), ${offset}, ${checked})"></td>`;
                         }).join('');
                         htmlParts.push(`
-                            <tr class="adaptive-edital-row" style="--control-count:${2 + activeRevisionOffsets.length}; border-left: 4px solid ${PALETA_SOLIDAS[colorIdx % PALETA_SOLIDAS.length]};">
+                            <tr class="adaptive-edital-row" style="--control-count:${2 + activeRevisionOffsets.length};">
                                 <td>
                                     <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority(decodeURIComponent('${safeId}'), this.value)" title="Prioridade do Assunto">
                                 </td>
@@ -5198,6 +5233,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const val = clampMateriaPriority(newPriority);
             await applyMateriaPriority(materiaName, val);
             filterDataByConcurso();
+            await maybePromptPriorityScheduleRebuild('prioridades das matérias');
         }
 
         async function updateAssuntoPriority(id, newPriority) {
@@ -5207,6 +5243,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 item.assunto_prioridade = val;
                 await saveEditalItemToCloud(item);
                 filterDataByConcurso();
+                await maybePromptPriorityScheduleRebuild('prioridades dos assuntos');
             }
         }
 
@@ -5492,6 +5529,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         let chartRenderSequence = 0;
+        let priorityDrivenSchedulePromptLock = false;
 
         function renderChart() {
             const sequence = ++chartRenderSequence;
@@ -5566,6 +5604,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
 
             const compactMobileChart = window.innerWidth <= 720;
+            const minimalistChart = window.innerWidth > 720;
 
             const progressRailPlugin = {
                 id: 'progressRailPlugin',
@@ -5575,9 +5614,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     if (!meta?.data?.length || !area) return;
                     const chartCtx = chart.ctx;
                     chartCtx.save();
-                    chartCtx.fillStyle = compactMobileChart ? 'rgba(112, 126, 144, 0.22)' : 'rgba(112, 103, 118, 0.42)';
+                    chartCtx.fillStyle = compactMobileChart ? 'rgba(112, 126, 144, 0.16)' : 'rgba(112, 103, 118, 0.24)';
                     meta.data.forEach(bar => {
-                        const width = compactMobileChart ? Math.max(7, Math.min(12, Number(bar.width) || 10)) : Math.max(18, Math.min(30, Number(bar.width) || 24));
+                        const width = compactMobileChart ? Math.max(5, Math.min(8, Number(bar.width) || 7)) : Math.max(10, Math.min(16, Number(bar.width) || 14));
                         const x = bar.x - width / 2;
                         const y = area.top;
                         const h = Math.max(1, area.bottom - area.top);
@@ -5608,10 +5647,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         backgroundColor: barGradients,
                         borderRadius: 999,
                         borderSkipped: false,
-                        maxBarThickness: compactMobileChart ? 12 : 30,
+                        maxBarThickness: compactMobileChart ? 8 : 16,
                         minBarLength: 2,
-                        categoryPercentage: compactMobileChart ? 0.56 : 0.76,
-                        barPercentage: compactMobileChart ? 0.52 : 0.72
+                        categoryPercentage: compactMobileChart ? 0.42 : 0.60,
+                        barPercentage: compactMobileChart ? 0.36 : 0.52
                     }]
                 },
                 plugins: [progressRailPlugin],
