@@ -1,5 +1,5 @@
-const APP_VERSION = '10.3.0';
-const CACHE_NAME = 'estudo-adaptativo-v10-3-0-layout-minimal-prioridade-cronograma-20260816';
+const APP_VERSION = '10.5.0';
+const CACHE_NAME = 'estudo-adaptativo-v10-5-0-auditoria-mobile-consolidada-20260816';
 
 const APP_SHELL = [
   './',
