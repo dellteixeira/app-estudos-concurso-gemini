@@ -1,4 +1,4 @@
-window.APP_VERSION = '10.2.0';
+window.APP_VERSION = '10.3.0';
       window.__pwaRegistration = null;
       window.__pwaUpdateRequested = false;
       window.__pwaUpdateCheckTimer = null;
