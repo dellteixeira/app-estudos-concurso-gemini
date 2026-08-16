@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.5.2 — Auditoria Mobile Consolidada
+ESTUDO ADAPTATIVO INTELIGENTE — V10.5.3 — Auditoria Mobile Consolidada
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -386,7 +386,7 @@ V10.4.0 — CALENDÁRIO ESTILO PAINEL + AJUSTES DE POMODORO E DIAGNÓSTICO (16/0
 - Pomodoro ajustado para padronizar hierarquia visual dos títulos e manter Intervalo/Concluir sessão com a mesma linguagem cromática.
 
 
-V10.5.2 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
+V10.5.3 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
 - Corrigido espaço lateral desperdiçado no cabeçalho mobile.
 - Ação contextual Novo integrada à barra inferior, eliminando sobreposição sobre os cards.
 - Ajustados alinhamentos, contenção horizontal, gaps e densidade visual em telas pequenas.
@@ -394,13 +394,21 @@ V10.5.2 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
 - CACHE_NAME: estudo-adaptativo-v10-5-0-auditoria-mobile-consolidada-20260816.
 
 
-V10.5.2 — RETENÇÃO E DIAGNÓSTICO ALINHADO AO LAYOUT DE REFERÊNCIA (16/08/2026)
+V10.5.3 — RETENÇÃO E DIAGNÓSTICO ALINHADO AO LAYOUT DE REFERÊNCIA (16/08/2026)
 - Removido o texto explicativo extra do painel Retenção e Diagnóstico.
 - Reorganização do painel para espelhar o layout de referência: bloco esquerdo com título/subtítulo/CTA, bloco central com métricas e estratégia da prova, bloco direito com Pontos críticos e mensagem/itens.
 - Ajustes finos de alinhamento, proporção e espaçamento no desktop e preservação da responsividade mobile.
 
 
-V10.5.2 — AJUSTES PONTUAIS DE CALENDÁRIO E CRONOGRAMA (16/08/2026)
+V10.5.3 — AJUSTES PONTUAIS DE CALENDÁRIO E CRONOGRAMA (16/08/2026)
 - Calendário: removida a barra de rolagem interna dos cards do dia e preservado o indicador +N de matérias extras.
 - Cronograma diário: reorganizadas apenas as linhas de botões do modal do dia, com Estudar Teoria/Estudar Questões ao lado da sessão e, abaixo, Apagar/Registrar questões externas/Planejar/Editar.
 - Mantida coerência no mobile sem alterar outros blocos do layout.
+
+
+V10.5.3 — AJUSTES ESTRITAMENTE PONTUAIS DE CALENDÁRIO E MODAL DO DIA (16/08/2026)
+- Removido o botão “Abrir” dos cards do calendário mensal.
+- O indicador de matérias ocultas (+N) passou para o canto superior direito do card do dia, no lugar do antigo botão Abrir.
+- No modal do dia, em desktop, Estudar Teoria e Estudar Questões ficam ao lado do campo Sessão/min na mesma linha.
+- Na linha inferior ficaram: Apagar, Planejar, Editar e Registrar questões externas.
+- Nenhum outro bloco de layout foi alterado nesta versão.
