@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.5.0 — Auditoria Mobile Consolidada
+ESTUDO ADAPTATIVO INTELIGENTE — V10.5.2 — Auditoria Mobile Consolidada
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -386,9 +386,21 @@ V10.4.0 — CALENDÁRIO ESTILO PAINEL + AJUSTES DE POMODORO E DIAGNÓSTICO (16/0
 - Pomodoro ajustado para padronizar hierarquia visual dos títulos e manter Intervalo/Concluir sessão com a mesma linguagem cromática.
 
 
-V10.5.0 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
+V10.5.2 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
 - Corrigido espaço lateral desperdiçado no cabeçalho mobile.
 - Ação contextual Novo integrada à barra inferior, eliminando sobreposição sobre os cards.
 - Ajustados alinhamentos, contenção horizontal, gaps e densidade visual em telas pequenas.
 - Auditoria conservadora das regras legadas de CSS documentada em RELATORIO_AUDITORIA_MOBILE_V10_5_0.txt.
 - CACHE_NAME: estudo-adaptativo-v10-5-0-auditoria-mobile-consolidada-20260816.
+
+
+V10.5.2 — RETENÇÃO E DIAGNÓSTICO ALINHADO AO LAYOUT DE REFERÊNCIA (16/08/2026)
+- Removido o texto explicativo extra do painel Retenção e Diagnóstico.
+- Reorganização do painel para espelhar o layout de referência: bloco esquerdo com título/subtítulo/CTA, bloco central com métricas e estratégia da prova, bloco direito com Pontos críticos e mensagem/itens.
+- Ajustes finos de alinhamento, proporção e espaçamento no desktop e preservação da responsividade mobile.
+
+
+V10.5.2 — AJUSTES PONTUAIS DE CALENDÁRIO E CRONOGRAMA (16/08/2026)
+- Calendário: removida a barra de rolagem interna dos cards do dia e preservado o indicador +N de matérias extras.
+- Cronograma diário: reorganizadas apenas as linhas de botões do modal do dia, com Estudar Teoria/Estudar Questões ao lado da sessão e, abaixo, Apagar/Registrar questões externas/Planejar/Editar.
+- Mantida coerência no mobile sem alterar outros blocos do layout.
