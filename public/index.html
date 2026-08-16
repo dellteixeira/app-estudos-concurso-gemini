@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.1.1">
+    <meta name="app-version" content="10.1.2">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -83,7 +83,7 @@
                     <h2>Estudo Adaptativo Inteligente</h2>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
-                <span class="app-version-badge" title="Versão em execução">V10.1.1</span>
+                <span class="app-version-badge" title="Versão em execução">V10.1.2</span>
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
@@ -109,11 +109,10 @@
                             <button class="btn btn-secondary btn-sm btn-theme-header" type="button" onclick="toggleDarkMode()" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
                             <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
                         </div>
-                        <div class="modern-search-shell header-search-shell">
-                            <span class="header-search-mark" aria-hidden="true">⌕</span>
-                            <input id="globalStudySearch" type="search" placeholder="Pesquisar matéria, assunto, flashcard ou anotação..." autocomplete="off" oninput="scheduleGlobalStudySearch(this.value)" onfocus="runGlobalStudySearch(this.value)" aria-label="Pesquisar no concurso atual">
-                            <div id="globalSearchResults" class="global-search-results"></div>
-                        </div>
+                        <button class="btn btn-secondary btn-sm btn-search-header" type="button" onclick="openGlobalSearchModal()" title="Pesquisar matéria, assunto, flashcard ou anotação">
+                            <span class="btn-search-header-icon" aria-hidden="true">⌕</span>
+                            <span>Pesquisar</span>
+                        </button>
                     </div>
                 </div>
                 <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
@@ -875,6 +874,24 @@
                 <button class="btn btn-secondary" type="button" onclick="closeQuestionPerformanceModal()">Registrar depois</button>
                 <button class="btn btn-primary" type="button" onclick="submitQuestionPerformance()" data-enter-default="true">Salvar desempenho</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL BUSCA GLOBAL -->
+    <div class="modal-overlay" id="modalGlobalSearch">
+        <div class="modal global-search-dialog" role="dialog" aria-modal="true" aria-labelledby="globalSearchDialogTitle">
+            <div class="global-search-dialog-head">
+                <div>
+                    <h3 id="globalSearchDialogTitle">Pesquisar</h3>
+                    <p>Busque matérias, assuntos, anotações e flashcards do concurso atual.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="closeGlobalSearchModal()">Fechar (ESC)</button>
+            </div>
+            <div class="modern-search-shell global-search-modal-shell">
+                <span class="header-search-mark" aria-hidden="true">⌕</span>
+                <input id="globalStudySearch" type="search" placeholder="Digite ao menos 2 caracteres..." autocomplete="off" oninput="scheduleGlobalStudySearch(this.value)" aria-label="Pesquisar no concurso atual">
+            </div>
+            <div id="globalSearchResults" class="global-search-results global-search-modal-results"></div>
         </div>
     </div>
 
