@@ -4777,3 +4777,152 @@ body.light-mode .global-search-modal-results.global-search-results { background:
     .study-launch-controls .btn[data-mobile-label]::after { font-size:.51rem; }
     #tab-flashcards .flashcard-study-actions .btn { font-size:.63rem !important; padding:.38rem .3rem !important; }
 }
+
+
+/* =========================================================
+   V10.3.0 — MINIMALISMO DO CABEÇALHO, GRÁFICO MAIS FINO,
+   LIMPEZA DO EDITAL E REFINO DO DIAGNÓSTICO
+   ========================================================= */
+@media (min-width: 901px) {
+    .concurso-selector-bar {
+        display:flex !important;
+        flex-wrap:nowrap !important;
+        align-items:center !important;
+        gap:8px !important;
+        overflow:hidden;
+    }
+    .concurso-selector-bar label { flex:0 0 auto; }
+    .concurso-selector-bar select {
+        flex:1 1 300px !important;
+        min-width:250px !important;
+        max-width:none !important;
+    }
+    .concurso-selector-bar > .btn,
+    .concurso-selector-bar > .countdown-badge,
+    .concurso-selector-bar > .sync-status-pill,
+    .header-account-actions .btn,
+    .btn-search-header {
+        height:38px !important;
+        min-height:38px !important;
+        padding:0 10px !important;
+        border-radius:12px !important;
+        font-size:.78rem !important;
+    }
+    .header-utility-cluster {
+        flex:0 0 auto !important;
+        width:auto !important;
+        display:flex !important;
+        align-items:center !important;
+        gap:8px !important;
+    }
+    .header-account-actions {
+        display:flex !important;
+        flex-wrap:nowrap !important;
+        align-items:center !important;
+        justify-content:flex-end !important;
+        gap:8px !important;
+        width:auto !important;
+    }
+    .header-account-actions .btn {
+        white-space:nowrap !important;
+        min-width:auto !important;
+    }
+}
+@media (min-width: 901px) and (max-width: 1350px) {
+    .concurso-selector-bar { gap:6px !important; }
+    .concurso-selector-bar > .btn,
+    .concurso-selector-bar > .countdown-badge,
+    .concurso-selector-bar > .sync-status-pill,
+    .header-account-actions .btn,
+    .btn-search-header {
+        padding:0 8px !important;
+        font-size:.72rem !important;
+    }
+    .header-account-actions { gap:6px !important; }
+    .btn-theme-header { max-width:132px; }
+}
+
+.progress-chart-shell {
+    height:165px !important;
+    min-height:165px !important;
+    padding:10px 10px 2px !important;
+}
+.progress-chart-shell canvas {
+    max-height:165px !important;
+}
+@media (max-width: 700px) {
+    .progress-chart-shell {
+        height:158px !important;
+        min-height:158px !important;
+        padding:10px 8px 2px !important;
+    }
+    .progress-chart-shell canvas { max-height:158px !important; }
+}
+
+.materia-header-row {
+    box-shadow:none !important;
+}
+#tab-edital tbody tr.adaptive-edital-row {
+    border-left:0 !important;
+    box-shadow:none !important;
+}
+
+.retention-diagnostic-panel {
+    grid-template-columns:minmax(230px, .9fr) minmax(420px, 1.45fr) minmax(320px, 1.15fr) !important;
+    grid-template-areas:
+        "head metrics critical"
+        "phase phase risk" !important;
+    gap:10px 12px !important;
+    align-items:stretch !important;
+}
+.retention-diagnostic-head {
+    align-items:flex-start !important;
+}
+.retention-diagnostic-head .btn {
+    margin-top:2px;
+}
+.retention-metric-grid {
+    gap:8px !important;
+}
+.retention-metric {
+    min-height:58px !important;
+    padding:9px 10px !important;
+}
+.exam-phase-strip {
+    min-height:58px !important;
+    padding:10px 12px !important;
+}
+.critical-queue-head {
+    min-height:58px !important;
+    padding:10px 12px !important;
+    align-items:flex-start !important;
+    justify-content:space-between !important;
+}
+.critical-queue-head span {
+    white-space:normal !important;
+    text-overflow:clip !important;
+    overflow:visible !important;
+    text-align:right !important;
+}
+.retention-risk-list {
+    min-height:58px !important;
+    max-height:none !important;
+    padding:2px 0 0 !important;
+}
+@media (max-width: 1280px) and (min-width: 901px) {
+    .retention-diagnostic-panel {
+        grid-template-columns:minmax(220px,.95fr) minmax(360px,1.25fr) !important;
+        grid-template-areas:
+            "head metrics"
+            "phase phase"
+            "critical risk" !important;
+    }
+}
+@media (max-width: 900px) {
+    .retention-diagnostic-panel {
+        grid-template-columns:1fr !important;
+        grid-template-areas:"head" "phase" "metrics" "critical" "risk" !important;
+        gap:8px !important;
+    }
+    .critical-queue-head span { text-align:left !important; }
+}
