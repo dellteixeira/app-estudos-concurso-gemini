@@ -4936,18 +4936,6 @@ body.light-mode .global-search-modal-results.global-search-results { background:
     margin: 0 0 12px !important;
 }
 
-#intervalTimerBtn,
-#completeFocusBtn {
-    background: linear-gradient(135deg, rgba(34,211,238,.22), rgba(83,227,213,.16)) !important;
-    border-color: rgba(83,227,213,.45) !important;
-    color: #bffaf3 !important;
-    box-shadow: none !important;
-}
-#intervalTimerBtn:disabled,
-#completeFocusBtn:disabled {
-    opacity: .52;
-    filter: saturate(.8);
-}
 
 .retention-diagnostic-panel {
     grid-template-columns: minmax(240px, .95fr) minmax(360px, 1.25fr) minmax(420px, 1.6fr);
@@ -5872,5 +5860,159 @@ body.light-mode .global-search-modal-results.global-search-results { background:
         padding: 2px 6px;
         font-size: .66rem;
         border-radius: 8px;
+    }
+}
+
+
+/* V10.5.4 — somente Pomodoro e linhas de ação do modal do dia */
+/* Pomodoro: título na mesma linha visual do título do painel de progresso. */
+.grid-top > .pomodoro-card > .dashboard-panel-title {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+    margin: 0 0 9px !important;
+    padding: 0 !important;
+    font-size: 1.28rem !important;
+    line-height: 1.1 !important;
+}
+.grid-top > .card > .dashboard-panel-title {
+    margin-top: 0 !important;
+}
+.pomodoro-card {
+    padding: 14px !important;
+    row-gap: 10px !important;
+}
+.pomodoro-hero {
+    min-height: 205px !important;
+}
+.pomodoro-actions {
+    align-self: center !important;
+}
+.timer-settings {
+    align-self: center !important;
+}
+
+/* Modal do dia: estrutura solicitada, sem interferir nos demais layouts. */
+.day-topic-status-inline {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+}
+.study-status-checks {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex: 0 0 auto !important;
+}
+.study-session-action-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+}
+.study-session-action-row .study-session-minutes-label {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    margin: 0 !important;
+}
+.study-session-action-row .study-launch-controls-primary {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+}
+.study-session-action-row .study-launch-controls-primary .btn {
+    min-width: 132px !important;
+    min-height: 38px !important;
+    padding: .4rem .62rem !important;
+    font-size: .72rem !important;
+    white-space: nowrap !important;
+}
+.study-launch-controls-secondary {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+.study-launch-controls-secondary .btn {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+}
+
+@media (max-width: 900px) {
+    .grid-top > .pomodoro-card > .dashboard-panel-title {
+        font-size: 1.16rem !important;
+    }
+    .pomodoro-card {
+        padding: 13px !important;
+    }
+    .day-topic-status-inline {
+        gap: 8px !important;
+    }
+    .study-status-checks {
+        width: 100% !important;
+    }
+    .study-session-action-row {
+        width: 100% !important;
+        gap: 5px !important;
+    }
+    .study-session-action-row .study-session-minutes-label {
+        flex: 0 0 auto !important;
+    }
+    .study-session-action-row .study-launch-controls-primary {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+        flex: 1 1 auto !important;
+        gap: 5px !important;
+    }
+    .study-session-action-row .study-launch-controls-primary .btn {
+        min-width: 0 !important;
+        width: 100% !important;
+        padding: .34rem .25rem !important;
+        font-size: .64rem !important;
+    }
+    .study-launch-controls-secondary {
+        display: grid !important;
+        grid-template-columns: auto auto auto minmax(0,1fr) !important;
+        gap: 5px !important;
+    }
+    .study-launch-controls-secondary .btn {
+        min-width: 0 !important;
+        padding: .35rem .48rem !important;
+        font-size: .65rem !important;
+    }
+    .study-launch-controls-secondary .btn-register-question-result {
+        width: 100% !important;
+        white-space: normal !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .study-session-action-row {
+        gap: 4px !important;
+    }
+    .study-session-minutes-label > span:first-child {
+        font-size: .68rem !important;
+    }
+    .study-minutes-input {
+        width: 48px !important;
+        min-width: 48px !important;
+    }
+    .study-session-action-row .study-launch-controls-primary .btn {
+        font-size: .59rem !important;
+        line-height: 1.05 !important;
+        padding: .3rem .18rem !important;
+    }
+    .study-launch-controls-secondary {
+        grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+    }
+    .study-launch-controls-secondary .btn {
+        width: 100% !important;
+        font-size: .64rem !important;
     }
 }
