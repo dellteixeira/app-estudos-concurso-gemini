@@ -6129,3 +6129,12 @@ body.light-mode .global-search-modal-results.global-search-results { background:
         padding-top: 12px !important;
     }
 }
+
+
+/* V10.5.9 — alinhamento vertical exclusivo do título do Pomodoro */
+@media (min-width: 901px) {
+    .grid-top > .pomodoro-card > .dashboard-panel-title {
+        padding-top: 18px !important;
+        margin-bottom: 8px !important;
+    }
+}
