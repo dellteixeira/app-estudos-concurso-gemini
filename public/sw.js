@@ -1,5 +1,5 @@
-const APP_VERSION = '10.5.2';
-const CACHE_NAME = 'estudo-adaptativo-v10-5-2-calendario-cronograma-pontual-20260816';
+const APP_VERSION = '10.5.3';
+const CACHE_NAME = 'estudo-adaptativo-v10-5-3-ajustes-pontuais-calendario-dia-20260816';
 
 const APP_SHELL = [
   './',
