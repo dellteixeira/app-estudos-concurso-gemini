@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.5.2',
+                    appVersion:'10.5.3',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -2409,9 +2409,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                 </div>
                                 <div class="study-launch-controls study-launch-controls-secondary">
                                     <button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia" data-mobile-label="Apagar">Apagar</button>
-                                    <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})" title="Registra desempenho de questões feitas fora do timer, sem adicionar minutos" data-mobile-label="Questões externas">Registrar questões externas</button>
                                     ${matchedItem && !isRevisionScheduleText(topicoStr) ? `<button class="btn btn-info btn-sm" onclick="showStudyPlanEditor(${idx})" data-mobile-label="Planejar">Planejar</button>` : ''}
                                     <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button>
+                                    <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})" title="Registra desempenho de questões feitas fora do timer, sem adicionar minutos" data-mobile-label="Questões externas">Registrar questões externas</button>
                                 </div>
                                 ${isLegalStudyMateria(matchedItem.materia) ? `<div class="study-launch-controls study-launch-controls-legal-row"><button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})" data-mobile-label="Lei Seca">Lei Seca</button></div>` : ''}
                             ` : ''}
@@ -3659,9 +3659,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     }
                 });
 
-                if (items.length > 2) {
-                    badgeParts.push(`<div class="clean-subject-more">+${items.length - 2}</div>`);
-                }
 
                 const allDone = items.length > 0 && completedCount === items.length;
                 const isOverdue = items.length > 0 && dateKey < todayKey && !allDone;
@@ -3690,7 +3687,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     <div class="month-day-cell ${isToday ? 'today' : ''} ${studyDayStateClass}" data-date-key="${dateKey}" onclick="openModalDayContent('${dateKey}')" role="button" tabindex="0" aria-label="Dia ${day}, ${items.length} itens agendados">
                         <div class="day-num-header">
                             <span class="day-num-value">${day}</span>
-                            <button class="btn btn-secondary btn-sm day-open-btn" style="padding:0 8px; font-size:0.72rem;" title="Abrir dia" tabindex="-1">Abrir</button>
+                            ${items.length > 2 ? `<span class="day-extra-counter" title="${items.length - 2} matérias ocultas">+${items.length - 2}</span>` : `<span class="day-extra-counter is-empty"></span>`}
                         </div>
                         ${progressMeta}
                         <div class="day-badges-scroll ${items.length === 0 ? 'is-empty' : ''}">${badgeParts.join('')}</div>
