@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="9.66.6">
+    <meta name="app-version" content="9.66.8">
     <meta name="theme-color" content="#0f172a">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -83,7 +83,7 @@
                     <h2>Estudo Adaptativo Inteligente</h2>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
-                <span class="app-version-badge" title="Versão em execução">V9.66.6</span>
+                <span class="app-version-badge" title="Versão em execução">V9.66.8</span>
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
@@ -103,8 +103,18 @@
                         <span id="syncStatusText">Verificando…</span>
                         <span id="syncStatusLast" class="sync-last"></span>
                     </div>
-                    <button class="btn btn-secondary btn-sm btn-account-header" type="button" onclick="openAccountModal()" title="Abrir dados e segurança da conta">Conta</button>
-                    <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
+                    <div class="header-utility-cluster" aria-label="Conta, aparência e pesquisa">
+                        <div class="header-account-actions">
+                            <button class="btn btn-secondary btn-sm btn-account-header" type="button" onclick="openAccountModal()" title="Abrir dados e segurança da conta">Conta</button>
+                            <button class="btn btn-secondary btn-sm btn-theme-header" type="button" onclick="toggleDarkMode()" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
+                            <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
+                        </div>
+                        <div class="modern-search-shell header-search-shell">
+                            <span class="header-search-mark" aria-hidden="true">⌕</span>
+                            <input id="globalStudySearch" type="search" placeholder="Pesquisar matéria, assunto, flashcard ou anotação..." autocomplete="off" oninput="scheduleGlobalStudySearch(this.value)" onfocus="runGlobalStudySearch(this.value)" aria-label="Pesquisar no concurso atual">
+                            <div id="globalSearchResults" class="global-search-results"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
                     <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
@@ -115,13 +125,6 @@
             </div>
         </header>
 
-        <section class="modern-command-center" aria-label="Busca e ferramentas">
-            <div class="modern-search-shell">
-                
-                <input id="globalStudySearch" type="search" placeholder="Pesquisar matéria, assunto, flashcard ou anotação..." autocomplete="off" oninput="scheduleGlobalStudySearch(this.value)" onfocus="runGlobalStudySearch(this.value)">
-            </div>
-            <div id="globalSearchResults" class="global-search-results"></div>
-        </section>
 
         <section class="study-overview-grid" aria-label="Resumo de estudos">
             <div class="overview-card accent"><span class="overview-label">Progresso Geral</span><strong class="overview-value" id="modernOverviewProgress">0%</strong><span class="overview-hint">edital verticalizado</span></div>
@@ -162,8 +165,7 @@
             <button class="btn-action" onclick="handleActionButton(this, openModalAnaliseEditalIA)">Analisar Edital com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
             <button class="btn-action" type="button" onclick="clearData()">Limpar Edital Atual</button>
-            <button class="btn-action" onclick="handleActionButton(this, toggleDarkMode)">Modo Claro/Escuro</button>
-        </div>
+                    </div>
 
         <!-- TAB 1: EDITAL VERTICALIZADO -->
         <div id="tab-edital" class="tab-content active">
