@@ -1,0 +1,36 @@
+name: Mirror GitHub to GitLab
+
+on:
+  push:
+  delete:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-gitlab
+  cancel-in-progress: true
+
+jobs:
+  mirror:
+    name: Sync repository to GitLab
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Create bare clone from GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git clone --bare "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" mirror.git
+
+      - name: Mirror branches and tags to GitLab
+        env:
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git -C mirror.git push --mirror "https://${GITLAB_USERNAME}:${GITLAB_TOKEN}@gitlab.com/dellteixeira-group/app-estudos-concurso-gemini.git"
