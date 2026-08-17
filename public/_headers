@@ -6,7 +6,19 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self'; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://vqtcveixmwiaoweimdik.supabase.co wss://vqtcveixmwiaoweimdik.supabase.co; worker-src 'self' blob:; frame-src 'self' blob:; object-src 'self' blob:; media-src 'self' blob:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
 
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/app.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/app.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/pwa-update.js
   Cache-Control: no-cache, no-store, must-revalidate
 
 /sw.js
@@ -14,3 +26,6 @@
 
 /manifest.json
   Cache-Control: no-cache, must-revalidate
+
+/version.json
+  Cache-Control: no-cache, no-store, must-revalidate
