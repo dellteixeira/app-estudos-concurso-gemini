@@ -1,3 +1,10 @@
+V10.7.8 — AJUSTE TIPOGRÁFICO DE RETENÇÃO E DIAGNÓSTICO
+- Redução dos rótulos Retenção média, Assuntos em risco, Revisões vencidas e Assuntos dominados.
+- Menor peso tipográfico para reforçar o visual minimalista.
+- Aumento do respiro lateral dos textos.
+- Pequeno refinamento no tamanho dos ícones e no espaçamento interno dos cards.
+- Estrutura, métricas, barras e lógica de retenção preservadas.
+
 ESTUDO ADAPTATIVO INTELIGENTE — V10.7.5 — Aquisição Adaptativa de Conteúdo
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
