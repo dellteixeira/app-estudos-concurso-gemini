@@ -11,7 +11,14 @@
     "binding": "ASSETS",
     "run_worker_first": [
       "/api/ai/*",
-      "/vendor/*"
+      "/vendor/*",
+      "/",
+      "/index.html",
+      "/sw.js",
+      "/pwa-update.js",
+      "/app.js",
+      "/app.css",
+      "/version.json"
     ],
     "not_found_handling": "single-page-application"
   },
