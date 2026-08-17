@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.5.8 — Auditoria Mobile Consolidada
+ESTUDO ADAPTATIVO INTELIGENTE — V10.7.0 — Aquisição Adaptativa de Conteúdo
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -386,7 +386,7 @@ V10.4.0 — CALENDÁRIO ESTILO PAINEL + AJUSTES DE POMODORO E DIAGNÓSTICO (16/0
 - Pomodoro ajustado para padronizar hierarquia visual dos títulos e manter Intervalo/Concluir sessão com a mesma linguagem cromática.
 
 
-V10.5.8 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
+V10.6.7 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
 - Corrigido espaço lateral desperdiçado no cabeçalho mobile.
 - Ação contextual Novo integrada à barra inferior, eliminando sobreposição sobre os cards.
 - Ajustados alinhamentos, contenção horizontal, gaps e densidade visual em telas pequenas.
@@ -394,19 +394,19 @@ V10.5.8 — AUDITORIA MOBILE CONSOLIDADA (16/08/2026)
 - CACHE_NAME: estudo-adaptativo-v10-5-0-auditoria-mobile-consolidada-20260816.
 
 
-V10.5.8 — RETENÇÃO E DIAGNÓSTICO ALINHADO AO LAYOUT DE REFERÊNCIA (16/08/2026)
+V10.6.7 — RETENÇÃO E DIAGNÓSTICO ALINHADO AO LAYOUT DE REFERÊNCIA (16/08/2026)
 - Removido o texto explicativo extra do painel Retenção e Diagnóstico.
 - Reorganização do painel para espelhar o layout de referência: bloco esquerdo com título/subtítulo/CTA, bloco central com métricas e estratégia da prova, bloco direito com Pontos críticos e mensagem/itens.
 - Ajustes finos de alinhamento, proporção e espaçamento no desktop e preservação da responsividade mobile.
 
 
-V10.5.8 — AJUSTES PONTUAIS DE CALENDÁRIO E CRONOGRAMA (16/08/2026)
+V10.6.7 — AJUSTES PONTUAIS DE CALENDÁRIO E CRONOGRAMA (16/08/2026)
 - Calendário: removida a barra de rolagem interna dos cards do dia e preservado o indicador +N de matérias extras.
 - Cronograma diário: reorganizadas apenas as linhas de botões do modal do dia, com Estudar Teoria/Estudar Questões ao lado da sessão e, abaixo, Apagar/Registrar questões externas/Planejar/Editar.
 - Mantida coerência no mobile sem alterar outros blocos do layout.
 
 
-V10.5.8 — AJUSTES ESTRITAMENTE PONTUAIS DE CALENDÁRIO E MODAL DO DIA (16/08/2026)
+V10.6.7 — AJUSTES ESTRITAMENTE PONTUAIS DE CALENDÁRIO E MODAL DO DIA (16/08/2026)
 - Removido o botão “Abrir” dos cards do calendário mensal.
 - O indicador de matérias ocultas (+N) passou para o canto superior direito do card do dia, no lugar do antigo botão Abrir.
 - No modal do dia, em desktop, Estudar Teoria e Estudar Questões ficam ao lado do campo Sessão/min na mesma linha.
@@ -414,35 +414,97 @@ V10.5.8 — AJUSTES ESTRITAMENTE PONTUAIS DE CALENDÁRIO E MODAL DO DIA (16/08/2
 - Nenhum outro bloco de layout foi alterado nesta versão.
 
 
-V10.5.8 — AJUSTES PONTUAIS POMODORO E AÇÕES DO DIA (16/08/2026)
+V10.6.7 — AJUSTES PONTUAIS POMODORO E AÇÕES DO DIA (16/08/2026)
 - Alinhado o título Relógio Pomodoro ao título Progresso Geral de Estudo e harmonizados somente os espaçamentos internos do card Pomodoro.
 - Modal do dia: Sessão/min + Estudar Teoria + Estudar Questões passam a integrar a mesma linha estrutural.
 - Linha inferior mantida exclusivamente com Apagar, Planejar, Editar e Registrar questões externas.
 - Nenhum outro layout foi alterado.
 
 
-V10.5.8 — POMODORO: INTERVALO E CONCLUIR SESSÃO IGUAIS AO RESETAR (16/08/2026)
+V10.6.7 — POMODORO: INTERVALO E CONCLUIR SESSÃO IGUAIS AO RESETAR (16/08/2026)
 - Alteração estritamente visual: Intervalo e Concluir sessão agora usam exatamente a mesma classe visual de Resetar (btn-secondary).
 - Removido o estilo ciano específico desses dois botões.
 - Resultado válido nos modos claro e escuro.
 - Nenhum outro layout ou comportamento foi alterado.
 
 
-V10.5.8 — LEI SECA NA MESMA LINHA DAS AÇÕES DE ESTUDO (16/08/2026)
+V10.6.7 — LEI SECA NA MESMA LINHA DAS AÇÕES DE ESTUDO (16/08/2026)
 - Alteração exclusiva do grupo de ações do tópico no modal do calendário.
 - Lei Seca passa a ficar ao lado de Estudar Questões, na mesma linha de Sessão/min, Estudar Teoria e Estudar Questões.
 - Três botões de estudo com altura idêntica e larguras proporcionais, com compactação responsiva no mobile.
 - Nenhum outro bloco de layout foi alterado.
 
 
-V10.5.8 — CORREÇÃO DE CACHE/PWA (16/08/2026)
+V10.6.7 — CORREÇÃO DE CACHE/PWA (16/08/2026)
 - Sem mudança de layout.
 - Eliminado identificador antigo fixo ?v=20260815-9663 dos assets principais.
 - Assets centrais passam a priorizar rede e usar cache apenas como fallback offline.
 - CACHE_NAME: estudo-adaptativo-v10-5-7-cache-busting-assets-20260816.
 
 
-V10.5.8 — AJUSTE EXCLUSIVO DO POMODORO (16/08/2026)
+V10.6.7 — AJUSTE EXCLUSIVO DO POMODORO (16/08/2026)
 - Título Relógio Pomodoro reposicionado alguns pixels para alinhar visualmente sua linha de base ao título Progresso Geral de Estudo (%).
 - Aumentado de forma sutil o respiro antes e dentro do bloco Horas Pomodoro do Dia.
 - Nenhum outro layout ou componente foi alterado.
+
+
+V10.6.7 — ALINHAMENTO VERTICAL EXCLUSIVO DO TÍTULO DO POMODORO (16/08/2026)
+- Título Relógio Pomodoro deslocado verticalmente no desktop para alinhar sua linha-base com Progresso Geral de Estudo (%).
+- O deslocamento ocorre dentro do próprio grid do card, fazendo apenas o conteúdo do Pomodoro acompanhar o novo alinhamento.
+- Nenhum outro layout foi alterado.
+
+
+V10.6.7 — RETENÇÃO E DIAGNÓSTICO RESPONSIVO (16/08/2026)
+- Corrigidas larguras mínimas rígidas que causavam overflow no painel.
+- Separadas as áreas de Pontos críticos e lista de risco no grid para evitar sobreposição.
+- Breakpoints próprios para desktop amplo, desktop estreito/tablet e mobile.
+- Nenhum outro bloco de layout foi alterado.
+- O pacote ZIP não inclui relatórios/auditorias/SHA em .txt.
+
+
+V10.6.7 — VÍDEOAULA INTEGRADA (16/08/2026)
+- Novo checkbox Vídeoaula por assunto no Edital Verticalizado e no modal do dia.
+- Novo botão Vídeoaula vinculado ao Pomodoro com activityType=videoaula.
+- Minutos de Vídeoaula entram em studySessions, Horas Estudadas, Horas por Matéria e distribuição das horas.
+- Retenção registra Vídeoaula como atividade própria com comportamento de construção teórica.
+- O progresso geral permanece 50% Teoria + 50% Questões; Vídeoaula é informação complementar e não cria uma terceira obrigação de conclusão.
+
+
+V10.6.7 — AQUISIÇÃO ADAPTATIVA DE CONTEÚDO (16/08/2026)
+- Automático é o método padrão para todos os tópicos existentes e novos.
+- Progresso: aquisição do conteúdo = 50%; questões = 50%.
+- Automático: Teoria OU Vídeoaula completam os 50% de aquisição.
+- Teoria: apenas Teoria completa os 50%.
+- Vídeoaula: apenas Vídeoaula completa os 50%.
+- Teoria + Vídeoaula: cada modalidade vale 25% do total do assunto; Questões permanecem 50%.
+- Método configurável dentro de Planejar, sem criar um novo painel.
+- Retenção/desempenho baixos podem fazer o motor recomendar Vídeoaula como reforço no modo Automático.
+- studySessions continua sendo a fonte canônica das horas e mantém videoaula como activityType próprio.
+
+
+V10.6.7 — Ajustes pontuais: pontos críticos em grade, lista de estudados hoje no Pomodoro e assinatura by Dell no cabeçalho.
+
+V10.6.7 — Ajuste exclusivo de Retenção e Diagnóstico conforme referência minimalista e responsiva.
+
+V10.6.7 — Correção isolada da marca: nome integral e assinatura by Dell alinhada ao final do título.
+
+V10.6.7 — Ajuste exclusivo de Retenção e Diagnóstico conforme referência 05; cartões críticos inteiros clicáveis, sem botão Revisar.
+
+
+V10.6.7 — Pontos críticos: 2 itens visíveis, botão + para pendências adicionais e modal expansível responsivo.
+
+V10.6.7 — Retenção e Diagnóstico reestruturado para reproduzir a referência 01; 2 pontos críticos visíveis e expansão por +.
+
+V10.6.8 — Remoção visual completa de Retenção e Diagnóstico e correção robusta de atualização PWA entre dispositivos.
+
+
+V10.7.0 — Integridade de horas e atualização multi-dispositivo
+- Horas Estudadas soma permanentemente todas as studySessions do concurso.
+- Reset diário não apaga mais o histórico geral; usa baseline sincronizado.
+- Limpar cronograma preserva studySessions.
+- Limpar Edital Atual é a única ação que zera o histórico do concurso.
+- Sincronização de metadata faz união de studySessions entre dispositivos antes de baixar/enviar.
+- Recuperação preventiva tenta reintroduzir sessões encontradas nos backups locais IndexedDB.
+- Aviso de nova versão restaurado; version.json + Worker-first de assets centrais tornam a atualização robusta inclusive para clientes antigos.
+
+V10.7.0 — Painel Retenção e Diagnóstico restaurado no padrão visual V10.5.8, com responsividade reforçada e sem alterar as correções de horas/sincronização/PWA da V10.6.9.
