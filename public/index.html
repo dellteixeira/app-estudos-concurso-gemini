@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.6.7">
+    <meta name="app-version" content="10.6.8">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -21,13 +21,13 @@
     <meta name="apple-mobile-web-app-title" content="Estudo Adaptativo Inteligente">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <script src="./pwa-update.js?v=10.6.7" defer></script>
+    <script src="./pwa-update.js?v=10.6.8" defer></script>
 
     <script src="./vendor/supabase.js" defer></script>
     <script src="./vendor/chart.umd.min.js" defer></script>
     <!-- PDF.js agora é carregado sob demanda ao abrir o visualizador de edital. -->
     
-    <link rel="stylesheet" href="./app.css?v=10.6.7">
+    <link rel="stylesheet" href="./app.css?v=10.6.8">
 </head>
 <body>
 
@@ -84,7 +84,7 @@
                     <span class="header-brand-signature">by Dell</span>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
-                <span class="app-version-badge" title="Versão em execução">V10.6.7</span>
+                <span class="app-version-badge" title="Versão em execução">V10.6.8</span>
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
@@ -133,29 +133,6 @@
             <div class="overview-card success"><span class="overview-label">Estudado Hoje</span><strong class="overview-value" id="modernOverviewToday">00:00</strong><span class="overview-hint">Pomodoro concluído</span></div>
             <div class="overview-card"><span class="overview-label">Meta Diária</span><strong class="overview-value" id="modernOverviewTarget">—</strong><span class="overview-hint">planejamento atual</span></div>
             <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">teoria + vídeoaula + questões + lei seca · todas as matérias</span></div>
-        </section>
-
-        <section class="retention-diagnostic-panel" id="retentionDiagnosticPanel" aria-label="Retenção e diagnóstico">
-            <div class="retention-diagnostic-head">
-                <div>
-                    <h3>Retenção e Diagnóstico</h3>
-                    <p class="retention-diagnostic-subtitle">Memória estimada a partir das sessões, revisões e desempenho em questões.</p>
-                </div>
-                <button class="btn btn-secondary btn-sm" type="button" onclick="openOpportunityStudyModal()">Estudar agora</button>
-            </div>
-            <div class="retention-center-column">
-                <div class="retention-metric-grid">
-                    <div class="retention-metric"><span>Retenção média</span><strong id="retentionDiagAverage">—</strong></div>
-                    <div class="retention-metric"><span>Assuntos em risco</span><strong id="retentionDiagRisk">0</strong></div>
-                    <div class="retention-metric"><span>Revisões vencidas</span><strong id="retentionDiagOverdue">0</strong></div>
-                    <div class="retention-metric"><span>Assuntos dominados</span><strong id="retentionDiagMastered">0</strong></div>
-                </div>
-                <div id="retentionExamPhase" class="exam-phase-strip"><strong>Estratégia da prova</strong><span>Data da prova não definida.</span></div>
-            </div>
-            <div class="retention-critical-column">
-                <div class="critical-queue-head"><strong>Pontos críticos</strong><span>Ordem calculada por risco, prioridade, retenção e desempenho.</span></div>
-                <div id="retentionDiagnosticRiskList" class="retention-risk-list"></div>
-            </div>
         </section>
 
         <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
@@ -854,19 +831,6 @@
     </div>
 
     <!-- V9.58 — FEEDBACK DE REVISÃO ADAPTATIVA -->
-
-
-    <div class="modal-overlay" id="modalCriticalTopics" style="z-index:1445;">
-        <div class="modal critical-topics-modal" role="dialog" aria-modal="true" aria-labelledby="criticalTopicsModalTitle">
-            <div class="modal-header critical-topics-modal-header">
-                <div>
-                    <h3 id="criticalTopicsModalTitle">Pontos críticos pendentes</h3>
-                    <p>Demais matérias organizadas por risco, prioridade, retenção e desempenho.</p>
-                </div>
-                <button class="modal-close" type="button" onclick="closeCriticalTopicsModal()" aria-label="Fechar">×</button>
-            </div>
-            <div id="criticalTopicsModalList" class="critical-topics-modal-list"></div>
-        </div>
     </div>
 
     <div class="modal-overlay" id="modalAdaptiveReviewFeedback" style="z-index:1410;">
@@ -1167,6 +1131,6 @@
         </div>
     </div>
 
-    <script src="./app.js?v=10.6.7" defer></script>
+    <script src="./app.js?v=10.6.8" defer></script>
 </body>
 </html>
