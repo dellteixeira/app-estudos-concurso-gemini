@@ -1,5 +1,5 @@
-const APP_VERSION = '10.7.1';
-const CACHE_NAME = 'estudo-adaptativo-v10-7-1-retencao-aprovada-20260817';
+const APP_VERSION = '10.7.2';
+const CACHE_NAME = 'estudo-adaptativo-v10-7-2-retencao-corrigida-20260817';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 
 const APP_SHELL = [
