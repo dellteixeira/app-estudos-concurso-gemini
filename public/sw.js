@@ -1,6 +1,6 @@
-const APP_VERSION = '10.7.2';
-const CACHE_NAME = 'estudo-adaptativo-v10-7-2-retencao-corrigida-20260817';
+const APP_VERSION = '10.7.5';
 const CACHE_PREFIX = 'estudo-adaptativo-';
+const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
 const APP_SHELL = [
   './', './index.html', './manifest.json', './version.json', './app.css', './app.js', './pwa-update.js',
@@ -11,7 +11,7 @@ const APP_SHELL = [
 async function primeOfflineAssets() {
   const cache = await caches.open(CACHE_NAME);
   await Promise.allSettled(APP_SHELL.map(async asset => {
-    const response = await fetch(asset, { cache:'no-store' });
+    const response = await fetch(asset, { cache: 'no-store' });
     if (!response || !response.ok) throw new Error(`Falha ao preparar ${asset}`);
     await cache.put(asset, response.clone());
   }));
@@ -19,11 +19,17 @@ async function primeOfflineAssets() {
 
 async function deleteOldAppCaches() {
   const names = await caches.keys();
-  await Promise.all(names.map(name => name !== CACHE_NAME && name.startsWith(CACHE_PREFIX) ? caches.delete(name) : Promise.resolve(false)));
+  await Promise.all(
+    names.map(name =>
+      name !== CACHE_NAME && name.startsWith(CACHE_PREFIX)
+        ? caches.delete(name)
+        : Promise.resolve(false)
+    )
+  );
 }
 
 self.addEventListener('install', event => {
-  // Não usa skipWaiting automaticamente: o usuário volta a receber o aviso "Nova versão disponível".
+  // A ativação continua controlada pelo usuário quando já existe uma versão em execução.
   event.waitUntil(primeOfflineAssets().catch(() => {}));
 });
 
@@ -45,50 +51,75 @@ self.addEventListener('message', event => {
     return;
   }
   if (event.data?.type === 'GET_APP_VERSION' && event.source) {
-    event.source.postMessage({ type:'APP_VERSION', version:APP_VERSION });
+    event.source.postMessage({ type: 'APP_VERSION', version: APP_VERSION });
   }
 });
 
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
+
   const url = new URL(request.url);
   if (url.hostname.includes('supabase.co')) return;
 
   const isNavigation = request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
   if (isNavigation) {
     event.respondWith(
-      fetch(request, { cache:'no-store' })
+      fetch(request, { cache: 'no-store' })
         .then(response => {
-          if (response?.ok) caches.open(CACHE_NAME).then(cache => cache.put('./index.html', response.clone())).catch(() => {});
+          if (response?.ok) {
+            caches.open(CACHE_NAME)
+              .then(cache => cache.put('./index.html', response.clone()))
+              .catch(() => {});
+          }
           return response;
         })
-        .catch(async () => (await caches.match('./index.html')) || (await caches.match('./')) || new Response('Aplicativo indisponível offline.', {status:503}))
+        .catch(async () =>
+          (await caches.match('./index.html')) ||
+          (await caches.match('./')) ||
+          new Response('Aplicativo indisponível offline.', { status: 503 })
+        )
     );
     return;
   }
 
   const isCoreAsset = url.origin === self.location.origin && [
-    '/app.js','/app.css','/pwa-update.js','/sw.js','/index.html','/manifest.json','/version.json'
+    '/app.js', '/app.css', '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json'
   ].some(path => url.pathname.endsWith(path));
 
   if (isCoreAsset) {
     event.respondWith(
-      fetch(request, { cache:'no-store' })
+      fetch(request, { cache: 'no-store' })
         .then(response => {
-          if (response?.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone())).catch(() => {});
+          if (response?.ok) {
+            caches.open(CACHE_NAME)
+              .then(cache => cache.put(request, response.clone()))
+              .catch(() => {});
+          }
           return response;
         })
-        .catch(async () => (await caches.match(request)) || (await caches.match(url.pathname.replace(/^\//,'./'))) || new Response('', {status:503}))
+        .catch(async () =>
+          (await caches.match(request)) ||
+          (await caches.match(url.pathname.replace(/^\//, './'))) ||
+          new Response('', { status: 503 })
+        )
     );
     return;
   }
 
-  event.respondWith(caches.match(request).then(cached => {
-    const network = fetch(request).then(response => {
-      if (response?.ok && url.origin === self.location.origin) caches.open(CACHE_NAME).then(cache => cache.put(request,response.clone())).catch(() => {});
-      return response;
-    }).catch(() => cached);
-    return cached || network;
-  }));
+  event.respondWith(
+    caches.match(request).then(cached => {
+      const network = fetch(request)
+        .then(response => {
+          if (response?.ok && url.origin === self.location.origin) {
+            caches.open(CACHE_NAME)
+              .then(cache => cache.put(request, response.clone()))
+              .catch(() => {});
+          }
+          return response;
+        })
+        .catch(() => cached);
+      return cached || network;
+    })
+  );
 });
