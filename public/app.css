@@ -7319,3 +7319,181 @@ body.light-mode .pomodoro-topic-badge {
     }
     #retentionDiagnosticPanel .retention-risk-row.v965 .btn { display:none !important; }
 }
+
+
+/* V10.6.6 — Pontos críticos: 2 visíveis + expansão por “+”, com texto totalmente responsivo */
+#retentionDiagnosticPanel .critical-queue-head {
+    min-width:0 !important;
+    overflow:hidden !important;
+}
+#retentionDiagnosticPanel .critical-queue-head strong {
+    flex:0 0 auto !important;
+    min-width:0 !important;
+}
+#retentionDiagnosticPanel .critical-queue-head span {
+    flex:1 1 220px !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+    line-height:1.25 !important;
+}
+#retentionDiagnosticPanel .retention-risk-list {
+    position:relative !important;
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    grid-auto-rows:minmax(0,1fr) !important;
+    gap:10px !important;
+    min-width:0 !important;
+    overflow:visible !important;
+}
+#retentionDiagnosticPanel .retention-risk-row.v965 {
+    min-width:0 !important;
+    width:100% !important;
+    overflow:hidden !important;
+    box-sizing:border-box !important;
+}
+#retentionDiagnosticPanel .retention-risk-copy {
+    min-width:0 !important;
+    overflow:hidden !important;
+}
+#retentionDiagnosticPanel .retention-risk-title {
+    display:-webkit-box !important;
+    -webkit-box-orient:vertical !important;
+    -webkit-line-clamp:2 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+    line-height:1.22 !important;
+}
+#retentionDiagnosticPanel .retention-risk-meta,
+#retentionDiagnosticPanel .critical-layer-label {
+    display:block !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+}
+#retentionDiagnosticPanel .retention-risk-value {
+    align-self:center !important;
+    white-space:nowrap !important;
+}
+#retentionDiagnosticPanel .critical-more-btn {
+    position:absolute !important;
+    right:3px !important;
+    bottom:3px !important;
+    width:30px !important;
+    height:30px !important;
+    min-width:30px !important;
+    min-height:30px !important;
+    padding:0 !important;
+    display:grid !important;
+    place-items:center !important;
+    border:0 !important;
+    border-radius:8px !important;
+    background:rgba(7,22,38,.78) !important;
+    color:rgba(242,248,252,.96) !important;
+    font:300 2rem/1 system-ui,sans-serif !important;
+    cursor:pointer !important;
+    z-index:4 !important;
+    transition:background .18s ease, transform .18s ease !important;
+}
+#retentionDiagnosticPanel .critical-more-btn:hover,
+#retentionDiagnosticPanel .critical-more-btn:focus-visible {
+    background:rgba(25,63,91,.92) !important;
+    transform:translateY(-1px) !important;
+    outline:1px solid rgba(120,208,237,.45) !important;
+}
+
+.critical-topics-modal {
+    width:min(900px,calc(100vw - 28px)) !important;
+    max-width:900px !important;
+    max-height:min(82vh,760px) !important;
+    overflow:hidden !important;
+    display:flex !important;
+    flex-direction:column !important;
+}
+.critical-topics-modal-header {
+    display:flex !important;
+    align-items:flex-start !important;
+    justify-content:space-between !important;
+    gap:14px !important;
+}
+.critical-topics-modal-header > div { min-width:0 !important; }
+.critical-topics-modal-header h3 { margin:0 0 4px !important; }
+.critical-topics-modal-header p {
+    margin:0 !important;
+    max-width:62ch !important;
+    font-size:.78rem !important;
+    line-height:1.35 !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+}
+.critical-topics-modal-list {
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px !important;
+    margin-top:14px !important;
+    padding-right:2px !important;
+    overflow:auto !important;
+    min-height:0 !important;
+}
+.critical-topics-modal-list .retention-risk-row {
+    min-width:0 !important;
+    min-height:92px !important;
+    overflow:hidden !important;
+}
+.critical-topics-modal-list .retention-risk-copy { min-width:0 !important; overflow:hidden !important; }
+.critical-topics-modal-list .retention-risk-title {
+    display:-webkit-box !important;
+    -webkit-box-orient:vertical !important;
+    -webkit-line-clamp:2 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    overflow-wrap:anywhere !important;
+}
+.critical-topics-modal-list .retention-risk-meta,
+.critical-topics-modal-list .critical-layer-label {
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+}
+
+@media (max-width:1180px) {
+    #retentionDiagnosticPanel .critical-queue-head {
+        align-items:flex-start !important;
+        flex-wrap:wrap !important;
+        gap:4px 10px !important;
+        height:auto !important;
+        min-height:46px !important;
+    }
+    #retentionDiagnosticPanel .critical-queue-head span {
+        flex-basis:100% !important;
+        text-align:left !important;
+    }
+}
+@media (max-width:720px) {
+    #retentionDiagnosticPanel .retention-risk-list {
+        grid-template-columns:1fr !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 {
+        min-height:88px !important;
+    }
+    .critical-topics-modal-list {
+        grid-template-columns:1fr !important;
+    }
+    .critical-topics-modal-header p { font-size:.72rem !important; }
+}
+
+/* V10.6.6 — garantia final de acomodação do subtítulo de Pontos críticos */
+#retentionDiagnosticPanel .critical-queue-head {
+    height:auto !important;
+    min-height:46px !important;
+}
