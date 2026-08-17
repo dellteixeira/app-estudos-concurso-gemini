@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.7.1">
+    <meta name="app-version" content="10.7.2">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -21,13 +21,13 @@
     <meta name="apple-mobile-web-app-title" content="Estudo Adaptativo Inteligente">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <script src="./pwa-update.js?v=10.7.1" defer></script>
+    <script src="./pwa-update.js?v=10.7.2" defer></script>
 
     <script src="./vendor/supabase.js" defer></script>
     <script src="./vendor/chart.umd.min.js" defer></script>
     <!-- PDF.js agora é carregado sob demanda ao abrir o visualizador de edital. -->
     
-    <link rel="stylesheet" href="./app.css?v=10.7.1">
+    <link rel="stylesheet" href="./app.css?v=10.7.2">
 </head>
 <body>
 
@@ -84,7 +84,7 @@
                     <span class="header-brand-signature">by Dell</span>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
-                <span class="app-version-badge" title="Versão em execução">V10.7.1</span>
+                <span class="app-version-badge" title="Versão em execução">V10.7.2</span>
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
@@ -135,42 +135,42 @@
             <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">todas as sessões: leitura, vídeo, questões e outras fontes</span></div>
         </section>
 
-        <section class="retention-diagnostic-panel retention-dashboard-v1071" id="retentionDiagnosticPanel" aria-label="Retenção e diagnóstico">
-            <div class="retention-diagnostic-head retention-intro-v1071">
+        <section class="retention-diagnostic-panel retention-dashboard-v1072" id="retentionDiagnosticPanel" aria-label="Retenção e diagnóstico">
+            <div class="retention-diagnostic-head retention-intro-v1072">
                 <div>
                     <h3>Retenção e Diagnóstico</h3>
                     <p class="retention-diagnostic-subtitle">Memória estimada a partir das sessões, revisões e desempenho em questões.</p>
                 </div>
-                <button class="btn btn-secondary btn-sm retention-study-now-v1071" type="button" onclick="openOpportunityStudyModal()"><span class="retention-study-now-icon" aria-hidden="true">▣</span>Estudar agora</button>
+                <button class="btn btn-secondary btn-sm retention-study-now-v1072" type="button" onclick="openOpportunityStudyModal()"><span class="retention-study-now-icon" aria-hidden="true">▣</span>Estudar agora</button>
             </div>
-            <div class="retention-center-column retention-center-v1071">
-                <div class="retention-metric-grid retention-metrics-v1071">
-                    <div class="retention-metric retention-metric-v1071" aria-label="Retenção média">
+            <div class="retention-center-column retention-center-v1072">
+                <div class="retention-metric-grid retention-metrics-v1072">
+                    <div class="retention-metric retention-metric-v1072" aria-label="Retenção média">
                         <span class="retention-metric-icon" aria-hidden="true">↗</span>
                         <span class="retention-metric-label">Retenção média</span>
                         <strong id="retentionDiagAverage">—</strong>
                     </div>
-                    <button class="retention-metric retention-metric-v1071 retention-metric-action" type="button" onclick="openRetentionMetricDetails('risk')" aria-label="Abrir assuntos em risco">
+                    <button class="retention-metric retention-metric-v1072 retention-metric-action" type="button" onclick="openRetentionMetricDetails('risk')" aria-label="Abrir assuntos em risco">
                         <span class="retention-metric-icon" aria-hidden="true">△</span>
                         <span class="retention-metric-label">Assuntos em risco</span>
                         <strong id="retentionDiagRisk">0</strong>
                     </button>
-                    <button class="retention-metric retention-metric-v1071 retention-metric-action" type="button" onclick="openRetentionMetricDetails('overdue')" aria-label="Abrir revisões vencidas">
+                    <button class="retention-metric retention-metric-v1072 retention-metric-action" type="button" onclick="openRetentionMetricDetails('overdue')" aria-label="Abrir revisões vencidas">
                         <span class="retention-metric-icon" aria-hidden="true">◷</span>
                         <span class="retention-metric-label">Revisões vencidas</span>
                         <strong id="retentionDiagOverdue">0</strong>
                     </button>
-                    <button class="retention-metric retention-metric-v1071 retention-metric-action" type="button" onclick="openRetentionMetricDetails('mastered')" aria-label="Abrir assuntos dominados">
+                    <button class="retention-metric retention-metric-v1072 retention-metric-action" type="button" onclick="openRetentionMetricDetails('mastered')" aria-label="Abrir assuntos dominados">
                         <span class="retention-metric-icon" aria-hidden="true">✓</span>
                         <span class="retention-metric-label">Assuntos dominados</span>
                         <strong id="retentionDiagMastered">0</strong>
                     </button>
                 </div>
-                <div id="retentionExamPhase" class="exam-phase-strip retention-exam-v1071"><span class="retention-exam-icon" aria-hidden="true">▦</span><strong>Estratégia da prova</strong><span>Data da prova não definida.</span></div>
+                <div id="retentionExamPhase" class="exam-phase-strip retention-exam-v1072"><span class="retention-exam-icon" aria-hidden="true">▦</span><strong>Estratégia da prova</strong><span>Data da prova não definida.</span></div>
             </div>
-            <div class="retention-critical-column retention-critical-v1071">
-                <div class="critical-queue-head retention-critical-head-v1071"><strong>Pontos críticos</strong><span>Ordem calculada por risco, prioridade, retenção e desempenho.</span></div>
-                <div id="retentionDiagnosticRiskList" class="retention-risk-list retention-risk-list-v1071"></div>
+            <div class="retention-critical-column retention-critical-v1072">
+                <div class="critical-queue-head retention-critical-head-v1072"><strong>Pontos críticos</strong><span>Ordem calculada por risco, prioridade, retenção e desempenho.</span></div>
+                <div id="retentionDiagnosticRiskList" class="retention-risk-list retention-risk-list-v1072"></div>
                 <button id="retentionMoreButton" class="retention-more-button" type="button" onclick="openRetentionMoreModal()" aria-label="Ver mais pontos críticos" title="Ver mais pontos críticos" hidden>+</button>
             </div>
         </section>
@@ -1199,6 +1199,6 @@
         </div>
     </div>
 
-    <script src="./app.js?v=10.7.1" defer></script>
+    <script src="./app.js?v=10.7.2" defer></script>
 </body>
 </html>
