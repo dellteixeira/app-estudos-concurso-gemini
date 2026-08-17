@@ -10189,7 +10189,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!hasRealCurrentConcurso()) {
                 set('retentionDiagAverage','—'); set('retentionDiagRisk','0'); set('retentionDiagOverdue','0'); set('retentionDiagMastered','0');
                 setBar('retentionDiagAverageBar',0); setBar('retentionDiagRiskBar',0); setBar('retentionDiagOverdueBar',0); setBar('retentionDiagMasteredBar',0);
-                if(phaseBox) phaseBox.innerHTML='<span class="retention-exam-icon" aria-hidden="true">▦</span><span class="retention-exam-copy"><strong>Selecione um concurso</strong><span>Crie ou selecione um concurso para ativar a estratégia progressiva.</span></span><button class="retention-exam-action" type="button" disabled>Definir data da prova</button>';
+                if(phaseBox) phaseBox.innerHTML='<span class="rd-exam-icon-v1077" aria-hidden="true">▦</span><span class="rd-exam-copy-v1077"><strong>Selecione um concurso</strong><span>Crie ou selecione um concurso para ativar a estratégia progressiva.</span></span><button class="rd-exam-action-v1077" type="button" disabled>Definir data da prova</button>';
                 if(list) list.innerHTML='<div class="retention-empty">Crie ou selecione um concurso para iniciar o diagnóstico.</div>';
                 if(moreButton) moreButton.hidden=true;
                 retentionDiagnosticRows=[]; return;
@@ -10204,7 +10204,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const title = hasExamDate ? `${phase.label}${dayText ? ` · ${dayText}` : ''}` : 'Sem data de prova definida';
                 const guidance = hasExamDate ? phase.guidance : 'Defina a data da prova para ativar a estratégia progressiva.';
                 const actionText = hasExamDate ? 'Alterar data' : 'Definir data da prova';
-                phaseBox.innerHTML = `<span class="retention-exam-icon" aria-hidden="true">▦</span><span class="retention-exam-copy"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(guidance)}</span></span><button class="retention-exam-action" type="button" onclick="editarDataProva()">${escapeHtml(actionText)}</button>`;
+                phaseBox.innerHTML = `<span class="rd-exam-icon-v1077" aria-hidden="true">▦</span><span class="rd-exam-copy-v1077"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(guidance)}</span></span><button class="rd-exam-action-v1077" type="button" onclick="editarDataProva()">${escapeHtml(actionText)}</button>`;
             }
 
             const diag = buildRetentionDiagnostics();
