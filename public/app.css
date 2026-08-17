@@ -6360,3 +6360,171 @@ body.light-mode .global-search-modal-results.global-search-results { background:
 @media (min-width: 641px) and (max-width: 900px) {
     .topic-plan-editor-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
+
+
+/* V10.6.2 — ajustes pontuais solicitados */
+.header-brand-copy {
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+}
+.header-brand-signature {
+    display:block;
+    margin-top:-2px;
+    font-size:.92rem;
+    line-height:1;
+    color:rgba(153,234,225,.82);
+    font-family:"Segoe Script","Brush Script MT",cursive;
+    letter-spacing:.02em;
+    font-weight:500;
+}
+
+.critical-queue-head {
+    padding:10px 14px !important;
+    min-height:unset !important;
+    align-items:center !important;
+}
+.critical-queue-head strong {
+    font-size:1rem !important;
+}
+.critical-queue-head span {
+    font-size:.78rem !important;
+    line-height:1.25 !important;
+}
+.retention-risk-list {
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:10px !important;
+    min-height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+    padding-right:0 !important;
+    align-items:start;
+}
+.retention-risk-row.v965 {
+    min-height:86px;
+    height:100%;
+    align-content:start;
+}
+.retention-risk-title {
+    white-space:normal !important;
+    line-height:1.25;
+}
+.retention-risk-meta,
+.critical-layer-label {
+    white-space:normal;
+}
+
+.pomodoro-daily-panel {
+    gap:16px !important;
+}
+.pomodoro-studied-topics-panel {
+    display:none;
+    margin-top:6px;
+    padding-top:12px;
+    border-top:1px solid rgba(115,151,179,.16);
+}
+.pomodoro-studied-topics-panel h5 {
+    margin:0 0 10px;
+    font-size:.85rem;
+    font-weight:800;
+    letter-spacing:.02em;
+    color:rgba(225,236,245,.92);
+}
+.pomodoro-studied-topics-list {
+    display:grid;
+    gap:8px;
+}
+.pomodoro-topic-entry {
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    gap:8px;
+    align-items:center;
+    padding:9px 10px;
+    border-radius:12px;
+    border:1px solid rgba(92,218,205,.24);
+    background:rgba(9,25,45,.44);
+}
+.pomodoro-topic-badge {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:24px;
+    padding:0 9px;
+    border-radius:999px;
+    background:rgba(44,123,229,.16);
+    border:1px solid rgba(84,190,255,.28);
+    color:rgba(133,211,255,.94);
+    font-size:.68rem;
+    font-weight:800;
+    letter-spacing:.04em;
+    white-space:nowrap;
+}
+.pomodoro-topic-copy {
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+}
+.pomodoro-topic-copy strong {
+    font-size:.82rem;
+    line-height:1.25;
+    color:rgba(237,243,249,.96);
+}
+.pomodoro-topic-copy span {
+    font-size:.72rem;
+    color:rgba(160,184,205,.86);
+}
+.pomodoro-topic-multi {
+    color:rgba(153,234,225,.82);
+    font-size:.7rem;
+    font-weight:800;
+    white-space:nowrap;
+}
+body.light-mode .header-brand-signature {
+    color:rgba(31,122,116,.82);
+}
+body.light-mode .pomodoro-studied-topics-panel {
+    border-top-color:rgba(21,58,88,.1);
+}
+body.light-mode .pomodoro-studied-topics-panel h5 {
+    color:#16324a;
+}
+body.light-mode .pomodoro-topic-entry {
+    background:rgba(255,255,255,.82);
+    border-color:rgba(21,58,88,.12);
+}
+body.light-mode .pomodoro-topic-copy strong {
+    color:#17324a;
+}
+body.light-mode .pomodoro-topic-copy span {
+    color:#4e6377;
+}
+body.light-mode .pomodoro-topic-badge {
+    background:rgba(44,123,229,.1);
+    border-color:rgba(44,123,229,.2);
+    color:#2563eb;
+}
+
+@media (max-width: 1180px) {
+    .retention-risk-list {
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+}
+@media (max-width: 900px) {
+    .header-brand-signature {
+        font-size:.84rem;
+    }
+    .retention-risk-list {
+        grid-template-columns:1fr !important;
+    }
+    .pomodoro-topic-entry {
+        grid-template-columns:1fr;
+        gap:6px;
+    }
+    .pomodoro-topic-badge,
+    .pomodoro-topic-multi {
+        justify-self:start;
+    }
+}
