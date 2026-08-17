@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.7.1',
+                    appVersion:'10.7.2',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -6977,7 +6977,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function removeStudySessionsForDate(dateKey = getLocalDateKey()) {
-            // V10.7.1: bloqueio de segurança. O histórico de estudo é permanente e não pode
+            // V10.7.2: bloqueio de segurança. O histórico de estudo é permanente e não pode
             // ser apagado por reset diário, cronograma ou rotinas auxiliares. A única limpeza
             // autorizada ocorre em clearData(), ao resetar completamente o edital do concurso.
             console.warn(`Remoção de studySessions bloqueada para ${dateKey}. Use Limpar Edital Atual para zerar o histórico.`);
