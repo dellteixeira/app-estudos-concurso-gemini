@@ -1,4 +1,4 @@
-const APP_VERSION = '10.7.8';
+const APP_VERSION = '10.7.9';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
