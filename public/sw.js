@@ -1,5 +1,5 @@
-const APP_VERSION = '10.6.5';
-const CACHE_NAME = 'estudo-adaptativo-v10-6-5-retencao-ref05-20260816';
+const APP_VERSION = '10.6.6';
+const CACHE_NAME = 'estudo-adaptativo-v10-6-6-pontoscriticos-expansivel-20260816';
 
 const APP_SHELL = [
   './',
