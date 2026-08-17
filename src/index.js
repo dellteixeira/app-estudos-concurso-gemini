@@ -7,7 +7,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.7.2";
+const APP_VERSION = "10.7.5";
 const CORE_NO_STORE_PATHS = new Set(["/", "/index.html", "/sw.js", "/pwa-update.js", "/app.js", "/app.css", "/version.json"]);
 
 const VENDOR_ROUTES = {
