@@ -536,3 +536,10 @@ V10.7.6 — Retenção e Diagnóstico: estratégia da prova e métricas sem sobr
 - Padroniza quatro métricas em cards iguais com ícones contextuais e barras de leitura rápida.
 - Mantém responsividade em desktop, tablet e mobile sem alterar a lógica de retenção.
 
+
+V10.7.7 — Correção definitiva do bloco central de Retenção e Diagnóstico
+- Isolado o layout central com classes exclusivas rd-* para eliminar conflitos com CSS legado.
+- Faixa da data da prova posicionada em fluxo próprio acima das métricas, com CTA à direita.
+- Quatro cards de métricas mantidos em uma linha no desktop, 2x2 em tablet e 1 coluna no mobile.
+- Removido do bloco central o reuso das classes legadas exam-phase-strip, retention-metric-grid e retention-center-column.
+- Auditoria de release ampliada para validar ordem do DOM, quatro cards, ausência de classes legadas conflitantes e CSS isolado.
