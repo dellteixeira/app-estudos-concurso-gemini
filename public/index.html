@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.7.9">
+    <meta name="app-version" content="10.8.0">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -1117,9 +1117,27 @@
                 <label><strong>Título da Anotação:</strong></label>
                 <input type="text" id="inputNotaTitulo" placeholder="Digite o título personalizado da anotação...">
             </div>
-            <div class="form-group">
+            <div class="form-group note-rich-editor-group">
                 <label><strong>Conteúdo / Resumo / Dicas:</strong></label>
-                <textarea id="inputNotaConteudo" placeholder="Digite aqui o conteúdo da sua nota..." style="min-height:180px;"></textarea>
+                <div class="note-format-toolbar" role="toolbar" aria-label="Formatação da nota">
+                    <button type="button" class="note-format-btn" data-note-command="bold" onclick="formatNoteText('bold')" aria-label="Negrito" title="Negrito (Ctrl/Cmd+B)"><strong>B</strong></button>
+                    <button type="button" class="note-format-btn" data-note-command="italic" onclick="formatNoteText('italic')" aria-label="Itálico" title="Itálico (Ctrl/Cmd+I)"><em>I</em></button>
+                    <button type="button" class="note-format-btn" data-note-command="underline" onclick="formatNoteText('underline')" aria-label="Sublinhado" title="Sublinhado (Ctrl/Cmd+U)"><span class="note-toolbar-underline">U</span></button>
+                    <span class="note-toolbar-divider" aria-hidden="true"></span>
+                    <label class="note-font-size-control">
+                        <span>Tamanho</span>
+                        <select id="noteFontSizeSelect" onchange="setNoteFontSize(this.value)" aria-label="Tamanho da fonte da nota">
+                            <option value="14">14</option>
+                            <option value="16" selected>16</option>
+                            <option value="18">18</option>
+                            <option value="20">20</option>
+                            <option value="24">24</option>
+                            <option value="28">28</option>
+                            <option value="32">32</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="inputNotaConteudo" class="note-rich-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Digite aqui o conteúdo da sua nota..." spellcheck="true"></div>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeModalNovaNota()">Cancelar (ESC)</button>
