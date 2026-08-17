@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.7.2 — Aquisição Adaptativa de Conteúdo
+ESTUDO ADAPTATIVO INTELIGENTE — V10.7.5 — Aquisição Adaptativa de Conteúdo
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -518,3 +518,21 @@ V10.7.4 — Retenção e Diagnóstico
 - Barra de retenção individual por assunto.
 - Legenda de risco e hierarquia visual aprimorada.
 - Responsividade preservada para desktop, tablet e mobile.
+
+
+V10.7.5 — Auditoria e correção definitiva do ciclo de atualização PWA
+- Versionamento sincronizado entre version.json, HTML, Service Worker e Cloudflare Worker.
+- A versão em execução passa a ser lida do meta app-version; o badge do cabeçalho é preenchido dinamicamente.
+- app.js deixa de duplicar versão em snapshots de backup e passa a usar window.APP_VERSION.
+- Registro do Service Worker usa URL versionada (sw.js?v=<versão>) e updateViaCache=none.
+- Cache do Service Worker deriva automaticamente da versão do app.
+- Atualização manual remove registros/caches antigos e força navegação de rede com cache-busting.
+- Incluídos scripts/release-version.mjs e scripts/audit-release.mjs para evitar divergência de versão em releases futuros.
+
+V10.7.6 — Retenção e Diagnóstico: estratégia da prova e métricas sem sobreposição
+- Reorganiza o bloco central em fluxo vertical real: estratégia da prova acima e métricas abaixo.
+- Adiciona CTA contextual para definir/alterar a data da prova.
+- Remove alturas/posicionamentos conflitantes que causavam sobreposição.
+- Padroniza quatro métricas em cards iguais com ícones contextuais e barras de leitura rápida.
+- Mantém responsividade em desktop, tablet e mobile sem alterar a lógica de retenção.
+
