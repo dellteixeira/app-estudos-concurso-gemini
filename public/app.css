@@ -9883,3 +9883,195 @@ body.light-mode #retentionDiagnosticPanel .rd-metric-label-v1077 {
         height: 40vh !important;
     }
 }
+
+/* V10.8.0 — Editor rico de anotações */
+#modalNovaNota .note-rich-editor-group {
+    gap: 8px !important;
+}
+
+#modalNovaNota .note-format-toolbar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    width: 100% !important;
+    min-height: 46px !important;
+    padding: 6px 8px !important;
+    margin: 0 !important;
+    border: 1px solid var(--border-color) !important;
+    border-bottom: 0 !important;
+    border-radius: 10px 10px 0 0 !important;
+    background: rgba(15, 23, 42, .55) !important;
+    box-sizing: border-box !important;
+    flex-wrap: wrap !important;
+}
+
+#modalNovaNota .note-format-btn {
+    appearance: none !important;
+    width: 34px !important;
+    height: 32px !important;
+    min-width: 34px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 1px solid rgba(100, 116, 139, .45) !important;
+    border-radius: 7px !important;
+    background: rgba(30, 41, 59, .68) !important;
+    color: var(--text-color) !important;
+    font-size: .92rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+}
+
+#modalNovaNota .note-format-btn:hover,
+#modalNovaNota .note-format-btn:focus-visible,
+#modalNovaNota .note-format-btn.active {
+    border-color: rgba(45, 212, 191, .82) !important;
+    background: rgba(20, 184, 166, .13) !important;
+    color: #5eead4 !important;
+    outline: none !important;
+}
+
+#modalNovaNota .note-toolbar-underline {
+    text-decoration: underline !important;
+    text-underline-offset: 2px !important;
+}
+
+#modalNovaNota .note-toolbar-divider {
+    width: 1px !important;
+    height: 24px !important;
+    margin: 0 3px !important;
+    background: rgba(100, 116, 139, .4) !important;
+}
+
+#modalNovaNota .note-font-size-control {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    margin-left: 1px !important;
+    color: #94a3b8 !important;
+    font-size: .76rem !important;
+    font-weight: 700 !important;
+}
+
+#modalNovaNota .note-font-size-control select {
+    width: 72px !important;
+    min-width: 72px !important;
+    height: 32px !important;
+    padding: 3px 24px 3px 8px !important;
+    border-radius: 7px !important;
+    font-size: .82rem !important;
+    font-weight: 700 !important;
+}
+
+#modalNovaNota #inputNotaConteudo.note-rich-editor {
+    width: 100% !important;
+    min-height: clamp(360px, 46vh, 620px) !important;
+    height: clamp(360px, 46vh, 620px) !important;
+    max-height: 62vh !important;
+    padding: 16px 18px !important;
+    margin: 0 !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0 0 10px 10px !important;
+    background: rgba(5, 18, 33, .55) !important;
+    color: var(--text-color) !important;
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    outline: none !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    box-sizing: border-box !important;
+    caret-color: #5eead4 !important;
+}
+
+#modalNovaNota #inputNotaConteudo.note-rich-editor:focus {
+    border-color: rgba(45, 212, 191, .68) !important;
+    box-shadow: 0 0 0 1px rgba(45, 212, 191, .12) inset !important;
+}
+
+#modalNovaNota #inputNotaConteudo.note-rich-editor:empty::before {
+    content: attr(data-placeholder) !important;
+    color: #64748b !important;
+    pointer-events: none !important;
+}
+
+#modalNovaNota #inputNotaConteudo.note-rich-editor b,
+#modalNovaNota #inputNotaConteudo.note-rich-editor strong,
+.note-rich-content b,
+.note-rich-content strong {
+    font-weight: 800 !important;
+}
+
+#modalNovaNota #inputNotaConteudo.note-rich-editor i,
+#modalNovaNota #inputNotaConteudo.note-rich-editor em,
+.note-rich-content i,
+.note-rich-content em {
+    font-style: italic !important;
+}
+
+#modalNovaNota #inputNotaConteudo.note-rich-editor u,
+.note-rich-content u {
+    text-decoration: underline !important;
+    text-underline-offset: 2px !important;
+}
+
+.note-card-body.note-rich-content {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+}
+
+body.light-mode #modalNovaNota .note-format-toolbar {
+    background: #f8fafc !important;
+}
+body.light-mode #modalNovaNota .note-format-btn {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+}
+body.light-mode #modalNovaNota .note-format-btn:hover,
+body.light-mode #modalNovaNota .note-format-btn:focus-visible,
+body.light-mode #modalNovaNota .note-format-btn.active {
+    background: #ecfeff !important;
+    border-color: #2dd4bf !important;
+    color: #0f766e !important;
+}
+body.light-mode #modalNovaNota #inputNotaConteudo.note-rich-editor {
+    background: #ffffff !important;
+}
+
+@media (max-height: 820px) and (min-width: 701px) {
+    #modalNovaNota #inputNotaConteudo.note-rich-editor {
+        min-height: 300px !important;
+        height: 40vh !important;
+        max-height: 48vh !important;
+    }
+}
+
+@media (max-width: 700px) {
+    #modalNovaNota .note-format-toolbar {
+        gap: 6px !important;
+        padding: 6px !important;
+    }
+    #modalNovaNota .note-font-size-control {
+        margin-left: 0 !important;
+    }
+    #modalNovaNota #inputNotaConteudo.note-rich-editor {
+        min-height: 320px !important;
+        height: 44vh !important;
+        max-height: 56vh !important;
+        padding: 14px !important;
+        font-size: 16px !important;
+        line-height: 1.55 !important;
+    }
+}
+
+@media (max-width: 430px) {
+    #modalNovaNota .note-font-size-control > span {
+        display: none !important;
+    }
+    #modalNovaNota #inputNotaConteudo.note-rich-editor {
+        min-height: 280px !important;
+        height: 40vh !important;
+    }
+}
