@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.6.7 — Aquisição Adaptativa de Conteúdo
+ESTUDO ADAPTATIVO INTELIGENTE — V10.6.8 — Aquisição Adaptativa de Conteúdo
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -494,3 +494,5 @@ V10.6.7 — Ajuste exclusivo de Retenção e Diagnóstico conforme referência 0
 V10.6.7 — Pontos críticos: 2 itens visíveis, botão + para pendências adicionais e modal expansível responsivo.
 
 V10.6.7 — Retenção e Diagnóstico reestruturado para reproduzir a referência 01; 2 pontos críticos visíveis e expansão por +.
+
+V10.6.8 — Remoção visual completa de Retenção e Diagnóstico e correção robusta de atualização PWA entre dispositivos.
