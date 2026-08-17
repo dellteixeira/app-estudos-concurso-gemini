@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.6.8">
+    <meta name="app-version" content="10.6.9">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -21,13 +21,13 @@
     <meta name="apple-mobile-web-app-title" content="Estudo Adaptativo Inteligente">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <script src="./pwa-update.js?v=10.6.8" defer></script>
+    <script src="./pwa-update.js?v=10.6.9" defer></script>
 
     <script src="./vendor/supabase.js" defer></script>
     <script src="./vendor/chart.umd.min.js" defer></script>
     <!-- PDF.js agora é carregado sob demanda ao abrir o visualizador de edital. -->
     
-    <link rel="stylesheet" href="./app.css?v=10.6.8">
+    <link rel="stylesheet" href="./app.css?v=10.6.9">
 </head>
 <body>
 
@@ -84,7 +84,7 @@
                     <span class="header-brand-signature">by Dell</span>
                 </div>
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
-                <span class="app-version-badge" title="Versão em execução">V10.6.8</span>
+                <span class="app-version-badge" title="Versão em execução">V10.6.9</span>
             </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
@@ -132,7 +132,7 @@
             <div class="overview-card warning"><span class="overview-label">Revisões</span><strong class="overview-value" id="modernOverviewReviews">0</strong><span class="overview-hint">pendentes agora</span></div>
             <div class="overview-card success"><span class="overview-label">Estudado Hoje</span><strong class="overview-value" id="modernOverviewToday">00:00</strong><span class="overview-hint">Pomodoro concluído</span></div>
             <div class="overview-card"><span class="overview-label">Meta Diária</span><strong class="overview-value" id="modernOverviewTarget">—</strong><span class="overview-hint">planejamento atual</span></div>
-            <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">teoria + vídeoaula + questões + lei seca · todas as matérias</span></div>
+            <div class="overview-card success"><span class="overview-label">Horas Estudadas</span><strong class="overview-value" id="modernOverviewStudiedHours">00:00</strong><span class="overview-hint">todas as sessões: leitura, vídeo, questões e outras fontes</span></div>
         </section>
 
         <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
@@ -875,6 +875,10 @@
                     <label for="questionPerformanceCorrect">Acertos</label>
                     <input id="questionPerformanceCorrect" type="number" min="0" max="500" inputmode="numeric" placeholder="Ex.: 14" oninput="updateQuestionPerformancePreview()">
                 </div>
+                <div class="form-group" id="questionPerformanceMinutesGroup">
+                    <label for="questionPerformanceMinutes">Minutos estudados</label>
+                    <input id="questionPerformanceMinutes" type="number" min="1" max="600" inputmode="numeric" placeholder="Ex.: 35">
+                </div>
             </div>
             <div class="question-performance-result" id="questionPerformancePreview">Informe os dois valores para calcular o aproveitamento.</div>
             <div class="question-performance-actions">
@@ -1131,6 +1135,6 @@
         </div>
     </div>
 
-    <script src="./app.js?v=10.6.8" defer></script>
+    <script src="./app.js?v=10.6.9" defer></script>
 </body>
 </html>
