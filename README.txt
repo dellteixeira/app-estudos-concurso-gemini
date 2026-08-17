@@ -1,3 +1,10 @@
+V10.7.9 — ÁREA DE ESCRITA DAS NOTAS AMPLIADA
+- Modal Nova Nota / Editar Nota passa a usar até 980 px de largura no desktop.
+- Campo Conteúdo / Resumo / Dicas agora ocupa aproximadamente 46% da altura da viewport, com mínimo de 360 px e máximo de 620 px no desktop.
+- Ajuste responsivo para notebooks com pouca altura e para celulares.
+- Mantidos os campos de matéria, assunto, título e ações originais.
+- Nenhuma alteração em armazenamento, sincronização ou lógica das notas.
+
 V10.7.8 — AJUSTE TIPOGRÁFICO DE RETENÇÃO E DIAGNÓSTICO
 - Redução dos rótulos Retenção média, Assuntos em risco, Revisões vencidas e Assuntos dominados.
 - Menor peso tipográfico para reforçar o visual minimalista.
