@@ -10178,26 +10178,48 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const panel = document.getElementById('retentionDiagnosticPanel');
             if (!panel) return;
             const set = (id,value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
+            const setBar = (id,value) => {
+                const el=document.getElementById(id);
+                if(el) el.style.width=`${Math.max(0,Math.min(100,Number(value)||0))}%`;
+            };
             const list = document.getElementById('retentionDiagnosticRiskList');
             const moreButton = document.getElementById('retentionMoreButton');
+            const phaseBox = document.getElementById('retentionExamPhase');
+
             if (!hasRealCurrentConcurso()) {
                 set('retentionDiagAverage','—'); set('retentionDiagRisk','0'); set('retentionDiagOverdue','0'); set('retentionDiagMastered','0');
-                const phaseBox=document.getElementById('retentionExamPhase'); if(phaseBox) phaseBox.innerHTML='<strong>Estratégia da prova</strong><span>Crie ou selecione um concurso para ativar a estratégia progressiva.</span>';
+                setBar('retentionDiagAverageBar',0); setBar('retentionDiagRiskBar',0); setBar('retentionDiagOverdueBar',0); setBar('retentionDiagMasteredBar',0);
+                if(phaseBox) phaseBox.innerHTML='<span class="retention-exam-icon" aria-hidden="true">▦</span><span class="retention-exam-copy"><strong>Selecione um concurso</strong><span>Crie ou selecione um concurso para ativar a estratégia progressiva.</span></span><button class="retention-exam-action" type="button" disabled>Definir data da prova</button>';
                 if(list) list.innerHTML='<div class="retention-empty">Crie ou selecione um concurso para iniciar o diagnóstico.</div>';
                 if(moreButton) moreButton.hidden=true;
                 retentionDiagnosticRows=[]; return;
             }
-            const phase = getExamPhaseProfile(getConcursosMetadata()[currentConcurso] || {});
-            const phaseBox = document.getElementById('retentionExamPhase');
+
+            const metadata = getConcursosMetadata();
+            const contestMeta = metadata[currentConcurso] || {};
+            const phase = getExamPhaseProfile(contestMeta);
             if (phaseBox) {
-                const dayText = phase.days == null ? '' : (phase.days < 0 ? '' : phase.days === 0 ? 'Hoje' : `${phase.days} dia${phase.days===1?'':'s'}`);
-                phaseBox.innerHTML = `<strong>${escapeHtml(phase.label)}${dayText?` · ${escapeHtml(dayText)}`:''}</strong><span>${escapeHtml(phase.guidance)}</span>`;
+                const hasExamDate = !!String(contestMeta.dataProva || '').trim();
+                const dayText = phase.days == null ? '' : (phase.days < 0 ? 'Prova realizada' : phase.days === 0 ? 'Hoje' : `${phase.days} dia${phase.days===1?'':'s'}`);
+                const title = hasExamDate ? `${phase.label}${dayText ? ` · ${dayText}` : ''}` : 'Sem data de prova definida';
+                const guidance = hasExamDate ? phase.guidance : 'Defina a data da prova para ativar a estratégia progressiva.';
+                const actionText = hasExamDate ? 'Alterar data' : 'Definir data da prova';
+                phaseBox.innerHTML = `<span class="retention-exam-icon" aria-hidden="true">▦</span><span class="retention-exam-copy"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(guidance)}</span></span><button class="retention-exam-action" type="button" onclick="editarDataProva()">${escapeHtml(actionText)}</button>`;
             }
+
             const diag = buildRetentionDiagnostics();
-            set('retentionDiagAverage', Number.isFinite(diag.avg) ? `${Math.round(diag.avg)}%` : '—');
+            const totalRows = Math.max(1, diag.rows.length);
+            const average = Number.isFinite(diag.avg) ? Math.round(diag.avg) : null;
+            set('retentionDiagAverage', average != null ? `${average}%` : '—');
             set('retentionDiagRisk', diag.risk.length);
             set('retentionDiagOverdue', diag.overdue.length);
             set('retentionDiagMastered', diag.mastered.length);
+            const countBar = count => count > 0 ? Math.max(8, (count / totalRows) * 100) : 0;
+            setBar('retentionDiagAverageBar', average ?? 0);
+            setBar('retentionDiagRiskBar', countBar(diag.risk.length));
+            setBar('retentionDiagOverdueBar', countBar(diag.overdue.length));
+            setBar('retentionDiagMasteredBar', countBar(diag.mastered.length));
+
             retentionDiagnosticRows = diag.risk.slice(0,20);
             if(!list) return;
             if (!diag.rows.length) {
