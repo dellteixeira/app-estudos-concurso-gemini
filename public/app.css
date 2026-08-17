@@ -9797,3 +9797,89 @@ body.light-mode #retentionDiagnosticPanel .rd-metric-label-v1077 {
         font-size: .80rem !important;
     }
 }
+
+/* V10.7.9 — Modal de notas: área de escrita ampliada */
+#modalNovaNota {
+    padding: clamp(12px, 2vh, 24px) !important;
+}
+
+#modalNovaNota > .modal {
+    width: min(94vw, 980px) !important;
+    max-width: 980px !important;
+    max-height: 95vh !important;
+    padding: clamp(20px, 2vw, 28px) !important;
+    gap: 14px !important;
+    overflow-y: auto !important;
+}
+
+#modalNovaNota .form-group {
+    flex: 0 0 auto !important;
+}
+
+#modalNovaNota #inputNotaConteudo {
+    width: 100% !important;
+    min-height: clamp(360px, 46vh, 620px) !important;
+    height: clamp(360px, 46vh, 620px) !important;
+    max-height: 62vh !important;
+    padding: 16px 18px !important;
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+    resize: vertical !important;
+    overflow-y: auto !important;
+}
+
+#modalNovaNota .modal-actions {
+    flex: 0 0 auto !important;
+    margin-top: 2px !important;
+}
+
+@media (max-height: 820px) and (min-width: 701px) {
+    #modalNovaNota > .modal {
+        max-height: 96vh !important;
+        gap: 10px !important;
+    }
+    #modalNovaNota #inputNotaConteudo {
+        min-height: 300px !important;
+        height: 40vh !important;
+        max-height: 48vh !important;
+    }
+}
+
+@media (max-width: 700px) {
+    #modalNovaNota {
+        padding: 8px !important;
+        align-items: center !important;
+    }
+    #modalNovaNota > .modal {
+        width: 100% !important;
+        max-width: none !important;
+        max-height: 97vh !important;
+        padding: 16px !important;
+        gap: 11px !important;
+    }
+    #modalNovaNota #inputNotaConteudo {
+        min-height: 320px !important;
+        height: 44vh !important;
+        max-height: 56vh !important;
+        padding: 14px !important;
+        font-size: .96rem !important;
+        line-height: 1.55 !important;
+    }
+    #modalNovaNota .modal-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        width: 100% !important;
+    }
+    #modalNovaNota .modal-actions .btn {
+        width: 100% !important;
+        justify-content: center !important;
+        min-width: 0 !important;
+    }
+}
+
+@media (max-width: 430px) {
+    #modalNovaNota #inputNotaConteudo {
+        min-height: 280px !important;
+        height: 40vh !important;
+    }
+}
