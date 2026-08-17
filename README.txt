@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.7.1 — Aquisição Adaptativa de Conteúdo
+ESTUDO ADAPTATIVO INTELIGENTE — V10.7.2 — Aquisição Adaptativa de Conteúdo
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -498,7 +498,7 @@ V10.6.7 — Retenção e Diagnóstico reestruturado para reproduzir a referênci
 V10.6.8 — Remoção visual completa de Retenção e Diagnóstico e correção robusta de atualização PWA entre dispositivos.
 
 
-V10.7.1 — Integridade de horas e atualização multi-dispositivo
+V10.7.2 — Integridade de horas e atualização multi-dispositivo
 - Horas Estudadas soma permanentemente todas as studySessions do concurso.
 - Reset diário não apaga mais o histórico geral; usa baseline sincronizado.
 - Limpar cronograma preserva studySessions.
@@ -507,6 +507,6 @@ V10.7.1 — Integridade de horas e atualização multi-dispositivo
 - Recuperação preventiva tenta reintroduzir sessões encontradas nos backups locais IndexedDB.
 - Aviso de nova versão restaurado; version.json + Worker-first de assets centrais tornam a atualização robusta inclusive para clientes antigos.
 
-V10.7.1 — Painel Retenção e Diagnóstico restaurado no padrão visual V10.5.8, com responsividade reforçada e sem alterar as correções de horas/sincronização/PWA da V10.6.9.
+V10.7.2 — Painel Retenção e Diagnóstico ajustado para corresponder ao mockup aprovado, mantendo as correções de horas e atualização.
 
-V10.7.1 — Painel Retenção e Diagnóstico reconstruído conforme mockup aprovado; métricas de risco, revisões vencidas e dominados abrem detalhes; PWA auditado.
+V10.7.2 — Painel Retenção e Diagnóstico reconstruído conforme mockup aprovado; métricas de risco, revisões vencidas e dominados abrem detalhes; PWA auditado.
