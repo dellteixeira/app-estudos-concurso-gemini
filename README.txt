@@ -557,3 +557,10 @@ V10.7.7 — Correção definitiva do bloco central de Retenção e Diagnóstico
 - Quatro cards de métricas mantidos em uma linha no desktop, 2x2 em tablet e 1 coluna no mobile.
 - Removido do bloco central o reuso das classes legadas exam-phase-strip, retention-metric-grid e retention-center-column.
 - Auditoria de release ampliada para validar ordem do DOM, quatro cards, ausência de classes legadas conflitantes e CSS isolado.
+
+V10.8.0 — EDITOR RICO DE ANOTAÇÕES
+- Adicionado negrito, itálico, sublinhado e tamanhos de fonte nas notas.
+- Compatibilidade mantida com notas antigas em texto simples.
+- Conteúdo formatado é sanitizado antes de salvar e exibir.
+- Atalhos Ctrl/Cmd+B, Ctrl/Cmd+I e Ctrl/Cmd+U disponíveis.
+- Área ampliada da V10.7.9 preservada.
