@@ -6129,3 +6129,1868 @@ body.light-mode .global-search-modal-results.global-search-results { background:
         padding-top: 12px !important;
     }
 }
+
+
+/* V10.5.9 — alinhamento vertical exclusivo do título do Pomodoro */
+@media (min-width: 901px) {
+    .grid-top > .pomodoro-card > .dashboard-panel-title {
+        padding-top: 18px !important;
+        margin-bottom: 8px !important;
+    }
+}
+
+
+/* V10.5.10 — responsividade exclusiva de Retenção e Diagnóstico */
+@media (min-width: 1281px) {
+    .retention-diagnostic-panel {
+        display: grid !important;
+        grid-template-columns: minmax(230px, .9fr) minmax(0, 1.45fr) minmax(280px, 1.25fr) !important;
+        grid-template-areas:
+            "head metrics criticalHead"
+            "head phase risk" !important;
+        gap: 10px 12px !important;
+        align-items: stretch !important;
+        overflow: hidden !important;
+    }
+    .retention-diagnostic-head { grid-area: head !important; min-width: 0 !important; }
+    .retention-diagnostic-head > div { max-width: none !important; min-width: 0 !important; }
+    .retention-metric-grid { grid-area: metrics !important; min-width: 0 !important; }
+    .exam-phase-strip { grid-area: phase !important; min-width: 0 !important; }
+    .critical-queue-head {
+        grid-area: criticalHead !important;
+        min-width: 0 !important;
+        align-self: stretch !important;
+    }
+    .retention-risk-list {
+        grid-area: risk !important;
+        min-width: 0 !important;
+        min-height: 96px !important;
+        max-height: 150px !important;
+        margin: 0 !important;
+        padding: 8px 0 0 !important;
+        overflow: auto !important;
+        justify-content: flex-start !important;
+    }
+    .critical-queue-head span {
+        min-width: 0 !important;
+        max-width: 58% !important;
+        overflow-wrap: anywhere !important;
+    }
+    .retention-empty {
+        min-height: 72px !important;
+        height: auto !important;
+        align-items: flex-start !important;
+        padding: 14px 0 0 !important;
+        font-size: .9rem !important;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1280px) {
+    .retention-diagnostic-panel {
+        display: grid !important;
+        grid-template-columns: minmax(220px, .9fr) minmax(0, 1.5fr) !important;
+        grid-template-areas:
+            "head metrics"
+            "head phase"
+            "criticalHead criticalHead"
+            "risk risk" !important;
+        gap: 10px 12px !important;
+        align-items: stretch !important;
+        overflow: hidden !important;
+    }
+    .retention-diagnostic-head { grid-area: head !important; min-width: 0 !important; }
+    .retention-metric-grid { grid-area: metrics !important; min-width: 0 !important; }
+    .exam-phase-strip { grid-area: phase !important; min-width: 0 !important; }
+    .critical-queue-head { grid-area: criticalHead !important; min-width: 0 !important; }
+    .retention-risk-list {
+        grid-area: risk !important;
+        min-width: 0 !important;
+        min-height: 72px !important;
+        max-height: 140px !important;
+        margin: 0 !important;
+        padding: 4px 0 0 !important;
+        overflow: auto !important;
+        justify-content: flex-start !important;
+    }
+    .retention-metric {
+        min-height: 82px !important;
+        padding: 11px !important;
+    }
+    .retention-metric strong { font-size: 1.25rem !important; }
+    .critical-queue-head span {
+        max-width: 65% !important;
+        overflow-wrap: anywhere !important;
+    }
+    .retention-empty {
+        min-height: 54px !important;
+        height: auto !important;
+        padding: 10px 0 0 !important;
+        font-size: .86rem !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .retention-diagnostic-panel {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-areas:
+            "head"
+            "phase"
+            "metrics"
+            "criticalHead"
+            "risk" !important;
+        gap: 8px !important;
+        overflow: hidden !important;
+    }
+    .retention-diagnostic-head { grid-area: head !important; min-width: 0 !important; }
+    .exam-phase-strip { grid-area: phase !important; min-width: 0 !important; }
+    .retention-metric-grid { grid-area: metrics !important; min-width: 0 !important; }
+    .critical-queue-head { grid-area: criticalHead !important; min-width: 0 !important; }
+    .retention-risk-list {
+        grid-area: risk !important;
+        min-width: 0 !important;
+        min-height: 60px !important;
+        max-height: 140px !important;
+        margin: 0 !important;
+        padding: 4px 0 0 !important;
+        overflow: auto !important;
+    }
+    .critical-queue-head {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+    }
+    .critical-queue-head span {
+        max-width: 100% !important;
+        text-align: left !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+    }
+    .exam-phase-strip {
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+    }
+    .exam-phase-strip span {
+        text-align: left !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+    .retention-empty {
+        min-height: 44px !important;
+        padding: 6px 0 0 !important;
+        font-size: .84rem !important;
+    }
+}
+
+@media (max-width: 520px) {
+    .retention-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .retention-metric {
+        min-height: 64px !important;
+        padding: 9px !important;
+    }
+    .retention-metric span { font-size: .65rem !important; }
+    .retention-metric strong { font-size: 1.05rem !important; }
+}
+
+
+/* V10.6.0 — Vídeoaula como atividade incremental */
+.btn-study-video {
+    background: linear-gradient(135deg, rgba(14,165,233,.92), rgba(34,211,238,.82)) !important;
+    border-color: rgba(103,232,249,.55) !important;
+    color: #04181f !important;
+}
+.study-status-checks {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+.study-session-action-row .study-launch-controls-primary {
+    min-width:0;
+}
+.study-session-action-row .study-launch-controls-primary .btn {
+    min-width:0 !important;
+    flex:1 1 0 !important;
+    height:48px !important;
+}
+@media (max-width:900px) {
+    .study-status-checks { gap:8px; }
+    .study-session-action-row {
+        display:flex !important;
+        align-items:center !important;
+        gap:7px !important;
+        min-width:0 !important;
+    }
+    .study-session-action-row .study-session-minutes-label {
+        flex:0 0 auto !important;
+    }
+    .study-session-action-row .study-launch-controls-primary {
+        display:flex !important;
+        flex:1 1 auto !important;
+        width:auto !important;
+        min-width:0 !important;
+        gap:5px !important;
+    }
+    .study-session-action-row .study-launch-controls-primary .btn {
+        flex:1 1 0 !important;
+        min-width:0 !important;
+        height:42px !important;
+        padding:0 5px !important;
+        font-size:.64rem !important;
+        white-space:normal !important;
+        line-height:1.05 !important;
+    }
+}
+@media (max-width:520px) {
+    .study-status-checks label { font-size:.78rem; }
+    .study-session-action-row .study-launch-controls-primary .btn {
+        font-size:.58rem !important;
+        padding:0 3px !important;
+    }
+}
+
+
+/* V10.6.1 — método de aquisição no editor Planejar; sem alterações fora deste componente */
+@media (min-width: 901px) {
+    .topic-plan-editor-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+    .topic-plan-editor-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+
+/* V10.6.2 — ajustes pontuais solicitados */
+.header-brand-copy {
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+}
+.header-brand-signature {
+    display:block;
+    margin-top:-2px;
+    font-size:.92rem;
+    line-height:1;
+    color:rgba(153,234,225,.82);
+    font-family:"Segoe Script","Brush Script MT",cursive;
+    letter-spacing:.02em;
+    font-weight:500;
+}
+
+.critical-queue-head {
+    padding:10px 14px !important;
+    min-height:unset !important;
+    align-items:center !important;
+}
+.critical-queue-head strong {
+    font-size:1rem !important;
+}
+.critical-queue-head span {
+    font-size:.78rem !important;
+    line-height:1.25 !important;
+}
+.retention-risk-list {
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:10px !important;
+    min-height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+    padding-right:0 !important;
+    align-items:start;
+}
+.retention-risk-row.v965 {
+    min-height:86px;
+    height:100%;
+    align-content:start;
+}
+.retention-risk-title {
+    white-space:normal !important;
+    line-height:1.25;
+}
+.retention-risk-meta,
+.critical-layer-label {
+    white-space:normal;
+}
+
+.pomodoro-daily-panel {
+    gap:16px !important;
+}
+.pomodoro-studied-topics-panel {
+    display:none;
+    margin-top:6px;
+    padding-top:12px;
+    border-top:1px solid rgba(115,151,179,.16);
+}
+.pomodoro-studied-topics-panel h5 {
+    margin:0 0 10px;
+    font-size:.85rem;
+    font-weight:800;
+    letter-spacing:.02em;
+    color:rgba(225,236,245,.92);
+}
+.pomodoro-studied-topics-list {
+    display:grid;
+    gap:8px;
+}
+.pomodoro-topic-entry {
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    gap:8px;
+    align-items:center;
+    padding:9px 10px;
+    border-radius:12px;
+    border:1px solid rgba(92,218,205,.24);
+    background:rgba(9,25,45,.44);
+}
+.pomodoro-topic-badge {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:24px;
+    padding:0 9px;
+    border-radius:999px;
+    background:rgba(44,123,229,.16);
+    border:1px solid rgba(84,190,255,.28);
+    color:rgba(133,211,255,.94);
+    font-size:.68rem;
+    font-weight:800;
+    letter-spacing:.04em;
+    white-space:nowrap;
+}
+.pomodoro-topic-copy {
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+}
+.pomodoro-topic-copy strong {
+    font-size:.82rem;
+    line-height:1.25;
+    color:rgba(237,243,249,.96);
+}
+.pomodoro-topic-copy span {
+    font-size:.72rem;
+    color:rgba(160,184,205,.86);
+}
+.pomodoro-topic-multi {
+    color:rgba(153,234,225,.82);
+    font-size:.7rem;
+    font-weight:800;
+    white-space:nowrap;
+}
+body.light-mode .header-brand-signature {
+    color:rgba(31,122,116,.82);
+}
+body.light-mode .pomodoro-studied-topics-panel {
+    border-top-color:rgba(21,58,88,.1);
+}
+body.light-mode .pomodoro-studied-topics-panel h5 {
+    color:#16324a;
+}
+body.light-mode .pomodoro-topic-entry {
+    background:rgba(255,255,255,.82);
+    border-color:rgba(21,58,88,.12);
+}
+body.light-mode .pomodoro-topic-copy strong {
+    color:#17324a;
+}
+body.light-mode .pomodoro-topic-copy span {
+    color:#4e6377;
+}
+body.light-mode .pomodoro-topic-badge {
+    background:rgba(44,123,229,.1);
+    border-color:rgba(44,123,229,.2);
+    color:#2563eb;
+}
+
+@media (max-width: 1180px) {
+    .retention-risk-list {
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+}
+@media (max-width: 900px) {
+    .header-brand-signature {
+        font-size:.84rem;
+    }
+    .retention-risk-list {
+        grid-template-columns:1fr !important;
+    }
+    .pomodoro-topic-entry {
+        grid-template-columns:1fr;
+        gap:6px;
+    }
+    .pomodoro-topic-badge,
+    .pomodoro-topic-multi {
+        justify-self:start;
+    }
+}
+
+
+/* V10.6.3 — Retenção e Diagnóstico: composição minimalista da referência */
+@media (min-width: 1101px) {
+    .retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:minmax(250px,.92fr) minmax(500px,1.55fr) minmax(560px,2.08fr) !important;
+        grid-template-rows:auto auto !important;
+        grid-template-areas:
+            "head metrics criticalHead"
+            "head phase risk" !important;
+        column-gap:12px !important;
+        row-gap:8px !important;
+        align-items:stretch !important;
+        margin:0 0 10px !important;
+        padding:12px 14px !important;
+        min-height:0 !important;
+        height:auto !important;
+        overflow:hidden !important;
+        border-radius:13px !important;
+        box-sizing:border-box !important;
+    }
+
+    .retention-diagnostic-head {
+        grid-area:head !important;
+        display:flex !important;
+        flex-direction:column !important;
+        align-items:flex-start !important;
+        justify-content:flex-start !important;
+        gap:0 !important;
+        min-width:0 !important;
+        padding:2px 0 !important;
+    }
+    .retention-diagnostic-head > div {
+        min-width:0 !important;
+        max-width:31ch !important;
+    }
+    .retention-diagnostic-head h3 {
+        margin:0 0 5px !important;
+        font-size:1.08rem !important;
+        line-height:1.1 !important;
+    }
+    .retention-diagnostic-subtitle {
+        display:block !important;
+        margin:0 !important;
+        max-width:31ch !important;
+        font-size:.72rem !important;
+        line-height:1.42 !important;
+        color:rgba(204,220,234,.78) !important;
+        overflow:visible !important;
+        -webkit-line-clamp:unset !important;
+    }
+    .retention-diagnostic-head .btn {
+        margin-top:auto !important;
+        min-height:34px !important;
+        height:34px !important;
+        padding:0 13px !important;
+        font-size:.72rem !important;
+        border-radius:8px !important;
+    }
+
+    .retention-metric-grid {
+        grid-area:metrics !important;
+        display:grid !important;
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+        gap:7px !important;
+        min-width:0 !important;
+        margin:0 !important;
+        align-content:stretch !important;
+    }
+    .retention-metric {
+        min-width:0 !important;
+        min-height:0 !important;
+        height:100% !important;
+        padding:10px 11px !important;
+        border-radius:11px !important;
+        display:flex !important;
+        flex-direction:column !important;
+        justify-content:space-between !important;
+        gap:8px !important;
+    }
+    .retention-metric span {
+        margin:0 !important;
+        font-size:.66rem !important;
+        line-height:1.2 !important;
+        white-space:normal !important;
+    }
+    .retention-metric strong {
+        margin:0 !important;
+        font-size:1.28rem !important;
+        line-height:1 !important;
+    }
+
+    .exam-phase-strip {
+        grid-area:phase !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:12px !important;
+        min-width:0 !important;
+        min-height:42px !important;
+        height:42px !important;
+        margin:0 !important;
+        padding:0 12px !important;
+        border-radius:10px !important;
+        box-sizing:border-box !important;
+    }
+    .exam-phase-strip strong {
+        flex:0 0 auto !important;
+        font-size:.76rem !important;
+        line-height:1.15 !important;
+        white-space:nowrap !important;
+    }
+    .exam-phase-strip span {
+        min-width:0 !important;
+        flex:1 1 auto !important;
+        font-size:.7rem !important;
+        line-height:1.2 !important;
+        text-align:right !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+
+    .critical-queue-head {
+        grid-area:criticalHead !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:12px !important;
+        min-width:0 !important;
+        min-height:42px !important;
+        height:42px !important;
+        margin:0 !important;
+        padding:0 12px !important;
+        border-radius:10px !important;
+        box-sizing:border-box !important;
+        align-self:stretch !important;
+    }
+    .critical-queue-head strong {
+        flex:0 0 auto !important;
+        font-size:.76rem !important;
+        line-height:1.15 !important;
+        white-space:nowrap !important;
+    }
+    .critical-queue-head span {
+        min-width:0 !important;
+        max-width:none !important;
+        flex:1 1 auto !important;
+        font-size:.68rem !important;
+        line-height:1.2 !important;
+        text-align:right !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+
+    .retention-risk-list {
+        grid-area:risk !important;
+        display:grid !important;
+        grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+        grid-auto-rows:minmax(0,auto) !important;
+        align-content:start !important;
+        align-items:stretch !important;
+        gap:7px !important;
+        min-width:0 !important;
+        min-height:0 !important;
+        max-height:112px !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow:auto !important;
+        box-sizing:border-box !important;
+    }
+    .retention-risk-list .retention-empty {
+        grid-column:1 / -1 !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        min-width:0 !important;
+        min-height:82px !important;
+        height:82px !important;
+        margin:0 !important;
+        padding:0 18px !important;
+        text-align:center !important;
+        font-size:.78rem !important;
+        line-height:1.35 !important;
+        color:rgba(194,211,226,.76) !important;
+        box-sizing:border-box !important;
+    }
+    .retention-risk-row.v965 {
+        grid-template-columns:auto minmax(0,1fr) auto !important;
+        grid-template-rows:auto auto !important;
+        gap:5px 7px !important;
+        min-width:0 !important;
+        min-height:82px !important;
+        height:auto !important;
+        padding:8px 9px !important;
+        border-radius:10px !important;
+        align-items:center !important;
+        align-content:center !important;
+        box-sizing:border-box !important;
+    }
+    .retention-risk-row.v965 .critical-rank {
+        grid-row:1 / 3 !important;
+        width:22px !important;
+        height:22px !important;
+        flex-basis:22px !important;
+        font-size:.64rem !important;
+    }
+    .retention-risk-row.v965 > div:nth-child(2) {
+        min-width:0 !important;
+    }
+    .retention-risk-row.v965 .retention-risk-title {
+        font-size:.7rem !important;
+        line-height:1.2 !important;
+        white-space:normal !important;
+        display:-webkit-box !important;
+        -webkit-line-clamp:2 !important;
+        -webkit-box-orient:vertical !important;
+        overflow:hidden !important;
+    }
+    .retention-risk-row.v965 .retention-risk-meta,
+    .retention-risk-row.v965 .critical-layer-label {
+        font-size:.61rem !important;
+        line-height:1.15 !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+    .retention-risk-row.v965 .retention-risk-value {
+        font-size:.7rem !important;
+    }
+    .retention-risk-row.v965 .btn {
+        grid-column:3 !important;
+        min-height:28px !important;
+        height:28px !important;
+        padding:0 8px !important;
+        font-size:.64rem !important;
+        border-radius:7px !important;
+    }
+}
+
+@media (min-width: 701px) and (max-width: 1100px) {
+    .retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:minmax(210px,.8fr) minmax(0,1.7fr) !important;
+        grid-template-areas:
+            "head metrics"
+            "head phase"
+            "criticalHead criticalHead"
+            "risk risk" !important;
+        gap:8px 10px !important;
+        padding:12px !important;
+        overflow:hidden !important;
+    }
+    .retention-diagnostic-head { grid-area:head !important; min-width:0 !important; }
+    .retention-metric-grid { grid-area:metrics !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:7px !important; min-width:0 !important; }
+    .exam-phase-strip { grid-area:phase !important; min-width:0 !important; }
+    .critical-queue-head { grid-area:criticalHead !important; min-width:0 !important; }
+    .retention-risk-list {
+        grid-area:risk !important;
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        gap:7px !important;
+        min-width:0 !important;
+        min-height:0 !important;
+        max-height:180px !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow:auto !important;
+    }
+    .retention-risk-list .retention-empty { grid-column:1 / -1 !important; min-height:56px !important; height:auto !important; padding:10px !important; }
+}
+
+@media (max-width: 700px) {
+    .retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        grid-template-areas:
+            "head"
+            "metrics"
+            "phase"
+            "criticalHead"
+            "risk" !important;
+        gap:8px !important;
+        padding:11px !important;
+        overflow:hidden !important;
+    }
+    .retention-diagnostic-head {
+        grid-area:head !important;
+        display:flex !important;
+        flex-direction:row !important;
+        align-items:flex-end !important;
+        justify-content:space-between !important;
+        gap:10px !important;
+        padding:0 !important;
+    }
+    .retention-diagnostic-head > div { min-width:0 !important; max-width:none !important; }
+    .retention-diagnostic-head h3 { font-size:1rem !important; margin:0 0 4px !important; }
+    .retention-diagnostic-subtitle { font-size:.68rem !important; line-height:1.35 !important; max-width:38ch !important; }
+    .retention-diagnostic-head .btn { flex:0 0 auto !important; margin:0 !important; min-height:32px !important; height:32px !important; padding:0 10px !important; font-size:.68rem !important; }
+    .retention-metric-grid { grid-area:metrics !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+    .retention-metric { min-height:64px !important; padding:9px 10px !important; }
+    .retention-metric span { font-size:.64rem !important; margin:0 !important; }
+    .retention-metric strong { font-size:1.12rem !important; margin-top:auto !important; }
+    .exam-phase-strip { grid-area:phase !important; min-height:42px !important; height:auto !important; padding:9px 10px !important; gap:6px !important; flex-wrap:wrap !important; }
+    .exam-phase-strip strong { font-size:.72rem !important; }
+    .exam-phase-strip span { flex-basis:100% !important; font-size:.66rem !important; text-align:left !important; white-space:normal !important; overflow:visible !important; }
+    .critical-queue-head { grid-area:criticalHead !important; min-height:42px !important; height:auto !important; padding:9px 10px !important; flex-wrap:wrap !important; gap:4px 8px !important; }
+    .critical-queue-head strong { font-size:.74rem !important; }
+    .critical-queue-head span { flex-basis:100% !important; max-width:none !important; font-size:.64rem !important; text-align:left !important; white-space:normal !important; overflow:visible !important; }
+    .retention-risk-list {
+        grid-area:risk !important;
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        gap:7px !important;
+        min-height:0 !important;
+        max-height:220px !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow:auto !important;
+    }
+    .retention-risk-list .retention-empty { min-height:48px !important; height:auto !important; padding:8px 4px !important; font-size:.72rem !important; text-align:left !important; justify-content:flex-start !important; }
+}
+
+
+/* V10.6.4 — correção isolada da marca: título integral + assinatura alinhada ao fim */
+.header-brand-copy {
+    height:auto !important;
+    min-height:0 !important;
+    width:fit-content !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    justify-content:center !important;
+    gap:2px !important;
+    overflow:visible !important;
+}
+.header-brand-copy h2 {
+    margin:0 !important;
+    width:max-content !important;
+    max-width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    line-height:1.08 !important;
+    white-space:nowrap !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    font-size:clamp(1rem,2.05vw,1.55rem) !important;
+}
+.header-brand-signature {
+    display:block !important;
+    align-self:flex-end !important;
+    width:auto !important;
+    margin:1px 0 0 !important;
+    padding:0 !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+    overflow:visible !important;
+    font-size:.88rem !important;
+}
+
+@media (max-width: 900px) {
+    .header-brand-copy h2 {
+        font-size:clamp(.88rem,3.05vw,1.14rem) !important;
+    }
+    .header-brand-signature {
+        display:block !important;
+        font-size:.78rem !important;
+    }
+}
+@media (max-width: 640px) {
+    .header-brand-copy h2 {
+        font-size:clamp(.78rem,3.35vw,.98rem) !important;
+    }
+    .header-brand-signature {
+        font-size:.72rem !important;
+    }
+}
+@media (max-width: 430px) {
+    .header-brand-copy h2 {
+        font-size:clamp(.7rem,3.45vw,.86rem) !important;
+    }
+    .header-brand-signature {
+        font-size:.66rem !important;
+    }
+}
+
+
+/* V10.6.5 — Retenção e Diagnóstico: reprodução da referência 05, sem botão Revisar */
+@media (min-width: 1181px) {
+    #retentionDiagnosticPanel.retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:minmax(250px,.90fr) minmax(500px,1.55fr) minmax(590px,2.10fr) !important;
+        grid-template-rows:98px 52px !important;
+        grid-template-areas:
+            "head metrics criticalHead"
+            "head phase risk" !important;
+        column-gap:14px !important;
+        row-gap:10px !important;
+        align-items:stretch !important;
+        padding:12px 14px !important;
+        min-height:184px !important;
+        height:auto !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head {
+        grid-area:head !important;
+        min-width:0 !important;
+        height:100% !important;
+        padding:3px 0 2px !important;
+        display:flex !important;
+        flex-direction:column !important;
+        align-items:flex-start !important;
+        justify-content:flex-start !important;
+        overflow:hidden !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head > div {
+        min-width:0 !important;
+        max-width:31ch !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head h3 {
+        margin:0 0 6px !important;
+        font-size:1.08rem !important;
+        line-height:1.08 !important;
+        white-space:nowrap !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-subtitle {
+        margin:0 !important;
+        max-width:31ch !important;
+        font-size:.72rem !important;
+        line-height:1.42 !important;
+        white-space:normal !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head .btn {
+        margin-top:auto !important;
+        min-height:34px !important;
+        height:34px !important;
+        padding:0 13px !important;
+        font-size:.72rem !important;
+        border-radius:8px !important;
+    }
+
+    #retentionDiagnosticPanel .retention-metric-grid {
+        grid-area:metrics !important;
+        display:grid !important;
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+        gap:8px !important;
+        min-width:0 !important;
+        min-height:0 !important;
+        height:98px !important;
+        margin:0 !important;
+    }
+    #retentionDiagnosticPanel .retention-metric {
+        min-width:0 !important;
+        min-height:0 !important;
+        height:98px !important;
+        padding:11px 12px !important;
+        display:flex !important;
+        flex-direction:column !important;
+        justify-content:space-between !important;
+        gap:5px !important;
+        border-radius:11px !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .retention-metric span {
+        margin:0 !important;
+        max-width:100% !important;
+        font-size:.66rem !important;
+        line-height:1.2 !important;
+        white-space:normal !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .retention-metric strong {
+        margin:0 !important;
+        font-size:1.25rem !important;
+        line-height:1 !important;
+    }
+
+    #retentionDiagnosticPanel .exam-phase-strip {
+        grid-area:phase !important;
+        min-width:0 !important;
+        min-height:52px !important;
+        height:52px !important;
+        margin:0 !important;
+        padding:0 13px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:14px !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .exam-phase-strip strong {
+        flex:0 0 auto !important;
+        max-width:42% !important;
+        font-size:.75rem !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+    #retentionDiagnosticPanel .exam-phase-strip span {
+        min-width:0 !important;
+        flex:1 1 auto !important;
+        font-size:.69rem !important;
+        line-height:1.2 !important;
+        text-align:right !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+
+    #retentionDiagnosticPanel .critical-queue-head {
+        grid-area:criticalHead !important;
+        min-width:0 !important;
+        min-height:46px !important;
+        height:46px !important;
+        margin:0 !important;
+        padding:0 13px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:12px !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .critical-queue-head strong {
+        flex:0 0 auto !important;
+        font-size:.76rem !important;
+        line-height:1.1 !important;
+        white-space:nowrap !important;
+    }
+    #retentionDiagnosticPanel .critical-queue-head span {
+        min-width:0 !important;
+        flex:1 1 auto !important;
+        font-size:.68rem !important;
+        line-height:1.2 !important;
+        text-align:right !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+
+    #retentionDiagnosticPanel .retention-risk-list {
+        grid-area:risk !important;
+        display:grid !important;
+        grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+        grid-auto-rows:110px !important;
+        gap:10px !important;
+        min-width:0 !important;
+        min-height:110px !important;
+        max-height:110px !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow-x:hidden !important;
+        overflow-y:auto !important;
+        align-items:stretch !important;
+        align-content:start !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-list .retention-empty {
+        grid-column:1 / -1 !important;
+        min-width:0 !important;
+        min-height:110px !important;
+        height:110px !important;
+        margin:0 !important;
+        padding:0 18px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        text-align:center !important;
+        font-size:.75rem !important;
+        line-height:1.35 !important;
+        overflow-wrap:anywhere !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 {
+        position:relative !important;
+        display:grid !important;
+        grid-template-columns:26px minmax(0,1fr) auto !important;
+        grid-template-rows:1fr !important;
+        gap:8px !important;
+        min-width:0 !important;
+        min-height:110px !important;
+        height:110px !important;
+        margin:0 !important;
+        padding:12px 12px 10px !important;
+        align-items:center !important;
+        align-content:center !important;
+        border-radius:11px !important;
+        overflow:hidden !important;
+        cursor:pointer !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965:hover {
+        border-color:rgba(85,207,198,.38) !important;
+        background:rgba(18,45,65,.52) !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965:focus-visible {
+        outline:2px solid rgba(85,207,198,.6) !important;
+        outline-offset:-2px !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .critical-rank {
+        grid-column:1 !important;
+        grid-row:1 !important;
+        align-self:end !important;
+        justify-self:start !important;
+        width:24px !important;
+        height:24px !important;
+        min-width:24px !important;
+        min-height:24px !important;
+        border-radius:7px !important;
+        font-size:.64rem !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-copy {
+        grid-column:2 !important;
+        grid-row:1 !important;
+        align-self:center !important;
+        min-width:0 !important;
+        overflow:hidden !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-title {
+        margin:0 0 5px !important;
+        min-width:0 !important;
+        max-width:100% !important;
+        font-size:.72rem !important;
+        line-height:1.18 !important;
+        font-weight:800 !important;
+        white-space:normal !important;
+        display:-webkit-box !important;
+        -webkit-line-clamp:2 !important;
+        -webkit-box-orient:vertical !important;
+        overflow:hidden !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-meta,
+    #retentionDiagnosticPanel .critical-layer-label {
+        min-width:0 !important;
+        max-width:100% !important;
+        margin:0 !important;
+        font-size:.61rem !important;
+        line-height:1.2 !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+    #retentionDiagnosticPanel .critical-layer-label {
+        margin-top:3px !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-value {
+        grid-column:3 !important;
+        grid-row:1 !important;
+        align-self:center !important;
+        justify-self:end !important;
+        min-width:0 !important;
+        margin:0 !important;
+        padding:0 !important;
+        font-size:.72rem !important;
+        line-height:1 !important;
+        white-space:nowrap !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .btn {
+        display:none !important;
+    }
+}
+
+@media (min-width: 861px) and (max-width: 1180px) {
+    #retentionDiagnosticPanel.retention-diagnostic-panel {
+        grid-template-columns:minmax(220px,.82fr) minmax(0,1.55fr) !important;
+        grid-template-areas:
+            "head metrics"
+            "head phase"
+            "criticalHead criticalHead"
+            "risk risk" !important;
+        gap:9px 11px !important;
+        padding:12px !important;
+        overflow:hidden !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-list {
+        grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+        grid-auto-rows:104px !important;
+        min-height:104px !important;
+        max-height:216px !important;
+        gap:8px !important;
+        overflow-y:auto !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 {
+        display:grid !important;
+        grid-template-columns:24px minmax(0,1fr) auto !important;
+        min-width:0 !important;
+        min-height:104px !important;
+        height:104px !important;
+        padding:10px !important;
+        gap:7px !important;
+        overflow:hidden !important;
+        cursor:pointer !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-copy { min-width:0 !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .retention-risk-title {
+        font-size:.7rem !important;
+        line-height:1.18 !important;
+        display:-webkit-box !important;
+        -webkit-line-clamp:2 !important;
+        -webkit-box-orient:vertical !important;
+        white-space:normal !important;
+        overflow:hidden !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-meta,
+    #retentionDiagnosticPanel .critical-layer-label {
+        font-size:.6rem !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-value { font-size:.69rem !important; white-space:nowrap !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .btn { display:none !important; }
+}
+
+@media (min-width: 601px) and (max-width: 860px) {
+    #retentionDiagnosticPanel .retention-risk-list {
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        gap:8px !important;
+        max-height:220px !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 {
+        display:grid !important;
+        grid-template-columns:24px minmax(0,1fr) auto !important;
+        min-width:0 !important;
+        min-height:100px !important;
+        height:100px !important;
+        overflow:hidden !important;
+        cursor:pointer !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-copy { min-width:0 !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .retention-risk-title {
+        white-space:normal !important;
+        display:-webkit-box !important;
+        -webkit-line-clamp:2 !important;
+        -webkit-box-orient:vertical !important;
+        overflow:hidden !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-meta,
+    #retentionDiagnosticPanel .critical-layer-label {
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .btn { display:none !important; }
+}
+
+@media (max-width: 600px) {
+    #retentionDiagnosticPanel .retention-risk-list {
+        grid-template-columns:1fr !important;
+        gap:8px !important;
+        max-height:324px !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 {
+        display:grid !important;
+        grid-template-columns:24px minmax(0,1fr) auto !important;
+        min-width:0 !important;
+        min-height:96px !important;
+        height:96px !important;
+        padding:10px !important;
+        gap:8px !important;
+        overflow:hidden !important;
+        cursor:pointer !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-copy { min-width:0 !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .retention-risk-title {
+        white-space:normal !important;
+        display:-webkit-box !important;
+        -webkit-line-clamp:2 !important;
+        -webkit-box-orient:vertical !important;
+        overflow:hidden !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-meta,
+    #retentionDiagnosticPanel .critical-layer-label {
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .btn { display:none !important; }
+}
+
+
+/* V10.6.6 — Pontos críticos: 2 visíveis + expansão por “+”, com texto totalmente responsivo */
+#retentionDiagnosticPanel .critical-queue-head {
+    min-width:0 !important;
+    overflow:hidden !important;
+}
+#retentionDiagnosticPanel .critical-queue-head strong {
+    flex:0 0 auto !important;
+    min-width:0 !important;
+}
+#retentionDiagnosticPanel .critical-queue-head span {
+    flex:1 1 220px !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+    line-height:1.25 !important;
+}
+#retentionDiagnosticPanel .retention-risk-list {
+    position:relative !important;
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    grid-auto-rows:minmax(0,1fr) !important;
+    gap:10px !important;
+    min-width:0 !important;
+    overflow:visible !important;
+}
+#retentionDiagnosticPanel .retention-risk-row.v965 {
+    min-width:0 !important;
+    width:100% !important;
+    overflow:hidden !important;
+    box-sizing:border-box !important;
+}
+#retentionDiagnosticPanel .retention-risk-copy {
+    min-width:0 !important;
+    overflow:hidden !important;
+}
+#retentionDiagnosticPanel .retention-risk-title {
+    display:-webkit-box !important;
+    -webkit-box-orient:vertical !important;
+    -webkit-line-clamp:2 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+    line-height:1.22 !important;
+}
+#retentionDiagnosticPanel .retention-risk-meta,
+#retentionDiagnosticPanel .critical-layer-label {
+    display:block !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+}
+#retentionDiagnosticPanel .retention-risk-value {
+    align-self:center !important;
+    white-space:nowrap !important;
+}
+#retentionDiagnosticPanel .critical-more-btn {
+    position:absolute !important;
+    right:3px !important;
+    bottom:3px !important;
+    width:30px !important;
+    height:30px !important;
+    min-width:30px !important;
+    min-height:30px !important;
+    padding:0 !important;
+    display:grid !important;
+    place-items:center !important;
+    border:0 !important;
+    border-radius:8px !important;
+    background:rgba(7,22,38,.78) !important;
+    color:rgba(242,248,252,.96) !important;
+    font:300 2rem/1 system-ui,sans-serif !important;
+    cursor:pointer !important;
+    z-index:4 !important;
+    transition:background .18s ease, transform .18s ease !important;
+}
+#retentionDiagnosticPanel .critical-more-btn:hover,
+#retentionDiagnosticPanel .critical-more-btn:focus-visible {
+    background:rgba(25,63,91,.92) !important;
+    transform:translateY(-1px) !important;
+    outline:1px solid rgba(120,208,237,.45) !important;
+}
+
+.critical-topics-modal {
+    width:min(900px,calc(100vw - 28px)) !important;
+    max-width:900px !important;
+    max-height:min(82vh,760px) !important;
+    overflow:hidden !important;
+    display:flex !important;
+    flex-direction:column !important;
+}
+.critical-topics-modal-header {
+    display:flex !important;
+    align-items:flex-start !important;
+    justify-content:space-between !important;
+    gap:14px !important;
+}
+.critical-topics-modal-header > div { min-width:0 !important; }
+.critical-topics-modal-header h3 { margin:0 0 4px !important; }
+.critical-topics-modal-header p {
+    margin:0 !important;
+    max-width:62ch !important;
+    font-size:.78rem !important;
+    line-height:1.35 !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+}
+.critical-topics-modal-list {
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px !important;
+    margin-top:14px !important;
+    padding-right:2px !important;
+    overflow:auto !important;
+    min-height:0 !important;
+}
+.critical-topics-modal-list .retention-risk-row {
+    min-width:0 !important;
+    min-height:92px !important;
+    overflow:hidden !important;
+}
+.critical-topics-modal-list .retention-risk-copy { min-width:0 !important; overflow:hidden !important; }
+.critical-topics-modal-list .retention-risk-title {
+    display:-webkit-box !important;
+    -webkit-box-orient:vertical !important;
+    -webkit-line-clamp:2 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    overflow-wrap:anywhere !important;
+}
+.critical-topics-modal-list .retention-risk-meta,
+.critical-topics-modal-list .critical-layer-label {
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+}
+
+@media (max-width:1180px) {
+    #retentionDiagnosticPanel .critical-queue-head {
+        align-items:flex-start !important;
+        flex-wrap:wrap !important;
+        gap:4px 10px !important;
+        height:auto !important;
+        min-height:46px !important;
+    }
+    #retentionDiagnosticPanel .critical-queue-head span {
+        flex-basis:100% !important;
+        text-align:left !important;
+    }
+}
+@media (max-width:720px) {
+    #retentionDiagnosticPanel .retention-risk-list {
+        grid-template-columns:1fr !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 {
+        min-height:88px !important;
+    }
+    .critical-topics-modal-list {
+        grid-template-columns:1fr !important;
+    }
+    .critical-topics-modal-header p { font-size:.72rem !important; }
+}
+
+/* V10.6.6 — garantia final de acomodação do subtítulo de Pontos críticos */
+#retentionDiagnosticPanel .critical-queue-head {
+    height:auto !important;
+    min-height:46px !important;
+}
+
+
+/* V10.6.7 — Retenção e Diagnóstico: estrutura fiel à referência 01 */
+#retentionDiagnosticPanel.retention-diagnostic-panel {
+    box-sizing:border-box !important;
+}
+#retentionDiagnosticPanel .retention-center-column,
+#retentionDiagnosticPanel .retention-critical-column {
+    min-width:0 !important;
+    box-sizing:border-box !important;
+}
+
+@media (min-width:1181px) {
+    #retentionDiagnosticPanel.retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:minmax(300px,.92fr) minmax(560px,1.58fr) minmax(650px,1.98fr) !important;
+        grid-template-rows:auto !important;
+        grid-template-areas:"head center critical" !important;
+        column-gap:18px !important;
+        row-gap:0 !important;
+        align-items:stretch !important;
+        min-height:272px !important;
+        height:auto !important;
+        padding:14px 16px !important;
+        overflow:hidden !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head {
+        grid-area:head !important;
+        min-width:0 !important;
+        height:100% !important;
+        padding:2px 0 !important;
+        display:flex !important;
+        flex-direction:column !important;
+        align-items:flex-start !important;
+        justify-content:flex-start !important;
+        overflow:hidden !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head > div {
+        min-width:0 !important;
+        max-width:30ch !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head h3 {
+        margin:0 0 7px !important;
+        font-size:1.10rem !important;
+        line-height:1.08 !important;
+        white-space:normal !important;
+        overflow:visible !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-subtitle {
+        margin:0 !important;
+        max-width:30ch !important;
+        font-size:.73rem !important;
+        line-height:1.48 !important;
+        white-space:normal !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head .btn {
+        margin-top:auto !important;
+        min-height:36px !important;
+        height:36px !important;
+        padding:0 14px !important;
+        font-size:.72rem !important;
+        border-radius:9px !important;
+    }
+
+    #retentionDiagnosticPanel .retention-center-column {
+        grid-area:center !important;
+        display:grid !important;
+        grid-template-rows:124px 64px !important;
+        gap:14px !important;
+        align-content:start !important;
+        height:100% !important;
+    }
+    #retentionDiagnosticPanel .retention-metric-grid {
+        display:grid !important;
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+        gap:10px !important;
+        min-width:0 !important;
+        width:100% !important;
+        height:124px !important;
+        margin:0 !important;
+    }
+    #retentionDiagnosticPanel .retention-metric {
+        min-width:0 !important;
+        width:100% !important;
+        height:124px !important;
+        padding:13px 14px !important;
+        display:flex !important;
+        flex-direction:column !important;
+        justify-content:space-between !important;
+        gap:8px !important;
+        border-radius:12px !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .retention-metric span {
+        margin:0 !important;
+        min-width:0 !important;
+        max-width:100% !important;
+        font-size:.68rem !important;
+        line-height:1.24 !important;
+        white-space:normal !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .retention-metric strong {
+        margin:0 !important;
+        font-size:1.35rem !important;
+        line-height:1 !important;
+    }
+    #retentionDiagnosticPanel .exam-phase-strip {
+        min-width:0 !important;
+        width:100% !important;
+        height:64px !important;
+        min-height:64px !important;
+        margin:0 !important;
+        padding:0 16px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:18px !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .exam-phase-strip strong {
+        flex:0 1 auto !important;
+        min-width:0 !important;
+        max-width:42% !important;
+        font-size:.77rem !important;
+        line-height:1.2 !important;
+        white-space:normal !important;
+        overflow-wrap:anywhere !important;
+    }
+    #retentionDiagnosticPanel .exam-phase-strip span {
+        min-width:0 !important;
+        flex:1 1 auto !important;
+        max-width:62% !important;
+        font-size:.70rem !important;
+        line-height:1.3 !important;
+        text-align:right !important;
+        white-space:normal !important;
+        overflow-wrap:anywhere !important;
+        text-overflow:clip !important;
+    }
+
+    #retentionDiagnosticPanel .retention-critical-column {
+        grid-area:critical !important;
+        display:grid !important;
+        grid-template-rows:124px 120px !important;
+        gap:14px !important;
+        align-content:start !important;
+        height:100% !important;
+        min-width:0 !important;
+        overflow:visible !important;
+    }
+    #retentionDiagnosticPanel .critical-queue-head {
+        min-width:0 !important;
+        width:100% !important;
+        height:124px !important;
+        min-height:124px !important;
+        margin:0 !important;
+        padding:0 16px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:20px !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .critical-queue-head strong {
+        flex:0 0 auto !important;
+        min-width:0 !important;
+        font-size:.79rem !important;
+        line-height:1.2 !important;
+        white-space:nowrap !important;
+    }
+    #retentionDiagnosticPanel .critical-queue-head span {
+        min-width:0 !important;
+        flex:1 1 auto !important;
+        max-width:72% !important;
+        font-size:.70rem !important;
+        line-height:1.35 !important;
+        text-align:right !important;
+        white-space:normal !important;
+        overflow:hidden !important;
+        overflow-wrap:anywhere !important;
+        word-break:normal !important;
+        text-overflow:clip !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-list {
+        position:relative !important;
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        grid-template-rows:120px !important;
+        gap:14px !important;
+        min-width:0 !important;
+        width:100% !important;
+        height:120px !important;
+        min-height:120px !important;
+        max-height:120px !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow:visible !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 {
+        position:relative !important;
+        display:grid !important;
+        grid-template-columns:26px minmax(0,1fr) auto !important;
+        grid-template-rows:1fr !important;
+        gap:9px !important;
+        min-width:0 !important;
+        width:100% !important;
+        height:120px !important;
+        min-height:120px !important;
+        margin:0 !important;
+        padding:14px 13px !important;
+        align-items:center !important;
+        border-radius:12px !important;
+        overflow:hidden !important;
+        cursor:pointer !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .critical-rank {
+        align-self:center !important;
+        justify-self:start !important;
+        width:25px !important;
+        height:25px !important;
+        min-width:25px !important;
+        min-height:25px !important;
+        border-radius:7px !important;
+        font-size:.65rem !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-copy {
+        min-width:0 !important;
+        max-width:100% !important;
+        overflow:hidden !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-title {
+        margin:0 0 5px !important;
+        min-width:0 !important;
+        max-width:100% !important;
+        font-size:.73rem !important;
+        line-height:1.20 !important;
+        font-weight:800 !important;
+        white-space:normal !important;
+        display:-webkit-box !important;
+        -webkit-box-orient:vertical !important;
+        -webkit-line-clamp:2 !important;
+        overflow:hidden !important;
+        overflow-wrap:anywhere !important;
+        word-break:normal !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-meta,
+    #retentionDiagnosticPanel .critical-layer-label {
+        display:block !important;
+        min-width:0 !important;
+        max-width:100% !important;
+        margin:0 !important;
+        font-size:.62rem !important;
+        line-height:1.25 !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+    #retentionDiagnosticPanel .critical-layer-label { margin-top:3px !important; }
+    #retentionDiagnosticPanel .retention-risk-value {
+        align-self:center !important;
+        justify-self:end !important;
+        min-width:0 !important;
+        font-size:.72rem !important;
+        line-height:1 !important;
+        white-space:nowrap !important;
+    }
+    #retentionDiagnosticPanel .retention-risk-list .retention-empty {
+        grid-column:1 / -1 !important;
+        height:120px !important;
+        min-height:120px !important;
+        padding:0 22px !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        text-align:center !important;
+        font-size:.74rem !important;
+        line-height:1.4 !important;
+        white-space:normal !important;
+        overflow-wrap:anywhere !important;
+        box-sizing:border-box !important;
+    }
+    #retentionDiagnosticPanel .critical-more-btn {
+        right:-7px !important;
+        bottom:-7px !important;
+    }
+}
+
+@media (min-width:861px) and (max-width:1180px) {
+    #retentionDiagnosticPanel.retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:minmax(220px,.78fr) minmax(0,1.72fr) !important;
+        grid-template-areas:"head center" "critical critical" !important;
+        gap:12px !important;
+        padding:13px !important;
+        height:auto !important;
+        overflow:hidden !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head { grid-area:head !important; min-width:0 !important; }
+    #retentionDiagnosticPanel .retention-center-column { grid-area:center !important; min-width:0 !important; display:grid !important; gap:10px !important; }
+    #retentionDiagnosticPanel .retention-critical-column { grid-area:critical !important; min-width:0 !important; display:grid !important; gap:10px !important; }
+    #retentionDiagnosticPanel .retention-metric-grid { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:8px !important; }
+    #retentionDiagnosticPanel .retention-metric { min-width:0 !important; height:96px !important; padding:10px 11px !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .exam-phase-strip { min-width:0 !important; min-height:52px !important; height:auto !important; padding:10px 12px !important; gap:12px !important; }
+    #retentionDiagnosticPanel .exam-phase-strip span { white-space:normal !important; overflow-wrap:anywhere !important; }
+    #retentionDiagnosticPanel .critical-queue-head { min-width:0 !important; min-height:72px !important; height:auto !important; padding:12px 13px !important; gap:14px !important; }
+    #retentionDiagnosticPanel .critical-queue-head span { min-width:0 !important; max-width:72% !important; white-space:normal !important; overflow-wrap:anywhere !important; text-align:right !important; }
+    #retentionDiagnosticPanel .retention-risk-list { position:relative !important; display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; min-width:0 !important; min-height:104px !important; height:auto !important; max-height:none !important; overflow:visible !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 { min-width:0 !important; min-height:104px !important; height:104px !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .retention-risk-title { white-space:normal !important; display:-webkit-box !important; -webkit-line-clamp:2 !important; -webkit-box-orient:vertical !important; overflow:hidden !important; overflow-wrap:anywhere !important; }
+    #retentionDiagnosticPanel .retention-risk-meta,
+    #retentionDiagnosticPanel .critical-layer-label { white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+}
+
+@media (max-width:860px) {
+    #retentionDiagnosticPanel.retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        grid-template-areas:"head" "center" "critical" !important;
+        gap:12px !important;
+        padding:12px !important;
+        height:auto !important;
+        overflow:hidden !important;
+    }
+    #retentionDiagnosticPanel .retention-diagnostic-head { grid-area:head !important; min-width:0 !important; }
+    #retentionDiagnosticPanel .retention-diagnostic-head h3 { white-space:normal !important; }
+    #retentionDiagnosticPanel .retention-center-column { grid-area:center !important; min-width:0 !important; display:grid !important; gap:9px !important; }
+    #retentionDiagnosticPanel .retention-critical-column { grid-area:critical !important; min-width:0 !important; display:grid !important; gap:9px !important; }
+    #retentionDiagnosticPanel .retention-metric-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important; }
+    #retentionDiagnosticPanel .retention-metric { min-width:0 !important; min-height:86px !important; height:auto !important; padding:10px !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .exam-phase-strip { min-width:0 !important; height:auto !important; min-height:54px !important; padding:10px 11px !important; display:flex !important; flex-wrap:wrap !important; gap:5px 10px !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .exam-phase-strip strong,
+    #retentionDiagnosticPanel .exam-phase-strip span { min-width:0 !important; max-width:100% !important; white-space:normal !important; overflow-wrap:anywhere !important; text-align:left !important; }
+    #retentionDiagnosticPanel .critical-queue-head { min-width:0 !important; height:auto !important; min-height:64px !important; padding:10px 11px !important; display:flex !important; flex-wrap:wrap !important; gap:5px 10px !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .critical-queue-head strong,
+    #retentionDiagnosticPanel .critical-queue-head span { min-width:0 !important; max-width:100% !important; white-space:normal !important; overflow-wrap:anywhere !important; text-align:left !important; }
+    #retentionDiagnosticPanel .critical-queue-head span { flex-basis:100% !important; }
+    #retentionDiagnosticPanel .retention-risk-list { position:relative !important; display:grid !important; grid-template-columns:1fr !important; gap:8px !important; min-width:0 !important; height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 { min-width:0 !important; width:100% !important; min-height:92px !important; height:auto !important; overflow:hidden !important; }
+    #retentionDiagnosticPanel .retention-risk-title { white-space:normal !important; display:-webkit-box !important; -webkit-line-clamp:2 !important; -webkit-box-orient:vertical !important; overflow:hidden !important; overflow-wrap:anywhere !important; }
+    #retentionDiagnosticPanel .retention-risk-meta,
+    #retentionDiagnosticPanel .critical-layer-label { white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+    #retentionDiagnosticPanel .critical-more-btn { right:2px !important; bottom:2px !important; }
+}
+
+
+/* V10.7.0 — Retenção e Diagnóstico restaurado no padrão visual V10.5.8 */
+#retentionDiagnosticPanel.retention-diagnostic-panel {
+    display:grid !important;
+    grid-template-columns:minmax(230px,.78fr) minmax(480px,1.45fr) minmax(470px,1.38fr) !important;
+    gap:14px !important;
+    align-items:stretch !important;
+    margin:0 0 14px !important;
+    padding:14px !important;
+    min-width:0 !important;
+    height:auto !important;
+    min-height:252px !important;
+    overflow:hidden !important;
+    border-radius:16px !important;
+}
+#retentionDiagnosticPanel * { box-sizing:border-box; }
+#retentionDiagnosticPanel .retention-diagnostic-head {
+    display:flex !important; flex-direction:column !important; align-items:flex-start !important;
+    min-width:0 !important; padding:0 4px !important; gap:8px !important;
+}
+#retentionDiagnosticPanel .retention-diagnostic-head > div { min-width:0 !important; max-width:100% !important; }
+#retentionDiagnosticPanel .retention-diagnostic-head h3 {
+    margin:0 0 7px !important; font-size:clamp(1.02rem,1.15vw,1.28rem) !important; line-height:1.12 !important;
+    white-space:normal !important; overflow-wrap:break-word !important; word-break:normal !important;
+}
+#retentionDiagnosticPanel .retention-diagnostic-subtitle {
+    margin:0 !important; max-width:30ch !important; font-size:clamp(.72rem,.73vw,.82rem) !important;
+    line-height:1.48 !important; white-space:normal !important; overflow-wrap:break-word !important; word-break:normal !important;
+}
+#retentionDiagnosticPanel .retention-diagnostic-head .btn {
+    margin-top:auto !important; width:auto !important; min-height:38px !important; padding:0 16px !important; white-space:nowrap !important;
+}
+#retentionDiagnosticPanel .retention-center-column {
+    min-width:0 !important; display:grid !important; grid-template-rows:minmax(0,1fr) auto !important; gap:10px !important;
+}
+#retentionDiagnosticPanel .retention-metric-grid {
+    display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:10px !important; min-width:0 !important;
+}
+#retentionDiagnosticPanel .retention-metric {
+    min-width:0 !important; min-height:108px !important; padding:13px 14px !important; border-radius:14px !important;
+    display:flex !important; flex-direction:column !important; align-items:flex-start !important; justify-content:space-between !important;
+}
+#retentionDiagnosticPanel .retention-metric span {
+    min-width:0 !important; max-width:100% !important; font-size:clamp(.66rem,.65vw,.75rem) !important; line-height:1.2 !important;
+    white-space:normal !important; overflow-wrap:break-word !important; word-break:normal !important;
+}
+#retentionDiagnosticPanel .retention-metric strong { font-size:clamp(1.25rem,1.35vw,1.6rem) !important; line-height:1 !important; margin:0 !important; }
+#retentionDiagnosticPanel .exam-phase-strip {
+    min-width:0 !important; min-height:72px !important; padding:12px 16px !important; border-radius:14px !important;
+    display:flex !important; align-items:center !important; justify-content:space-between !important; gap:16px !important;
+}
+#retentionDiagnosticPanel .exam-phase-strip strong {
+    flex:0 1 auto !important; min-width:0 !important; font-size:clamp(.8rem,.85vw,.98rem) !important; line-height:1.25 !important;
+    white-space:normal !important; overflow-wrap:break-word !important;
+}
+#retentionDiagnosticPanel .exam-phase-strip span {
+    flex:1 1 220px !important; min-width:0 !important; max-width:72% !important; text-align:right !important;
+    font-size:clamp(.7rem,.72vw,.82rem) !important; line-height:1.35 !important; white-space:normal !important; overflow-wrap:break-word !important; word-break:normal !important;
+}
+#retentionDiagnosticPanel .retention-critical-column {
+    position:relative !important; min-width:0 !important; display:grid !important; grid-template-rows:auto minmax(0,1fr) !important; gap:10px !important;
+}
+#retentionDiagnosticPanel .critical-queue-head {
+    min-width:0 !important; min-height:52px !important; margin:0 !important; padding:11px 14px !important; border-radius:14px !important;
+    display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:14px !important;
+}
+#retentionDiagnosticPanel .critical-queue-head strong {
+    flex:0 0 auto !important; font-size:clamp(.82rem,.85vw,1rem) !important; line-height:1.2 !important; white-space:nowrap !important;
+}
+#retentionDiagnosticPanel .critical-queue-head span {
+    flex:1 1 auto !important; min-width:0 !important; max-width:68% !important; font-size:clamp(.64rem,.62vw,.74rem) !important; line-height:1.32 !important;
+    text-align:right !important; white-space:normal !important; overflow-wrap:break-word !important; word-break:normal !important;
+}
+#retentionDiagnosticPanel .retention-risk-list {
+    display:grid !important; grid-template-columns:1fr !important; grid-auto-rows:minmax(0,1fr) !important; gap:8px !important;
+    min-width:0 !important; min-height:0 !important; max-height:none !important; padding:0 !important; margin:0 !important; overflow:visible !important;
+}
+#retentionDiagnosticPanel .retention-risk-row.v965 {
+    display:grid !important; grid-template-columns:auto minmax(0,1fr) auto auto !important; gap:9px !important; align-items:center !important;
+    min-width:0 !important; min-height:74px !important; padding:10px 11px !important; margin:0 !important; border-radius:12px !important; overflow:hidden !important;
+}
+#retentionDiagnosticPanel .retention-risk-copy { min-width:0 !important; overflow:hidden !important; }
+#retentionDiagnosticPanel .retention-risk-title {
+    min-width:0 !important; max-width:100% !important; font-size:clamp(.72rem,.72vw,.82rem) !important; line-height:1.25 !important;
+    white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important;
+}
+#retentionDiagnosticPanel .retention-risk-meta, #retentionDiagnosticPanel .critical-layer-label {
+    min-width:0 !important; max-width:100% !important; font-size:clamp(.61rem,.6vw,.69rem) !important; line-height:1.28 !important;
+    white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important;
+}
+#retentionDiagnosticPanel .retention-risk-value { font-size:clamp(.72rem,.7vw,.8rem) !important; white-space:nowrap !important; }
+#retentionDiagnosticPanel .retention-risk-row .btn { min-height:34px !important; padding:0 11px !important; width:auto !important; white-space:nowrap !important; }
+#retentionDiagnosticPanel .retention-empty {
+    min-width:0 !important; min-height:110px !important; display:flex !important; align-items:center !important; padding:10px 4px !important;
+    font-size:clamp(.75rem,.78vw,.92rem) !important; line-height:1.4 !important; white-space:normal !important; overflow-wrap:break-word !important;
+}
+#retentionDiagnosticPanel .retention-more-button {
+    position:absolute !important; right:8px !important; bottom:7px !important; width:30px !important; height:30px !important; min-width:30px !important;
+    display:grid !important; place-items:center !important; border:1px solid var(--modern-border,var(--border-color)) !important; border-radius:9px !important;
+    background:var(--card-bg) !important; color:var(--text-color) !important; font-size:1.25rem !important; line-height:1 !important; cursor:pointer !important; z-index:2 !important;
+}
+#retentionDiagnosticPanel .retention-more-button[hidden] { display:none !important; }
+.retention-more-modal-content { width:min(760px,calc(100vw - 28px)) !important; max-height:min(76vh,720px) !important; overflow:hidden !important; }
+.retention-more-list { display:grid; gap:8px; overflow:auto; max-height:60vh; padding-right:3px; }
+.retention-more-list .retention-risk-row.v965 { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; gap:9px; align-items:center; min-width:0; padding:10px 11px; border:1px solid var(--modern-border,var(--border-color)); border-radius:12px; }
+.retention-more-list .retention-risk-copy { min-width:0; overflow:hidden; }
+.retention-more-list .retention-risk-title, .retention-more-list .retention-risk-meta, .retention-more-list .critical-layer-label { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+@media (max-width: 1280px) {
+    #retentionDiagnosticPanel.retention-diagnostic-panel { grid-template-columns:minmax(220px,.82fr) minmax(430px,1.45fr) minmax(390px,1.25fr) !important; gap:10px !important; padding:12px !important; }
+    #retentionDiagnosticPanel .critical-queue-head { gap:8px !important; }
+    #retentionDiagnosticPanel .critical-queue-head span { max-width:64% !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 { grid-template-columns:auto minmax(0,1fr) auto !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .btn { grid-column:2 / -1 !important; justify-self:end !important; }
+}
+@media (max-width: 1040px) {
+    #retentionDiagnosticPanel.retention-diagnostic-panel { grid-template-columns:minmax(210px,.8fr) minmax(0,1.7fr) !important; grid-template-areas:"head center" "critical critical" !important; min-height:0 !important; }
+    #retentionDiagnosticPanel .retention-diagnostic-head { grid-area:head !important; }
+    #retentionDiagnosticPanel .retention-center-column { grid-area:center !important; }
+    #retentionDiagnosticPanel .retention-critical-column { grid-area:critical !important; }
+    #retentionDiagnosticPanel .retention-risk-list { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 { grid-template-columns:auto minmax(0,1fr) auto !important; min-height:86px !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .btn { grid-column:2 / -1 !important; justify-self:end !important; }
+}
+@media (max-width: 760px) {
+    #retentionDiagnosticPanel.retention-diagnostic-panel { display:flex !important; flex-direction:column !important; gap:12px !important; padding:12px !important; overflow:visible !important; }
+    #retentionDiagnosticPanel .retention-diagnostic-head { min-height:150px !important; }
+    #retentionDiagnosticPanel .retention-diagnostic-head .btn { margin-top:8px !important; }
+    #retentionDiagnosticPanel .retention-metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+    #retentionDiagnosticPanel .retention-metric { min-height:90px !important; }
+    #retentionDiagnosticPanel .exam-phase-strip { align-items:flex-start !important; flex-direction:column !important; gap:6px !important; min-height:0 !important; }
+    #retentionDiagnosticPanel .exam-phase-strip span { max-width:100% !important; text-align:left !important; flex-basis:auto !important; }
+    #retentionDiagnosticPanel .critical-queue-head { flex-direction:column !important; gap:5px !important; min-height:0 !important; }
+    #retentionDiagnosticPanel .critical-queue-head span { max-width:100% !important; text-align:left !important; }
+    #retentionDiagnosticPanel .retention-risk-list { grid-template-columns:1fr !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 { grid-template-columns:auto minmax(0,1fr) auto !important; }
+}
+@media (max-width: 480px) {
+    #retentionDiagnosticPanel .retention-metric-grid { gap:8px !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 { grid-template-columns:auto minmax(0,1fr) !important; }
+    #retentionDiagnosticPanel .retention-risk-value { grid-column:1 !important; grid-row:2 !important; justify-self:center !important; }
+    #retentionDiagnosticPanel .retention-risk-row.v965 .btn { grid-column:2 !important; grid-row:2 !important; justify-self:end !important; }
+    .retention-more-list .retention-risk-row.v965 { grid-template-columns:auto minmax(0,1fr) !important; }
+    .retention-more-list .retention-risk-value { grid-column:1; grid-row:2; justify-self:center; }
+    .retention-more-list .btn { grid-column:2; grid-row:2; justify-self:end; }
+}
