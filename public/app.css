@@ -9752,3 +9752,48 @@ body.light-mode #retentionDiagnosticPanel .rd-metric-progress-v1077 { background
         max-height:148px !important;
     }
 }
+
+
+/* V10.7.8 — Retenção/Diagnóstico: tipografia minimalista dos rótulos */
+#retentionDiagnosticPanel .rd-metric-label-v1077 {
+    padding-right: 8px !important;
+    font-size: clamp(.76rem, .72vw, .86rem) !important;
+    line-height: 1.22 !important;
+    font-weight: 650 !important;
+    letter-spacing: 0 !important;
+    color: #c4d2de !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+}
+
+#retentionDiagnosticPanel .rd-metric-card-v1077 {
+    grid-template-columns: 50px minmax(0,1fr) !important;
+    column-gap: 12px !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+}
+
+#retentionDiagnosticPanel .rd-metric-icon-v1077 {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+    font-size: 1.30rem !important;
+}
+
+body.light-mode #retentionDiagnosticPanel .rd-metric-label-v1077 {
+    color: #526a7d !important;
+}
+
+@media (max-width: 1260px) {
+    #retentionDiagnosticPanel .rd-metric-label-v1077 {
+        font-size: .79rem !important;
+    }
+}
+
+@media (max-width: 560px) {
+    #retentionDiagnosticPanel .rd-metric-label-v1077 {
+        font-size: .80rem !important;
+    }
+}
