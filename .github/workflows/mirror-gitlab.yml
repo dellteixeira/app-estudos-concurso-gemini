@@ -25,7 +25,9 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
-          git clone --bare "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" mirror.git
+          git clone --bare \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            mirror.git
 
       - name: Mirror branches and tags to GitLab
         env:
@@ -33,4 +35,10 @@ jobs:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         run: |
           set -euo pipefail
-          git -C mirror.git push --mirror "https://${GITLAB_USERNAME}:${GITLAB_TOKEN}@gitlab.com/dellteixeira-group/app-estudos-concurso-gemini.git"
+
+          AUTH="$(printf '%s:%s' "$GITLAB_USERNAME" "$GITLAB_TOKEN" | base64 -w0)"
+
+          git -C mirror.git \
+            -c http.extraHeader="Authorization: Basic ${AUTH}" \
+            push --mirror \
+            "https://gitlab.com/dellteixeira-group/app-estudos-concurso-gemini.git"
