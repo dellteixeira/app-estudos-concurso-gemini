@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.6.1',
+                    appVersion:'10.6.2',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -7065,6 +7065,49 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
         }
 
+        function getDailyStudiedTopicsSummary(dateKey = getLocalDateKey()) {
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const sessions = Array.isArray(contest.studySessions) ? contest.studySessions : [];
+            const map = new Map();
+            sessions.forEach(session => {
+                if ((session?.dateKey || getSessionDateKey(session)) !== dateKey) return;
+                const materia = String(session?.materia || '').trim();
+                const assunto = String(session?.assunto || '').trim();
+                if (!materia && !assunto) return;
+                const key = `${materia}||${assunto}`;
+                const bucket = map.get(key) || { materia, assunto, minutes:0, activities:new Set() };
+                bucket.minutes += Math.max(0, Math.round(Number(session?.minutes || session?.durationMinutes || 0) || 0));
+                if (session?.activityType) bucket.activities.add(String(session.activityType));
+                map.set(key, bucket);
+            });
+            return [...map.values()].sort((a,b) => b.minutes - a.minutes || a.materia.localeCompare(b.materia));
+        }
+
+        function getActivityBadgeLabel(type) {
+            const labels = { teoria:'TEORIA', videoaula:'VÍDEOAULA', questoes:'QUESTÕES', lei_seca:'LEI SECA', revisao_ativa:'REVISÃO' };
+            return labels[String(type || '').toLowerCase()] || String(type || '').replace(/_/g,' ').toUpperCase();
+        }
+
+        function renderPomodoroStudiedTopics() {
+            const list = document.getElementById('pomodoroStudiedTopicsList');
+            const panel = document.getElementById('pomodoroStudiedTopicsPanel');
+            if (!list || !panel) return;
+            const entries = getDailyStudiedTopicsSummary();
+            if (!entries.length) {
+                panel.style.display = 'none';
+                list.innerHTML = '';
+                return;
+            }
+            panel.style.display = 'block';
+            list.innerHTML = entries.map(entry => {
+                const primaryType = [...entry.activities][0] || '';
+                const badge = primaryType ? `<span class="pomodoro-topic-badge">${escapeHtml(getActivityBadgeLabel(primaryType))}</span>` : '';
+                const extra = entry.activities.size > 1 ? `<span class="pomodoro-topic-multi">+${entry.activities.size - 1}</span>` : '';
+                const title = `${entry.materia}${entry.assunto ? ` — ${entry.assunto}` : ''}`;
+                return `<div class="pomodoro-topic-entry">${badge}<div class="pomodoro-topic-copy"><strong>${escapeHtml(title)}</strong><span>${formatStudyMinutes(entry.minutes)}</span></div>${extra}</div>`;
+            }).join('');
+        }
+
         function renderPomodoroDailyCounter() {
             const generalEl = document.getElementById('generalPomodoroTotal');
             const totalEl = document.getElementById('dailyPomodoroTotal');
@@ -7074,6 +7117,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!generalEl || !totalEl || !targetEl || !progressEl || !statusEl) return;
             renderActiveStudyContext();
             renderSubjectStudyHours();
+            renderPomodoroStudiedTopics();
 
             const studiedMinutes = getDailyPomodoroMinutes();
             const targetHours = getPomodoroDailyTargetHours();
