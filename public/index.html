@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.7.5">
+    <meta name="app-version" content="10.7.6">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -144,29 +144,40 @@
                 <button class="btn btn-secondary btn-sm retention-study-now-v1072" type="button" onclick="openOpportunityStudyModal()"><span class="retention-study-now-icon" aria-hidden="true">▣</span>Estudar agora</button>
             </div>
             <div class="retention-center-column retention-center-v1072">
+                <div id="retentionExamPhase" class="exam-phase-strip retention-exam-v1072" aria-live="polite">
+                    <span class="retention-exam-icon" aria-hidden="true">▦</span>
+                    <span class="retention-exam-copy">
+                        <strong>Sem data de prova definida</strong>
+                        <span>Defina a data da prova para ativar a estratégia progressiva.</span>
+                    </span>
+                    <button class="retention-exam-action" type="button" onclick="editarDataProva()">Definir data da prova</button>
+                </div>
                 <div class="retention-metric-grid retention-metrics-v1072">
-                    <div class="retention-metric retention-metric-v1072" aria-label="Retenção média">
+                    <div class="retention-metric retention-metric-v1072 metric-retention" aria-label="Retenção média">
                         <span class="retention-metric-icon" aria-hidden="true">↗</span>
                         <span class="retention-metric-label">Retenção média</span>
                         <strong id="retentionDiagAverage">—</strong>
+                        <span class="retention-metric-progress" aria-hidden="true"><span id="retentionDiagAverageBar"></span></span>
                     </div>
-                    <button class="retention-metric retention-metric-v1072 retention-metric-action" type="button" onclick="openRetentionMetricDetails('risk')" aria-label="Abrir assuntos em risco">
+                    <button class="retention-metric retention-metric-v1072 retention-metric-action metric-risk" type="button" onclick="openRetentionMetricDetails('risk')" aria-label="Abrir assuntos em risco">
                         <span class="retention-metric-icon" aria-hidden="true">△</span>
                         <span class="retention-metric-label">Assuntos em risco</span>
                         <strong id="retentionDiagRisk">0</strong>
+                        <span class="retention-metric-progress" aria-hidden="true"><span id="retentionDiagRiskBar"></span></span>
                     </button>
-                    <button class="retention-metric retention-metric-v1072 retention-metric-action" type="button" onclick="openRetentionMetricDetails('overdue')" aria-label="Abrir revisões vencidas">
+                    <button class="retention-metric retention-metric-v1072 retention-metric-action metric-overdue" type="button" onclick="openRetentionMetricDetails('overdue')" aria-label="Abrir revisões vencidas">
                         <span class="retention-metric-icon" aria-hidden="true">◷</span>
                         <span class="retention-metric-label">Revisões vencidas</span>
                         <strong id="retentionDiagOverdue">0</strong>
+                        <span class="retention-metric-progress" aria-hidden="true"><span id="retentionDiagOverdueBar"></span></span>
                     </button>
-                    <button class="retention-metric retention-metric-v1072 retention-metric-action" type="button" onclick="openRetentionMetricDetails('mastered')" aria-label="Abrir assuntos dominados">
+                    <button class="retention-metric retention-metric-v1072 retention-metric-action metric-mastered" type="button" onclick="openRetentionMetricDetails('mastered')" aria-label="Abrir assuntos dominados">
                         <span class="retention-metric-icon" aria-hidden="true">✓</span>
                         <span class="retention-metric-label">Assuntos dominados</span>
                         <strong id="retentionDiagMastered">0</strong>
+                        <span class="retention-metric-progress" aria-hidden="true"><span id="retentionDiagMasteredBar"></span></span>
                     </button>
                 </div>
-                <div id="retentionExamPhase" class="exam-phase-strip retention-exam-v1072"><span class="retention-exam-icon" aria-hidden="true">▦</span><strong>Estratégia da prova</strong><span>Data da prova não definida.</span></div>
             </div>
             <div class="retention-critical-column retention-critical-v1072">
                 <div class="critical-queue-head retention-critical-head-v1072">
