@@ -510,3 +510,11 @@ V10.7.2 — Integridade de horas e atualização multi-dispositivo
 V10.7.2 — Painel Retenção e Diagnóstico ajustado para corresponder ao mockup aprovado, mantendo as correções de horas e atualização.
 
 V10.7.2 — Painel Retenção e Diagnóstico reconstruído conforme mockup aprovado; métricas de risco, revisões vencidas e dominados abrem detalhes; PWA auditado.
+
+
+V10.7.4 — Retenção e Diagnóstico
+- Redesenho consolidado do painel de retenção.
+- Criticidade visual Alto/Médio/Baixo nos pontos críticos.
+- Barra de retenção individual por assunto.
+- Legenda de risco e hierarquia visual aprimorada.
+- Responsividade preservada para desktop, tablet e mobile.
