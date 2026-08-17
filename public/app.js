@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.6.7',
+                    appVersion:'10.6.8',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -9987,69 +9987,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return { rows, avg, risk, overdue, mastered };
         }
 
+        // V10.6.8 — painel visual de Retenção e Diagnóstico removido por solicitação.
+        // O motor interno de retenção permanece disponível para revisões adaptativas.
         function renderRetentionDiagnostics() {
-            const panel = document.getElementById('retentionDiagnosticPanel');
-            if (!panel) return;
-            const set = (id,value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
-            if (!hasRealCurrentConcurso()) {
-                set('retentionDiagAverage','—'); set('retentionDiagRisk','0'); set('retentionDiagOverdue','0'); set('retentionDiagMastered','0');
-                const phaseBox=document.getElementById('retentionExamPhase'); if(phaseBox) phaseBox.innerHTML='<strong>Estratégia da prova</strong><span>Crie ou selecione um concurso para ativar a estratégia progressiva.</span>';
-                const list=document.getElementById('retentionDiagnosticRiskList'); if(list) list.innerHTML='<div class="retention-empty">Crie ou selecione um concurso para iniciar o diagnóstico.</div>';
-                retentionDiagnosticRows=[]; return;
-            }
-            const phase = getExamPhaseProfile(getConcursosMetadata()[currentConcurso] || {});
-            const phaseBox = document.getElementById('retentionExamPhase');
-            if (phaseBox) {
-                const dayText = phase.days == null ? '' : (phase.days < 0 ? '' : phase.days === 0 ? 'Hoje' : `${phase.days} dia${phase.days===1?'':'s'}`);
-                phaseBox.innerHTML = `<strong>${escapeHtml(phase.label)}${dayText?` · ${escapeHtml(dayText)}`:''}</strong><span>${escapeHtml(phase.guidance)}</span>`;
-            }
-            const diag = buildRetentionDiagnostics();
-            set('retentionDiagAverage', Number.isFinite(diag.avg) ? `${Math.round(diag.avg)}%` : '—');
-            set('retentionDiagRisk', diag.risk.length);
-            set('retentionDiagOverdue', diag.overdue.length);
-            set('retentionDiagMastered', diag.mastered.length);
-            retentionDiagnosticRows = diag.risk.slice();
-            const list=document.getElementById('retentionDiagnosticRiskList'); if(!list) return;
-            if (!diag.rows.length) {
-                list.innerHTML='<div class="retention-empty">Ainda não há sessões suficientes para estimar retenção. O diagnóstico aparecerá conforme você estudar.</div>';
-                return;
-            }
-            if (!retentionDiagnosticRows.length) {
-                list.innerHTML='<div class="retention-empty">Nenhum assunto está em risco neste momento.</div>';
-                return;
-            }
-            const visibleRows = retentionDiagnosticRows.slice(0,2);
-            const remainingCount = Math.max(0, retentionDiagnosticRows.length - visibleRows.length);
-            list.innerHTML = visibleRows.map((row,index)=>renderCriticalRiskCard(row,index)).join('') +
-                (remainingCount ? `<button class="critical-more-btn" type="button" onclick="openCriticalTopicsModal()" aria-label="Ver mais ${remainingCount} matéria${remainingCount===1?'':'s'} em pontos críticos" title="Ver mais ${remainingCount} matéria${remainingCount===1?'':'s'}">+</button>` : '');
-        }
-
-        function renderCriticalRiskCard(row,index,options={}) {
-            const state=row?.state || {};
-            const item=editalItems.find(i=>getStudyTopicKey(i.materia,i.assunto)===state.key);
-            const plan=item?getLayeredReviewPlan(row,item):null;
-            const status=row?.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row?.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
-            const layerDef=plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
-            const layerText=plan?`Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}`:'Revisão adaptativa';
-            const modalClass = options.modal ? ' critical-modal-card' : '';
-            const title = `${state.materia || ''} — ${state.assunto || ''}`;
-            return `<div class="retention-risk-row v965 retention-risk-clickable${modalClass}" role="button" tabindex="0" aria-label="Abrir conteúdo de ${escapeHtml(title)}" onclick="${options.modal?'closeCriticalTopicsModal();':''}openLayeredReviewModal(${index})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${options.modal?'closeCriticalTopicsModal();':''}openLayeredReviewModal(${index});}"><div class="critical-rank">${index+1}</div><div class="retention-risk-copy"><div class="retention-risk-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div><div class="retention-risk-meta">${escapeHtml(status)}</div><div class="critical-layer-label">${escapeHtml(layerText)}</div></div><div class="retention-risk-value">${Math.round(Number(row?.retention)||0)}%</div></div>`;
-        }
-
-        function openCriticalTopicsModal() {
-            const modal=document.getElementById('modalCriticalTopics');
-            const list=document.getElementById('criticalTopicsModalList');
-            if(!modal || !list) return;
-            const remaining=retentionDiagnosticRows.slice(2);
-            list.innerHTML=remaining.length
-                ? remaining.map((row,offset)=>renderCriticalRiskCard(row,offset+2,{modal:true})).join('')
-                : '<div class="retention-empty">Não há outras matérias críticas neste momento.</div>';
-            modal.style.display='flex';
-        }
-
-        function closeCriticalTopicsModal() {
-            const modal=document.getElementById('modalCriticalTopics');
-            if(modal) modal.style.display='none';
+            return;
         }
 
         function startRetentionDiagnosticTopic(index) {
@@ -10091,8 +10032,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         document.addEventListener('click', (event) => {
             const modal = document.getElementById('modalGlobalSearch');
             if (modal && event.target === modal) closeGlobalSearchModal();
-            const criticalModal = document.getElementById('modalCriticalTopics');
-            if (criticalModal && event.target === criticalModal) closeCriticalTopicsModal();
         });
 
         window.addEventListener('load', () => {
