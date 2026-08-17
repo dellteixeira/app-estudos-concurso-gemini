@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.6.4',
+                    appVersion:'10.6.5',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -10025,7 +10025,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const status=row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
                 const layerDef=plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
                 const layerText=plan?`Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}`:'Revisão adaptativa';
-                return `<div class="retention-risk-row v965"><div class="critical-rank">${index+1}</div><div><div class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</div><div class="retention-risk-meta">${escapeHtml(status)}</div><div class="critical-layer-label">${escapeHtml(layerText)}</div></div><div class="retention-risk-value">${Math.round(row.retention)}%</div><button class="btn btn-secondary btn-sm" type="button" onclick="openLayeredReviewModal(${index})">Revisar</button></div>`;
+                return `<div class="retention-risk-row v965 retention-risk-clickable" role="button" tabindex="0" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}" onclick="openLayeredReviewModal(${index})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLayeredReviewModal(${index});}"><div class="critical-rank">${index+1}</div><div class="retention-risk-copy"><div class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</div><div class="retention-risk-meta">${escapeHtml(status)}</div><div class="critical-layer-label">${escapeHtml(layerText)}</div></div><div class="retention-risk-value">${Math.round(row.retention)}%</div></div>`;
             }).join('');
         }
 
