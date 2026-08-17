@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.7.0',
+                    appVersion:'10.7.1',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -6977,7 +6977,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function removeStudySessionsForDate(dateKey = getLocalDateKey()) {
-            // V10.7.0: bloqueio de segurança. O histórico de estudo é permanente e não pode
+            // V10.7.1: bloqueio de segurança. O histórico de estudo é permanente e não pode
             // ser apagado por reset diário, cronograma ou rotinas auxiliares. A única limpeza
             // autorizada ocorre em clearData(), ao resetar completamente o edital do concurso.
             console.warn(`Remoção de studySessions bloqueada para ${dateKey}. Use Limpar Edital Atual para zerar o histórico.`);
@@ -10125,7 +10125,48 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const status = row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
             const layerDef = plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
             const layerText = plan ? `Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}` : 'Revisão adaptativa';
-            return `<div class="retention-risk-row v965"><div class="critical-rank">${index+1}</div><div class="retention-risk-copy"><div class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</div><div class="retention-risk-meta">${escapeHtml(status)}</div><div class="critical-layer-label">${escapeHtml(layerText)}</div></div><div class="retention-risk-value">${Math.round(row.retention)}%</div><button class="btn btn-secondary btn-sm" type="button" onclick="openLayeredReviewModal(${index})">Revisar</button></div>`;
+            return `<button class="retention-risk-row v965 retention-risk-card-v1071" type="button" onclick="openLayeredReviewModal(${index})" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span></span><span class="retention-risk-value">${Math.round(row.retention)}%</span></button>`;
+        }
+
+        function getRetentionMetricConfig(kind) {
+            return {
+                risk: { title:'Assuntos em risco', subtitle:'Conteúdos que exigem atenção por retenção, atraso de revisão ou desempenho em questões.', key:'risk' },
+                overdue: { title:'Revisões vencidas', subtitle:'Conteúdos cuja próxima revisão prevista já ultrapassou a data recomendada.', key:'overdue' },
+                mastered: { title:'Assuntos dominados', subtitle:'Conteúdos com retenção alta, sem revisão vencida e desempenho compatível com domínio.', key:'mastered' }
+            }[kind] || null;
+        }
+
+        function renderRetentionMetricDetailRow(row, index, kind) {
+            const state = row?.state || {};
+            const retention = Math.round(Number(row?.retention) || 0);
+            const accuracy = Number.isFinite(Number(row?.questionAccuracy)) ? `${Math.round(Number(row.questionAccuracy))}%` : '—';
+            const nextReview = row?.nextAt instanceof Date && Number.isFinite(row.nextAt.getTime()) ? row.nextAt.toLocaleDateString('pt-BR') : '—';
+            const overdueText = row?.overdue ? `Vencida${row.overdueDays ? ` há ${row.overdueDays}d` : ''}` : `Próxima: ${nextReview}`;
+            const indexInRisk = retentionDiagnosticRows.findIndex(item => item?.state?.key === state.key);
+            const clickable = kind !== 'mastered' && indexInRisk >= 0;
+            const tag = clickable ? 'button' : 'div';
+            const action = clickable ? ` type="button" onclick="closeRetentionMetricDetails(); openLayeredReviewModal(${indexInRisk})"` : '';
+            return `<${tag} class="retention-metric-detail-row${clickable?' is-clickable':''}"${action}><span class="retention-detail-rank">${index+1}</span><span class="retention-detail-copy"><strong>${escapeHtml(state.materia||'Matéria')} — ${escapeHtml(state.assunto||'Assunto')}</strong><span>Retenção ${retention}% · Questões ${accuracy} · ${escapeHtml(overdueText)}</span></span><span class="retention-detail-value">${retention}%</span></${tag}>`;
+        }
+
+        function openRetentionMetricDetails(kind) {
+            const config = getRetentionMetricConfig(kind); if(!config) return;
+            const modal=document.getElementById('modalRetentionMetricDetails');
+            const title=document.getElementById('retentionMetricModalTitle');
+            const subtitle=document.getElementById('retentionMetricModalSubtitle');
+            const list=document.getElementById('retentionMetricModalList');
+            if(!modal || !title || !subtitle || !list) return;
+            const diag=buildRetentionDiagnostics();
+            const rows=Array.isArray(diag[config.key]) ? diag[config.key] : [];
+            title.textContent=config.title;
+            subtitle.textContent=config.subtitle;
+            list.innerHTML=rows.length ? rows.map((row,index)=>renderRetentionMetricDetailRow(row,index,kind)).join('') : '<div class="retention-empty">Nenhum conteúdo nesta categoria no momento.</div>';
+            modal.style.display='flex';
+        }
+
+        function closeRetentionMetricDetails() {
+            const modal=document.getElementById('modalRetentionMetricDetails');
+            if(modal) modal.style.display='none';
         }
 
         function renderRetentionDiagnostics() {
