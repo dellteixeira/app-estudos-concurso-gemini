@@ -10122,10 +10122,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const state = row.state;
             const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === state.key);
             const plan = item ? getLayeredReviewPlan(row,item) : null;
+            const retention = Math.max(0, Math.min(100, Math.round(Number(row.retention) || 0)));
+            const severity = row.overdue || retention < 45 || (row.questionAccuracy!=null && row.questionAccuracy<45)
+                ? 'high'
+                : (retention < 65 || (row.questionAccuracy!=null && row.questionAccuracy<60) ? 'medium' : 'low');
+            const severityLabel = severity === 'high' ? 'Alto' : severity === 'medium' ? 'Médio' : 'Baixo';
             const status = row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
             const layerDef = plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
             const layerText = plan ? `Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}` : 'Revisão adaptativa';
-            return `<button class="retention-risk-row v965 retention-risk-card-v1071" type="button" onclick="openLayeredReviewModal(${index})" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span></span><span class="retention-risk-value">${Math.round(row.retention)}%</span></button>`;
+            return `<button class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" type="button" onclick="openLayeredReviewModal(${index})" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}. Risco ${severityLabel}. Retenção ${retention}%"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span style="width:${retention}%"></span></span></span><span class="retention-risk-value">${retention}%</span></button>`;
         }
 
         function getRetentionMetricConfig(kind) {
