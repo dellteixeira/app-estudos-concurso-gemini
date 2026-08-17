@@ -6528,3 +6528,392 @@ body.light-mode .pomodoro-topic-badge {
         justify-self:start;
     }
 }
+
+
+/* V10.6.3 — Retenção e Diagnóstico: composição minimalista da referência */
+@media (min-width: 1101px) {
+    .retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:minmax(250px,.92fr) minmax(500px,1.55fr) minmax(560px,2.08fr) !important;
+        grid-template-rows:auto auto !important;
+        grid-template-areas:
+            "head metrics criticalHead"
+            "head phase risk" !important;
+        column-gap:12px !important;
+        row-gap:8px !important;
+        align-items:stretch !important;
+        margin:0 0 10px !important;
+        padding:12px 14px !important;
+        min-height:0 !important;
+        height:auto !important;
+        overflow:hidden !important;
+        border-radius:13px !important;
+        box-sizing:border-box !important;
+    }
+
+    .retention-diagnostic-head {
+        grid-area:head !important;
+        display:flex !important;
+        flex-direction:column !important;
+        align-items:flex-start !important;
+        justify-content:flex-start !important;
+        gap:0 !important;
+        min-width:0 !important;
+        padding:2px 0 !important;
+    }
+    .retention-diagnostic-head > div {
+        min-width:0 !important;
+        max-width:31ch !important;
+    }
+    .retention-diagnostic-head h3 {
+        margin:0 0 5px !important;
+        font-size:1.08rem !important;
+        line-height:1.1 !important;
+    }
+    .retention-diagnostic-subtitle {
+        display:block !important;
+        margin:0 !important;
+        max-width:31ch !important;
+        font-size:.72rem !important;
+        line-height:1.42 !important;
+        color:rgba(204,220,234,.78) !important;
+        overflow:visible !important;
+        -webkit-line-clamp:unset !important;
+    }
+    .retention-diagnostic-head .btn {
+        margin-top:auto !important;
+        min-height:34px !important;
+        height:34px !important;
+        padding:0 13px !important;
+        font-size:.72rem !important;
+        border-radius:8px !important;
+    }
+
+    .retention-metric-grid {
+        grid-area:metrics !important;
+        display:grid !important;
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+        gap:7px !important;
+        min-width:0 !important;
+        margin:0 !important;
+        align-content:stretch !important;
+    }
+    .retention-metric {
+        min-width:0 !important;
+        min-height:0 !important;
+        height:100% !important;
+        padding:10px 11px !important;
+        border-radius:11px !important;
+        display:flex !important;
+        flex-direction:column !important;
+        justify-content:space-between !important;
+        gap:8px !important;
+    }
+    .retention-metric span {
+        margin:0 !important;
+        font-size:.66rem !important;
+        line-height:1.2 !important;
+        white-space:normal !important;
+    }
+    .retention-metric strong {
+        margin:0 !important;
+        font-size:1.28rem !important;
+        line-height:1 !important;
+    }
+
+    .exam-phase-strip {
+        grid-area:phase !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:12px !important;
+        min-width:0 !important;
+        min-height:42px !important;
+        height:42px !important;
+        margin:0 !important;
+        padding:0 12px !important;
+        border-radius:10px !important;
+        box-sizing:border-box !important;
+    }
+    .exam-phase-strip strong {
+        flex:0 0 auto !important;
+        font-size:.76rem !important;
+        line-height:1.15 !important;
+        white-space:nowrap !important;
+    }
+    .exam-phase-strip span {
+        min-width:0 !important;
+        flex:1 1 auto !important;
+        font-size:.7rem !important;
+        line-height:1.2 !important;
+        text-align:right !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+
+    .critical-queue-head {
+        grid-area:criticalHead !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:12px !important;
+        min-width:0 !important;
+        min-height:42px !important;
+        height:42px !important;
+        margin:0 !important;
+        padding:0 12px !important;
+        border-radius:10px !important;
+        box-sizing:border-box !important;
+        align-self:stretch !important;
+    }
+    .critical-queue-head strong {
+        flex:0 0 auto !important;
+        font-size:.76rem !important;
+        line-height:1.15 !important;
+        white-space:nowrap !important;
+    }
+    .critical-queue-head span {
+        min-width:0 !important;
+        max-width:none !important;
+        flex:1 1 auto !important;
+        font-size:.68rem !important;
+        line-height:1.2 !important;
+        text-align:right !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+
+    .retention-risk-list {
+        grid-area:risk !important;
+        display:grid !important;
+        grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+        grid-auto-rows:minmax(0,auto) !important;
+        align-content:start !important;
+        align-items:stretch !important;
+        gap:7px !important;
+        min-width:0 !important;
+        min-height:0 !important;
+        max-height:112px !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow:auto !important;
+        box-sizing:border-box !important;
+    }
+    .retention-risk-list .retention-empty {
+        grid-column:1 / -1 !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        min-width:0 !important;
+        min-height:82px !important;
+        height:82px !important;
+        margin:0 !important;
+        padding:0 18px !important;
+        text-align:center !important;
+        font-size:.78rem !important;
+        line-height:1.35 !important;
+        color:rgba(194,211,226,.76) !important;
+        box-sizing:border-box !important;
+    }
+    .retention-risk-row.v965 {
+        grid-template-columns:auto minmax(0,1fr) auto !important;
+        grid-template-rows:auto auto !important;
+        gap:5px 7px !important;
+        min-width:0 !important;
+        min-height:82px !important;
+        height:auto !important;
+        padding:8px 9px !important;
+        border-radius:10px !important;
+        align-items:center !important;
+        align-content:center !important;
+        box-sizing:border-box !important;
+    }
+    .retention-risk-row.v965 .critical-rank {
+        grid-row:1 / 3 !important;
+        width:22px !important;
+        height:22px !important;
+        flex-basis:22px !important;
+        font-size:.64rem !important;
+    }
+    .retention-risk-row.v965 > div:nth-child(2) {
+        min-width:0 !important;
+    }
+    .retention-risk-row.v965 .retention-risk-title {
+        font-size:.7rem !important;
+        line-height:1.2 !important;
+        white-space:normal !important;
+        display:-webkit-box !important;
+        -webkit-line-clamp:2 !important;
+        -webkit-box-orient:vertical !important;
+        overflow:hidden !important;
+    }
+    .retention-risk-row.v965 .retention-risk-meta,
+    .retention-risk-row.v965 .critical-layer-label {
+        font-size:.61rem !important;
+        line-height:1.15 !important;
+        white-space:nowrap !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+    }
+    .retention-risk-row.v965 .retention-risk-value {
+        font-size:.7rem !important;
+    }
+    .retention-risk-row.v965 .btn {
+        grid-column:3 !important;
+        min-height:28px !important;
+        height:28px !important;
+        padding:0 8px !important;
+        font-size:.64rem !important;
+        border-radius:7px !important;
+    }
+}
+
+@media (min-width: 701px) and (max-width: 1100px) {
+    .retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:minmax(210px,.8fr) minmax(0,1.7fr) !important;
+        grid-template-areas:
+            "head metrics"
+            "head phase"
+            "criticalHead criticalHead"
+            "risk risk" !important;
+        gap:8px 10px !important;
+        padding:12px !important;
+        overflow:hidden !important;
+    }
+    .retention-diagnostic-head { grid-area:head !important; min-width:0 !important; }
+    .retention-metric-grid { grid-area:metrics !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:7px !important; min-width:0 !important; }
+    .exam-phase-strip { grid-area:phase !important; min-width:0 !important; }
+    .critical-queue-head { grid-area:criticalHead !important; min-width:0 !important; }
+    .retention-risk-list {
+        grid-area:risk !important;
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        gap:7px !important;
+        min-width:0 !important;
+        min-height:0 !important;
+        max-height:180px !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow:auto !important;
+    }
+    .retention-risk-list .retention-empty { grid-column:1 / -1 !important; min-height:56px !important; height:auto !important; padding:10px !important; }
+}
+
+@media (max-width: 700px) {
+    .retention-diagnostic-panel {
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        grid-template-areas:
+            "head"
+            "metrics"
+            "phase"
+            "criticalHead"
+            "risk" !important;
+        gap:8px !important;
+        padding:11px !important;
+        overflow:hidden !important;
+    }
+    .retention-diagnostic-head {
+        grid-area:head !important;
+        display:flex !important;
+        flex-direction:row !important;
+        align-items:flex-end !important;
+        justify-content:space-between !important;
+        gap:10px !important;
+        padding:0 !important;
+    }
+    .retention-diagnostic-head > div { min-width:0 !important; max-width:none !important; }
+    .retention-diagnostic-head h3 { font-size:1rem !important; margin:0 0 4px !important; }
+    .retention-diagnostic-subtitle { font-size:.68rem !important; line-height:1.35 !important; max-width:38ch !important; }
+    .retention-diagnostic-head .btn { flex:0 0 auto !important; margin:0 !important; min-height:32px !important; height:32px !important; padding:0 10px !important; font-size:.68rem !important; }
+    .retention-metric-grid { grid-area:metrics !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+    .retention-metric { min-height:64px !important; padding:9px 10px !important; }
+    .retention-metric span { font-size:.64rem !important; margin:0 !important; }
+    .retention-metric strong { font-size:1.12rem !important; margin-top:auto !important; }
+    .exam-phase-strip { grid-area:phase !important; min-height:42px !important; height:auto !important; padding:9px 10px !important; gap:6px !important; flex-wrap:wrap !important; }
+    .exam-phase-strip strong { font-size:.72rem !important; }
+    .exam-phase-strip span { flex-basis:100% !important; font-size:.66rem !important; text-align:left !important; white-space:normal !important; overflow:visible !important; }
+    .critical-queue-head { grid-area:criticalHead !important; min-height:42px !important; height:auto !important; padding:9px 10px !important; flex-wrap:wrap !important; gap:4px 8px !important; }
+    .critical-queue-head strong { font-size:.74rem !important; }
+    .critical-queue-head span { flex-basis:100% !important; max-width:none !important; font-size:.64rem !important; text-align:left !important; white-space:normal !important; overflow:visible !important; }
+    .retention-risk-list {
+        grid-area:risk !important;
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        gap:7px !important;
+        min-height:0 !important;
+        max-height:220px !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow:auto !important;
+    }
+    .retention-risk-list .retention-empty { min-height:48px !important; height:auto !important; padding:8px 4px !important; font-size:.72rem !important; text-align:left !important; justify-content:flex-start !important; }
+}
+
+
+/* V10.6.4 — correção isolada da marca: título integral + assinatura alinhada ao fim */
+.header-brand-copy {
+    height:auto !important;
+    min-height:0 !important;
+    width:fit-content !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    justify-content:center !important;
+    gap:2px !important;
+    overflow:visible !important;
+}
+.header-brand-copy h2 {
+    margin:0 !important;
+    width:max-content !important;
+    max-width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    line-height:1.08 !important;
+    white-space:nowrap !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    font-size:clamp(1rem,2.05vw,1.55rem) !important;
+}
+.header-brand-signature {
+    display:block !important;
+    align-self:flex-end !important;
+    width:auto !important;
+    margin:1px 0 0 !important;
+    padding:0 !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+    overflow:visible !important;
+    font-size:.88rem !important;
+}
+
+@media (max-width: 900px) {
+    .header-brand-copy h2 {
+        font-size:clamp(.88rem,3.05vw,1.14rem) !important;
+    }
+    .header-brand-signature {
+        display:block !important;
+        font-size:.78rem !important;
+    }
+}
+@media (max-width: 640px) {
+    .header-brand-copy h2 {
+        font-size:clamp(.78rem,3.35vw,.98rem) !important;
+    }
+    .header-brand-signature {
+        font-size:.72rem !important;
+    }
+}
+@media (max-width: 430px) {
+    .header-brand-copy h2 {
+        font-size:clamp(.7rem,3.45vw,.86rem) !important;
+    }
+    .header-brand-signature {
+        font-size:.66rem !important;
+    }
+}
