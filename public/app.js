@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.6.8',
+                    appVersion:'10.6.9',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -932,6 +932,106 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         let editalSyncTimer = null;
         let flashcardSyncTimer = null;
 
+        function getSessionMinutes(session) {
+            const candidates = [session?.minutes, session?.durationMinutes, session?.focusMinutes, session?.elapsedMinutes];
+            for (const value of candidates) {
+                const numeric = Number(value);
+                if (Number.isFinite(numeric) && numeric > 0) return Math.max(0, Math.round(numeric));
+            }
+            return 0;
+        }
+
+        function getStudySessionIdentity(session) {
+            if (session?.id != null && String(session.id).trim()) return `id:${String(session.id).trim()}`;
+            return `fp:${[session?.createdAt,session?.dateKey,session?.materia,session?.assunto,session?.activityType,getSessionMinutes(session)].map(v=>String(v??'')).join('|')}`;
+        }
+
+        function mergeStudySessions(primarySessions, secondarySessions) {
+            const merged = new Map();
+            [...(Array.isArray(secondarySessions) ? secondarySessions : []), ...(Array.isArray(primarySessions) ? primarySessions : [])].forEach(session => {
+                if (!session || typeof session !== 'object') return;
+                const key = getStudySessionIdentity(session);
+                const previous = merged.get(key) || {};
+                merged.set(key, { ...previous, ...session, minutes:getSessionMinutes(session) || getSessionMinutes(previous) });
+            });
+            return [...merged.values()].sort((a,b) => String(a?.createdAt || a?.dateKey || '').localeCompare(String(b?.createdAt || b?.dateKey || '')));
+        }
+
+        function mergeDateNumericMap(primary, secondary) {
+            const result = { ...(secondary && typeof secondary === 'object' ? secondary : {}) };
+            Object.entries(primary && typeof primary === 'object' ? primary : {}).forEach(([key,value]) => {
+                result[key] = Math.max(Number(result[key]) || 0, Number(value) || 0);
+            });
+            return result;
+        }
+
+        function getLatestIsoTimestamp(a, b) {
+            const ta = Date.parse(a || '') || 0;
+            const tb = Date.parse(b || '') || 0;
+            if (!ta && !tb) return null;
+            return ta >= tb ? a : b;
+        }
+
+        function filterSessionsAfterHistoryReset(sessions, resetAt) {
+            const resetTime = Date.parse(resetAt || '') || 0;
+            if (!resetTime) return Array.isArray(sessions) ? sessions : [];
+            return (Array.isArray(sessions) ? sessions : []).filter(session => {
+                const created = Date.parse(session?.createdAt || '') || Date.parse(`${session?.dateKey || ''}T23:59:59`) || 0;
+                return created > resetTime;
+            });
+        }
+
+        function mergeConcursosMetadataPreservingHistory(primaryMetadata, secondaryMetadata) {
+            const primary = primaryMetadata && typeof primaryMetadata === 'object' ? primaryMetadata : {};
+            const secondary = secondaryMetadata && typeof secondaryMetadata === 'object' ? secondaryMetadata : {};
+            const result = { ...secondary };
+            const names = new Set([...Object.keys(secondary), ...Object.keys(primary)]);
+            names.forEach(name => {
+                const p = primary[name] && typeof primary[name] === 'object' ? primary[name] : {};
+                const s = secondary[name] && typeof secondary[name] === 'object' ? secondary[name] : {};
+                const historyResetAt = getLatestIsoTimestamp(p.studyHistoryResetAt, s.studyHistoryResetAt);
+                const sessions = filterSessionsAfterHistoryReset(mergeStudySessions(p.studySessions, s.studySessions), historyResetAt);
+                result[name] = {
+                    ...s,
+                    ...p,
+                    ...(historyResetAt ? { studyHistoryResetAt:historyResetAt } : {}),
+                    studySessions:sessions,
+                    dailyPomodoroResetBaselines: mergeDateNumericMap(p.dailyPomodoroResetBaselines, s.dailyPomodoroResetBaselines)
+                };
+            });
+            return result;
+        }
+
+        async function recoverStudySessionsFromLocalBackups() {
+            if (!currentUser) return false;
+            try {
+                const [currentBackup, previousBackup] = await Promise.all([readLocalBackup('current'), readLocalBackup('previous')]);
+                const local = getConcursosMetadata();
+                let recovered = local;
+                let beforeCount = 0;
+                Object.values(local || {}).forEach(c => { beforeCount += Array.isArray(c?.studySessions) ? c.studySessions.length : 0; });
+                [previousBackup, currentBackup].forEach(snapshot => {
+                    const backupMetadata = snapshot?.core?.concursosMetadata;
+                    if (backupMetadata && typeof backupMetadata === 'object') {
+                        recovered = mergeConcursosMetadataPreservingHistory(recovered, backupMetadata);
+                    }
+                });
+                let afterCount = 0;
+                Object.values(recovered || {}).forEach(c => { afterCount += Array.isArray(c?.studySessions) ? c.studySessions.length : 0; });
+                if (afterCount > beforeCount) {
+                    metadataCache = recovered;
+                    localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(recovered));
+                    setMetadataDirty(true);
+                    scheduleMetadataSync(200);
+                    console.warn(`Histórico de estudo recuperado do backup local: ${afterCount - beforeCount} sessão(ões).`);
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Recuperação preventiva do histórico local não pôde ser concluída:', error);
+            }
+            return false;
+        }
+
         function scheduleMetadataSync(delay = 750) {
             if (metadataSyncTimer) clearTimeout(metadataSyncTimer);
             metadataSyncTimer = setTimeout(async () => {
@@ -993,7 +1093,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         .maybeSingle());
 
                     if (!error && data && data.setting_value) {
-                        metadataCache = data.setting_value;
+                        const localMetadata = getConcursosMetadata();
+                        // A nuvem vence nas configurações quando não há alteração local pendente,
+                        // mas studySessions é cumulativo e jamais pode ser apagado por uma cópia mais antiga.
+                        metadataCache = mergeConcursosMetadataPreservingHistory(data.setting_value, localMetadata);
                         localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadataCache));
                     }
                 } catch(e) { console.log('Configurações locais preservadas:', e); }
@@ -1006,7 +1109,25 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             // Captura uma revisão e um snapshot consistentes. Se outra alteração local acontecer
             // enquanto o upload estiver em andamento, a revisão muda e NÃO limpamos o dirty flag.
             const syncRevision = Math.max(0, Number(state.metadataRevision) || 0);
-            const metadataSnapshot = getConcursosMetadata();
+            const localSnapshot = getConcursosMetadata();
+            let remoteSnapshot = {};
+            try {
+                const remoteResult = await runSupabaseRequest(() => supabaseClient
+                    .from('user_settings')
+                    .select('setting_value')
+                    .eq('user_id', currentUser.id)
+                    .eq('setting_key', 'concursos_metadata')
+                    .maybeSingle());
+                if (!remoteResult?.error && remoteResult?.data?.setting_value) remoteSnapshot = remoteResult.data.setting_value;
+            } catch (error) {
+                console.warn('Não foi possível comparar o histórico remoto antes do envio; o estado local será mantido na fila.', error);
+                throw error;
+            }
+            // Local vence nas configurações alteradas neste aparelho, porém o histórico de sessões
+            // é sempre a união dos aparelhos. Isso impede o modelo last-writer-wins de apagar horas.
+            const metadataSnapshot = mergeConcursosMetadataPreservingHistory(localSnapshot, remoteSnapshot);
+            metadataCache = metadataSnapshot;
+            localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadataSnapshot));
             const result = await runSupabaseRequest(() => supabaseClient.from('user_settings').upsert({
                 user_id: currentUser.id,
                 setting_key: 'concursos_metadata',
@@ -2526,7 +2647,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                     <button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia" data-mobile-label="Apagar">Apagar</button>
                                     ${matchedItem && !isRevisionScheduleText(topicoStr) ? `<button class="btn btn-info btn-sm" onclick="showStudyPlanEditor(${idx})" data-mobile-label="Planejar">Planejar</button>` : ''}
                                     <button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button>
-                                    <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})" title="Registra desempenho de questões feitas fora do timer, sem adicionar minutos" data-mobile-label="Questões externas">Registrar questões externas</button>
+                                    <button class="btn btn-sm btn-secondary btn-register-question-result" onclick="openManualQuestionPerformanceForScheduledTopic(${idx})" title="Registra desempenho e os minutos estudados em questões feitas fora do timer" data-mobile-label="Questões externas">Registrar questões externas</button>
                                 </div>
                             ` : ''}
                             ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<div class="day-topic-inline-actions lesson-only-action"><button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})" title="Marca uma aula inteira como concluída. Este botão não adiciona minutos.">✓ Concluir esta aula</button></div>` : ''}
@@ -4163,21 +4284,16 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const scheduledCount = Object.values(contest.dateSchedule).reduce((total, items) =>
                 total + (Array.isArray(items) ? items.length : 0), 0);
-            const sessionCount = contest.studySessions.length;
-            const hasPlanning = scheduledCount > 0 || sessionCount > 0 || Number(contest.pomodoroDailyTargetHours || 0) > 0 || contest.scheduleConfig;
+            const hasPlanning = scheduledCount > 0 || Number(contest.pomodoroDailyTargetHours || 0) > 0 || contest.scheduleConfig;
 
             if (!hasPlanning) {
                 // Corrige também qualquer metadado residual de versões anteriores.
                 contest.dateSchedule = {};
-                contest.studySessions = [];
+                // studySessions é histórico permanente e não pertence ao cronograma.
                 contest.pomodoroDailyTargetHours = 0;
                 contest.pomodoroScheduleMethod = null;
                 contest.adaptiveRevisionProgress = {};
-                contest.retentionEngine = {
-                    schemaVersion: RETENTION_ENGINE_SCHEMA_VERSION,
-                    mode:'shadow', targetRetention:RETENTION_TARGET_DEFAULT, topics:{},
-                    createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
-                };
+                rebuildRetentionEngineForContest(contest);
                 delete contest.scheduleConfig;
                 await saveConcursosMetadata(metadata);
                 renderMonthCalendar();
@@ -4192,8 +4308,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const confirmar = await appConfirm(
                 `Deseja limpar TODO o cronograma de "${currentConcurso}"?\n\n` +
-                'Isso removerá todos os agendamentos e revisões futuras, zerará a meta diária, apagará as sessões de estudo vinculadas ao planejamento e reconciliará o Progresso Geral.\n\n' +
-                'Os flashcards, anotações e o edital verticalizado serão preservados.',
+                'Isso removerá todos os agendamentos e revisões futuras e zerará a meta diária.\n\n' +
+                'O histórico permanente de horas estudadas, flashcards, anotações e o edital verticalizado serão preservados.',
                 { title:'Limpar Cronograma', confirmText:'Limpar tudo', danger:true }
             );
             if (!confirmar) return;
@@ -4201,16 +4317,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             // Fonte de verdade única: ao apagar o planejamento, nenhum estado derivado
             // pode sobreviver como se ainda houvesse cronograma ativo.
             contest.dateSchedule = {};
-            contest.studySessions = [];
+            // Histórico de estudo não é apagado ao limpar o cronograma.
             contest.studyPlanHistory = [];
             contest.pomodoroDailyTargetHours = 0;
             contest.pomodoroScheduleMethod = null;
             contest.adaptiveRevisionProgress = {};
-            contest.retentionEngine = {
-                schemaVersion: RETENTION_ENGINE_SCHEMA_VERSION,
-                mode:'shadow', targetRetention:RETENTION_TARGET_DEFAULT, topics:{},
-                createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
-            };
+            rebuildRetentionEngineForContest(contest);
             delete contest.scheduleConfig;
 
             // Remove resíduos legados de Pomodoro específicos do concurso.
@@ -4528,6 +4640,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         async function loadData() {
             // MOBILE-FIRST: mostra imediatamente o que já está salvo no aparelho.
             loadLocalMetadata();
+            // Antes de qualquer sincronização, tenta recuperar sessões que versões anteriores
+            // possam ter perdido por sobrescrita de metadata entre dispositivos.
+            await recoverStudySessionsFromLocalBackups();
             loadLocalEditalData();
             ensureCurrentConcursoForUser();
             filterDataByConcurso();
@@ -5492,7 +5607,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!first) return;
 
             const second = await appConfirm(
-                `Confirma a exclusão completa do edital "${concursoAlvo}"? O histórico de estudo já registrado será preservado, mas os tópicos do edital não poderão ser recuperados pelo botão Voltar.`,
+                `Confirma a exclusão completa do edital "${concursoAlvo}"? Esta é a única operação que também zerará o histórico permanente de horas estudadas deste concurso.`,
                 { title:'Confirmação final', confirmText:'Apagar edital', danger:true }
             );
             if (!second) return;
@@ -5511,17 +5626,17 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             saveSyncState(syncState);
             saveEditalToLocalStorage();
 
-            // Remove somente metadados derivados dos tópicos apagados. Horas/sessões históricas
-            // permanecem intactas, pois studySessions é a fonte canônica do tempo estudado.
+            // Limpar o edital é a única operação que zera o histórico permanente deste concurso.
             const metadata = getConcursosMetadata();
             const contest = metadata[concursoAlvo];
             if (contest) {
-                if (contest.adaptiveRevisionProgress) {
-                    ids.forEach(id => delete contest.adaptiveRevisionProgress[id]);
-                }
-                if (contest.topicStudyPlans) {
-                    ids.forEach(id => delete contest.topicStudyPlans[id]);
-                }
+                contest.studyHistoryResetAt = new Date().toISOString();
+                contest.studySessions = [];
+                contest.dailyPomodoroResetBaselines = {};
+                contest.adaptiveRevisionProgress = {};
+                contest.topicStudyPlans = {};
+                contest.studyPlanHistory = [];
+                rebuildRetentionEngineForContest(contest);
                 await saveConcursosMetadata(metadata);
             }
 
@@ -6185,12 +6300,16 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const meta = document.getElementById('questionPerformanceMeta');
             const total = document.getElementById('questionPerformanceTotal');
             const correct = document.getElementById('questionPerformanceCorrect');
+            const minutes = document.getElementById('questionPerformanceMinutes');
+            const minutesGroup = document.getElementById('questionPerformanceMinutesGroup');
             if (topic) topic.textContent = `${materia} — ${assunto}`;
             if (meta) meta.textContent = options.sessionId
-                ? 'A sessão foi contabilizada. Informe apenas quantas questões resolveu e quantas acertou.'
-                : 'Informe o resultado da bateria de questões, mesmo que tenha sido resolvida fora do Painel.';
+                ? 'A sessão já teve o tempo contabilizado. Informe apenas quantas questões resolveu e quantas acertou.'
+                : 'Informe o resultado e os minutos realmente estudados fora do Painel.';
             if (total) total.value = '';
             if (correct) correct.value = '';
+            if (minutes) minutes.value = '';
+            if (minutesGroup) minutesGroup.style.display = options.sessionId ? 'none' : '';
             updateQuestionPerformancePreview();
             const modal = document.getElementById('modalQuestionPerformance');
             if (modal) modal.style.display = 'flex';
@@ -6239,6 +6358,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!Number.isFinite(totalRaw) || totalRaw < 1) return appNotice('Informe quantas questões foram resolvidas.', { title:'Questões' });
             if (!Number.isFinite(correctRaw) || correctRaw < 0 || correctRaw > totalRaw) return appNotice('Informe uma quantidade válida de acertos.', { title:'Questões' });
             const performance = normalizeQuestionPerformance(totalRaw, correctRaw);
+            const manualMinutesRaw = Number(document.getElementById('questionPerformanceMinutes')?.value);
+            if (!pending.sessionId && (!Number.isFinite(manualMinutesRaw) || manualMinutesRaw < 1)) {
+                return appNotice('Informe quantos minutos foram estudados nessa bateria de questões.', { title:'Questões' });
+            }
             const metadata = getConcursosMetadata();
             const contest = metadata[currentConcurso];
             if (!contest) return;
@@ -6254,7 +6377,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     assunto:pending.assunto,
                     activityType:'questoes',
                     isRevision:!!pending.isRevision,
-                    minutes:0,
+                    minutes:Math.max(1, Math.round(manualMinutesRaw)),
                     source:'questions_manual',
                     performanceOnly:true,
                     createdAt:new Date().toISOString()
@@ -6704,7 +6827,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const totals = new Map();
             getStudySessions().forEach(session => {
                 const materia = String(session?.materia || '').trim();
-                const minutes = Math.max(0, Number(session?.minutes || 0));
+                const minutes = getSessionMinutes(session);
                 if (!materia || !minutes) return;
                 if (!totals.has(materia)) totals.set(materia, { materia, minutes:0, teoria:0, videoaula:0, questoes:0, leiSeca:0 });
                 const row = totals.get(materia);
@@ -6718,9 +6841,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         function getTotalRecordedStudyMinutes() {
-            // Fonte canônica do total por matéria: soma todas as sessões de estudo
-            // registradas no concurso atual (Teoria + Vídeoaula + Questões + Lei Seca), sem incluir pausas/intervalos.
-            return getSubjectStudyTotals().reduce((total, row) => total + Math.max(0, Number(row.minutes) || 0), 0);
+            // Total permanente do concurso: toda sessão registrada conta, independentemente
+            // da fonte (teoria/leitura, vídeoaula, questões, lei seca, revisão ou outras fontes).
+            // Pausas/intervalos não criam studySessions e portanto nunca entram aqui.
+            return getStudySessions().reduce((total, session) => total + getSessionMinutes(session), 0);
         }
 
         function renderSubjectStudyHours() {
@@ -6853,14 +6977,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function removeStudySessionsForDate(dateKey = getLocalDateKey()) {
-            const metadata = getConcursosMetadata();
-            const contest = metadata[currentConcurso];
-            if (!contest || !Array.isArray(contest.studySessions)) return;
-            contest.studySessions = contest.studySessions.filter(s => s?.dateKey !== dateKey);
-            rebuildRetentionEngineForContest(contest);
-            await saveConcursosMetadata(metadata);
-            renderSubjectStudyHours();
-            updateModernOverview();
+            // V10.6.9: bloqueio de segurança. O histórico de estudo é permanente e não pode
+            // ser apagado por reset diário, cronograma ou rotinas auxiliares. A única limpeza
+            // autorizada ocorre em clearData(), ao resetar completamente o edital do concurso.
+            console.warn(`Remoção de studySessions bloqueada para ${dateKey}. Use Limpar Edital Atual para zerar o histórico.`);
+            return false;
         }
 
         function startScheduledTopicStudy(idx, activityType = 'teoria', forceAdaptiveAdvance = false) {
@@ -6993,15 +7114,18 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return getTotalRecordedStudyMinutes();
         }
 
-        function getDailyPomodoroMinutes(dateKey = getLocalDateKey()) {
-            // Fonte canônica do "Estudado Hoje": sessões efetivamente vinculadas
-            // ao concurso/cronograma atual. Isso mantém o contador sincronizado
-            // com Horas Estudadas e evita horas órfãs após limpar o cronograma.
+        function getRawDailyStudyMinutes(dateKey = getLocalDateKey()) {
             return getStudySessions().reduce((total, session) => {
                 if (session?.dateKey !== dateKey) return total;
-                const minutes = Math.max(0, Number(session?.minutes || 0));
-                return total + minutes;
+                return total + getSessionMinutes(session);
             }, 0);
+        }
+
+        function getDailyPomodoroMinutes(dateKey = getLocalDateKey()) {
+            // O reset diário é apenas visual/operacional: jamais apaga o histórico permanente.
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const baseline = Math.max(0, Number(contest?.dailyPomodoroResetBaselines?.[dateKey]) || 0);
+            return Math.max(0, getRawDailyStudyMinutes(dateKey) - baseline);
         }
 
         function getTotalEffectivePomodoroMinutes() {
@@ -7151,12 +7275,19 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
         }
 
-        function resetDailyPomodoroHours() {
-            if (!confirm('Deseja zerar todas as horas Pomodoro contabilizadas hoje?')) return;
+        async function resetDailyPomodoroHours() {
+            if (!confirm('Deseja zerar apenas o contador de hoje? O histórico total de horas estudadas será preservado.')) return;
+            const metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            const contest = metadata[currentConcurso];
+            if (!contest.dailyPomodoroResetBaselines || typeof contest.dailyPomodoroResetBaselines !== 'object') contest.dailyPomodoroResetBaselines = {};
+            const dateKey = getLocalDateKey();
+            contest.dailyPomodoroResetBaselines[dateKey] = getRawDailyStudyMinutes(dateKey);
             localStorage.removeItem(getDailyPomodoroStorageKey());
             localStorage.removeItem(getDailyPomodoroExtraStorageKey());
-            removeStudySessionsForDate(getLocalDateKey());
+            await saveConcursosMetadata(metadata);
             renderPomodoroDailyCounter();
+            updateModernOverview();
         }
 
         function updatePauseButton() {
@@ -9987,7 +10118,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return { rows, avg, risk, overdue, mastered };
         }
 
-        // V10.6.8 — painel visual de Retenção e Diagnóstico removido por solicitação.
+        // V10.6.9 — painel visual de Retenção e Diagnóstico removido por solicitação.
         // O motor interno de retenção permanece disponível para revisões adaptativas.
         function renderRetentionDiagnostics() {
             return;
