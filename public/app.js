@@ -2961,9 +2961,166 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!isOutro) titleInput.value = '';
         }
 
+        const NOTE_FONT_SIZES = [14,16,18,20,24,28,32];
+        let noteEditorSavedRange = null;
+
+        function normalizeNoteFontSize(value) {
+            const size = Number(value);
+            if (!Number.isFinite(size)) return 16;
+            return NOTE_FONT_SIZES.reduce((best,current) => Math.abs(current-size) < Math.abs(best-size) ? current : best, NOTE_FONT_SIZES[0]);
+        }
+
+        function plainTextToNoteHtml(text) {
+            return escapeHtml(String(text || '')).replace(/\r\n?/g,'\n').replace(/\n/g,'<br>');
+        }
+
+        function sanitizeNoteHtml(rawHtml) {
+            const source = document.createElement('div');
+            source.innerHTML = String(rawHtml || '');
+            const output = document.createElement('div');
+            const allowed = new Set(['B','STRONG','I','EM','U','BR','DIV','P','SPAN','FONT']);
+            const fontMap = { '1':10, '2':13, '3':16, '4':18, '5':24, '6':32, '7':48 };
+
+            const appendClean = (node, target) => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    target.appendChild(document.createTextNode(node.nodeValue || ''));
+                    return;
+                }
+                if (node.nodeType !== Node.ELEMENT_NODE) return;
+                const tag = node.tagName.toUpperCase();
+                if (!allowed.has(tag)) {
+                    [...node.childNodes].forEach(child => appendClean(child,target));
+                    return;
+                }
+
+                let cleanTag = tag;
+                if (tag === 'STRONG') cleanTag = 'B';
+                if (tag === 'EM') cleanTag = 'I';
+                if (tag === 'FONT') cleanTag = 'SPAN';
+                const clean = document.createElement(cleanTag.toLowerCase());
+
+                if (cleanTag === 'SPAN') {
+                    let px = null;
+                    if (tag === 'FONT') px = fontMap[String(node.getAttribute('size') || '')] || null;
+                    if (!px && node.style?.fontSize) {
+                        const match = String(node.style.fontSize).match(/([0-9.]+)px/i);
+                        if (match) px = Number(match[1]);
+                    }
+                    if (px) clean.style.fontSize = `${normalizeNoteFontSize(px)}px`;
+                }
+                [...node.childNodes].forEach(child => appendClean(child,clean));
+                target.appendChild(clean);
+            };
+            [...source.childNodes].forEach(node => appendClean(node,output));
+            return output.innerHTML.trim();
+        }
+
+        function noteHtmlToPlainText(html) {
+            const holder = document.createElement('div');
+            holder.innerHTML = sanitizeNoteHtml(html);
+            return (holder.innerText || holder.textContent || '').replace(/\u00a0/g,' ').trim();
+        }
+
+        function getNoteStoredHtml(note) {
+            if (!note) return '';
+            if (note.formato === 'html') return sanitizeNoteHtml(note.conteudo || '');
+            return plainTextToNoteHtml(note.conteudo || '');
+        }
+
+        function saveNoteEditorSelection() {
+            const editor = document.getElementById('inputNotaConteudo');
+            const selection = window.getSelection?.();
+            if (!editor || !selection || selection.rangeCount < 1) return;
+            const range = selection.getRangeAt(0);
+            const common = range.commonAncestorContainer;
+            if (common === editor || editor.contains(common.nodeType === Node.ELEMENT_NODE ? common : common.parentNode)) {
+                noteEditorSavedRange = range.cloneRange();
+            }
+        }
+
+        function restoreNoteEditorSelection() {
+            const editor = document.getElementById('inputNotaConteudo');
+            const selection = window.getSelection?.();
+            if (!editor || !selection) return;
+            editor.focus();
+            if (!noteEditorSavedRange) return;
+            try {
+                selection.removeAllRanges();
+                selection.addRange(noteEditorSavedRange);
+            } catch (_) {}
+        }
+
+        function formatNoteText(command) {
+            const editor = document.getElementById('inputNotaConteudo');
+            if (!editor) return;
+            restoreNoteEditorSelection();
+            document.execCommand(command, false, null);
+            saveNoteEditorSelection();
+            updateNoteToolbarState();
+        }
+
+        function setNoteFontSize(value) {
+            const editor = document.getElementById('inputNotaConteudo');
+            if (!editor) return;
+            const px = normalizeNoteFontSize(value);
+            const map = {10:'1',13:'2',14:'2',16:'3',18:'4',20:'4',24:'5',28:'5',32:'6',48:'7'};
+            restoreNoteEditorSelection();
+            document.execCommand('fontSize', false, map[px] || '3');
+            const fonts = editor.querySelectorAll('font[size]');
+            fonts.forEach(font => {
+                const span = document.createElement('span');
+                span.style.fontSize = `${px}px`;
+                while (font.firstChild) span.appendChild(font.firstChild);
+                font.replaceWith(span);
+            });
+            document.getElementById('noteFontSizeSelect').value = String(px);
+            saveNoteEditorSelection();
+            updateNoteToolbarState();
+        }
+
+        function updateNoteToolbarState() {
+            ['bold','italic','underline'].forEach(command => {
+                const btn = document.querySelector(`#modalNovaNota [data-note-command="${command}"]`);
+                if (!btn) return;
+                let active = false;
+                try { active = document.queryCommandState(command); } catch (_) {}
+                btn.classList.toggle('active', !!active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        }
+
+        function installNoteRichEditorHandlers() {
+            const editor = document.getElementById('inputNotaConteudo');
+            if (!editor || editor.dataset.richHandlersInstalled === 'true') return;
+            editor.dataset.richHandlersInstalled = 'true';
+            editor.addEventListener('keydown', event => {
+                if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+                const key = event.key.toLowerCase();
+                const command = key === 'b' ? 'bold' : key === 'i' ? 'italic' : key === 'u' ? 'underline' : '';
+                if (!command) return;
+                event.preventDefault();
+                formatNoteText(command);
+            });
+            editor.addEventListener('keyup', () => { saveNoteEditorSelection(); updateNoteToolbarState(); });
+            editor.addEventListener('mouseup', () => { saveNoteEditorSelection(); updateNoteToolbarState(); });
+            editor.addEventListener('focus', () => { saveNoteEditorSelection(); updateNoteToolbarState(); });
+            editor.addEventListener('input', saveNoteEditorSelection);
+            document.querySelectorAll('#modalNovaNota .note-format-btn').forEach(btn => {
+                btn.addEventListener('mousedown', event => { saveNoteEditorSelection(); event.preventDefault(); });
+            });
+            const fontSelect = document.getElementById('noteFontSizeSelect');
+            if (fontSelect) fontSelect.addEventListener('mousedown', saveNoteEditorSelection);
+            editor.addEventListener('paste', event => {
+                event.preventDefault();
+                const text = event.clipboardData?.getData('text/plain') || '';
+                document.execCommand('insertText', false, text);
+            });
+        }
+
         function loadNotesData() {
             populateNotesMateriaDropdowns();
             populateNotaAssuntoDropdown();
+            installNoteRichEditorHandlers();
             renderNotesList();
         }
 
@@ -2990,7 +3147,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             <span class="note-card-title">${escapeHtml(nota.titulo)}</span>
                             <span class="note-card-date">Editado em ${escapeHtml(nota.data || 'Recente')}</span>
                         </div>
-                        <div class="note-card-body" style="white-space:pre-wrap;">${escapeHtml(nota.conteudo)}</div>
+                        <div class="note-card-body note-rich-content">${getNoteStoredHtml(nota)}</div>
                         <div class="note-card-actions">
                             <button class="btn btn-secondary btn-sm" onclick="editNota(${globalIndex})" data-mobile-label="Editar">Editar</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteNota(${globalIndex})">Excluir</button>
@@ -3004,7 +3161,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             currentEditingNoteIndex = null;
             document.getElementById('modalNotaTitle').innerText = 'Nova Nota';
             document.getElementById('inputNotaTitulo').value = '';
-            document.getElementById('inputNotaConteudo').value = '';
+            document.getElementById('inputNotaConteudo').innerHTML = '';
+            noteEditorSavedRange = null;
+            installNoteRichEditorHandlers();
+            const sizeSelect = document.getElementById('noteFontSizeSelect'); if (sizeSelect) sizeSelect.value = '16';
+            updateNoteToolbarState();
             populateNotaAssuntoDropdown();
             document.getElementById('modalNovaNota').style.display = 'flex';
         }
@@ -3030,7 +3191,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             document.getElementById('inputNotaTitulo').value = assuntoConhecido ? '' : nota.titulo;
             handleNotaAssuntoChange();
 
-            document.getElementById('inputNotaConteudo').value = nota.conteudo;
+            document.getElementById('inputNotaConteudo').innerHTML = getNoteStoredHtml(nota);
+            noteEditorSavedRange = null;
+            installNoteRichEditorHandlers();
+            updateNoteToolbarState();
             document.getElementById('modalNovaNota').style.display = 'flex';
         }
 
@@ -3041,8 +3205,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const isOutro = assuntoSelecionado === '__outro__';
             const assunto = isOutro ? '' : assuntoSelecionado;
             const titulo = isOutro ? tituloCustom : assuntoSelecionado;
-            const conteudo = document.getElementById('inputNotaConteudo').value.trim();
-            if (!titulo || !conteudo) return alert(isOutro ? 'Preencha o título personalizado e o conteúdo da anotação.' : 'Preencha o conteúdo da anotação.');
+            const editor = document.getElementById('inputNotaConteudo');
+            const conteudo = sanitizeNoteHtml(editor?.innerHTML || '');
+            const conteudoTexto = noteHtmlToPlainText(conteudo);
+            if (!titulo || !conteudoTexto) return alert(isOutro ? 'Preencha o título personalizado e o conteúdo da anotação.' : 'Preencha o conteúdo da anotação.');
 
             let metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
@@ -3050,9 +3216,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             const nowStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             if (currentEditingNoteIndex !== null) {
-                metadata[currentConcurso].structuredNotes[currentEditingNoteIndex] = { materia, assunto, titulo, conteudo, data: nowStr };
+                metadata[currentConcurso].structuredNotes[currentEditingNoteIndex] = { materia, assunto, titulo, conteudo, conteudoTexto, formato:'html', data: nowStr };
             } else {
-                metadata[currentConcurso].structuredNotes.push({ materia, assunto, titulo, conteudo, data: nowStr });
+                metadata[currentConcurso].structuredNotes.push({ materia, assunto, titulo, conteudo, conteudoTexto, formato:'html', data: nowStr });
             }
 
             await saveConcursosMetadata(metadata);
@@ -9924,7 +10090,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 }
             });
             getStructuredNotesForCurrentConcurso().forEach(note => {
-                const txt = `${note.materia || ''} ${note.titulo || ''} ${note.conteudo || ''}`.toLocaleLowerCase('pt-BR');
+                const searchableNoteContent = note.formato === 'html' ? (note.conteudoTexto || noteHtmlToPlainText(note.conteudo || '')) : (note.conteudo || '');
+                const txt = `${note.materia || ''} ${note.titulo || ''} ${searchableNoteContent}`.toLocaleLowerCase('pt-BR');
                 if (txt.includes(term)) results.push({ type:'Nota', title:note.titulo || 'Anotação', sub:note.materia || '', action:() => openSearchNotesResult(note.materia || '') });
             });
             (flashcardsList || []).forEach(fc => {
