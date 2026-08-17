@@ -1,4 +1,4 @@
-ESTUDO ADAPTATIVO INTELIGENTE — V10.6.8 — Aquisição Adaptativa de Conteúdo
+ESTUDO ADAPTATIVO INTELIGENTE — V10.6.9 — Aquisição Adaptativa de Conteúdo
 Base incremental: V9.65.7 — Controle de Atualização do PWA
 Data: 15/08/2026
 
@@ -496,3 +496,13 @@ V10.6.7 — Pontos críticos: 2 itens visíveis, botão + para pendências adici
 V10.6.7 — Retenção e Diagnóstico reestruturado para reproduzir a referência 01; 2 pontos críticos visíveis e expansão por +.
 
 V10.6.8 — Remoção visual completa de Retenção e Diagnóstico e correção robusta de atualização PWA entre dispositivos.
+
+
+V10.6.9 — Integridade de horas e atualização multi-dispositivo
+- Horas Estudadas soma permanentemente todas as studySessions do concurso.
+- Reset diário não apaga mais o histórico geral; usa baseline sincronizado.
+- Limpar cronograma preserva studySessions.
+- Limpar Edital Atual é a única ação que zera o histórico do concurso.
+- Sincronização de metadata faz união de studySessions entre dispositivos antes de baixar/enviar.
+- Recuperação preventiva tenta reintroduzir sessões encontradas nos backups locais IndexedDB.
+- Aviso de nova versão restaurado; version.json + Worker-first de assets centrais tornam a atualização robusta inclusive para clientes antigos.
