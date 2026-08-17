@@ -160,7 +160,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
                     key:`${currentUser.id}:current`,
                     slot:'current',
                     schemaVersion:1,
-                    appVersion:'10.6.9',
+                    appVersion:'10.7.1',
                     userId:currentUser.id,
                     createdAt:new Date().toISOString(),
                     reason:String(reason || 'alteração automática'),
@@ -6977,7 +6977,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function removeStudySessionsForDate(dateKey = getLocalDateKey()) {
-            // V10.6.9: bloqueio de segurança. O histórico de estudo é permanente e não pode
+            // V10.7.1: bloqueio de segurança. O histórico de estudo é permanente e não pode
             // ser apagado por reset diário, cronograma ou rotinas auxiliares. A única limpeza
             // autorizada ocorre em clearData(), ao resetar completamente o edital do concurso.
             console.warn(`Remoção de studySessions bloqueada para ${dateKey}. Use Limpar Edital Atual para zerar o histórico.`);
@@ -10118,10 +10118,112 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return { rows, avg, risk, overdue, mastered };
         }
 
-        // V10.6.9 — painel visual de Retenção e Diagnóstico removido por solicitação.
-        // O motor interno de retenção permanece disponível para revisões adaptativas.
+        function renderRetentionRiskCard(row, index) {
+            const state = row.state;
+            const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === state.key);
+            const plan = item ? getLayeredReviewPlan(row,item) : null;
+            const status = row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
+            const layerDef = plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
+            const layerText = plan ? `Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}` : 'Revisão adaptativa';
+            return `<button class="retention-risk-row v965 retention-risk-card-v1071" type="button" onclick="openLayeredReviewModal(${index})" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span></span><span class="retention-risk-value">${Math.round(row.retention)}%</span></button>`;
+        }
+
+        function getRetentionMetricConfig(kind) {
+            return {
+                risk: { title:'Assuntos em risco', subtitle:'Conteúdos que exigem atenção por retenção, atraso de revisão ou desempenho em questões.', key:'risk' },
+                overdue: { title:'Revisões vencidas', subtitle:'Conteúdos cuja próxima revisão prevista já ultrapassou a data recomendada.', key:'overdue' },
+                mastered: { title:'Assuntos dominados', subtitle:'Conteúdos com retenção alta, sem revisão vencida e desempenho compatível com domínio.', key:'mastered' }
+            }[kind] || null;
+        }
+
+        function renderRetentionMetricDetailRow(row, index, kind) {
+            const state = row?.state || {};
+            const retention = Math.round(Number(row?.retention) || 0);
+            const accuracy = Number.isFinite(Number(row?.questionAccuracy)) ? `${Math.round(Number(row.questionAccuracy))}%` : '—';
+            const nextReview = row?.nextAt instanceof Date && Number.isFinite(row.nextAt.getTime()) ? row.nextAt.toLocaleDateString('pt-BR') : '—';
+            const overdueText = row?.overdue ? `Vencida${row.overdueDays ? ` há ${row.overdueDays}d` : ''}` : `Próxima: ${nextReview}`;
+            const indexInRisk = retentionDiagnosticRows.findIndex(item => item?.state?.key === state.key);
+            const clickable = kind !== 'mastered' && indexInRisk >= 0;
+            const tag = clickable ? 'button' : 'div';
+            const action = clickable ? ` type="button" onclick="closeRetentionMetricDetails(); openLayeredReviewModal(${indexInRisk})"` : '';
+            return `<${tag} class="retention-metric-detail-row${clickable?' is-clickable':''}"${action}><span class="retention-detail-rank">${index+1}</span><span class="retention-detail-copy"><strong>${escapeHtml(state.materia||'Matéria')} — ${escapeHtml(state.assunto||'Assunto')}</strong><span>Retenção ${retention}% · Questões ${accuracy} · ${escapeHtml(overdueText)}</span></span><span class="retention-detail-value">${retention}%</span></${tag}>`;
+        }
+
+        function openRetentionMetricDetails(kind) {
+            const config = getRetentionMetricConfig(kind); if(!config) return;
+            const modal=document.getElementById('modalRetentionMetricDetails');
+            const title=document.getElementById('retentionMetricModalTitle');
+            const subtitle=document.getElementById('retentionMetricModalSubtitle');
+            const list=document.getElementById('retentionMetricModalList');
+            if(!modal || !title || !subtitle || !list) return;
+            const diag=buildRetentionDiagnostics();
+            const rows=Array.isArray(diag[config.key]) ? diag[config.key] : [];
+            title.textContent=config.title;
+            subtitle.textContent=config.subtitle;
+            list.innerHTML=rows.length ? rows.map((row,index)=>renderRetentionMetricDetailRow(row,index,kind)).join('') : '<div class="retention-empty">Nenhum conteúdo nesta categoria no momento.</div>';
+            modal.style.display='flex';
+        }
+
+        function closeRetentionMetricDetails() {
+            const modal=document.getElementById('modalRetentionMetricDetails');
+            if(modal) modal.style.display='none';
+        }
+
         function renderRetentionDiagnostics() {
-            return;
+            const panel = document.getElementById('retentionDiagnosticPanel');
+            if (!panel) return;
+            const set = (id,value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
+            const list = document.getElementById('retentionDiagnosticRiskList');
+            const moreButton = document.getElementById('retentionMoreButton');
+            if (!hasRealCurrentConcurso()) {
+                set('retentionDiagAverage','—'); set('retentionDiagRisk','0'); set('retentionDiagOverdue','0'); set('retentionDiagMastered','0');
+                const phaseBox=document.getElementById('retentionExamPhase'); if(phaseBox) phaseBox.innerHTML='<strong>Estratégia da prova</strong><span>Crie ou selecione um concurso para ativar a estratégia progressiva.</span>';
+                if(list) list.innerHTML='<div class="retention-empty">Crie ou selecione um concurso para iniciar o diagnóstico.</div>';
+                if(moreButton) moreButton.hidden=true;
+                retentionDiagnosticRows=[]; return;
+            }
+            const phase = getExamPhaseProfile(getConcursosMetadata()[currentConcurso] || {});
+            const phaseBox = document.getElementById('retentionExamPhase');
+            if (phaseBox) {
+                const dayText = phase.days == null ? '' : (phase.days < 0 ? '' : phase.days === 0 ? 'Hoje' : `${phase.days} dia${phase.days===1?'':'s'}`);
+                phaseBox.innerHTML = `<strong>${escapeHtml(phase.label)}${dayText?` · ${escapeHtml(dayText)}`:''}</strong><span>${escapeHtml(phase.guidance)}</span>`;
+            }
+            const diag = buildRetentionDiagnostics();
+            set('retentionDiagAverage', Number.isFinite(diag.avg) ? `${Math.round(diag.avg)}%` : '—');
+            set('retentionDiagRisk', diag.risk.length);
+            set('retentionDiagOverdue', diag.overdue.length);
+            set('retentionDiagMastered', diag.mastered.length);
+            retentionDiagnosticRows = diag.risk.slice(0,20);
+            if(!list) return;
+            if (!diag.rows.length) {
+                list.innerHTML='<div class="retention-empty">Ainda não há sessões suficientes para estimar retenção. O diagnóstico aparecerá conforme você estudar.</div>';
+                if(moreButton) moreButton.hidden=true; return;
+            }
+            if (!retentionDiagnosticRows.length) {
+                list.innerHTML='<div class="retention-empty">Nenhum assunto está em risco neste momento.</div>';
+                if(moreButton) moreButton.hidden=true; return;
+            }
+            list.innerHTML=retentionDiagnosticRows.slice(0,2).map((row,index)=>renderRetentionRiskCard(row,index)).join('');
+            if(moreButton) {
+                const extra = retentionDiagnosticRows.length - 2;
+                moreButton.hidden = extra <= 0;
+                moreButton.title = extra > 0 ? `Ver mais ${extra} ponto${extra===1?'':'s'} crítico${extra===1?'':'s'}` : '';
+                moreButton.setAttribute('aria-label', moreButton.title || 'Ver mais pontos críticos');
+            }
+        }
+
+        function openRetentionMoreModal() {
+            const modal=document.getElementById('modalRetentionMore');
+            const list=document.getElementById('retentionMoreList');
+            if(!modal || !list) return;
+            const rows=retentionDiagnosticRows.slice(2);
+            list.innerHTML=rows.length ? rows.map((row,offset)=>renderRetentionRiskCard(row,offset+2)).join('') : '<div class="retention-empty">Não há outros pontos críticos.</div>';
+            modal.style.display='flex';
+        }
+
+        function closeRetentionMoreModal() {
+            const modal=document.getElementById('modalRetentionMore');
+            if(modal) modal.style.display='none';
         }
 
         function startRetentionDiagnosticTopic(index) {
