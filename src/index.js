@@ -7,6 +7,9 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
+const APP_VERSION = "10.7.1";
+const CORE_NO_STORE_PATHS = new Set(["/", "/index.html", "/sw.js", "/pwa-update.js", "/app.js", "/app.css", "/version.json"]);
+
 const VENDOR_ROUTES = {
   "/vendor/supabase.js": {
     upstreams: [
@@ -393,6 +396,16 @@ ${rawText.slice(0, MAX_TEXT_CHARS)}
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (request.method === "GET" && CORE_NO_STORE_PATHS.has(url.pathname)) {
+      const assetResponse = await env.ASSETS.fetch(request);
+      const headers = new Headers(assetResponse.headers);
+      headers.set("cache-control", "no-cache, no-store, must-revalidate");
+      headers.set("pragma", "no-cache");
+      headers.set("expires", "0");
+      headers.set("x-app-version", APP_VERSION);
+      return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
+    }
 
     const vendorRoute = VENDOR_ROUTES[url.pathname];
     if (vendorRoute && request.method === "GET") {
