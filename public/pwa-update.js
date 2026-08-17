@@ -1,4 +1,4 @@
-window.APP_VERSION = '10.6.9';
+window.APP_VERSION = '10.7.1';
 window.__pwaRegistration = null;
 window.__pwaUpdateRequested = false;
 window.__pwaUpdateCheckTimer = null;
@@ -134,8 +134,10 @@ if ('serviceWorker' in navigator) {
         prime();
         navigator.serviceWorker.ready.then(readyReg => { attachPwaUpdateLifecycle(readyReg); prime(); }).catch(() => {});
         window.addEventListener('online', checkForPwaUpdate);
+        window.addEventListener('focus', checkForPwaUpdate);
+        window.addEventListener('pageshow', checkForPwaUpdate);
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForPwaUpdate(); });
-        window.__pwaUpdateCheckTimer = window.setInterval(checkForPwaUpdate, 2 * 60 * 1000);
+        window.__pwaUpdateCheckTimer = window.setInterval(checkForPwaUpdate, 60 * 1000);
       })
       .catch(err => console.error('Erro no Service Worker:', err));
   });
