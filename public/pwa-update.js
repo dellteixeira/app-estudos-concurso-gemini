@@ -1,4 +1,4 @@
-window.APP_VERSION = '10.6.6';
+window.APP_VERSION = '10.6.7';
       window.__pwaRegistration = null;
       window.__pwaUpdateRequested = false;
       window.__pwaUpdateCheckTimer = null;
@@ -75,7 +75,7 @@ window.APP_VERSION = '10.6.6';
         });
 
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=10.6.6', { updateViaCache: 'none' })
+          navigator.serviceWorker.register('./sw.js?v=10.6.7', { updateViaCache: 'none' })
             .then(async reg => {
               attachPwaUpdateLifecycle(reg);
               await checkForPwaUpdate();
