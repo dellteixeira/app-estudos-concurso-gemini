@@ -12,10 +12,29 @@
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 
-/app.js
+
+/css/base.css
   Cache-Control: no-cache, no-store, must-revalidate
 
-/app.css
+/css/dashboard.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/css/features.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/study-domain.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/app-core.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/app-ai.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/app-ui.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/app-pwa.js
   Cache-Control: no-cache, no-store, must-revalidate
 
 /pwa-update.js
