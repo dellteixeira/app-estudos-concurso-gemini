@@ -125,13 +125,23 @@ for (const call of requiredDomainCalls) if (!appJs.includes(call)) fail(`produç
 if (!errors.some(e => e.includes('produção não delega'))) ok('regras críticas compartilham StudyDomain com os testes');
 
 // Testes automatizados exigidos.
-const expectedTests = ['minutes','sync','priorities','deletions','metrics','retention'].map(n => `tests/${n}.test.cjs`);
+const expectedTests = ['minutes','sync','priorities','deletions','metrics','retention','infrastructure'].map(n => `tests/${n}.test.cjs`);
 for (const rel of expectedTests) if (!exists(rel)) fail(`teste automatizado ausente: ${rel}`);
 if (!exists('.github/workflows/quality-check.yml')) fail('workflow automático de qualidade ausente');
 else ok('GitHub Actions de qualidade presente');
+if (!exists('.github/workflows/backup-supabase.yml')) fail('workflow de backup Supabase ausente');
+else {
+  const backupWorkflow = read('.github/workflows/backup-supabase.yml');
+  if (!/backup-supabase-storage\.mjs/.test(backupWorkflow) || !/manifest\.sha256/.test(backupWorkflow)) fail('backup Supabase sem blindagem de Storage/integridade');
+  else ok('backup Supabase preparado para banco + Storage + integridade');
+}
+for (const rel of ['supabase/baseline/runtime-contract.json','supabase/baseline/README.txt','scripts/capture-supabase-baseline.sh','scripts/backup-supabase-storage.mjs','supabase/migrations/20260818_harden_delete_my_study_data.sql']) {
+  if (!exists(rel)) fail(`blindagem Supabase ausente: ${rel}`);
+}
+if (!errors.some(e => e.includes('blindagem Supabase'))) ok('baseline e hardening Supabase versionados');
 try {
   execFileSync(process.execPath, ['--test', ...expectedTests.map(rel=>path.join(root,rel))], { stdio:'pipe' });
-  ok('6 categorias de testes automatizados aprovadas');
+  ok('7 categorias de testes automatizados aprovadas');
 } catch (error) { fail('testes automatizados falharam'); }
 
 // Regressões funcionais importantes das versões anteriores.
