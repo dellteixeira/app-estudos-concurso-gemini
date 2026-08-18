@@ -615,3 +615,36 @@ V10.9.1 — ATUALIZAÇÃO PWA DETERMINÍSTICA
 - Caches antigos são removidos após o novo controlador assumir.
 - release-version.mjs não altera mais index.html apenas para trocar o número da versão.
 - audit-release.mjs verifica a ausência de versão hardcoded e o handshake real com o Service Worker.
+
+============================================================
+V10.11.0 — FASE 0: BLINDAGEM DA BASE SUPABASE
+============================================================
+
+A base canônica V10.10.0 continha migrations incrementais, mas não um dump
+completo do schema remoto. Para evitar documentar um schema inventado, a V10.11.0
+adiciona um contrato derivado do código e um capturador do baseline real:
+
+  bash scripts/capture-supabase-baseline.sh
+
+Requisito: SUPABASE_DB_URL e Supabase CLI. O resultado é gravado em
+supabase/baseline/generated/ com hashes SHA-256.
+
+Backup diário
+- PostgreSQL: roles.sql, schema.sql e data.sql.
+- Integridade: manifest.sha256 + backup-info.txt.
+- Storage: scripts/backup-supabase-storage.mjs. É executado somente quando os
+  secrets SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY estiverem configurados; sem
+  eles, o backup de banco continua normalmente.
+- Para o futuro leitor PDF, o bucket privado previsto é study-pdfs.
+
+Exclusão de conta
+- A RPC public.delete_my_study_data() agora está versionada por migration e cobre
+  tabelas atuais/legadas conhecidas somente quando existirem.
+- A Edge Function remove primeiro objetos sob study-pdfs/<user_id>/, depois os
+  dados do banco e, por último, auth.users.
+
+Segredos adicionais recomendados no GitHub Actions para backup de Storage:
+- SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY
+
+Nunca exponha SUPABASE_SERVICE_ROLE_KEY no frontend.
