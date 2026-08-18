@@ -6,6 +6,9 @@ on:
   schedule:
     - cron: "0 6 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -14,26 +17,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
       - name: Create backup directory
-        run: mkdir -p backups
+        run: mkdir -p backups/database backups/storage
 
       - name: Backup roles
         run: |
           supabase db dump \
             --db-url "${{ secrets.SUPABASE_DB_URL }}" \
             --role-only \
-            -f backups/roles.sql
+            -f backups/database/roles.sql
 
-      - name: Backup schema
+      - name: Backup schema, RLS, RPCs and grants
         run: |
           supabase db dump \
             --db-url "${{ secrets.SUPABASE_DB_URL }}" \
-            -f backups/schema.sql
+            -f backups/database/schema.sql
 
       - name: Backup data
         run: |
@@ -41,7 +49,24 @@ jobs:
             --db-url "${{ secrets.SUPABASE_DB_URL }}" \
             --data-only \
             --use-copy \
-            -f backups/data.sql
+            -f backups/database/data.sql
+
+      - name: Backup Storage objects when configured
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STORAGE_BACKUP_DIR: backups/storage
+        run: node scripts/backup-supabase-storage.mjs
+
+      - name: Generate integrity manifests
+        run: |
+          find backups -type f -print0 | sort -z | xargs -0 sha256sum > backups/manifest.sha256
+          {
+            echo "created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "commit=${GITHUB_SHA}"
+            echo "run_id=${GITHUB_RUN_ID}"
+          } > backups/backup-info.txt
 
       - name: Compact backup
         run: |
@@ -53,3 +78,4 @@ jobs:
           name: supabase-backup-${{ github.run_id }}
           path: supabase-backup-${{ github.run_id }}.tar.gz
           retention-days: 30
+          if-no-files-found: error
