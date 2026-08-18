@@ -1,3 +1,20 @@
+V10.10.0 — EVOLUÇÃO ARQUITETURAL P3
+- app.js dividido em domínio puro, núcleo, analisador de edital/IA, UI e PWA.
+- app.css dividido em base, dashboard e features preservando a cascata original.
+- StudyDomain concentra regras puras compartilhadas por produção e testes.
+- Testes automatizados para minutos, sincronização, prioridades, exclusões, métricas e retenção.
+- GitHub Actions executa testes e auditoria em push/PR.
+- Service Worker, headers e Cloudflare Worker atualizados para os novos assets.
+
+V10.9.2 — MELHORIA ESTRUTURAL P2
+- Gráfico de progresso confirmado na ordem canônica do Edital.
+- Pomodoro iniciado manualmente agora exige vínculo com matéria, assunto e tipo de estudo antes do foco.
+- Sessões manuais passam a entrar corretamente em studySessions com origem pomodoro-manual.
+- Código morto removido de startRetentionDiagnosticTopic.
+- Blocos CSS antigos e integralmente sobrescritos de Retenção/Diagnóstico removidos, reduzindo a folha de estilos sem alterar o visual atual.
+- Query string legada do manifest removida; manifest.json passa a ser servido e revalidado pelo mecanismo PWA atual.
+- Auditoria de release ampliada para impedir regressões nesses pontos.
+
 V10.9.0 — AUDITORIA E CONFIABILIDADE
 - Pomodoro passa a usar relógio absoluto (Date.now + deadline), mantendo o tempo correto após background, tela bloqueada ou suspensão de timers do navegador.
 - Progresso de questões deixa de ser binário: considera volume de questões, desempenho e confiança da amostra.
