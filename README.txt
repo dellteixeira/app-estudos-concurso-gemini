@@ -589,3 +589,12 @@ V10.8.0 — EDITOR RICO DE ANOTAÇÕES
 - Conteúdo formatado é sanitizado antes de salvar e exibir.
 - Atalhos Ctrl/Cmd+B, Ctrl/Cmd+I e Ctrl/Cmd+U disponíveis.
 - Área ampliada da V10.7.9 preservada.
+
+V10.9.1 — ATUALIZAÇÃO PWA DETERMINÍSTICA
+- Removida a dependência de versão hardcoded no index.html.
+- A versão exibida passa a ser consultada diretamente do Service Worker ativo.
+- O atualizador registra sw.js usando a versão publicada em version.json como cache-buster.
+- “Atualizar agora” aguarda instalação, SKIP_WAITING, controllerchange e confirma a versão ativa antes do reload.
+- Caches antigos são removidos após o novo controlador assumir.
+- release-version.mjs não altera mais index.html apenas para trocar o número da versão.
+- audit-release.mjs verifica a ausência de versão hardcoded e o handshake real com o Service Worker.
