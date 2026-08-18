@@ -2660,14 +2660,61 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderAdaptiveStudySuggestion(container);
         }
 
+        function getCanonicalMateriaOrder() {
+            const materiasMap = {};
+            editalItems.forEach((item, index) => {
+                const materia = String(item?.materia || '').trim();
+                if (!materia) return;
+                const prioridade = clampMateriaPriority(item?.prioridade || 1);
+                if (!materiasMap[materia]) materiasMap[materia] = { prioridade, naturalIndex:index };
+                else materiasMap[materia].prioridade = Math.min(materiasMap[materia].prioridade, prioridade);
+            });
+            return buildDisplayedMateriaOrder(materiasMap);
+        }
+
+        function getCanonicalAssuntosForMateria(matName) {
+            const seen = new Map();
+            editalItems.forEach((item, index) => {
+                if (item?.materia !== matName) return;
+                const assunto = String(item?.assunto || '').trim();
+                if (!assunto) return;
+                const prioridade = Math.max(1, parseInt(item?.assunto_prioridade, 10) || 1);
+                if (!seen.has(assunto)) seen.set(assunto, { prioridade, naturalIndex:index });
+                else seen.get(assunto).prioridade = Math.min(seen.get(assunto).prioridade, prioridade);
+            });
+            return [...seen.entries()]
+                .sort((a,b) => a[1].prioridade - b[1].prioridade || a[1].naturalIndex - b[1].naturalIndex || a[0].localeCompare(b[0], 'pt-BR', { sensitivity:'base' }))
+                .map(([assunto]) => assunto);
+        }
+
+        function sortMateriaNamesByCanonicalOrder(names = []) {
+            const canonical = getCanonicalMateriaOrder();
+            const rank = new Map(canonical.map((name,index) => [name,index]));
+            return [...new Set((names || []).filter(Boolean))].sort((a,b) => {
+                const ar = rank.has(a) ? rank.get(a) : Number.MAX_SAFE_INTEGER;
+                const br = rank.has(b) ? rank.get(b) : Number.MAX_SAFE_INTEGER;
+                if (ar !== br) return ar - br;
+                return String(a).localeCompare(String(b), 'pt-BR', { sensitivity:'base' });
+            });
+        }
+
+        function sortAssuntoNamesByCanonicalOrder(materia, names = []) {
+            const canonical = getCanonicalAssuntosForMateria(materia);
+            const rank = new Map(canonical.map((name,index) => [name,index]));
+            return [...new Set((names || []).filter(Boolean))].sort((a,b) => {
+                const ar = rank.has(a) ? rank.get(a) : Number.MAX_SAFE_INTEGER;
+                const br = rank.has(b) ? rank.get(b) : Number.MAX_SAFE_INTEGER;
+                if (ar !== br) return ar - br;
+                return String(a).localeCompare(String(b), 'pt-BR', { sensitivity:'base' });
+            });
+        }
+
         function getUniqueMateriasFromEdital() {
-            const set = new Set();
-            editalItems.forEach(i => { if (i.materia) set.add(i.materia); });
-            return Array.from(set);
+            return getCanonicalMateriaOrder();
         }
 
         function getAssuntosForMateria(matName) {
-            return editalItems.filter(i => i.materia === matName).map(i => i.assunto);
+            return getCanonicalAssuntosForMateria(matName);
         }
 
         function showEditTopicDropdown(idx) {
@@ -2903,11 +2950,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!mSel || !modalSel) return;
             mSel.innerHTML = ''; modalSel.innerHTML = '';
 
-            const setMaterias = new Set();
-            editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
-            if (setMaterias.size === 0) setMaterias.add('Geral');
+            const materias = getCanonicalMateriaOrder();
+            if (materias.length === 0) materias.push('Geral');
 
-            setMaterias.forEach(mat => {
+            materias.forEach(mat => {
                 mSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`;
                 modalSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`;
             });
@@ -2919,12 +2965,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!materiaSel || !assuntoSel) return;
 
             const materia = materiaSel.value;
-            const assuntos = [...new Set(
-                editalItems
-                    .filter(i => i.materia === materia && i.assunto)
-                    .map(i => i.assunto.trim())
-                    .filter(Boolean)
-            )];
+            const assuntos = getCanonicalAssuntosForMateria(materia);
 
             assuntoSel.innerHTML = '';
             assuntos.forEach(assunto => {
@@ -3249,9 +3290,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const mSel = document.getElementById('fcMateriaSelect');
             if (!mSel) return;
             mSel.innerHTML = '<option value="">Selecione a Matéria (Opcional)</option>';
-            const setMaterias = new Set();
-            editalItems.forEach(i => { if (i.materia) setMaterias.add(i.materia); });
-            setMaterias.forEach(mat => { mSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`; });
+            getCanonicalMateriaOrder().forEach(mat => { mSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`; });
             updateFcAssuntoOptions();
         }
 
@@ -3261,7 +3300,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!aSel) return;
             aSel.innerHTML = '<option value="">Selecione o Assunto (Opcional)</option>';
             if (!mVal) return;
-            const assuntos = editalItems.filter(i => i.materia === mVal).map(i => i.assunto);
+            const assuntos = getCanonicalAssuntosForMateria(mVal);
             assuntos.forEach(ass => { aSel.innerHTML += `<option value="${escapeHtml(ass)}">${escapeHtml(ass)}</option>`; });
         }
 
@@ -3416,14 +3455,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 deckHierarchy[mat].assuntos[ass]++;
             });
 
-            Object.keys(deckHierarchy).forEach(matName => {
+            sortMateriaNamesByCanonicalOrder(Object.keys(deckHierarchy)).forEach(matName => {
                 const matData = deckHierarchy[matName];
                 const isOpen = openFcFolders[matName] === true;
                 const isMatActive = (activeFcMateriaFilter === matName && !activeFcAssuntoFilter);
                 const safeMatHandler = encodeHandlerValue(matName);
 
                 let subfoldersHtml = '';
-                Object.keys(matData.assuntos).forEach(assName => {
+                sortAssuntoNamesByCanonicalOrder(matName, Object.keys(matData.assuntos)).forEach(assName => {
                     const count = matData.assuntos[assName];
                     const isAssActive = (activeFcMateriaFilter === matName && activeFcAssuntoFilter === assName);
                     const safeAssHandler = encodeHandlerValue(assName);
@@ -3490,7 +3529,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 grouped[mKey].push(fc);
             });
 
-            Object.keys(grouped).forEach(mName => {
+            sortMateriaNamesByCanonicalOrder(Object.keys(grouped)).forEach(mName => {
                 let cardsHtml = '';
                 grouped[mName].forEach(fc => {
                     cardsHtml += `
@@ -3650,9 +3689,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 });
             });
 
-            const pastas = Object.keys(hierarchy).sort((a,b) => a.localeCompare(b, 'pt-BR')).map(materia => ({
+            const pastas = sortMateriaNamesByCanonicalOrder(Object.keys(hierarchy)).map(materia => ({
                 materia,
-                assuntos: Object.keys(hierarchy[materia]).sort((a,b) => a.localeCompare(b, 'pt-BR')).map(assunto => ({
+                assuntos: sortAssuntoNamesByCanonicalOrder(materia, Object.keys(hierarchy[materia])).map(assunto => ({
                     assunto,
                     flashcards: hierarchy[materia][assunto]
                 }))
@@ -5303,6 +5342,46 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 filterDataByConcurso();
                 alert(`A matéria "${materiaParaExcluir}" foi excluída com sucesso!`);
             }
+        }
+
+        function resolvePromptSelection(value, options) {
+            const text = String(value || '').trim();
+            if (!text) return null;
+            const numeric = Number.parseInt(text, 10);
+            if (/^\d+$/.test(text) && numeric >= 1 && numeric <= options.length) return options[numeric - 1];
+            return options.find(option => String(option).localeCompare(text, 'pt-BR', { sensitivity:'base' }) === 0) || null;
+        }
+
+        async function excluirAssuntoEspecifico() {
+            const materias = getCanonicalMateriaOrder();
+            if (!materias.length) return alert('Não há matérias cadastradas para excluir assuntos.');
+
+            const materiaResposta = prompt(`Escolha a matéria do assunto que deseja excluir.\nDigite o NÚMERO ou o NOME exato:\n\n${materias.map((m,idx)=>`${idx+1}. ${m}`).join('\n')}`);
+            if (!materiaResposta || !materiaResposta.trim()) return;
+            const materia = resolvePromptSelection(materiaResposta, materias);
+            if (!materia) return alert('Matéria não encontrada.');
+
+            const assuntos = getCanonicalAssuntosForMateria(materia);
+            if (!assuntos.length) return alert(`A matéria "${materia}" não possui assuntos cadastrados.`);
+            const assuntoResposta = prompt(`Escolha SOMENTE o assunto que deseja excluir de "${materia}".\nDigite o NÚMERO ou o NOME exato:\n\n${assuntos.map((a,idx)=>`${idx+1}. ${a}`).join('\n')}`);
+            if (!assuntoResposta || !assuntoResposta.trim()) return;
+            const assunto = resolvePromptSelection(assuntoResposta, assuntos);
+            if (!assunto) return alert('Assunto não encontrado.');
+
+            const confirmed = confirm(`Excluir somente o assunto "${assunto}" da matéria "${materia}"?\n\nA matéria, suas anotações, flashcards e histórico de estudo serão preservados.`);
+            if (!confirmed) return;
+
+            const itemsToDelete = editalItems.filter(item => item.materia === materia && String(item.assunto || '').trim() === assunto);
+            if (!itemsToDelete.length) return alert('O assunto selecionado não está mais disponível.');
+            for (const item of itemsToDelete) await deleteEditalItemFromCloud(item.id);
+
+            filterDataByConcurso();
+            populateNotesMateriaDropdowns();
+            populateFcMateriaDropdown();
+            renderMonthCalendar();
+            updateModernOverview();
+            renderRetentionDiagnostics();
+            alert(`O assunto "${assunto}" foi excluído de "${materia}". A matéria e seus demais assuntos foram preservados.`);
         }
 
         let draggedMateriaName = null;
@@ -9962,20 +10041,62 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             document.documentElement.style.setProperty('--desktop-tabs-sticky-top', `${stickyTop}px`);
         }
 
-        function switchTab(tabId, btn) {
+        const TAB_WORKSPACE_TARGETS = Object.freeze({
+            'tab-calendario': 'calendarWorkspace',
+            'tab-flashcards': 'flashcardsWorkspace',
+            'tab-anotacoes': 'notesWorkspace'
+        });
+
+        function getTabWorkspaceTopOffset() {
+            if (window.matchMedia('(max-width: 900px)').matches) {
+                return Math.max(10, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--workspace-mobile-top-gap')) || 12);
+            }
+            const header = document.querySelector('header.modern-header');
+            if (!header) return 18;
+            const style = getComputedStyle(header);
+            const headerTop = parseFloat(style.top) || 0;
+            return Math.ceil(headerTop + header.offsetHeight + 14);
+        }
+
+        function focusTabWorkspace(tabId, options = {}) {
+            const targetId = TAB_WORKSPACE_TARGETS[tabId];
+            if (!targetId) return;
+            const target = document.getElementById(targetId);
+            if (!target || !target.offsetParent) return;
+
+            const offset = getTabWorkspaceTopOffset();
+            const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - offset);
+            const behavior = options.instant ? 'auto' : (options.behavior || 'smooth');
+            window.scrollTo({ top, behavior });
+        }
+
+        function scheduleTabWorkspaceFocus(tabId, options = {}) {
+            if (!TAB_WORKSPACE_TARGETS[tabId]) return;
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => focusTabWorkspace(tabId, options));
+            });
+        }
+
+        function switchTab(tabId, btn, options = {}) {
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
+            const tab = document.getElementById(tabId);
+            if (!tab) return;
+            tab.classList.add('active');
+            if (btn) btn.classList.add('active');
             document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
             updateContextFab(tabId);
             updateModernOverview();
 
             // Renderiza componentes pesados somente quando a aba fica visível.
             if (tabId === 'tab-calendario') {
-                requestAnimationFrame(() => renderMonthCalendar());
-            } else if (tabId === 'tab-edital') {
-                requestAnimationFrame(() => renderChart());
+                requestAnimationFrame(() => {
+                    renderMonthCalendar();
+                    if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
+                });
+            } else {
+                if (tabId === 'tab-edital') requestAnimationFrame(() => renderChart());
+                if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
             }
         }
 
@@ -10149,9 +10270,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function mobileSwitchTab(tabId, mobileBtn) {
             const desktopBtn = findDesktopTabButton(tabId);
             if (desktopBtn) switchTab(tabId, desktopBtn);
+            else switchTab(tabId, null);
             document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
             updateContextFab(tabId);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function updateContextFab(tabId) {
@@ -10611,6 +10732,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         window.updateMateriaPriority = updateMateriaPriority;
         window.updateAssuntoPriority = updateAssuntoPriority;
         window.excluirMateriaEspecifica = excluirMateriaEspecifica;
+        window.excluirAssuntoEspecifico = excluirAssuntoEspecifico;
         window.changeConcurso = changeConcurso;
         window.openModalNovoConcurso = openModalNovoConcurso;
         window.closeModalNovoConcurso = closeModalNovoConcurso;
