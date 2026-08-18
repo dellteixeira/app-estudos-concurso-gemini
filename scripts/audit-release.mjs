@@ -26,14 +26,15 @@ if (path.basename(root) !== expectedRootName) fail(`pasta raiz=${path.basename(r
 else ok('nome da pasta raiz sincronizado com a versão');
 
 const html = read('public/index.html');
-const htmlVersion = html.match(/<meta name="app-version" content="([^"]+)">/)?.[1] || '';
 const sw = read('public/sw.js');
 const swVersion = sw.match(/const APP_VERSION = '([^']+)';/)?.[1] || '';
 const worker = read('src/index.js');
 const workerVersion = worker.match(/const APP_VERSION = "([^"]+)";/)?.[1] || '';
 
+if (/<meta name="app-version"/.test(html)) fail('index.html ainda contém versão hardcoded em meta app-version');
+else ok('index.html não depende mais de versão hardcoded');
+
 for (const [label, value] of [
-  ['index.html meta app-version', htmlVersion],
   ['sw.js APP_VERSION', swVersion],
   ['src/index.js APP_VERSION', workerVersion],
 ]) {
@@ -49,14 +50,22 @@ if (/app(?:\.css|\.js)\?v=\d+\.\d+\.\d+|pwa-update\.js\?v=\d+\.\d+\.\d+/.test(ht
 } else ok('assets centrais não duplicam versão em query string');
 
 const pwa = read('public/pwa-update.js');
-if (!/meta\[name="app-version"\]/.test(pwa)) fail('pwa-update.js não lê a versão em execução do meta app-version');
-else ok('pwa-update.js lê a versão do HTML');
-if (!/register\(swUrl, \{ updateViaCache: 'none' \}\)/.test(pwa)) fail('registro do Service Worker não força updateViaCache=none');
+if (/meta\[name="app-version"\]/.test(pwa)) fail('pwa-update.js ainda depende da versão hardcoded do HTML');
+else ok('pwa-update.js não depende mais da versão do HTML');
+if (!/getWorkerVersion\(/.test(pwa) || !/GET_APP_VERSION/.test(pwa)) fail('pwa-update.js não consulta a versão real do Service Worker ativo');
+else ok('pwa-update.js consulta a versão real do Service Worker');
+if (!/register\(swUrl, \{[\s\S]*?updateViaCache: 'none'/.test(pwa)) fail('registro do Service Worker não força updateViaCache=none');
 else ok('Service Worker registrado com updateViaCache=none');
-if (!/sw\.js\?v=/.test(pwa)) fail('URL do Service Worker não é versionada');
-else ok('URL do Service Worker é versionada');
-if (!/cacheNames[\s\S]*startsWith\('estudo-adaptativo-'\)/.test(pwa)) fail('rotina de atualização não limpa caches antigos do app');
+if (!/const swUrl = `\.\/sw\.js\?v=\$\{encodeURIComponent\(token\)\}`/.test(pwa)) fail('URL do Service Worker não usa token/versão remota para forçar atualização');
+else ok('URL do Service Worker usa versão remota/cache-buster');
+if (!/waitForControllerVersion\(/.test(pwa) || !/controllerchange/.test(pwa)) fail('atualizador não aguarda o novo Service Worker assumir o controle');
+else ok('atualizador aguarda controllerchange e confirma versão ativa');
+if (!/sessionStorage\.setItem\('__pwa_last_applied_version'/.test(pwa)) fail('atualizador não registra a versão aplicada');
+else ok('atualizador registra a versão aplicada antes do reload');
+if (!/startsWith\(CACHE_PREFIX\)/.test(pwa)) fail('rotina de atualização não limpa caches antigos do app');
 else ok('rotina de atualização limpa caches antigos');
+if (!/event\.ports\?\.\[0\]/.test(sw)) fail('Service Worker não responde GET_APP_VERSION via MessageChannel');
+else ok('Service Worker responde versão via MessageChannel');
 
 if (!/CACHE_NAME = `\$\{CACHE_PREFIX\}v\$\{APP_VERSION\.replace/.test(sw)) fail('CACHE_NAME não deriva automaticamente de APP_VERSION');
 else ok('CACHE_NAME deriva automaticamente da versão');
