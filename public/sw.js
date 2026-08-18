@@ -1,4 +1,4 @@
-const APP_VERSION = '10.9.0';
+const APP_VERSION = '10.9.1';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
@@ -50,8 +50,10 @@ self.addEventListener('message', event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
-  if (event.data?.type === 'GET_APP_VERSION' && event.source) {
-    event.source.postMessage({ type: 'APP_VERSION', version: APP_VERSION });
+  if (event.data?.type === 'GET_APP_VERSION') {
+    const payload = { type: 'APP_VERSION', version: APP_VERSION };
+    if (event.ports?.[0]) event.ports[0].postMessage(payload);
+    else if (event.source) event.source.postMessage(payload);
   }
 });
 
