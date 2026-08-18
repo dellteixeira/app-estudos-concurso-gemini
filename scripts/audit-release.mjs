@@ -163,6 +163,49 @@ const cssRich = read('public/app.css');
 if (!/\.note-format-toolbar/.test(cssRich) || !/\.note-rich-editor/.test(cssRich)) fail('Notas: estilos do editor rico ausentes');
 else ok('Notas: estilos do editor rico presentes');
 
+
+// V10.8.1 — Auditoria da navegação orientada ao objetivo.
+const appJs = read('public/app.js');
+const navTargets = [
+  ['tab-calendario', 'calendarWorkspace'],
+  ['tab-flashcards', 'flashcardsWorkspace'],
+  ['tab-anotacoes', 'notesWorkspace']
+];
+for (const [tabId, workspaceId] of navTargets) {
+  if (!html.includes(`id="${workspaceId}"`)) fail(`Navegação direta: destino ${workspaceId} ausente no HTML`);
+  if (!appJs.includes(`'${tabId}': '${workspaceId}'`)) fail(`Navegação direta: mapeamento ${tabId} → ${workspaceId} ausente`);
+}
+if (!errors.some(e => e.includes('Navegação direta:'))) ok('Navegação direta possui os três destinos de trabalho');
+if (!/function focusTabWorkspace\(/.test(appJs) || !/function scheduleTabWorkspaceFocus\(/.test(appJs)) fail('Navegação direta: rotina de posicionamento da viewport ausente');
+else ok('Navegação direta possui rotina de posicionamento da viewport');
+if (/function mobileSwitchTab[\s\S]*?window\.scrollTo\(\{ top: 0/.test(appJs)) fail('Navegação mobile ainda força retorno ao topo da página');
+else ok('Navegação mobile não retorna mais ao topo da página');
+const desktopOrder = [
+  html.indexOf("switchTab('tab-edital'"),
+  html.indexOf("switchTab('tab-calendario'"),
+  html.indexOf("switchTab('tab-flashcards'"),
+  html.indexOf("switchTab('tab-anotacoes'")
+];
+if (desktopOrder.some(v => v < 0) || desktopOrder.some((v,i,a) => i && v <= a[i-1])) fail('Ordem das abas desktop não está alinhada a Edital → Cronograma → Flashcards → Anotações');
+else ok('Ordem das abas desktop alinhada à navegação mobile');
+
+// V10.8.2 — Exclusão granular e ordem canônica por prioridade.
+const editalHtml = html.match(/<div[^>]+id="tab-edital"[\s\S]*?<\/div>\s*<div[^>]+id="tab-/)?.[0] || html;
+if (!/onclick="excluirAssuntoEspecifico\(\)"/.test(editalHtml)) fail('Edital não expõe botão Excluir Assunto');
+else ok('Edital expõe botão Excluir Assunto');
+if (!/async function excluirAssuntoEspecifico\(\)/.test(appJs)) fail('função excluirAssuntoEspecifico ausente');
+else ok('exclusão granular de assunto implementada');
+for (const helper of ['getCanonicalMateriaOrder','getCanonicalAssuntosForMateria','sortMateriaNamesByCanonicalOrder','sortAssuntoNamesByCanonicalOrder']) {
+  if (!new RegExp(`function ${helper}\\(`).test(appJs)) fail(`helper canônico ${helper} ausente`);
+}
+if (!errors.some(e => e.includes('helper canônico'))) ok('helpers canônicos de ordenação por prioridade presentes');
+if (!/sortMateriaNamesByCanonicalOrder\(Object\.keys\(deckHierarchy\)\)/.test(appJs)) fail('pastas de flashcards não usam ordem canônica de matérias');
+else ok('pastas de flashcards usam ordem canônica');
+if (!/const assuntos = getCanonicalAssuntosForMateria\(materia\);/.test(appJs)) fail('anotações não usam ordem canônica de assuntos');
+else ok('anotações usam ordem canônica de assuntos');
+if (!/getCanonicalMateriaOrder\(\)\.forEach\(mat =>/.test(appJs)) fail('seletor de flashcards não usa ordem canônica de matérias');
+else ok('seletor de flashcards usa ordem canônica');
+
 if (errors.length) {
   console.error(`\nAUDITORIA REPROVADA: ${errors.length} problema(s).`);
   process.exit(1);
