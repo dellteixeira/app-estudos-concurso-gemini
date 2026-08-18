@@ -206,6 +206,29 @@ else ok('anotações usam ordem canônica de assuntos');
 if (!/getCanonicalMateriaOrder\(\)\.forEach\(mat =>/.test(appJs)) fail('seletor de flashcards não usa ordem canônica de matérias');
 else ok('seletor de flashcards usa ordem canônica');
 
+
+// V10.9.0 — Auditoria de confiabilidade: timer, progresso e retenção.
+if (!/let timerEndAtMs = null;/.test(appJs)) fail('Timer: deadline absoluto ausente');
+if (!/timerEndAtMs = Date\.now\(\) \+/.test(appJs)) fail('Timer: deadline não deriva de Date.now()');
+if (!/function syncTimerFromClock\(\)/.test(appJs)) fail('Timer: reconciliação com relógio real ausente');
+if (!/visibilitychange/.test(appJs) || !/pageshow/.test(appJs)) fail('Timer: reconciliação ao retornar do background ausente');
+if (/function startTimer\(\)[\s\S]*?timeLeft--/.test(appJs)) fail('Timer: startTimer ainda depende de decremento por tick');
+else ok('Timer usa relógio absoluto e não decremento por setInterval');
+
+if (!/function getQuestionProgressFraction\(/.test(appJs) || !/function getStudyProgressBreakdown\(/.test(appJs)) fail('Progresso: métrica calibrada de questões ausente');
+else ok('Progresso usa volume + desempenho em questões');
+if (!/volumeFraction = 0\.80/.test(appJs) || !/accuracy >= 75/.test(appJs)) fail('Progresso: faixas de volume/desempenho não encontradas');
+if (!/const progressBreakdown = getStudyProgressBreakdown\(topics\);/.test(appJs)) fail('Overview: não reutiliza a métrica calibrada');
+else ok('Overview reutiliza a métrica calibrada');
+if (!/sortMateriaNamesByCanonicalOrder\(Object\.keys\(counts\)\)/.test(appJs)) fail('Gráfico: matérias não seguem ordem canônica');
+else ok('Gráfico de progresso segue ordem canônica');
+
+if (!/const activeTopicKeys = new Set\(\(editalItems \|\| \[\]\)\.map/.test(appJs)) fail('Retenção: filtro por assuntos ativos do edital ausente');
+else ok('Retenção ignora assuntos removidos do edital no diagnóstico ativo');
+if (!/function hasRetentionMasteryEvidence\(/.test(appJs)) fail('Retenção: regra de evidência de domínio ausente');
+if (!/qTotal >= 10/.test(appJs) || !/qAccuracy >= 75/.test(appJs) || !/positiveRecallRatings >= 2/.test(appJs)) fail('Retenção: domínio não exige evidência objetiva/subjetiva suficiente');
+else ok('Assunto dominado exige evidência suficiente');
+
 if (errors.length) {
   console.error(`\nAUDITORIA REPROVADA: ${errors.length} problema(s).`);
   process.exit(1);
