@@ -7,8 +7,12 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.9.1";
-const CORE_NO_STORE_PATHS = new Set(["/", "/index.html", "/sw.js", "/pwa-update.js", "/app.js", "/app.css", "/version.json"]);
+const APP_VERSION = "10.10.0";
+const CORE_NO_STORE_PATHS = new Set([
+  "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
+  "/css/base.css", "/css/dashboard.css", "/css/features.css",
+  "/js/study-domain.js", "/js/app-core.js", "/js/app-ai.js", "/js/app-ui.js", "/js/app-pwa.js"
+]);
 
 const VENDOR_ROUTES = {
   "/vendor/supabase.js": {
