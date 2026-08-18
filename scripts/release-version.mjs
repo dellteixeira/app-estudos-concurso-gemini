@@ -11,17 +11,12 @@ if (!/^\d+\.\d+\.\d+$/.test(version || '')) {
 
 const files = {
   version: path.join(root, 'public/version.json'),
-  html: path.join(root, 'public/index.html'),
   sw: path.join(root, 'public/sw.js'),
   worker: path.join(root, 'src/index.js'),
 };
 
 const now = new Date().toISOString();
 fs.writeFileSync(files.version, JSON.stringify({ version, build: now }, null, 2) + '\n');
-
-let html = fs.readFileSync(files.html, 'utf8');
-html = html.replace(/<meta name="app-version" content="[^"]+">/, `<meta name="app-version" content="${version}">`);
-fs.writeFileSync(files.html, html);
 
 let sw = fs.readFileSync(files.sw, 'utf8');
 sw = sw.replace(/const APP_VERSION = '[^']+';/, `const APP_VERSION = '${version}';`);
@@ -32,4 +27,5 @@ worker = worker.replace(/const APP_VERSION = "[^"]+";/, `const APP_VERSION = "${
 fs.writeFileSync(files.worker, worker);
 
 console.log(`Versão sincronizada para ${version}.`);
+console.log('O index.html não contém mais número de versão hardcoded.');
 console.log('Execute: node scripts/audit-release.mjs');
