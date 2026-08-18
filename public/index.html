@@ -11,7 +11,7 @@
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
     <link rel="manifest" href="manifest.json?v=20260815-9663">
-    <meta name="app-version" content="10.8.0">
+    <meta name="app-version" content="10.8.2">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -119,8 +119,8 @@
                 <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
                     <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
                     <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
-                    <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
                     <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
+                    <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
                 </div>
             </div>
         </header>
@@ -301,6 +301,7 @@
                         <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
                         <button type="button" class="btn btn-secondary" onclick="exportMateriasConteudos()" title="Exportar matérias e assuntos do concurso atual em JSON">Exportar Matérias</button>
                         <button type="button" class="btn btn-danger" onclick="excluirMateriaEspecifica()">Excluir Matéria</button>
+                        <button type="button" class="btn btn-warning" onclick="excluirAssuntoEspecifico()">Excluir Assunto</button>
                     </div>
                 </form>
 
@@ -346,7 +347,7 @@
                 <div id="delayedItemsContainer"></div>
             </div>
 
-            <div class="card calendar-shell-card">
+            <div class="card calendar-shell-card tab-workspace-anchor" id="calendarWorkspace">
                 <div class="calendar-shell-top">
                     <div class="calendar-shell-title">
                         <div class="calendar-shell-icon" aria-hidden="true">📅</div>
@@ -392,7 +393,7 @@
 
         <!-- TAB 3: ANOTAÇÕES -->
         <div id="tab-anotacoes" class="tab-content">
-            <div class="card">
+            <div class="card tab-workspace-anchor" id="notesWorkspace">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
                     <h3>Anotações e Caderno de Resumos</h3>
                     <button class="btn btn-primary" onclick="openModalNovaNota()">Incluir Nota</button>
@@ -409,7 +410,7 @@
 
         <!-- TAB 4: FLASHCARDS -->
         <div id="tab-flashcards" class="tab-content">
-            <div class="card">
+            <div class="card tab-workspace-anchor" id="flashcardsWorkspace">
                 <div class="flashcards-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                     <h3>Flashcards e Estudo Ativo</h3>
                     <div class="flashcard-study-actions">
