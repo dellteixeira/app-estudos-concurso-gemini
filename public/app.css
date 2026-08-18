@@ -10075,3 +10075,50 @@ body.light-mode #modalNovaNota #inputNotaConteudo.note-rich-editor {
         height: 40vh !important;
     }
 }
+
+/* V10.8.1 — Navegação orientada ao objetivo: Cronograma, Flashcards e Anotações */
+:root {
+    --workspace-mobile-top-gap: 12px;
+}
+
+.tab-workspace-anchor {
+    scroll-margin-top: 18px;
+}
+
+/* Desktop e mobile usam a mesma ordem visual dos destinos principais. */
+.header-nav-tabs .tab-btn,
+.mobile-bottom-nav .mobile-nav-btn[data-tab] {
+    touch-action: manipulation;
+}
+
+/* O destino ativo recebe um respiro previsível na chegada, sem alterar o card. */
+#calendarWorkspace,
+#flashcardsWorkspace,
+#notesWorkspace {
+    position: relative;
+}
+
+@media (min-width: 901px) {
+    #calendarWorkspace,
+    #flashcardsWorkspace,
+    #notesWorkspace {
+        scroll-margin-top: calc(var(--desktop-tabs-sticky-top, 112px) + 18px);
+    }
+}
+
+@media (max-width: 900px) {
+    #calendarWorkspace,
+    #flashcardsWorkspace,
+    #notesWorkspace {
+        scroll-margin-top: var(--workspace-mobile-top-gap);
+    }
+}
+
+
+/* V10.8.2 — Edital: ações de exclusão independentes */
+#tab-edital .edital-manual-actions,
+#tab-edital .manual-entry-actions { gap:8px; flex-wrap:wrap; }
+@media (max-width:700px) {
+    #tab-edital button[onclick="excluirMateriaEspecifica()"],
+    #tab-edital button[onclick="excluirAssuntoEspecifico()"] { flex:1 1 145px; justify-content:center; }
+}
