@@ -1,3 +1,12 @@
+V10.9.0 — AUDITORIA E CONFIABILIDADE
+- Pomodoro passa a usar relógio absoluto (Date.now + deadline), mantendo o tempo correto após background, tela bloqueada ou suspensão de timers do navegador.
+- Progresso de questões deixa de ser binário: considera volume de questões, desempenho e confiança da amostra.
+- O painel Progresso Geral e o resumo superior passam a usar a mesma métrica calibrada.
+- O gráfico de progresso passa a seguir explicitamente a ordem canônica de prioridades do Edital.
+- O diagnóstico de retenção passa a considerar somente assuntos ainda ativos no Edital; o histórico permanece preservado.
+- Assuntos dominados agora exigem retenção >= 85%, ausência de revisão vencida e evidência objetiva (>=10 questões, >=75% e confiança mínima) ou duas avaliações positivas de recuperação (Bom/Fácil).
+- Auditoria automatizada ampliada para bloquear regressões nesses quatro pontos.
+
 V10.8.2 — EXCLUSÃO GRANULAR E ORDEM CANÔNICA POR PRIORIDADE
 - Adicionado botão Excluir Assunto ao lado de Excluir Matéria.
 - Exclusão de assunto remove apenas o item do Edital Verticalizado; matéria, notas, flashcards e histórico são preservados.
