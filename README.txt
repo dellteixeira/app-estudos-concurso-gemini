@@ -1,3 +1,19 @@
+V10.8.2 — EXCLUSÃO GRANULAR E ORDEM CANÔNICA POR PRIORIDADE
+- Adicionado botão Excluir Assunto ao lado de Excluir Matéria.
+- Exclusão de assunto remove apenas o item do Edital Verticalizado; matéria, notas, flashcards e histórico são preservados.
+- Criada ordem canônica global: prioridade da matéria, ordem manual dentro da mesma prioridade e prioridade dos assuntos.
+- Anotações, Flashcards, seletores e pastas passam a respeitar a ordem do Edital Verticalizado.
+- Exportação de flashcards também preserva a ordem canônica.
+
+V10.8.1 — NAVEGAÇÃO DIRETA PARA CRONOGRAMA, FLASHCARDS E ANOTAÇÕES
+- Ao selecionar Cronograma, Flashcards ou Anotações, a viewport é posicionada diretamente na área de trabalho correspondente.
+- O comportamento é o mesmo no mobile e no desktop, com compensação automática para o cabeçalho sticky no desktop.
+- Cronograma abre diretamente no Calendário de Estudos, ignorando visualmente o painel de revisões acima.
+- Flashcards abre diretamente em Flashcards e Estudo Ativo.
+- Anotações abre diretamente em Anotações e Caderno de Resumos.
+- A ordem das abas desktop foi alinhada à navegação mobile: Edital, Cronograma, Flashcards, Anotações.
+- A navegação inferior mobile e a ação contextual existente foram preservadas.
+
 V10.7.9 — ÁREA DE ESCRITA DAS NOTAS AMPLIADA
 - Modal Nova Nota / Editar Nota passa a usar até 980 px de largura no desktop.
 - Campo Conteúdo / Resumo / Dicas agora ocupa aproximadamente 46% da altura da viewport, com mínimo de 360 px e máximo de 620 px no desktop.
