@@ -1,9 +1,11 @@
-const APP_VERSION = '10.9.1';
+const APP_VERSION = '10.10.0';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
 const APP_SHELL = [
-  './', './index.html', './manifest.json', './version.json', './app.css', './app.js', './pwa-update.js',
+  './', './index.html', './manifest.json', './version.json', './pwa-update.js',
+  './css/base.css', './css/dashboard.css', './css/features.css',
+  './js/study-domain.js', './js/app-core.js', './js/app-ai.js', './js/app-ui.js', './js/app-pwa.js',
   './vendor/supabase.js', './vendor/chart.umd.min.js', './vendor/pdf.min.js', './vendor/pdf.worker.min.js',
   './icon-192.png', './icon-512.png'
 ];
@@ -86,7 +88,9 @@ self.addEventListener('fetch', event => {
   }
 
   const isCoreAsset = url.origin === self.location.origin && [
-    '/app.js', '/app.css', '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json'
+    '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json',
+    '/css/base.css', '/css/dashboard.css', '/css/features.css',
+    '/js/study-domain.js', '/js/app-core.js', '/js/app-ai.js', '/js/app-ui.js', '/js/app-pwa.js'
   ].some(path => url.pathname.endsWith(path));
 
   if (isCoreAsset) {
