@@ -6071,6 +6071,55 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }, 600);
         }
 
+        // V10.9.0 — progresso de questões baseado em volume + desempenho, não em checkbox binário.
+        function getQuestionProgressFraction(item, contestMeta = null) {
+            if (!item) return 0;
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const state = getRetentionTopicState(contest, item.materia, item.assunto, false);
+            const stats = state?.questionStats || {};
+            const total = Math.max(0, Number(stats.total) || 0);
+            const accuracy = Number.isFinite(Number(stats.averageAccuracy))
+                ? Number(stats.averageAccuracy)
+                : (Number.isFinite(Number(stats.lastAccuracy)) ? Number(stats.lastAccuracy) : null);
+            const confidence = total > 0 ? Math.max(0.08, Math.min(1, 1 - Math.exp(-total / 12))) : 0;
+
+            // O volume vale até 80% da metade reservada às questões (40 pontos no total geral).
+            let volumeFraction = 0;
+            if (total >= 20) volumeFraction = 0.80;
+            else if (total >= 10) volumeFraction = 0.50;
+            else if (total >= 5) volumeFraction = 0.30;
+            else if (total >= 1) volumeFraction = 0.10;
+            else if (item.questoes) volumeFraction = 0.10; // compatibilidade com checkboxes legados.
+
+            // Desempenho consistente acrescenta até 20% (mais 10 pontos no total geral).
+            let performanceBonus = 0;
+            if (total >= 5 && accuracy != null && accuracy >= 75) {
+                const accuracyScale = Math.max(0, Math.min(1, (accuracy - 75) / 25));
+                const bonusBase = 0.10 + (accuracyScale * 0.10);
+                const confidenceFactor = 0.75 + (confidence * 0.25);
+                performanceBonus = bonusBase * confidenceFactor;
+            }
+            return Math.max(0, Math.min(1, volumeFraction + performanceBonus));
+        }
+
+        function getStudyProgressBreakdown(items = editalItems) {
+            const topics = Array.isArray(items) ? items : [];
+            const contest = getConcursosMetadata()[currentConcurso] || {};
+            const acquisitionUnits = topics.reduce((sum,item) => sum + getContentAcquisitionState(item).fraction, 0);
+            const questionUnits = topics.reduce((sum,item) => sum + getQuestionProgressFraction(item, contest), 0);
+            const count = topics.length;
+            const theoryContribution = count ? (acquisitionUnits / count) * 50 : 0;
+            const questionsContribution = count ? (questionUnits / count) * 50 : 0;
+            return {
+                count,
+                acquisitionUnits,
+                questionUnits,
+                theoryContribution,
+                questionsContribution,
+                total: Math.min(100, theoryContribution + questionsContribution)
+            };
+        }
+
         function renderChartNow() {
             const canvas = document.getElementById('progressChart');
             if (!canvas || typeof Chart === 'undefined') return;
@@ -6083,15 +6132,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (!counts[mat]) counts[mat] = { total: 0, concluido: 0 };
                 counts[mat].total += 2;
                 counts[mat].concluido += getContentAcquisitionState(item).fraction;
-                if (item.questoes) counts[mat].concluido++;
+                counts[mat].concluido += getQuestionProgressFraction(item);
             });
 
-            const topicCount = editalItems.length;
-            const acquisitionUnits = editalItems.reduce((sum,item) => sum + getContentAcquisitionState(item).fraction, 0);
-            const questionsDone = editalItems.filter(i => !!i.questoes).length;
-            const theoryContributionRaw = topicCount ? (acquisitionUnits / topicCount) * 50 : 0;
-            const questionsContributionRaw = topicCount ? (questionsDone / topicCount) * 50 : 0;
-            const totalStudyProgressRaw = Math.min(100, theoryContributionRaw + questionsContributionRaw);
+            const progressBreakdown = getStudyProgressBreakdown(editalItems);
+            const theoryContributionRaw = progressBreakdown.theoryContribution;
+            const questionsContributionRaw = progressBreakdown.questionsContribution;
+            const totalStudyProgressRaw = progressBreakdown.total;
             const formatContribution = value => value > 0 && value < 1 ? value.toFixed(1) : String(Math.round(value));
             const formatOverall = value => value > 0 && value < 1 ? value.toFixed(1) : String(Math.round(value));
             const theoryEl = document.getElementById('studyTheoryProgress');
@@ -6101,7 +6148,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (questionsEl) questionsEl.textContent = `${formatContribution(questionsContributionRaw)} / 50%`;
             if (totalEl) totalEl.textContent = `${formatOverall(totalStudyProgressRaw)}%`;
 
-            const labels = Object.keys(counts);
+            const labels = sortMateriaNamesByCanonicalOrder(Object.keys(counts));
             const percentData = labels.map(l => Math.round((counts[l].concluido / (counts[l].total || 1)) * 100));
             // V10.1.2 — cada matéria recebe um gradiente próprio e estável na ordem do edital.
             // O ângulo áureo distribui os matizes pelo círculo cromático e reduz repetições visuais.
@@ -6222,6 +6269,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         let pendingLegalStudyContext = null;
         let focusSessionCommitted = false;
         let pomodoroAudioContext = null;
+        // V10.9.0 — relógio absoluto: mantém o tempo correto quando aba/PWA fica em background.
+        let timerEndAtMs = null;
+        let timerCompletionInFlight = false;
 
         function preparePomodoroAudio() {
             try {
@@ -7277,6 +7327,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             clearInterval(timerInterval);
             timerInterval = null;
+            clearTimerDeadline();
             timerMode = 'focus';
             timerHasStarted = false;
             isTimerPaused = false;
@@ -7535,6 +7586,84 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             updateModernOverview();
         }
 
+        function clearTimerDeadline() {
+            timerEndAtMs = null;
+        }
+
+        function armTimerDeadlineFromRemaining() {
+            timerEndAtMs = Date.now() + Math.max(0, Number(timeLeft) || 0) * 1000;
+        }
+
+        function syncTimerFromClock() {
+            if (!timerHasStarted || isTimerPaused || !Number.isFinite(Number(timerEndAtMs))) return timeLeft;
+            const remainingMs = Math.max(0, Number(timerEndAtMs) - Date.now());
+            timeLeft = Math.max(0, Math.ceil(remainingMs / 1000));
+            return timeLeft;
+        }
+
+        function getCurrentTimerElapsedSeconds() {
+            syncTimerFromClock();
+            return Math.max(0, (Number(currentTimerTotalSeconds) || 0) - (Number(timeLeft) || 0));
+        }
+
+        async function completeElapsedTimerCycle() {
+            if (timerCompletionInFlight || timeLeft > 0) return;
+            timerCompletionInFlight = true;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            clearTimerDeadline();
+            timerHasStarted = false;
+            isTimerPaused = false;
+            try {
+                if (timerMode === 'focus') {
+                    if (focusSessionCommitted) { updatePauseButton(); return; }
+                    focusSessionCommitted = true;
+                    const sessionMinutes = Math.max(0, Number(currentFocusCycleMinutes) || 0);
+                    const studiedBefore = getDailyPomodoroMinutes();
+                    const targetMinutes = Math.round(getPomodoroDailyTargetHours() * 60);
+                    const studiedAfter = studiedBefore + sessionMinutes;
+                    if (targetMinutes > 0) {
+                        const extraBefore = Math.max(0, studiedBefore - targetMinutes);
+                        const extraAfter = Math.max(0, studiedAfter - targetMinutes);
+                        const newExtraMinutes = Math.max(0, extraAfter - extraBefore);
+                        if (newExtraMinutes > 0) addDailyPomodoroExtraMinutes(newExtraMinutes);
+                    }
+                    let finalContext = null;
+                    if (activeStudyContext && activeStudyContext.concurso === currentConcurso && sessionMinutes > 0) {
+                        finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
+                        try {
+                            const committedSession = await recordStudyMinutesForContext(sessionMinutes, finalContext);
+                            if (!committedSession) throw new Error('A sessão não pôde ser vinculada ao concurso atual.');
+                            await updateLegalReadingBlockAfterSession(finalContext);
+                        } catch (error) {
+                            console.error('Falha ao registrar sessão concluída:', error);
+                            await appNotice('A sessão terminou, mas houve uma falha ao registrar o tempo. Os dados locais foram preservados quando possível. Tente sincronizar novamente.', { title:'Falha ao contabilizar tempo' });
+                        }
+                    }
+                    setDailyPomodoroMinutes(getDailyPomodoroMinutes());
+                    currentFocusCycleMinutes = 0;
+                    updatePauseButton();
+                    playPomodoroCompletionBell();
+                    const needsPostSessionFeedback = finalContext?.activityType === 'questoes' || !!(finalContext?.isRevision && isAdaptiveRetentionStrategy());
+                    if (!needsPostSessionFeedback) setTimeout(() => alert('Foco Finalizado!'), 2300);
+                } else {
+                    currentFocusCycleMinutes = 0;
+                    updatePauseButton();
+                    playPomodoroCompletionBell();
+                    setTimeout(() => alert('Intervalo Finalizado!'), 2300);
+                }
+            } finally {
+                timerCompletionInFlight = false;
+            }
+        }
+
+        function tickPomodoroTimerFromClock() {
+            if (!timerHasStarted || isTimerPaused) return;
+            syncTimerFromClock();
+            updateDisplay();
+            if (timeLeft <= 0) void completeElapsedTimerCycle();
+        }
+
         function updatePauseButton() {
             const pauseBtn = document.getElementById('pauseTimerBtn');
             const completeBtn = document.getElementById('completeFocusBtn');
@@ -7543,7 +7672,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 pauseBtn.textContent = isTimerPaused ? 'Continuar' : 'Pausar';
             }
             if (completeBtn) {
-                const elapsedSeconds = Math.max(0, (Number(currentTimerTotalSeconds) || 0) - (Number(timeLeft) || 0));
+                const elapsedSeconds = getCurrentTimerElapsedSeconds();
                 completeBtn.disabled = timerMode !== 'focus' || !timerHasStarted || focusSessionCommitted || elapsedSeconds < 60 || !activeStudyContext;
                 completeBtn.title = activeStudyContext ? 'Concluir e contabilizar os minutos completos já estudados' : 'Inicie uma atividade pelo cronograma para contabilizar a sessão';
             }
@@ -7595,67 +7724,21 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 focusSessionCommitted = false;
                 currentFocusCycleMinutes = Math.max(1, parseInt(document.getElementById('focoMin').value) || 40);
                 currentTimerTotalSeconds = currentFocusCycleMinutes * 60;
+                timeLeft = currentTimerTotalSeconds;
                 playPomodoroStartBell();
             }
             if (isNewCycle && timerMode === 'interval') {
                 currentTimerTotalSeconds = Math.max(1, parseInt(document.getElementById('pausaMin').value) || 5) * 60;
+                timeLeft = currentTimerTotalSeconds;
             }
 
             timerHasStarted = true;
             isTimerPaused = false;
+            armTimerDeadlineFromRemaining();
             updatePauseButton();
-
-            timerInterval = setInterval(async () => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    updateDisplay();
-                }
-
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    timerHasStarted = false;
-                    isTimerPaused = false;
-                    if (timerMode === 'focus') {
-                        if (focusSessionCommitted) { updatePauseButton(); return; }
-                        focusSessionCommitted = true;
-                        const sessionMinutes = Math.max(0, Number(currentFocusCycleMinutes) || 0);
-                        const studiedBefore = getDailyPomodoroMinutes();
-                        const targetMinutes = Math.round(getPomodoroDailyTargetHours() * 60);
-                        const studiedAfter = studiedBefore + sessionMinutes;
-                        if (targetMinutes > 0) {
-                            const extraBefore = Math.max(0, studiedBefore - targetMinutes);
-                            const extraAfter = Math.max(0, studiedAfter - targetMinutes);
-                            const newExtraMinutes = Math.max(0, extraAfter - extraBefore);
-                            if (newExtraMinutes > 0) addDailyPomodoroExtraMinutes(newExtraMinutes);
-                        }
-                        let finalContext = null;
-                        if (activeStudyContext && activeStudyContext.concurso === currentConcurso && sessionMinutes > 0) {
-                            finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
-                            try {
-                                const committedSession = await recordStudyMinutesForContext(sessionMinutes, finalContext);
-                                if (!committedSession) throw new Error('A sessão não pôde ser vinculada ao concurso atual.');
-                                await updateLegalReadingBlockAfterSession(finalContext);
-                            } catch (error) {
-                                console.error('Falha ao registrar sessão concluída:', error);
-                                await appNotice('A sessão terminou, mas houve uma falha ao registrar o tempo. Os dados locais foram preservados quando possível. Tente sincronizar novamente.', { title:'Falha ao contabilizar tempo' });
-                            }
-                        }
-                        // Compatibilidade com o contador legado; a fonte canônica permanece studySessions.
-                        setDailyPomodoroMinutes(getDailyPomodoroMinutes());
-                        currentFocusCycleMinutes = 0;
-                        updatePauseButton();
-                        playPomodoroCompletionBell();
-                        const needsPostSessionFeedback = finalContext?.activityType === 'questoes' || !!(finalContext?.isRevision && isAdaptiveRetentionStrategy());
-                        if (!needsPostSessionFeedback) setTimeout(() => alert('Foco Finalizado!'), 2300);
-                    } else {
-                        currentFocusCycleMinutes = 0;
-                        updatePauseButton();
-                        playPomodoroCompletionBell();
-                        setTimeout(() => alert('Intervalo Finalizado!'), 2300);
-                    }
-                }
-            }, 1000);
+            tickPomodoroTimerFromClock();
+            // O intervalo apenas atualiza a UI; a fonte do tempo é Date.now()/timerEndAtMs.
+            timerInterval = setInterval(tickPomodoroTimerFromClock, 500);
         }
 
         function foldLegalStudyText(value) {
@@ -7797,6 +7880,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (focusInput) focusInput.value = requestedMinutes;
             clearInterval(timerInterval);
             timerInterval = null;
+            clearTimerDeadline();
             timerMode = 'focus';
             timerHasStarted = false;
             isTimerPaused = false;
@@ -7843,13 +7927,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!activeStudyContext || activeStudyContext.concurso !== currentConcurso) {
                 return alert('Inicie Teoria, Vídeoaula, Questões ou Lei Seca pelo cronograma antes de concluir uma sessão contabilizável.');
             }
-            const elapsedSeconds = Math.max(0, (Number(currentTimerTotalSeconds) || 0) - (Number(timeLeft) || 0));
+            const elapsedSeconds = getCurrentTimerElapsedSeconds();
             const completedMinutes = Math.floor(elapsedSeconds / 60);
             if (completedMinutes < 1) return alert('Complete pelo menos 1 minuto de foco antes de contabilizar a sessão.');
             if (!confirm(`Concluir esta sessão agora e contabilizar ${completedMinutes} min de estudo?`)) return;
 
             clearInterval(timerInterval);
             timerInterval = null;
+            clearTimerDeadline();
             isTimerPaused = false;
             focusSessionCommitted = true;
             const finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
@@ -7876,6 +7961,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (timerMode !== 'focus' || (!timerHasStarted && timeLeft <= 0)) {
                 clearInterval(timerInterval);
                 timerInterval = null;
+                clearTimerDeadline();
                 timerMode = 'focus';
                 timerHasStarted = false;
                 isTimerPaused = false;
@@ -7891,6 +7977,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function startIntervalTimer() {
             clearInterval(timerInterval);
             timerInterval = null;
+            clearTimerDeadline();
             timerMode = 'interval';
             timerHasStarted = false;
             isTimerPaused = false;
@@ -7905,11 +7992,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function togglePauseTimer() {
             if (timerInterval) {
+                syncTimerFromClock();
                 clearInterval(timerInterval);
                 timerInterval = null;
+                clearTimerDeadline();
                 isTimerPaused = true;
                 playPomodoroPauseBell();
-                updatePauseButton();
+                updateDisplay();
                 return;
             }
 
@@ -7921,6 +8010,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function resetTimer() {
             clearInterval(timerInterval);
             timerInterval = null;
+            clearTimerDeadline();
             isTimerPaused = false;
             timerHasStarted = false;
             timerMode = 'focus';
@@ -7931,6 +8021,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             updateDisplay();
             updatePauseButton();
         }
+
+
+        // Ao retornar de background/tela bloqueada, reconcilia imediatamente com o relógio real.
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) tickPomodoroTimerFromClock();
+        });
+        window.addEventListener('pageshow', () => tickPomodoroTimerFromClock());
 
 
         // =========================================================
@@ -10381,11 +10478,26 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return launchOpportunityPomodoro({...base,activityType:acquisitionActivity,method:acquisitionActivity==='videoaula'?'videoaula':'reestudo',methodLabel:def.label,recoveryMethod:acquisitionActivity==='videoaula'?'videoaula':'reestudo'});
         }
 
+        function hasRetentionMasteryEvidence(state) {
+            const stats = state?.questionStats || {};
+            const qTotal = Math.max(0, Number(stats.total) || 0);
+            const qAccuracy = Number.isFinite(Number(stats.averageAccuracy))
+                ? Number(stats.averageAccuracy)
+                : (Number.isFinite(Number(stats.lastAccuracy)) ? Number(stats.lastAccuracy) : null);
+            const qConfidence = qTotal > 0 ? Math.max(0.08, Math.min(1, 1 - Math.exp(-qTotal / 12))) : 0;
+            const objectiveEvidence = qTotal >= 10 && qAccuracy != null && qAccuracy >= 75 && qConfidence >= 0.50;
+            const ratings = state?.ratingCounts || {};
+            const positiveRecallRatings = Math.max(0, Number(ratings.good) || 0) + Math.max(0, Number(ratings.easy) || 0);
+            const subjectiveEvidence = positiveRecallRatings >= 2;
+            return objectiveEvidence || subjectiveEvidence;
+        }
+
         function buildRetentionDiagnostics() {
             const contest = getConcursosMetadata()[currentConcurso] || {};
             const engine = getRetentionEngine(contest, false);
             const now = new Date();
-            const states = Object.values(engine?.topics || {}).filter(state => state?.lastStudyAt);
+            const activeTopicKeys = new Set((editalItems || []).map(item => getStudyTopicKey(item.materia, item.assunto)));
+            const states = Object.values(engine?.topics || {}).filter(state => state?.lastStudyAt && state?.key && activeTopicKeys.has(state.key));
             const rows = states.map(state => {
                 const retention = Math.max(0, Math.min(100, calculateRetentionFromState(state, now)));
                 const nextAt = state.nextReviewAt ? new Date(state.nextReviewAt) : null;
@@ -10401,7 +10513,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const avg = rows.length ? rows.reduce((sum,row)=>sum+row.retention,0)/rows.length : null;
             const risk = rows.filter(row => row.retention < 70 || row.overdue || (row.questionAccuracy!=null && row.questionAccuracy<60));
             const overdue = rows.filter(row => row.overdue);
-            const mastered = rows.filter(row => row.retention >= 85 && !row.overdue && (row.questionAccuracy==null || row.questionAccuracy>=75));
+            const mastered = rows.filter(row => row.retention >= 85 && !row.overdue && hasRetentionMasteryEvidence(row.state));
             risk.sort((a,b)=>b.riskScore-a.riskScore || a.retention-b.retention);
             return { rows, avg, risk, overdue, mastered };
         }
@@ -10558,11 +10670,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function updateModernOverview() {
             const topics = editalItems || [];
-            const acquisitionUnits = topics.reduce((acc,item) => acc + getContentAcquisitionState(item).fraction, 0);
-            const questionUnits = topics.reduce((acc,item) => acc + (item.questoes ? 1 : 0), 0);
-            const total = topics.length * 2;
-            const done = acquisitionUnits + questionUnits;
-            const pct = total ? Math.round(done / total * 100) : 0;
+            const progressBreakdown = getStudyProgressBreakdown(topics);
+            const pct = Math.round(progressBreakdown.total);
             const delayedText = document.getElementById('delayedBadgeCount')?.textContent || '0';
             const delayed = (delayedText.match(/\d+/) || ['0'])[0];
             const today = document.getElementById('dailyPomodoroTotal')?.textContent || '00:00';
