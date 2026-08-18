@@ -10,7 +10,7 @@
     <title>Estudo Adaptativo Inteligente</title>
     <!-- PWA Multiplataforma v2 - 2026-08-11 | build 20260811-5 -->
 
-    <link rel="manifest" href="manifest.json?v=20260815-9663">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#061321">
     <meta name="color-scheme" content="dark light">
     <meta name="mobile-web-app-capable" content="yes">
@@ -26,7 +26,9 @@
     <script src="./vendor/chart.umd.min.js" defer></script>
     <!-- PDF.js agora é carregado sob demanda ao abrir o visualizador de edital. -->
     
-    <link rel="stylesheet" href="./app.css">
+    <link rel="stylesheet" href="./css/base.css">
+    <link rel="stylesheet" href="./css/dashboard.css">
+    <link rel="stylesheet" href="./css/features.css">
 </head>
 <body>
 
@@ -805,6 +807,35 @@
         </div>
     </div>
 
+    <!-- V10.9.2 — seleção obrigatória de contexto para Pomodoro iniciado manualmente -->
+    <div class="modal-overlay" id="modalPomodoroContext" style="z-index:1398;">
+        <div class="modal" style="max-width:620px;">
+            <h3>Vincular sessão de estudo</h3>
+            <p class="pomodoro-context-help">Selecione a matéria e o assunto antes de iniciar o foco. Assim, os minutos serão contabilizados corretamente no histórico e nas métricas.</p>
+            <div class="form-group">
+                <label><strong>Matéria:</strong></label>
+                <select id="pomodoroContextMateria" onchange="updatePomodoroContextAssuntos()" style="width:100%;"></select>
+            </div>
+            <div class="form-group">
+                <label><strong>Assunto:</strong></label>
+                <select id="pomodoroContextAssunto" style="width:100%;"></select>
+            </div>
+            <div class="form-group">
+                <label><strong>Tipo de estudo:</strong></label>
+                <select id="pomodoroContextActivity" style="width:100%;">
+                    <option value="teoria">Teoria</option>
+                    <option value="questoes">Questões</option>
+                    <option value="videoaula">Vídeoaula</option>
+                    <option value="lei_seca">Lei Seca</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="closePomodoroContextModal()">Cancelar (ESC)</button>
+                <button class="btn btn-success" type="button" onclick="confirmPomodoroContextAndStart()">Vincular e iniciar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- V9.59 — CONFIGURAÇÃO DO ESTUDO POR OPORTUNIDADE -->
     <div class="modal-overlay" id="modalFlexibleStudyConfig" style="z-index:1400;">
         <div class="modal modal-large" style="max-width:860px;">
@@ -1239,6 +1270,10 @@
         </div>
     </div>
 
-    <script src="./app.js" defer></script>
+    <script src="./js/study-domain.js" defer></script>
+    <script src="./js/app-core.js" defer></script>
+    <script src="./js/app-ai.js" defer></script>
+    <script src="./js/app-ui.js" defer></script>
+    <script src="./js/app-pwa.js" defer></script>
 </body>
 </html>
