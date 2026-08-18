@@ -1,0 +1,24 @@
+name: Quality Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testes automatizados
+        run: node --test tests/*.test.cjs
+      - name: Auditoria estrutural
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: node scripts/audit-release.mjs
