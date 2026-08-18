@@ -13,6 +13,45 @@ function json(body: unknown, status = 200) {
   })
 }
 
+
+async function removeStoragePrefix(adminClient: ReturnType<typeof createClient>, bucket: string, prefix: string) {
+  const removeBatch: string[] = []
+
+  async function walk(currentPrefix: string) {
+    let offset = 0
+    const limit = 1000
+    while (true) {
+      const { data, error } = await adminClient.storage.from(bucket).list(currentPrefix, {
+        limit,
+        offset,
+        sortBy: { column: 'name', order: 'asc' },
+      })
+      if (error) {
+        const message = String(error.message || '')
+        // Bucket futuro ainda não criado: não transforma exclusão de conta atual em erro.
+        if (/bucket.*not found|not found/i.test(message)) return
+        throw error
+      }
+      const entries = Array.isArray(data) ? data : []
+      for (const entry of entries) {
+        if (!entry?.name) continue
+        const fullPath = currentPrefix ? `${currentPrefix}/${entry.name}` : entry.name
+        if (entry.id) removeBatch.push(fullPath)
+        else await walk(fullPath)
+      }
+      if (entries.length < limit) break
+      offset += limit
+    }
+  }
+
+  await walk(prefix)
+  for (let i = 0; i < removeBatch.length; i += 100) {
+    const { error } = await adminClient.storage.from(bucket).remove(removeBatch.slice(i, i + 100))
+    if (error) throw error
+  }
+  return removeBatch.length
+}
+
 function getDefaultKey(jsonEnvName: string, legacyEnvName: string): string {
   const modern = Deno.env.get(jsonEnvName)
   if (modern) {
@@ -58,6 +97,23 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Cliente administrativo existe somente dentro da Edge Function. Ele também
+    // remove objetos privados que pertençam ao usuário antes da remoção de auth.users.
+    const adminClient = createClient(supabaseUrl, secretKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    let deletedStorageObjects = 0
+    try {
+      deletedStorageObjects += await removeStoragePrefix(adminClient, 'study-pdfs', user.id)
+    } catch (storageError) {
+      console.error('delete-account: falha ao apagar Storage do usuário', storageError)
+      return json({
+        error: 'Não foi possível excluir os arquivos privados da conta.',
+        code: 'ACCOUNT_STORAGE_DELETE_FAILED',
+      }, 500)
+    }
+
     // A RPC é SECURITY INVOKER e usa auth.uid(); portanto só apaga dados
     // pertencentes ao próprio usuário autenticado e executa tudo em uma transação.
     const { data: deletedData, error: deleteDataError } = await userClient.rpc('delete_my_study_data')
@@ -69,12 +125,6 @@ Deno.serve(async (req) => {
       }, 500)
     }
 
-    // Cliente administrativo existe somente dentro da Edge Function. As Edge
-    // Functions hospedadas recebem SUPABASE_SECRET_KEYS / SERVICE_ROLE por padrão.
-    const adminClient = createClient(supabaseUrl, secretKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    })
-
     const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(user.id, false)
     if (deleteUserError) {
       console.error('delete-account: falha ao apagar auth.users', deleteUserError)
@@ -84,7 +134,7 @@ Deno.serve(async (req) => {
       }, 502)
     }
 
-    return json({ deleted: true, userId: user.id, data: deletedData })
+    return json({ deleted: true, userId: user.id, data: deletedData, deletedStorageObjects })
   } catch (error) {
     console.error('delete-account: erro inesperado', error)
     return json({ error: 'Falha interna ao excluir a conta.' }, 500)
