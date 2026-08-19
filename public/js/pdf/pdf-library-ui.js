@@ -1,7 +1,7 @@
 (function(global){
 'use strict';
 let state={docs:[],workspaces:[],scope:'contest',activeWorkspace:'',activeMateria:'',activeAssunto:'',search:'',initializedFor:''};
-let selectedFile=null,linkPdfId=null,workspaceReturnContext='library';
+let selectedFile=null,linkPdfId=null,workspaceReturnContext='library',pendingOpenDocumentId=null;
 const $=id=>document.getElementById(id);
 const esc=v=>typeof global.escapeHtml==='function'?global.escapeHtml(v):String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 function contest(){try{return global.getLastStudiedConcurso?.()||'Concurso Geral'}catch(_){return'Concurso Geral'}}
@@ -70,7 +70,7 @@ function render(){
     const wa=l?ws(l.workspace_id):'Biblioteca Global';
     const secondary=state.scope==='contest'&&l?`<button class="btn btn-secondary btn-sm" onclick="PdfStudyLibraryUI.unlinkDocument('${esc(d.id)}')">Desvincular</button>`:`<button class="btn btn-secondary btn-sm" onclick="PdfStudyLibraryUI.openLinkModal('${esc(d.id)}')">Vincular</button>`;
     const del=state.scope==='global'?`<button class="btn btn-danger btn-sm" onclick="PdfStudyLibraryUI.deleteDocument('${esc(d.id)}')">Excluir da Biblioteca</button>`:'';
-    return `<article class="pdf-library-card"><div class="pdf-card-top"><span class="pdf-file-badge">PDF</span><button class="pdf-favorite-btn ${d.is_favorite?'active':''}" onclick="PdfStudyLibraryUI.toggleFavorite('${esc(d.id)}')">★</button></div><h4>${esc(d.title)}</h4><p class="pdf-card-context">${context}</p><p class="pdf-card-workspace">${esc(wa)}</p><div class="pdf-progress-line"><span style="width:${Math.min(100,Math.max(0,p))}%"></span></div><div class="pdf-card-meta"><span>${p.toFixed(0)}% lido · pág. ${pg}</span><span>${bytes(d.file_size)}</span></div><div class="pdf-card-actions"><button class="btn btn-primary btn-sm" onclick="PdfStudyLibraryUI.openDocument('${esc(d.id)}')">Abrir arquivo</button>${secondary}${del}</div></article>`;
+    return `<article class="pdf-library-card"><div class="pdf-card-top"><span class="pdf-file-badge">PDF</span><button class="pdf-favorite-btn ${d.is_favorite?'active':''}" onclick="PdfStudyLibraryUI.toggleFavorite('${esc(d.id)}')">★</button></div><h4>${esc(d.title)}</h4><p class="pdf-card-context">${context}</p><p class="pdf-card-workspace">${esc(wa)}</p><div class="pdf-progress-line"><span style="width:${Math.min(100,Math.max(0,p))}%"></span></div><div class="pdf-card-meta"><span>${p.toFixed(0)}% lido · pág. ${pg}</span><span>${bytes(d.file_size)}</span></div><div class="pdf-card-actions"><button class="btn btn-primary btn-sm" onclick="PdfStudyLibraryUI.openDocument('${esc(d.id)}')">Visualizar PDF</button>${secondary}${del}</div></article>`;
   }).join('');
 }
 
@@ -159,11 +159,13 @@ async function submitLink(){try{await global.PdfStudyLinks.create({pdfId:linkPdf
 async function unlinkDocument(id){if(!confirm('Remover este PDF apenas do concurso atual? O arquivo continuará na Biblioteca Global.'))return;try{await global.PdfStudyLinks.removeForPdfInConcurso(id,contest());await load();status('Vínculo removido. O PDF foi preservado na Biblioteca Global.','ok')}catch(e){handle(e)}}
 async function toggleFavorite(id){const d=state.docs.find(x=>x.id===id);try{await global.PdfStudyLibrary.setFavorite(id,!d?.is_favorite);await load()}catch(e){handle(e)}}
 async function deleteDocument(id){const d=state.docs.find(x=>x.id===id);if(!d||!confirm(`Excluir “${d.title}” da Biblioteca Global? Isso remove o arquivo e todos os vínculos.`))return;try{await global.PdfStudyLibrary.remove(d);await load()}catch(e){handle(e)}}
-async function openDocument(id){try{const d=state.docs.find(x=>x.id===id);global.open(await global.PdfStudyLibrary.createSignedUrl(d,900),'_blank','noopener,noreferrer')}catch(e){handle(e)}}
+function openDocument(id){pendingOpenDocumentId=id;const title=$('pdfViewerNoticeTitle');if(title){const d=state.docs.find(x=>x.id===id);title.textContent=d?.title||'';}$('modalPdfViewerNotice').style.display='flex'}
+function closeViewerNoticeModal(){$('modalPdfViewerNotice').style.display='none';pendingOpenDocumentId=null}
+async function confirmOpenTemporaryView(){const btn=$('btnOpenPdfSignedUrl');try{if(btn)btn.disabled=true;const d=state.docs.find(x=>x.id===pendingOpenDocumentId);global.open(await global.PdfStudyLibrary.createSignedUrl(d,900),'_blank','noopener,noreferrer');closeViewerNoticeModal()}catch(e){handle(e)}finally{if(btn)btn.disabled=false}}
 function handleDrop(e){e.preventDefault();$('pdfDropZone')?.classList.remove('drag-over');setFile(e.dataTransfer?.files?.[0])}
 function handleDragOver(e){e.preventDefault();$('pdfDropZone')?.classList.add('drag-over')}
 function handleDragLeave(){$('pdfDropZone')?.classList.remove('drag-over')}
 function handle(e){console.error('[PDF Library]',e);status(e?.message||'Erro.','error');alert(e?.message||'Erro.')}
 
-global.PdfStudyLibraryUI=Object.freeze({initialize,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,onUploadMateriaChange,submitUpload,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,openDocument,handleDrop,handleDragOver,handleDragLeave});
+global.PdfStudyLibraryUI=Object.freeze({initialize,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,onUploadMateriaChange,submitUpload,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
 })(window);
