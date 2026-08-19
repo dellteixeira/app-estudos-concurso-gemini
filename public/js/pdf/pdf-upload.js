@@ -12,8 +12,7 @@
     if(!workspaceId)throw new Error('Selecione um Workspace para organizar o vínculo.');
     const ctx={workspaceId,concurso:core().normalizeText(concurso,180),materia:core().normalizeText(materia,180),assunto:core().normalizeText(assunto,300)};
     if(!ctx.concurso)throw new Error('O primeiro vínculo precisa indicar o concurso atual.');
-    if(!ctx.materia)throw new Error('Selecione uma matéria do edital.');
-    if(!ctx.assunto)throw new Error('Selecione um assunto do edital.');
+    if(ctx.assunto&&!ctx.materia)throw new Error('Selecione uma matéria antes de escolher um assunto.');
     return ctx;
   }
   function uploadError({code,message,file,stage,technical,cause}){
@@ -27,7 +26,7 @@
     if(stage==='storage'||/storage|bucket|object/.test(lower))return uploadError({code:ERROR_CODES.STORAGE_ERROR,message:'O Storage não aceitou o arquivo. Tente novamente; se persistir, verifique espaço, política ou conexão.',file,stage,technical:raw,cause:error});
     if(stage==='database')return uploadError({code:ERROR_CODES.DATABASE_ERROR,message:'O arquivo chegou ao servidor, mas não foi possível registrar seus metadados no banco.',file,stage,technical:raw,cause:error});
     if(stage==='progress')return uploadError({code:ERROR_CODES.PROGRESS_ERROR,message:'O PDF foi enviado, mas o estado inicial de leitura não pôde ser criado. O envio foi desfeito com segurança.',file,stage,technical:raw,cause:error});
-    if(stage==='link')return uploadError({code:ERROR_CODES.LINK_ERROR,message:'O PDF foi enviado, mas não foi possível vinculá-lo ao Workspace/matéria/assunto. O envio foi desfeito com segurança.',file,stage,technical:raw,cause:error});
+    if(stage==='link')return uploadError({code:ERROR_CODES.LINK_ERROR,message:'O PDF foi enviado, mas não foi possível vinculá-lo ao destino escolhido. O envio foi desfeito com segurança.',file,stage,technical:raw,cause:error});
     return uploadError({code:ERROR_CODES.UNKNOWN_ERROR,message:'Não foi possível carregar este PDF por um erro inesperado.',file,stage,technical:raw,cause:error});
   }
   async function preflight(file){
