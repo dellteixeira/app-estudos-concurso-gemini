@@ -50,7 +50,7 @@ test('serviços JS de fundação são privados, limitam PDF e constroem caminho 
   const workspaces = read('public/js/pdf/pdf-workspaces.js');
   assert.match(core, /MAX_PDF_BYTES = 100 \* 1024 \* 1024/);
   assert.match(core, /application\/pdf/);
-  assert.match(core, /return `\$\{userId\}\/\$\{workspaceSegment\}\/\$\{pdfId\}\/original\.pdf`/);
+  assert.match(core, /return `\$\{userId\}\/\$\{pdfId\}\/original\.pdf`/);
   assert.match(workspaces, /from\('study_workspaces'\)/);
   assert.match(workspaces, /\.eq\('user_id', user\.id\)/);
 });
