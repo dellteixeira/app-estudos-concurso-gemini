@@ -29,6 +29,16 @@
     if(stage==='link')return uploadError({code:ERROR_CODES.LINK_ERROR,message:'O PDF foi enviado, mas não foi possível vinculá-lo ao destino escolhido. O envio foi desfeito com segurança.',file,stage,technical:raw,cause:error});
     return uploadError({code:ERROR_CODES.UNKNOWN_ERROR,message:'Não foi possível carregar este PDF por um erro inesperado.',file,stage,technical:raw,cause:error});
   }
+  async function cleanupBestEffort(operation,label){
+    try{
+      const result=await operation;
+      if(result?.error)console.warn(`[PDF Upload] limpeza ignorou falha em ${label}:`,result.error);
+    }catch(error){console.warn(`[PDF Upload] limpeza ignorou falha em ${label}:`,error)}
+  }
+  async function cleanupUploadDraft({client,userId,pdfId,storagePath}){
+    if(pdfId&&userId)await cleanupBestEffort(client.from('pdf_documents').delete().eq('id',pdfId).eq('user_id',userId),'pdf_documents');
+    if(storagePath)await cleanupBestEffort(client.storage.from(core().BUCKET).remove([storagePath]),'storage');
+  }
   async function preflight(file){
     const validation=core().validatePdfFile(file);
     if(!validation.ok){
@@ -57,18 +67,18 @@
     try{
       const res=await client.from('pdf_documents').insert(documentPayload).select().single();
       if(res.error)throw res.error;documentRow=res.data;
-    }catch(error){await client.storage.from(core().BUCKET).remove([storagePath]).catch(()=>null);throw classifyError(error,{file,stage:'database'})}
+    }catch(error){await cleanupUploadDraft({client,storagePath});throw classifyError(error,{file,stage:'database'})}
     try{
       const res=await client.from('pdf_progress').upsert({user_id:user.id,pdf_id:pdfId,current_page:1,progress_percentage:0,reading_seconds:0,updated_at:new Date().toISOString()},{onConflict:'user_id,pdf_id'});
       if(res.error)throw res.error;
-    }catch(error){await client.from('pdf_documents').delete().eq('id',pdfId).eq('user_id',user.id).catch(()=>null);await client.storage.from(core().BUCKET).remove([storagePath]).catch(()=>null);throw classifyError(error,{file,stage:'progress'})}
+    }catch(error){await cleanupUploadDraft({client,userId:user.id,pdfId,storagePath});throw classifyError(error,{file,stage:'progress'})}
     onProgress?.({stage:'linking',percent:80});
     try{
       const link=await links().create({pdfId,workspaceId:context.workspaceId,concurso:context.concurso,materia:context.materia,assunto:context.assunto});
       const result={...documentRow,links:[link],activeLink:link,progress:{pdf_id:pdfId,current_page:1,progress_percentage:0,reading_seconds:0}};
       try{await global.PdfStudyLibrary?.rememberDocument?.(result)}catch(_){}
       onProgress?.({stage:'done',percent:100});return result;
-    }catch(error){await client.from('pdf_documents').delete().eq('id',pdfId).eq('user_id',user.id).catch(()=>null);await client.storage.from(core().BUCKET).remove([storagePath]).catch(()=>null);throw classifyError(error,{file,stage:'link'})}
+    }catch(error){await cleanupUploadDraft({client,userId:user.id,pdfId,storagePath});throw classifyError(error,{file,stage:'link'})}
   }
   async function upload(args){
     const context=cleanContext(args);const user=await core().getAuthenticatedUser(),client=core().getSupabaseClient();
