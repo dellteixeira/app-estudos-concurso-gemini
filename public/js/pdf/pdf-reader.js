@@ -53,7 +53,8 @@ function clamp(n,min,max){return Math.min(max,Math.max(min,n))}
 	  if(!selected||Number(selected.page)!==Number(state.page))return;
 	  for(const r of selected.rects||[]){
 	    const el=document.createElement('div');el.className='pdf-reader-selection-rect';
-	    el.style.left=(r.x*100)+'%';el.style.top=(r.y*100)+'%';el.style.width=(r.w*100)+'%';el.style.height=(r.h*100)+'%';
+	    const top=r.y+(r.h*.12),height=Math.max(.003,r.h*.76);
+	    el.style.left=(r.x*100)+'%';el.style.top=(top*100)+'%';el.style.width=(r.w*100)+'%';el.style.height=(height*100)+'%';
 	    layer.appendChild(el);
 	  }
 	}
@@ -261,7 +262,7 @@ async function renderPage(){
   const viewport=page.getViewport({scale:state.scale});const host=$('pdfReaderPageHost');host.innerHTML='';
   const pageEl=document.createElement('div');pageEl.className='pdf-reader-page';pageEl.dataset.page=state.page;pageEl.style.width=viewport.width+'px';pageEl.style.height=viewport.height+'px';
   const canvas=document.createElement('canvas');canvas.width=Math.floor(viewport.width*devicePixelRatio);canvas.height=Math.floor(viewport.height*devicePixelRatio);canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';
-	  const ctx=canvas.getContext('2d');const textLayer=document.createElement('div');textLayer.className='pdf-reader-text-layer';const selectionLayer=document.createElement('div');selectionLayer.className='pdf-reader-selection-layer';const markLayer=document.createElement('div');markLayer.className='pdf-reader-mark-layer';pageEl.append(canvas,textLayer,selectionLayer,markLayer);host.appendChild(pageEl);
+	  const ctx=canvas.getContext('2d');const selectionLayer=document.createElement('div');selectionLayer.className='pdf-reader-selection-layer';const markLayer=document.createElement('div');markLayer.className='pdf-reader-mark-layer';const textLayer=document.createElement('div');textLayer.className='pdf-reader-text-layer';pageEl.append(canvas,selectionLayer,markLayer,textLayer);host.appendChild(pageEl);
   await page.render({canvasContext:ctx,viewport,transform:devicePixelRatio!==1?[devicePixelRatio,0,0,devicePixelRatio,0,0]:null}).promise;
   const text=await page.getTextContent();await pdfjsLib.renderTextLayer({textContentSource:text,container:textLayer,viewport,textDivs:[]}).promise;
   pageEl.addEventListener('mouseup',()=>setTimeout(updateSelection,20));pageEl.addEventListener('pointerup',()=>setTimeout(updateSelection,60));pageEl.addEventListener('touchend',()=>setTimeout(updateSelection,180),{passive:true});
