@@ -75,10 +75,29 @@
     const current=readCache(user.id); const map=new Map(current.map(d=>[d.id,d]));
     map.set(doc.id,doc); writeCache(user.id,[...map.values()]);
   }
+
+  async function forgetDocuments(ids){
+    const list=new Set((Array.isArray(ids)?ids:[ids]).filter(Boolean));if(!list.size)return;
+    const user=await core().getAuthenticatedUser();writeCache(user.id,readCache(user.id).filter(d=>!list.has(d.id)));
+  }
+  async function removeMany(docs,{chunkSize=25,onProgress}={}){
+    const valid=(Array.isArray(docs)?docs:[]).filter(d=>d?.id&&d?.storage_path);if(!valid.length)return{deleted:0,total:0};
+    const user=await core().getAuthenticatedUser(),client=core().getSupabaseClient();
+    for(const d of valid)if(!String(d.storage_path).startsWith(`${user.id}/`))throw new Error('Um dos PDFs possui caminho de Storage inválido.');
+    let deleted=0;const size=Math.max(1,Math.min(Number(chunkSize)||25,50));
+    for(let i=0;i<valid.length;i+=size){
+      const chunk=valid.slice(i,i+size),paths=chunk.map(d=>d.storage_path),ids=chunk.map(d=>d.id);
+      const {error:storageError}=await client.storage.from(core().BUCKET).remove(paths);if(storageError)throw storageError;
+      const {error:dbError}=await client.from('pdf_documents').delete().eq('user_id',user.id).in('id',ids);if(dbError)throw dbError;
+      deleted+=chunk.length;await forgetDocuments(ids);onProgress?.({deleted,total:valid.length,percent:Math.round((deleted/valid.length)*100)});
+    }
+    return{deleted,total:valid.length};
+  }
+
   async function setFavorite(id,v){const u=await core().getAuthenticatedUser();const c=core().getSupabaseClient();const {data,error}=await c.from('pdf_documents').update({is_favorite:!!v,updated_at:new Date().toISOString()}).eq('id',id).eq('user_id',u.id).select().single();if(error)throw error;return data;}
-  async function remove(doc){if(!doc?.id||!doc?.storage_path)throw new Error('Documento inválido.');const u=await core().getAuthenticatedUser();if(!String(doc.storage_path).startsWith(`${u.id}/`))throw new Error('Caminho inválido.');const c=core().getSupabaseClient();const {error:se}=await c.storage.from(core().BUCKET).remove([doc.storage_path]);if(se)throw se;const {error}=await c.from('pdf_documents').delete().eq('id',doc.id).eq('user_id',u.id);if(error)throw error;return true;}
+  async function remove(doc){const result=await removeMany([doc]);return result.deleted===1;}
   async function createSignedUrl(doc,sec=900){const c=core().getSupabaseClient();const {data,error}=await c.storage.from(core().BUCKET).createSignedUrl(doc.storage_path,sec);if(error)throw error;return data?.signedUrl;}
   async function downloadBlob(doc){if(!doc?.storage_path)throw new Error('PDF sem caminho de Storage.');const c=core().getSupabaseClient();const {data,error}=await core().retry(()=>c.storage.from(core().BUCKET).download(doc.storage_path),{attempts:3,delayMs:350});if(error)throw error;if(!data)throw new Error('Não foi possível baixar o PDF.');return data;}
   async function updatePageCount(id,pageCount){const u=await core().getAuthenticatedUser(),c=core().getSupabaseClient();const {error}=await c.from('pdf_documents').update({page_count:Number(pageCount)||null,updated_at:new Date().toISOString()}).eq('id',id).eq('user_id',u.id);if(error)throw error;return true;}
-  global.PdfStudyLibrary=Object.freeze({list,getCached,setFavorite,remove,createSignedUrl,rememberDocument,downloadBlob,updatePageCount});
+  global.PdfStudyLibrary=Object.freeze({list,getCached,setFavorite,remove,removeMany,forgetDocuments,createSignedUrl,rememberDocument,downloadBlob,updatePageCount});
 })(window);
