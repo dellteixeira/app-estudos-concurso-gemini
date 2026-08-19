@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="./css/dashboard.css">
     <link rel="stylesheet" href="./css/features.css">
     <link rel="stylesheet" href="./css/pdf-library.css">
+    <link rel="stylesheet" href="./css/pdf-reader.css">
 </head>
 <body>
 
@@ -1413,38 +1414,49 @@
 
     <script src="./js/study-domain.js" defer></script>
 
-    <!-- MODAL AVISO DE VISUALIZAÇÃO TEMPORÁRIA -->
-    <div class="modal-overlay" id="modalPdfViewerNotice">
-        <div class="modal pdf-reader-notice-modal">
-            <div class="pdf-modal-heading">
-                <div>
-                    <h3>Atenção: visualização temporária</h3>
-                    <p id="pdfViewerNoticeTitle" class="pdf-reader-notice-title"></p>
-                    <p>O PDF ainda será aberto no visualizador do navegador. Nesse modo, grifos, sublinhados, comentários e edições feitas no visualizador padrão ficam salvos localmente no seu dispositivo ou navegador e <strong>não são sincronizados on-line</strong>.</p>
+    <!-- READER PDF INTERNO — V10.15.0 -->
+    <section id="pdfReaderOverlay" class="pdf-reader-overlay" aria-label="Leitor PDF interno">
+        <header class="pdf-reader-topbar">
+            <div class="pdf-reader-title-group">
+                <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.close()">← Biblioteca</button>
+                <div class="pdf-reader-title" id="pdfReaderTitle">PDF</div>
+            </div>
+            <div class="pdf-reader-nav">
+                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.prev()">‹</button>
+                <input class="pdf-reader-page-input" id="pdfReaderPageInput" type="number" min="1" value="1" onchange="PdfStudyReader.goto(this.value)">
+                <span>/ <strong id="pdfReaderTotalPages">—</strong></span>
+                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.next()">›</button>
+            </div>
+            <div class="pdf-reader-tools">
+                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.zoom(-.15)">−</button>
+                <span id="pdfReaderZoomLabel">125%</span>
+                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.zoom(.15)">+</button>
+                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.fitWidth()">Ajustar</button>
+                <button id="pdfReaderBookmark" class="btn btn-secondary btn-sm pdf-reader-bookmark" onclick="PdfStudyReader.toggleBookmark()">🔖</button>
+                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.toggleSide()">Painel</button>
+            </div>
+        </header>
+        <div class="pdf-reader-body">
+            <main id="pdfReaderCanvasWrap" class="pdf-reader-canvas-wrap"><div id="pdfReaderPageHost" class="pdf-reader-page-host"></div></main>
+            <aside class="pdf-reader-side">
+                <div class="pdf-reader-side-head"><div><strong>Marcações</strong><div id="pdfReaderStatus" class="pdf-reader-status">—</div></div><button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.toggleSide()">×</button></div>
+                <div id="pdfReaderAnnotationsList" class="pdf-reader-side-list"></div>
+                <div class="pdf-reader-side-actions">
+                    <button class="btn btn-primary btn-sm" onclick="PdfStudyReader.exportToNotes()">Exportar para Anotações</button>
+                    <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.downloadMarkdown()">Baixar .md</button>
                 </div>
-            </div>
-            <div class="pdf-reader-notice-card">
-                <h4>O que já está funcionando</h4>
-                <ul>
-                    <li>upload privado na Biblioteca Global;</li>
-                    <li>vínculo do PDF com concurso, matéria e assunto;</li>
-                    <li>progresso básico do documento.</li>
-                </ul>
-                <h4>O que será necessário para marcações on-line</h4>
-                <ul>
-                    <li>Leitor PDF interno do app;</li>
-                    <li>tabelas de anotações, grifos, sublinhados e favoritos de página;</li>
-                    <li>sincronização das anotações entre dispositivos;</li>
-                    <li>exportação das marcações para notas/flashcards.</li>
-                </ul>
-            </div>
-            <div class="modal-actions pdf-modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeViewerNoticeModal()">Cancelar</button>
-                <button class="btn btn-primary" id="btnOpenPdfSignedUrl" type="button" onclick="PdfStudyLibraryUI.confirmOpenTemporaryView()">Abrir visualização temporária</button>
-            </div>
+            </aside>
         </div>
-    </div>
+        <div id="pdfReaderSelectionBar" class="pdf-reader-selection-bar">
+            <span id="pdfReaderSelectionText" class="pdf-reader-selection-text"></span>
+            <button class="btn btn-warning btn-sm" onclick="PdfStudyReader.saveAnnotation('highlight')">Grifar</button>
+            <button class="btn btn-info btn-sm" onclick="PdfStudyReader.saveAnnotation('underline')">Sublinhar</button>
+            <button class="btn btn-purple btn-sm" onclick="PdfStudyReader.promptNote()">Nota</button>
+            <button class="btn btn-success btn-sm" onclick="PdfStudyReader.createFlashcard()">Flashcard</button>
+        </div>
+    </section>
 
+    <script src="./vendor/pdf.min.js" defer></script>
     <script src="./js/app-core.js" defer></script>
     <script src="./js/pdf/pdf-core.js" defer></script>
     <script src="./js/pdf/pdf-workspaces.js" defer></script>
@@ -1453,6 +1465,8 @@
     <script src="./js/pdf/pdf-upload.js" defer></script>
     <script src="./js/app-ai.js" defer></script>
     <script src="./js/app-ui.js" defer></script>
+    <script src="./js/pdf/pdf-annotations.js" defer></script>
+    <script src="./js/pdf/pdf-reader.js" defer></script>
     <script src="./js/pdf/pdf-library-ui.js" defer></script>
     <script src="./js/app-pwa.js" defer></script>
 </body>
