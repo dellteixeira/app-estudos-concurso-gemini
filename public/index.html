@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="./css/base.css">
     <link rel="stylesheet" href="./css/dashboard.css">
     <link rel="stylesheet" href="./css/features.css">
+    <link rel="stylesheet" href="./css/pdf-library.css">
 </head>
 <body>
 
@@ -120,6 +121,7 @@
                 <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
                     <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
                     <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
+                    <button class="tab-btn" onclick="switchTab('tab-biblioteca', this)">Biblioteca</button>
                     <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
                     <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
                 </div>
@@ -392,6 +394,34 @@
             </div>
         </div>
 
+        <!-- TAB 3: BIBLIOTECA DE PDFs -->
+        <div id="tab-biblioteca" class="tab-content">
+            <div class="card tab-workspace-anchor" id="pdfLibraryWorkspace">
+                <div class="pdf-library-shell">
+                    <div class="pdf-library-hero">
+                        <div class="pdf-library-title">
+                            <h3>Biblioteca de Estudos</h3>
+                            <p>PDFs privados em uma Biblioteca Global. Um mesmo arquivo pode ser vinculado a vários concursos, matérias e assuntos.</p>
+                            <span class="pdf-library-contest">Concurso: <strong id="pdfLibraryContestName">—</strong></span>
+                        </div>
+                        <div class="pdf-library-actions">
+                            <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.openWorkspaceModal()">+ Workspace</button>
+                            <button class="btn btn-primary" type="button" onclick="PdfStudyLibraryUI.openUploadModal()">+ Adicionar PDF</button>
+                        </div>
+                    </div>
+                    <div class="pdf-library-filters" aria-label="Filtros da Biblioteca">
+                        <input id="pdfLibrarySearch" type="search" placeholder="Buscar PDF" oninput="PdfStudyLibraryUI.onSearch(this.value)">
+                        <select id="pdfLibraryScope" onchange="PdfStudyLibraryUI.onScopeChange(this.value)"><option value="contest">Concurso atual</option><option value="global">Biblioteca Global</option></select>
+                        <select id="pdfWorkspaceFilter" onchange="PdfStudyLibraryUI.onWorkspaceFilterChange(this.value)"><option value="">Todos os Workspaces</option></select>
+                        <select id="pdfMateriaFilter" onchange="PdfStudyLibraryUI.onMateriaFilterChange(this.value)"><option value="">Todas as matérias</option></select>
+                        <select id="pdfAssuntoFilter" onchange="PdfStudyLibraryUI.onAssuntoFilterChange(this.value)"><option value="">Todos os assuntos</option></select>
+                    </div>
+                    <div id="pdfLibraryStatus" class="pdf-library-status" aria-live="polite"></div>
+                    <div id="pdfLibraryGrid" class="pdf-library-grid"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- TAB 3: ANOTAÇÕES -->
         <div id="tab-anotacoes" class="tab-content">
             <div class="card tab-workspace-anchor" id="notesWorkspace">
@@ -458,11 +488,81 @@
         <nav class="mobile-bottom-nav" aria-label="Navegação principal mobile">
             <button class="mobile-nav-btn active" type="button" data-tab="tab-edital" onclick="mobileSwitchTab('tab-edital', this)"><span>Edital</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-calendario" onclick="mobileSwitchTab('tab-calendario', this)"><span>Cronograma</span></button>
+            <button class="mobile-nav-btn" type="button" data-tab="tab-biblioteca" onclick="mobileSwitchTab('tab-biblioteca', this)"><span>Biblioteca</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" onclick="mobileSwitchTab('tab-flashcards', this)"><span>Flashcards</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" onclick="mobileSwitchTab('tab-anotacoes', this)"><span>Anotações</span></button>
             <button class="mobile-nav-btn" type="button" onclick="toggleModernTools()"><span>Mais</span></button>
             <button id="contextFab" class="mobile-nav-btn mobile-context-action" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo"><span>Novo</span></button>
         </nav>
+    </div>
+
+    <!-- MODAL NOVO WORKSPACE DE PDFs -->
+    <div class="modal-overlay" id="modalPdfWorkspace">
+        <div class="modal">
+            <h3>Novo Workspace</h3>
+            <p style="opacity:.78; margin-top:-4px;">Workspace global: pode organizar PDFs usados em qualquer concurso.</p>
+            <div class="form-group">
+                <label for="pdfWorkspaceName">Nome do Workspace</label>
+                <input type="text" id="pdfWorkspaceName" maxlength="120" placeholder="Ex.: Doutrina e legislação">
+            </div>
+            <div class="form-group">
+                <label for="pdfWorkspaceDescription">Descrição (opcional)</label>
+                <textarea id="pdfWorkspaceDescription" maxlength="500" placeholder="Como este espaço será usado"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeWorkspaceModal()">Cancelar</button>
+                <button class="btn btn-primary" id="btnCreatePdfWorkspace" type="button" onclick="PdfStudyLibraryUI.createWorkspace()">Criar Workspace</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL UPLOAD DE PDF -->
+    <div class="modal-overlay" id="modalPdfUpload">
+        <div class="modal modal-large">
+            <h3>Adicionar PDF à Biblioteca</h3>
+            <div id="pdfDropZone" class="pdf-drop-zone" onclick="document.getElementById('pdfUploadFile').click()" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
+                <strong>Arraste um PDF para cá</strong>
+                <span>ou clique para selecionar no dispositivo · máximo 100 MB</span>
+                <div class="pdf-upload-file-name" id="pdfUploadFileName">Nenhum arquivo selecionado</div>
+                <input id="pdfUploadFile" type="file" accept="application/pdf,.pdf" hidden onchange="PdfStudyLibraryUI.onUploadFileChange(this)">
+            </div>
+            <div class="form-group" style="margin-top:14px;">
+                <label for="pdfUploadTitle">Título do material</label>
+                <input id="pdfUploadTitle" type="text" maxlength="240" placeholder="Título do PDF">
+            </div>
+            <div class="pdf-upload-grid">
+                <div class="form-group">
+                    <label for="pdfUploadWorkspace">Workspace</label>
+                    <select id="pdfUploadWorkspace"></select>
+                </div>
+                <div class="form-group">
+                    <label for="pdfUploadMateria">Matéria do edital</label>
+                    <select id="pdfUploadMateria" onchange="PdfStudyLibraryUI.onUploadMateriaChange()"><option value="">Selecione a matéria</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="pdfUploadAssunto">Assunto do edital</label>
+                    <select id="pdfUploadAssunto"><option value="">Selecione o assunto</option></select>
+                </div>
+            </div>
+            <div class="pdf-upload-progress-track"><div class="pdf-upload-progress-bar" id="pdfUploadProgress"></div></div>
+            <div class="pdf-upload-progress-text" id="pdfUploadProgressText" aria-live="polite"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeUploadModal()">Cancelar</button>
+                <button class="btn btn-primary" id="btnSubmitPdfUpload" type="button" onclick="PdfStudyLibraryUI.submitUpload()">Adicionar à Biblioteca</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL VINCULAR PDF A CONTEXTO -->
+    <div class="modal-overlay" id="modalPdfLink">
+        <div class="modal">
+            <h3>Vincular PDF ao concurso atual</h3>
+            <p id="pdfLinkDocumentTitle" style="opacity:.8"></p>
+            <div class="form-group"><label for="pdfLinkWorkspace">Workspace</label><select id="pdfLinkWorkspace"></select></div>
+            <div class="form-group"><label for="pdfLinkMateria">Matéria do edital</label><select id="pdfLinkMateria" onchange="PdfStudyLibraryUI.onLinkMateriaChange()"></select></div>
+            <div class="form-group"><label for="pdfLinkAssunto">Assunto do edital</label><select id="pdfLinkAssunto"></select></div>
+            <div class="modal-actions"><button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeLinkModal()">Cancelar</button><button class="btn btn-primary" id="btnCreatePdfLink" type="button" onclick="PdfStudyLibraryUI.submitLink()">Criar vínculo</button></div>
+        </div>
     </div>
 
     <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
@@ -1272,8 +1372,14 @@
 
     <script src="./js/study-domain.js" defer></script>
     <script src="./js/app-core.js" defer></script>
+    <script src="./js/pdf/pdf-core.js" defer></script>
+    <script src="./js/pdf/pdf-workspaces.js" defer></script>
+    <script src="./js/pdf/pdf-links.js" defer></script>
+    <script src="./js/pdf/pdf-library.js" defer></script>
+    <script src="./js/pdf/pdf-upload.js" defer></script>
     <script src="./js/app-ai.js" defer></script>
     <script src="./js/app-ui.js" defer></script>
+    <script src="./js/pdf/pdf-library-ui.js" defer></script>
     <script src="./js/app-pwa.js" defer></script>
 </body>
 </html>
