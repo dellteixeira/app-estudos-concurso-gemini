@@ -36,8 +36,11 @@
     if (search) { const safe=String(search).replace(/[,%()]/g,' ').trim(); if(safe) q=q.or(`title.ilike.%${safe}%,original_file_name.ilike.%${safe}%`); }
     const {data,error}=await q; if(error) throw error; const docs=data||[]; if(!docs.length)return[];
     const ids=docs.map(d=>d.id);
-    const allLinks = await links().list({ pdfIds: ids });
-    const {data:pr,error:pe}=await client.from('pdf_progress').select('pdf_id,current_page,progress_percentage,reading_seconds,last_opened_at').eq('user_id',user.id).in('pdf_id',ids); if(pe)throw pe;
+    const [allLinks,progressResult]=await Promise.all([
+      links().list({ pdfIds: ids }),
+      client.from('pdf_progress').select('pdf_id,current_page,progress_percentage,reading_seconds,last_opened_at').eq('user_id',user.id).in('pdf_id',ids)
+    ]);
+    const {data:pr,error:pe}=progressResult;if(pe)throw pe;
     const pm=new Map((pr||[]).map(x=>[x.pdf_id,x]));
     const result = docs.map(d=>{const dl=allLinks.filter(x=>x.pdf_id===d.id); const active= scope==='global'?null:(dl.find(x=>x.concurso===concurso && (!workspaceId||x.workspace_id===workspaceId) && (!materia||x.materia===materia) && (!assunto||x.assunto===assunto))||dl.find(x=>x.concurso===concurso)||null); return {...d,links:dl,activeLink:active,progress:pm.get(d.id)||null};});
     // Guarda o acervo completo conhecido para manter a Biblioteca visível em falhas transitórias.
