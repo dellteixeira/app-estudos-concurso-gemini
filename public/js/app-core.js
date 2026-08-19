@@ -3272,6 +3272,40 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             assuntos.forEach(ass => { aSel.innerHTML += `<option value="${escapeHtml(ass)}">${escapeHtml(ass)}</option>`; });
         }
 
+        async function addPdfStudyNote({ materia, assunto, titulo, conteudoTexto }) {
+            const text = String(conteudoTexto || '').trim();
+            if (!materia || !titulo || !text) throw new Error('Dados insuficientes para exportar a anotação do PDF.');
+            let metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            if (!metadata[currentConcurso].structuredNotes) metadata[currentConcurso].structuredNotes = [];
+            const now = new Date();
+            metadata[currentConcurso].structuredNotes.push({
+                materia, assunto: assunto || '', titulo,
+                conteudo: plainTextToNoteHtml(text), conteudoTexto: text, formato: 'html',
+                data: now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+                source_type:'pdf'
+            });
+            await saveConcursosMetadata(metadata);
+            loadNotesData();
+            return true;
+        }
+        window.addPdfStudyNote = addPdfStudyNote;
+
+        async function addPdfStudyFlashcard({ materia, assunto, pergunta, resposta, sourcePdfId, sourcePage }) {
+            const p = String(pergunta || '').trim(), r = String(resposta || '').trim();
+            if (!p || !r) throw new Error('Pergunta e resposta são obrigatórias.');
+            const card = {
+                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()),
+                materia: materia || '', assunto: assunto || '', pergunta:p, resposta:r,
+                source_type:'pdf', source_pdf_id:sourcePdfId || null, source_page:Number(sourcePage)||null
+            };
+            flashcardsList.push(card);
+            renderFlashcardFolders(); renderFlashcards();
+            await saveFlashcardsData();
+            return card;
+        }
+        window.addPdfStudyFlashcard = addPdfStudyFlashcard;
+
         async function saveFlashcardsData() {
             flashcardsList.forEach(fc => {
                 if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
