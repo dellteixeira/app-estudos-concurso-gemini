@@ -6,3 +6,6 @@ test('Reader possui navegação por setas e roda do mouse',()=>{const h=read('pu
 test('seleção aparece só quando há texto e flashcard sugere pergunta plausível',()=>{const r=read('public/js/pdf/pdf-reader.js');const h=read('public/index.html');assert.match(r,/if\(!g\)\{clearSelection\(\);return\}/);assert.match(r,/inferQuestionFromSelection/);assert.match(h,/Pergunta sugerida automaticamente/);assert.match(r,/modalPdfFlashcard/);});
 test('Biblioteca estabiliza loads concorrentes e concurso usa seletor atual',()=>{const u=read('public/js/pdf/pdf-library-ui.js');assert.match(u,/concursoSelect/);assert.match(u,/loadSeq/);assert.match(u,/seq!==state\.loadSeq/);});
 test('upload modal tem limites responsivos e sem overflow horizontal',()=>{const c=read('public/css/pdf-library.css');assert.match(c,/max-height:calc\(100dvh - 28px\)/);assert.match(c,/overflow-x:hidden/);assert.match(c,/@media\(max-width:720px\)/);});
+
+
+test('Reader renderiza página antes de bloquear em anotações e bookmarks',()=>{const r=read('public/js/pdf/pdf-reader.js');const renderPos=r.indexOf("await renderPage();setStatus('PDF pronto. Sincronizando marcações…')");const metadataPos=r.indexOf('const [annotations,bookmarks]=await Promise.all');assert.ok(renderPos>0);assert.ok(metadataPos>renderPos);});
