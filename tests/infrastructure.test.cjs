@@ -43,3 +43,15 @@ test('exclusão de conta prepara limpeza do bucket study-pdfs antes do auth.user
   assert.ok(storagePos >= 0 && rpcPos > storagePos && authPos > rpcPos);
   assert.match(fn, /ACCOUNT_STORAGE_DELETE_FAILED/);
 });
+
+test('cabeçalho deixa sincronização fora da barra de concurso', () => {
+  const html = read('public/index.html');
+  const base = read('public/css/base.css');
+  const syncPos = html.indexOf('id="syncStatusPill"');
+  const concursoPos = html.indexOf('class="concurso-selector-bar"');
+  assert.ok(syncPos > 0 && concursoPos > syncPos);
+  assert.doesNotMatch(html, /<label><strong>Concurso:<\/strong><\/label>/);
+  assert.match(html, /class="sync-status-pill header-sync-status"/);
+  assert.match(html, /aria-label="Selecionar concurso"/);
+  assert.match(base, /\.header-sync-status/);
+});
