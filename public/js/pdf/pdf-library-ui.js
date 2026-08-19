@@ -1,10 +1,10 @@
 (function(global){
 'use strict';
-let state={docs:[],workspaces:[],scope:'contest',activeWorkspace:'',activeMateria:'',activeAssunto:'',search:'',initializedFor:''};
+let state={docs:[],workspaces:[],scope:'contest',activeWorkspace:'',activeMateria:'',activeAssunto:'',search:'',initializedFor:'',loadSeq:0};
 let selectedFile=null,linkPdfId=null,workspaceReturnContext='library',pendingOpenDocumentId=null;
 const $=id=>document.getElementById(id);
 const esc=v=>typeof global.escapeHtml==='function'?global.escapeHtml(v):String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-function contest(){try{return global.getLastStudiedConcurso?.()||'Concurso Geral'}catch(_){return'Concurso Geral'}}
+function contest(){try{return document.getElementById('concursoSelect')?.value||global.getLastStudiedConcurso?.()||'Concurso Geral'}catch(_){return'Concurso Geral'}}
 function materias(){try{return global.getUniqueMateriasFromEdital?.()||[]}catch(_){return[]}}
 function assuntos(m){try{return global.getAssuntosForMateria?.(m)||[]}catch(_){return[]}}
 function bytes(n){n=Number(n||0);return n<1048576?`${Math.max(1,Math.round(n/1024))} KB`:`${(n/1048576).toFixed(n>=10485760?0:1)} MB`}
@@ -52,12 +52,12 @@ function renderAss(mode){
 }
 
 async function load(){
+  const seq=++state.loadSeq; const cc=contest();
   status('Carregando biblioteca…');
-  const docs=await global.PdfStudyLibrary.list({scope:state.scope,concurso:contest(),workspaceId:state.activeWorkspace,materia:state.activeMateria,assunto:state.activeAssunto,search:state.search});
-  state.docs=docs;
-  render();
-  const cached=docs.some(d=>d.__fromCache);
-  status(cached?'Conexão instável: exibindo a última Biblioteca salva neste dispositivo.':`${state.docs.length} ${state.docs.length===1?'PDF encontrado':'PDFs encontrados'}.`,cached?'warn':'ok');
+  const docs=await global.PdfStudyLibrary.list({scope:state.scope,concurso:cc,workspaceId:state.activeWorkspace,materia:state.activeMateria,assunto:state.activeAssunto,search:state.search});
+  if(seq!==state.loadSeq||cc!==contest())return;
+  state.docs=docs; render();
+  status(`${state.docs.length} ${state.docs.length===1?'PDF encontrado':'PDFs encontrados'}.`,'ok');
 }
 
 function ws(id){return state.workspaces.find(w=>w.id===id)?.name||'Sem Workspace'}
@@ -166,9 +166,9 @@ async function submitLink(){try{await global.PdfStudyLinks.create({pdfId:linkPdf
 async function unlinkDocument(id){if(!confirm('Remover este PDF apenas do concurso atual? O arquivo continuará na Biblioteca Global.'))return;try{await global.PdfStudyLinks.removeForPdfInConcurso(id,contest());await load();status('Vínculo removido. O PDF foi preservado na Biblioteca Global.','ok')}catch(e){handle(e)}}
 async function toggleFavorite(id){const d=state.docs.find(x=>x.id===id);try{await global.PdfStudyLibrary.setFavorite(id,!d?.is_favorite);await load()}catch(e){handle(e)}}
 async function deleteDocument(id){const d=state.docs.find(x=>x.id===id);if(!d||!confirm(`Excluir “${d.title}” da Biblioteca Global? Isso remove o arquivo e todos os vínculos.`))return;try{await global.PdfStudyLibrary.remove(d);await load()}catch(e){handle(e)}}
-function openDocument(id){pendingOpenDocumentId=id;const title=$('pdfViewerNoticeTitle');if(title){const d=state.docs.find(x=>x.id===id);title.textContent=d?.title||'';}$('modalPdfViewerNotice').style.display='flex'}
-function closeViewerNoticeModal(){$('modalPdfViewerNotice').style.display='none';pendingOpenDocumentId=null}
-async function confirmOpenTemporaryView(){const btn=$('btnOpenPdfSignedUrl');try{if(btn)btn.disabled=true;const d=state.docs.find(x=>x.id===pendingOpenDocumentId);global.open(await global.PdfStudyLibrary.createSignedUrl(d,900),'_blank','noopener,noreferrer');closeViewerNoticeModal()}catch(e){handle(e)}finally{if(btn)btn.disabled=false}}
+async function openDocument(id){try{const d=state.docs.find(x=>x.id===id);if(!d)throw new Error('PDF não encontrado na Biblioteca.');if(!global.PdfStudyReader)throw new Error('Reader PDF interno não carregado.');await global.PdfStudyReader.open(d)}catch(e){handle(e)}}
+function closeViewerNoticeModal(){const m=$('modalPdfViewerNotice');if(m)m.style.display='none';pendingOpenDocumentId=null}
+async function confirmOpenTemporaryView(){return openDocument(pendingOpenDocumentId)}
 function handleDrop(e){e.preventDefault();$('pdfDropZone')?.classList.remove('drag-over');setFile(e.dataTransfer?.files?.[0])}
 function handleDragOver(e){e.preventDefault();$('pdfDropZone')?.classList.add('drag-over')}
 function handleDragLeave(){$('pdfDropZone')?.classList.remove('drag-over')}
@@ -182,5 +182,5 @@ function handle(e){
   status(e?.message||'Erro.','error');alert(e?.message||'Erro.');
 }
 
-global.PdfStudyLibraryUI=Object.freeze({initialize,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,onUploadMateriaChange,submitUpload,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
+global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:()=>load().catch(handle),getCurrentContest:contest,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,onUploadMateriaChange,submitUpload,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
 })(window);
