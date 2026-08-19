@@ -59,15 +59,36 @@ function updateSelection(){
 function lockSelectionForAction(){state.selectionLocked=true;clearTimeout(selectionClearTimer);selectionClearTimer=null;setTimeout(()=>{state.selectionLocked=false},900)}
 function inferQuestionFromSelection(text=''){
   const clean=String(text||'').replace(/\s+/g,' ').trim();
-  if(!clean)return 'Qual é a ideia central deste trecho?';
+  if(!clean)return 'O que deve ser lembrado neste ponto?';
   const lower=clean.toLocaleLowerCase('pt-BR');
-  if(/significa|conceito|conceitua|define|é a|consagra|denomina/.test(lower)) return 'Qual conceito ou definição este trecho apresenta?';
-  if(/requisito|requisitos|elemento|elementos|pressuposto|pressupostos/.test(lower)) return 'Quais são os requisitos ou elementos mencionados neste trecho?';
-  if(/diferença|distingue|distinção|contravenção|crime/.test(lower)) return 'Qual distinção importante este trecho estabelece?';
-  if(/pena|detenção|reclusão|multa/.test(lower)) return 'Qual consequência jurídica ou pena este trecho descreve?';
-  const firstSentence=(clean.split(/[.!?;]\s/)[0]||clean).trim();
-  const short=firstSentence.length>110?firstSentence.slice(0,107)+'…':firstSentence;
-  return `O que o trecho “${short}” procura explicar?`;
+  const firstSentence=(clean.split(/[.!?;]\s+/)[0]||clean).trim();
+  const shortSentence=firstSentence.length>96?firstSentence.slice(0,93)+'…':firstSentence;
+  const compact=s=>String(s||'').replace(/^[,.;:\-\s]+|[,.;:\-\s]+$/g,'').replace(/\s+/g,' ').trim();
+  const clip=(s,max=74)=>{s=compact(s);return s.length>max?s.slice(0,max-1).replace(/\s+\S*$/,'')+'…':s};
+  const subject=()=>{
+    const patterns=[
+      /(?:entende-se por|considera-se|denomina-se|chama-se)\s+([^,.;:()]{3,90})/i,
+      /(?:^|[.;:]\s*)(?:o|a|os|as|um|uma)?\s*([^,.;:()]{3,90}?)\s+(?:é|são|consiste|corresponde|significa|constitui|representa)\s/i,
+      /(?:sobre|quanto a|em relação a|relativo a|referente a)\s+([^,.;:()]{3,90})/i,
+      /(?:art\.?\s*\d+[^\s,.;:]*)\s*[-–—:]?\s*([^,.;:()]{3,90})/i
+    ];
+    for(const p of patterns){const m=clean.match(p);if(m?.[1])return clip(m[1])}
+    const noun=clean.match(/\b(?:direito|dever|competência|atribuição|requisito|condição|prazo|pena|crime|infração|ato|processo|procedimento|recurso|responsabilidade|servidor|administração|contrato|licitação|controle|princípio|garantia|vedação|exceção|nulidade|prescrição|decadência)\b(?:\s+(?:[a-zà-ú]+|de|da|do|dos|das)){0,6}/i);
+    if(noun?.[0])return clip(noun[0]);
+    return clip(shortSentence,68);
+  };
+  const topic=subject();
+  const comparison=clean.match(/\b(.{3,80}?)\s+(?:diferencia-se de|distingue-se de|difere de|ao contrário de|enquanto)\s+(.{3,80}?)(?:[.;,]|$)/i);
+  if(comparison)return `Como o trecho diferencia ${clip(comparison[1],38)} de ${clip(comparison[2],38)}?`;
+  if(/\b(?:salvo|exceto|ressalvado|ressalvada|excepcionalmente|não se aplica|dispensa-se)\b/.test(lower))return `Qual é a exceção indicada sobre ${topic}?`;
+  if(/\b(?:requisito|requisitos|elemento|elementos|pressuposto|pressupostos|condição|condições|depende de|exige|necessário|necessária|deve conter)\b/.test(lower))return `Quais requisitos o trecho aponta para ${topic}?`;
+  if(/\b(?:se|quando|desde que|caso|na hipótese de|sempre que)\b/.test(lower)&&/\b(?:será|deverá|poderá|implica|gera|acarreta|resulta|produz|autoriza|veda|impede|permite)\b/.test(lower))return `O que ocorre quando ${topic}?`;
+  if(/\b(?:pena|detenção|reclusão|multa|sanção|penalidade|punível|responde por|incide em)\b/.test(lower))return `Qual consequência jurídica recai sobre ${topic}?`;
+  if(/\b(?:vedado|proibido|não pode|não poderá|é nulo|nulidade|ilícito|crime|contravenção)\b/.test(lower))return `O que é vedado ou inválido em ${topic}?`;
+  if(/\b(?:compete|cabe|atribuição|competência|responsável|deverá|deve|obrigatório|obriga-se)\b/.test(lower))return `O que o trecho exige de ${topic}?`;
+  if(/\b(?:define|conceitua|significa|conceito|consiste|considera-se|entende-se por|denomina-se|é a|é o|são os|são as)\b/.test(lower))return `Como o trecho define ${topic}?`;
+  if(/\b(?:porque|pois|em razão de|decorre|decorrem|para que|a fim de|com o objetivo de|finalidade)\b/.test(lower))return `Por que ${topic} é relevante no trecho?`;
+  return `O que o trecho afirma sobre ${topic}?`;
 }
 async function saveAnnotation(type,noteText=''){
   if(!state.selected)return alert('Selecione um trecho do PDF primeiro.');
@@ -255,8 +276,8 @@ async function toggleFit(){if(state.fitMode==='width')return fitPage();return fi
 function resetDocumentScroll(){const wrap=$('pdfReaderCanvasWrap');if(wrap){wrap.scrollLeft=0;wrap.scrollTop=0;clampDocumentScroll()}}
 function centerScrollAfterRender(){requestAnimationFrame(()=>clampDocumentScroll())}
 function clampDocumentScroll(){const wrap=$('pdfReaderCanvasWrap');if(!wrap)return;const maxX=Math.max(0,wrap.scrollWidth-wrap.clientWidth),maxY=Math.max(0,wrap.scrollHeight-wrap.clientHeight);wrap.scrollLeft=clamp(wrap.scrollLeft,0,maxX);wrap.scrollTop=clamp(wrap.scrollTop,0,maxY)}
-async function toggleBookmark(){try{const active=await ann().toggleBookmark(state.doc.id,state.page);state.bookmarks=await ann().bookmarks(state.doc.id);updateBookmarkButton();setStatus(active?'Página marcada.':'Marcador removido.')}catch(e){handle(e)}}
-function updateBookmarkButton(){const b=$('pdfReaderBookmark');if(b)b.classList.toggle('active',state.bookmarks.some(x=>Number(x.page_number)===state.page))}
+async function toggleBookmark(){try{const active=await ann().toggleBookmark(state.doc.id,state.page);state.bookmarks=await ann().bookmarks(state.doc.id);updateBookmarkButton();setStatus(active?'Página marcada para voltar depois.':'Marcador da página removido.')}catch(e){handle(e)}}
+function updateBookmarkButton(){const b=$('pdfReaderBookmark');if(!b)return;const active=state.bookmarks.some(x=>Number(x.page_number)===state.page);b.classList.toggle('active',active);b.setAttribute('aria-pressed',active?'true':'false');b.setAttribute('aria-label',active?'Remover marcador desta página':'Marcar esta página');b.title=active?'Remover marcador desta página':'Marcar esta página'}
 async function saveProgress(closing){if(!state.doc||!state.total)return;const c=core().getSupabaseClient(),u=await core().getAuthenticatedUser();const elapsed=closing&&state.openedAt?Math.max(0,Math.round((Date.now()-state.openedAt)/1000)):0;const {error}=await c.from('pdf_progress').upsert({user_id:u.id,pdf_id:state.doc.id,current_page:state.page,progress_percentage:Math.round((state.page/state.total)*10000)/100,reading_seconds:Number(state.doc.progress?.reading_seconds||0)+elapsed,last_opened_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:'user_id,pdf_id'});if(error)throw error}
 function toggleSide(){document.getElementById('pdfReaderOverlay')?.classList.toggle('side-collapsed')}
 function handle(e){console.error('[PDF Reader]',e);setStatus(e?.message||'Erro no Reader.');alert(e?.message||'Erro no Reader.')}
