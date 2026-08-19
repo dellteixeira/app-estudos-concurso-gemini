@@ -19,3 +19,6 @@ test('Biblioteca abre global por padrão e Workspace não bloqueia PDFs',()=>{co
 
 
 test('Biblioteca usa cache local para renderização quase instantânea antes da sincronização',()=>{const l=read('public/js/pdf/pdf-library.js');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(l,/async function getCached/);assert.match(u,/Mostrando cache local/);assert.match(u,/PdfStudyLibrary\.getCached/);});
+
+
+test('Biblioteca carrega links e progresso em paralelo e prioriza cache no first paint',()=>{const l=read('public/js/pdf/pdf-library.js');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(l,/Promise\.all\(\[\s*links\(\)\.list/);assert.match(u,/const loadPromise=load\(\)\.catch/);assert.match(u,/Promise\.allSettled/);});
