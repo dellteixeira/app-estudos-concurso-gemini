@@ -406,13 +406,14 @@
                             <span class="pdf-library-contest">Concurso: <strong id="pdfLibraryContestName">—</strong></span>
                         </div>
                         <div class="pdf-library-actions">
+                            <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.refresh()">↻ Atualizar</button>
                             <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.openWorkspaceModal()">+ Workspace</button>
                             <button class="btn btn-primary" type="button" onclick="PdfStudyLibraryUI.openUploadModal()">+ Adicionar PDF</button>
                         </div>
                     </div>
                     <div class="pdf-library-filters" aria-label="Filtros da Biblioteca">
                         <input id="pdfLibrarySearch" type="search" placeholder="Buscar PDF" oninput="PdfStudyLibraryUI.onSearch(this.value)">
-                        <select id="pdfLibraryScope" onchange="PdfStudyLibraryUI.onScopeChange(this.value)"><option value="contest">Concurso atual</option><option value="global">Biblioteca Global</option></select>
+                        <select id="pdfLibraryScope" onchange="PdfStudyLibraryUI.onScopeChange(this.value)"><option value="global" selected>Biblioteca Global</option><option value="contest">Concurso atual</option></select>
                         <select id="pdfWorkspaceFilter" onchange="PdfStudyLibraryUI.onWorkspaceFilterChange(this.value)"><option value="">Todos os Workspaces</option></select>
                         <select id="pdfMateriaFilter" onchange="PdfStudyLibraryUI.onMateriaFilterChange(this.value)"><option value="">Todas as matérias</option></select>
                         <select id="pdfAssuntoFilter" onchange="PdfStudyLibraryUI.onAssuntoFilterChange(this.value)"><option value="">Todos os assuntos</option></select>
