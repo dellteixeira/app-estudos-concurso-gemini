@@ -22,10 +22,9 @@
     return maxLength ? text.slice(0, maxLength) : text;
   }
 
-  function buildStoragePath({ userId, workspaceId, pdfId }) {
+  function buildStoragePath({ userId, pdfId }) {
     if (!userId || !pdfId) throw new Error('userId e pdfId são obrigatórios.');
-    const workspaceSegment = workspaceId || 'unfiled';
-    return `${userId}/${workspaceSegment}/${pdfId}/original.pdf`;
+    return `${userId}/${pdfId}/original.pdf`;
   }
 
   function validatePdfFile(file) {
