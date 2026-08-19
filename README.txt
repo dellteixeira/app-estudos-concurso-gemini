@@ -728,3 +728,6 @@ V10.15.0 — Reader PDF interno
 - Criação de flashcards a partir de trecho selecionado.
 - Biblioteca estabilizada contra loads concorrentes e concurso transitório.
 - Modal de upload responsivo sem overflow horizontal.
+
+
+V10.15.1 — Biblioteca PDF: Workspace idempotente, recuperação de corrida 23505, Biblioteca Global padrão e carregamento de PDFs desacoplado de falhas de Workspace.
