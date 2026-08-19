@@ -118,6 +118,7 @@ for (const route of ['/css/pdf-reader.css','/js/pdf/pdf-annotations.js','/js/pdf
 if (!errors.some(e => e.includes('Service Worker não trata Reader'))) ok('Reader coberto por network-first no Service Worker');
 if (!exists('supabase/migrations/20260819030000_create_pdf_reader_annotations.sql')) fail('migration do Reader PDF ausente'); else ok('Reader PDF com anotações/versionamento versionado');
 if (!exists('supabase/migrations/20260819090000_harden_pdf_reader_rls.sql')) fail('hardening RLS do Reader PDF ausente'); else ok('hardening RLS do Reader PDF versionado');
+if (!/ERROR_CODES/.test(read('public/js/pdf/pdf-upload.js')) || !/classifyError/.test(read('public/js/pdf/pdf-upload.js')) || !/retryFailedUploads/.test(read('public/js/pdf/pdf-library-ui.js')) || !/pdfUploadResultPanel/.test(read('public/index.html'))) fail('diagnóstico/retry de upload em lote incompleto'); else ok('diagnóstico e retry de upload em lote versionados');
 
 // Sintaxe.
 for (const rel of [...JS_FILES, ...PDF_FOUNDATION_JS_FILES, 'public/pwa-update.js','public/sw.js','src/index.js']) {
