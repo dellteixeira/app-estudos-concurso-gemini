@@ -46,34 +46,16 @@
     return data;
   }
 
-  async function update(id, patch = {}) {
+  async function update(id, changes) {
     const user = await core().getAuthenticatedUser();
     const client = core().getSupabaseClient();
     const payload = { updated_at: new Date().toISOString() };
-    if (Object.prototype.hasOwnProperty.call(patch, 'name')) {
-      payload.name = core().normalizeText(patch.name, 120);
+    if ('name' in changes) {
+      payload.name = core().normalizeText(changes.name, 120);
       if (!payload.name) throw new Error('Informe o nome do Workspace.');
     }
-    if (Object.prototype.hasOwnProperty.call(patch, 'description')) payload.description = core().normalizeText(patch.description, 500) || null;
-    if (Object.prototype.hasOwnProperty.call(patch, 'isDefault')) payload.is_default = Boolean(patch.isDefault);
-
-    if (payload.is_default) {
-      const { error: resetError } = await client
-        .from('study_workspaces')
-        .update({ is_default: false, updated_at: payload.updated_at })
-        .eq('user_id', user.id)
-        .eq('is_default', true)
-        .neq('id', id);
-      if (resetError) throw resetError;
-    }
-
-    const { data, error } = await client
-      .from('study_workspaces')
-      .update(payload)
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
-      .single();
+    if ('description' in changes) payload.description = core().normalizeText(changes.description, 500) || null;
+    const { data, error } = await client.from('study_workspaces').update(payload).eq('id', id).eq('user_id', user.id).select().single();
     if (error) throw error;
     return data;
   }
