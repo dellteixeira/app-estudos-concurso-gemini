@@ -1,7 +1,7 @@
 (function(global){
 'use strict';
 let state={docs:[],workspaces:[],scope:'global',activeWorkspace:'',activeMateria:'',activeAssunto:'',search:'',initializedFor:'',loadSeq:0};
-let selectedFile=null,linkPdfId=null,workspaceReturnContext='library',pendingOpenDocumentId=null,ensureWorkspacePromise=null;
+let selectedFiles=[],linkPdfId=null,workspaceReturnContext='library',pendingOpenDocumentId=null,ensureWorkspacePromise=null,selectionMode=false,selectedPdfIds=new Set(),lastUploadFailures=[],lastUploadContext=null;
 const $=id=>document.getElementById(id);
 const esc=v=>typeof global.escapeHtml==='function'?global.escapeHtml(v):String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 function contest(){try{return document.getElementById('concursoSelect')?.value||global.getLastStudiedConcurso?.()||'Concurso Geral'}catch(_){return'Concurso Geral'}}
@@ -9,6 +9,33 @@ function materias(){try{return global.getUniqueMateriasFromEdital?.()||[]}catch(
 function assuntos(m){try{return global.getAssuntosForMateria?.(m)||[]}catch(_){return[]}}
 function bytes(n){n=Number(n||0);return n<1048576?`${Math.max(1,Math.round(n/1024))} KB`:`${(n/1048576).toFixed(n>=10485760?0:1)} MB`}
 function status(m,k=''){const e=$('pdfLibraryStatus');if(e){e.textContent=m||'';e.dataset.kind=k}}
+function uploadConcurrency(){const mobile=matchMedia?.('(max-width:700px)')?.matches;const conn=navigator.connection?.effectiveType||'';return mobile||/2g/.test(conn)?2:3}
+function renderSelectedFiles(){
+  const name=$('pdfUploadFileName'),list=$('pdfUploadFileList'),title=$('pdfUploadTitle'),btn=$('btnSubmitPdfUpload');
+  const count=selectedFiles.length;if(name){name.dataset.selected=count?'true':'false';name.textContent=count?`${count} PDF${count===1?'':'s'} selecionado${count===1?'':'s'}`:'Nenhum arquivo selecionado'}
+  if(list)list.innerHTML=selectedFiles.slice(0,12).map((f,i)=>`<div class="pdf-upload-file-row"><span>${esc(f.name)}</span><small>${bytes(f.size)}</small><button type="button" onclick="event.stopPropagation();PdfStudyLibraryUI.removeUploadFile(${i})" aria-label="Remover ${esc(f.name)}">×</button></div>`).join('')+(count>12?`<div class="pdf-upload-more">+ ${count-12} arquivo(s)</div>`:'');
+  if(title){title.disabled=count!==1;title.placeholder=count===1?'Título do PDF':'Para lotes, o título vem do nome de cada arquivo';if(count!==1)title.value='';else if(!title.value.trim())title.value=selectedFiles[0]?.name?.replace(/\.pdf$/i,'')||''}
+  if(btn)btn.textContent=count>1?`Adicionar ${count} PDFs`:'Adicionar à Biblioteca';
+}
+function updateBulkToolbar(){const bar=$('pdfBulkToolbar'),count=$('pdfBulkSelectedCount'),toggle=$('btnPdfSelectionMode');if(bar)bar.hidden=!selectionMode;if(count)count.textContent=String(selectedPdfIds.size);if(toggle)toggle.textContent=selectionMode?'Concluir seleção':'Selecionar'}
+function uploadFailureLabel(code){return({INVALID_TYPE:'Formato inválido',EMPTY_FILE:'Arquivo vazio',TOO_LARGE:'Excede o limite',INVALID_PDF:'PDF inválido/corrompido',NETWORK_ERROR:'Falha de conexão',STORAGE_ERROR:'Erro no Storage',DATABASE_ERROR:'Erro de registro',PROGRESS_ERROR:'Erro de progresso',LINK_ERROR:'Erro de vínculo',UNKNOWN_ERROR:'Erro inesperado'})[code]||'Erro';}
+function renderUploadResult(result){
+  const panel=$('pdfUploadResultPanel'),summary=$('pdfUploadResultSummary'),list=$('pdfUploadResultList'),retry=$('btnRetryFailedPdfs'),remove=$('btnRemoveFailedPdfs');if(!panel)return;
+  const ok=result?.successful?.length||0,failed=result?.failed||[];lastUploadFailures=failed;
+  panel.hidden=false;panel.dataset.kind=failed.length?'warn':'ok';
+  if(summary)summary.textContent=failed.length?`${ok} enviado(s) · ${failed.length} falharam. Os enviados foram preservados.`:`${ok} PDF(s) enviados com sucesso.`;
+  if(list)list.innerHTML=[...(result?.successful||[]).map(d=>`<div class="pdf-upload-result-row ok"><span>✓</span><div><strong>${esc(d.original_file_name||d.title||'PDF')}</strong><small>Enviado com sucesso</small></div></div>`),...failed.map(item=>`<div class="pdf-upload-result-row error"><span>×</span><div><strong>${esc(item.file?.name||'PDF')}</strong><small>${esc(uploadFailureLabel(item.code))}: ${esc(item.message||item.error?.message||'Falha no upload.')}</small>${item.technicalMessage?`<details><summary>Detalhes técnicos</summary><code>${esc(item.code||'UNKNOWN_ERROR')} · ${esc(item.stage||'unknown')} · ${esc(item.technicalMessage)}</code></details>`:''}</div></div>`)].join('');
+  if(retry)retry.hidden=!failed.length;if(remove)remove.hidden=!failed.length;
+}
+function resetUploadResult(){lastUploadFailures=[];lastUploadContext=null;const panel=$('pdfUploadResultPanel');if(panel){panel.hidden=true;panel.dataset.kind='';}const list=$('pdfUploadResultList');if(list)list.innerHTML='';}
+function retryFailedUploads(){if(!lastUploadFailures.length)return;selectedFiles=lastUploadFailures.map(x=>x.file).filter(Boolean);renderSelectedFiles();resetUploadResult();submitUpload(true)}
+function removeFailedUploads(){selectedFiles=selectedFiles.filter(f=>!lastUploadFailures.some(x=>x.file===f));lastUploadFailures=[];renderSelectedFiles();resetUploadResult()}
+async function copyUploadReport(){
+  if(!lastUploadFailures.length)return alert('Não há falhas para copiar.');
+  const lines=['Relatório de falhas no upload de PDFs','',...lastUploadFailures.map((x,i)=>`${i+1}. ${x.file?.name||'PDF'}\nCódigo: ${x.code||'UNKNOWN_ERROR'}\nEtapa: ${x.stage||'unknown'}\nMotivo: ${x.message||x.error?.message||'Falha'}${x.technicalMessage?`\nDetalhe técnico: ${x.technicalMessage}`:''}`)];const report=lines.join('\n\n');
+  try{await navigator.clipboard.writeText(report);status('Relatório de falhas copiado.','ok')}catch(_){const ta=document.createElement('textarea');ta.value=report;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();status('Relatório de falhas copiado.','ok')}
+}
+
 
 async function ensureWorkspace(){
   // Single-flight: evita duas inicializações simultâneas tentando criar “Biblioteca Geral”.
@@ -79,7 +106,7 @@ function render(){
     const wa=l?ws(l.workspace_id):'Biblioteca Global';
     const secondary=state.scope==='contest'&&l?`<button class="btn btn-secondary btn-sm" onclick="PdfStudyLibraryUI.unlinkDocument('${esc(d.id)}')">Desvincular</button>`:`<button class="btn btn-secondary btn-sm" onclick="PdfStudyLibraryUI.openLinkModal('${esc(d.id)}')">Vincular</button>`;
     const del=state.scope==='global'?`<button class="btn btn-danger btn-sm" onclick="PdfStudyLibraryUI.deleteDocument('${esc(d.id)}')">Excluir da Biblioteca</button>`:'';
-    return `<article class="pdf-library-card"><div class="pdf-card-top"><span class="pdf-file-badge">PDF</span><button class="pdf-favorite-btn ${d.is_favorite?'active':''}" onclick="PdfStudyLibraryUI.toggleFavorite('${esc(d.id)}')">★</button></div><h4>${esc(d.title)}</h4><p class="pdf-card-context">${context}</p><p class="pdf-card-workspace">${esc(wa)}</p><div class="pdf-progress-line"><span style="width:${Math.min(100,Math.max(0,p))}%"></span></div><div class="pdf-card-meta"><span>${p.toFixed(0)}% lido · pág. ${pg}</span><span>${bytes(d.file_size)}</span></div><div class="pdf-card-actions"><button class="btn btn-primary btn-sm" onclick="PdfStudyLibraryUI.openDocument('${esc(d.id)}')">Visualizar PDF</button>${secondary}${del}</div></article>`;
+    return `<article class="pdf-library-card ${selectedPdfIds.has(d.id)?'selected':''}"><div class="pdf-card-top">${selectionMode?`<label class="pdf-card-select"><input type="checkbox" ${selectedPdfIds.has(d.id)?'checked':''} onchange="PdfStudyLibraryUI.toggleDocumentSelection('${esc(d.id)}',this.checked)"><span>Selecionar</span></label>`:'<span class="pdf-file-badge">PDF</span>'}<button class="pdf-favorite-btn ${d.is_favorite?'active':''}" onclick="PdfStudyLibraryUI.toggleFavorite('${esc(d.id)}')">★</button></div><h4>${esc(d.title)}</h4><p class="pdf-card-context">${context}</p><p class="pdf-card-workspace">${esc(wa)}</p><div class="pdf-progress-line"><span style="width:${Math.min(100,Math.max(0,p))}%"></span></div><div class="pdf-card-meta"><span>${p.toFixed(0)}% lido · pág. ${pg}</span><span>${bytes(d.file_size)}</span></div><div class="pdf-card-actions"><button class="btn btn-primary btn-sm" onclick="PdfStudyLibraryUI.openDocument('${esc(d.id)}')">Visualizar PDF</button>${secondary}${del}</div></article>`;
   }).join('');
 }
 
@@ -138,48 +165,39 @@ async function openUploadModal(){
   if(!materias().length)return alert('O concurso atual ainda não possui matérias no edital. Cadastre o edital para criar o primeiro vínculo do PDF.');
   try{
     await ensureWorkspace();
-    selectedFile=null;
+    selectedFiles=[];resetUploadResult();
     $('pdfUploadFile').value='';$('pdfUploadTitle').value='';
-    const fileName=$('pdfUploadFileName');fileName.textContent='Nenhum arquivo selecionado';fileName.dataset.selected='false';
+    renderSelectedFiles();
     $('pdfUploadProgress').style.width='0%';$('pdfUploadProgressText').textContent='';
     renderWs();renderMat();
     $('modalPdfUpload').style.display='flex';
   }catch(e){handle(e)}
 }
-function closeUploadModal(){$('modalPdfUpload').style.display='none';selectedFile=null;$('pdfDropZone')?.classList.remove('drag-over')}
+function closeUploadModal(){$('modalPdfUpload').style.display='none';selectedFiles=[];resetUploadResult();$('pdfDropZone')?.classList.remove('drag-over')}
 function chooseUploadFile(){$('pdfUploadFile')?.click()}
 function onDropZoneKeydown(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseUploadFile()}}
-function setFile(f){
-  const v=global.PdfStudyCore.validatePdfFile(f);if(!v.ok){alert(v.error);return}
-  selectedFile=f;
-  const el=$('pdfUploadFileName');el.textContent=`✓ ${f.name} · ${bytes(f.size)}`;el.dataset.selected='true';
-  if(!$('pdfUploadTitle').value.trim())$('pdfUploadTitle').value=f.name.replace(/\.pdf$/i,'');
+function addFiles(files){
+  const incoming=[...(files||[])];if(!incoming.length)return;resetUploadResult();
+  const map=new Map(selectedFiles.map(f=>[`${f.name}|${f.size}|${f.lastModified||0}`,f]));
+  for(const f of incoming)map.set(`${f.name}|${f.size}|${f.lastModified||0}`,f);
+  selectedFiles=[...map.values()];renderSelectedFiles();
 }
-function onUploadFileChange(i){setFile(i?.files?.[0])}
+function removeUploadFile(index){selectedFiles.splice(Number(index),1);renderSelectedFiles()}
+function onUploadFileChange(i){addFiles(i?.files);if(i)i.value=''}
 function onUploadMateriaChange(){renderAss('upload')}
-async function submitUpload(){
-  if(!selectedFile)return alert('Selecione um arquivo PDF antes de continuar.');
-  const workspaceId=$('pdfUploadWorkspace').value;
-  const materia=$('pdfUploadMateria').value;
-  const assunto=$('pdfUploadAssunto').value;
-  if(!workspaceId)return alert('Selecione um Workspace.');
-  if(!materia)return alert('Selecione a matéria do edital.');
-  if(!assunto)return alert('Selecione o assunto do edital.');
-  const btn=$('btnSubmitPdfUpload');
+async function submitUpload(isRetry=false){
+  if(!selectedFiles.length)return alert('Selecione pelo menos um arquivo PDF antes de continuar.');
+  const workspaceId=$('pdfUploadWorkspace').value,materia=$('pdfUploadMateria').value,assunto=$('pdfUploadAssunto').value;
+  if(!workspaceId)return alert('Selecione um Workspace.');if(!materia)return alert('Selecione a matéria do edital.');if(!assunto)return alert('Selecione o assunto do edital.');
+  const btn=$('btnSubmitPdfUpload'),files=[...selectedFiles];lastUploadContext={workspaceId,materia,assunto,concurso:contest()};if(!isRetry)resetUploadResult();
   try{
-    if(btn)btn.disabled=true;
-    const uploaded=await global.PdfStudyUpload.upload({file:selectedFile,title:$('pdfUploadTitle').value,workspaceId,concurso:contest(),materia,assunto,onProgress:i=>{
-      $('pdfUploadProgress').style.width=`${i.percent||0}%`;
-      const labels={uploading:'Enviando PDF…',registering:'Registrando documento…',linking:'Criando vínculo de estudo…',done:'Concluído.'};
-      $('pdfUploadProgressText').textContent=labels[i.stage]||'Processando…';
-    }});
-    closeUploadModal();
-    // Exibe o PDF imediatamente. A releitura remota passa a ser uma sincronização de confirmação,
-    // não uma condição para o card aparecer na tela.
-    if(uploaded?.id){state.docs=[uploaded,...state.docs.filter(d=>d.id!==uploaded.id)];render();status('PDF salvo. Sincronizando a Biblioteca…','ok');}
-    try{await load();status('PDF salvo na Biblioteca Global e vinculado ao concurso atual.','ok')}
-    catch(syncError){console.warn('[PDF Library] upload concluído; sincronização de tela falhou:',syncError);status('PDF salvo on-line. A atualização da lista será tentada novamente quando a conexão estabilizar.','warn')}
-  }catch(e){handle(e)}finally{if(btn)btn.disabled=false}
+    if(btn)btn.disabled=true;$('pdfUploadProgress').style.width='0%';$('pdfUploadProgressText').textContent=`Preparando ${files.length} PDF(s)…`;
+    const result=await global.PdfStudyUpload.uploadMany({files,workspaceId,concurso:contest(),materia,assunto,concurrency:uploadConcurrency(),onProgress:p=>{$('pdfUploadProgress').style.width=`${p.percent||0}%`;$('pdfUploadProgressText').textContent=`${p.completed}/${p.total} concluídos · ${p.successful} enviados${p.failed?` · ${p.failed} falharam`:''}`},onItemProgress:i=>{if(i.document){state.docs=[i.document,...state.docs.filter(d=>d.id!==i.document.id)];render()}}});
+    for(const doc of result.successful||[])state.docs=[doc,...state.docs.filter(d=>d.id!==doc.id)];render();renderUploadResult(result);
+    try{await load()}catch(syncError){console.warn('[PDF Library] lote salvo; sincronização de tela falhou:',syncError)}
+    if(result.failed?.length){selectedFiles=result.failed.map(x=>x.file).filter(Boolean);renderSelectedFiles();status(`${result.successful.length} PDF(s) enviados; ${result.failed.length} falharam. Veja o diagnóstico por arquivo e tente novamente somente as falhas.`,'warn')}
+    else{status(`${result.successful.length} PDF(s) adicionados à Biblioteca Global.`,'ok');setTimeout(()=>closeUploadModal(),500)}
+  }catch(e){const classified=global.PdfStudyUpload?.classifyError?.(e,{file:files[0],stage:e?.stage||'unknown'})||e;const result={successful:[],failed:[{file:files[0],error:classified,code:classified.code,stage:classified.stage,message:classified.userMessage||classified.message,technicalMessage:classified.technicalMessage}],total:files.length};renderUploadResult(result);status(classified.userMessage||classified.message||'Falha no upload.','error')}finally{if(btn)btn.disabled=false}
 }
 
 function openLinkModal(id){if(!materias().length)return alert('O concurso atual não possui matérias no edital.');linkPdfId=id;const d=state.docs.find(x=>x.id===id);$('pdfLinkDocumentTitle').textContent=d?.title||'';renderWs();renderMat();$('modalPdfLink').style.display='flex'}
@@ -193,7 +211,17 @@ async function openDocument(id){try{const d=state.docs.find(x=>x.id===id);if(!d)
 function closeViewerNoticeModal(){const m=$('modalPdfViewerNotice');if(m)m.style.display='none';pendingOpenDocumentId=null}
 async function confirmOpenTemporaryView(){return openDocument(pendingOpenDocumentId)}
 async function refreshLibrary(){state.initializedFor='';await initialize(true)}
-function handleDrop(e){e.preventDefault();$('pdfDropZone')?.classList.remove('drag-over');setFile(e.dataTransfer?.files?.[0])}
+function toggleSelectionMode(){selectionMode=!selectionMode;if(!selectionMode)selectedPdfIds.clear();updateBulkToolbar();render()}
+function toggleDocumentSelection(id,checked){if(checked)selectedPdfIds.add(id);else selectedPdfIds.delete(id);updateBulkToolbar();const card=document.querySelector(`.pdf-library-card input[type="checkbox"][onchange*="${id}"]`)?.closest('.pdf-library-card');card?.classList.toggle('selected',!!checked)}
+function selectAllVisible(){state.docs.forEach(d=>selectedPdfIds.add(d.id));updateBulkToolbar();render()}
+function clearSelection(){selectedPdfIds.clear();updateBulkToolbar();render()}
+async function deleteSelected(){
+  const docs=state.docs.filter(d=>selectedPdfIds.has(d.id));if(!docs.length)return alert('Selecione pelo menos um PDF.');
+  if(!confirm(`Excluir permanentemente ${docs.length} PDF(s) da Biblioteca Global?\n\nOs arquivos, vínculos, progresso e marcações associados serão removidos. Esta ação não pode ser desfeita.`))return;
+  const btn=$('btnDeleteSelectedPdfs');try{if(btn)btn.disabled=true;status(`Excluindo ${docs.length} PDF(s)…`,'warn');const result=await global.PdfStudyLibrary.removeMany(docs,{onProgress:p=>status(`Excluindo PDFs… ${p.deleted}/${p.total}`,'warn')});selectedPdfIds.clear();state.docs=state.docs.filter(d=>!docs.some(x=>x.id===d.id));updateBulkToolbar();render();await load().catch(()=>{});status(`${result.deleted} PDF(s) excluídos da Biblioteca Global.`,'ok')}catch(e){handle(e)}finally{if(btn)btn.disabled=false}
+}
+
+function handleDrop(e){e.preventDefault();$('pdfDropZone')?.classList.remove('drag-over');addFiles(e.dataTransfer?.files)}
 function handleDragOver(e){e.preventDefault();$('pdfDropZone')?.classList.add('drag-over')}
 function handleDragLeave(){$('pdfDropZone')?.classList.remove('drag-over')}
 function handle(e){
@@ -206,5 +234,5 @@ function handle(e){
   status(e?.message||'Erro.','error');alert(e?.message||'Erro.');
 }
 
-global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,onUploadMateriaChange,submitUpload,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
+global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,removeUploadFile,onUploadMateriaChange,submitUpload,retryFailedUploads,removeFailedUploads,copyUploadReport,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,toggleSelectionMode,toggleDocumentSelection,selectAllVisible,clearSelection,deleteSelected,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
 })(window);
