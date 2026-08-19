@@ -16,8 +16,9 @@ test('backup Supabase preserva banco e está preparado para Storage privado', ()
 
 test('baseline não inventa schema remoto e possui capturador verificável', () => {
   const contract = JSON.parse(read('supabase/baseline/runtime-contract.json'));
-  assert.deepEqual(contract.direct_public_tables, ['edital','flashcards','user_settings']);
+  assert.deepEqual(contract.direct_public_tables, ['edital','flashcards','user_settings','study_workspaces','pdf_documents','pdf_progress']);
   assert.ok(contract.known_rpc.includes('delete_my_study_data'));
+  assert.deepEqual(contract.private_storage_buckets, ['study-pdfs']);
   const capture = read('scripts/capture-supabase-baseline.sh');
   assert.match(capture, /SUPABASE_DB_URL/);
   assert.match(capture, /supabase db dump/);
