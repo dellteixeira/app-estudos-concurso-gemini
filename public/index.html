@@ -89,23 +89,22 @@
                 <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
                 <span class="app-version-badge" title="Versão em execução">V—</span>
             </div>
+            <div id="syncStatusPill" class="sync-status-pill header-sync-status" role="status" aria-live="polite" title="Estado da sincronização">
+                <span class="sync-dot" aria-hidden="true"></span>
+                <span id="syncStatusText">Verificando…</span>
+                <span id="syncStatusLast" class="sync-last"></span>
+            </div>
             <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
             
             <div class="header-control-stack">
                 <div class="concurso-selector-bar">
-                    <label><strong>Concurso:</strong></label>
-                    <select id="concursoSelect" onchange="changeConcurso(this.value)"></select>
+                    <select id="concursoSelect" onchange="changeConcurso(this.value)" aria-label="Selecionar concurso"></select>
                     <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
                     <button id="btnRenomearConcurso" class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
                     <button id="btnExcluirConcurso" class="btn btn-danger btn-sm" onclick="removerConcursoAtual(this)">Excluir</button>
                     
                     <div id="countdownBadge" class="countdown-badge" onclick="editarDataProva()" title="Clique para alterar a data da prova">
                         Sem data de prova
-                    </div>
-                    <div id="syncStatusPill" class="sync-status-pill" role="status" aria-live="polite" title="Estado da sincronização">
-                        <span class="sync-dot" aria-hidden="true"></span>
-                        <span id="syncStatusText">Verificando…</span>
-                        <span id="syncStatusLast" class="sync-last"></span>
                     </div>
                     <div class="header-utility-cluster" aria-label="Conta, aparência e pesquisa">
                         <div class="header-account-actions">
