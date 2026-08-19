@@ -531,38 +531,58 @@
                 </div>
             </div>
 
-            <div id="pdfDropZone" class="pdf-drop-zone" role="button" tabindex="0" aria-label="Selecionar arquivo PDF" onclick="PdfStudyLibraryUI.chooseUploadFile()" onkeydown="PdfStudyLibraryUI.onDropZoneKeydown(event)" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
-                <div class="pdf-drop-icon" aria-hidden="true">PDF</div>
-                <strong>Arraste seu PDF aqui</strong>
-                <span class="pdf-drop-subtitle">ou escolha um arquivo do computador ou celular</span>
-                <button class="btn btn-primary pdf-select-file-btn" type="button" onclick="event.stopPropagation(); PdfStudyLibraryUI.chooseUploadFile()">Selecionar arquivo PDF</button>
-                <div class="pdf-drop-limit">Somente PDF · máximo 100 MB</div>
-                <div class="pdf-upload-file-name" id="pdfUploadFileName" data-selected="false">Nenhum arquivo selecionado</div>
-                <input id="pdfUploadFile" type="file" accept="application/pdf,.pdf" hidden onchange="PdfStudyLibraryUI.onUploadFileChange(this)">
-            </div>
-
-            <div class="form-group">
-                <label for="pdfUploadTitle">Título do material</label>
-                <input id="pdfUploadTitle" type="text" maxlength="240" placeholder="Título do PDF" autocomplete="off">
-            </div>
-
-            <div class="pdf-upload-grid">
-                <div class="form-group pdf-workspace-field">
-                    <label for="pdfUploadWorkspace">Workspace</label>
-                    <div class="pdf-workspace-select-row">
-                        <select id="pdfUploadWorkspace" aria-describedby="pdfUploadWorkspaceHelp"></select>
-                        <button class="btn btn-secondary pdf-new-workspace-btn" type="button" onclick="PdfStudyLibraryUI.openWorkspaceModal('upload')">+ Novo</button>
+            <div class="pdf-upload-layout">
+                <section class="pdf-upload-stage">
+                    <div id="pdfDropZone" class="pdf-drop-zone" role="button" tabindex="0" aria-label="Selecionar arquivo PDF" onclick="PdfStudyLibraryUI.chooseUploadFile()" onkeydown="PdfStudyLibraryUI.onDropZoneKeydown(event)" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
+                        <div class="pdf-drop-icon" aria-hidden="true">PDF</div>
+                        <strong>Arraste seu PDF aqui</strong>
+                        <span class="pdf-drop-subtitle">ou escolha um arquivo do computador ou celular</span>
+                        <button class="btn btn-primary pdf-select-file-btn" type="button" onclick="event.stopPropagation(); PdfStudyLibraryUI.chooseUploadFile()">Selecionar arquivo PDF</button>
+                        <div class="pdf-drop-limit">Somente PDF · máximo 100 MB</div>
+                        <div class="pdf-upload-file-name" id="pdfUploadFileName" data-selected="false">Nenhum arquivo selecionado</div>
+                        <input id="pdfUploadFile" type="file" accept="application/pdf,.pdf" hidden onchange="PdfStudyLibraryUI.onUploadFileChange(this)">
                     </div>
-                    <small id="pdfUploadWorkspaceHelp" class="pdf-field-help">Usado para organizar o material. Se não existir nenhum, “Biblioteca Geral” será criada automaticamente.</small>
-                </div>
-                <div class="form-group">
-                    <label for="pdfUploadMateria">Matéria do edital</label>
-                    <select id="pdfUploadMateria" onchange="PdfStudyLibraryUI.onUploadMateriaChange()"><option value="">Selecione a matéria</option></select>
-                </div>
-                <div class="form-group">
-                    <label for="pdfUploadAssunto">Assunto do edital</label>
-                    <select id="pdfUploadAssunto"><option value="">Selecione o assunto</option></select>
-                </div>
+                    <div class="pdf-upload-stage-hint">
+                        <div class="pdf-upload-stage-pill">Biblioteca Global</div>
+                        <p>O arquivo físico será salvo uma única vez e poderá ser reutilizado em vários concursos, matérias e assuntos sem duplicação.</p>
+                    </div>
+                </section>
+
+                <section class="pdf-upload-form-panel">
+                    <div class="form-group">
+                        <label for="pdfUploadTitle">Título do material</label>
+                        <input id="pdfUploadTitle" type="text" maxlength="240" placeholder="Título do PDF" autocomplete="off">
+                    </div>
+
+                    <div class="pdf-upload-grid">
+                        <div class="form-group pdf-workspace-field">
+                            <label for="pdfUploadWorkspace">Workspace</label>
+                            <div class="pdf-workspace-select-row">
+                                <select id="pdfUploadWorkspace" aria-describedby="pdfUploadWorkspaceHelp"></select>
+                                <button class="btn btn-secondary pdf-new-workspace-btn" type="button" onclick="PdfStudyLibraryUI.openWorkspaceModal('upload')">+ Novo</button>
+                            </div>
+                            <small id="pdfUploadWorkspaceHelp" class="pdf-field-help">Organiza seu acervo. Se ainda não houver nenhum, “Biblioteca Geral” será criada automaticamente.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="pdfUploadMateria">Matéria do edital</label>
+                            <select id="pdfUploadMateria" onchange="PdfStudyLibraryUI.onUploadMateriaChange()"><option value="">Selecione a matéria</option></select>
+                        </div>
+                        <div class="form-group pdf-upload-assunto-field">
+                            <label for="pdfUploadAssunto">Assunto do edital</label>
+                            <select id="pdfUploadAssunto"><option value="">Selecione o assunto</option></select>
+                        </div>
+                    </div>
+
+                    <div class="pdf-upload-summary-card">
+                        <h4>Como este PDF será usado</h4>
+                        <ul>
+                            <li>o documento entra na <strong>Biblioteca Global</strong>;</li>
+                            <li>o primeiro vínculo é criado com o <strong>concurso atual</strong>;</li>
+                            <li>matéria e assunto ficam vinculados ao <strong>edital</strong>;</li>
+                            <li>o mesmo PDF poderá ser reutilizado depois em outros concursos.</li>
+                        </ul>
+                    </div>
+                </section>
             </div>
 
             <div class="pdf-upload-progress-track" aria-hidden="true"><div class="pdf-upload-progress-bar" id="pdfUploadProgress"></div></div>
@@ -1392,6 +1412,39 @@
     </div>
 
     <script src="./js/study-domain.js" defer></script>
+
+    <!-- MODAL AVISO DE VISUALIZAÇÃO TEMPORÁRIA -->
+    <div class="modal-overlay" id="modalPdfViewerNotice">
+        <div class="modal pdf-reader-notice-modal">
+            <div class="pdf-modal-heading">
+                <div>
+                    <h3>Atenção: visualização temporária</h3>
+                    <p id="pdfViewerNoticeTitle" class="pdf-reader-notice-title"></p>
+                    <p>O PDF ainda será aberto no visualizador do navegador. Nesse modo, grifos, sublinhados, comentários e edições feitas no visualizador padrão ficam salvos localmente no seu dispositivo ou navegador e <strong>não são sincronizados on-line</strong>.</p>
+                </div>
+            </div>
+            <div class="pdf-reader-notice-card">
+                <h4>O que já está funcionando</h4>
+                <ul>
+                    <li>upload privado na Biblioteca Global;</li>
+                    <li>vínculo do PDF com concurso, matéria e assunto;</li>
+                    <li>progresso básico do documento.</li>
+                </ul>
+                <h4>O que será necessário para marcações on-line</h4>
+                <ul>
+                    <li>Leitor PDF interno do app;</li>
+                    <li>tabelas de anotações, grifos, sublinhados e favoritos de página;</li>
+                    <li>sincronização das anotações entre dispositivos;</li>
+                    <li>exportação das marcações para notas/flashcards.</li>
+                </ul>
+            </div>
+            <div class="modal-actions pdf-modal-actions">
+                <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeViewerNoticeModal()">Cancelar</button>
+                <button class="btn btn-primary" id="btnOpenPdfSignedUrl" type="button" onclick="PdfStudyLibraryUI.confirmOpenTemporaryView()">Abrir visualização temporária</button>
+            </div>
+        </div>
+    </div>
+
     <script src="./js/app-core.js" defer></script>
     <script src="./js/pdf/pdf-core.js" defer></script>
     <script src="./js/pdf/pdf-workspaces.js" defer></script>
