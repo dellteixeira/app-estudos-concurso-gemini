@@ -3290,6 +3290,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return true;
         }
         window.addPdfStudyNote = addPdfStudyNote;
+        function getPdfStudyNotesForCurrentContest() {
+            const metadata = getConcursosMetadata();
+            const notes = metadata?.[currentConcurso]?.structuredNotes;
+            return Array.isArray(notes) ? notes.map(note => ({ ...note })) : [];
+        }
+        window.getPdfStudyNotesForCurrentContest = getPdfStudyNotesForCurrentContest;
 
         async function addPdfStudyFlashcard({ materia, assunto, pergunta, resposta, sourcePdfId, sourcePage }) {
             const p = String(pergunta || '').trim(), r = String(resposta || '').trim();
