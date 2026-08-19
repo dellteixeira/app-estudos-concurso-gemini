@@ -74,8 +74,10 @@
     onProgress?.({ stage: 'linking', percent: 80 });
     try {
       const link = await links().create({ pdfId, workspaceId, concurso: cleanConcurso, materia: cleanMateria, assunto: cleanAssunto });
+      const result = { ...documentRow, links: [link], activeLink: link, progress: { pdf_id: pdfId, current_page: 1, progress_percentage: 0, reading_seconds: 0 } };
+      try { await global.PdfStudyLibrary?.rememberDocument?.(result); } catch (_) {}
       onProgress?.({ stage: 'done', percent: 100 });
-      return { ...documentRow, links: [link], activeLink: link };
+      return result;
     } catch (linkError) {
       await client.from('pdf_documents').delete().eq('id', pdfId).eq('user_id', user.id).catch(() => null);
       await client.storage.from(core().BUCKET).remove([storagePath]).catch(() => null);
