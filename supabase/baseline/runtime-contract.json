@@ -20,5 +20,10 @@
   "notes": "Contrato derivado do código da base canônica com Biblioteca PDF Global. pdf_documents é o acervo físico independente; pdf_document_links guarda concurso/workspace/matéria/assunto. O schema remoto legado completo continua devendo ser capturado por scripts/capture-supabase-baseline.sh.",
   "private_storage_buckets": [
     "study-pdfs"
+  ],
+  "tables": [
+    "pdf_annotations",
+    "pdf_annotation_versions",
+    "pdf_bookmarks"
   ]
 }
