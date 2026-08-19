@@ -48,3 +48,24 @@
 
 /version.json
   Cache-Control: no-cache, no-store, must-revalidate
+
+/css/pdf-library.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-core.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-workspaces.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-links.js
+  Cache-Control: no-store, no-cache, must-revalidate
+
+/js/pdf/pdf-library.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-upload.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-library-ui.js
+  Cache-Control: no-cache, no-store, must-revalidate
