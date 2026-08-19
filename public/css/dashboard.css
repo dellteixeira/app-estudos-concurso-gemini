@@ -98,6 +98,11 @@ header.modern-header {
     border-color: rgba(83,227,213,.42);
     box-shadow: 0 0 0 3px rgba(83,227,213,.035);
 }
+.header-sync-status {
+    border-color:rgba(83,227,213,.20) !important;
+    background:rgba(7,22,37,.74) !important;
+    box-shadow:none !important;
+}
 .app-version-badge {
     background: rgba(142, 165, 185, .08) !important;
     border: 1px solid #263b50 !important;
@@ -1128,6 +1133,10 @@ body.light-mode .critical-queue-head {
 }
 
 @media (max-width:900px) {
+    .header-sync-status {
+        order:2;
+        margin-left:0;
+    }
     .header-utility-cluster {
         grid-column:1 / -1 !important;
         display:grid !important;
@@ -1499,4 +1508,3 @@ body.light-mode .global-search-modal-results.global-search-results { background:
     }
     .critical-queue-head span { text-align:left !important; }
 }
-
