@@ -111,7 +111,13 @@ for (const route of CORE_ROUTES) {
   if (!worker.includes(`"${route}"`)) fail(`Cloudflare Worker não força no-store em ${route}`);
 }
 if (!errors.some(e => e.includes('APP_SHELL') || e.includes('_headers') || e.includes('Cloudflare Worker'))) ok('novos chunks cobertos por offline/no-store');
+for (const route of ['/css/pdf-reader.css','/js/pdf/pdf-annotations.js','/js/pdf/pdf-reader.js']) {
+  const coreBlock = sw.match(/const isCoreAsset[\s\S]*?\.some\(path => url\.pathname\.endsWith\(path\)\);/)?.[0] || '';
+  if (!coreBlock.includes(`'${route}'`)) fail(`Service Worker não trata Reader como core asset: ${route}`);
+}
+if (!errors.some(e => e.includes('Service Worker não trata Reader'))) ok('Reader coberto por network-first no Service Worker');
 if (!exists('supabase/migrations/20260819030000_create_pdf_reader_annotations.sql')) fail('migration do Reader PDF ausente'); else ok('Reader PDF com anotações/versionamento versionado');
+if (!exists('supabase/migrations/20260819090000_harden_pdf_reader_rls.sql')) fail('hardening RLS do Reader PDF ausente'); else ok('hardening RLS do Reader PDF versionado');
 
 // Sintaxe.
 for (const rel of [...JS_FILES, ...PDF_FOUNDATION_JS_FILES, 'public/pwa-update.js','public/sw.js','src/index.js']) {
@@ -138,7 +144,7 @@ for (const call of requiredDomainCalls) if (!appJs.includes(call)) fail(`produç
 if (!errors.some(e => e.includes('produção não delega'))) ok('regras críticas compartilham StudyDomain com os testes');
 
 // Testes automatizados exigidos.
-const expectedTests = ['minutes','sync','priorities','deletions','metrics','retention','infrastructure','pdf-foundation','pdf-library','pdf-links'].map(n => `tests/${n}.test.cjs`);
+const expectedTests = ['minutes','sync','priorities','deletions','metrics','retention','infrastructure','pdf-foundation','pdf-library','pdf-links','pdf-reader','pdf-context-integrity','pwa-assets'].map(n => `tests/${n}.test.cjs`);
 for (const rel of expectedTests) if (!exists(rel)) fail(`teste automatizado ausente: ${rel}`);
 if (!exists('.github/workflows/quality-check.yml')) fail('workflow automático de qualidade ausente');
 else ok('GitHub Actions de qualidade presente');
