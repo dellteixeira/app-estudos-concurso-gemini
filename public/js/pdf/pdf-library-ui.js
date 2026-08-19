@@ -92,10 +92,20 @@ async function initialize(force=false){
   // A Biblioteca Global é a visão segura/persistente do acervo. O filtro por concurso é opcional.
   if(!$('concursoSelect')?.value||$('concursoSelect')?.value==='—')state.scope='global';
   if($('pdfLibraryScope'))$('pdfLibraryScope').value=state.scope;
-  try{await global.PdfStudyLinks.processPendingContestOperations()}catch(e){console.warn('[PDF Links] pendências não bloquearam a Biblioteca:',e)}
-  try{await ensureWorkspace()}catch(e){console.warn('[PDF Workspaces] falha não bloqueante:',e);state.workspaces=[];renderWs();status('Não foi possível atualizar Workspaces agora; carregando PDFs mesmo assim.','warn')}
   renderMat();
-  try{await load()}catch(e){handle(e)}
+  // Prioriza o first paint da Biblioteca; manutenção contextual roda em paralelo e não bloqueia o acervo.
+  const loadPromise=load().catch(handle);
+  const maintenancePromise=Promise.allSettled([
+    global.PdfStudyLinks.processPendingContestOperations(),
+    ensureWorkspace()
+  ]).then(results=>{
+    const workspaceResult=results[1];
+    if(workspaceResult?.status==='rejected'){
+      console.warn('[PDF Workspaces] falha não bloqueante:',workspaceResult.reason);state.workspaces=[];renderWs();status('Workspaces indisponíveis temporariamente; PDFs continuam acessíveis.','warn');
+    }else renderWs();
+  });
+  await loadPromise;
+  maintenancePromise.catch(()=>{});
 }
 function onScopeChange(v){state.scope=v==='global'?'global':'contest';state.activeMateria='';state.activeAssunto='';$('pdfLibraryScope').value=state.scope;load().catch(handle)}
 function onWorkspaceFilterChange(v){state.activeWorkspace=v||'';load().catch(handle)}
