@@ -680,3 +680,40 @@ Próxima entrega prevista:
 - upload validado de PDF para study-pdfs
 - registro em pdf_documents
 - listagem/filtros iniciais
+
+============================================================
+V10.13.0 — FASE 2: WORKSPACE + BIBLIOTECA + UPLOAD DE PDF
+============================================================
+
+Integração visível da Biblioteca privada de estudos.
+
+Fluxo obrigatório:
+  concurso atual -> Workspace -> matéria do edital -> assunto do edital -> PDF
+  -> bucket privado study-pdfs -> pdf_documents -> pdf_progress -> Biblioteca.
+
+Novos módulos:
+- public/css/pdf-library.css
+- public/js/pdf/pdf-library.js
+- public/js/pdf/pdf-upload.js
+- public/js/pdf/pdf-library-ui.js
+
+A Fase 2 adiciona também vínculo explícito de concurso em study_workspaces e
+pdf_documents pela migration 20260818220000_link_pdf_workspace_to_concurso.sql.
+
+Comportamento:
+- ao abrir a Biblioteca pela primeira vez em um concurso, o app cria automaticamente
+  um Workspace “Materiais — <concurso>” se ainda não existir um Workspace naquele concurso;
+- o upload exige PDF válido, Workspace, matéria e assunto do edital atual;
+- o arquivo físico vai para study-pdfs/<user>/<workspace>/<pdf>/original.pdf;
+- os metadados ficam em pdf_documents e o estado inicial em pdf_progress;
+- exclusão remove primeiro o arquivo físico e depois os metadados;
+- “Abrir arquivo” usa URL temporária assinada; o PDF Reader interno avançado entra na Fase 3.
+
+
+V10.14.0 — Biblioteca PDF Global
+- pdf_documents representa somente o arquivo físico privado e permanente.
+- pdf_document_links guarda concurso + workspace + matéria + assunto; o mesmo PDF pode ter vários vínculos.
+- Workspaces são globais e reutilizáveis entre concursos.
+- Excluir concurso remove apenas pdf_document_links daquele concurso; não remove pdf_documents nem Storage.
+- Excluir PDF da Biblioteca Global remove explicitamente o arquivo e, por cascade, progresso/vínculos.
+- Novos arquivos usam study-pdfs/<user_id>/<pdf_id>/original.pdf.
