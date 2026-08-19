@@ -69,3 +69,12 @@
 
 /js/pdf/pdf-library-ui.js
   Cache-Control: no-cache, no-store, must-revalidate
+
+/css/pdf-reader.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-annotations.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-reader.js
+  Cache-Control: no-cache, no-store, must-revalidate
