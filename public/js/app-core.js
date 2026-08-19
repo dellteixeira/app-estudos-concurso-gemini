@@ -5138,6 +5138,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderMonthCalendar();
             loadNotesData();
             loadFlashcardsData();
+            if (document.getElementById('tab-biblioteca')?.classList.contains('active')) {
+                window.PdfStudyLibraryUI?.initialize(true);
+            }
         }
 
         function filterDataByConcurso() {
@@ -5197,6 +5200,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 return;
             }
 
+            try {
+                await window.PdfStudyLinks?.handleConcursoRename?.(antigoNome, nomeFormatado);
+            } catch (error) {
+                console.error('Falha ao manter PDFs vinculados durante a renomeação:', error);
+                await appNotice('Não foi possível atualizar os Workspaces/PDFs vinculados. A renomeação foi cancelada para evitar inconsistência.', { title:'Renomear concurso' });
+                return;
+            }
+
             metadata[nomeFormatado] = metadata[antigoNome] || { dataProva: null, dateSchedule: {} };
             delete metadata[antigoNome];
             await saveConcursosMetadata(metadata);
@@ -5244,6 +5255,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (btn) { btn.disabled = true; btn.textContent = 'Excluindo...'; }
 
             try {
+                await window.PdfStudyLinks?.handleConcursoDelete?.(concursoRemovido);
                 queueConcursoDelete(concursoRemovido);
                 const idsRemovidos = allEditalItems
                     .filter(item => (item.concurso || 'Concurso Geral') === concursoRemovido)
