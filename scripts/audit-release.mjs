@@ -23,18 +23,21 @@ const PDF_FOUNDATION_JS_FILES = [
   'public/js/pdf/pdf-links.js',
   'public/js/pdf/pdf-library.js',
   'public/js/pdf/pdf-upload.js',
+  'public/js/pdf/pdf-annotations.js',
+  'public/js/pdf/pdf-reader.js',
   'public/js/pdf/pdf-library-ui.js'
 ];
 const CSS_FILES = [
   'public/css/base.css',
   'public/css/dashboard.css',
   'public/css/features.css',
-  'public/css/pdf-library.css'
+  'public/css/pdf-library.css',
+  'public/css/pdf-reader.css'
 ];
 const CORE_ROUTES = [
   '/', '/index.html', '/sw.js', '/pwa-update.js', '/version.json',
-  '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css',
-  '/js/study-domain.js', '/js/app-core.js', '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-upload.js', '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
+  '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css', '/css/pdf-reader.css',
+  '/js/study-domain.js', '/js/app-core.js', '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-upload.js', '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
 ];
 
 let versionManifest = {};
@@ -108,6 +111,7 @@ for (const route of CORE_ROUTES) {
   if (!worker.includes(`"${route}"`)) fail(`Cloudflare Worker não força no-store em ${route}`);
 }
 if (!errors.some(e => e.includes('APP_SHELL') || e.includes('_headers') || e.includes('Cloudflare Worker'))) ok('novos chunks cobertos por offline/no-store');
+if (!exists('supabase/migrations/20260819030000_create_pdf_reader_annotations.sql')) fail('migration do Reader PDF ausente'); else ok('Reader PDF com anotações/versionamento versionado');
 
 // Sintaxe.
 for (const rel of [...JS_FILES, ...PDF_FOUNDATION_JS_FILES, 'public/pwa-update.js','public/sw.js','src/index.js']) {
