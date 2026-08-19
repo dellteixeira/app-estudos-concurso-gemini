@@ -10,7 +10,7 @@ test('Biblioteca estabiliza loads concorrentes e concurso usa seletor atual',()=
 test('upload modal tem limites responsivos e sem overflow horizontal',()=>{const c=read('public/css/pdf-library.css');assert.match(c,/max-height:calc\(100dvh - 28px\)/);assert.match(c,/overflow-x:hidden/);assert.match(c,/@media\(max-width:720px\)/);});
 
 
-test('Reader renderiza página antes de bloquear em anotações e bookmarks',()=>{const r=read('public/js/pdf/pdf-reader.js');const renderPos=r.indexOf("await renderPage();setStatus('PDF pronto. Sincronizando marcações…�)");const metadataPos=r.indexOf('const [annotations,bookmarks]=await Promise.all');assert.ok(renderPos>0);assert.ok(metadataPos>renderPos);});
+test('Reader renderiza página antes de bloquear em anotações e bookmarks',()=>{const r=read('public/js/pdf/pdf-reader.js');const renderPos=r.indexOf('await renderPage();setStatus(');const metadataPos=r.indexOf('const [annotations,bookmarks]=await Promise.all');assert.ok(renderPos>0);assert.ok(metadataPos>renderPos);});
 
 
 test('Reader mobile suporta pinch customizado sem zoom da página e ajuste largura/página',()=>{const r=read('public/js/pdf/pdf-reader.js');const c=read('public/css/pdf-reader.css');const h=read('public/index.html');assert.match(r,/beginPinch/);assert.match(r,/movePinch/);assert.match(r,/endPinch/);assert.match(r,/touches\.length===2/);assert.match(r,/fitPage/);assert.match(r,/toggleFit/);assert.match(h,/pdfReaderFitButton/);assert.match(c,/touch-action:pan-x pan-y/);assert.match(c,/overscroll-behavior-x:none/);});
