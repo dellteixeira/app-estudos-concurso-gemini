@@ -33,7 +33,7 @@
 .pdf-modal-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
 .pdf-modal-heading h3 { margin:0 0 6px; }
 .pdf-modal-heading p { margin:0; max-width:720px; color:var(--modern-muted); font-size:.86rem; line-height:1.5; }
-.pdf-upload-modal { height:auto; max-height:92vh; }
+.pdf-upload-modal { height:auto; max-height:92vh; width:min(1120px,96vw); }
 .pdf-workspace-modal { max-width:720px; }
 .pdf-field-optional { color:var(--modern-muted); font-weight:500; }
 .pdf-field-help { display:block; margin-top:4px; color:var(--modern-muted); font-size:.74rem; line-height:1.4; }
@@ -73,7 +73,23 @@
 .pdf-upload-file-name { margin-top:4px; max-width:100%; color:#93c5fd; font-size:.8rem; font-weight:700; overflow-wrap:anywhere; }
 .pdf-upload-file-name[data-selected="true"] { color:#86efac; }
 
-.pdf-upload-grid { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; align-items:start; }
+.pdf-upload-layout { display:grid; grid-template-columns:minmax(340px,1.05fr) minmax(320px,.95fr); gap:18px; align-items:start; }
+.pdf-upload-stage,.pdf-upload-form-panel { border:1px solid var(--modern-border); border-radius:18px; background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015)); padding:18px; }
+.pdf-upload-stage { display:grid; gap:14px; }
+.pdf-upload-stage-hint { border-radius:14px; padding:12px 14px; background:rgba(83,227,213,.06); border:1px solid rgba(83,227,213,.18); color:var(--modern-muted); }
+.pdf-upload-stage-hint p { margin:8px 0 0; line-height:1.55; font-size:.84rem; }
+.pdf-upload-stage-pill { display:inline-flex; align-items:center; padding:5px 10px; border-radius:999px; background:rgba(19,168,255,.12); color:#bdeafe; border:1px solid rgba(19,168,255,.2); font-size:.74rem; font-weight:800; letter-spacing:.02em; }
+.pdf-upload-form-panel { display:grid; gap:16px; }
+.pdf-upload-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+.pdf-upload-assunto-field,.pdf-workspace-field { grid-column:1/-1; }
+.pdf-upload-summary-card { border-radius:16px; padding:14px 16px; background:rgba(15,23,42,.32); border:1px solid var(--modern-border); }
+.pdf-upload-summary-card h4 { margin:0 0 10px; }
+.pdf-upload-summary-card ul { margin:0; padding-left:18px; color:var(--modern-muted); display:grid; gap:7px; line-height:1.5; font-size:.84rem; }
+.pdf-reader-notice-modal { max-width:760px; }
+.pdf-reader-notice-card { border:1px solid var(--modern-border); border-radius:16px; padding:16px; background:rgba(148,163,184,.05); }
+.pdf-reader-notice-card h4 { margin:0 0 8px; }
+.pdf-reader-notice-card h4 + ul { margin-bottom:14px; }
+.pdf-reader-notice-card ul { margin:0; padding-left:18px; color:var(--modern-muted); display:grid; gap:6px; line-height:1.5; }
 .pdf-workspace-select-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:stretch; }
 .pdf-workspace-select-row select { min-width:0; width:100%; }
 .pdf-new-workspace-btn { white-space:nowrap; padding-inline:14px; }
@@ -87,8 +103,9 @@ body.light-mode .pdf-drop-zone { border-color:rgba(13,148,136,.55); }
 @media (max-width:900px) {
   .pdf-library-filters { grid-template-columns:1fr 1fr; }
   .pdf-library-grid { grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); }
+  .pdf-upload-layout { grid-template-columns:1fr; }
   .pdf-upload-grid { grid-template-columns:1fr 1fr; }
-  .pdf-workspace-field { grid-column:1/-1; }
+  .pdf-workspace-field,.pdf-upload-assunto-field { grid-column:1/-1; }
   .mobile-bottom-nav { grid-template-columns:repeat(7,minmax(0,1fr)) !important; }
   .mobile-bottom-nav .mobile-nav-btn { font-size:.58rem !important; padding-inline:1px !important; }
 }
@@ -96,7 +113,7 @@ body.light-mode .pdf-drop-zone { border-color:rgba(13,148,136,.55); }
   .pdf-library-hero,.pdf-library-actions { width:100%; }
   .pdf-library-actions .btn { flex:1; min-width:0; }
   .pdf-library-filters,.pdf-upload-grid { grid-template-columns:1fr; }
-  .pdf-workspace-field { grid-column:auto; }
+  .pdf-workspace-field,.pdf-upload-assunto-field { grid-column:auto; }
   .pdf-library-grid { grid-template-columns:1fr; }
   .pdf-card-actions .btn { flex:1; }
   .pdf-upload-modal,.pdf-workspace-modal { padding:18px; gap:13px; }
