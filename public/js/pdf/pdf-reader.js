@@ -16,7 +16,11 @@ function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 	}
 function scheduleSelectionClear(delay=480){
   clearTimeout(selectionClearTimer);
-  selectionClearTimer=setTimeout(()=>{if(!state.selectionLocked)clearSelection({preserveNative:true})},delay);
+  selectionClearTimer=setTimeout(()=>{
+    const nativeSelection=window.getSelection();
+    if(state.selectionLocked||(nativeSelection&&!nativeSelection.isCollapsed&&nativeSelection.toString().trim()))return;
+    clearSelection({preserveNative:true});
+  },delay);
 }
 function clamp(n,min,max){return Math.min(max,Math.max(min,n))}
 	function normalizeRects(clientRects,box){
@@ -72,7 +76,8 @@ function updateSelection(){
   const g=getSelectedGeometry();
   if(!g){if(state.selected)scheduleSelectionClear();return}
 	  clearTimeout(selectionClearTimer);selectionClearTimer=null;state.selected=g;
-	  renderSelectionVisual(g);
+	  // A seleção nativa permanece responsável pelo feedback visual. A geometria
+	  // normalizada é mantida somente para persistir grifos e anotações.
 	  const bar=$('pdfReaderSelectionBar');if(bar){$('pdfReaderSelectionText').textContent=g.text.length>90?g.text.slice(0,90)+'…':g.text;bar.classList.add('show')}
 	}
 function lockSelectionForAction(){state.selectionLocked=true;clearTimeout(selectionClearTimer);selectionClearTimer=null;setTimeout(()=>{state.selectionLocked=false},900)}
@@ -265,7 +270,8 @@ async function renderPage(){
 	  const ctx=canvas.getContext('2d');const selectionLayer=document.createElement('div');selectionLayer.className='pdf-reader-selection-layer';const markLayer=document.createElement('div');markLayer.className='pdf-reader-mark-layer';const textLayer=document.createElement('div');textLayer.className='pdf-reader-text-layer';pageEl.append(canvas,selectionLayer,markLayer,textLayer);host.appendChild(pageEl);
   await page.render({canvasContext:ctx,viewport,transform:devicePixelRatio!==1?[devicePixelRatio,0,0,devicePixelRatio,0,0]:null}).promise;
   const text=await page.getTextContent();await pdfjsLib.renderTextLayer({textContentSource:text,container:textLayer,viewport,textDivs:[]}).promise;
-  pageEl.addEventListener('mouseup',()=>setTimeout(updateSelection,20));pageEl.addEventListener('pointerup',()=>setTimeout(updateSelection,60));pageEl.addEventListener('touchend',()=>setTimeout(updateSelection,180),{passive:true});
+  const finishSelection=()=>requestAnimationFrame(updateSelection);
+  pageEl.addEventListener('pointerup',finishSelection);pageEl.addEventListener('touchend',finishSelection,{passive:true});
   $('pdfReaderPageInput').value=String(state.page);updateBookmarkButton();await renderAnnotations();renderSideList();saveProgress(false).catch(()=>{})
 }
 async function renderAnnotations(){
