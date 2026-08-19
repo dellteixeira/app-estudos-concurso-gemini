@@ -14,8 +14,7 @@
       workspace_id: workspaceId || null,
     };
     if (!ctx.concurso) throw new Error('Selecione um concurso para o vínculo.');
-    if (!ctx.materia) throw new Error('Selecione uma matéria do edital.');
-    if (!ctx.assunto) throw new Error('Selecione um assunto do edital.');
+    if (ctx.assunto && !ctx.materia) throw new Error('Selecione uma matéria antes de escolher um assunto.');
     return ctx;
   }
 

@@ -67,7 +67,7 @@ function renderWs(preferredId=''){
 function renderMat(){
   const opts=materias().map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
   for(const id of ['pdfMateriaFilter','pdfUploadMateria','pdfLinkMateria']){
-    const e=$(id);if(e)e.innerHTML=`<option value="">${id==='pdfMateriaFilter'?'Todas as matérias':'Selecione a matéria'}</option>`+opts;
+    const e=$(id);if(e)e.innerHTML=`<option value="">${id==='pdfMateriaFilter'?'Todas as matérias':'Sem matéria específica'}</option>`+opts;
   }
   renderAss('filter');renderAss('upload');renderAss('link');
 }
@@ -77,7 +77,12 @@ function renderAss(mode){
   const tid=mode==='filter'?'pdfAssuntoFilter':mode==='upload'?'pdfUploadAssunto':'pdfLinkAssunto';
   const e=$(tid);if(!e)return;
   const arr=assuntos($(mid)?.value||'');
-  e.innerHTML=`<option value="">${mode==='filter'?'Todos os assuntos':'Selecione o assunto'}</option>`+arr.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+  e.innerHTML=`<option value="">${mode==='filter'?'Todos os assuntos':'Sem assunto específico'}</option>`+arr.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+}
+function linkContextLabel(link){
+  if(!link)return'';
+  const parts=[link.materia,link.assunto].filter(Boolean);
+  return parts.length?parts.map(esc).join(' · '):'Somente Workspace';
 }
 
 async function load(){
@@ -102,7 +107,7 @@ function render(){
   }
   c.innerHTML=state.docs.map(d=>{
     const p=Number(d.progress?.progress_percentage||0),pg=Number(d.progress?.current_page||1),l=d.activeLink;
-    const context=l?`${esc(l.materia)} · ${esc(l.assunto)}`:`${d.links.length} vínculo${d.links.length===1?'':'s'} de estudo`;
+    const context=l?linkContextLabel(l):`${d.links.length} vínculo${d.links.length===1?'':'s'} de estudo`;
     const wa=l?ws(l.workspace_id):'Biblioteca Global';
     const secondary=state.scope==='contest'&&l?`<button class="btn btn-secondary btn-sm" onclick="PdfStudyLibraryUI.unlinkDocument('${esc(d.id)}')">Desvincular</button>`:`<button class="btn btn-secondary btn-sm" onclick="PdfStudyLibraryUI.openLinkModal('${esc(d.id)}')">Vincular</button>`;
     const del=state.scope==='global'?`<button class="btn btn-danger btn-sm" onclick="PdfStudyLibraryUI.deleteDocument('${esc(d.id)}')">Excluir da Biblioteca</button>`:'';
@@ -162,7 +167,6 @@ async function createWorkspace(){
 }
 
 async function openUploadModal(){
-  if(!materias().length)return alert('O concurso atual ainda não possui matérias no edital. Cadastre o edital para criar o primeiro vínculo do PDF.');
   try{
     await ensureWorkspace();
     selectedFiles=[];resetUploadResult();
@@ -188,7 +192,7 @@ function onUploadMateriaChange(){renderAss('upload')}
 async function submitUpload(isRetry=false){
   if(!selectedFiles.length)return alert('Selecione pelo menos um arquivo PDF antes de continuar.');
   const workspaceId=$('pdfUploadWorkspace').value,materia=$('pdfUploadMateria').value,assunto=$('pdfUploadAssunto').value;
-  if(!workspaceId)return alert('Selecione um Workspace.');if(!materia)return alert('Selecione a matéria do edital.');if(!assunto)return alert('Selecione o assunto do edital.');
+  if(!workspaceId)return alert('Selecione um Workspace.');if(assunto&&!materia)return alert('Selecione uma matéria antes de escolher um assunto.');
   const btn=$('btnSubmitPdfUpload'),files=[...selectedFiles];lastUploadContext={workspaceId,materia,assunto,concurso:contest()};if(!isRetry)resetUploadResult();
   try{
     if(btn)btn.disabled=true;$('pdfUploadProgress').style.width='0%';$('pdfUploadProgressText').textContent=`Preparando ${files.length} PDF(s)…`;
@@ -200,10 +204,10 @@ async function submitUpload(isRetry=false){
   }catch(e){const classified=global.PdfStudyUpload?.classifyError?.(e,{file:files[0],stage:e?.stage||'unknown'})||e;const result={successful:[],failed:[{file:files[0],error:classified,code:classified.code,stage:classified.stage,message:classified.userMessage||classified.message,technicalMessage:classified.technicalMessage}],total:files.length};renderUploadResult(result);status(classified.userMessage||classified.message||'Falha no upload.','error')}finally{if(btn)btn.disabled=false}
 }
 
-function openLinkModal(id){if(!materias().length)return alert('O concurso atual não possui matérias no edital.');linkPdfId=id;const d=state.docs.find(x=>x.id===id);$('pdfLinkDocumentTitle').textContent=d?.title||'';renderWs();renderMat();$('modalPdfLink').style.display='flex'}
+function openLinkModal(id){linkPdfId=id;const d=state.docs.find(x=>x.id===id);$('pdfLinkDocumentTitle').textContent=d?.title||'';renderWs();renderMat();$('modalPdfLink').style.display='flex'}
 function closeLinkModal(){$('modalPdfLink').style.display='none';linkPdfId=null}
 function onLinkMateriaChange(){renderAss('link')}
-async function submitLink(){try{await global.PdfStudyLinks.create({pdfId:linkPdfId,workspaceId:$('pdfLinkWorkspace').value,concurso:contest(),materia:$('pdfLinkMateria').value,assunto:$('pdfLinkAssunto').value});closeLinkModal();await load();status('Novo vínculo criado sem duplicar o PDF.','ok')}catch(e){handle(e)}}
+async function submitLink(){try{const workspaceId=$('pdfLinkWorkspace').value,materia=$('pdfLinkMateria').value,assunto=$('pdfLinkAssunto').value;if(!workspaceId)return alert('Selecione um Workspace.');if(assunto&&!materia)return alert('Selecione uma matéria antes de escolher um assunto.');await global.PdfStudyLinks.create({pdfId:linkPdfId,workspaceId,concurso:contest(),materia,assunto});closeLinkModal();await load();status('Novo vínculo criado sem duplicar o PDF.','ok')}catch(e){handle(e)}}
 async function unlinkDocument(id){if(!confirm('Remover este PDF apenas do concurso atual? O arquivo continuará na Biblioteca Global.'))return;try{await global.PdfStudyLinks.removeForPdfInConcurso(id,contest());await load();status('Vínculo removido. O PDF foi preservado na Biblioteca Global.','ok')}catch(e){handle(e)}}
 async function toggleFavorite(id){const d=state.docs.find(x=>x.id===id);try{await global.PdfStudyLibrary.setFavorite(id,!d?.is_favorite);await load()}catch(e){handle(e)}}
 async function deleteDocument(id){const d=state.docs.find(x=>x.id===id);if(!d||!confirm(`Excluir “${d.title}” da Biblioteca Global? Isso remove o arquivo e todos os vínculos.`))return;try{await global.PdfStudyLibrary.remove(d);await load()}catch(e){handle(e)}}
