@@ -19,17 +19,22 @@ const JS_FILES = [
 ];
 const PDF_FOUNDATION_JS_FILES = [
   'public/js/pdf/pdf-core.js',
-  'public/js/pdf/pdf-workspaces.js'
+  'public/js/pdf/pdf-workspaces.js',
+  'public/js/pdf/pdf-links.js',
+  'public/js/pdf/pdf-library.js',
+  'public/js/pdf/pdf-upload.js',
+  'public/js/pdf/pdf-library-ui.js'
 ];
 const CSS_FILES = [
   'public/css/base.css',
   'public/css/dashboard.css',
-  'public/css/features.css'
+  'public/css/features.css',
+  'public/css/pdf-library.css'
 ];
 const CORE_ROUTES = [
   '/', '/index.html', '/sw.js', '/pwa-update.js', '/version.json',
-  '/css/base.css', '/css/dashboard.css', '/css/features.css',
-  '/js/study-domain.js', '/js/app-core.js', '/js/app-ai.js', '/js/app-ui.js', '/js/app-pwa.js'
+  '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css',
+  '/js/study-domain.js', '/js/app-core.js', '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-upload.js', '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
 ];
 
 let versionManifest = {};
@@ -129,7 +134,7 @@ for (const call of requiredDomainCalls) if (!appJs.includes(call)) fail(`produç
 if (!errors.some(e => e.includes('produção não delega'))) ok('regras críticas compartilham StudyDomain com os testes');
 
 // Testes automatizados exigidos.
-const expectedTests = ['minutes','sync','priorities','deletions','metrics','retention','infrastructure','pdf-foundation'].map(n => `tests/${n}.test.cjs`);
+const expectedTests = ['minutes','sync','priorities','deletions','metrics','retention','infrastructure','pdf-foundation','pdf-library','pdf-links'].map(n => `tests/${n}.test.cjs`);
 for (const rel of expectedTests) if (!exists(rel)) fail(`teste automatizado ausente: ${rel}`);
 if (!exists('.github/workflows/quality-check.yml')) fail('workflow automático de qualidade ausente');
 else ok('GitHub Actions de qualidade presente');
@@ -139,13 +144,13 @@ else {
   if (!/backup-supabase-storage\.mjs/.test(backupWorkflow) || !/manifest\.sha256/.test(backupWorkflow)) fail('backup Supabase sem blindagem de Storage/integridade');
   else ok('backup Supabase preparado para banco + Storage + integridade');
 }
-for (const rel of ['supabase/baseline/runtime-contract.json','supabase/baseline/README.txt','scripts/capture-supabase-baseline.sh','scripts/backup-supabase-storage.mjs','supabase/migrations/20260818_harden_delete_my_study_data.sql','supabase/migrations/20260818210000_create_pdf_foundation.sql','supabase/migrations/20260818210100_extend_delete_my_study_data_for_pdf.sql']) {
+for (const rel of ['supabase/baseline/runtime-contract.json','supabase/baseline/README.txt','scripts/capture-supabase-baseline.sh','scripts/backup-supabase-storage.mjs','supabase/migrations/20260818_harden_delete_my_study_data.sql','supabase/migrations/20260818210000_create_pdf_foundation.sql','supabase/migrations/20260818210100_extend_delete_my_study_data_for_pdf.sql','supabase/migrations/20260818220000_link_pdf_workspace_to_concurso.sql','supabase/migrations/20260818230000_decouple_pdf_from_concurso.sql','supabase/migrations/20260818230100_extend_delete_my_study_data_for_pdf_links.sql']) {
   if (!exists(rel)) fail(`blindagem Supabase ausente: ${rel}`);
 }
 if (!errors.some(e => e.includes('blindagem Supabase'))) ok('baseline e hardening Supabase versionados');
 try {
   execFileSync(process.execPath, ['--test', ...expectedTests.map(rel=>path.join(root,rel))], { stdio:'pipe' });
-  ok('8 categorias de testes automatizados aprovadas');
+  ok('10 categorias de testes automatizados aprovadas');
 } catch (error) { fail('testes automatizados falharam'); }
 
 
@@ -156,6 +161,21 @@ for (const token of ['public.study_workspaces','public.pdf_documents','public.pd
 }
 if (!/file_size > 0 and file_size <= 104857600/.test(pdfFoundationSql)) fail('limite de 100 MiB do PDF não está versionado');
 else ok('fundação PDF privada com RLS/Storage/limite versionada');
+
+// Biblioteca Global + vínculos contextuais (Fase 2.1).
+const pdfGlobalSql = read('supabase/migrations/20260818230000_decouple_pdf_from_concurso.sql');
+for (const token of ['pdf_document_links','pdf_id','concurso','materia','assunto','enable row level security']) {
+  if (!pdfGlobalSql.includes(token)) fail(`Biblioteca Global incompleta: ${token}`);
+}
+for (const token of ['pdfLibraryScope','modalPdfLink','pdfLinkMateria','pdfLinkAssunto']) {
+  if (!html.includes(token)) fail(`UI de vínculo global incompleta: ${token}`);
+}
+const pdfPhase2Js = PDF_FOUNDATION_JS_FILES.filter(exists).map(read).join('\n');
+for (const token of ["from('pdf_document_links')","from('pdf_documents')","from('pdf_progress')",'.storage.from(core().BUCKET)','getUniqueMateriasFromEdital','getAssuntosForMateria']) {
+  if (!pdfPhase2Js.includes(token)) fail(`integração da Biblioteca Global incompleta: ${token}`);
+}
+if (!/\$\{userId\}\/\$\{pdfId\}\/original\.pdf/.test(read('public/js/pdf/pdf-core.js'))) fail('Storage ainda depende de Workspace');
+if (!errors.some(e => e.includes('Biblioteca Global') || e.includes('Storage ainda'))) ok('PDF global desacoplado do concurso com vínculos contextuais');
 
 // Regressões funcionais importantes das versões anteriores.
 if (!/let timerEndAtMs = null;/.test(appJs) || !/timerEndAtMs = Date\.now\(\) \+/.test(appJs) || /function startTimer\(\)[\s\S]*?timeLeft--/.test(appJs)) fail('Timer absoluto sofreu regressão');
