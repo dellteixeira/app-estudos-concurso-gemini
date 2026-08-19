@@ -717,3 +717,14 @@ V10.14.0 — Biblioteca PDF Global
 - Excluir concurso remove apenas pdf_document_links daquele concurso; não remove pdf_documents nem Storage.
 - Excluir PDF da Biblioteca Global remove explicitamente o arquivo e, por cascade, progresso/vínculos.
 - Novos arquivos usam study-pdfs/<user_id>/<pdf_id>/original.pdf.
+
+
+V10.15.0 — Reader PDF interno
+- PDF.js renderizado dentro do app.
+- Grifos, sublinhados e notas salvos no Supabase.
+- Histórico de versões das anotações.
+- Marcadores de página.
+- Exportação para o caderno de Anotações e Markdown.
+- Criação de flashcards a partir de trecho selecionado.
+- Biblioteca estabilizada contra loads concorrentes e concurso transitório.
+- Modal de upload responsivo sem overflow horizontal.
