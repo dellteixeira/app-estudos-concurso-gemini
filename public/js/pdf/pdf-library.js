@@ -61,6 +61,11 @@
     }
   }
 
+  async function getCached(filters={}) {
+    const user = await core().getAuthenticatedUser();
+    return filterCached(readCache(user.id), filters);
+  }
+
   async function rememberDocument(doc) {
     if (!doc?.id) return;
     const user=await core().getAuthenticatedUser();
@@ -72,5 +77,5 @@
   async function createSignedUrl(doc,sec=900){const c=core().getSupabaseClient();const {data,error}=await c.storage.from(core().BUCKET).createSignedUrl(doc.storage_path,sec);if(error)throw error;return data?.signedUrl;}
   async function downloadBlob(doc){if(!doc?.storage_path)throw new Error('PDF sem caminho de Storage.');const c=core().getSupabaseClient();const {data,error}=await core().retry(()=>c.storage.from(core().BUCKET).download(doc.storage_path),{attempts:3,delayMs:350});if(error)throw error;if(!data)throw new Error('Não foi possível baixar o PDF.');return data;}
   async function updatePageCount(id,pageCount){const u=await core().getAuthenticatedUser(),c=core().getSupabaseClient();const {error}=await c.from('pdf_documents').update({page_count:Number(pageCount)||null,updated_at:new Date().toISOString()}).eq('id',id).eq('user_id',u.id);if(error)throw error;return true;}
-  global.PdfStudyLibrary=Object.freeze({list,setFavorite,remove,createSignedUrl,rememberDocument,downloadBlob,updatePageCount});
+  global.PdfStudyLibrary=Object.freeze({list,getCached,setFavorite,remove,createSignedUrl,rememberDocument,downloadBlob,updatePageCount});
 })(window);
