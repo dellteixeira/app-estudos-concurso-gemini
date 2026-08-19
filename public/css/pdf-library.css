@@ -11,6 +11,7 @@
 .pdf-library-status { min-height:20px; color:var(--modern-muted); font-size:.8rem; }
 .pdf-library-status[data-kind="error"] { color:#fda4af; }
 .pdf-library-status[data-kind="ok"] { color:#86efac; }
+.pdf-library-status[data-kind="warn"] { color:#fcd34d; }
 .pdf-library-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
 .pdf-library-card { border:1px solid var(--modern-border); border-radius:16px; padding:15px; background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015)); min-width:0; }
 .pdf-card-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
