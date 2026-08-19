@@ -16,3 +16,6 @@ test('Biblioteca mantém PDF visível quando a releitura remota falha',()=>{cons
 test('Workspace padrão é idempotente e corrida 23505 é recuperada',()=>{const w=read('public/js/pdf/pdf-workspaces.js');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(w,/async function ensureDefault/);assert.match(w,/study_workspaces_user_name_uidx/);assert.match(w,/23505/);assert.match(w,/findByName/);assert.match(u,/ensureWorkspacePromise/);});
 
 test('Biblioteca abre global por padrão e Workspace não bloqueia PDFs',()=>{const h=read('public/index.html');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(h,/value="global" selected/);assert.match(h,/PdfStudyLibraryUI\.refresh\(\)/);assert.match(u,/scope:'global'/);assert.match(u,/falha não bloqueante/);assert.match(u,/await load\(\)/);});
+
+
+test('Biblioteca usa cache local para renderização quase instantânea antes da sincronização',()=>{const l=read('public/js/pdf/pdf-library.js');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(l,/async function getCached/);assert.match(u,/Mostrando cache local/);assert.match(u,/PdfStudyLibrary\.getCached/);});
