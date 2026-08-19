@@ -129,3 +129,9 @@ body.light-mode .pdf-drop-zone { border-color:rgba(13,148,136,.55); }
   .mobile-bottom-nav .mobile-nav-btn { font-size:.53rem !important; min-height:48px !important; }
   .pdf-modal-actions { grid-template-columns:1fr; }
 }
+
+/* V10.15.0 — composição responsiva do upload: sem overflow horizontal. */
+.pdf-upload-modal{width:min(960px,calc(100vw - 28px))!important;max-width:960px!important;max-height:calc(100dvh - 28px)!important;overflow-y:auto!important;overflow-x:hidden!important;padding:22px!important;box-sizing:border-box}
+.pdf-upload-layout{display:grid!important;grid-template-columns:1fr!important;gap:14px!important;min-width:0!important}.pdf-upload-stage,.pdf-upload-form-panel{min-width:0!important;padding:14px!important}.pdf-drop-zone{min-height:165px!important;padding:18px!important}.pdf-upload-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:12px!important}.pdf-workspace-field{grid-column:1/-1!important}.pdf-upload-assunto-field{grid-column:auto!important}.pdf-upload-summary-card{margin-top:2px}.pdf-modal-actions{position:sticky;bottom:-22px;background:#0a1d2d;padding:12px 0 0!important;z-index:2}
+@media(max-width:720px){.pdf-upload-modal{width:calc(100vw - 12px)!important;max-height:calc(100dvh - 12px)!important;padding:14px!important;border-radius:14px!important}.pdf-modal-heading h3{font-size:1.05rem}.pdf-modal-heading p{font-size:.78rem}.pdf-upload-grid{grid-template-columns:1fr!important}.pdf-workspace-field,.pdf-upload-assunto-field{grid-column:auto!important}.pdf-drop-zone{min-height:150px!important}.pdf-upload-stage-hint,.pdf-upload-summary-card{font-size:.78rem}.pdf-modal-actions{grid-template-columns:1fr 1fr!important;bottom:-14px}}
+@media(max-width:430px){.pdf-upload-modal{padding:11px!important}.pdf-modal-actions{grid-template-columns:1fr!important}.pdf-select-file-btn{min-width:0;width:100%}}
