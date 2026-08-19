@@ -1,7 +1,7 @@
 (function(global){
 'use strict';
-let state={docs:[],workspaces:[],scope:'contest',activeWorkspace:'',activeMateria:'',activeAssunto:'',search:'',initializedFor:'',loadSeq:0};
-let selectedFile=null,linkPdfId=null,workspaceReturnContext='library',pendingOpenDocumentId=null;
+let state={docs:[],workspaces:[],scope:'global',activeWorkspace:'',activeMateria:'',activeAssunto:'',search:'',initializedFor:'',loadSeq:0};
+let selectedFile=null,linkPdfId=null,workspaceReturnContext='library',pendingOpenDocumentId=null,ensureWorkspacePromise=null;
 const $=id=>document.getElementById(id);
 const esc=v=>typeof global.escapeHtml==='function'?global.escapeHtml(v):String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 function contest(){try{return document.getElementById('concursoSelect')?.value||global.getLastStudiedConcurso?.()||'Concurso Geral'}catch(_){return'Concurso Geral'}}
@@ -11,13 +11,15 @@ function bytes(n){n=Number(n||0);return n<1048576?`${Math.max(1,Math.round(n/102
 function status(m,k=''){const e=$('pdfLibraryStatus');if(e){e.textContent=m||'';e.dataset.kind=k}}
 
 async function ensureWorkspace(){
-  let all=await global.PdfStudyWorkspaces.list();
-  if(!all.length){
-    all=[await global.PdfStudyWorkspaces.create({name:'Biblioteca Geral',description:'Workspace global padrão para materiais de estudo.',isDefault:true})];
-  }
-  state.workspaces=all;
-  renderWs();
-  return all;
+  // Single-flight: evita duas inicializações simultâneas tentando criar “Biblioteca Geral”.
+  if(ensureWorkspacePromise)return ensureWorkspacePromise;
+  ensureWorkspacePromise=(async()=>{
+    let all=await global.PdfStudyWorkspaces.ensureDefault();
+    state.workspaces=all;
+    renderWs();
+    return all;
+  })();
+  try{return await ensureWorkspacePromise}finally{ensureWorkspacePromise=null}
 }
 
 function renderWs(preferredId=''){
@@ -81,8 +83,14 @@ async function initialize(force=false){
   const cc=contest();
   if(!force&&state.initializedFor===cc){await load();return}
   state={...state,docs:[],activeWorkspace:'',activeMateria:'',activeAssunto:'',search:'',initializedFor:cc};
-  $('pdfLibraryContestName').textContent=cc;
-  try{await global.PdfStudyLinks.processPendingContestOperations();await ensureWorkspace();renderMat();await load()}catch(e){handle(e)}
+  const badge=$('pdfLibraryContestName');if(badge)badge.textContent=(cc&&cc!=='—')?cc:'Nenhum selecionado';
+  // A Biblioteca Global é a visão segura/persistente do acervo. O filtro por concurso é opcional.
+  if(!$('concursoSelect')?.value||$('concursoSelect')?.value==='—')state.scope='global';
+  if($('pdfLibraryScope'))$('pdfLibraryScope').value=state.scope;
+  try{await global.PdfStudyLinks.processPendingContestOperations()}catch(e){console.warn('[PDF Links] pendências não bloquearam a Biblioteca:',e)}
+  try{await ensureWorkspace()}catch(e){console.warn('[PDF Workspaces] falha não bloqueante:',e);state.workspaces=[];renderWs();status('Não foi possível atualizar Workspaces agora; carregando PDFs mesmo assim.','warn')}
+  renderMat();
+  try{await load()}catch(e){handle(e)}
 }
 function onScopeChange(v){state.scope=v==='global'?'global':'contest';state.activeMateria='';state.activeAssunto='';$('pdfLibraryScope').value=state.scope;load().catch(handle)}
 function onWorkspaceFilterChange(v){state.activeWorkspace=v||'';load().catch(handle)}
@@ -107,7 +115,7 @@ async function createWorkspace(){
     if(workspaceReturnContext==='link'){$('pdfLinkWorkspace').value=created.id;$('modalPdfLink').style.display='flex'}
     workspaceReturnContext='library';
     await load();
-    status(`Workspace “${created.name}” criado.`,'ok');
+    status(`Workspace “${created.name}” disponível.`,'ok');
   }catch(e){handle(e)}finally{if(btn)btn.disabled=false}
 }
 
@@ -169,6 +177,7 @@ async function deleteDocument(id){const d=state.docs.find(x=>x.id===id);if(!d||!
 async function openDocument(id){try{const d=state.docs.find(x=>x.id===id);if(!d)throw new Error('PDF não encontrado na Biblioteca.');if(!global.PdfStudyReader)throw new Error('Reader PDF interno não carregado.');await global.PdfStudyReader.open(d)}catch(e){handle(e)}}
 function closeViewerNoticeModal(){const m=$('modalPdfViewerNotice');if(m)m.style.display='none';pendingOpenDocumentId=null}
 async function confirmOpenTemporaryView(){return openDocument(pendingOpenDocumentId)}
+async function refreshLibrary(){state.initializedFor='';await initialize(true)}
 function handleDrop(e){e.preventDefault();$('pdfDropZone')?.classList.remove('drag-over');setFile(e.dataTransfer?.files?.[0])}
 function handleDragOver(e){e.preventDefault();$('pdfDropZone')?.classList.add('drag-over')}
 function handleDragLeave(){$('pdfDropZone')?.classList.remove('drag-over')}
@@ -182,5 +191,5 @@ function handle(e){
   status(e?.message||'Erro.','error');alert(e?.message||'Erro.');
 }
 
-global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:()=>load().catch(handle),getCurrentContest:contest,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,onUploadMateriaChange,submitUpload,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
+global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,onUploadMateriaChange,submitUpload,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
 })(window);
