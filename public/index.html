@@ -498,18 +498,23 @@
 
     <!-- MODAL NOVO WORKSPACE DE PDFs -->
     <div class="modal-overlay" id="modalPdfWorkspace">
-        <div class="modal">
-            <h3>Novo Workspace</h3>
-            <p style="opacity:.78; margin-top:-4px;">Workspace global: pode organizar PDFs usados em qualquer concurso.</p>
+        <div class="modal pdf-workspace-modal">
+            <div class="pdf-modal-heading">
+                <div>
+                    <h3>Novo Workspace</h3>
+                    <p>Workspace global: organize seus PDFs por finalidade sem prender o arquivo a um concurso.</p>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="pdfWorkspaceName">Nome do Workspace</label>
-                <input type="text" id="pdfWorkspaceName" maxlength="120" placeholder="Ex.: Doutrina e legislação">
+                <input type="text" id="pdfWorkspaceName" maxlength="120" placeholder="Ex.: Doutrina e legislação" autocomplete="off">
             </div>
             <div class="form-group">
-                <label for="pdfWorkspaceDescription">Descrição (opcional)</label>
-                <textarea id="pdfWorkspaceDescription" maxlength="500" placeholder="Como este espaço será usado"></textarea>
+                <label for="pdfWorkspaceDescription">Descrição <span class="pdf-field-optional">(opcional)</span></label>
+                <textarea id="pdfWorkspaceDescription" maxlength="500" placeholder="Ex.: PDFs de doutrina, legislação comentada e jurisprudência"></textarea>
             </div>
-            <div class="modal-actions">
+            <div class="pdf-workspace-help">Depois de criado, o Workspace ficará disponível para qualquer concurso e poderá ser escolhido no upload ou no vínculo de um PDF já existente.</div>
+            <div class="modal-actions pdf-modal-actions">
                 <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeWorkspaceModal()">Cancelar</button>
                 <button class="btn btn-primary" id="btnCreatePdfWorkspace" type="button" onclick="PdfStudyLibraryUI.createWorkspace()">Criar Workspace</button>
             </div>
@@ -518,22 +523,37 @@
 
     <!-- MODAL UPLOAD DE PDF -->
     <div class="modal-overlay" id="modalPdfUpload">
-        <div class="modal modal-large">
-            <h3>Adicionar PDF à Biblioteca</h3>
-            <div id="pdfDropZone" class="pdf-drop-zone" onclick="document.getElementById('pdfUploadFile').click()" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
-                <strong>Arraste um PDF para cá</strong>
-                <span>ou clique para selecionar no dispositivo · máximo 100 MB</span>
-                <div class="pdf-upload-file-name" id="pdfUploadFileName">Nenhum arquivo selecionado</div>
+        <div class="modal modal-large pdf-upload-modal">
+            <div class="pdf-modal-heading">
+                <div>
+                    <h3>Adicionar PDF à Biblioteca</h3>
+                    <p>O arquivo será salvo uma única vez na Biblioteca Global e vinculado ao concurso, matéria e assunto escolhidos.</p>
+                </div>
+            </div>
+
+            <div id="pdfDropZone" class="pdf-drop-zone" role="button" tabindex="0" aria-label="Selecionar arquivo PDF" onclick="PdfStudyLibraryUI.chooseUploadFile()" onkeydown="PdfStudyLibraryUI.onDropZoneKeydown(event)" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
+                <div class="pdf-drop-icon" aria-hidden="true">PDF</div>
+                <strong>Arraste seu PDF aqui</strong>
+                <span class="pdf-drop-subtitle">ou escolha um arquivo do computador ou celular</span>
+                <button class="btn btn-primary pdf-select-file-btn" type="button" onclick="event.stopPropagation(); PdfStudyLibraryUI.chooseUploadFile()">Selecionar arquivo PDF</button>
+                <div class="pdf-drop-limit">Somente PDF · máximo 100 MB</div>
+                <div class="pdf-upload-file-name" id="pdfUploadFileName" data-selected="false">Nenhum arquivo selecionado</div>
                 <input id="pdfUploadFile" type="file" accept="application/pdf,.pdf" hidden onchange="PdfStudyLibraryUI.onUploadFileChange(this)">
             </div>
-            <div class="form-group" style="margin-top:14px;">
+
+            <div class="form-group">
                 <label for="pdfUploadTitle">Título do material</label>
-                <input id="pdfUploadTitle" type="text" maxlength="240" placeholder="Título do PDF">
+                <input id="pdfUploadTitle" type="text" maxlength="240" placeholder="Título do PDF" autocomplete="off">
             </div>
+
             <div class="pdf-upload-grid">
-                <div class="form-group">
+                <div class="form-group pdf-workspace-field">
                     <label for="pdfUploadWorkspace">Workspace</label>
-                    <select id="pdfUploadWorkspace"></select>
+                    <div class="pdf-workspace-select-row">
+                        <select id="pdfUploadWorkspace" aria-describedby="pdfUploadWorkspaceHelp"></select>
+                        <button class="btn btn-secondary pdf-new-workspace-btn" type="button" onclick="PdfStudyLibraryUI.openWorkspaceModal('upload')">+ Novo</button>
+                    </div>
+                    <small id="pdfUploadWorkspaceHelp" class="pdf-field-help">Usado para organizar o material. Se não existir nenhum, “Biblioteca Geral” será criada automaticamente.</small>
                 </div>
                 <div class="form-group">
                     <label for="pdfUploadMateria">Matéria do edital</label>
@@ -544,9 +564,10 @@
                     <select id="pdfUploadAssunto"><option value="">Selecione o assunto</option></select>
                 </div>
             </div>
-            <div class="pdf-upload-progress-track"><div class="pdf-upload-progress-bar" id="pdfUploadProgress"></div></div>
+
+            <div class="pdf-upload-progress-track" aria-hidden="true"><div class="pdf-upload-progress-bar" id="pdfUploadProgress"></div></div>
             <div class="pdf-upload-progress-text" id="pdfUploadProgressText" aria-live="polite"></div>
-            <div class="modal-actions">
+            <div class="modal-actions pdf-modal-actions">
                 <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeUploadModal()">Cancelar</button>
                 <button class="btn btn-primary" id="btnSubmitPdfUpload" type="button" onclick="PdfStudyLibraryUI.submitUpload()">Adicionar à Biblioteca</button>
             </div>
