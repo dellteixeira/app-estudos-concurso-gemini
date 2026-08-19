@@ -730,4 +730,4 @@ V10.15.0 — Reader PDF interno
 - Modal de upload responsivo sem overflow horizontal.
 
 
-V10.15.1 — Biblioteca PDF: Workspace idempotente, recuperação de corrida 23505, Biblioteca Global padrão e carregamento de PDFs desacoplado de falhas de Workspace.
+V10.15.2 — Biblioteca PDF: Workspace idempotente, recuperação de corrida 23505, Biblioteca Global padrão e carregamento de PDFs desacoplado de falhas de Workspace.
