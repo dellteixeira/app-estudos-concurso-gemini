@@ -2,6 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id);const core=()=>global.PdfStudyCore;const ann=()=>global.PdfStudyAnnotations;
 let state={doc:null,pdf:null,page:1,total:0,scale:1.25,annotations:[],bookmarks:[],selected:null,openedAt:0,renderToken:0,importedNotes:[],fitMode:'custom',selectionLocked:false};
+let flashcardDraft=null;
 let wheelLock=false,pinchState=null,selectionClearTimer=null,resizeTimer=null;
 function currentContest(){return document.getElementById('concursoSelect')?.value||global.getLastStudiedConcurso?.()||'Concurso Geral'}
 function currentLink(){const links=state.doc?.links||[];return state.doc?.activeLink||links.find(l=>l.concurso===currentContest())||null}
@@ -108,26 +109,31 @@ function openFlashcardComposer(){
   if(!state.selected)return alert('Selecione um trecho do PDF primeiro.');
   const link=currentLink();
   if(!link)return alert('Vincule o PDF a um concurso/matéria antes de criar flashcard.');
+  flashcardDraft={text:state.selected.text,page:state.selected.page,materia:link.materia||'',assunto:link.assunto||'',sourcePdfId:state.doc?.id||null};
   const modal=$('modalPdfFlashcard');
   if(!modal)return createFlashcard();
-  $('pdfFlashcardQuestion').value=inferQuestionFromSelection(state.selected.text);
-  $('pdfFlashcardAnswer').value=state.selected.text;
-  $('pdfFlashcardContext').textContent=`${link.materia||'Sem matéria'} · ${link.assunto||'Sem assunto'} · pág. ${state.selected.page}`;
+  $('pdfFlashcardQuestion').value=inferQuestionFromSelection(flashcardDraft.text);
+  $('pdfFlashcardAnswer').value=flashcardDraft.text;
+  $('pdfFlashcardContext').textContent=`${flashcardDraft.materia||'Sem matéria'} · ${flashcardDraft.assunto||'Sem assunto'} · pág. ${flashcardDraft.page}`;
   modal.style.display='flex';
   setTimeout(()=>$('pdfFlashcardQuestion')?.focus(),0);
 }
-function closeFlashcardComposer(){const modal=$('modalPdfFlashcard');if(modal)modal.style.display='none'}
+function closeFlashcardComposer({keepDraft=false}={}){const modal=$('modalPdfFlashcard');if(modal)modal.style.display='none';if(!keepDraft)flashcardDraft=null}
 async function createFlashcard(){
-  if(!state.selected)return alert('Selecione um trecho do PDF primeiro.');
-  const link=currentLink();
-  if(!link)return alert('Vincule o PDF a um concurso/matéria antes de criar flashcard.');
-  const pergunta=($('pdfFlashcardQuestion')?.value||inferQuestionFromSelection(state.selected.text)).trim();
-  const resposta=($('pdfFlashcardAnswer')?.value||state.selected.text).trim();
+  const draft=flashcardDraft||(
+    state.selected?{text:state.selected.text,page:state.selected.page,materia:currentLink()?.materia||'',assunto:currentLink()?.assunto||'',sourcePdfId:state.doc?.id||null}:null
+  );
+  if(!draft)return alert('Abra o criador a partir de um trecho do PDF antes de salvar.');
+  if(!draft.materia&&!draft.assunto)return alert('Vincule o PDF a um concurso/matéria antes de criar flashcard.');
+  const pergunta=($('pdfFlashcardQuestion')?.value||inferQuestionFromSelection(draft.text)).trim();
+  const resposta=($('pdfFlashcardAnswer')?.value||draft.text).trim();
   if(!pergunta||!resposta)return alert('Pergunta e resposta são obrigatórias.');
   try{
     if(typeof global.addPdfStudyFlashcard!=='function')throw new Error('Integração com flashcards indisponível.');
-    await global.addPdfStudyFlashcard({materia:link.materia,assunto:link.assunto,pergunta,resposta,sourcePdfId:state.doc.id,sourcePage:state.selected.page});
-    closeFlashcardComposer();clearSelection();setStatus('Flashcard criado com pergunta sugerida automaticamente.');
+    await global.addPdfStudyFlashcard({materia:draft.materia,assunto:draft.assunto,pergunta,resposta,sourcePdfId:draft.sourcePdfId,sourcePage:draft.page});
+    closeFlashcardComposer();clearSelection();setStatus('Flashcard salvo na área de Flashcards.');
+    await close();
+    global.openSearchFlashcardResult?.({materia:draft.materia,assunto:draft.assunto});
   }catch(e){handle(e)}
 }
 async function exportToNotes(){
