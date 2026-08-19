@@ -1,0 +1,46 @@
+name: Pedido para GPT/Codex
+
+description: Use este modelo para pedir uma alteracao no app com contexto suficiente para implementacao segura.
+title: "[Codex] "
+labels: [codex]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: O que voce quer que mude no app?
+      placeholder: Ex. Permitir importar PDFs apenas para o Workspace, sem exigir materia e assunto.
+    validations:
+      required: true
+  - type: textarea
+    id: comportamento_atual
+    attributes:
+      label: Comportamento atual
+      description: O que acontece hoje? Inclua mensagens de erro, telas ou passos para reproduzir.
+    validations:
+      required: false
+  - type: textarea
+    id: comportamento_esperado
+    attributes:
+      label: Comportamento esperado
+      description: Como deve funcionar depois da correcao?
+    validations:
+      required: true
+  - type: textarea
+    id: arquivos_telas
+    attributes:
+      label: Prints, arquivos ou links relacionados
+      description: Cole links de imagens, PRs, arquivos ou explique onde o problema aparece.
+    validations:
+      required: false
+  - type: checkboxes
+    id: validacao
+    attributes:
+      label: Validacao esperada
+      options:
+        - label: Rodar testes automatizados
+          required: true
+        - label: Rodar auditoria estrutural
+          required: true
+        - label: Gerar ZIP dos arquivos canonicos alterados
+          required: true
