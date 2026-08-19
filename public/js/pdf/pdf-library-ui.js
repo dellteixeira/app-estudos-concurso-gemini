@@ -55,8 +55,13 @@ function renderAss(mode){
 
 async function load(){
   const seq=++state.loadSeq; const cc=contest();
+  const filters={scope:state.scope,concurso:cc,workspaceId:state.activeWorkspace,materia:state.activeMateria,assunto:state.activeAssunto,search:state.search};
   status('Carregando biblioteca…');
-  const docs=await global.PdfStudyLibrary.list({scope:state.scope,concurso:cc,workspaceId:state.activeWorkspace,materia:state.activeMateria,assunto:state.activeAssunto,search:state.search});
+  try{
+    const cached=await global.PdfStudyLibrary.getCached(filters);
+    if(seq===state.loadSeq&&cached.length){state.docs=cached;render();status(`Mostrando cache local (${cached.length}). Sincronizando…`,'warn')}
+  }catch(_){/* cache é melhor esforço */}
+  const docs=await global.PdfStudyLibrary.list(filters);
   if(seq!==state.loadSeq||cc!==contest())return;
   state.docs=docs; render();
   status(`${state.docs.length} ${state.docs.length===1?'PDF encontrado':'PDFs encontrados'}.`,'ok');
