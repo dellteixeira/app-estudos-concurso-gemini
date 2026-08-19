@@ -1,4 +1,4 @@
-const APP_VERSION = '10.15.2';
+const APP_VERSION = '10.15.3';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
@@ -89,8 +89,8 @@ self.addEventListener('fetch', event => {
 
   const isCoreAsset = url.origin === self.location.origin && [
     '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json',
-    '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css',
-    '/js/study-domain.js', '/js/app-core.js', '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-upload.js', '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
+    '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css', '/css/pdf-reader.css',
+    '/js/study-domain.js', '/js/app-core.js', '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-upload.js', '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
   ].some(path => url.pathname.endsWith(path));
 
   if (isCoreAsset) {
