@@ -55,3 +55,18 @@ test('cabeçalho deixa sincronização fora da barra de concurso', () => {
   assert.match(html, /aria-label="Selecionar concurso"/);
   assert.match(base, /\.header-sync-status/);
 });
+
+test('pipeline Supabase valida migrations em PR e aplica somente após merge na main', () => {
+  const check = read('.github/workflows/supabase-migration-check.yml');
+  const deploy = read('.github/workflows/supabase-production-deploy.yml');
+  for (const secret of ['SUPABASE_ACCESS_TOKEN', 'SUPABASE_PROJECT_ID', 'SUPABASE_DB_PASSWORD']) {
+    assert.match(check, new RegExp(secret));
+    assert.match(deploy, new RegExp(secret));
+  }
+  assert.match(check, /pull_request:/);
+  assert.match(check, /supabase db push --dry-run --password/);
+  assert.match(deploy, /push:/);
+  assert.match(deploy, /branches: \[main\]/);
+  assert.match(deploy, /supabase db push --password/);
+  assert.doesNotMatch(deploy, /--dry-run/);
+});
