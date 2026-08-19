@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);const core=()=>global.PdfStudyCore;const
 let state={doc:null,pdf:null,page:1,total:0,scale:1.25,annotations:[],bookmarks:[],selected:null,openedAt:0,renderToken:0,importedNotes:[]};
 let wheelLock=false;
 function currentContest(){return document.getElementById('concursoSelect')?.value||global.getLastStudiedConcurso?.()||'Concurso Geral'}
-function currentLink(){const links=state.doc?.links||[];return state.doc?.activeLink||links.find(l=>l.concurso===currentContest())||links[0]||null}
+function currentLink(){const links=state.doc?.links||[];return state.doc?.activeLink||links.find(l=>l.concurso===currentContest())||null}
 function setStatus(t){const e=$('pdfReaderStatus');if(e)e.textContent=t||''}
 function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function clearSelection(){state.selected=null;const bar=$('pdfReaderSelectionBar');if(bar)bar.classList.remove('show');const txt=$('pdfReaderSelectionText');if(txt)txt.textContent='';try{window.getSelection()?.removeAllRanges()}catch(_){}}
@@ -118,10 +118,9 @@ async function importNotes(){
   const link=currentLink();
   if(!link)return alert('Vincule este PDF ao concurso atual antes de importar anotações.');
   try{
-    const user=await core().getAuthenticatedUser();
-    const key=`concursos_metadata_${user.id}`;
-    const metadata=JSON.parse(localStorage.getItem(key)||'{}');
-    const notes=Array.isArray(metadata?.[currentContest()]?.structuredNotes)?metadata[currentContest()].structuredNotes:[];
+    const notes=typeof global.getPdfStudyNotesForCurrentContest==='function'
+      ? global.getPdfStudyNotesForCurrentContest()
+      : [];
     const filtered=notes.filter(n=>String(n?.materia||'')===String(link.materia||'') && (!link.assunto || !String(n?.assunto||'') || String(n.assunto)===String(link.assunto)));
     state.importedNotes=filtered.slice(-12).reverse().map((n,idx)=>({
       id:`imported-${idx}-${Date.parse(n?.data||'')||idx}`,
@@ -173,8 +172,18 @@ async function open(doc){
     $('pdfReaderOverlay').classList.add('open');document.body.classList.add('pdf-reader-open');$('pdfReaderTitle').textContent=doc.title||doc.original_file_name||'PDF';$('pdfReaderZoomLabel').textContent=Math.round(state.scale*100)+'%';setStatus('Carregando PDF…');bindReaderInteractions();
     const blob=await global.PdfStudyLibrary.downloadBlob(doc);const data=new Uint8Array(await blob.arrayBuffer());
     state.pdf=await pdfjsLib.getDocument({data}).promise;state.total=state.pdf.numPages;state.page=Math.min(Math.max(1,state.page),state.total);$('pdfReaderTotalPages').textContent=String(state.total);$('pdfReaderPageInput').max=String(state.total);
-    const [annotations,bookmarks]=await Promise.all([ann().list(doc.id),ann().bookmarks(doc.id)]);state.annotations=annotations;state.bookmarks=bookmarks;
-    await global.PdfStudyLibrary.updatePageCount?.(doc.id,state.total);renderSideList();await renderPage();setStatus('Selecione um trecho para grifar, sublinhar, anotar ou criar flashcard.');
+    // First meaningful paint: renderiza o PDF antes de aguardar metadados secundários.
+    await renderPage();setStatus('PDF pronto. Sincronizando marcações…');
+    const pageCountTask=typeof global.PdfStudyLibrary.updatePageCount==='function'
+      ? global.PdfStudyLibrary.updatePageCount(doc.id,state.total).catch(error=>{console.warn('[PDF Reader] page_count não bloqueante:',error);return null})
+      : Promise.resolve(null);
+    const [annotations,bookmarks]=await Promise.all([
+      ann().list(doc.id).catch(error=>{console.warn('[PDF Reader] marcações indisponíveis temporariamente:',error);return[]}),
+      ann().bookmarks(doc.id).catch(error=>{console.warn('[PDF Reader] bookmarks indisponíveis temporariamente:',error);return[]}),
+      pageCountTask
+    ]);
+    if(state.doc?.id!==doc.id)return;
+    state.annotations=annotations||[];state.bookmarks=bookmarks||[];updateBookmarkButton();await renderAnnotations();renderSideList();setStatus('Selecione um trecho para grifar, sublinhar, anotar ou criar flashcard.');
   }catch(e){handle(e);close()}
 }
 async function close(){
