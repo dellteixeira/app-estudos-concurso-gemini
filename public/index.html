@@ -538,7 +538,7 @@
             <div class="pdf-modal-heading">
                 <div>
                     <h3>Adicionar PDFs à Biblioteca</h3>
-                    <p>Você pode importar vários PDFs de uma só vez. O Workspace, a matéria e o assunto escolhidos serão aplicados a todo o lote.</p>
+                    <p>Você pode importar vários PDFs de uma só vez para um Workspace e, se quiser, vincular o lote a uma matéria ou assunto do edital.</p>
                 </div>
             </div>
 
@@ -575,12 +575,12 @@
                             <small id="pdfUploadWorkspaceHelp" class="pdf-field-help">Organiza seu acervo. Se ainda não houver nenhum, “Biblioteca Geral” será criada automaticamente.</small>
                         </div>
                         <div class="form-group">
-                            <label for="pdfUploadMateria">Matéria do edital</label>
-                            <select id="pdfUploadMateria" onchange="PdfStudyLibraryUI.onUploadMateriaChange()"><option value="">Selecione a matéria</option></select>
+                            <label for="pdfUploadMateria">Matéria do edital <span class="pdf-field-optional">(opcional)</span></label>
+                            <select id="pdfUploadMateria" onchange="PdfStudyLibraryUI.onUploadMateriaChange()"><option value="">Sem matéria específica</option></select>
                         </div>
                         <div class="form-group pdf-upload-assunto-field">
-                            <label for="pdfUploadAssunto">Assunto do edital</label>
-                            <select id="pdfUploadAssunto"><option value="">Selecione o assunto</option></select>
+                            <label for="pdfUploadAssunto">Assunto do edital <span class="pdf-field-optional">(opcional)</span></label>
+                            <select id="pdfUploadAssunto"><option value="">Sem assunto específico</option></select>
                         </div>
                     </div>
 
@@ -588,8 +588,8 @@
                         <h4>Como este PDF será usado</h4>
                         <ul>
                             <li>cada documento entra uma única vez na <strong>Biblioteca Global</strong>;</li>
-                            <li>todos os PDFs do lote recebem o mesmo <strong>Workspace, matéria e assunto</strong>;</li>
-                            <li>matéria e assunto ficam vinculados ao <strong>edital</strong>;</li>
+                            <li>todos os PDFs do lote recebem o mesmo <strong>Workspace</strong>;</li>
+                            <li><strong>matéria e assunto</strong> são opcionais e só serão vinculados se você escolher;</li>
                             <li>o mesmo PDF poderá ser reutilizado depois em outros concursos.</li>
                         </ul>
                     </div>
@@ -622,8 +622,8 @@
             <h3>Vincular PDF ao concurso atual</h3>
             <p id="pdfLinkDocumentTitle" style="opacity:.8"></p>
             <div class="form-group"><label for="pdfLinkWorkspace">Workspace</label><select id="pdfLinkWorkspace"></select></div>
-            <div class="form-group"><label for="pdfLinkMateria">Matéria do edital</label><select id="pdfLinkMateria" onchange="PdfStudyLibraryUI.onLinkMateriaChange()"></select></div>
-            <div class="form-group"><label for="pdfLinkAssunto">Assunto do edital</label><select id="pdfLinkAssunto"></select></div>
+            <div class="form-group"><label for="pdfLinkMateria">Matéria do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkMateria" onchange="PdfStudyLibraryUI.onLinkMateriaChange()"></select></div>
+            <div class="form-group"><label for="pdfLinkAssunto">Assunto do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkAssunto"></select></div>
             <div class="modal-actions"><button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeLinkModal()">Cancelar</button><button class="btn btn-primary" id="btnCreatePdfLink" type="button" onclick="PdfStudyLibraryUI.submitLink()">Criar vínculo</button></div>
         </div>
     </div>
