@@ -11,10 +11,34 @@
 
   async function getAuthenticatedUser() {
     const client = getSupabaseClient();
+    // getSession() lê a sessão persistida localmente e evita uma chamada de rede
+    // desnecessária a cada operação da Biblioteca. getUser() fica como fallback.
+    try {
+      const { data: sessionData, error: sessionError } = await client.auth.getSession();
+      if (!sessionError && sessionData?.session?.user?.id) return sessionData.session.user;
+    } catch (_) {}
     const { data, error } = await client.auth.getUser();
     if (error) throw error;
     if (!data?.user?.id) throw new Error('Usuário não autenticado.');
     return data.user;
+  }
+
+  function isNetworkError(error) {
+    const message = String(error?.message || error || '').toLowerCase();
+    return message.includes('networkerror') || message.includes('failed to fetch') || message.includes('fetch resource') || message.includes('network request failed');
+  }
+
+  async function retry(operation, { attempts = 2, delayMs = 350 } = {}) {
+    let lastError;
+    for (let attempt = 1; attempt <= Math.max(1, attempts); attempt += 1) {
+      try { return await operation(attempt); }
+      catch (error) {
+        lastError = error;
+        if (!isNetworkError(error) || attempt >= attempts) break;
+        await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
+      }
+    }
+    throw lastError;
   }
 
   function normalizeText(value, maxLength) {
@@ -43,6 +67,8 @@
     MAX_PDF_BYTES,
     getSupabaseClient,
     getAuthenticatedUser,
+    isNetworkError,
+    retry,
     normalizeText,
     buildStoragePath,
     validatePdfFile,
