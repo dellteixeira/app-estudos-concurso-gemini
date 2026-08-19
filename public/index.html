@@ -408,7 +408,8 @@
                         <div class="pdf-library-actions">
                             <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.refresh()">↻ Atualizar</button>
                             <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.openWorkspaceModal()">+ Workspace</button>
-                            <button class="btn btn-primary" type="button" onclick="PdfStudyLibraryUI.openUploadModal()">+ Adicionar PDF</button>
+                            <button class="btn btn-primary" type="button" onclick="PdfStudyLibraryUI.openUploadModal()">+ Adicionar PDFs</button>
+                            <button class="btn btn-secondary" id="btnPdfSelectionMode" type="button" onclick="PdfStudyLibraryUI.toggleSelectionMode()">Selecionar</button>
                         </div>
                     </div>
                     <div class="pdf-library-filters" aria-label="Filtros da Biblioteca">
@@ -419,6 +420,14 @@
                         <select id="pdfAssuntoFilter" onchange="PdfStudyLibraryUI.onAssuntoFilterChange(this.value)"><option value="">Todos os assuntos</option></select>
                     </div>
                     <div id="pdfLibraryStatus" class="pdf-library-status" aria-live="polite"></div>
+                    <div id="pdfBulkToolbar" class="pdf-bulk-toolbar" hidden>
+                        <div class="pdf-bulk-count"><strong id="pdfBulkSelectedCount">0</strong> PDF(s) selecionado(s)</div>
+                        <div class="pdf-bulk-actions">
+                            <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyLibraryUI.selectAllVisible()">Selecionar todos os visíveis</button>
+                            <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyLibraryUI.clearSelection()">Limpar seleção</button>
+                            <button class="btn btn-danger btn-sm" id="btnDeleteSelectedPdfs" type="button" onclick="PdfStudyLibraryUI.deleteSelected()">Excluir selecionados</button>
+                        </div>
+                    </div>
                     <div id="pdfLibraryGrid" class="pdf-library-grid"></div>
                 </div>
             </div>
@@ -528,21 +537,21 @@
         <div class="modal modal-large pdf-upload-modal">
             <div class="pdf-modal-heading">
                 <div>
-                    <h3>Adicionar PDF à Biblioteca</h3>
-                    <p>O arquivo será salvo uma única vez na Biblioteca Global e vinculado ao concurso, matéria e assunto escolhidos.</p>
+                    <h3>Adicionar PDFs à Biblioteca</h3>
+                    <p>Você pode importar vários PDFs de uma só vez. O Workspace, a matéria e o assunto escolhidos serão aplicados a todo o lote.</p>
                 </div>
             </div>
 
             <div class="pdf-upload-layout">
                 <section class="pdf-upload-stage">
-                    <div id="pdfDropZone" class="pdf-drop-zone" role="button" tabindex="0" aria-label="Selecionar arquivo PDF" onclick="PdfStudyLibraryUI.chooseUploadFile()" onkeydown="PdfStudyLibraryUI.onDropZoneKeydown(event)" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
+                    <div id="pdfDropZone" class="pdf-drop-zone" role="button" tabindex="0" aria-label="Selecionar PDFs" onclick="PdfStudyLibraryUI.chooseUploadFile()" onkeydown="PdfStudyLibraryUI.onDropZoneKeydown(event)" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
                         <div class="pdf-drop-icon" aria-hidden="true">PDF</div>
-                        <strong>Arraste seu PDF aqui</strong>
-                        <span class="pdf-drop-subtitle">ou escolha um arquivo do computador ou celular</span>
-                        <button class="btn btn-primary pdf-select-file-btn" type="button" onclick="event.stopPropagation(); PdfStudyLibraryUI.chooseUploadFile()">Selecionar arquivo PDF</button>
-                        <div class="pdf-drop-limit">Somente PDF · máximo 100 MB</div>
-                        <div class="pdf-upload-file-name" id="pdfUploadFileName" data-selected="false">Nenhum arquivo selecionado</div>
-                        <input id="pdfUploadFile" type="file" accept="application/pdf,.pdf" hidden onchange="PdfStudyLibraryUI.onUploadFileChange(this)">
+                        <strong>Arraste seus PDFs aqui</strong>
+                        <span class="pdf-drop-subtitle">ou escolha um ou vários arquivos do computador ou celular</span>
+                        <button class="btn btn-primary pdf-select-file-btn" type="button" onclick="event.stopPropagation(); PdfStudyLibraryUI.chooseUploadFile()">Selecionar PDFs</button>
+                        <div class="pdf-drop-limit">Somente PDF · máximo 100 MB por arquivo</div>
+                        <div class="pdf-upload-file-name" id="pdfUploadFileName" data-selected="false">Nenhum arquivo selecionado</div><div id="pdfUploadFileList" class="pdf-upload-file-list"></div>
+                        <input id="pdfUploadFile" type="file" accept="application/pdf,.pdf" multiple hidden onchange="PdfStudyLibraryUI.onUploadFileChange(this)">
                     </div>
                     <div class="pdf-upload-stage-hint">
                         <div class="pdf-upload-stage-pill">Biblioteca Global</div>
@@ -552,7 +561,7 @@
 
                 <section class="pdf-upload-form-panel">
                     <div class="form-group">
-                        <label for="pdfUploadTitle">Título do material</label>
+                        <label for="pdfUploadTitle">Título do material <span class="pdf-field-optional">(usado somente quando houver 1 PDF)</span></label>
                         <input id="pdfUploadTitle" type="text" maxlength="240" placeholder="Título do PDF" autocomplete="off">
                     </div>
 
@@ -578,8 +587,8 @@
                     <div class="pdf-upload-summary-card">
                         <h4>Como este PDF será usado</h4>
                         <ul>
-                            <li>o documento entra na <strong>Biblioteca Global</strong>;</li>
-                            <li>o primeiro vínculo é criado com o <strong>concurso atual</strong>;</li>
+                            <li>cada documento entra uma única vez na <strong>Biblioteca Global</strong>;</li>
+                            <li>todos os PDFs do lote recebem o mesmo <strong>Workspace, matéria e assunto</strong>;</li>
                             <li>matéria e assunto ficam vinculados ao <strong>edital</strong>;</li>
                             <li>o mesmo PDF poderá ser reutilizado depois em outros concursos.</li>
                         </ul>
@@ -589,6 +598,17 @@
 
             <div class="pdf-upload-progress-track" aria-hidden="true"><div class="pdf-upload-progress-bar" id="pdfUploadProgress"></div></div>
             <div class="pdf-upload-progress-text" id="pdfUploadProgressText" aria-live="polite"></div>
+            <section id="pdfUploadResultPanel" class="pdf-upload-result-panel" hidden aria-live="polite">
+                <div class="pdf-upload-result-head">
+                    <div><strong>Resultado da importação</strong><p id="pdfUploadResultSummary"></p></div>
+                    <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyLibraryUI.copyUploadReport()">Copiar relatório</button>
+                </div>
+                <div id="pdfUploadResultList" class="pdf-upload-result-list"></div>
+                <div class="pdf-upload-result-actions">
+                    <button id="btnRetryFailedPdfs" class="btn btn-warning btn-sm" type="button" onclick="PdfStudyLibraryUI.retryFailedUploads()" hidden>Tentar novamente os que falharam</button>
+                    <button id="btnRemoveFailedPdfs" class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyLibraryUI.removeFailedUploads()" hidden>Remover falhas da lista</button>
+                </div>
+            </section>
             <div class="modal-actions pdf-modal-actions">
                 <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeUploadModal()">Cancelar</button>
                 <button class="btn btn-primary" id="btnSubmitPdfUpload" type="button" onclick="PdfStudyLibraryUI.submitUpload()">Adicionar à Biblioteca</button>
@@ -1439,7 +1459,7 @@
                 <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.zoom(-.15)">−</button>
                 <span id="pdfReaderZoomLabel">125%</span>
                 <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.zoom(.15)">+</button>
-                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.fitWidth()">Ajustar</button>
+                <button id="pdfReaderFitButton" class="btn btn-secondary btn-sm pdf-reader-fit-label" onclick="PdfStudyReader.toggleFit()" title="Alternar ajuste por largura ou página">Ajustar</button>
                 <button id="pdfReaderBookmark" class="btn btn-secondary btn-sm pdf-reader-bookmark" onclick="PdfStudyReader.toggleBookmark()">🔖</button>
                 <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.toggleSide()">Painel</button>
             </div>
