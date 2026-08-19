@@ -1,0 +1,23 @@
+{
+  "captured_from_codebase": "10.12.0",
+  "direct_public_tables": [
+    "edital",
+    "flashcards",
+    "user_settings",
+    "study_workspaces",
+    "pdf_documents",
+    "pdf_progress"
+  ],
+  "known_rpc": [
+    "delete_my_study_data"
+  ],
+  "legacy_tables_handled_if_present": [
+    "user_flashcards",
+    "user_notes",
+    "user_schedules"
+  ],
+  "notes": "Contrato derivado do código da base canônica e da Fase 1 PDF. O schema remoto legado completo continua devendo ser capturado por scripts/capture-supabase-baseline.sh.",
+  "private_storage_buckets": [
+    "study-pdfs"
+  ]
+}
