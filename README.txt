@@ -648,3 +648,35 @@ Segredos adicionais recomendados no GitHub Actions para backup de Storage:
 - SUPABASE_SERVICE_ROLE_KEY
 
 Nunca exponha SUPABASE_SERVICE_ROLE_KEY no frontend.
+
+============================================================
+V10.12.0 — FASE 1: FUNDAÇÃO PRIVADA DO MÓDULO PDF
+============================================================
+
+Esta versão NÃO expõe ainda Biblioteca ou PDF Reader na interface. Ela cria a fundação segura para a próxima entrega.
+
+Criado no Supabase:
+- public.study_workspaces
+- public.pdf_documents
+- public.pdf_progress
+- bucket privado study-pdfs (100 MiB por arquivo, application/pdf)
+- RLS por auth.uid() em todas as tabelas novas
+- políticas do Storage que exigem o user_id autenticado como primeiro segmento do caminho
+
+Caminho físico previsto para PDFs:
+  study-pdfs/<user_id>/<workspace_id-ou-unfiled>/<pdf_id>/original.pdf
+
+Serviços JS preparados, ainda não carregados pela UI:
+- public/js/pdf/pdf-core.js
+- public/js/pdf/pdf-workspaces.js
+
+A RPC delete_my_study_data foi ampliada por nova migration para excluir, nesta ordem:
+  pdf_progress -> pdf_documents -> study_workspaces -> demais dados existentes.
+Os objetos físicos de study-pdfs/<user_id>/ continuam sendo removidos antes da RPC pela Edge Function delete-account.
+
+Próxima entrega prevista:
+- Biblioteca visual
+- CRUD visual de Workspaces
+- upload validado de PDF para study-pdfs
+- registro em pdf_documents
+- listagem/filtros iniciais
