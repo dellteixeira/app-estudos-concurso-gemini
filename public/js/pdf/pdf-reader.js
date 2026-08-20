@@ -23,6 +23,41 @@ function scheduleSelectionClear(delay=480){
   },delay);
 }
 function clamp(n,min,max){return Math.min(max,Math.max(min,n))}
+	function orderTextContentForSelection(textContent,viewport){
+	  const items=Array.isArray(textContent?.items)?textContent.items:[];
+	  if(items.length<2||!items.every(item=>typeof item?.str==='string'&&item.transform?.length>=6))return textContent;
+	  const positioned=items.map((item,index)=>{
+	    const matrix=pdfjsLib.Util.transform(viewport.transform,item.transform);
+	    return {item,index,x:matrix[4],y:matrix[5],height:Math.max(1,Math.hypot(matrix[2],matrix[3]))};
+	  });
+	  const heights=positioned.map(x=>x.height).sort((a,b)=>a-b);
+	  const lineTolerance=clamp((heights[Math.floor(heights.length/2)]||4)*.58,2,9);
+	  positioned.sort((a,b)=>a.y-b.y||a.x-b.x||a.index-b.index);
+	  const lines=[];
+	  for(const entry of positioned){
+	    let line=lines[lines.length-1];
+	    if(!line||Math.abs(entry.y-line.anchorY)>Math.max(lineTolerance,Math.min(entry.height,line.height)*.48)){
+	      line={anchorY:entry.y,height:entry.height,entries:[]};lines.push(line);
+	    }
+	    line.entries.push(entry);line.anchorY=(line.anchorY*(line.entries.length-1)+entry.y)/line.entries.length;line.height=Math.max(line.height,entry.height);
+	  }
+	  const ordered=[];
+	  for(const line of lines){
+	    line.entries.sort((a,b)=>a.x-b.x||a.index-b.index);
+	    line.entries.forEach((entry,index)=>ordered.push({...entry.item,hasEOL:index===line.entries.length-1}));
+	  }
+	  return {...textContent,items:ordered};
+	}
+	function installTextSelectionAssist(textLayer){
+	  const end=document.createElement('div');end.className='pdf-reader-end-of-content';textLayer.appendChild(end);
+	  textLayer.addEventListener('mousedown',event=>{
+	    if(event.target===textLayer)return;
+	    const bounds=textLayer.getBoundingClientRect();
+	    end.style.top=(clamp((event.clientY-bounds.top)/bounds.height,0,1)*100).toFixed(2)+'%';end.classList.add('active');
+	  });
+	  const release=()=>{end.style.top='';end.classList.remove('active')};
+	  textLayer.addEventListener('mouseup',release);textLayer.addEventListener('mouseleave',release);
+	}
 	function normalizeRects(clientRects,box){
 	  const raw=[];
 	  for(const rect of [...clientRects]){
@@ -269,7 +304,8 @@ async function renderPage(){
   const canvas=document.createElement('canvas');canvas.width=Math.floor(viewport.width*devicePixelRatio);canvas.height=Math.floor(viewport.height*devicePixelRatio);canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';
 	  const ctx=canvas.getContext('2d');const selectionLayer=document.createElement('div');selectionLayer.className='pdf-reader-selection-layer';const markLayer=document.createElement('div');markLayer.className='pdf-reader-mark-layer';const textLayer=document.createElement('div');textLayer.className='pdf-reader-text-layer';pageEl.append(canvas,selectionLayer,markLayer,textLayer);host.appendChild(pageEl);
   await page.render({canvasContext:ctx,viewport,transform:devicePixelRatio!==1?[devicePixelRatio,0,0,devicePixelRatio,0,0]:null}).promise;
-  const text=await page.getTextContent();await pdfjsLib.renderTextLayer({textContentSource:text,container:textLayer,viewport,textDivs:[]}).promise;
+  const text=orderTextContentForSelection(await page.getTextContent({disableCombineTextItems:false}),viewport);
+  await pdfjsLib.renderTextLayer({textContentSource:text,container:textLayer,viewport,textDivs:[]}).promise;installTextSelectionAssist(textLayer);
   const finishSelection=()=>requestAnimationFrame(updateSelection);
   pageEl.addEventListener('pointerup',finishSelection);pageEl.addEventListener('touchend',finishSelection,{passive:true});
   $('pdfReaderPageInput').value=String(state.page);updateBookmarkButton();await renderAnnotations();renderSideList();saveProgress(false).catch(()=>{})
