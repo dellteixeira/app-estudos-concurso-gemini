@@ -1455,7 +1455,7 @@
             <button class="pdf-reader-copy-btn" type="button" onclick="PdfStudyReader.useClipboardSelection()">＋ Colar seleção</button>
             <span id="pdfReaderSelectionText" class="pdf-reader-selection-text">Selecione diretamente no PDF</span>
             <div class="pdf-reader-study-actions" aria-label="Ações de estudo">
-                <button class="pdf-reader-action highlight" onclick="PdfStudyReader.saveAnnotation('highlight')">Marca-texto</button>
+                <button class="pdf-reader-action highlight" onclick="PdfStudyReader.openHighlightComposer()">Marca-texto</button>
                 <button class="pdf-reader-action underline" onclick="PdfStudyReader.saveAnnotation('underline')">Sublinhar</button>
                 <button class="pdf-reader-action note" onclick="PdfStudyReader.promptNote()">Anotação</button>
                 <button class="pdf-reader-action flashcard" onclick="PdfStudyReader.openFlashcardComposer()">Flashcard</button>
@@ -1476,6 +1476,10 @@
             <div class="modal-card">
                 <h3>Novo flashcard a partir do trecho</h3>
                 <p id="pdfFlashcardContext">—</p>
+                <div class="pdf-reader-flashcard-taxonomy">
+                    <label><span class="pdf-reader-import-hint">Matéria (opcional)</span><input id="pdfFlashcardMateria" type="text" maxlength="180" placeholder="Ex.: Direito Penal"></label>
+                    <label><span class="pdf-reader-import-hint">Assunto (opcional)</span><input id="pdfFlashcardAssunto" type="text" maxlength="300" placeholder="Ex.: Teoria do crime"></label>
+                </div>
                 <label>
                     <span class="pdf-reader-import-hint">Pergunta sugerida automaticamente</span>
                     <input id="pdfFlashcardQuestion" type="text" maxlength="500" placeholder="Pergunta do flashcard">
@@ -1488,6 +1492,15 @@
                     <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.closeFlashcardComposer()">Cancelar</button>
                     <button class="btn btn-success btn-sm" type="button" onclick="PdfStudyReader.createFlashcard()">Salvar flashcard</button>
                 </div>
+            </div>
+        </div>
+        <div id="modalPdfHighlight" class="pdf-reader-flashcard-modal" aria-label="Configurar marca-texto">
+            <div class="modal-card pdf-reader-highlight-card">
+                <h3>Personalizar marca-texto</h3>
+                <div id="pdfHighlightPreview" class="pdf-reader-highlight-preview">Exemplo de marcação</div>
+                <label><span class="pdf-reader-import-hint">Cor</span><input id="pdfHighlightColor" type="color" value="#fff176" oninput="PdfStudyReader.updateHighlightPreview()"></label>
+                <label><span class="pdf-reader-import-hint">Opacidade: <output id="pdfHighlightOpacityValue">25%</output></span><input id="pdfHighlightOpacity" type="range" min="8" max="65" value="25" oninput="PdfStudyReader.updateHighlightPreview()"></label>
+                <div class="pdf-reader-flashcard-actions"><button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.closeHighlightComposer()">Cancelar</button><button class="btn btn-warning btn-sm" type="button" onclick="PdfStudyReader.applyHighlight()">Aplicar marca-texto</button></div>
             </div>
         </div>
     </section>
