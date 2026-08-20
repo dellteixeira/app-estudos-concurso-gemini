@@ -6,31 +6,16 @@ test('link table permite múltiplos contextos sem duplicar PDF',()=>{const s=rea
 test('excluir concurso remove somente vínculos',()=>{const l=read('public/js/pdf/pdf-links.js');const c=read('public/js/app-core.js');assert.match(l,/deleteConcursoNow/);assert.match(l,/from\('pdf_document_links'\)\.delete/);assert.doesNotMatch(l,/storage\.from/);assert.match(c,/PdfStudyLinks\?\.handleConcursoDelete/);});
 test('excluir PDF global remove arquivo e documento explicitamente',()=>{const l=read('public/js/pdf/pdf-library.js');assert.match(l,/storage\.from\(core\(\)\.BUCKET\)\.remove/);assert.match(l,/from\('pdf_documents'\)\.delete/);});
 test('upload PDF tem dropzone explícita e seletor múltiplo acessível',()=>{const h=read('public/index.html');const c=read('public/css/pdf-library.css');assert.match(h,/Selecionar PDFs/);assert.match(h,/role="button"/);assert.match(h,/pdfUploadFile/);assert.match(h,/multiple/);assert.match(c,/\.pdf-drop-zone[\s\S]*border:2px dashed/);});
-test('modal de upload garante Workspace padrão e permite criar Workspace inline',()=>{const h=read('public/index.html');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(h,/pdf-new-workspace-btn/);assert.match(h,/openWorkspaceModal\('upload'\)/);assert.match(u,/async function openUploadModal/);assert.match(u,/await ensureWorkspace\(\)/);assert.match(u,/Biblioteca Geral/);});
-
+test('modal de upload garante Workspace padrão e permite criar Workspace inline',()=>{const h=read('public/index.html');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(h,/pdf-new-workspace-btn/);assert.match(h,/openWorkspaceModal\('upload'\)/);assert.match(u,/async function openUploadModal/);assert.match(u,/await ensureWorkspace\(\)/);});
 test('upload modal preserva Biblioteca Global e abre Reader interno',()=>{const h=read('public/index.html');const c=read('public/css/pdf-library.css');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(h,/pdf-upload-layout/);assert.match(h,/Biblioteca Global/);assert.match(h,/pdfReaderOverlay/);assert.match(c,/\.pdf-upload-layout/);assert.match(u,/PdfStudyReader\.open/);assert.match(u,/Visualizar<\/button>/);});
-
 test('Biblioteca mantém PDFs visíveis quando a releitura remota falha',()=>{const c=read('public/js/pdf/pdf-core.js');const l=read('public/js/pdf/pdf-library.js');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(c,/getSession\(\)/);assert.match(c,/isNetworkError/);assert.match(c,/async function retry/);assert.match(l,/CACHE_PREFIX/);assert.match(l,/rememberDocument/);assert.match(l,/__fromCache/);assert.match(u,/state\.docs=\[doc/);assert.match(u,/sincronização de tela falhou/);});
-
-
 test('Workspace padrão é idempotente e corrida 23505 é recuperada',()=>{const w=read('public/js/pdf/pdf-workspaces.js');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(w,/async function ensureDefault/);assert.match(w,/study_workspaces_user_name_uidx/);assert.match(w,/23505/);assert.match(w,/findByName/);assert.match(u,/ensureWorkspacePromise/);});
-
 test('Biblioteca abre global por padrão e Workspace não bloqueia PDFs',()=>{const h=read('public/index.html');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(h,/value="global" selected/);assert.match(h,/PdfStudyLibraryUI\.refresh\(\)/);assert.match(u,/scope:'global'/);assert.match(u,/falha não bloqueante/);assert.match(u,/await load\(\)/);});
-
-
 test('Biblioteca usa cache local para renderização quase instantânea antes da sincronização',()=>{const l=read('public/js/pdf/pdf-library.js');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(l,/async function getCached/);assert.match(u,/Mostrando cache local/);assert.match(u,/PdfStudyLibrary\.getCached/);});
-
-
 test('Biblioteca carrega links e progresso em paralelo e prioriza cache no first paint',()=>{const l=read('public/js/pdf/pdf-library.js');const u=read('public/js/pdf/pdf-library-ui.js');assert.match(l,/Promise\.all\(\[\s*links\(\)\.list/);assert.match(u,/const loadPromise=load\(\)\.catch/);assert.match(u,/Promise\.allSettled/);});
-
-
 test('ações da Biblioteca não estouram no mobile com quatro comandos',()=>{const c=read('public/css/pdf-library.css');assert.match(c,/pdf-library-actions \{ display:grid/);assert.match(c,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);assert.match(c,/@media\(max-width:390px\).*pdf-library-actions\{grid-template-columns:1fr/s);});
-
-
 test('upload em lote aceita múltiplos PDFs com concorrência controlada',()=>{const h=read('public/index.html');const u=read('public/js/pdf/pdf-upload.js');const ui=read('public/js/pdf/pdf-library-ui.js');assert.match(h,/type="file"[^>]*multiple/);assert.match(u,/async function uploadMany/);assert.match(u,/workerCount/);assert.match(u,/Promise\.all\(Array\.from/);assert.match(ui,/uploadConcurrency/);assert.match(ui,/PdfStudyUpload\.uploadMany/);});
 test('Biblioteca permite seleção múltipla e exclusão em lote',()=>{const h=read('public/index.html');const l=read('public/js/pdf/pdf-library.js');const ui=read('public/js/pdf/pdf-library-ui.js');assert.match(h,/pdfBulkToolbar/);assert.match(h,/Excluir selecionados/);assert.match(ui,/selectedPdfIds=new Set/);assert.match(ui,/selectAllVisible/);assert.match(ui,/deleteSelected/);assert.match(l,/async function removeMany/);assert.match(l,/chunkSize=25/);});
-
-
 test('upload em lote diagnostica falha por arquivo com código etapa e mensagem amigável',()=>{const u=read('public/js/pdf/pdf-upload.js');const ui=read('public/js/pdf/pdf-library-ui.js');const h=read('public/index.html');for(const code of ['INVALID_TYPE','EMPTY_FILE','TOO_LARGE','INVALID_PDF','NETWORK_ERROR','STORAGE_ERROR','DATABASE_ERROR','PROGRESS_ERROR','LINK_ERROR'])assert.match(u,new RegExp(code));assert.match(u,/classifyError/);assert.match(u,/fileName/);assert.match(ui,/renderUploadResult/);assert.match(h,/Resultado da importação/);});
 test('lote não aborta por um PDF inválido e permite retry somente das falhas',()=>{const u=read('public/js/pdf/pdf-upload.js');const ui=read('public/js/pdf/pdf-library-ui.js');assert.doesNotMatch(u,/invalid\.length\)throw new Error/);assert.match(u,/failed\.push/);assert.match(ui,/retryFailedUploads/);assert.match(ui,/result\.failed\.map\(x=>x\.file\)/);});
 test('diagnóstico detecta assinatura PDF inválida antes do Storage e permite copiar relatório',()=>{const u=read('public/js/pdf/pdf-upload.js');const ui=read('public/js/pdf/pdf-library-ui.js');assert.match(u,/slice\(0,1024\)/);assert.match(u,/%PDF-/);assert.match(ui,/copyUploadReport/);assert.match(ui,/technicalMessage/);});
