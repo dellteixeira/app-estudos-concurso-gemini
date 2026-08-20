@@ -24,5 +24,13 @@ test('Reader mobile usa gestos padrão sem assistente concorrente',()=>{const r=
 
 test('seleção usa renderTextLayer e gera retângulos persistentes',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/renderTextLayer/);assert.match(r,/getTextContent/);assert.match(r,/getClientRects/);assert.match(r,/renderPageMarks/);assert.match(r,/rects:rects\.slice/);});
 
+test('anotação não desenha ícone sobre o PDF e navega ao ponto exato',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/x\.annotation_type!==\'note\'/);assert.doesNotMatch(r,/mark\.textContent=\'✎\'/);assert.match(r,/item\.rects\?\.\[0\]\?\.y/);assert.match(r,/box\.scrollTo\(\{top:/);});
+
+test('marca-texto e sublinhado podem ser removidos pelo painel ou pela própria marca',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/Marcas visuais/);assert.match(r,/confirmRemoveMark/);assert.match(r,/Clique para remover/);assert.match(r,/deleteAnnotation\(id\)/);});
+
+test('marcações sobrevivem a falha de rede e sincronizam depois',()=>{const a=read('public/js/pdf/pdf-annotations.js');assert.match(a,/pdf_annotations_pending_v2/);assert.match(a,/isNetworkError/);assert.match(a,/enqueue\(localRecord\(payload\)\)/);assert.match(a,/syncPending/);assert.match(a,/String\(id\)\.startsWith\('local-'\)/);});
+
+test('flashcard usa endpoint de IA dedicado com fallback local editável',()=>{const r=read('public/js/pdf/pdf-reader.js'),w=read('src/index.js'),h=read('public/index.html');assert.match(r,/enhanceFlashcardWithAI/);assert.match(r,/\/api\/ai\/flashcard/);assert.match(r,/inferQuestionFromSelection/);assert.match(w,/async function generateFlashcard/);assert.match(w,/aprendizagem ativa/);assert.match(w,/recuperação ativa/);assert.match(h,/Gerar novamente com IA/);});
+
 test('URL temporária do PDF é revogada ao fechar o Reader',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/URL\.revokeObjectURL\(nativeObjectUrl\)/);assert.match(r,/nativeObjectUrl=null/);assert.match(r,/dispose\(\)/);});
 
