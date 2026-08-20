@@ -32,5 +32,11 @@ test('marcações sobrevivem a falha de rede e sincronizam depois',()=>{const a=
 
 test('flashcard usa endpoint de IA dedicado com fallback local editável',()=>{const r=read('public/js/pdf/pdf-reader.js'),w=read('src/index.js'),h=read('public/index.html');assert.match(r,/enhanceFlashcardWithAI/);assert.match(r,/\/api\/ai\/flashcard/);assert.match(r,/inferQuestionFromSelection/);assert.match(w,/async function generateFlashcard/);assert.match(w,/aprendizagem ativa/);assert.match(w,/recuperação ativa/);assert.match(h,/Gerar novamente com IA/);});
 
+test('Reader oferece zoom visível e localização de frases completas',()=>{const h=read('public/index.html'),r=read('public/js/pdf/pdf-reader.js');assert.match(h,/pdfReaderZoomValue/);assert.match(h,/Diminuir zoom/);assert.match(h,/Aumentar zoom/);assert.match(h,/pdfReaderSearchInput/);assert.match(r,/async function searchPdf/);assert.match(r,/pageSearchText/);assert.match(r,/nextSearchResult/);});
+
+test('ESC ENTER e Ctrl F funcionam no Reader e nos modais',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/function onReaderKeydown/);assert.match(r,/event\.key===\'Escape\'/);assert.match(r,/event\.key===\'Enter\'/);assert.match(r,/event\.key\.toLowerCase\(\)===\'f\'/);assert.match(r,/document\.addEventListener\('keydown',onReaderKeydown\)/);assert.match(r,/document\.removeEventListener\('keydown',onReaderKeydown\)/);});
+
+test('motor de flashcard faz crítica silenciosa e informa IA real ou fallback',()=>{const w=read('src/index.js'),r=read('public/js/pdf/pdf-reader.js');assert.match(w,/raciocine silenciosamente em cinco etapas/);assert.match(w,/critique a pergunta/);assert.match(w,/Workers AI · Llama 3\.1 8B/);assert.match(r,/Gerado por IA real/);assert.match(r,/Modo local usado/);});
+
 test('URL temporária do PDF é revogada ao fechar o Reader',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/URL\.revokeObjectURL\(nativeObjectUrl\)/);assert.match(r,/nativeObjectUrl=null/);assert.match(r,/dispose\(\)/);});
 
