@@ -20,7 +20,7 @@ test('upload modal tem limites responsivos e sem overflow horizontal',()=>{const
 test('Reader abre Blob privado sem expor URL assinada',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/downloadBlob\(doc\)/);assert.match(r,/new Blob\(\[blob\],\{type:'application\/pdf'\}\)/);assert.match(r,/URL\.createObjectURL/);});
 
 
-test('Reader mobile usa gestos padrão sem assistente concorrente',()=>{const r=read('public/js/pdf/pdf-reader.js'),c=read('public/css/pdf-reader.css');assert.doesNotMatch(r,/beginPinch|movePinch|touchstart/);assert.match(c,/touch-action:auto/);assert.match(c,/overflow:auto!important/);});
+test('Reader mobile usa Pointer Events para pinch sem assistente touch legado',()=>{const r=read('public/js/pdf/pdf-reader.js'),c=read('public/css/pdf-reader.css');assert.match(r,/beginPinch/);assert.match(r,/pointerdown/);assert.match(r,/pointermove/);assert.doesNotMatch(r,/touchstart|touchmove/);assert.match(c,/touch-action:pan-x pan-y!important/);assert.match(c,/overflow:auto!important/);});
 
 test('seleção usa renderTextLayer e gera retângulos persistentes',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/renderTextLayer/);assert.match(r,/getTextContent/);assert.match(r,/getClientRects/);assert.match(r,/renderPageMarks/);assert.match(r,/rects:rects\.slice/);});
 
