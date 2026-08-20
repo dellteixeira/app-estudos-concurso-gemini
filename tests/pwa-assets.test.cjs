@@ -2,4 +2,3 @@ const test=require('node:test');const assert=require('node:assert/strict');const
 test('Reader é core asset network-first no Service Worker',()=>{const sw=read('public/sw.js');const block=sw.match(/const isCoreAsset[\s\S]*?\.some\(path => url\.pathname\.endsWith\(path\)\);/)?.[0]||'';for(const route of ['/css/pdf-reader.css','/js/pdf/pdf-annotations.js','/js/pdf/pdf-reader.js'])assert.match(block,new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));});
 test('Reader também faz parte do APP_SHELL offline',()=>{const sw=read('public/sw.js');for(const token of ['./css/pdf-reader.css','./js/pdf/pdf-annotations.js','./js/pdf/pdf-reader.js'])assert.ok(sw.includes(`'${token}'`),`ausente: ${token}`);});
 test('componente oficial do Viewer fica disponível offline',()=>{const sw=read('public/sw.js');assert.ok(sw.includes("'./vendor/pdf_viewer.min.js'"));});
-
