@@ -1,3 +1,4 @@
+// Migração temporária v10.24.3 — funcionalidade já aplicada; remover após o merge.
 import fs from 'node:fs';
 import path from 'node:path';
 
