@@ -1,3 +1,4 @@
+# Triggered after temporary orchestrator was registered on main.
 from pathlib import Path
 import re
 
