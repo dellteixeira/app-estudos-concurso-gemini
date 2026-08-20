@@ -144,6 +144,9 @@ function onWorkspaceFilterChange(v){state.activeWorkspace=v||'';load().catch(han
 function onMateriaFilterChange(v){state.activeMateria=v||'';state.activeAssunto='';renderAss('filter');load().catch(handle)}
 function onAssuntoFilterChange(v){state.activeAssunto=v||'';load().catch(handle)}
 let st;function onSearch(v){clearTimeout(st);st=setTimeout(()=>{state.search=String(v||'').trim();load().catch(handle)},180)}
+let libraryActivationTimer=null;
+function scheduleLibraryActivationRefresh(){clearTimeout(libraryActivationTimer);libraryActivationTimer=setTimeout(()=>{initialize(true).catch(handle)},0)}
+document.addEventListener('click',event=>{const btn=event.target?.closest?.('button');if(!btn)return;const onclick=btn.getAttribute('onclick')||'';if(onclick.includes("'tab-biblioteca'")||btn.dataset?.tab==='tab-biblioteca')scheduleLibraryActivationRefresh()});
 
 function openWorkspaceModal(context='library'){
   workspaceReturnContext=context==='upload'?'upload':context==='link'?'link':'library';
