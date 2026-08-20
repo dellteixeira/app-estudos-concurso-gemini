@@ -1,12 +1,12 @@
 name: Temporary Flashcard v10.24.9 Migration
 on:
-  push:
-    branches: [feature/flashcard-manual-workers-ai]
+  pull_request:
+    branches: [main]
 permissions:
   contents: write
 jobs:
   migrate:
-    if: ${{ !contains(github.event.head_commit.message, '[flashcard-migrated]') }}
+    if: ${{ github.event.pull_request.head.ref == 'feature/flashcard-manual-workers-ai' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
