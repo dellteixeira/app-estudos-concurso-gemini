@@ -1,4 +1,4 @@
-const APP_VERSION = '10.18.0';
+const APP_VERSION = '10.18.1';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
@@ -129,3 +129,4 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
