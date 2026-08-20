@@ -7,7 +7,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.24.8";
+const APP_VERSION = "10.24.9";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -412,6 +412,22 @@ ${rawText.slice(0, MAX_TEXT_CHARS)}
   });
 }
 
+
+function parseFlashcardAIResponse(result) {
+  if (!result) return null;
+  const candidates = [result?.response, result?.result?.response, result?.response?.response, result?.output, result?.data, result];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    if (typeof candidate === "object" && !Array.isArray(candidate)) {
+      if (typeof candidate.question === "string" && typeof candidate.answer === "string") return candidate;
+    } else if (typeof candidate === "string") {
+      const parsed = extractFirstJsonObject(candidate);
+      if (parsed && typeof parsed.question === "string" && typeof parsed.answer === "string") return parsed;
+    }
+  }
+  return null;
+}
+
 async function generateFlashcard(request, env) {
   const user = await authenticateSupabaseUser(request, env);
   if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
@@ -435,7 +451,7 @@ async function generateFlashcard(request, env) {
       temperature:0.1,
       max_tokens:1400
     });
-    const parsed = parseAIResponse(result);
+    const parsed = parseFlashcardAIResponse(result);
     const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
     if (!question || !answer) throw new Error("Resposta incompleta da IA");
     return json({ question, answer, model:"Workers AI · Llama 3.1 8B" });
