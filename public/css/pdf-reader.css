@@ -5,4 +5,3 @@
 .pdf-reader-selection-layer{z-index:1;mix-blend-mode:multiply}.pdf-reader-selection-rect{background:rgba(36,177,204,.28);box-shadow:none}.pdf-reader-mark-layer{z-index:2}.pdf-reader-text-layer{z-index:3}
 .pdf-reader-text-layer{touch-action:auto}.pdf-reader-text-layer ::selection{background:rgba(47,194,255,.38);text-shadow:none}.pdf-reader-selection-layer{z-index:1;pointer-events:none;display:none;mix-blend-mode:normal}.pdf-reader-mark-layer{z-index:2}.pdf-reader-text-layer{z-index:3}
 .pdf-reader-text-layer span.markedContent{top:0;height:0}.pdf-reader-text-layer br::selection{background:transparent}.pdf-reader-text-layer .endOfContent{display:block;position:absolute;inset:100% 0 0;z-index:-1;cursor:default;user-select:none;-webkit-user-select:none}.pdf-reader-text-layer .endOfContent.active{top:0}
-
