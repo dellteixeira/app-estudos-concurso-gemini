@@ -94,3 +94,11 @@
   .pdf-reader-side-main{padding:14px!important}
   .pdf-reader-side-actions{padding:10px!important}
 }
+
+
+/* V10.24.11 — pinch-to-zoom mobile */
+@media(max-width:700px){
+  .pdf-reader-canvas-wrap{touch-action:pan-x pan-y!important}
+  .pdf-reader-canvas-wrap.is-pinching{touch-action:none!important;overscroll-behavior:none!important}
+  .pdf-reader-canvas-wrap.is-pinching .pdf-reader-page-host{will-change:transform}
+}
