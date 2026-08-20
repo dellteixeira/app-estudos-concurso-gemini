@@ -7,7 +7,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.16.0";
+const APP_VERSION = "10.17.0";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -85,6 +85,16 @@ async function serveVendorAsset(request, route) {
       "cache-control": "no-store",
       "x-painel-vendor-last-status": String(lastStatus || 0)
     }
+  });
+}
+
+const EMBEDPDF_VERSION = "2.14.4";
+async function serveEmbedPdfAsset(request, pathname) {
+  const file = pathname.slice("/vendor/embedpdf/".length);
+  if (!/^[a-zA-Z0-9._-]+$/.test(file)) return new Response("Arquivo inválido.", { status: 400 });
+  return serveVendorAsset(request, {
+    upstreams: [`https://cdn.jsdelivr.net/npm/@embedpdf/snippet@${EMBEDPDF_VERSION}/dist/${file}`],
+    contentType: file.endsWith(".wasm") ? "application/wasm" : file.endsWith(".css") ? "text/css; charset=utf-8" : file.endsWith(".json") ? "application/json; charset=utf-8" : "application/javascript; charset=utf-8"
   });
 }
 
@@ -421,6 +431,10 @@ export default {
     const vendorRoute = VENDOR_ROUTES[url.pathname];
     if (vendorRoute && request.method === "GET") {
       return serveVendorAsset(request, vendorRoute);
+    }
+
+    if (request.method === "GET" && url.pathname.startsWith("/vendor/embedpdf/")) {
+      return serveEmbedPdfAsset(request, url.pathname);
     }
 
     if (url.pathname === "/api/ai/analisar-edital") {
