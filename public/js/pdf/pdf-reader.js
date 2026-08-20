@@ -48,16 +48,6 @@ function clamp(n,min,max){return Math.min(max,Math.max(min,n))}
 	  }
 	  return {...textContent,items:ordered};
 	}
-	function installTextSelectionAssist(textLayer){
-	  const end=document.createElement('div');end.className='pdf-reader-end-of-content';textLayer.appendChild(end);
-	  textLayer.addEventListener('mousedown',event=>{
-	    if(event.target===textLayer)return;
-	    const bounds=textLayer.getBoundingClientRect();
-	    end.style.top=(clamp((event.clientY-bounds.top)/bounds.height,0,1)*100).toFixed(2)+'%';end.classList.add('active');
-	  });
-	  const release=()=>{end.style.top='';end.classList.remove('active')};
-	  textLayer.addEventListener('mouseup',release);textLayer.addEventListener('mouseleave',release);
-	}
 	function normalizeRects(clientRects,box){
 	  const raw=[];
 	  for(const rect of [...clientRects]){
@@ -269,7 +259,7 @@ async function onKeyDown(e){
 async function open(doc){
   if(!doc?.id)return;
   try{
-    if(!global.pdfjsLib)throw new Error('PDF.js não carregado.');
+    if(!global.pdfjsLib||!global.pdfjsViewer?.TextLayerBuilder)throw new Error('Visualizador completo do PDF.js não carregado.');
     pdfjsLib.GlobalWorkerOptions.workerSrc='./vendor/pdf.worker.min.js';
     state={doc,pdf:null,page:Number(doc.progress?.current_page||1),total:0,scale:window.innerWidth<700?1:1.25,annotations:[],bookmarks:[],selected:null,openedAt:Date.now(),renderToken:0,importedNotes:[],fitMode:window.innerWidth<700?'width':'custom',selectionLocked:false};
     $('pdfReaderOverlay').classList.add('open');document.body.classList.add('pdf-reader-open');$('pdfReaderTitle').textContent=doc.title||doc.original_file_name||'PDF';$('pdfReaderZoomLabel').textContent=Math.round(state.scale*100)+'%';setStatus('Carregando PDF…');bindReaderInteractions();
@@ -302,10 +292,10 @@ async function renderPage(){
   const viewport=page.getViewport({scale:state.scale});const host=$('pdfReaderPageHost');host.innerHTML='';
   const pageEl=document.createElement('div');pageEl.className='pdf-reader-page';pageEl.dataset.page=state.page;pageEl.style.width=viewport.width+'px';pageEl.style.height=viewport.height+'px';
   const canvas=document.createElement('canvas');canvas.width=Math.floor(viewport.width*devicePixelRatio);canvas.height=Math.floor(viewport.height*devicePixelRatio);canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';
-	  const ctx=canvas.getContext('2d');const selectionLayer=document.createElement('div');selectionLayer.className='pdf-reader-selection-layer';const markLayer=document.createElement('div');markLayer.className='pdf-reader-mark-layer';const textLayer=document.createElement('div');textLayer.className='pdf-reader-text-layer';pageEl.append(canvas,selectionLayer,markLayer,textLayer);host.appendChild(pageEl);
+	  const ctx=canvas.getContext('2d');const selectionLayer=document.createElement('div');selectionLayer.className='pdf-reader-selection-layer';const markLayer=document.createElement('div');markLayer.className='pdf-reader-mark-layer';const textLayerBuilder=new global.pdfjsViewer.TextLayerBuilder({highlighter:null,accessibilityManager:null,enablePermissions:false});const textLayer=textLayerBuilder.div;textLayer.classList.add('pdf-reader-text-layer');pageEl.append(canvas,selectionLayer,markLayer,textLayer);host.appendChild(pageEl);
   await page.render({canvasContext:ctx,viewport,transform:devicePixelRatio!==1?[devicePixelRatio,0,0,devicePixelRatio,0,0]:null}).promise;
   const text=orderTextContentForSelection(await page.getTextContent({disableCombineTextItems:false}),viewport);
-  await pdfjsLib.renderTextLayer({textContentSource:text,container:textLayer,viewport,textDivs:[]}).promise;installTextSelectionAssist(textLayer);
+  textLayerBuilder.setTextContentSource(text);await textLayerBuilder.render(viewport);
   const finishSelection=()=>requestAnimationFrame(updateSelection);
   pageEl.addEventListener('pointerup',finishSelection);pageEl.addEventListener('touchend',finishSelection,{passive:true});
   $('pdfReaderPageInput').value=String(state.page);updateBookmarkButton();await renderAnnotations();renderSideList();saveProgress(false).catch(()=>{})
@@ -353,3 +343,4 @@ function toggleSide(){document.getElementById('pdfReaderOverlay')?.classList.tog
 function handle(e){console.error('[PDF Reader]',e);setStatus(e?.message||'Erro no Reader.');alert(e?.message||'Erro no Reader.')}
 global.PdfStudyReader=Object.freeze({open,close,prev,next,goto,zoom,fitWidth,fitPage,toggleFit,toggleBookmark,saveAnnotation,promptNote,createFlashcard,openFlashcardComposer,closeFlashcardComposer,exportToNotes,importNotes,deleteAnnotation,goToAnnotation,toggleSide,moveVertical,scrollReader});
 })(window);
+
