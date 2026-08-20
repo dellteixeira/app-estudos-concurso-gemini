@@ -1,0 +1,33 @@
+name: Temporary Keep Library After Flashcard
+on:
+  push:
+    branches: [fix/keep-library-after-flashcard-save]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[library-retained]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/keep-library-after-flashcard-save
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply change
+        run: python3 scripts/apply_keep_library_after_flashcard_save.py
+      - name: Validate
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: |
+          npm test
+          npm run audit
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: keep Biblioteca open after flashcard save [library-retained]" || exit 0
+          git push origin HEAD:fix/keep-library-after-flashcard-save
