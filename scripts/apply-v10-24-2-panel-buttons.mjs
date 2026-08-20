@@ -2,11 +2,11 @@ import fs from 'node:fs';
 
 const read=p=>fs.readFileSync(p,'utf8');
 const write=(p,s)=>fs.writeFileSync(p,s);
-const must=(cond,msg)=>{if(!cond)throw new Error(msg)};
 
 for(const p of ['package.json','public/version.json','public/sw.js','src/index.js']){
   if(!fs.existsSync(p)) continue;
-  write(p,read(p).replaceAll('10.24.1','10.24.2'));
+  let s=read(p).replaceAll('10.24.1','10.24.2');
+  write(p,s);
 }
 
 {
@@ -31,10 +31,16 @@ for(const p of ['package.json','public/version.json','public/sw.js','src/index.j
   write(p,s);
 }
 
+for(const p of ['tests/v10-24-1-layout-fix.test.cjs','tests/library-reader-v10-24.test.cjs']){
+  if(!fs.existsSync(p)) continue;
+  let s=read(p).replaceAll("'10.24.1'","'10.24.2'").replaceAll('"10.24.1"','"10.24.2"');
+  write(p,s);
+}
+
 {
-  const p='tests/v10-24-1-layout-fix.test.cjs';
+  const p='tests/pdf-library.test.cjs';
   if(fs.existsSync(p)){
-    let s=read(p).replace("assert.equal(pkg.version,'10.24.1')","assert.equal(pkg.version,'10.24.2')");
+    let s=read(p).replace(/assert\.match\(ui,\/Visualizar PDF\/\);/g,"assert.match(ui,/Visualizar<\\/button>/);");
     write(p,s);
   }
 }
