@@ -7,7 +7,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.22.0";
+const APP_VERSION = "10.23.0";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -422,22 +422,23 @@ async function generateFlashcard(request, env) {
   let body;
   try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
   const text = cleanText(body?.text, 12000);
+  const existingQuestion = cleanText(body?.existingQuestion, 500);
   if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
   const schema = { type:"object", properties:{ question:{type:"string"}, answer:{type:"string"} }, required:["question","answer"] };
   try {
     const result = await env.AI.run(MODEL, {
       messages: [
-        { role:"system", content:`Você é um especialista em aprendizagem ativa e elaboração de flashcards para concursos públicos brasileiros. Transforme o trecho em UM flashcard de alta qualidade. Identifique se o núcleo é conceito, regra, exceção, requisitos, consequência, prazo, competência, comparação ou relação de causa e efeito. A pergunta deve exigir recuperação ativa, ser inequívoca, autossuficiente e específica; nunca use perguntas vagas como "o que o trecho afirma?". A resposta deve ser curta, completa, fiel exclusivamente ao trecho e preservar condições, exceções, números e termos jurídicos essenciais. Não invente contexto. Retorne somente JSON.` },
-        { role:"user", content:`TRECHO-FONTE:\n${text}` }
+        { role:"system", content:`Você é um especialista sênior em aprendizagem ativa, psicometria e elaboração de flashcards para concursos públicos brasileiros. Antes de responder, raciocine silenciosamente em cinco etapas: (1) identifique a unidade de conhecimento central; (2) classifique-a como conceito, regra, exceção, requisito, consequência, prazo, competência, comparação ou causa e efeito; (3) separe regra de condições e exceções; (4) produza uma pergunta que forneça contexto suficiente sem entregar a resposta; (5) critique a pergunta quanto a ambiguidade, pistas, generalidade e fidelidade e reescreva se necessário. Gere UM flashcard atômico. A pergunta deve exigir recuperação ativa, ser inequívoca, autossuficiente e específica; evite sim/não e nunca use fórmulas vagas como "o que o trecho afirma?". A resposta deve ser concisa, completa, fiel exclusivamente à fonte e preservar condições, exceções, números e termos jurídicos essenciais. Não invente fatos nem complemente com conhecimento externo. Retorne somente JSON.` },
+        { role:"user", content:`TRECHO-FONTE:\n${text}\n\nPERGUNTA LOCAL INICIAL (apenas para superar, não para copiar):\n${existingQuestion||'não fornecida'}` }
       ],
       response_format:{ type:"json_schema", json_schema:schema },
-      temperature:0.15,
-      max_tokens:900
+      temperature:0.1,
+      max_tokens:1400
     });
     const parsed = parseAIResponse(result);
     const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
     if (!question || !answer) throw new Error("Resposta incompleta da IA");
-    return json({ question, answer, model:MODEL });
+    return json({ question, answer, model:"Workers AI · Llama 3.1 8B" });
   } catch (error) {
     console.error("Workers AI flashcard error", error);
     return json({ error:"Não foi possível aprimorar agora." }, 503);
