@@ -3417,3 +3417,26 @@
         }
         body.light-mode .header-search-shell:focus-within { background: #fff; }
         body.light-mode .header-search-shell #globalStudySearch::placeholder { color:#718096; }
+
+
+/* V10.24.10 — mobile action grids harmonized */
+@media(max-width:700px){
+  .concurso-selector-bar{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;padding:14px!important}
+  .concurso-selector-bar>select{width:100%!important;min-width:0!important}
+  .concurso-selector-bar>.btn-primary{width:100%!important;justify-content:center!important}
+  .header-utility-cluster{width:100%!important;display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+  .header-account-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important}
+  .header-account-actions .btn,.btn-search-header{width:100%!important;min-width:0!important;justify-content:center!important}
+  .edital-manual-form{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .edital-manual-form>#prioridade{grid-column:1/-1!important;width:100%!important}
+  .edital-manual-actions{grid-column:1/-1!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important}
+  .edital-manual-actions .btn{width:100%!important;min-width:0!important;justify-content:center!important;white-space:normal!important;text-align:center!important}
+  .edital-guide-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important}
+  .edital-guide-actions .btn{width:100%!important;min-width:0!important;justify-content:center!important;white-space:normal!important;text-align:center!important}
+}
+@media(max-width:430px){
+  .header-account-actions{grid-template-columns:1fr!important}
+  .edital-manual-form{grid-template-columns:1fr!important}
+  .edital-manual-form>#prioridade,.edital-manual-actions{grid-column:1!important}
+  .edital-manual-actions,.edital-guide-actions{grid-template-columns:1fr!important}
+}
