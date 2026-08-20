@@ -1,0 +1,33 @@
+name: Temporary Flashcard PR Migrator
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    if: ${{ github.event.pull_request.head.ref == 'feature/flashcard-manual-workers-ai' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/flashcard-manual-workers-ai
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: python3 scripts/apply_flashcard_v10_24_9.py
+      - name: Validate
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: |
+          npm test
+          npm run audit
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: manual flashcards with Workers AI [flashcard-migrated]" || exit 0
+          git push origin HEAD:feature/flashcard-manual-workers-ai
