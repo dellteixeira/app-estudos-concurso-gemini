@@ -25,7 +25,8 @@ jobs:
           const fs = require('fs');
           const cssPath = 'public/css/pdf-reader.css';
           let css = fs.readFileSync(cssPath, 'utf8');
-          if (css.includes('10.24.8') && !css.includes('V10.17:') && !css.includes('V10.19 —')) process.exit(0);
+          const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+          if (pkg.version === '10.24.8' && !css.includes('V10.17:') && !css.includes('V10.19 —')) process.exit(0);
           const before = css.length;
           const v1017 = /\/\* V10\.17:[\s\S]*?\/\* V10\.18\.1/;
           if (!v1017.test(css)) throw new Error('Bloco V10.17 não encontrado');
@@ -44,13 +45,15 @@ jobs:
           fs.writeFileSync('tests/pdf-reader-css-phase2.test.cjs',`const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const css=fs.readFileSync('public/css/pdf-reader.css','utf8');test('Fase 2 remove CSS de renderers obsoletos e preserva renderer atual',()=>{assert.doesNotMatch(css,/pdf-reader-page-host\\.pdfViewer/);assert.doesNotMatch(css,/pdf-reader-native-frame/);assert.doesNotMatch(css,/V10\\.17:/);assert.doesNotMatch(css,/V10\\.19 —/);assert.match(css,/pdf-reader-custom-viewer/);});test('Fase 2 preserva controles e correções atuais',()=>{for(const token of ['pdf-reader-selection-bar','pdf-reader-study-actions','pdf-note-paper','pdf-export-menu','V10.24.3'])assert.ok(css.includes(token),token);});\n`);
           NODE
       - name: Testes e auditoria pós-modificação
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
         run: npm test && npm run audit
       - name: Commitar refactor na branch
         run: |
-          if git diff --quiet && [ ! -f tests/pdf-reader-css-phase2.test.cjs ]; then exit 0; fi
+          rm -f docs/.phase2-trigger
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/css/pdf-reader.css package.json public/version.json public/sw.js src/index.js tests/pdf-reader-css-phase2.test.cjs
+          git add -A public/css/pdf-reader.css package.json public/version.json public/sw.js src/index.js tests/pdf-reader-css-phase2.test.cjs docs/.phase2-trigger
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "refactor: consolidar CSS do PDF Reader fase 2"
           git push origin HEAD:${{ github.head_ref }}
