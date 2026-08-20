@@ -22,8 +22,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Apply migration
-        run: node scripts/apply-ui-reader-v10-24.mjs
+      - name: Apply migration once
+        shell: bash
+        run: |
+          if grep -q '"version": "10.24.0"' package.json; then
+            echo "V10.24 already applied."
+          else
+            node scripts/apply-ui-reader-v10-24.mjs
+            node scripts/postfix-v10-24.mjs
+          fi
       - name: Run tests
         run: npm test
       - name: Run audit
