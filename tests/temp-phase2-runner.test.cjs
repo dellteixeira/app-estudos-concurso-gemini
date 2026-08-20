@@ -1,0 +1,1 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');test('workflow temporário da fase 2 é restrito à branch de refactor',()=>{const y=fs.readFileSync('.github/workflows/temp-phase2-css.yml','utf8');assert.match(y,/refactor\/pdf-reader-css-phase-2/);assert.match(y,/npm test/);assert.match(y,/npm run audit/);});
