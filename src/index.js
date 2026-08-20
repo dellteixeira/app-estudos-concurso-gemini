@@ -7,7 +7,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.21.0";
+const APP_VERSION = "10.22.0";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -412,6 +412,38 @@ ${rawText.slice(0, MAX_TEXT_CHARS)}
   });
 }
 
+async function generateFlashcard(request, env) {
+  const user = await authenticateSupabaseUser(request, env);
+  if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+  if (env.AI_RATE_LIMITER?.limit) {
+    const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:flashcard` });
+    if (!success) return json({ error: "Muitas gerações em sequência. Aguarde um minuto." }, 429);
+  }
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
+  const text = cleanText(body?.text, 12000);
+  if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
+  const schema = { type:"object", properties:{ question:{type:"string"}, answer:{type:"string"} }, required:["question","answer"] };
+  try {
+    const result = await env.AI.run(MODEL, {
+      messages: [
+        { role:"system", content:`Você é um especialista em aprendizagem ativa e elaboração de flashcards para concursos públicos brasileiros. Transforme o trecho em UM flashcard de alta qualidade. Identifique se o núcleo é conceito, regra, exceção, requisitos, consequência, prazo, competência, comparação ou relação de causa e efeito. A pergunta deve exigir recuperação ativa, ser inequívoca, autossuficiente e específica; nunca use perguntas vagas como "o que o trecho afirma?". A resposta deve ser curta, completa, fiel exclusivamente ao trecho e preservar condições, exceções, números e termos jurídicos essenciais. Não invente contexto. Retorne somente JSON.` },
+        { role:"user", content:`TRECHO-FONTE:\n${text}` }
+      ],
+      response_format:{ type:"json_schema", json_schema:schema },
+      temperature:0.15,
+      max_tokens:900
+    });
+    const parsed = parseAIResponse(result);
+    const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
+    if (!question || !answer) throw new Error("Resposta incompleta da IA");
+    return json({ question, answer, model:MODEL });
+  } catch (error) {
+    console.error("Workers AI flashcard error", error);
+    return json({ error:"Não foi possível aprimorar agora." }, 503);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -436,6 +468,11 @@ export default {
         return json({ error: "Método não permitido." }, 405);
       }
       return analyzeEdital(request, env);
+    }
+
+    if (url.pathname === "/api/ai/flashcard") {
+      if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
+      return generateFlashcard(request, env);
     }
 
 

@@ -60,6 +60,7 @@
 /* V10.21 — ferramentas independentes e marca-texto configurável. */
 .pdf-reader-mark.highlight{background:var(--mark-color,#fff17640);box-shadow:none;mix-blend-mode:multiply}
 .pdf-reader-mark.note{width:22px!important;height:22px!important;transform:translate(-5px,-18px);display:grid;place-items:center;border-radius:50%;background:#7c3aed!important;color:#fff;font:700 13px/1 system-ui;outline:2px solid #fff;box-shadow:0 2px 7px rgba(0,0,0,.35);mix-blend-mode:normal}
+.pdf-reader-ai-status{font-size:.76rem!important;color:#8ff5eb!important;min-height:1.1em}.pdf-reader-side-item.visual .pdf-reader-side-main strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600;color:#cbd5e1}.pdf-reader-side-item.visual{border-style:dashed}
 .pdf-reader-flashcard-taxonomy{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .pdf-reader-highlight-card input[type="color"]{height:38px;padding:3px;cursor:pointer}.pdf-reader-highlight-card input[type="range"]{width:100%;accent-color:#53e3d5}
 .pdf-reader-highlight-preview{padding:10px 12px;border-radius:8px;color:#17202a;background:#fff17640;font-weight:750;text-align:center}

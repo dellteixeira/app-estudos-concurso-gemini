@@ -1488,8 +1488,10 @@
                     <span class="pdf-reader-import-hint">Resposta</span>
                     <textarea id="pdfFlashcardAnswer" placeholder="Resposta do flashcard"></textarea>
                 </label>
+                <p id="pdfFlashcardAiStatus" class="pdf-reader-ai-status" aria-live="polite">A pergunta será aprimorada automaticamente.</p>
                 <div class="pdf-reader-flashcard-actions">
                     <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.closeFlashcardComposer()">Cancelar</button>
+                    <button id="pdfFlashcardAiButton" class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.enhanceFlashcardWithAI()">Gerar novamente com IA</button>
                     <button class="btn btn-success btn-sm" type="button" onclick="PdfStudyReader.createFlashcard()">Salvar flashcard</button>
                 </div>
             </div>
