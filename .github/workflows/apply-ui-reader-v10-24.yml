@@ -4,15 +4,20 @@ on:
   push:
     branches:
       - feature/library-reader-layout-v10-24
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   migrate-test-commit:
+    if: github.head_ref == 'feature/library-reader-layout-v10-24' || github.ref_name == 'feature/library-reader-layout-v10-24'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v4
         with:
           ref: feature/library-reader-layout-v10-24
