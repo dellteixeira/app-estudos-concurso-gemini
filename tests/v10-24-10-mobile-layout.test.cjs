@@ -1,0 +1,9 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const r=fs.readFileSync('public/js/pdf/pdf-reader.js','utf8');
+const c=fs.readFileSync('public/css/pdf-reader.css','utf8');
+const b=fs.readFileSync('public/css/base.css','utf8');
+test('Reader mobile inicia com PDF visível e painel recolhido',()=>{assert.match(r,/matchMedia\?\.\('\(max-width:700px\)'\)\.matches/);assert.match(r,/classList\.add\('side-collapsed'\)/);});
+test('Reader mobile mostra todas as ferramentas sem rolagem horizontal obrigatória',()=>{assert.match(c,/mobile Reader visible-first and complete toolbars/);assert.match(c,/grid-template-columns:repeat\(auto-fit,minmax\(44px,1fr\)\)/);assert.match(c,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);});
+test('Ações mobile do cabeçalho e edital usam grids harmônicos',()=>{assert.match(b,/mobile action grids harmonized/);assert.match(b,/\.edital-manual-actions\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s);assert.match(b,/\.edital-guide-actions\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s);assert.match(b,/\.header-account-actions\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s);});
