@@ -8,6 +8,7 @@ reader_path.write_text(s,encoding='utf-8')
 
 p=Path('tests/pdf-reader.test.cjs'); t=p.read_text(encoding='utf-8')
 t=t.replace("/flashcardDraft=\\{text:state\\.selected\\.text,page:state\\.selected\\.page/", "/flashcardDraft=\\{text:selected\\?\\.text\\|\\|'',page:selected\\?\\.page\\|\\|state\\.page/")
+t=t.replace("assert.match(r,/Modo local usado/);", "assert.match(r,/Você pode continuar criando o flashcard manualmente/);")
 p.write_text(t,encoding='utf-8')
 
 print('compatibility assertions updated')
