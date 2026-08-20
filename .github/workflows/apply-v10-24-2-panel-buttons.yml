@@ -1,0 +1,46 @@
+name: Apply v10.24.2 panel buttons
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  apply-test-commit:
+    if: github.head_ref == 'feature/v10-24-2-panel-buttons'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v10-24-2-panel-buttons
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Aplicar refinamentos
+        shell: bash
+        run: |
+          if grep -q '"version": "10.24.2"' package.json; then
+            echo 'v10.24.2 already applied'
+          else
+            node scripts/apply-v10-24-2-panel-buttons.mjs
+          fi
+      - name: Testes
+        run: npm test
+      - name: Auditoria
+        run: AUDIT_ALLOW_ANY_ROOT=1 npm run audit
+      - name: Commitar resultado
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json public src tests
+          if git diff --cached --quiet; then
+            echo 'No generated changes'
+            exit 0
+          fi
+          git commit -m 'Ajustar painel e botões compactos v10.24.2'
+          git push origin HEAD:feature/v10-24-2-panel-buttons
