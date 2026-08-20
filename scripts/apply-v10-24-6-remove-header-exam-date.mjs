@@ -1,3 +1,4 @@
+// Migração temporária v10.24.6 — funcionalidade já aplicada; remover após o merge.
 import fs from 'node:fs';
 import path from 'node:path';
 const read=p=>fs.readFileSync(p,'utf8');
