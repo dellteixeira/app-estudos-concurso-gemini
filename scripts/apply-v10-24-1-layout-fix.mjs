@@ -1,3 +1,4 @@
+// Migração temporária v10.24.1 — já aplicada; mantida apenas até o merge para rastreabilidade.
 import fs from 'node:fs';
 
 const read=p=>fs.readFileSync(p,'utf8');
@@ -29,8 +30,7 @@ for(const p of ['package.json','public/version.json','public/sw.js','src/index.j
   const re=/<div class="pdf-reader-side-actions">\s*<button class="pdf-reader-side-action primary" onclick="PdfStudyReader\.exportAnnotations\('doc'\)"[^>]*>[^<]*Exportar DOC<\/button><button class="pdf-reader-side-action" type="button" onclick="PdfStudyReader\.exportAnnotations\('txt'\)"[^>]*>[^<]*Exportar TXT<\/button>\s*<button class="pdf-reader-side-action" onclick="PdfStudyReader\.importNotes\(\)"[^>]*>[^<]*Importar<\/button>\s*<\/div>/;
   const replacement=`<div class="pdf-reader-side-actions"><div class="pdf-export-menu-wrap"><button id="pdfExportMenuButton" class="pdf-reader-side-action primary" type="button" aria-haspopup="menu" aria-expanded="false" onclick="PdfStudyReader.toggleExportMenu()">↑ Exportar⌄</button><div id="pdfExportMenu" class="pdf-export-menu" role="menu" hidden><button type="button" role="menuitem" onclick="PdfStudyReader.exportFromMenu('doc')">Exportar como DOC</button><button type="button" role="menuitem" onclick="PdfStudyReader.exportFromMenu('txt')">Exportar como TXT</button></div></div><button class="pdf-reader-side-action" onclick="PdfStudyReader.importNotes()" title="Importar anotações da matéria">↓ Importar</button></div>`;
   const next=s.replace(re,replacement);
-  must(next!==s,'Bloco de exportação v10.24 não encontrado');
-  write(p,next);
+  if(s.includes('pdfExportMenuButton')) write(p,s); else { must(next!==s,'Bloco de exportação v10.24 não encontrado'); write(p,next); }
 }
 
 {
@@ -54,5 +54,5 @@ for(const p of ['package.json','public/version.json','public/sw.js','src/index.j
   write(p,s);
 }
 
-write('tests/v10-24-1-layout-fix.test.cjs',`const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const r=p=>fs.readFileSync(p,'utf8');test('v10.24.1 layout aprovado',()=>{const lib=r('public/css/pdf-library.css'),rc=r('public/css/pdf-reader.css'),html=r('public/index.html'),reader=r('public/js/pdf/pdf-reader.js'),pkg=require('../package.json');assert.equal(pkg.version,'10.24.1');assert.match(lib,/minmax\\(0,1fr\\) minmax\\(0,1fr\\) minmax\\(0,1\\.25fr\\)/);assert.match(lib,/white-space:normal/);assert.match(html,/pdfExportMenuButton/);assert.match(html,/Exportar como DOC/);assert.match(html,/Exportar como TXT/);assert.match(reader,/function toggleExportMenu/);assert.match(reader,/function exportFromMenu/);assert.match(rc,/pdf-reader-side-list\\{[^}]*padding:18px 22px 28px/);assert.match(rc,/pdf-reader-side-actions\\{[^}]*justify-content:center/);assert.match(rc,/@media\\(max-width:700px\\)/);});\n`);
-console.log('V10.24.1 layout fix applied.');
+if(!fs.existsSync('tests/v10-24-1-layout-fix.test.cjs')) write('tests/v10-24-1-layout-fix.test.cjs',`const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const r=p=>fs.readFileSync(p,'utf8');test('v10.24.1 layout aprovado',()=>{const lib=r('public/css/pdf-library.css'),rc=r('public/css/pdf-reader.css'),html=r('public/index.html'),reader=r('public/js/pdf/pdf-reader.js'),pkg=require('../package.json');assert.equal(pkg.version,'10.24.1');assert.match(lib,/minmax\\(0,1fr\\) minmax\\(0,1fr\\) minmax\\(0,1\\.25fr\\)/);assert.match(lib,/white-space:normal/);assert.match(html,/pdfExportMenuButton/);assert.match(html,/Exportar como DOC/);assert.match(html,/Exportar como TXT/);assert.match(reader,/function toggleExportMenu/);assert.match(reader,/function exportFromMenu/);assert.match(rc,/pdf-reader-side-list\\{[^}]*padding:18px 22px 28px/);assert.match(rc,/pdf-reader-side-actions\\{[^}]*justify-content:center/);assert.match(rc,/@media\\(max-width:700px\\)/);});\n`);
+console.log('V10.24.1 layout fix verified.');
