@@ -1444,13 +1444,18 @@
             </div>
             <div class="pdf-reader-engine" title="Motor do visualizador">Leitor próprio · Biblioteca</div>
             <div class="pdf-reader-tools">
+                <div class="pdf-reader-zoom" aria-label="Controles de zoom"><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.zoom(-0.15)" title="Diminuir zoom">−</button><output id="pdfReaderZoomValue">100%</output><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.zoom(0.15)" title="Aumentar zoom">＋</button></div>
                 <button id="pdfReaderFitWidth" class="pdf-reader-icon-btn active" type="button" onclick="PdfStudyReader.fitWidth()" title="Ajustar à largura">↔ <span>Largura</span></button>
                 <button id="pdfReaderFitPage" class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.fitPage()" title="Ajustar página inteira">▣ <span>Página</span></button>
+                <button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.toggleSearch()" title="Localizar palavras ou frases no PDF">⌕ <span>Localizar</span></button>
                 <button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.openNativeTab()" title="Abrir em nova aba">↗</button>
                 <button id="pdfReaderBookmark" class="pdf-reader-icon-btn pdf-reader-bookmark" type="button" onclick="PdfStudyReader.toggleBookmark()" title="Marcar página">🔖</button>
                 <button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.toggleSide()" title="Mostrar ou ocultar painel">☰ <span>Painel</span></button>
             </div>
         </header>
+        <form id="pdfReaderSearchBar" class="pdf-reader-search-bar" hidden onsubmit="event.preventDefault();PdfStudyReader.searchPdf()">
+            <span aria-hidden="true">⌕</span><input id="pdfReaderSearchInput" type="search" autocomplete="off" placeholder="Localizar palavra, frase ou período completo" aria-label="Localizar no PDF"><button class="pdf-reader-icon-btn" type="submit">Localizar</button><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.nextSearchResult()" title="Próximo resultado">Próximo ↓</button><output id="pdfReaderSearchCount" aria-live="polite"></output><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.toggleSearch(false)" title="Fechar pesquisa">×</button>
+        </form>
         <div id="pdfReaderSelectionBar" class="pdf-reader-selection-bar show" aria-live="polite">
             <button class="pdf-reader-copy-btn" type="button" onclick="PdfStudyReader.useClipboardSelection()">＋ Colar seleção</button>
             <span id="pdfReaderSelectionText" class="pdf-reader-selection-text">Selecione diretamente no PDF</span>
