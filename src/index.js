@@ -7,7 +7,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.15.6";
+const APP_VERSION = "10.16.0";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -33,6 +33,13 @@ const VENDOR_ROUTES = {
     upstreams: [
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
       "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
+    ],
+    contentType: "application/javascript; charset=utf-8"
+  },
+  "/vendor/pdf_viewer.min.js": {
+    upstreams: [
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",
+      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"
     ],
     contentType: "application/javascript; charset=utf-8"
   },
@@ -427,3 +434,4 @@ export default {
     return env.ASSETS.fetch(request);
   }
 };
+
