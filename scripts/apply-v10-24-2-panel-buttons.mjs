@@ -5,8 +5,7 @@ const write=(p,s)=>fs.writeFileSync(p,s);
 
 for(const p of ['package.json','public/version.json','public/sw.js','src/index.js']){
   if(!fs.existsSync(p)) continue;
-  let s=read(p).replaceAll('10.24.1','10.24.2');
-  write(p,s);
+  write(p,read(p).replaceAll('10.24.1','10.24.2'));
 }
 
 {
@@ -33,14 +32,14 @@ for(const p of ['package.json','public/version.json','public/sw.js','src/index.j
 
 for(const p of ['tests/v10-24-1-layout-fix.test.cjs','tests/library-reader-v10-24.test.cjs']){
   if(!fs.existsSync(p)) continue;
-  let s=read(p).replaceAll("'10.24.1'","'10.24.2'").replaceAll('"10.24.1"','"10.24.2"');
-  write(p,s);
+  write(p,read(p).replaceAll("'10.24.1'","'10.24.2'").replaceAll('"10.24.1"','"10.24.2"'));
 }
 
 {
   const p='tests/pdf-library.test.cjs';
   if(fs.existsSync(p)){
-    let s=read(p).replace(/assert\.match\(ui,\/Visualizar PDF\/\);/g,"assert.match(ui,/Visualizar<\\/button>/);");
+    let s=read(p);
+    s=s.replace('assert.match(u,/Visualizar PDF/);','assert.match(u,/Visualizar<\\/button>/);');
     write(p,s);
   }
 }
