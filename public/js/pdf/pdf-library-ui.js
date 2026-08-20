@@ -109,9 +109,9 @@ function render(){
     const p=Number(d.progress?.progress_percentage||0),pg=Number(d.progress?.current_page||1),l=d.activeLink;
     const context=l?linkContextLabel(l):`${d.links.length} vínculo${d.links.length===1?'':'s'} de estudo`;
     const wa=l?ws(l.workspace_id):'Biblioteca Global';
-    const secondary=state.scope==='contest'&&l?`<button class="btn btn-secondary btn-sm" onclick="PdfStudyLibraryUI.unlinkDocument('${esc(d.id)}')">Desvincular</button>`:`<button class="btn btn-secondary btn-sm" onclick="PdfStudyLibraryUI.openLinkModal('${esc(d.id)}')">Vincular</button>`;
-    const del=state.scope==='global'?`<button class="btn btn-danger btn-sm" onclick="PdfStudyLibraryUI.deleteDocument('${esc(d.id)}')">Excluir da Biblioteca</button>`:'';
-    return `<article class="pdf-library-card ${selectedPdfIds.has(d.id)?'selected':''}"><div class="pdf-card-top">${selectionMode?`<label class="pdf-card-select"><input type="checkbox" ${selectedPdfIds.has(d.id)?'checked':''} onchange="PdfStudyLibraryUI.toggleDocumentSelection('${esc(d.id)}',this.checked)"><span>Selecionar</span></label>`:'<span class="pdf-file-badge">PDF</span>'}<button class="pdf-favorite-btn ${d.is_favorite?'active':''}" onclick="PdfStudyLibraryUI.toggleFavorite('${esc(d.id)}')">★</button></div><h4>${esc(d.title)}</h4><p class="pdf-card-context">${context}</p><p class="pdf-card-workspace">${esc(wa)}</p><div class="pdf-progress-line"><span style="width:${Math.min(100,Math.max(0,p))}%"></span></div><div class="pdf-card-meta"><span>${p.toFixed(0)}% lido · pág. ${pg}</span><span>${bytes(d.file_size)}</span></div><div class="pdf-card-actions"><button class="btn btn-primary btn-sm" onclick="PdfStudyLibraryUI.openDocument('${esc(d.id)}')">Visualizar PDF</button>${secondary}${del}</div></article>`;
+    const secondary=state.scope==='contest'&&l?`<button class="btn btn-secondary btn-sm pdf-library-card-action" onclick="PdfStudyLibraryUI.unlinkDocument('${esc(d.id)}')">Desvincular</button>`:`<button class="btn btn-secondary btn-sm pdf-library-card-action" onclick="PdfStudyLibraryUI.openLinkModal('${esc(d.id)}')">Vincular</button>`;
+    const del=state.scope==='global'?`<button class="btn btn-danger btn-sm pdf-library-card-action pdf-library-card-delete" onclick="PdfStudyLibraryUI.deleteDocument('${esc(d.id)}')">Excluir da Biblioteca</button>`:'';
+    return `<article class="pdf-library-card ${selectedPdfIds.has(d.id)?'selected':''}"><div class="pdf-card-top">${selectionMode?`<label class="pdf-card-select"><input type="checkbox" ${selectedPdfIds.has(d.id)?'checked':''} onchange="PdfStudyLibraryUI.toggleDocumentSelection('${esc(d.id)}',this.checked)"><span>Selecionar</span></label>`:'<span class="pdf-file-badge">PDF</span>'}<button class="pdf-favorite-btn ${d.is_favorite?'active':''}" onclick="PdfStudyLibraryUI.toggleFavorite('${esc(d.id)}')">★</button></div><h4>${esc(d.title)}</h4><p class="pdf-card-context">${context}</p><p class="pdf-card-workspace">${esc(wa)}</p><div class="pdf-progress-line"><span style="width:${Math.min(100,Math.max(0,p))}%"></span></div><div class="pdf-card-meta"><span>${p.toFixed(0)}% lido · pág. ${pg}</span><span>${bytes(d.file_size)}</span></div><div class="pdf-card-actions"><button class="btn btn-secondary btn-sm pdf-library-card-action" onclick="PdfStudyLibraryUI.openDocument('${esc(d.id)}')">Visualizar PDF</button>${secondary}${del}</div></article>`;
   }).join('');
 }
 
@@ -240,3 +240,23 @@ function handle(e){
 
 global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,removeUploadFile,onUploadMateriaChange,submitUpload,retryFailedUploads,removeFailedUploads,copyUploadReport,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,toggleSelectionMode,toggleDocumentSelection,selectAllVisible,clearSelection,deleteSelected,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
 })(window);
+
+
+// V10.24 — acabamento responsivo da Biblioteca e posicionamento da guia.
+function tuneLibraryUiV1024(){
+  const ids=['pdfLibraryScope','pdfWorkspaceFilter','pdfMateriaFilter','pdfAssuntoFilter'];
+  const controls=ids.map(id=>document.getElementById(id)).filter(Boolean);
+  const search=document.getElementById('pdfLibrarySearch'); if(search)controls.push(search);
+  const parent=controls.find(Boolean)?.parentElement;
+  if(parent){parent.classList.add('pdf-library-filter-row-v1024'); controls.forEach(el=>el.classList.add('pdf-library-filter-control-v1024'));}
+}
+function scrollLibraryStartV1024(){
+  const tab=document.getElementById('tab-biblioteca'); if(!tab)return;
+  const target=tab.querySelector('h2,h3,.section-title,.pdf-library-header')||tab;
+  const header=document.querySelector('.modern-header');
+  const top=Math.max(0,target.getBoundingClientRect().top+window.scrollY-(header?.offsetHeight||0)-12);
+  window.scrollTo({top,behavior:'auto'});
+}
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const oc=b.getAttribute('onclick')||'';if(oc.includes("switchTab('tab-biblioteca'"))requestAnimationFrame(()=>requestAnimationFrame(()=>{tuneLibraryUiV1024();scrollLibraryStartV1024()}));});
+window.addEventListener('resize',tuneLibraryUiV1024,{passive:true});
+setTimeout(tuneLibraryUiV1024,0);

@@ -1472,7 +1472,7 @@
                 <div class="pdf-reader-side-head"><div><strong>Marcações</strong><div id="pdfReaderStatus" class="pdf-reader-status">Use o mouse, roda ou setas.</div></div><button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.toggleSide()">×</button></div>
                 <div id="pdfReaderAnnotationsList" class="pdf-reader-side-list"></div>
                 <div class="pdf-reader-side-actions">
-                    <button class="pdf-reader-side-action primary" onclick="PdfStudyReader.exportToNotes()" title="Exportar marcações para Anotações">↑ Exportar</button>
+                    <button class="pdf-reader-side-action primary" onclick="PdfStudyReader.exportAnnotations('doc')" title="Exportar marcações para Anotações">↑ Exportar DOC</button><button class="pdf-reader-side-action" type="button" onclick="PdfStudyReader.exportAnnotations('txt')" title="Exportar anotações em TXT">↑ Exportar TXT</button>
                     <button class="pdf-reader-side-action" onclick="PdfStudyReader.importNotes()" title="Importar anotações da matéria">↓ Importar</button>
                 </div>
             </aside>
@@ -1525,6 +1525,8 @@
     <script src="./js/pdf/pdf-reader.js" defer></script>
     <script src="./js/pdf/pdf-library-ui.js" defer></script>
     <script src="./js/app-pwa.js" defer></script>
+
+<div id="modalPdfNoteEditor" class="pdf-note-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle"><div class="pdf-note-card"><div class="pdf-note-head"><div><h3 id="pdfNoteEditorTitle">Nova anotação</h3><p>Edite como em uma folha de estudos.</p></div><button type="button" class="btn btn-secondary btn-sm" onclick="PdfStudyReader.closePdfNoteEditor()">Fechar</button></div><div class="pdf-note-toolbar" role="toolbar" aria-label="Formatação da anotação"><button type="button" onclick="PdfStudyReader.formatPdfNote('bold')"><b>B</b></button><button type="button" onclick="PdfStudyReader.formatPdfNote('italic')"><i>I</i></button><button type="button" onclick="PdfStudyReader.formatPdfNote('underline')"><u>U</u></button><label>Tamanho <select onchange="PdfStudyReader.setPdfNoteFontSize(this.value)"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="4">Grande</option><option value="5">Título</option></select></label></div><div id="pdfNoteEditor" class="pdf-note-paper" contenteditable="true" spellcheck="true" aria-label="Conteúdo da anotação"></div><div class="pdf-note-actions"><button type="button" class="btn btn-secondary" onclick="PdfStudyReader.closePdfNoteEditor()">Cancelar</button><button type="button" class="btn btn-primary" onclick="PdfStudyReader.savePdfNoteEditor()">Salvar anotação</button></div></div></div>
 </body>
 </html>
 
