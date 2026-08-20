@@ -1,0 +1,20 @@
+// Migração temporária v10.24.5 — funcionalidade já aplicada; remover após o merge.
+import fs from 'node:fs';
+import path from 'node:path';
+const read=p=>fs.readFileSync(p,'utf8');
+const write=(p,s)=>fs.writeFileSync(p,s);
+for(const p of ['package.json','public/version.json','public/sw.js','src/index.js']) if(fs.existsSync(p)) write(p,read(p).replaceAll('10.24.4','10.24.5'));
+const p='public/js/pdf/pdf-reader.js';
+let s=read(p);
+const oldSave=`async function saveAnnotation(type,noteText='',customColor=''){if(!await ensureSelection())return;try{const isNote=type==='note',color=customColor||(type==='underline'?'#38bdf8':isNote?'#c084fc':'#fff17640'),item=await ann().create({pdfId:state.doc.id,pageNumber:state.selected.page,type,selectedText:isNote?'':state.selected.text,noteText,color,rects:isNote?state.selected.rects.slice(0,1):state.selected.rects});state.annotations.push(item);clearSelection();renderList();renderPageMarks(item.page_number);status(isNote?'Anotação salva no local escolhido.':type==='underline'?'Texto sublinhado.':'Marca-texto aplicado.')}catch(e){handle(e)}}`;
+const newSave=`async function saveAnnotation(type,noteText='',customColor=''){const isNote=type==='note';if(isNote){if(!state.selected)state.selected={page:state.page,text:'',rects:[],capturedAt:Date.now()}}else if(!await ensureSelection())return;try{const color=customColor||(type==='underline'?'#38bdf8':isNote?'#c084fc':'#fff17640'),item=await ann().create({pdfId:state.doc.id,pageNumber:state.selected.page,type,selectedText:isNote?'':state.selected.text,noteText,color,rects:isNote?state.selected.rects.slice(0,1):state.selected.rects});state.annotations.push(item);clearSelection();renderList();renderPageMarks(item.page_number);status(isNote?'Anotação salva no local escolhido.':type==='underline'?'Texto sublinhado.':'Marca-texto aplicado.')}catch(e){handle(e)}}`;
+if(!s.includes(oldSave)) throw new Error('saveAnnotation pattern not found');
+s=s.replace(oldSave,newSave);
+const oldPrompt=`async function promptNote(){if(!await ensureSelection())return;const editor=$('pdfNoteEditor');if(editor){editor.innerHTML='';$('modalPdfNoteEditor').style.display='flex';setTimeout(()=>editor.focus(),0)}else{const note=prompt('Escreva sua anotação:','');if(note!==null&&note.trim())saveAnnotation('note',note.trim())}}`;
+const newPrompt=`async function promptNote(){captureDirectSelection();if(!state.selected)state.selected={page:state.page,text:'',rects:[],capturedAt:Date.now()};global.getSelection?.()?.removeAllRanges();const editor=$('pdfNoteEditor');if(editor){editor.innerHTML='';$('modalPdfNoteEditor').style.display='flex';status('Escreva sua anotação e salve quando concluir.')}else{const note=prompt('Escreva sua anotação:','');if(note!==null&&note.trim())saveAnnotation('note',note.trim())}}`;
+if(!s.includes(oldPrompt)) throw new Error('promptNote pattern not found');
+s=s.replace(oldPrompt,newPrompt);
+write(p,s);
+if(fs.existsSync('tests')){const walk=d=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){const q=path.join(d,e.name);if(e.isDirectory())walk(q);else if(/\.test\.cjs$/.test(e.name)){let t=read(q);if(t.includes('10.24.4'))write(q,t.replaceAll('10.24.4','10.24.5'));}}};walk('tests');}
+write('tests/v10-24-5-note-direct-editor.test.cjs',`const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const r=p=>fs.readFileSync(p,'utf8');test('v10.24.5 abre Anotação sem clipboard',()=>{const js=r('public/js/pdf/pdf-reader.js'),pkg=require('../package.json');assert.equal(pkg.version,'10.24.5');assert.ok(js.includes('async function promptNote(){captureDirectSelection()'));assert.ok(js.includes('global.getSelection?.()?.removeAllRanges()'));const promptBlock=js.slice(js.indexOf('async function promptNote()'),js.indexOf('async function enhanceFlashcardWithAI()'));assert.doesNotMatch(promptBlock,/ensureSelection|useClipboardSelection|editor\.focus/);assert.ok(js.includes("if(isNote){if(!state.selected)state.selected="));});\n`);
+console.log('V10.24.5 note direct editor applied.');
