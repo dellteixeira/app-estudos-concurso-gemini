@@ -1451,13 +1451,13 @@
                 <button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.toggleSide()" title="Mostrar ou ocultar painel">☰ <span>Painel</span></button>
             </div>
         </header>
-        <div id="pdfReaderSelectionBar" class="pdf-reader-selection-bar" aria-live="polite">
+        <div id="pdfReaderSelectionBar" class="pdf-reader-selection-bar show" aria-live="polite">
             <button class="pdf-reader-copy-btn" type="button" onclick="PdfStudyReader.useClipboardSelection()">＋ Colar seleção</button>
             <span id="pdfReaderSelectionText" class="pdf-reader-selection-text">Selecione diretamente no PDF</span>
             <div class="pdf-reader-study-actions" aria-label="Ações de estudo">
-                <button class="pdf-reader-action highlight" onclick="PdfStudyReader.saveAnnotation('highlight')">Grifar</button>
+                <button class="pdf-reader-action highlight" onclick="PdfStudyReader.saveAnnotation('highlight')">Marca-texto</button>
                 <button class="pdf-reader-action underline" onclick="PdfStudyReader.saveAnnotation('underline')">Sublinhar</button>
-                <button class="pdf-reader-action note" onclick="PdfStudyReader.promptNote()">Nota</button>
+                <button class="pdf-reader-action note" onclick="PdfStudyReader.promptNote()">Anotação</button>
                 <button class="pdf-reader-action flashcard" onclick="PdfStudyReader.openFlashcardComposer()">Flashcard</button>
             </div>
         </div>

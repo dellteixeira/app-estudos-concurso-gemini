@@ -53,3 +53,7 @@
 .pdf-reader-custom-viewer .pdf-reader-mark-layer{position:absolute;inset:0;z-index:2;pointer-events:none}
 .pdf-reader-page-error{display:grid;place-items:center;height:100%;padding:20px;color:#7f1d1d;font-size:.8rem;text-align:center}
 
+/* V10.20.1 — a barra de estudo é estrutural e nunca depende de seleção para aparecer. */
+#pdfReaderSelectionBar.pdf-reader-selection-bar{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:none!important;position:static!important}
+#pdfReaderSelectionBar .pdf-reader-study-actions{display:flex!important;visibility:visible!important;opacity:1!important}
+
