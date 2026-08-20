@@ -1434,15 +1434,17 @@
 
     <script src="./js/study-domain.js" defer></script>
 
-    <!-- READER PDFIUM / EmbedPDF — V10.17.0 -->
+    <!-- READER PDF NATIVO — V10.18.0 -->
     <section id="pdfReaderOverlay" class="pdf-reader-overlay side-collapsed" aria-label="Leitor PDF interno">
         <header class="pdf-reader-topbar">
             <div class="pdf-reader-title-group">
                 <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.close()">← Biblioteca</button>
                 <div class="pdf-reader-title" id="pdfReaderTitle">PDF</div>
             </div>
-            <div class="pdf-reader-engine" title="Motor do visualizador">PDFium · seleção contínua</div>
+            <div class="pdf-reader-engine" title="Motor do visualizador">Visualizador nativo · seleção contínua</div>
             <div class="pdf-reader-tools">
+                <button class="btn btn-primary btn-sm" onclick="PdfStudyReader.useClipboardSelection()">Usar texto copiado</button>
+                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.openNativeTab()">Abrir em nova aba</button>
                 <button id="pdfReaderBookmark" class="btn btn-secondary btn-sm pdf-reader-bookmark" onclick="PdfStudyReader.toggleBookmark()">🔖</button>
                 <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.toggleSide()">Painel</button>
             </div>
