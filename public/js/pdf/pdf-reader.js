@@ -1,7 +1,7 @@
 (function(global){
 'use strict';
 const $=id=>document.getElementById(id),core=()=>global.PdfStudyCore,ann=()=>global.PdfStudyAnnotations;
-const ENGINE_URL='./vendor/embedpdf/embedpdf.js',DOCUMENT_ID='study-library-document';
+const ENGINE_URL='/vendor/embedpdf/embedpdf.js',DOCUMENT_ID='study-library-document';
 let enginePromise,viewer,registry,selectionScope,scrollApi,zoomApi,unsubscribers=[],flashcardDraft=null;
 const blank=()=>({doc:null,page:1,total:0,annotations:[],bookmarks:[],selected:null,openedAt:0,importedNotes:[],openToken:0});let state=blank();
 function currentContest(){return $('concursoSelect')?.value||global.getLastStudiedConcurso?.()||'Concurso Geral'}
