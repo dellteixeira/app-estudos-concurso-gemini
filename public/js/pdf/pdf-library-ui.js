@@ -36,9 +36,7 @@ async function copyUploadReport(){
   try{await navigator.clipboard.writeText(report);status('Relatório de falhas copiado.','ok')}catch(_){const ta=document.createElement('textarea');ta.value=report;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();status('Relatório de falhas copiado.','ok')}
 }
 
-
 async function ensureWorkspace(){
-  // Single-flight: evita duas inicializações simultâneas tentando criar “Biblioteca Geral”.
   if(ensureWorkspacePromise)return ensureWorkspacePromise;
   ensureWorkspacePromise=(async()=>{
     let all=await global.PdfStudyWorkspaces.ensureDefault();
@@ -57,21 +55,14 @@ function renderWs(preferredId=''){
     e.innerHTML=prefix+state.workspaces.map(w=>`<option value="${esc(w.id)}">${esc(w.name)}</option>`).join('');
     if(id==='pdfWorkspaceFilter') e.value=state.activeWorkspace||'';
     else if(previous&&state.workspaces.some(w=>String(w.id)===String(previous))) e.value=previous;
-    else {
-      const def=state.workspaces.find(w=>w.is_default)||state.workspaces[0];
-      if(def)e.value=def.id;
-    }
+    else {const def=state.workspaces.find(w=>w.is_default)||state.workspaces[0];if(def)e.value=def.id;}
   }
 }
-
 function renderMat(){
   const opts=materias().map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
-  for(const id of ['pdfMateriaFilter','pdfUploadMateria','pdfLinkMateria']){
-    const e=$(id);if(e)e.innerHTML=`<option value="">${id==='pdfMateriaFilter'?'Todas as matérias':'Sem matéria específica'}</option>`+opts;
-  }
+  for(const id of ['pdfMateriaFilter','pdfUploadMateria','pdfLinkMateria']){const e=$(id);if(e)e.innerHTML=`<option value="">${id==='pdfMateriaFilter'?'Todas as matérias':'Sem matéria específica'}</option>`+opts;}
   renderAss('filter');renderAss('upload');renderAss('link');
 }
-
 function renderAss(mode){
   const mid=mode==='filter'?'pdfMateriaFilter':mode==='upload'?'pdfUploadMateria':'pdfLinkMateria';
   const tid=mode==='filter'?'pdfAssuntoFilter':mode==='upload'?'pdfUploadAssunto':'pdfLinkAssunto';
@@ -79,32 +70,22 @@ function renderAss(mode){
   const arr=assuntos($(mid)?.value||'');
   e.innerHTML=`<option value="">${mode==='filter'?'Todos os assuntos':'Sem assunto específico'}</option>`+arr.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
 }
-function linkContextLabel(link){
-  if(!link)return'';
-  const parts=[link.materia,link.assunto].filter(Boolean);
-  return parts.length?parts.map(esc).join(' · '):'Somente Workspace';
-}
+function linkContextLabel(link){if(!link)return'';const parts=[link.materia,link.assunto].filter(Boolean);return parts.length?parts.map(esc).join(' · '):'Somente Workspace';}
 
 async function load(){
   const seq=++state.loadSeq; const cc=contest();
   const filters={scope:state.scope,concurso:cc,workspaceId:state.activeWorkspace,materia:state.activeMateria,assunto:state.activeAssunto,search:state.search};
   status('Carregando biblioteca…');
-  try{
-    const cached=await global.PdfStudyLibrary.getCached(filters);
-    if(seq===state.loadSeq&&cached.length){state.docs=cached;render();status(`Mostrando cache local (${cached.length}). Sincronizando…`,'warn')}
-  }catch(_){/* cache é melhor esforço */}
+  try{const cached=await global.PdfStudyLibrary.getCached(filters);if(seq===state.loadSeq&&cached.length){state.docs=cached;render();status(`Mostrando cache local (${cached.length}). Sincronizando…`,'warn')}}catch(_){/* cache é melhor esforço */}
   const docs=await global.PdfStudyLibrary.list(filters);
   if(seq!==state.loadSeq||cc!==contest())return;
   state.docs=docs; render();
   status(`${state.docs.length} ${state.docs.length===1?'PDF encontrado':'PDFs encontrados'}.`,'ok');
 }
-
 function ws(id){return state.workspaces.find(w=>w.id===id)?.name||'Sem Workspace'}
 function render(){
   const c=$('pdfLibraryGrid');if(!c)return;
-  if(!state.docs.length){
-    c.innerHTML='<div class="pdf-empty-state"><div class="pdf-empty-icon">📚</div><h4>Nenhum PDF nesta seleção</h4><p>Adicione um PDF à Biblioteca Global ou altere o filtro.</p><button class="btn btn-primary" onclick="PdfStudyLibraryUI.openUploadModal()">+ Adicionar PDF</button></div>';return;
-  }
+  if(!state.docs.length){c.innerHTML='<div class="pdf-empty-state"><div class="pdf-empty-icon">📚</div><h4>Nenhum PDF nesta seleção</h4><p>Adicione um PDF à Biblioteca Global ou altere o filtro.</p><button class="btn btn-primary" onclick="PdfStudyLibraryUI.openUploadModal()">+ Adicionar PDF</button></div>';return;}
   c.innerHTML=state.docs.map(d=>{
     const p=Number(d.progress?.progress_percentage||0),pg=Number(d.progress?.current_page||1),l=d.activeLink;
     const context=l?linkContextLabel(l):`${d.links.length} vínculo${d.links.length===1?'':'s'} de estudo`;
@@ -118,23 +99,18 @@ function render(){
 async function initialize(force=false){
   if(!global.PdfStudyLinks)return;
   const cc=contest();
-  if(!force&&state.initializedFor===cc){await load();return}
+  const sameContext=state.initializedFor===cc;
+  if(sameContext){await load();return;}
   state={...state,docs:[],activeWorkspace:'',activeMateria:'',activeAssunto:'',search:'',initializedFor:cc};
   const badge=$('pdfLibraryContestName');if(badge)badge.textContent=(cc&&cc!=='—')?cc:'Nenhum selecionado';
-  // A Biblioteca Global é a visão segura/persistente do acervo. O filtro por concurso é opcional.
   if(!$('concursoSelect')?.value||$('concursoSelect')?.value==='—')state.scope='global';
   if($('pdfLibraryScope'))$('pdfLibraryScope').value=state.scope;
   renderMat();
-  // Prioriza o first paint da Biblioteca; manutenção contextual roda em paralelo e não bloqueia o acervo.
   const loadPromise=load().catch(handle);
-  const maintenancePromise=Promise.allSettled([
-    global.PdfStudyLinks.processPendingContestOperations(),
-    ensureWorkspace()
-  ]).then(results=>{
+  const maintenancePromise=Promise.allSettled([global.PdfStudyLinks.processPendingContestOperations(),ensureWorkspace()]).then(results=>{
     const workspaceResult=results[1];
-    if(workspaceResult?.status==='rejected'){
-      console.warn('[PDF Workspaces] falha não bloqueante:',workspaceResult.reason);state.workspaces=[];renderWs();status('Workspaces indisponíveis temporariamente; PDFs continuam acessíveis.','warn');
-    }else renderWs();
+    if(workspaceResult?.status==='rejected'){console.warn('[PDF Workspaces] falha não bloqueante:',workspaceResult.reason);state.workspaces=[];renderWs();status('Workspaces indisponíveis temporariamente; PDFs continuam acessíveis.','warn');}
+    else renderWs();
   });
   await loadPromise;
   maintenancePromise.catch(()=>{});
@@ -144,9 +120,6 @@ function onWorkspaceFilterChange(v){state.activeWorkspace=v||'';load().catch(han
 function onMateriaFilterChange(v){state.activeMateria=v||'';state.activeAssunto='';renderAss('filter');load().catch(handle)}
 function onAssuntoFilterChange(v){state.activeAssunto=v||'';load().catch(handle)}
 let st;function onSearch(v){clearTimeout(st);st=setTimeout(()=>{state.search=String(v||'').trim();load().catch(handle)},180)}
-let libraryActivationTimer=null;
-function scheduleLibraryActivationRefresh(){clearTimeout(libraryActivationTimer);libraryActivationTimer=setTimeout(()=>{initialize(true).catch(handle)},0)}
-document.addEventListener('click',event=>{const btn=event.target?.closest?.('button');if(!btn)return;const onclick=btn.getAttribute('onclick')||'';if(onclick.includes("'tab-biblioteca'")||btn.dataset?.tab==='tab-biblioteca')scheduleLibraryActivationRefresh()});
 
 function openWorkspaceModal(context='library'){
   workspaceReturnContext=context==='upload'?'upload':context==='link'?'link':'library';
@@ -156,39 +129,15 @@ function openWorkspaceModal(context='library'){
 function closeWorkspaceModal(){$('modalPdfWorkspace').style.display='none';workspaceReturnContext='library'}
 async function createWorkspace(){
   const btn=$('btnCreatePdfWorkspace');
-  try{
-    if(btn)btn.disabled=true;
-    const created=await global.PdfStudyWorkspaces.create({name:$('pdfWorkspaceName').value,description:$('pdfWorkspaceDescription').value});
-    $('modalPdfWorkspace').style.display='none';
-    await ensureWorkspace();renderWs(created.id);
-    if(workspaceReturnContext==='upload'){$('pdfUploadWorkspace').value=created.id;$('modalPdfUpload').style.display='flex'}
-    if(workspaceReturnContext==='link'){$('pdfLinkWorkspace').value=created.id;$('modalPdfLink').style.display='flex'}
-    workspaceReturnContext='library';
-    await load();
-    status(`Workspace “${created.name}” disponível.`,'ok');
-  }catch(e){handle(e)}finally{if(btn)btn.disabled=false}
+  try{if(btn)btn.disabled=true;const created=await global.PdfStudyWorkspaces.create({name:$('pdfWorkspaceName').value,description:$('pdfWorkspaceDescription').value});$('modalPdfWorkspace').style.display='none';await ensureWorkspace();renderWs(created.id);if(workspaceReturnContext==='upload'){$('pdfUploadWorkspace').value=created.id;$('modalPdfUpload').style.display='flex'}if(workspaceReturnContext==='link'){$('pdfLinkWorkspace').value=created.id;$('modalPdfLink').style.display='flex'}workspaceReturnContext='library';await load();status(`Workspace “${created.name}” disponível.`,'ok');}catch(e){handle(e)}finally{if(btn)btn.disabled=false}
 }
-
 async function openUploadModal(){
-  try{
-    await ensureWorkspace();
-    selectedFiles=[];resetUploadResult();
-    $('pdfUploadFile').value='';$('pdfUploadTitle').value='';
-    renderSelectedFiles();
-    $('pdfUploadProgress').style.width='0%';$('pdfUploadProgressText').textContent='';
-    renderWs();renderMat();
-    $('modalPdfUpload').style.display='flex';
-  }catch(e){handle(e)}
+  try{await ensureWorkspace();selectedFiles=[];resetUploadResult();$('pdfUploadFile').value='';$('pdfUploadTitle').value='';renderSelectedFiles();$('pdfUploadProgress').style.width='0%';$('pdfUploadProgressText').textContent='';renderWs();renderMat();$('modalPdfUpload').style.display='flex';}catch(e){handle(e)}
 }
 function closeUploadModal(){$('modalPdfUpload').style.display='none';selectedFiles=[];resetUploadResult();$('pdfDropZone')?.classList.remove('drag-over')}
 function chooseUploadFile(){$('pdfUploadFile')?.click()}
 function onDropZoneKeydown(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseUploadFile()}}
-function addFiles(files){
-  const incoming=[...(files||[])];if(!incoming.length)return;resetUploadResult();
-  const map=new Map(selectedFiles.map(f=>[`${f.name}|${f.size}|${f.lastModified||0}`,f]));
-  for(const f of incoming)map.set(`${f.name}|${f.size}|${f.lastModified||0}`,f);
-  selectedFiles=[...map.values()];renderSelectedFiles();
-}
+function addFiles(files){const incoming=[...(files||[])];if(!incoming.length)return;resetUploadResult();const map=new Map(selectedFiles.map(f=>[`${f.name}|${f.size}|${f.lastModified||0}`,f]));for(const f of incoming)map.set(`${f.name}|${f.size}|${f.lastModified||0}`,f);selectedFiles=[...map.values()];renderSelectedFiles();}
 function removeUploadFile(index){selectedFiles.splice(Number(index),1);renderSelectedFiles()}
 function onUploadFileChange(i){addFiles(i?.files);if(i)i.value=''}
 function onUploadMateriaChange(){renderAss('upload')}
@@ -206,7 +155,6 @@ async function submitUpload(isRetry=false){
     else{status(`${result.successful.length} PDF(s) adicionados à Biblioteca Global.`,'ok');setTimeout(()=>closeUploadModal(),500)}
   }catch(e){const classified=global.PdfStudyUpload?.classifyError?.(e,{file:files[0],stage:e?.stage||'unknown'})||e;const result={successful:[],failed:[{file:files[0],error:classified,code:classified.code,stage:classified.stage,message:classified.userMessage||classified.message,technicalMessage:classified.technicalMessage}],total:files.length};renderUploadResult(result);status(classified.userMessage||classified.message||'Falha no upload.','error')}finally{if(btn)btn.disabled=false}
 }
-
 function openLinkModal(id){linkPdfId=id;const d=state.docs.find(x=>x.id===id);$('pdfLinkDocumentTitle').textContent=d?.title||'';renderWs();renderMat();$('modalPdfLink').style.display='flex'}
 function closeLinkModal(){$('modalPdfLink').style.display='none';linkPdfId=null}
 function onLinkMateriaChange(){renderAss('link')}
@@ -227,23 +175,18 @@ async function deleteSelected(){
   if(!confirm(`Excluir permanentemente ${docs.length} PDF(s) da Biblioteca Global?\n\nOs arquivos, vínculos, progresso e marcações associados serão removidos. Esta ação não pode ser desfeita.`))return;
   const btn=$('btnDeleteSelectedPdfs');try{if(btn)btn.disabled=true;status(`Excluindo ${docs.length} PDF(s)…`,'warn');const result=await global.PdfStudyLibrary.removeMany(docs,{onProgress:p=>status(`Excluindo PDFs… ${p.deleted}/${p.total}`,'warn')});selectedPdfIds.clear();state.docs=state.docs.filter(d=>!docs.some(x=>x.id===d.id));updateBulkToolbar();render();await load().catch(()=>{});status(`${result.deleted} PDF(s) excluídos da Biblioteca Global.`,'ok')}catch(e){handle(e)}finally{if(btn)btn.disabled=false}
 }
-
 function handleDrop(e){e.preventDefault();$('pdfDropZone')?.classList.remove('drag-over');addFiles(e.dataTransfer?.files)}
 function handleDragOver(e){e.preventDefault();$('pdfDropZone')?.classList.add('drag-over')}
 function handleDragLeave(){$('pdfDropZone')?.classList.remove('drag-over')}
 function handle(e){
   console.error('[PDF Library]',e);
   const network=global.PdfStudyCore?.isNetworkError?.(e);
-  if(network){
-    status('Falha temporária de conexão. Seus PDFs salvos não foram apagados. Tente atualizar a Biblioteca em alguns segundos.','warn');
-    return;
-  }
+  if(network){status('Falha temporária de conexão. Seus PDFs salvos não foram apagados. Tente atualizar a Biblioteca em alguns segundos.','warn');return;}
   status(e?.message||'Erro.','error');alert(e?.message||'Erro.');
 }
 
 global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:()=>initialize(false),onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,removeUploadFile,onUploadMateriaChange,submitUpload,retryFailedUploads,removeFailedUploads,copyUploadReport,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,toggleSelectionMode,toggleDocumentSelection,selectAllVisible,clearSelection,deleteSelected,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
 })(window);
-
 
 // V10.24 — acabamento responsivo da Biblioteca e posicionamento da guia.
 function tuneLibraryUiV1024(){
