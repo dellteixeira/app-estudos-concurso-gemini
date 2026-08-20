@@ -50,6 +50,7 @@ for(const p of ['package.json','public/version.json','public/sw.js','src/index.j
   const p='tests/library-reader-v10-24.test.cjs';
   let s=read(p).replace("assert.equal(pkg.version,'10.24.0')","assert.equal(pkg.version,'10.24.1')");
   s=s.replace("assert.match(html,/Exportar DOC/);assert.match(html,/Exportar TXT/);","assert.match(html,/pdfExportMenuButton/);assert.match(html,/Exportar como DOC/);assert.match(html,/Exportar como TXT/);");
+  s=s.replace("assert.match(reader,/Object\\.freeze\\(\\{formatPdfNote,setPdfNoteFontSize,closePdfNoteEditor,savePdfNoteEditor,exportAnnotations,/);","assert.match(reader,/Object\\.freeze\\(\\{[^}]*formatPdfNote[^}]*exportAnnotations/);");
   write(p,s);
 }
 
