@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="./css/dashboard.css">
     <link rel="stylesheet" href="./css/features.css">
     <link rel="stylesheet" href="./css/pdf-library.css">
+    <link rel="stylesheet" href="./vendor/pdf_viewer.min.css">
     <link rel="stylesheet" href="./css/pdf-reader.css">
 </head>
 <body>
@@ -1434,14 +1435,14 @@
 
     <script src="./js/study-domain.js" defer></script>
 
-    <!-- READER PDF HÍBRIDO — V10.18.1 -->
+    <!-- READER PDF.JS OFICIAL — V10.19.0 -->
     <section id="pdfReaderOverlay" class="pdf-reader-overlay" aria-label="Leitor PDF interno">
         <header class="pdf-reader-topbar">
             <div class="pdf-reader-title-group">
                 <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.close()">← Biblioteca</button>
                 <div class="pdf-reader-title" id="pdfReaderTitle">PDF</div>
             </div>
-            <div class="pdf-reader-engine" title="Motor do visualizador">Leitor rápido · seleção contínua</div>
+            <div class="pdf-reader-engine" title="Motor do visualizador">PDF.js aberto · integrado</div>
             <div class="pdf-reader-tools">
                 <button id="pdfReaderFitWidth" class="pdf-reader-icon-btn active" type="button" onclick="PdfStudyReader.fitWidth()" title="Ajustar à largura">↔ <span>Largura</span></button>
                 <button id="pdfReaderFitPage" class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.fitPage()" title="Ajustar página inteira">▣ <span>Página</span></button>
@@ -1451,8 +1452,8 @@
             </div>
         </header>
         <div id="pdfReaderSelectionBar" class="pdf-reader-selection-bar" aria-live="polite">
-            <button class="pdf-reader-copy-btn" type="button" onclick="PdfStudyReader.useClipboardSelection()">＋ Usar seleção copiada</button>
-            <span id="pdfReaderSelectionText" class="pdf-reader-selection-text">Selecione no PDF e pressione Ctrl+C</span>
+            <button class="pdf-reader-copy-btn" type="button" onclick="PdfStudyReader.useClipboardSelection()">＋ Colar seleção</button>
+            <span id="pdfReaderSelectionText" class="pdf-reader-selection-text">Selecione diretamente no PDF</span>
             <div class="pdf-reader-study-actions" aria-label="Ações de estudo">
                 <button class="pdf-reader-action highlight" onclick="PdfStudyReader.saveAnnotation('highlight')">Grifar</button>
                 <button class="pdf-reader-action underline" onclick="PdfStudyReader.saveAnnotation('underline')">Sublinhar</button>
@@ -1500,6 +1501,8 @@
     <script src="./js/app-ai.js" defer></script>
     <script src="./js/app-ui.js" defer></script>
     <script src="./js/pdf/pdf-annotations.js" defer></script>
+    <script src="./vendor/pdf.min.js" defer></script>
+    <script src="./vendor/pdf_viewer.min.js" defer></script>
     <script src="./js/pdf/pdf-reader.js" defer></script>
     <script src="./js/pdf/pdf-library-ui.js" defer></script>
     <script src="./js/app-pwa.js" defer></script>

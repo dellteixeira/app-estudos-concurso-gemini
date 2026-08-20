@@ -31,3 +31,16 @@
 @media(max-width:900px){.pdf-reader-engine{display:none}.pdf-reader-topbar{grid-template-columns:minmax(0,1fr) auto}.pdf-reader-tools{grid-column:auto;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start}.pdf-reader-icon-btn span{display:none}}
 @media(max-width:700px){.pdf-reader-overlay{grid-template-rows:auto auto minmax(0,1fr)}.pdf-reader-topbar{display:flex;height:auto;align-items:center;flex-wrap:nowrap}.pdf-reader-title-group{justify-content:flex-start;min-width:0}.pdf-reader-tools{width:auto;margin-left:auto}.pdf-reader-selection-bar{overflow-x:auto;padding:5px 7px}.pdf-reader-selection-text{display:none}.pdf-reader-study-actions{margin-left:auto}.pdf-reader-side{top:104px}.pdf-reader-side-actions{grid-template-columns:none}.pdf-reader-side-action{font-size:.68rem;padding:6px 8px}}
 
+/* V10.19 — visualizador oficial PDF.js com interface própria. */
+.pdf-reader-canvas-wrap{position:relative;overflow:auto!important;padding:12px!important;background:#121b25;touch-action:auto}
+.pdf-reader-page-host.pdfViewer{display:block;width:100%;height:auto;min-height:100%;overflow:visible;background:transparent;padding-bottom:24px}
+.pdf-reader-page-host.pdfViewer .page{position:relative;margin:0 auto 12px;border:0;box-shadow:0 8px 24px rgba(0,0,0,.32)}
+.pdf-reader-page-host.pdfViewer .textLayer{z-index:3;user-select:text;-webkit-user-select:text}
+.pdf-reader-page-host.pdfViewer .textLayer ::selection{background:rgba(44,190,220,.36);color:transparent}
+.pdf-reader-page-host.pdfViewer .canvasWrapper canvas{pointer-events:none}
+.pdf-reader-page-host.pdfViewer .pdf-reader-mark-layer{position:absolute;inset:0;z-index:2;pointer-events:none}
+.pdf-reader-page-host.pdfViewer .pdf-reader-mark{pointer-events:auto}
+.pdf-reader-side-actions{justify-content:center;width:100%}
+.pdf-reader-side-action{flex:0 0 auto;text-align:center}
+@media(max-width:700px){.pdf-reader-canvas-wrap{padding:6px!important}.pdf-reader-page-host.pdfViewer{padding-bottom:12px}.pdf-reader-side-actions{justify-content:center}}
+
