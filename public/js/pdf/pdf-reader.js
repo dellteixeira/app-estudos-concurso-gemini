@@ -343,4 +343,3 @@ function toggleSide(){document.getElementById('pdfReaderOverlay')?.classList.tog
 function handle(e){console.error('[PDF Reader]',e);setStatus(e?.message||'Erro no Reader.');alert(e?.message||'Erro no Reader.')}
 global.PdfStudyReader=Object.freeze({open,close,prev,next,goto,zoom,fitWidth,fitPage,toggleFit,toggleBookmark,saveAnnotation,promptNote,createFlashcard,openFlashcardComposer,closeFlashcardComposer,exportToNotes,importNotes,deleteAnnotation,goToAnnotation,toggleSide,moveVertical,scrollReader});
 })(window);
-
