@@ -24,4 +24,3 @@ test('seleção ordena fragmentos e delega a interação ao TextLayerBuilder ofi
 
 
 test('eventos globais de seleção são reativados a cada abertura do Reader',()=>{const r=read('public/js/pdf/pdf-reader.js');assert.match(r,/document\.removeEventListener\('selectionchange',onSelectionChange\)/);assert.match(r,/document\.addEventListener\('selectionchange',onSelectionChange\)/);assert.match(r,/wrap\.dataset\.bound!==['"]1['"]/);});
-
