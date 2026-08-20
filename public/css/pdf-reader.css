@@ -57,3 +57,11 @@
 #pdfReaderSelectionBar.pdf-reader-selection-bar{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:none!important;position:static!important}
 #pdfReaderSelectionBar .pdf-reader-study-actions{display:flex!important;visibility:visible!important;opacity:1!important}
 
+/* V10.21 — ferramentas independentes e marca-texto configurável. */
+.pdf-reader-mark.highlight{background:var(--mark-color,#fff17640);box-shadow:none;mix-blend-mode:multiply}
+.pdf-reader-mark.note{width:22px!important;height:22px!important;transform:translate(-5px,-18px);display:grid;place-items:center;border-radius:50%;background:#7c3aed!important;color:#fff;font:700 13px/1 system-ui;outline:2px solid #fff;box-shadow:0 2px 7px rgba(0,0,0,.35);mix-blend-mode:normal}
+.pdf-reader-flashcard-taxonomy{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.pdf-reader-highlight-card input[type="color"]{height:38px;padding:3px;cursor:pointer}.pdf-reader-highlight-card input[type="range"]{width:100%;accent-color:#53e3d5}
+.pdf-reader-highlight-preview{padding:10px 12px;border-radius:8px;color:#17202a;background:#fff17640;font-weight:750;text-align:center}
+@media(max-width:560px){.pdf-reader-flashcard-taxonomy{grid-template-columns:1fr}}
+
