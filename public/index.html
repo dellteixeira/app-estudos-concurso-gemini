@@ -1434,37 +1434,21 @@
 
     <script src="./js/study-domain.js" defer></script>
 
-    <!-- READER PDF INTERNO — V10.15.2 -->
+    <!-- READER PDFIUM / EmbedPDF — V10.17.0 -->
     <section id="pdfReaderOverlay" class="pdf-reader-overlay side-collapsed" aria-label="Leitor PDF interno">
         <header class="pdf-reader-topbar">
             <div class="pdf-reader-title-group">
                 <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.close()">← Biblioteca</button>
                 <div class="pdf-reader-title" id="pdfReaderTitle">PDF</div>
             </div>
-            <div class="pdf-reader-nav">
-                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.prev()">‹</button>
-                <input class="pdf-reader-page-input" id="pdfReaderPageInput" type="number" min="1" value="1" onchange="PdfStudyReader.goto(this.value)">
-                <span>/ <strong id="pdfReaderTotalPages">—</strong></span>
-                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.next()">›</button>
-            </div>
+            <div class="pdf-reader-engine" title="Motor do visualizador">PDFium · seleção contínua</div>
             <div class="pdf-reader-tools">
-                <div class="pdf-reader-arrows">
-                    <span class="pdf-reader-top-label">Navegação</span>
-                    <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.prev()">←</button>
-                    <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.moveVertical(-1)">↑</button>
-                    <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.moveVertical(1)">↓</button>
-                    <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.next()">→</button>
-                </div>
-                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.zoom(-.15)">−</button>
-                <span id="pdfReaderZoomLabel">125%</span>
-                <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.zoom(.15)">+</button>
-                <button id="pdfReaderFitButton" class="btn btn-secondary btn-sm pdf-reader-fit-label" onclick="PdfStudyReader.toggleFit()" title="Alternar ajuste por largura ou página">Ajustar</button>
                 <button id="pdfReaderBookmark" class="btn btn-secondary btn-sm pdf-reader-bookmark" onclick="PdfStudyReader.toggleBookmark()">🔖</button>
                 <button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.toggleSide()">Painel</button>
             </div>
         </header>
         <div class="pdf-reader-body">
-            <main id="pdfReaderCanvasWrap" class="pdf-reader-canvas-wrap"><div id="pdfReaderPageHost" class="pdf-reader-page-host"></div></main>
+            <main id="pdfReaderCanvasWrap" class="pdf-reader-canvas-wrap"><div id="pdfReaderPageHost" class="pdf-reader-page-host" aria-label="Documento PDF"></div></main>
             <aside class="pdf-reader-side">
                 <div class="pdf-reader-side-head"><div><strong>Marcações</strong><div id="pdfReaderStatus" class="pdf-reader-status">Use o mouse, roda ou setas.</div></div><button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.toggleSide()">×</button></div>
                 <div id="pdfReaderAnnotationsList" class="pdf-reader-side-list"></div>
@@ -1501,8 +1485,6 @@
         </div>
     </section>
 
-    <script src="./vendor/pdf.min.js" defer></script>
-    <script src="./vendor/pdf_viewer.min.js" defer></script>
     <script src="./js/app-core.js" defer></script>
     <script src="./js/pdf/pdf-core.js" defer></script>
     <script src="./js/pdf/pdf-workspaces.js" defer></script>
