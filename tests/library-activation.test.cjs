@@ -7,7 +7,9 @@ const read=r=>fs.readFileSync(path.join(root,r),'utf8');
 
 test('Biblioteca usa somente o hook oficial de ativação da guia',()=>{
   const ui=read('public/js/pdf/pdf-library-ui.js');
-  assert.match(ui,/onTabActivated:\(\)=>initialize\(false\)/);
+  assert.match(ui,/onTabActivated:activateLibrary/);
+  assert.match(ui,/activationPromise=initialize\(false\)/);
+  assert.doesNotMatch(ui,/window\.PdfStudyLibraryUI\?\.onTabActivated\?\.\(\)/);
   assert.doesNotMatch(ui,/scheduleLibraryActivationRefresh/);
   assert.doesNotMatch(ui,/initialize\(true\)\.catch\(handle\)/);
 });
