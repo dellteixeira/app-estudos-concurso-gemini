@@ -1,0 +1,114 @@
+name: Cloudflare Production Deploy
+
+on:
+  workflow_run:
+    workflows: ["Quality Check"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout validated revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate release version consistency
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
+          const publicVersion = JSON.parse(fs.readFileSync('public/version.json', 'utf8')).version;
+          const worker = fs.readFileSync('src/index.js', 'utf8');
+          const sw = fs.readFileSync('public/sw.js', 'utf8');
+          const workerVersion = worker.match(/const APP_VERSION = "([^"]+)"/)?.[1];
+          const swVersion = sw.match(/const APP_VERSION = '([^']+)'/)?.[1];
+          const versions = { package: pkg, public: publicVersion, worker: workerVersion, serviceWorker: swVersion };
+          if (!pkg || Object.values(versions).some(version => version !== pkg)) {
+            console.error('Version mismatch before Cloudflare deploy:', versions);
+            process.exit(1);
+          }
+          console.log(`Validated release version ${pkg}`);
+          NODE
+
+      - name: Validate Cloudflare credentials
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Missing repository secret CLOUDFLARE_API_TOKEN"
+            exit 1
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Missing repository secret CLOUDFLARE_ACCOUNT_ID"
+            exit 1
+          fi
+
+      - name: Deploy Worker and assets
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+
+      - name: Verify deployed version
+        shell: bash
+        env:
+          APP_URL: https://app-estudos-concurso-gemini.d3-concursos.workers.dev
+        run: |
+          expected="$(node -p "require('./public/version.json').version")"
+          echo "Expecting Cloudflare production version: $expected"
+
+          matched=0
+          for attempt in $(seq 1 12); do
+            cache_buster="${GITHUB_SHA}-${GITHUB_RUN_ID}-${attempt}"
+            if curl --fail --silent --show-error \
+              --header 'Cache-Control: no-cache, no-store' \
+              "$APP_URL/version.json?deploy=$cache_buster" \
+              --output /tmp/cloudflare-version.json; then
+              actual="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).version||''))}catch{}")"
+              echo "Verification attempt $attempt: remote=$actual expected=$expected"
+              if [ "$actual" = "$expected" ]; then
+                matched=1
+                break
+              fi
+            fi
+            sleep 5
+          done
+
+          if [ "$matched" -ne 1 ]; then
+            echo "::error::Cloudflare did not expose version $expected after deployment"
+            exit 1
+          fi
+
+          curl --fail --silent --show-error \
+            --header 'Cache-Control: no-cache, no-store' \
+            "$APP_URL/sw.js?deploy=${GITHUB_SHA}-${GITHUB_RUN_ID}" \
+            --output /tmp/cloudflare-sw.js
+          grep -F "const APP_VERSION = '$expected';" /tmp/cloudflare-sw.js >/dev/null || {
+            echo "::error::Service Worker version does not match deployed release $expected"
+            exit 1
+          }
+
+          echo "Cloudflare production verified at version $expected"
