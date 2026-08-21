@@ -40,11 +40,11 @@ jobs:
       - name: Gravar v10.25.2 na branch funcional
         if: github.event_name == 'pull_request' && github.event.pull_request.number == 85 && github.head_ref == 'fix/v10-25-2-smart-flashcards-mobile-library'
         run: |
-          rm -f scripts/temp-v10-25-2-direct.py .github/workflows/temp-apply-v10-25-2-functional.yml .v10-25-2-functional-trigger .v10-25-2-prtarget-trigger
+          rm -f scripts/temp-v10-25-2-direct.py .github/workflows/temp-apply-v10-25-2-functional.yml .v10-25-2-functional-trigger .v10-25-2-prtarget-trigger .v10-25-2-qc-trigger
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src/index.js public/js/pdf/pdf-reader.js public/js/pdf/pdf-library-ui.js package.json public/version.json public/sw.js
-          git add -u scripts/temp-v10-25-2-direct.py .github/workflows/temp-apply-v10-25-2-functional.yml .v10-25-2-functional-trigger .v10-25-2-prtarget-trigger || true
+          git add src/index.js public/js/pdf/pdf-reader.js public/js/pdf/pdf-library-ui.js package.json public/version.json public/sw.js tests/*.test.cjs
+          git add -u scripts/temp-v10-25-2-direct.py .github/workflows/temp-apply-v10-25-2-functional.yml .v10-25-2-functional-trigger .v10-25-2-prtarget-trigger .v10-25-2-qc-trigger || true
           if ! git diff --cached --quiet; then
             git commit -m 'fix: smarter iterative flashcards and reliable mobile library v10.25.2'
             git push origin HEAD:${{ github.head_ref }}
