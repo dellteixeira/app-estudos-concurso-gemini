@@ -19,6 +19,10 @@ needle = 'const systemPrompt = `Você é um especialista sênior em aprendizagem
 replacement = 'const systemPrompt = `Você é um especialista sênior em aprendizagem ativa e elaboração de flashcards para concursos públicos brasileiros. Antes de responder, raciocine silenciosamente em cinco etapas: (1) identifique a unidade de conhecimento central; (2) classifique-a como conceito, regra, exceção, requisito, prazo, competência, consequência, comparação, causa/efeito ou pegadinha; (3) separe regra, condições, exceções, números e prazos; (4) formule uma pergunta autossuficiente que exija recuperação ativa sem entregar a resposta; (5) critique a pergunta quanto a ambiguidade, pistas, generalidade e fidelidade ao trecho e reescreva se necessário. Trabalhe EXCLUSIVAMENTE com o trecho-fonte recebido:'
 assert needle in s
 s = s.replace(needle, replacement, 1)
+old_llama = 'llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast" }'
+new_llama = 'llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }'
+assert old_llama in s
+s = s.replace(old_llama, new_llama, 1)
 p.write_text(s)
 
 # Preserve the existing Reader status contract while exposing the selected model.
