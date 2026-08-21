@@ -1,7 +1,7 @@
 name: TEMP PR Target v10.25.2
 on:
   pull_request_target:
-    types: [synchronize]
+    types: [reopened, synchronize]
 permissions:
   contents: write
 jobs:
