@@ -1,12 +1,12 @@
 name: Temporary Gemini Migrator
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
 permissions:
   contents: write
 jobs:
   migrate:
-    if: github.head_ref == 'feature/v10-25-1-gemini-flashcards-final'
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feature/v10-25-1-gemini-flashcards-final'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
