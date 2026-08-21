@@ -31,10 +31,11 @@ for (const path of ['package.json', 'public/version.json', 'public/sw.js']) {
 for (const name of fs.readdirSync('tests').filter(name => name.endsWith('.test.cjs'))) {
   const path = `tests/${name}`;
   let text = fs.readFileSync(path, 'utf8');
-  if (text.includes('10.25.6')) {
-    text = text.replaceAll('10.25.6', '10.25.7');
-    fs.writeFileSync(path, text);
-  }
+  const updated = text
+    .replaceAll('10.25.6', '10.25.7')
+    .replaceAll('10\\.25\\.6', '10\\.25\\.7')
+    .replaceAll('10\\\\.25\\\\.6', '10\\\\.25\\\\.7');
+  if (updated !== text) fs.writeFileSync(path, updated);
 }
 
 fs.writeFileSync('tests/v10-25-7-gemini-max-tokens-retry.test.cjs', `const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst worker=fs.readFileSync('src/index.js','utf8');\n\ntest('v10.25.7 increases Gemini output budget',()=>{\n  assert.match(worker,/maxOutputTokens: compactRetry \\? 900 : 1600/);\n  assert.match(worker,/const APP_VERSION = \\\"10\\.25\\.7\\\"/);\n});\n\ntest('v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON',()=>{\n  assert.match(worker,/compactRetry = false/);\n  assert.match(worker,/summary\\.finishReasons\\.split\\('\\,'\\)\\.includes\\('MAX_TOKENS'\\)/);\n  assert.match(worker,/runGeminiFlashcard\\(env, model, systemPrompt, userPrompt, \\{ compactRetry: true \\}\\)/);\n  assert.match(worker,/RETRY COMPACTO/);\n});\n\ntest('v10.25.7 keeps hedge and fallback intact',()=>{\n  assert.match(worker,/FLASHCARD_HEDGE_DELAY_MS = 4500/);\n  assert.match(worker,/runFlashcardProvidersHedged/);\n  assert.match(worker,/buildDeterministicFlashcard/);\n});\n\ntest('v10.25.7 logs retry without source content',()=>{\n  assert.match(worker,/Flashcard Gemini retry reason=MAX_TOKENS/);\n  assert.doesNotMatch(worker,/console\\.(?:info|warn)\\([^\\n]*TRECHO-FONTE/);\n});\n`);
