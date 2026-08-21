@@ -24,6 +24,6 @@ test('V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
   assert.match(pwa,/window\.handleLogin = handleLogin/);
   assert.match(pwa,/window\.installPwaApp = installPwaApp/);
   assert.ok(pwa.length>10000,'app-pwa.js não pode ser truncado');
-  assert.equal(JSON.parse(read('package.json')).version,'10.25.6');
-  assert.equal(JSON.parse(read('public/version.json')).version,'10.25.6');
+  assert.equal(JSON.parse(read('package.json')).version,'10.25.7');
+  assert.equal(JSON.parse(read('public/version.json')).version,'10.25.7');
 });

@@ -22,7 +22,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.25.6";
+const APP_VERSION = "10.25.7";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -581,7 +581,7 @@ function parseGeminiFlashcardPayload(payload) {
   return null;
 }
 
-async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
+async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compactRetry = false } = {}) {
   if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
   const controller = new AbortController();
@@ -595,10 +595,10 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
       headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        contents: [{ role: "user", parts: [{ text: compactRetry ? `${userPrompt}\n\nRETRY COMPACTO: devolva apenas um JSON curto e completo, com pergunta objetiva e resposta concisa. Não explique, não raciocine em texto e não inclua markdown.` : userPrompt }] }],
         generationConfig: {
-          temperature: 0.35,
-          maxOutputTokens: 600,
+          temperature: compactRetry ? 0.1 : 0.35,
+          maxOutputTokens: compactRetry ? 900 : 1600,
           responseMimeType: "application/json",
           responseSchema: {
             type: "OBJECT",
@@ -640,9 +640,13 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
 
   const payload = await response.json();
   const summary = summarizeGeminiFlashcardPayload(payload);
-  console.info(`Flashcard Gemini response model=${model.id} status=200 candidates=${summary.candidates} parts=${summary.parts} textParts=${summary.textParts} textChars=${summary.textChars} finishReasons=${summary.finishReasons}`);
+  console.info(`Flashcard Gemini response model=${model.id} status=200 candidates=${summary.candidates} parts=${summary.parts} textParts=${summary.textParts} textChars=${summary.textChars} finishReasons=${summary.finishReasons} compactRetry=${compactRetry}`);
 
   const recovered = parseGeminiFlashcardPayload(payload);
+  if (!recovered?.flashcard && !compactRetry && summary.finishReasons.split(',').includes('MAX_TOKENS')) {
+    console.info(`Flashcard Gemini retry reason=MAX_TOKENS model=${model.id} firstDuration=${Date.now() - startedAt}ms`);
+    return runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compactRetry: true });
+  }
   if (!recovered?.flashcard) {
     const parseError = new Error("Resposta incompleta do Gemini");
     parseError.provider = "gemini";
