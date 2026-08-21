@@ -1,0 +1,23 @@
+name: Trigger Safe Gemini Integration on PR
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  trigger:
+    if: github.head_ref == 'feature/v10-25-1-gemini-flashcards-safe'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Touch branch to trigger integration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          echo "trigger" > docs/.trigger-gemini-safe
+          git add docs/.trigger-gemini-safe
+          git commit -m 'chore: trigger safe Gemini integration'
+          git push origin HEAD:${{ github.head_ref }}
