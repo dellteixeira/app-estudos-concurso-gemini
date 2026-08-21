@@ -21,8 +21,13 @@ const block=`  const readField = field => {
       const endQuote = rest.indexOf(quote, 1);
       return endQuote > 0 ? rest.slice(1, endQuote) : rest.slice(1);
     }
-    const lineEnd = rest.search(/[\\n}]/);
-    return (lineEnd >= 0 ? rest.slice(0, lineEnd) : rest).replace(/,\\s*$/, '').trim();
+    const newlineIndex = rest.indexOf(String.fromCharCode(10));
+    const braceIndex = rest.indexOf('}');
+    const ends = [newlineIndex, braceIndex].filter(value => value >= 0);
+    const lineEnd = ends.length ? Math.min(...ends) : -1;
+    let raw = (lineEnd >= 0 ? rest.slice(0, lineEnd) : rest).trim();
+    if (raw.endsWith(',')) raw = raw.slice(0, -1).trim();
+    return raw;
   };`;
 source=source.slice(0,start)+block+source.slice(end);
 fs.writeFileSync(path,source);
