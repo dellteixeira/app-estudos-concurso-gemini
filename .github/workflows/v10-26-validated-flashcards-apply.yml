@@ -1,0 +1,50 @@
+name: V10.26 Validated Flashcards Apply
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: read
+
+jobs:
+  apply-and-validate:
+    if: >-
+      (github.event_name == 'pull_request' && startsWith(github.head_ref, 'feat/v10-26-validated-flashcards')) ||
+      (github.event_name == 'issue_comment' && github.event.issue.number == 111 && contains(github.event.comment.body, '/apply-v10-26'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/v10-26-validated-flashcards
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply v10.26.0
+        run: node scripts/apply-v10-26-validated-flashcards.mjs
+      - name: Check critical syntax
+        run: node --check src/index.js
+      - name: Run automated tests
+        run: node --test tests/*.test.cjs
+      - name: Run structural audit
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: node scripts/audit-release.mjs
+      - name: Remove applicator and commit validated tree
+        shell: bash
+        run: |
+          rm -f scripts/apply-v10-26-validated-flashcards.mjs
+          rm -f .github/workflows/v10-26-validated-flashcards-apply.yml
+          rm -f v10-26-trigger.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: validated source-grounded flashcards v10.26.0'
+          git push origin HEAD:feat/v10-26-validated-flashcards
