@@ -1,0 +1,25 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const read=p=>fs.readFileSync(p,'utf8');
+test('V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança',()=>{
+  const library=read('public/js/pdf/pdf-library-ui.js');
+  const reader=read('public/js/pdf/pdf-reader.js');
+  const worker=read('src/index.js');
+  const pwa=read('public/js/app-pwa.js');
+  assert.match(library,/LIBRARY_VIEW_KEY='pdfLibraryViewMode'/);
+  assert.match(library,/onTabActivated:activateLibrary/);
+  assert.match(library,/pdfLibraryViewToggle/);
+  assert.match(reader,/FLASHCARD_AI_MODEL_OPTIONS/);
+  assert.match(reader,/pdfFlashcardAiModel/);
+  assert.match(worker,/@cf\/google\/gemma-4-26b-a4b-it/);
+  assert.match(worker,/@cf\/nvidia\/nemotron-3-120b-a12b/);
+  assert.match(worker,/@cf\/zai-org\/glm-4\.7-flash/);
+  assert.match(worker,/FLASHCARD_AUTO_CHAIN = \["gemma", "glm", "llama"\]/);
+  assert.match(pwa,/window\.switchTab = switchTab/);
+  assert.match(pwa,/window\.handleLogin = handleLogin/);
+  assert.match(pwa,/window\.installPwaApp = installPwaApp/);
+  assert.ok(pwa.length>10000,'app-pwa.js não pode ser truncado');
+  assert.equal(JSON.parse(read('package.json')).version,'10.25.0');
+  assert.equal(JSON.parse(read('public/version.json')).version,'10.25.0');
+});

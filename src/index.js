@@ -1,5 +1,12 @@
 // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+const FLASHCARD_AI_MODELS = Object.freeze({
+  gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
+  nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
+  glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
+  llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
+});
+const FLASHCARD_AUTO_CHAIN = ["gemma", "glm", "llama"];
 const MAX_TEXT_CHARS = 110000;
 const MAX_REQUEST_BYTES = 512 * 1024;
 const MAX_MATERIAS = 120;
@@ -7,7 +14,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.24.11";
+const APP_VERSION = "10.25.0";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -439,27 +446,33 @@ async function generateFlashcard(request, env) {
   try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
   const text = cleanText(body?.text, 12000);
   const existingQuestion = cleanText(body?.existingQuestion, 500);
+  const materia = cleanText(body?.materia, 180);
+  const assunto = cleanText(body?.assunto, 300);
+  const requested = String(body?.model || "auto").toLowerCase();
   if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
-  const schema = { type:"object", properties:{ question:{type:"string"}, answer:{type:"string"} }, required:["question","answer"] };
-  try {
-    const result = await env.AI.run(MODEL, {
-      messages: [
-        { role:"system", content:`Você é um especialista sênior em aprendizagem ativa, psicometria e elaboração de flashcards para concursos públicos brasileiros. Antes de responder, raciocine silenciosamente em cinco etapas: (1) identifique a unidade de conhecimento central; (2) classifique-a como conceito, regra, exceção, requisito, consequência, prazo, competência, comparação ou causa e efeito; (3) separe regra de condições e exceções; (4) produza uma pergunta que forneça contexto suficiente sem entregar a resposta; (5) critique a pergunta quanto a ambiguidade, pistas, generalidade e fidelidade e reescreva se necessário. Gere UM flashcard atômico. A pergunta deve exigir recuperação ativa, ser inequívoca, autossuficiente e específica; evite sim/não e nunca use fórmulas vagas como "o que o trecho afirma?". A resposta deve ser concisa, completa, fiel exclusivamente à fonte e preservar condições, exceções, números e termos jurídicos essenciais. Não invente fatos nem complemente com conhecimento externo. Retorne somente JSON.` },
-        { role:"user", content:`TRECHO-FONTE:\n${text}\n\nPERGUNTA LOCAL INICIAL (apenas para superar, não para copiar):\n${existingQuestion||'não fornecida'}` }
-      ],
-      response_format:{ type:"json_schema", json_schema:schema },
-      temperature:0.1,
-      max_tokens:1400
-    });
-    const parsed = parseFlashcardAIResponse(result);
-    const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
-    if (!question || !answer) throw new Error("Resposta incompleta da IA");
-    return json({ question, answer, model:"Workers AI · Llama 3.1 8B" });
-  } catch (error) {
-    console.error("Workers AI flashcard error", error);
-    return json({ error:"Não foi possível aprimorar agora." }, 503);
+  if (requested !== "auto" && !FLASHCARD_AI_MODELS[requested]) return json({ error: "Modelo de IA inválido." }, 400);
+  const candidates = requested === "auto" ? FLASHCARD_AUTO_CHAIN : [requested];
+  const systemPrompt = `Você é um especialista sênior em aprendizagem ativa e elaboração de flashcards para concursos públicos brasileiros. Antes de responder, raciocine silenciosamente em cinco etapas: (1) identifique a unidade de conhecimento central; (2) classifique-a como conceito, regra, exceção, requisito, prazo, competência, consequência, comparação, causa/efeito ou pegadinha; (3) separe regra, condições, exceções, números e prazos; (4) formule uma pergunta autossuficiente que exija recuperação ativa sem entregar a resposta; (5) critique a pergunta quanto a ambiguidade, pistas, generalidade e fidelidade ao trecho e reescreva se necessário. Trabalhe EXCLUSIVAMENTE com o trecho-fonte recebido: não invente, não complemente com conhecimento externo e não altere o sentido jurídico. Identifique silenciosamente a unidade de conhecimento central e classifique-a, quando aplicável, como conceito, regra, exceção, requisito, prazo, competência, consequência, comparação, causa/efeito ou pegadinha. Gere UM flashcard atômico e de alta qualidade. A pergunta deve ser autossuficiente, específica, inequívoca, exigir recuperação ativa e evitar formatos vagos ou de sim/não. Preserve na resposta condições, exceções, números, prazos e termos jurídicos essenciais. Se houver matéria/assunto, use-os apenas para contextualização, nunca para acrescentar fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
+  const userPrompt = `MATÉRIA (opcional): ${materia || "não informada"}\nASSUNTO (opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL (opcional; melhore se útil): ${existingQuestion || "não fornecida"}\n\nTRECHO-FONTE:\n${text}`;
+  const errors = [];
+  for (let index = 0; index < candidates.length; index++) {
+    const key = candidates[index];
+    const model = FLASHCARD_AI_MODELS[key];
+    try {
+      const result = await env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 1600 });
+      const parsed = parseFlashcardAIResponse(result);
+      const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
+      if (!question || !answer) throw new Error("Resposta incompleta da IA");
+      return json({ question, answer, model: `Workers AI · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
+    } catch (error) {
+      errors.push(`${model.label}: ${error?.message || error}`);
+      console.warn("Workers AI flashcard model failed", model.id, error);
+    }
   }
+  console.error("Workers AI flashcard exhausted candidates", errors);
+  return json({ error: "Não foi possível gerar a pergunta com IA agora. O modo manual continua disponível." }, 503);
 }
+
 
 export default {
   async fetch(request, env) {
