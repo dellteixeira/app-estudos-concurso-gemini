@@ -1,4 +1,4 @@
-name: Cloudflare Production Deploy
+name: Cloudflare Production Verify
 
 on:
   workflow_run:
@@ -10,11 +10,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: cloudflare-production
-  cancel-in-progress: false
+  group: cloudflare-production-verify
+  cancel-in-progress: true
 
 jobs:
-  deploy:
+  verify:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -44,35 +44,13 @@ jobs:
           const swVersion = sw.match(/const APP_VERSION = '([^']+)'/)?.[1];
           const versions = { package: pkg, public: publicVersion, worker: workerVersion, serviceWorker: swVersion };
           if (!pkg || Object.values(versions).some(version => version !== pkg)) {
-            console.error('Version mismatch before Cloudflare deploy:', versions);
+            console.error('Version mismatch before Cloudflare verification:', versions);
             process.exit(1);
           }
           console.log(`Validated release version ${pkg}`);
           NODE
 
-      - name: Validate Cloudflare credentials
-        shell: bash
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::error::Missing repository secret CLOUDFLARE_API_TOKEN"
-            exit 1
-          fi
-          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::Missing repository secret CLOUDFLARE_ACCOUNT_ID"
-            exit 1
-          fi
-
-      - name: Deploy Worker and assets
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
-
-      - name: Verify deployed version
+      - name: Wait for native Cloudflare deployment and verify production
         shell: bash
         env:
           APP_URL: https://app-estudos-concurso-gemini.d3-concursos.workers.dev
@@ -81,11 +59,11 @@ jobs:
           echo "Expecting Cloudflare production version: $expected"
 
           matched=0
-          for attempt in $(seq 1 12); do
+          for attempt in $(seq 1 24); do
             cache_buster="${GITHUB_SHA}-${GITHUB_RUN_ID}-${attempt}"
             if curl --fail --silent --show-error \
               --header 'Cache-Control: no-cache, no-store' \
-              "$APP_URL/version.json?deploy=$cache_buster" \
+              "$APP_URL/version.json?verify=$cache_buster" \
               --output /tmp/cloudflare-version.json; then
               actual="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).version||''))}catch{}")"
               echo "Verification attempt $attempt: remote=$actual expected=$expected"
@@ -98,16 +76,16 @@ jobs:
           done
 
           if [ "$matched" -ne 1 ]; then
-            echo "::error::Cloudflare did not expose version $expected after deployment"
+            echo "::error::Native Cloudflare deployment did not expose version $expected within the verification window"
             exit 1
           fi
 
           curl --fail --silent --show-error \
             --header 'Cache-Control: no-cache, no-store' \
-            "$APP_URL/sw.js?deploy=${GITHUB_SHA}-${GITHUB_RUN_ID}" \
+            "$APP_URL/sw.js?verify=${GITHUB_SHA}-${GITHUB_RUN_ID}" \
             --output /tmp/cloudflare-sw.js
           grep -F "const APP_VERSION = '$expected';" /tmp/cloudflare-sw.js >/dev/null || {
-            echo "::error::Service Worker version does not match deployed release $expected"
+            echo "::error::Service Worker version does not match production release $expected"
             exit 1
           }
 
