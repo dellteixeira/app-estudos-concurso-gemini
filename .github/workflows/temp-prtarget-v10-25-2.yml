@@ -26,7 +26,7 @@ jobs:
           node --check public/js/pdf/pdf-reader.js
           node --check public/js/pdf/pdf-library-ui.js
           npm test
-          npm run audit
+          AUDIT_ALLOW_ANY_ROOT=1 npm run audit
       - name: Commit functional files
         run: |
           rm -f scripts/temp-v10-25-2-direct.py scripts/temp-v10-25-2.py
