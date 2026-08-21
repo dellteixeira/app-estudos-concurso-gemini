@@ -7,19 +7,51 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout target
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/v10-26-validated-flashcards' && github.head_ref || github.sha }}
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+
+      - name: Apply v10.26.0 only on functional branch
+        if: github.event_name == 'pull_request' && github.head_ref == 'feat/v10-26-validated-flashcards'
+        run: node scripts/apply-v10-26-validated-flashcards.mjs
+
+      - name: Sintaxe crítica v10.26
+        if: github.event_name == 'pull_request' && github.head_ref == 'feat/v10-26-validated-flashcards'
+        run: node --check src/index.js
+
       - name: Testes automatizados
         run: node --test tests/*.test.cjs
+
       - name: Auditoria estrutural
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: node scripts/audit-release.mjs
+
+      - name: Commit validated v10.26 tree
+        if: github.event_name == 'pull_request' && github.head_ref == 'feat/v10-26-validated-flashcards'
+        shell: bash
+        run: |
+          rm -f scripts/apply-v10-26-validated-flashcards.mjs
+          rm -f .github/workflows/v10-26-validated-flashcards-apply.yml
+          rm -f v10-26-trigger.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No validated changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat: validated source-grounded flashcards v10.26.0'
+          git push origin HEAD:${GITHUB_HEAD_REF}
