@@ -7,45 +7,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Aplicar correção v10.25.3 de resiliência da IA
-        if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-3-ai-diagnostics-timeouts'
-        run: |
-          if [ -f scripts/temp-v10-25-3-ai-resilience.py ]; then
-            python3 scripts/temp-v10-25-3-ai-resilience.py
-          fi
-      - name: Sintaxe crítica da IA
-        if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-3-ai-diagnostics-timeouts'
-        run: |
-          node --check src/index.js
-          node --check public/js/pdf/pdf-reader.js
       - name: Testes automatizados
         run: node --test tests/*.test.cjs
       - name: Auditoria estrutural
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: node scripts/audit-release.mjs
-      - name: Gravar correção v10.25.3 na branch funcional
-        if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-3-ai-diagnostics-timeouts'
-        run: |
-          rm -f scripts/temp-v10-25-3-ai-resilience.py .github/workflows/temp-v10-25-3-ai-resilience.yml
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src/index.js public/js/pdf/pdf-reader.js package.json public/version.json public/sw.js tests/*.test.cjs
-          git add -u scripts/temp-v10-25-3-ai-resilience.py .github/workflows/temp-v10-25-3-ai-resilience.yml || true
-          if ! git diff --cached --quiet; then
-            git commit -m 'fix: improve AI diagnostics and fallback resilience v10.25.3'
-            git push origin HEAD:${{ github.head_ref }}
-          fi
