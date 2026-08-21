@@ -16,5 +16,5 @@ test('v10.25.4 informa ao usuário quando Gemini ou fallback respondeu',()=>{
   assert.ok(reader.includes('controller.abort(),25000'));
   assert.ok(reader.includes('✅ Gerado por'));
   assert.ok(reader.includes('⚠️ Modelo preferido indisponível — gerado por'));
-  assert.ok(worker.includes('provider, modelKey: key, fallbackUsed'));
+  assert.ok(worker.includes('provider: result.provider, modelKey: result.key, fallbackUsed'));
 });

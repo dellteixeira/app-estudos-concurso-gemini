@@ -14,6 +14,7 @@ function flashcardCandidateChain(requested) {
 }
 const GEMINI_FLASHCARD_TIMEOUT_MS = 12000;
 const WORKERS_FLASHCARD_TIMEOUT_MS = 8000;
+const FLASHCARD_HEDGE_DELAY_MS = 4500;
 const MAX_TEXT_CHARS = 110000;
 const MAX_REQUEST_BYTES = 512 * 1024;
 const MAX_MATERIAS = 120;
@@ -21,7 +22,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.25.4";
+const APP_VERSION = "10.25.5";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -563,6 +564,82 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function attemptFlashcardModel(env, key, systemPrompt, userPrompt, { hedged = false } = {}) {
+  const model = FLASHCARD_AI_MODELS[key];
+  const provider = model?.provider === "gemini" ? "gemini" : "workers-ai";
+  const providerLabel = provider === "gemini" ? "Google Gemini" : "Workers AI";
+  const startedAt = Date.now();
+  try {
+    const parsed = provider === "gemini"
+      ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
+      : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), WORKERS_FLASHCARD_TIMEOUT_MS, model.label));
+    const question = cleanText(parsed?.question, 500);
+    const answer = cleanText(parsed?.answer, 4000);
+    if (!question || !answer) throw new Error("Resposta incompleta da IA");
+    const durationMs = Date.now() - startedAt;
+    console.info(`Flashcard AI success provider=${provider} model=${model.id} duration=${durationMs}ms hedged=${hedged}`);
+    return { question, answer, provider, providerLabel, model, key, durationMs, hedged };
+  } catch (error) {
+    const durationMs = Number(error?.durationMs) || (Date.now() - startedAt);
+    const status = error?.status ?? "error";
+    const reason = cleanText(error?.reason || error?.message || String(error), 500);
+    console.warn(`Flashcard AI failure provider=${provider} model=${model.id} status=${status} reason=${reason} duration=${durationMs}ms hedged=${hedged}`);
+    error.flashcardTelemetry = { provider, model: model.id, status, reason, durationMs, hedged };
+    throw error;
+  }
+}
+
+function firstSuccessfulFlashcard(promises) {
+  return new Promise((resolve, reject) => {
+    const failures = [];
+    let remaining = promises.length;
+    for (const promise of promises) {
+      Promise.resolve(promise).then(resolve, error => {
+        failures.push(error);
+        remaining -= 1;
+        if (remaining === 0) {
+          const aggregate = new Error("Todos os provedores externos falharam");
+          aggregate.causes = failures;
+          reject(aggregate);
+        }
+      });
+    }
+  });
+}
+
+async function runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt) {
+  if (!candidates.length) throw new Error("Nenhum provedor de IA disponível");
+  if (candidates.length === 1) return attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt);
+
+  let fallbackStarted = false;
+  let timer = null;
+  let startFallback;
+  const fallbackPromise = new Promise((resolve, reject) => {
+    startFallback = () => {
+      if (fallbackStarted) return;
+      fallbackStarted = true;
+      if (timer) clearTimeout(timer);
+      attemptFlashcardModel(env, candidates[1], systemPrompt, userPrompt, { hedged: true }).then(resolve, reject);
+    };
+    timer = setTimeout(startFallback, FLASHCARD_HEDGE_DELAY_MS);
+  });
+
+  const primaryPromise = attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt).catch(error => {
+    startFallback();
+    throw error;
+  });
+
+  try {
+    return await firstSuccessfulFlashcard([primaryPromise, fallbackPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function generateFlashcard(request, env) {
   const user = await authenticateSupabaseUser(request, env);
   if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
@@ -585,32 +662,24 @@ async function generateFlashcard(request, env) {
   const systemPrompt = `Você é um elaborador especialista de flashcards para concursos públicos brasileiros, com foco em aprendizagem ativa e recuperação ativa. Gere exatamente UM novo flashcard usando EXCLUSIVAMENTE fatos presentes no TRECHO-FONTE. A pergunta deve ser autossuficiente, clara, tecnicamente precisa e útil para recuperação ativa. Priorize, conforme o conteúdo permitir: regra e exceção; requisito; prazo; competência; conceito; consequência jurídica; distinção; condição; vedação; número ou literalidade relevante. A resposta deve responder diretamente à pergunta, sem introduções, sem inventar informação e preservando ressalvas essenciais. NÃO repita nem parafraseie de modo trivial perguntas anteriores. Quando houver perguntas anteriores, explore OUTRO ângulo factual do mesmo trecho. raciocine silenciosamente em cinco etapas e critique a pergunta antes de devolver: (1) a resposta está integralmente sustentada pelo trecho? (2) a pergunta é específica? (3) há apenas um núcleo de cobrança? (4) pergunta e resposta são diferentes das anteriores? Se qualquer resposta for não, reescreva. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
   const avoid = previousQuestions.length ? previousQuestions.map((q,i)=>`${i+1}. ${q}`).join("\n") : "nenhuma";
   const userPrompt = `GERAÇÃO: ${generationIndex}\nMATÉRIA (contexto opcional): ${materia || "não informada"}\nASSUNTO (contexto opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL A NÃO REPETIR: ${existingQuestion || "nenhuma"}\nPERGUNTAS JÁ GERADAS A NÃO REPETIR NEM PARAFRASEAR:\n${avoid}\n\nTRECHO-FONTE — única fonte de verdade:\n${text}`;
-  const errors = [];
-  for (let index = 0; index < candidates.length; index++) {
-    const key = candidates[index];
-    const model = FLASHCARD_AI_MODELS[key];
-    const attemptStartedAt = Date.now();
-    try {
-      const parsed = model.provider === "gemini"
-        ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
-        : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), WORKERS_FLASHCARD_TIMEOUT_MS, model.label));
-      const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
-      if (!question || !answer) throw new Error("Resposta incompleta da IA");
-      const provider = model.provider === "gemini" ? "gemini" : "workers-ai";
-      const providerLabel = model.provider === "gemini" ? "Google Gemini" : "Workers AI";
-      return json({ question, answer, model: `${providerLabel} · ${model.label}`, provider, modelKey: key, fallbackUsed: requested === "auto" ? index > 0 : key !== requested });
-    } catch (error) {
-      const provider = model.provider === "gemini" ? "gemini" : "workers-ai";
-      const durationMs = Number(error?.durationMs) || (Date.now() - attemptStartedAt);
-      const status = error?.status ?? "error";
-      const reason = cleanText(error?.reason || error?.message || String(error), 500);
-      errors.push(`${model.label}: ${reason}`);
-      console.warn(`Flashcard AI failure provider=${provider} model=${model.id} status=${status} reason=${reason} duration=${durationMs}ms`);
-    }
+  try {
+    const result = await runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt);
+    const preferredKey = requested === "auto" ? candidates[0] : requested;
+    const fallbackUsed = result.key !== preferredKey;
+    console.info(`Flashcard AI selected provider=${result.provider} model=${result.model.id} duration=${result.durationMs}ms fallback=${fallbackUsed} hedged=${result.hedged}`);
+    return json({ question: result.question, answer: result.answer, model: `${result.providerLabel} · ${result.model.label}`, provider: result.provider, modelKey: result.key, fallbackUsed, hedged: result.hedged, latencyMs: result.durationMs });
+  } catch (aggregate) {
+    const errors = Array.isArray(aggregate?.causes) ? aggregate.causes.map(error => {
+      const telemetry = error?.flashcardTelemetry;
+      return telemetry ? `${telemetry.model}: ${telemetry.reason}` : cleanText(error?.message || String(error), 500);
+    }) : [cleanText(aggregate?.message || String(aggregate), 500)];
+    console.warn("Flashcard AI external providers exhausted; using deterministic local fallback", errors);
   }
-  console.warn("Flashcard AI external providers exhausted; using deterministic local fallback", errors);
+  const localStartedAt = Date.now();
   const local = buildDeterministicFlashcard({ text, materia, assunto, generationIndex, previousQuestions, existingQuestion });
-  return json({ question: local.question, answer: local.answer, model: "Gerador local · sem IA", provider: "local-deterministic", modelKey: "local", fallbackUsed: true, deterministic: true });
+  const localDurationMs = Date.now() - localStartedAt;
+  console.info(`Flashcard AI success provider=local-deterministic model=local duration=${localDurationMs}ms hedged=false fallback=true`);
+  return json({ question: local.question, answer: local.answer, model: "Gerador local · sem IA", provider: "local-deterministic", modelKey: "local", fallbackUsed: true, deterministic: true, hedged: false, latencyMs: localDurationMs });
 }
 
 
