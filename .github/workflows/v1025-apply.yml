@@ -1,0 +1,123 @@
+name: Apply V10.25 Library and AI Architecture
+on:
+  push:
+    branches: [feature/v10-25-library-ai-models]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.event.head_commit.message != 'chore: apply v10.25 patches'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v10-25-library-ai-models
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply patches
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, json
+
+          index=Path('public/index.html')
+          text=index.read_text(encoding='utf-8')
+          tag='<script src="./js/app-enhancements-v1025.js" defer></script>'
+          if tag not in text:
+              anchor='<script src="./pwa-update.js" defer></script>'
+              if anchor not in text: raise SystemExit('index anchor not found')
+              text=text.replace(anchor, anchor+'\n    '+tag, 1)
+              index.write_text(text,encoding='utf-8')
+
+          worker=Path('src/index.js')
+          text=worker.read_text(encoding='utf-8')
+          text=text.replace('const APP_VERSION = "10.24.11";', 'const APP_VERSION = "10.25.0";')
+          text=text.replace('"/js/app-pwa.js"', '"/js/app-pwa.js", "/js/app-enhancements-v1025.js"')
+          replacement=r'''async function generateFlashcard(request, env) {
+            const user = await authenticateSupabaseUser(request, env);
+            if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+            if (env.AI_RATE_LIMITER?.limit) {
+              const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:flashcard` });
+              if (!success) return json({ error: "Muitas gerações em sequência. Aguarde um minuto." }, 429);
+            }
+            let body;
+            try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
+            const text = cleanText(body?.text, 12000);
+            const existingQuestion = cleanText(body?.existingQuestion, 500);
+            const materia = cleanText(body?.materia, 180);
+            const assunto = cleanText(body?.assunto, 300);
+            const requested = cleanText(body?.model || "auto", 40).toLowerCase();
+            if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
+
+            const catalog = {
+              gemma: { id:"@cf/google/gemma-4-26b-a4b-it", label:"Gemma 4 26B" },
+              nemotron: { id:"@cf/nvidia/nemotron-3-120b-a12b", label:"Nemotron 3 120B" },
+              glm: { id:"@cf/zai-org/glm-4.7-flash", label:"GLM-4.7 Flash" },
+              llama: { id:"@cf/meta/llama-3.1-8b-instruct-fast", label:"Llama 3.1 8B" }
+            };
+            const order = requested === "auto" ? ["gemma","glm","llama"] : [requested, ...(requested === "llama" ? [] : ["llama"])];
+            const candidates = [...new Set(order)].map(k=>catalog[k]).filter(Boolean);
+            if (!candidates.length) return json({ error:"Modelo de IA inválido." }, 400);
+            const schema = { type:"object", properties:{ question:{type:"string"}, answer:{type:"string"} }, required:["question","answer"] };
+            const systemPrompt = `Você é um especialista sênior em aprendizagem ativa, psicometria e elaboração de flashcards para concursos públicos brasileiros. Analise silenciosamente a fonte e identifique a unidade de conhecimento central. Classifique-a como conceito, regra, exceção, requisito, consequência, prazo, competência, comparação, causa e efeito ou pegadinha. Gere UM flashcard atômico e de alta qualidade. A pergunta deve exigir recuperação ativa, ser inequívoca, autossuficiente, específica e natural. Evite perguntas de sim/não, perguntas que entreguem a resposta e fórmulas vagas como “o que o trecho afirma?”. Quando houver regra e exceção, privilegie a distinção mais cobrável em prova. Quando houver número, prazo, pena, requisito ou competência, preserve-o com precisão. A resposta deve ser concisa, completa e fiel EXCLUSIVAMENTE ao conteúdo-fonte. Não invente fatos, jurisprudência ou conhecimento externo. Retorne somente JSON.`;
+            const userPrompt = `MATÉRIA: ${materia||"não informada"}\nASSUNTO: ${assunto||"não informado"}\n\nCONTEÚDO-FONTE:\n${text}\n\nPERGUNTA ATUAL (use apenas como referência e melhore se necessário):\n${existingQuestion||"não fornecida"}`;
+            let lastError = null;
+            for (let i=0;i<candidates.length;i++) {
+              const candidate=candidates[i];
+              try {
+                const result = await env.AI.run(candidate.id, {
+                  messages:[{role:"system",content:systemPrompt},{role:"user",content:userPrompt}],
+                  response_format:{type:"json_schema",json_schema:schema},
+                  temperature:0.15,
+                  max_tokens:1400
+                });
+                const parsed=parseFlashcardAIResponse(result);
+                const question=cleanText(parsed?.question,500), answer=cleanText(parsed?.answer,4000);
+                if(!question||!answer) throw new Error("Resposta incompleta da IA");
+                return json({question,answer,model:`Workers AI · ${candidate.label}`,modelId:candidate.id,fallbackUsed:i>0,requestedModel:requested});
+              } catch(error) {
+                lastError=error;
+                console.warn("Workers AI flashcard model failed",candidate.id,error?.message||error);
+              }
+            }
+            console.error("Workers AI flashcard error",lastError);
+            return json({ error:"Não foi possível aprimorar agora. O modo manual continua disponível." }, 503);
+          }'''
+          pattern=r'async function generateFlashcard\(request, env\) \{.*?\n\}\n\nexport default'
+          new,n=re.subn(pattern,replacement+'\n\nexport default',text,count=1,flags=re.S)
+          if n!=1: raise SystemExit(f'generateFlashcard replacement count={n}')
+          worker.write_text(new,encoding='utf-8')
+
+          vp=Path('public/version.json')
+          if vp.exists():
+              data=json.loads(vp.read_text(encoding='utf-8'))
+              data['version']='10.25.0'
+              vp.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          sw=Path('public/sw.js')
+          if sw.exists():
+              s=sw.read_text(encoding='utf-8')
+              s=s.replace('10.24.11','10.25.0')
+              if './js/app-enhancements-v1025.js' not in s:
+                  anchors=['./js/app-pwa.js','/js/app-pwa.js']
+                  for a in anchors:
+                      if a in s:
+                          s=s.replace(a, a+"',\n  './js/app-enhancements-v1025.js" if a.startswith('./') else a+"',\n  '/js/app-enhancements-v1025.js", 1)
+                          break
+              sw.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate JavaScript
+        run: |
+          node --check src/index.js
+          node --check public/js/app-enhancements-v1025.js
+          node --check public/sw.js
+      - name: Run tests
+        run: npm test
+      - name: Commit generated patches
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html public/version.json public/sw.js src/index.js public/js/app-enhancements-v1025.js
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: apply v10.25 patches"
+          git push origin HEAD:feature/v10-25-library-ai-models
