@@ -28,6 +28,26 @@ jobs:
       - name: Apply v10.26.0
         run: node scripts/apply-v10-26-validated-flashcards.mjs
 
+      - name: Repair duplicated try anchor
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'src/index.js';
+          let src = fs.readFileSync(file, 'utf8');
+          const bad = `  try {
+    const result = await runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt, validationContext);  try {
+    const result = await runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt);`;
+          const good = `  try {
+    const result = await runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt, validationContext);`;
+          if (!src.includes(bad)) {
+            console.error('Expected duplicated try anchor was not found.');
+            process.exit(1);
+          }
+          src = src.replace(bad, good);
+          fs.writeFileSync(file, src);
+          NODE
+
       - name: Check critical syntax
         run: node --check src/index.js
 
