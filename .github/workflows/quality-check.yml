@@ -7,32 +7,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Migração temporária Gemini PR 73
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 73 && github.head_ref == 'feature/v10-25-1-gemini-flashcards-final'
-        run: |
-          git fetch origin main
-          git show origin/main:scripts/temp-apply-gemini-v10-25-1.py > /tmp/temp-apply-gemini-v10-25-1.py
-          python3 /tmp/temp-apply-gemini-v10-25-1.py
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A src/index.js public/js/pdf/pdf-reader.js tests docs
-          if ! git diff --cached --quiet; then
-            git commit -m 'feat: integrate Gemini flashcards with safe Workers AI fallback'
-            git push origin HEAD:feature/v10-25-1-gemini-flashcards-final
-          fi
       - name: Testes automatizados
         run: node --test tests/*.test.cjs
       - name: Auditoria estrutural
