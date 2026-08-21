@@ -6,7 +6,7 @@ const reader=fs.readFileSync('public/js/pdf/pdf-reader.js','utf8');
 const library=fs.readFileSync('public/js/pdf/pdf-library-ui.js','utf8');
 
 test('IA de flashcard tem caminho rápido e limites rígidos de latência',()=>{
-  assert.ok(worker.includes('gemini-2.5-flash-lite'));
+  assert.ok(worker.includes('gemini-2.5-flash'));
   assert.ok(worker.includes('const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"]'));
   assert.ok(worker.includes('controller.abort(), 4000'));
   assert.ok(worker.includes('2500, model.label'));

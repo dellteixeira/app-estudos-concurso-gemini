@@ -1,7 +1,7 @@
 // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const FLASHCARD_AI_MODELS = Object.freeze({
-  gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },
+  gemini: { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
   gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
   nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
   glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
@@ -15,7 +15,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.25.1";
+const APP_VERSION = "10.25.2";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -451,8 +451,8 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: "user", parts: [{ text: userPrompt }] }],
       generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 700,
+        temperature: 0.35,
+        maxOutputTokens: 600,
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
@@ -498,14 +498,17 @@ async function generateFlashcard(request, env) {
   try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
   const text = cleanText(body?.text, 7000);
   const existingQuestion = cleanText(body?.existingQuestion, 500);
+  const previousQuestions = (Array.isArray(body?.previousQuestions) ? body.previousQuestions : []).map(q => cleanText(q, 500)).filter(Boolean).slice(-12);
+  const generationIndex = Math.max(1, Math.min(99, Number.parseInt(body?.generationIndex, 10) || 1));
   const materia = cleanText(body?.materia, 180);
   const assunto = cleanText(body?.assunto, 300);
   const requested = String(body?.model || "auto").toLowerCase();
   if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
   if (requested !== "auto" && !FLASHCARD_AI_MODELS[requested]) return json({ error: "Modelo de IA inválido." }, 400);
   const candidates = requested === "auto" ? FLASHCARD_AUTO_CHAIN : [requested];
-  const systemPrompt = `Crie UM flashcard atômico para concurso usando SOMENTE o trecho-fonte, com aprendizagem ativa e recuperação ativa; raciocine silenciosamente em cinco etapas e critique a pergunta antes de responder. Faça pergunta autossuficiente, específica e sem pistas; preserve regra, exceções, requisitos, números, prazos e termos jurídicos essenciais. Não invente nem complemente fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
-  const userPrompt = `MATÉRIA (opcional): ${materia || "não informada"}\nASSUNTO (opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL (opcional; melhore se útil): ${existingQuestion || "não fornecida"}\n\nTRECHO-FONTE:\n${text}`;
+  const systemPrompt = `Você é um elaborador especialista de flashcards para concursos públicos brasileiros, com foco em aprendizagem ativa e recuperação ativa. Gere exatamente UM novo flashcard usando EXCLUSIVAMENTE fatos presentes no TRECHO-FONTE. A pergunta deve ser autossuficiente, clara, tecnicamente precisa e útil para recuperação ativa. Priorize, conforme o conteúdo permitir: regra e exceção; requisito; prazo; competência; conceito; consequência jurídica; distinção; condição; vedação; número ou literalidade relevante. A resposta deve responder diretamente à pergunta, sem introduções, sem inventar informação e preservando ressalvas essenciais. NÃO repita nem parafraseie de modo trivial perguntas anteriores. Quando houver perguntas anteriores, explore OUTRO ângulo factual do mesmo trecho. raciocine silenciosamente em cinco etapas e critique a pergunta antes de devolver: (1) a resposta está integralmente sustentada pelo trecho? (2) a pergunta é específica? (3) há apenas um núcleo de cobrança? (4) pergunta e resposta são diferentes das anteriores? Se qualquer resposta for não, reescreva. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
+  const avoid = previousQuestions.length ? previousQuestions.map((q,i)=>`${i+1}. ${q}`).join("\n") : "nenhuma";
+  const userPrompt = `GERAÇÃO: ${generationIndex}\nMATÉRIA (contexto opcional): ${materia || "não informada"}\nASSUNTO (contexto opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL A NÃO REPETIR: ${existingQuestion || "nenhuma"}\nPERGUNTAS JÁ GERADAS A NÃO REPETIR NEM PARAFRASEAR:\n${avoid}\n\nTRECHO-FONTE — única fonte de verdade:\n${text}`;
   const errors = [];
   for (let index = 0; index < candidates.length; index++) {
     const key = candidates[index];

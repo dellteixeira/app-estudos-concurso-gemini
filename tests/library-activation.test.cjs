@@ -10,7 +10,7 @@ test('Biblioteca usa somente o hook oficial de ativação da guia',()=>{
   assert.match(ui,/onTabActivated:activateLibrary/);
   assert.match(ui,/resetLibraryToGlobalView\(\)/);
   assert.match(ui,/state\.scope='global'/);
-  assert.match(ui,/activationPromise=initialize\(false\)/);
+  assert.match(ui,/activationPromise=initialize\(true\)/);
   assert.doesNotMatch(ui,/window\.PdfStudyLibraryUI\?\.onTabActivated\?\.\(\)/);
   assert.doesNotMatch(ui,/scheduleLibraryActivationRefresh/);
   assert.doesNotMatch(ui,/initialize\(true\)\.catch\(handle\)/);

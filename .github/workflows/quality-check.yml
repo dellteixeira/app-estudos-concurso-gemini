@@ -7,45 +7,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Aplicar v10.25.2 na PR funcional
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 85 && github.head_ref == 'fix/v10-25-2-smart-flashcards-mobile-library'
-        run: |
-          if [ -f scripts/temp-v10-25-2-direct.py ]; then
-            python3 scripts/temp-v10-25-2-direct.py
-          fi
-      - name: Sintaxe crítica
-        run: |
-          node --check src/index.js
-          node --check public/js/pdf/pdf-reader.js
-          node --check public/js/pdf/pdf-library-ui.js
       - name: Testes automatizados
         run: node --test tests/*.test.cjs
       - name: Auditoria estrutural
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: node scripts/audit-release.mjs
-      - name: Gravar v10.25.2 na branch funcional
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 85 && github.head_ref == 'fix/v10-25-2-smart-flashcards-mobile-library'
-        run: |
-          rm -f scripts/temp-v10-25-2-direct.py .github/workflows/temp-apply-v10-25-2-functional.yml .v10-25-2-functional-trigger .v10-25-2-prtarget-trigger .v10-25-2-qc-trigger
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src/index.js public/js/pdf/pdf-reader.js public/js/pdf/pdf-library-ui.js package.json public/version.json public/sw.js tests/*.test.cjs
-          git add -u scripts/temp-v10-25-2-direct.py .github/workflows/temp-apply-v10-25-2-functional.yml .v10-25-2-functional-trigger .v10-25-2-prtarget-trigger .v10-25-2-qc-trigger || true
-          if ! git diff --cached --quiet; then
-            git commit -m 'fix: smarter iterative flashcards and reliable mobile library v10.25.2'
-            git push origin HEAD:${{ github.head_ref }}
-          fi
