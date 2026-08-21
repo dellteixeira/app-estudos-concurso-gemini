@@ -1,1 +1,1 @@
-trigger-target
+trigger-quality
