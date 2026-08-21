@@ -504,7 +504,7 @@ async function generateFlashcard(request, env) {
   if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
   if (requested !== "auto" && !FLASHCARD_AI_MODELS[requested]) return json({ error: "Modelo de IA inválido." }, 400);
   const candidates = requested === "auto" ? FLASHCARD_AUTO_CHAIN : [requested];
-  const systemPrompt = `Crie UM flashcard atômico para concurso usando SOMENTE o trecho-fonte, com aprendizagem ativa e recuperação ativa. Raciocine silenciosamente em cinco etapas e critique a pergunta antes de responder. Faça pergunta autossuficiente, específica e sem pistas; preserve regra, exceções, requisitos, números, prazos e termos jurídicos essenciais. Não invente nem complemente fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
+  const systemPrompt = `Crie UM flashcard atômico para concurso usando SOMENTE o trecho-fonte, com aprendizagem ativa e recuperação ativa; raciocine silenciosamente em cinco etapas e critique a pergunta antes de responder. Faça pergunta autossuficiente, específica e sem pistas; preserve regra, exceções, requisitos, números, prazos e termos jurídicos essenciais. Não invente nem complemente fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
   const userPrompt = `MATÉRIA (opcional): ${materia || "não informada"}\nASSUNTO (opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL (opcional; melhore se útil): ${existingQuestion || "não fornecida"}\n\nTRECHO-FONTE:\n${text}`;
   const errors = [];
   for (let index = 0; index < candidates.length; index++) {
