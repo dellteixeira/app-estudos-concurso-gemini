@@ -22,7 +22,9 @@ jobs:
           node-version: '22'
       - name: Aplicar v10.25.6
         if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/v10-25-6-gemini-parser'
-        run: node scripts/temp-v10-25-6-gemini-parser.mjs
+        run: |
+          node scripts/repair-v10-25-6-patcher.mjs
+          node scripts/temp-v10-25-6-gemini-parser.mjs
       - name: Sintaxe crítica
         run: node --check src/index.js
       - name: Testes automatizados
@@ -37,7 +39,7 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -- src/index.js package.json public/version.json public/sw.js tests/*.test.cjs .github/workflows/quality-check.yml
-          git add -u -- scripts/temp-v10-25-6-gemini-parser.mjs
+          git add -u -- scripts/temp-v10-25-6-gemini-parser.mjs scripts/repair-v10-25-6-patcher.mjs
           git diff --cached --quiet && exit 0
           git commit -m 'fix: resilient Gemini parser v10.25.6'
           git push origin HEAD:fix/v10-25-6-gemini-parser
