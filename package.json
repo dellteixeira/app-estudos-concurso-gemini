@@ -1,7 +1,7 @@
 {
   "name": "estudo-adaptativo-inteligente",
   "private": true,
-  "version": "10.25.3",
+  "version": "10.25.4",
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "audit": "node scripts/audit-release.mjs",
