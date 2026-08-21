@@ -2,7 +2,7 @@ name: TEMP Direct Functional v10.25.2
 on:
   pull_request:
     branches: [main]
-    types: [synchronize]
+    types: [reopened]
 permissions:
   contents: write
 jobs:
