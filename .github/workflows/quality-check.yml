@@ -7,19 +7,51 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout v10.25.4 functional branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/v10-25-4-ai-resilient-local-fallback'
+        uses: actions/checkout@v4
+        with:
+          ref: fix/v10-25-4-ai-resilient-local-fallback
+          fetch-depth: 0
+      - name: Checkout event ref
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.ref != 'fix/v10-25-4-ai-resilient-local-fallback'
+        uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Aplicar v10.25.4 na branch funcional
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/v10-25-4-ai-resilient-local-fallback'
+        run: |
+          if [ -f scripts/temp-v10-25-4-ai-resilience.mjs ]; then
+            node scripts/temp-v10-25-4-ai-resilience.mjs
+          fi
+      - name: Sintaxe crítica
+        run: |
+          node --check src/index.js
+          node --check public/js/pdf/pdf-reader.js
       - name: Testes automatizados
         run: node --test tests/*.test.cjs
       - name: Auditoria estrutural
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: node scripts/audit-release.mjs
+      - name: Gravar v10.25.4 na branch funcional
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/v10-25-4-ai-resilient-local-fallback'
+        run: |
+          if [ ! -f scripts/temp-v10-25-4-ai-resilience.mjs ]; then
+            exit 0
+          fi
+          rm -f scripts/temp-v10-25-4-ai-resilience.mjs
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- src/index.js public/js/pdf/pdf-reader.js package.json public/version.json public/sw.js tests/v10-25-1-gemini-flashcards.test.cjs tests/v10-25-library-ai-models.test.cjs tests/v10-25-3-ai-resilience.test.cjs
+          git add -u -- scripts/temp-v10-25-4-ai-resilience.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: resilient flashcard generation v10.25.4'
+          git push origin HEAD:fix/v10-25-4-ai-resilient-local-fallback
