@@ -1,7 +1,7 @@
 name: Publish v10.25.1 Release
 
 on:
-  push:
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'fix/v10-25-1-ai-library-final')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,4 +26,3 @@ jobs:
               --title "V10.25.1 — Backup Canônico" \
               --notes "Backup canônico da versão estável 10.25.1. Inclui correções de IA rápida nos flashcards e carregamento global da Biblioteca. Commit: d87850e2b1f337cb549978f087f5b2fe334ee0d9."
           fi
-# one-shot release publisher; remove after successful publication
