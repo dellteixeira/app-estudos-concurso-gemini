@@ -1,0 +1,4430 @@
+=== SYNTAX ===
+
+=== TESTS ===
+TAP version 13
+# Subtest: exclusão granular seleciona somente o assunto escolhido
+ok 1 - exclusão granular seleciona somente o assunto escolhido
+  ---
+  duration_ms: 1.471929
+  type: 'test'
+  ...
+# Subtest: exclusão granular não remove assunto homônimo de outra matéria
+ok 2 - exclusão granular não remove assunto homônimo de outra matéria
+  ---
+  duration_ms: 0.193832
+  type: 'test'
+  ...
+# Subtest: backup Supabase preserva banco e está preparado para Storage privado
+ok 3 - backup Supabase preserva banco e está preparado para Storage privado
+  ---
+  duration_ms: 1.388624
+  type: 'test'
+  ...
+# Subtest: baseline não inventa schema remoto e possui capturador verificável
+ok 4 - baseline não inventa schema remoto e possui capturador verificável
+  ---
+  duration_ms: 1.269691
+  type: 'test'
+  ...
+# Subtest: RPC versionada de exclusão usa auth.uid e cobre tabelas conhecidas
+ok 5 - RPC versionada de exclusão usa auth.uid e cobre tabelas conhecidas
+  ---
+  duration_ms: 0.448667
+  type: 'test'
+  ...
+# Subtest: exclusão de conta prepara limpeza do bucket study-pdfs antes do auth.users
+ok 6 - exclusão de conta prepara limpeza do bucket study-pdfs antes do auth.users
+  ---
+  duration_ms: 0.419934
+  type: 'test'
+  ...
+# Subtest: cabeçalho deixa sincronização fora da barra de concurso
+ok 7 - cabeçalho deixa sincronização fora da barra de concurso
+  ---
+  duration_ms: 2.336464
+  type: 'test'
+  ...
+# Subtest: pipeline Supabase valida migrations em PR e aplica somente após merge na main
+ok 8 - pipeline Supabase valida migrations em PR e aplica somente após merge na main
+  ---
+  duration_ms: 0.415155
+  type: 'test'
+  ...
+# Subtest: Biblioteca usa somente o hook oficial de ativação da guia
+ok 9 - Biblioteca usa somente o hook oficial de ativação da guia
+  ---
+  duration_ms: 2.009452
+  type: 'test'
+  ...
+# Subtest: reabrir Biblioteca sempre volta ao acervo global e recarrega documentos
+ok 10 - reabrir Biblioteca sempre volta ao acervo global e recarrega documentos
+  ---
+  duration_ms: 0.454308
+  type: 'test'
+  ...
+# Subtest: v10.24 biblioteca e reader
+not ok 11 - v10.24 biblioteca e reader
+  ---
+  duration_ms: 3.778686
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/library-reader-v10-24.test.cjs:3:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '10.25.1'
+    - '10.25.0'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '10.25.0'
+  actual: '10.25.1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/library-reader-v10-24.test.cjs:3:262)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: questões não valem metade do progresso com um único registro
+ok 12 - questões não valem metade do progresso com um único registro
+  ---
+  duration_ms: 1.385647
+  type: 'test'
+  ...
+# Subtest: volume e desempenho elevam progressivamente a contribuição
+ok 13 - volume e desempenho elevam progressivamente a contribuição
+  ---
+  duration_ms: 0.296695
+  type: 'test'
+  ...
+# Subtest: checkbox legado mantém contribuição mínima e não domínio artificial
+ok 14 - checkbox legado mantém contribuição mínima e não domínio artificial
+  ---
+  duration_ms: 0.221473
+  type: 'test'
+  ...
+# Subtest: minutos usam a primeira duração válida e arredondam corretamente
+ok 15 - minutos usam a primeira duração válida e arredondam corretamente
+  ---
+  duration_ms: 1.486746
+  type: 'test'
+  ...
+# Subtest: total permanente soma somente minutos válidos de studySessions
+ok 16 - total permanente soma somente minutos válidos de studySessions
+  ---
+  duration_ms: 0.3589
+  type: 'test'
+  ...
+# Subtest: Reader nunca usa vínculo de outro concurso como fallback
+ok 17 - Reader nunca usa vínculo de outro concurso como fallback
+  ---
+  duration_ms: 1.560514
+  type: 'test'
+  ...
+# Subtest: Flashcard independe de vínculo e exportação mantém contexto válido
+ok 18 - Flashcard independe de vínculo e exportação mantém contexto válido
+  ---
+  duration_ms: 0.493742
+  type: 'test'
+  ...
+# Subtest: hardening RLS valida propriedade do PDF e torna versões imutáveis ao cliente
+ok 19 - hardening RLS valida propriedade do PDF e torna versões imutáveis ao cliente
+  ---
+  duration_ms: 0.431426
+  type: 'test'
+  ...
+# Subtest: fundação PDF cria Workspaces, documentos e progresso com RLS
+ok 20 - fundação PDF cria Workspaces, documentos e progresso com RLS
+  ---
+  duration_ms: 1.641857
+  type: 'test'
+  ...
+# Subtest: bucket study-pdfs é privado, limitado a PDF e 100 MiB
+ok 21 - bucket study-pdfs é privado, limitado a PDF e 100 MiB
+  ---
+  duration_ms: 0.391802
+  type: 'test'
+  ...
+# Subtest: metadados impõem limites e evitam caminhos duplicados por usuário
+ok 22 - metadados impõem limites e evitam caminhos duplicados por usuário
+  ---
+  duration_ms: 0.20886
+  type: 'test'
+  ...
+# Subtest: exclusão de dados cobre fundação PDF na ordem correta
+ok 23 - exclusão de dados cobre fundação PDF na ordem correta
+  ---
+  duration_ms: 0.430764
+  type: 'test'
+  ...
+# Subtest: serviços JS de fundação são privados, limitam PDF e constroem caminho por user_id
+ok 24 - serviços JS de fundação são privados, limitam PDF e constroem caminho por user_id
+  ---
+  duration_ms: 0.368829
+  type: 'test'
+  ...
+# Subtest: Biblioteca tem escopo global e vínculo contextual
+ok 25 - Biblioteca tem escopo global e vínculo contextual
+  ---
+  duration_ms: 2.016726
+  type: 'test'
+  ...
+# Subtest: PDF global não carrega concurso workspace matéria ou assunto
+ok 26 - PDF global não carrega concurso workspace matéria ou assunto
+  ---
+  duration_ms: 0.588969
+  type: 'test'
+  ...
+# Subtest: Storage novo independe de workspace
+ok 27 - Storage novo independe de workspace
+  ---
+  duration_ms: 0.341989
+  type: 'test'
+  ...
+# Subtest: link table permite múltiplos contextos sem duplicar PDF
+ok 28 - link table permite múltiplos contextos sem duplicar PDF
+  ---
+  duration_ms: 0.438509
+  type: 'test'
+  ...
+# Subtest: excluir concurso remove somente vínculos
+ok 29 - excluir concurso remove somente vínculos
+  ---
+  duration_ms: 3.48597
+  type: 'test'
+  ...
+# Subtest: excluir PDF global remove arquivo e documento explicitamente
+ok 30 - excluir PDF global remove arquivo e documento explicitamente
+  ---
+  duration_ms: 0.29433
+  type: 'test'
+  ...
+# Subtest: upload PDF tem dropzone explícita e seletor múltiplo acessível
+ok 31 - upload PDF tem dropzone explícita e seletor múltiplo acessível
+  ---
+  duration_ms: 1.706006
+  type: 'test'
+  ...
+# Subtest: modal de upload garante Workspace padrão e permite criar Workspace inline
+ok 32 - modal de upload garante Workspace padrão e permite criar Workspace inline
+  ---
+  duration_ms: 0.736065
+  type: 'test'
+  ...
+# Subtest: upload modal preserva Biblioteca Global e abre Reader interno
+ok 33 - upload modal preserva Biblioteca Global e abre Reader interno
+  ---
+  duration_ms: 0.907495
+  type: 'test'
+  ...
+# Subtest: Biblioteca mantém PDFs visíveis quando a releitura remota falha
+ok 34 - Biblioteca mantém PDFs visíveis quando a releitura remota falha
+  ---
+  duration_ms: 0.634154
+  type: 'test'
+  ...
+# Subtest: Workspace padrão é idempotente e corrida 23505 é recuperada
+ok 35 - Workspace padrão é idempotente e corrida 23505 é recuperada
+  ---
+  duration_ms: 0.302805
+  type: 'test'
+  ...
+# Subtest: Biblioteca abre global por padrão e Workspace não bloqueia PDFs
+ok 36 - Biblioteca abre global por padrão e Workspace não bloqueia PDFs
+  ---
+  duration_ms: 0.644133
+  type: 'test'
+  ...
+# Subtest: Biblioteca usa cache local para renderização quase instantânea antes da sincronização
+ok 37 - Biblioteca usa cache local para renderização quase instantânea antes da sincronização
+  ---
+  duration_ms: 0.613065
+  type: 'test'
+  ...
+# Subtest: Biblioteca carrega links e progresso em paralelo e prioriza cache no first paint
+ok 38 - Biblioteca carrega links e progresso em paralelo e prioriza cache no first paint
+  ---
+  duration_ms: 0.467112
+  type: 'test'
+  ...
+# Subtest: ações da Biblioteca não estouram no mobile com quatro comandos
+ok 39 - ações da Biblioteca não estouram no mobile com quatro comandos
+  ---
+  duration_ms: 0.260506
+  type: 'test'
+  ...
+# Subtest: upload em lote aceita múltiplos PDFs com concorrência controlada
+ok 40 - upload em lote aceita múltiplos PDFs com concorrência controlada
+  ---
+  duration_ms: 1.730251
+  type: 'test'
+  ...
+# Subtest: Biblioteca permite seleção múltipla e exclusão em lote
+ok 41 - Biblioteca permite seleção múltipla e exclusão em lote
+  ---
+  duration_ms: 1.07136
+  type: 'test'
+  ...
+# Subtest: upload em lote diagnostica falha por arquivo com código etapa e mensagem amigável
+ok 42 - upload em lote diagnostica falha por arquivo com código etapa e mensagem amigável
+  ---
+  duration_ms: 1.091589
+  type: 'test'
+  ...
+# Subtest: lote não aborta por um PDF inválido e permite retry somente das falhas
+ok 43 - lote não aborta por um PDF inválido e permite retry somente das falhas
+  ---
+  duration_ms: 0.366765
+  type: 'test'
+  ...
+# Subtest: diagnóstico detecta assinatura PDF inválida antes do Storage e permite copiar relatório
+ok 44 - diagnóstico detecta assinatura PDF inválida antes do Storage e permite copiar relatório
+  ---
+  duration_ms: 0.335146
+  type: 'test'
+  ...
+# Subtest: upload de PDF permite destino somente no Workspace sem matéria obrigatória
+ok 45 - upload de PDF permite destino somente no Workspace sem matéria obrigatória
+  ---
+  duration_ms: 0.646728
+  type: 'test'
+  ...
+# Subtest: upload desfaz falha parcial sem usar catch direto em query builder do Supabase
+ok 46 - upload desfaz falha parcial sem usar catch direto em query builder do Supabase
+  ---
+  duration_ms: 0.297676
+  type: 'test'
+  ...
+# Subtest: serviço de vínculos cria, remove e sincroniza concurso
+ok 47 - serviço de vínculos cria, remove e sincroniza concurso
+  ---
+  duration_ms: 1.656754
+  type: 'test'
+  ...
+# Subtest: migration desacopla colunas contextuais de pdf_documents
+ok 48 - migration desacopla colunas contextuais de pdf_documents
+  ---
+  duration_ms: 0.435934
+  type: 'test'
+  ...
+# Subtest: RPC de exclusão completa inclui pdf_document_links
+ok 49 - RPC de exclusão completa inclui pdf_document_links
+  ---
+  duration_ms: 0.276666
+  type: 'test'
+  ...
+# Subtest: Fase 2 remove CSS de renderers obsoletos e preserva renderer atual
+ok 50 - Fase 2 remove CSS de renderers obsoletos e preserva renderer atual
+  ---
+  duration_ms: 1.749366
+  type: 'test'
+  ...
+# Subtest: Fase 2 preserva controles e correções atuais
+ok 51 - Fase 2 preserva controles e correções atuais
+  ---
+  duration_ms: 0.415055
+  type: 'test'
+  ...
+# Subtest: auditoria pós-Fase 2 mantém renderer próprio e elimina assinaturas visuais antigas
+ok 52 - auditoria pós-Fase 2 mantém renderer próprio e elimina assinaturas visuais antigas
+  ---
+  duration_ms: 0.353681
+  type: 'test'
+  ...
+# Subtest: Biblioteca usa renderer próprio sobre o núcleo PDF.js
+ok 53 - Biblioteca usa renderer próprio sobre o núcleo PDF.js
+  ---
+  duration_ms: 4.495189
+  type: 'test'
+  ...
+# Subtest: renderer próprio cria páginas progressivas sem restrições de container
+ok 54 - renderer próprio cria páginas progressivas sem restrições de container
+  ---
+  duration_ms: 0.802579
+  type: 'test'
+  ...
+# Subtest: Reader captura seleção direta e mantém área de transferência como fallback
+ok 55 - Reader captura seleção direta e mantém área de transferência como fallback
+  ---
+  duration_ms: 1.18282
+  type: 'test'
+  ...
+# Subtest: Reader mantém marca-texto sublinhado anotação flashcard e troca de ajuste
+ok 56 - Reader mantém marca-texto sublinhado anotação flashcard e troca de ajuste
+  ---
+  duration_ms: 1.560414
+  type: 'test'
+  ...
+# Subtest: barra de estudo permanece visível antes e depois da seleção
+ok 57 - barra de estudo permanece visível antes e depois da seleção
+  ---
+  duration_ms: 2.713628
+  type: 'test'
+  ...
+# Subtest: flashcard permite matéria e assunto opcionais no modal
+ok 58 - flashcard permite matéria e assunto opcionais no modal
+  ---
+  duration_ms: 1.338309
+  type: 'test'
+  ...
+# Subtest: nota é pontual e sublinhado não entra no painel ou exportação
+ok 59 - nota é pontual e sublinhado não entra no painel ou exportação
+  ---
+  duration_ms: 0.655764
+  type: 'test'
+  ...
+# Subtest: marca-texto oferece cor e opacidade configuráveis
+ok 60 - marca-texto oferece cor e opacidade configuráveis
+  ---
+  duration_ms: 1.269781
+  type: 'test'
+  ...
+# Subtest: anotações PDF têm RLS e versionamento
+ok 61 - anotações PDF têm RLS e versionamento
+  ---
+  duration_ms: 0.671294
+  type: 'test'
+  ...
+# Subtest: Reader próprio controla página e escala sem PDFViewer
+ok 62 - Reader próprio controla página e escala sem PDFViewer
+  ---
+  duration_ms: 1.003674
+  type: 'test'
+  ...
+# Subtest: seleção copiada alimenta flashcard e pergunta plausível
+ok 63 - seleção copiada alimenta flashcard e pergunta plausível
+  ---
+  duration_ms: 1.208317
+  type: 'test'
+  ...
+# Subtest: flashcard de trecho usa pergunta contextual sem fallback genérico
+ok 64 - flashcard de trecho usa pergunta contextual sem fallback genérico
+  ---
+  duration_ms: 1.061592
+  type: 'test'
+  ...
+# Subtest: flashcard do PDF salva a partir do modal e mantém a Biblioteca aberta
+ok 65 - flashcard do PDF salva a partir do modal e mantém a Biblioteca aberta
+  ---
+  duration_ms: 0.956807
+  type: 'test'
+  ...
+# Subtest: botão de marcador de página comunica função e estado
+ok 66 - botão de marcador de página comunica função e estado
+  ---
+  duration_ms: 0.381012
+  type: 'test'
+  ...
+# Subtest: Biblioteca estabiliza loads concorrentes e concurso usa seletor atual
+ok 67 - Biblioteca estabiliza loads concorrentes e concurso usa seletor atual
+  ---
+  duration_ms: 0.305821
+  type: 'test'
+  ...
+# Subtest: upload modal tem limites responsivos e sem overflow horizontal
+ok 68 - upload modal tem limites responsivos e sem overflow horizontal
+  ---
+  duration_ms: 0.300371
+  type: 'test'
+  ...
+# Subtest: Reader abre Blob privado sem expor URL assinada
+ok 69 - Reader abre Blob privado sem expor URL assinada
+  ---
+  duration_ms: 0.351516
+  type: 'test'
+  ...
+# Subtest: Reader mobile usa Pointer Events para pinch sem assistente touch legado
+ok 70 - Reader mobile usa Pointer Events para pinch sem assistente touch legado
+  ---
+  duration_ms: 0.654943
+  type: 'test'
+  ...
+# Subtest: seleção usa renderTextLayer e gera retângulos persistentes
+ok 71 - seleção usa renderTextLayer e gera retângulos persistentes
+  ---
+  duration_ms: 0.387013
+  type: 'test'
+  ...
+# Subtest: anotação não desenha ícone sobre o PDF e navega ao ponto exato
+ok 72 - anotação não desenha ícone sobre o PDF e navega ao ponto exato
+  ---
+  duration_ms: 0.472031
+  type: 'test'
+  ...
+# Subtest: marca-texto e sublinhado podem ser removidos pelo painel ou pela própria marca
+ok 73 - marca-texto e sublinhado podem ser removidos pelo painel ou pela própria marca
+  ---
+  duration_ms: 0.459007
+  type: 'test'
+  ...
+# Subtest: marcações sobrevivem a falha de rede e sincronizam depois
+ok 74 - marcações sobrevivem a falha de rede e sincronizam depois
+  ---
+  duration_ms: 0.275915
+  type: 'test'
+  ...
+# Subtest: flashcard usa endpoint de IA dedicado com fallback local editável
+not ok 75 - flashcard usa endpoint de IA dedicado com fallback local editável
+  ---
+  duration_ms: 3.567211
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/pdf-reader.test.cjs:33:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /aprendizagem ativa/. Input:
+    
+    '// Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.\n' +
+      'const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";\n' +
+      'const FLASHCARD_AI_MODELS = Object.freeze({\n' +
+      '  gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },\n' +
+      '  gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },\n' +
+      '  nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },\n' +
+      '  glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },\n' +
+      '  llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }\n' +
+      '});\n' +
+      'const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];\n' +
+      'const MAX_TEXT_CHARS = 110000;\n' +
+      'const MAX_REQUEST_BYTES = 512 * 1024;\n' +
+      'const MAX_MATERIAS = 120;\n' +
+      'const MAX_TOPICS_TOTAL = 5000;\n' +
+      'const MAX_MATERIA_CHARS = 180;\n' +
+      'const MAX_ASSUNTO_CHARS = 1200;\n' +
+      '\n' +
+      'const APP_VERSION = "10.25.1";\n' +
+      'const CORE_NO_STORE_PATHS = new Set([\n' +
+      '  "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",\n' +
+      '  "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",\n' +
+      '  "/js/study-domain.js", "/js/app-core.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"\n' +
+      ']);\n' +
+      '\n' +
+      'const VENDOR_ROUTES = {\n' +
+      '  "/vendor/supabase.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",\n' +
+      '      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/chart.umd.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",\n' +
+      '      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf_viewer.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf_viewer.min.css": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"\n' +
+      '    ],\n' +
+      '    contentType: "text/css; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf.worker.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  }\n' +
+      '};\n' +
+      '\n' +
+      'async function serveVendorAsset(request, route) {\n' +
+      '  const cache = caches.default;\n' +
+      '  const cacheKey = new Request(request.url, { method: "GET" });\n' +
+      '  const cached = await cache.match(cacheKey);\n' +
+      '  if (cached) return cached;\n' +
+      '\n' +
+      '  let lastStatus = 0;\n' +
+      '  for (const upstreamUrl of route.upstreams) {\n' +
+      '    try {\n' +
+      '      const upstream = await fetch(upstreamUrl, { redirect: "follow" });\n' +
+      '      lastStatus = upstream.status;\n' +
+      '      if (!upstream.ok) continue;\n' +
+      '\n' +
+      '      const headers = new Headers();\n' +
+      '      headers.set("content-type", route.contentType);\n' +
+      '      headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");\n' +
+      '      headers.set("x-content-type-options", "nosniff");\n' +
+      '      headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);\n' +
+      '      const response = new Response(upstream.body, { status: 200, headers });\n' +
+      '      await cache.put(cacheKey, response.clone());\n' +
+      '      return response;\n' +
+      '    } catch (error) {\n' +
+      '      console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);\n' +
+      '    }\n' +
+      '  }\n' +
+      '\n' +
+      '  return new Response("Dependência temporariamente indisponível.", {\n' +
+      '    status: 503,\n' +
+      '    headers: {\n' +
+      '      "content-type": "text/plain; charset=utf-8",\n' +
+      '      "cache-control": "no-store",\n' +
+      '      "x-painel-vendor-last-status": String(lastStatus || 0)\n' +
+      '    }\n' +
+      '  });\n' +
+      '}\n' +
+      '\n' +
+      '\n' +
+      'const prioritySchema = {\n' +
+      '  type: "object",\n' +
+      '  properties: {\n' +
+      '    materias: {\n' +
+      '      type: "array",\n' +
+      '      items: {\n' +
+      '        type: "object",\n' +
+      '        properties: {\n' +
+      '          materia: { type: "string" },\n' +
+      '          prioridade: { type: "integer", minimum: 1, maximum: 4 },\n' +
+      '          peso: { type: "number", minimum: 0 }\n' +
+      '        },\n' +
+      '        required: ["materia", "prioridade", "peso"]\n' +
+      '      }\n' +
+      '    }\n' +
+      '  },\n' +
+      '  required: ["materias"]\n' +
+      '};\n' +
+      '\n' +
+      'function json(data, status = 200, extraHeaders = {}) {\n' +
+      '  const headers = new Headers({\n' +
+      '    "content-type": "application/json; charset=utf-8",\n' +
+      '    "cache-control": "no-store",\n' +
+      '    "x-content-type-options": "nosniff",\n' +
+      '    "referrer-policy": "no-referrer"\n' +
+      '  });\n' +
+      '  for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);\n' +
+      '  return new Response(JSON.stringify(data), { status, headers });\n' +
+      '}\n' +
+      '\n' +
+      'function cleanText(value, maxLength) {\n' +
+      '  return String(value || "")\n' +
+      '    .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/g, "")\n' +
+      '    .trim()\n' +
+      '    .slice(0, maxLength);\n' +
+      '}\n' +
+      '\n' +
+      'function fold(value) {\n' +
+      '  return String(value || "")\n' +
+      '    .normalize("NFD")\n' +
+      '    .replace(/[\\u0300-\\u036f]/g, "")\n' +
+      '    .toLowerCase()\n' +
+      '    .replace(/\\s+/g, " ")\n' +
+      '    .trim();\n' +
+      '}\n' +
+      '\n' +
+      'function stripMarkdownJsonFence(value) {\n' +
+      '  return String(value || "")\n' +
+      '    .trim()\n' +
+      '    .replace(/^```(?:json)?\\s*/i, "")\n' +
+      '    .replace(/\\s*```$/i, "")\n' +
+      '    .trim();\n' +
+      '}\n' +
+      '\n' +
+      'function extractFirstJsonObject(text) {\n' +
+      '  const source = stripMarkdownJsonFence(text);\n' +
+      '  if (!source) return null;\n' +
+      '\n' +
+      '  try {\n' +
+      '    const direct = JSON.parse(source);\n' +
+      '    if (direct && typeof direct === "object") return direct;\n' +
+      '  } catch {}\n' +
+      '\n' +
+      '  let start = -1, depth = 0, inString = false, escaped = false;\n' +
+      '  for (let i = 0; i < source.length; i++) {\n' +
+      '    const ch = source[i];\n' +
+      '    if (inString) {\n' +
+      '      if (escaped) escaped = false;\n' +
+      '      else if (ch === "\\\\") escaped = true;\n' +
+      `      else if (ch === '"') inString = false;\n` +
+      '      continue;\n' +
+      '    }\n' +
+      `    if (ch === '"') { inString = true; continue; }\n` +
+      '    if (ch === "{") {\n' +
+      '      if (depth === 0) start = i;\n' +
+      '      depth++;\n' +
+      '    } else if (ch === "}" && depth > 0) {\n' +
+      '      depth--;\n' +
+      '      if (depth === 0 && start >= 0) {\n' +
+      '        try { return JSON.parse(source.slice(start, i + 1)); } catch {}\n' +
+      '        start = -1;\n' +
+      '      }\n' +
+      '    }\n' +
+      '  }\n' +
+      '  return null;\n' +
+      '}\n' +
+      '\n' +
+      'function parseAIResponse(result) {\n' +
+      '  if (!result) return null;\n' +
+      '  const candidates = [\n' +
+      '    result?.response,\n' +
+      '    result?.result?.response,\n' +
+      '    result?.response?.response,\n' +
+      '    result?.output,\n' +
+      '    result?.data,\n' +
+      '    result\n' +
+      '  ];\n' +
+      '  for (const candidate of candidates) {\n' +
+      '    if (!candidate) continue;\n' +
+      '    if (typeof candidate === "object" && !Array.isArray(candidate)) {\n' +
+      '      if (Array.isArray(candidate.materias)) return candidate;\n' +
+      '      if (candidate.analysis && Array.isArray(candidate.analysis.materias)) return candidate.analysis;\n' +
+      '    } else if (typeof candidate === "string") {\n' +
+      '      const parsed = extractFirstJsonObject(candidate);\n' +
+      '      if (parsed && Array.isArray(parsed.materias)) return parsed;\n' +
+      '    }\n' +
+      '  }\n' +
+      '  return null;\n' +
+      '}\n' +
+      '\n' +
+      'async function authenticateSupabaseUser(request, env) {\n' +
+      '  const authorization = request.headers.get("authorization") || "";\n' +
+      '  if (!authorization.startsWith("Bearer ")) return null;\n' +
+      '\n' +
+      '  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {\n' +
+      '    headers: {\n' +
+      '      authorization,\n' +
+      '      apikey: env.SUPABASE_ANON_KEY\n' +
+      '    }\n' +
+      '  });\n' +
+      '\n' +
+      '  if (!response.ok) return null;\n' +
+      '  return response.json();\n' +
+      '}\n' +
+      '\n' +
+      'function sanitizeLockedMaterias(input) {\n' +
+      '  const items = Array.isArray(input) ? input : [];\n' +
+      '  const clean = [];\n' +
+      '  const seen = new Set();\n' +
+      '\n' +
+      '  let topicCount = 0;\n' +
+      '  for (const item of items.slice(0, MAX_MATERIAS)) {\n' +
+      '    const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);\n' +
+      '    if (!materia) continue;\n' +
+      '\n' +
+      '    const assuntos = [];\n' +
+      '    const topicSeen = new Set();\n' +
+      '    for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {\n' +
+      '      if (topicCount >= MAX_TOPICS_TOTAL) break;\n' +
+      '      const assunto = cleanText(value, MAX_ASSUNTO_CHARS);\n' +
+      '      const key = fold(assunto);\n' +
+      '      if (!assunto || topicSeen.has(key)) continue;\n' +
+      '      topicSeen.add(key);\n' +
+      '      assuntos.push(assunto);\n' +
+      '      topicCount++;\n' +
+      '    }\n' +
+      '    if (!assuntos.length) continue;\n' +
+      '\n' +
+      '    const key = fold(materia);\n' +
+      '    if (seen.has(key)) continue;\n' +
+      '    seen.add(key);\n' +
+      '\n' +
+      '    clean.push({\n' +
+      '      materia,\n' +
+      '      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),\n' +
+      '      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,\n' +
+      '      assuntos\n' +
+      '    });\n' +
+      '  }\n' +
+      '  return clean;\n' +
+      '}\n' +
+      '\n' +
+      'function mergePriorityOnly(lockedMaterias, aiResult) {\n' +
+      '  const scores = new Map();\n' +
+      '  for (const item of (Array.isArray(aiResult?.materias) ? aiResult.materias : [])) {\n' +
+      '    const name = String(item?.materia || "").trim();\n' +
+      '    if (!name) continue;\n' +
+      '    scores.set(fold(name), {\n' +
+      '      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),\n' +
+      '      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null\n' +
+      '    });\n' +
+      '  }\n' +
+      '\n' +
+      '  return lockedMaterias.map(item => {\n' +
+      '    const score = scores.get(fold(item.materia));\n' +
+      '    return {\n' +
+      '      materia: item.materia,\n' +
+      '      // A hierarquia e os assuntos jamais vêm da IA.\n' +
+      '      prioridade: score?.prioridade ?? item.prioridade,\n' +
+      '      // Peso detectado do quadro de provas no frontend tem precedência.\n' +
+      '      peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),\n' +
+      '      assuntos: item.assuntos\n' +
+      '    };\n' +
+      '  });\n' +
+      '}\n' +
+      '\n' +
+      'async function analyzeEdital(request, env) {\n' +
+      '  const contentType = request.headers.get("content-type") || "";\n' +
+      '  if (!contentType.toLowerCase().includes("application/json")) {\n' +
+      '    return json({ error: "Content-Type deve ser application/json." }, 415);\n' +
+      '  }\n' +
+      '  const declaredLength = Number(request.headers.get("content-length") || 0);\n' +
+      '  if'... 11092 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
+    const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+    const FLASHCARD_AI_MODELS = Object.freeze({
+      gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },
+      gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
+      nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
+      glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
+      llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
+    });
+    const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];
+    const MAX_TEXT_CHARS = 110000;
+    const MAX_REQUEST_BYTES = 512 * 1024;
+    const MAX_MATERIAS = 120;
+    const MAX_TOPICS_TOTAL = 5000;
+    const MAX_MATERIA_CHARS = 180;
+    const MAX_ASSUNTO_CHARS = 1200;
+    
+    const APP_VERSION = "10.25.1";
+    const CORE_NO_STORE_PATHS = new Set([
+      "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
+      "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
+      "/js/study-domain.js", "/js/app-core.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"
+    ]);
+    
+    const VENDOR_ROUTES = {
+      "/vendor/supabase.js": {
+        upstreams: [
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/chart.umd.min.js": {
+        upstreams: [
+          "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",
+          "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf_viewer.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf_viewer.min.css": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",
+          "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"
+        ],
+        contentType: "text/css; charset=utf-8"
+      },
+      "/vendor/pdf.worker.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      }
+    };
+    
+    async function serveVendorAsset(request, route) {
+      const cache = caches.default;
+      const cacheKey = new Request(request.url, { method: "GET" });
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+    
+      let lastStatus = 0;
+      for (const upstreamUrl of route.upstreams) {
+        try {
+          const upstream = await fetch(upstreamUrl, { redirect: "follow" });
+          lastStatus = upstream.status;
+          if (!upstream.ok) continue;
+    
+          const headers = new Headers();
+          headers.set("content-type", route.contentType);
+          headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");
+          headers.set("x-content-type-options", "nosniff");
+          headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);
+          const response = new Response(upstream.body, { status: 200, headers });
+          await cache.put(cacheKey, response.clone());
+          return response;
+        } catch (error) {
+          console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);
+        }
+      }
+    
+      return new Response("Dependência temporariamente indisponível.", {
+        status: 503,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+          "x-painel-vendor-last-status": String(lastStatus || 0)
+        }
+      });
+    }
+    
+    
+    const prioritySchema = {
+      type: "object",
+      properties: {
+        materias: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              materia: { type: "string" },
+              prioridade: { type: "integer", minimum: 1, maximum: 4 },
+              peso: { type: "number", minimum: 0 }
+            },
+            required: ["materia", "prioridade", "peso"]
+          }
+        }
+      },
+      required: ["materias"]
+    };
+    
+    function json(data, status = 200, extraHeaders = {}) {
+      const headers = new Headers({
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer"
+      });
+      for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);
+      return new Response(JSON.stringify(data), { status, headers });
+    }
+    
+    function cleanText(value, maxLength) {
+      return String(value || "")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+        .trim()
+        .slice(0, maxLength);
+    }
+    
+    function fold(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    
+    function stripMarkdownJsonFence(value) {
+      return String(value || "")
+        .trim()
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+    }
+    
+    function extractFirstJsonObject(text) {
+      const source = stripMarkdownJsonFence(text);
+      if (!source) return null;
+    
+      try {
+        const direct = JSON.parse(source);
+        if (direct && typeof direct === "object") return direct;
+      } catch {}
+    
+      let start = -1, depth = 0, inString = false, escaped = false;
+      for (let i = 0; i < source.length; i++) {
+        const ch = source[i];
+        if (inString) {
+          if (escaped) escaped = false;
+          else if (ch === "\\") escaped = true;
+          else if (ch === '"') inString = false;
+          continue;
+        }
+        if (ch === '"') { inString = true; continue; }
+        if (ch === "{") {
+          if (depth === 0) start = i;
+          depth++;
+        } else if (ch === "}" && depth > 0) {
+          depth--;
+          if (depth === 0 && start >= 0) {
+            try { return JSON.parse(source.slice(start, i + 1)); } catch {}
+            start = -1;
+          }
+        }
+      }
+      return null;
+    }
+    
+    function parseAIResponse(result) {
+      if (!result) return null;
+      const candidates = [
+        result?.response,
+        result?.result?.response,
+        result?.response?.response,
+        result?.output,
+        result?.data,
+        result
+      ];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate === "object" && !Array.isArray(candidate)) {
+          if (Array.isArray(candidate.materias)) return candidate;
+          if (candidate.analysis && Array.isArray(candidate.analysis.materias)) return candidate.analysis;
+        } else if (typeof candidate === "string") {
+          const parsed = extractFirstJsonObject(candidate);
+          if (parsed && Array.isArray(parsed.materias)) return parsed;
+        }
+      }
+      return null;
+    }
+    
+    async function authenticateSupabaseUser(request, env) {
+      const authorization = request.headers.get("authorization") || "";
+      if (!authorization.startsWith("Bearer ")) return null;
+    
+      const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          authorization,
+          apikey: env.SUPABASE_ANON_KEY
+        }
+      });
+    
+      if (!response.ok) return null;
+      return response.json();
+    }
+    
+    function sanitizeLockedMaterias(input) {
+      const items = Array.isArray(input) ? input : [];
+      const clean = [];
+      const seen = new Set();
+    
+      let topicCount = 0;
+      for (const item of items.slice(0, MAX_MATERIAS)) {
+        const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);
+        if (!materia) continue;
+    
+        const assuntos = [];
+        const topicSeen = new Set();
+        for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {
+          if (topicCount >= MAX_TOPICS_TOTAL) break;
+          const assunto = cleanText(value, MAX_ASSUNTO_CHARS);
+          const key = fold(assunto);
+          if (!assunto || topicSeen.has(key)) continue;
+          topicSeen.add(key);
+          assuntos.push(assunto);
+          topicCount++;
+        }
+        if (!assuntos.length) continue;
+    
+        const key = fold(materia);
+        if (seen.has(key)) continue;
+        seen.add(key);
+    
+        clean.push({
+          materia,
+          prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+          peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,
+          assuntos
+        });
+      }
+      return clean;
+    }
+    
+    function mergePriorityOnly(lockedMaterias, aiResult) {
+      const scores = new Map();
+      for (const item of (Array.isArray(aiResult?.materias) ? aiResult.materias : [])) {
+        const name = String(item?.materia || "").trim();
+        if (!name) continue;
+        scores.set(fold(name), {
+          prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+          peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null
+        });
+      }
+    
+      return lockedMaterias.map(item => {
+        const score = scores.get(fold(item.materia));
+        return {
+          materia: item.materia,
+          // A hierarquia e os assuntos jamais vêm da IA.
+          prioridade: score?.prioridade ?? item.prioridade,
+          // Peso detectado do quadro de provas no frontend tem precedência.
+          peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),
+          assuntos: item.assuntos
+        };
+      });
+    }
+    
+    async function analyzeEdital(request, env) {
+      const contentType = request.headers.get("content-type") || "";
+      if (!contentType.toLowerCase().includes("application/json")) {
+        return json({ error: "Content-Type deve ser application/json." }, 415);
+      }
+      const declaredLength = Number(request.headers.get("content-length") || 0);
+      if (declaredLength > MAX_REQUEST_BYTES) {
+        return json({ error: "Requisição excede o limite de segurança." }, 413);
+      }
+    
+      const user = await authenticateSupabaseUser(request, env);
+      if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+    
+      if (env.AI_RATE_LIMITER?.limit) {
+        const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:analisar-edital` });
+        if (!success) {
+          return json({ error: "Muitas análises em sequência. Aguarde um minuto e tente novamente." }, 429, { "retry-after": "60" });
+        }
+      }
+    
+      let body;
+      try {
+        const rawBody = await request.text();
+        if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+          return json({ error: "Requisição excede o limite de segurança." }, 413);
+        }
+        body = JSON.parse(rawBody);
+      } catch {
+        return json({ error: "Corpo JSON inválido." }, 400);
+      }
+    
+      const rawLockedMaterias = Array.isArray(body?.lockedMaterias) ? body.lockedMaterias : [];
+      if (rawLockedMaterias.length > MAX_MATERIAS) {
+        return json({ error: "Quantidade de matérias excede o limite de segurança." }, 413);
+      }
+      const rawTopicCount = rawLockedMaterias.reduce((sum, item) => sum + (Array.isArray(item?.assuntos) ? item.assuntos.length : 0), 0);
+      if (rawTopicCount > MAX_TOPICS_TOTAL) {
+        return json({ error: "Quantidade de tópicos excede o limite de segurança." }, 413);
+      }
+    
+      const concurso = cleanText(body?.concurso, 200);
+      const banca = cleanText(body?.banca, 120);
+      const fileName = cleanText(body?.fileName || "Edital.pdf", 240);
+      const cargoLabel = cleanText(body?.cargo?.label || body?.cargo, 240);
+      const rawText = cleanText(body?.text, MAX_TEXT_CHARS + 1);
+      const lockedMaterias = sanitizeLockedMaterias(rawLockedMaterias);
+    
+      if (!lockedMaterias.length) {
+        return json({ error: "O frontend não enviou matérias/assuntos determinísticos válidos para o cargo selecionado." }, 422);
+      }
+    
+      if (rawText.length > MAX_TEXT_CHARS) {
+        return json({ error: "Recorte do edital excedeu o limite de segurança." }, 413);
+      }
+    
+      // Resultado-base seguro: mesmo que a IA falhe, matéria/assunto permanecem corretos.
+      let finalMaterias = lockedMaterias;
+      let aiUsed = false;
+    
+      const systemPrompt = `
+    Você auxilia na PRIORIZAÇÃO de um edital já extraído deterministicamente.
+    
+    REGRAS ABSOLUTAS:
+    1. NÃO extraia matérias.
+    2. NÃO crie matérias.
+    3. NÃO remova matérias.
+    4. NÃO renomeie matérias.
+    5. NÃO gere assuntos.
+    6. A lista de matérias fornecida está BLOQUEADA.
+    7. Sua única tarefa é atribuir prioridade 1, 2, 3 ou 4 e peso numérico às matérias usando SOMENTE sinais existentes no edital recebido.
+    8. Se o texto não permitir diferenciar, use prioridade 2. A escala é P1 = prioridade máxima, P2 = alta, P3 = média e P4 = baixa.
+    9. Se o peso já estiver explicitamente indicado no texto/quadro de provas, respeite-o.
+    10. Não use histórico da banca; ele não está disponível nesta fase.
+    11. Retorne somente JSON no schema solicitado.
+    `;
+    
+      const lockedNames = lockedMaterias.map(m => ({
+        materia: m.materia,
+        peso_detectado: m.peso,
+        prioridade_inicial: m.prioridade
+      }));
+    
+      const userPrompt = `
+    Concurso: ${concurso || "não informado"}
+    Cargo/Área/Especialidade: ${cargoLabel || "não informado"}
+    Banca: ${banca || "não informada"}
+    Arquivo: ${fileName}
+    
+    MATÉRIAS BLOQUEADAS:
+    ${JSON.stringify(lockedNames)}
+    
+    RECORTE DO EDITAL DO CARGO:
+    ${rawText.slice(0, MAX_TEXT_CHARS)}
+    `;
+    
+      try {
+        const result = await env.AI.run(MODEL, {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: prioritySchema
+          },
+          temperature: 0,
+          max_tokens: 3000
+        });
+    
+        const parsed = parseAIResponse(result);
+        if (parsed && Array.isArray(parsed.materias)) {
+          finalMaterias = mergePriorityOnly(lockedMaterias, parsed);
+          aiUsed = true;
+        }
+      } catch (error) {
+        console.error("Workers AI priority error; using deterministic fallback", error);
+      }
+    
+      return json({
+        parserVersion: "v8-adaptive-universal",
+        analysis: {
+          concurso,
+          materias: finalMaterias
+        },
+        model: MODEL,
+        aiUsed,
+        extractionLocked: true
+      });
+    }
+    
+    
+    function parseFlashcardAIResponse(result) {
+      if (!result) return null;
+      const candidates = [result?.response, result?.result?.response, result?.response?.response, result?.output, result?.data, result];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate === "object" && !Array.isArray(candidate)) {
+          if (typeof candidate.question === "string" && typeof candidate.answer === "string") return candidate;
+        } else if (typeof candidate === "string") {
+          const parsed = extractFirstJsonObject(candidate);
+          if (parsed && typeof parsed.question === "string" && typeof parsed.answer === "string") return parsed;
+        }
+      }
+      return null;
+    }
+    
+    async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
+      if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+          body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 700,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: { question: { type: "STRING" }, answer: { type: "STRING" } },
+              required: ["question", "answer"]
+            }
+          }
+          })
+        });
+      } catch (error) {
+        if (error?.name === "AbortError") throw new Error("Gemini excedeu o limite de 4 segundos");
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!response.ok) {
+        const detail = cleanText(await response.text(), 500);
+        throw new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+      }
+      const payload = await response.json();
+      const text = payload?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").join("") || "";
+      const parsed = extractFirstJsonObject(text);
+      if (!parsed?.question || !parsed?.answer) throw new Error("Resposta incompleta do Gemini");
+      return parsed;
+    }
+    
+    function withTimeout(promise, ms, label) {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} excedeu o limite de ${ms} ms`)), ms);
+      });
+      return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+    }
+    
+    async function generateFlashcard(request, env) {
+      const user = await authenticateSupabaseUser(request, env);
+      if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+      if (env.AI_RATE_LIMITER?.limit) {
+        const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:flashcard` });
+        if (!success) return json({ error: "Muitas gerações em sequência. Aguarde um minuto." }, 429);
+      }
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
+      const text = cleanText(body?.text, 7000);
+      const existingQuestion = cleanText(body?.existingQuestion, 500);
+      const materia = cleanText(body?.materia, 180);
+      const assunto = cleanText(body?.assunto, 300);
+      const requested = String(body?.model || "auto").toLowerCase();
+      if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
+      if (requested !== "auto" && !FLASHCARD_AI_MODELS[requested]) return json({ error: "Modelo de IA inválido." }, 400);
+      const candidates = requested === "auto" ? FLASHCARD_AUTO_CHAIN : [requested];
+      const systemPrompt = `Crie UM flashcard atômico para concurso usando SOMENTE o trecho-fonte. Faça pergunta autossuficiente, específica e sem pistas; preserve regra, exceções, requisitos, números, prazos e termos jurídicos essenciais. Não invente nem complemente fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
+      const userPrompt = `MATÉRIA (opcional): ${materia || "não informada"}\nASSUNTO (opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL (opcional; melhore se útil): ${existingQuestion || "não fornecida"}\n\nTRECHO-FONTE:\n${text}`;
+      const errors = [];
+      for (let index = 0; index < candidates.length; index++) {
+        const key = candidates[index];
+        const model = FLASHCARD_AI_MODELS[key];
+        try {
+          const parsed = model.provider === "gemini"
+            ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
+            : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), 2500, model.label));
+          const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
+          if (!question || !answer) throw new Error("Resposta incompleta da IA");
+          return json({ question, answer, model: `${model.provider === "gemini" ? "Google Gemini" : "Workers AI"} · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
+        } catch (error) {
+          errors.push(`${model.label}: ${error?.message || error}`);
+          console.warn("Flashcard AI model failed", model.id, error);
+        }
+      }
+      console.error("Flashcard AI exhausted candidates", errors);
+      return json({ error: "Não foi possível gerar a pergunta com IA agora. O modo manual continua disponível." }, 503);
+    }
+    
+    
+    export default {
+      async fetch(request, env) {
+        const url = new URL(request.url);
+    
+        if (request.method === "GET" && CORE_NO_STORE_PATHS.has(url.pathname)) {
+          const assetResponse = await env.ASSETS.fetch(request);
+          const headers = new Headers(assetResponse.headers);
+          headers.set("cache-control", "no-cache, no-store, must-revalidate");
+          headers.set("pragma", "no-cache");
+          headers.set("expires", "0");
+          headers.set("x-app-version", APP_VERSION);
+          return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
+        }
+    
+        const vendorRoute = VENDOR_ROUTES[url.pathname];
+        if (vendorRoute && request.method === "GET") {
+          return serveVendorAsset(request, vendorRoute);
+        }
+    
+        if (url.pathname === "/api/ai/analisar-edital") {
+          if (request.method !== "POST") {
+            return json({ error: "Método não permitido." }, 405);
+          }
+          return analyzeEdital(request, env);
+        }
+    
+        if (url.pathname === "/api/ai/flashcard") {
+          if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
+          return generateFlashcard(request, env);
+        }
+    
+    
+        return env.ASSETS.fetch(request);
+      }
+    };
+    
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/pdf-reader.test.cjs:33:357)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Reader oferece zoom visível e localização de frases completas
+ok 76 - Reader oferece zoom visível e localização de frases completas
+  ---
+  duration_ms: 1.401647
+  type: 'test'
+  ...
+# Subtest: ESC ENTER e Ctrl F funcionam no Reader e nos modais
+ok 77 - ESC ENTER e Ctrl F funcionam no Reader e nos modais
+  ---
+  duration_ms: 0.591835
+  type: 'test'
+  ...
+# Subtest: motor de flashcard faz crítica silenciosa e informa IA real ou fallback
+not ok 78 - motor de flashcard faz crítica silenciosa e informa IA real ou fallback
+  ---
+  duration_ms: 1.991328
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/pdf-reader.test.cjs:39:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /raciocine silenciosamente em cinco etapas/. Input:
+    
+    '// Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.\n' +
+      'const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";\n' +
+      'const FLASHCARD_AI_MODELS = Object.freeze({\n' +
+      '  gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },\n' +
+      '  gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },\n' +
+      '  nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },\n' +
+      '  glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },\n' +
+      '  llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }\n' +
+      '});\n' +
+      'const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];\n' +
+      'const MAX_TEXT_CHARS = 110000;\n' +
+      'const MAX_REQUEST_BYTES = 512 * 1024;\n' +
+      'const MAX_MATERIAS = 120;\n' +
+      'const MAX_TOPICS_TOTAL = 5000;\n' +
+      'const MAX_MATERIA_CHARS = 180;\n' +
+      'const MAX_ASSUNTO_CHARS = 1200;\n' +
+      '\n' +
+      'const APP_VERSION = "10.25.1";\n' +
+      'const CORE_NO_STORE_PATHS = new Set([\n' +
+      '  "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",\n' +
+      '  "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",\n' +
+      '  "/js/study-domain.js", "/js/app-core.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"\n' +
+      ']);\n' +
+      '\n' +
+      'const VENDOR_ROUTES = {\n' +
+      '  "/vendor/supabase.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",\n' +
+      '      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/chart.umd.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",\n' +
+      '      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf_viewer.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf_viewer.min.css": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"\n' +
+      '    ],\n' +
+      '    contentType: "text/css; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf.worker.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  }\n' +
+      '};\n' +
+      '\n' +
+      'async function serveVendorAsset(request, route) {\n' +
+      '  const cache = caches.default;\n' +
+      '  const cacheKey = new Request(request.url, { method: "GET" });\n' +
+      '  const cached = await cache.match(cacheKey);\n' +
+      '  if (cached) return cached;\n' +
+      '\n' +
+      '  let lastStatus = 0;\n' +
+      '  for (const upstreamUrl of route.upstreams) {\n' +
+      '    try {\n' +
+      '      const upstream = await fetch(upstreamUrl, { redirect: "follow" });\n' +
+      '      lastStatus = upstream.status;\n' +
+      '      if (!upstream.ok) continue;\n' +
+      '\n' +
+      '      const headers = new Headers();\n' +
+      '      headers.set("content-type", route.contentType);\n' +
+      '      headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");\n' +
+      '      headers.set("x-content-type-options", "nosniff");\n' +
+      '      headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);\n' +
+      '      const response = new Response(upstream.body, { status: 200, headers });\n' +
+      '      await cache.put(cacheKey, response.clone());\n' +
+      '      return response;\n' +
+      '    } catch (error) {\n' +
+      '      console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);\n' +
+      '    }\n' +
+      '  }\n' +
+      '\n' +
+      '  return new Response("Dependência temporariamente indisponível.", {\n' +
+      '    status: 503,\n' +
+      '    headers: {\n' +
+      '      "content-type": "text/plain; charset=utf-8",\n' +
+      '      "cache-control": "no-store",\n' +
+      '      "x-painel-vendor-last-status": String(lastStatus || 0)\n' +
+      '    }\n' +
+      '  });\n' +
+      '}\n' +
+      '\n' +
+      '\n' +
+      'const prioritySchema = {\n' +
+      '  type: "object",\n' +
+      '  properties: {\n' +
+      '    materias: {\n' +
+      '      type: "array",\n' +
+      '      items: {\n' +
+      '        type: "object",\n' +
+      '        properties: {\n' +
+      '          materia: { type: "string" },\n' +
+      '          prioridade: { type: "integer", minimum: 1, maximum: 4 },\n' +
+      '          peso: { type: "number", minimum: 0 }\n' +
+      '        },\n' +
+      '        required: ["materia", "prioridade", "peso"]\n' +
+      '      }\n' +
+      '    }\n' +
+      '  },\n' +
+      '  required: ["materias"]\n' +
+      '};\n' +
+      '\n' +
+      'function json(data, status = 200, extraHeaders = {}) {\n' +
+      '  const headers = new Headers({\n' +
+      '    "content-type": "application/json; charset=utf-8",\n' +
+      '    "cache-control": "no-store",\n' +
+      '    "x-content-type-options": "nosniff",\n' +
+      '    "referrer-policy": "no-referrer"\n' +
+      '  });\n' +
+      '  for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);\n' +
+      '  return new Response(JSON.stringify(data), { status, headers });\n' +
+      '}\n' +
+      '\n' +
+      'function cleanText(value, maxLength) {\n' +
+      '  return String(value || "")\n' +
+      '    .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/g, "")\n' +
+      '    .trim()\n' +
+      '    .slice(0, maxLength);\n' +
+      '}\n' +
+      '\n' +
+      'function fold(value) {\n' +
+      '  return String(value || "")\n' +
+      '    .normalize("NFD")\n' +
+      '    .replace(/[\\u0300-\\u036f]/g, "")\n' +
+      '    .toLowerCase()\n' +
+      '    .replace(/\\s+/g, " ")\n' +
+      '    .trim();\n' +
+      '}\n' +
+      '\n' +
+      'function stripMarkdownJsonFence(value) {\n' +
+      '  return String(value || "")\n' +
+      '    .trim()\n' +
+      '    .replace(/^```(?:json)?\\s*/i, "")\n' +
+      '    .replace(/\\s*```$/i, "")\n' +
+      '    .trim();\n' +
+      '}\n' +
+      '\n' +
+      'function extractFirstJsonObject(text) {\n' +
+      '  const source = stripMarkdownJsonFence(text);\n' +
+      '  if (!source) return null;\n' +
+      '\n' +
+      '  try {\n' +
+      '    const direct = JSON.parse(source);\n' +
+      '    if (direct && typeof direct === "object") return direct;\n' +
+      '  } catch {}\n' +
+      '\n' +
+      '  let start = -1, depth = 0, inString = false, escaped = false;\n' +
+      '  for (let i = 0; i < source.length; i++) {\n' +
+      '    const ch = source[i];\n' +
+      '    if (inString) {\n' +
+      '      if (escaped) escaped = false;\n' +
+      '      else if (ch === "\\\\") escaped = true;\n' +
+      `      else if (ch === '"') inString = false;\n` +
+      '      continue;\n' +
+      '    }\n' +
+      `    if (ch === '"') { inString = true; continue; }\n` +
+      '    if (ch === "{") {\n' +
+      '      if (depth === 0) start = i;\n' +
+      '      depth++;\n' +
+      '    } else if (ch === "}" && depth > 0) {\n' +
+      '      depth--;\n' +
+      '      if (depth === 0 && start >= 0) {\n' +
+      '        try { return JSON.parse(source.slice(start, i + 1)); } catch {}\n' +
+      '        start = -1;\n' +
+      '      }\n' +
+      '    }\n' +
+      '  }\n' +
+      '  return null;\n' +
+      '}\n' +
+      '\n' +
+      'function parseAIResponse(result) {\n' +
+      '  if (!result) return null;\n' +
+      '  const candidates = [\n' +
+      '    result?.response,\n' +
+      '    result?.result?.response,\n' +
+      '    result?.response?.response,\n' +
+      '    result?.output,\n' +
+      '    result?.data,\n' +
+      '    result\n' +
+      '  ];\n' +
+      '  for (const candidate of candidates) {\n' +
+      '    if (!candidate) continue;\n' +
+      '    if (typeof candidate === "object" && !Array.isArray(candidate)) {\n' +
+      '      if (Array.isArray(candidate.materias)) return candidate;\n' +
+      '      if (candidate.analysis && Array.isArray(candidate.analysis.materias)) return candidate.analysis;\n' +
+      '    } else if (typeof candidate === "string") {\n' +
+      '      const parsed = extractFirstJsonObject(candidate);\n' +
+      '      if (parsed && Array.isArray(parsed.materias)) return parsed;\n' +
+      '    }\n' +
+      '  }\n' +
+      '  return null;\n' +
+      '}\n' +
+      '\n' +
+      'async function authenticateSupabaseUser(request, env) {\n' +
+      '  const authorization = request.headers.get("authorization") || "";\n' +
+      '  if (!authorization.startsWith("Bearer ")) return null;\n' +
+      '\n' +
+      '  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {\n' +
+      '    headers: {\n' +
+      '      authorization,\n' +
+      '      apikey: env.SUPABASE_ANON_KEY\n' +
+      '    }\n' +
+      '  });\n' +
+      '\n' +
+      '  if (!response.ok) return null;\n' +
+      '  return response.json();\n' +
+      '}\n' +
+      '\n' +
+      'function sanitizeLockedMaterias(input) {\n' +
+      '  const items = Array.isArray(input) ? input : [];\n' +
+      '  const clean = [];\n' +
+      '  const seen = new Set();\n' +
+      '\n' +
+      '  let topicCount = 0;\n' +
+      '  for (const item of items.slice(0, MAX_MATERIAS)) {\n' +
+      '    const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);\n' +
+      '    if (!materia) continue;\n' +
+      '\n' +
+      '    const assuntos = [];\n' +
+      '    const topicSeen = new Set();\n' +
+      '    for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {\n' +
+      '      if (topicCount >= MAX_TOPICS_TOTAL) break;\n' +
+      '      const assunto = cleanText(value, MAX_ASSUNTO_CHARS);\n' +
+      '      const key = fold(assunto);\n' +
+      '      if (!assunto || topicSeen.has(key)) continue;\n' +
+      '      topicSeen.add(key);\n' +
+      '      assuntos.push(assunto);\n' +
+      '      topicCount++;\n' +
+      '    }\n' +
+      '    if (!assuntos.length) continue;\n' +
+      '\n' +
+      '    const key = fold(materia);\n' +
+      '    if (seen.has(key)) continue;\n' +
+      '    seen.add(key);\n' +
+      '\n' +
+      '    clean.push({\n' +
+      '      materia,\n' +
+      '      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),\n' +
+      '      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,\n' +
+      '      assuntos\n' +
+      '    });\n' +
+      '  }\n' +
+      '  return clean;\n' +
+      '}\n' +
+      '\n' +
+      'function mergePriorityOnly(lockedMaterias, aiResult) {\n' +
+      '  const scores = new Map();\n' +
+      '  for (const item of (Array.isArray(aiResult?.materias) ? aiResult.materias : [])) {\n' +
+      '    const name = String(item?.materia || "").trim();\n' +
+      '    if (!name) continue;\n' +
+      '    scores.set(fold(name), {\n' +
+      '      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),\n' +
+      '      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null\n' +
+      '    });\n' +
+      '  }\n' +
+      '\n' +
+      '  return lockedMaterias.map(item => {\n' +
+      '    const score = scores.get(fold(item.materia));\n' +
+      '    return {\n' +
+      '      materia: item.materia,\n' +
+      '      // A hierarquia e os assuntos jamais vêm da IA.\n' +
+      '      prioridade: score?.prioridade ?? item.prioridade,\n' +
+      '      // Peso detectado do quadro de provas no frontend tem precedência.\n' +
+      '      peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),\n' +
+      '      assuntos: item.assuntos\n' +
+      '    };\n' +
+      '  });\n' +
+      '}\n' +
+      '\n' +
+      'async function analyzeEdital(request, env) {\n' +
+      '  const contentType = request.headers.get("content-type") || "";\n' +
+      '  if (!contentType.toLowerCase().includes("application/json")) {\n' +
+      '    return json({ error: "Content-Type deve ser application/json." }, 415);\n' +
+      '  }\n' +
+      '  const declaredLength = Number(request.headers.get("content-length") || 0);\n' +
+      '  if'... 11092 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
+    const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+    const FLASHCARD_AI_MODELS = Object.freeze({
+      gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },
+      gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
+      nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
+      glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
+      llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
+    });
+    const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];
+    const MAX_TEXT_CHARS = 110000;
+    const MAX_REQUEST_BYTES = 512 * 1024;
+    const MAX_MATERIAS = 120;
+    const MAX_TOPICS_TOTAL = 5000;
+    const MAX_MATERIA_CHARS = 180;
+    const MAX_ASSUNTO_CHARS = 1200;
+    
+    const APP_VERSION = "10.25.1";
+    const CORE_NO_STORE_PATHS = new Set([
+      "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
+      "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
+      "/js/study-domain.js", "/js/app-core.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"
+    ]);
+    
+    const VENDOR_ROUTES = {
+      "/vendor/supabase.js": {
+        upstreams: [
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/chart.umd.min.js": {
+        upstreams: [
+          "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",
+          "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf_viewer.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf_viewer.min.css": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",
+          "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"
+        ],
+        contentType: "text/css; charset=utf-8"
+      },
+      "/vendor/pdf.worker.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      }
+    };
+    
+    async function serveVendorAsset(request, route) {
+      const cache = caches.default;
+      const cacheKey = new Request(request.url, { method: "GET" });
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+    
+      let lastStatus = 0;
+      for (const upstreamUrl of route.upstreams) {
+        try {
+          const upstream = await fetch(upstreamUrl, { redirect: "follow" });
+          lastStatus = upstream.status;
+          if (!upstream.ok) continue;
+    
+          const headers = new Headers();
+          headers.set("content-type", route.contentType);
+          headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");
+          headers.set("x-content-type-options", "nosniff");
+          headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);
+          const response = new Response(upstream.body, { status: 200, headers });
+          await cache.put(cacheKey, response.clone());
+          return response;
+        } catch (error) {
+          console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);
+        }
+      }
+    
+      return new Response("Dependência temporariamente indisponível.", {
+        status: 503,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+          "x-painel-vendor-last-status": String(lastStatus || 0)
+        }
+      });
+    }
+    
+    
+    const prioritySchema = {
+      type: "object",
+      properties: {
+        materias: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              materia: { type: "string" },
+              prioridade: { type: "integer", minimum: 1, maximum: 4 },
+              peso: { type: "number", minimum: 0 }
+            },
+            required: ["materia", "prioridade", "peso"]
+          }
+        }
+      },
+      required: ["materias"]
+    };
+    
+    function json(data, status = 200, extraHeaders = {}) {
+      const headers = new Headers({
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer"
+      });
+      for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);
+      return new Response(JSON.stringify(data), { status, headers });
+    }
+    
+    function cleanText(value, maxLength) {
+      return String(value || "")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+        .trim()
+        .slice(0, maxLength);
+    }
+    
+    function fold(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    
+    function stripMarkdownJsonFence(value) {
+      return String(value || "")
+        .trim()
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+    }
+    
+    function extractFirstJsonObject(text) {
+      const source = stripMarkdownJsonFence(text);
+      if (!source) return null;
+    
+      try {
+        const direct = JSON.parse(source);
+        if (direct && typeof direct === "object") return direct;
+      } catch {}
+    
+      let start = -1, depth = 0, inString = false, escaped = false;
+      for (let i = 0; i < source.length; i++) {
+        const ch = source[i];
+        if (inString) {
+          if (escaped) escaped = false;
+          else if (ch === "\\") escaped = true;
+          else if (ch === '"') inString = false;
+          continue;
+        }
+        if (ch === '"') { inString = true; continue; }
+        if (ch === "{") {
+          if (depth === 0) start = i;
+          depth++;
+        } else if (ch === "}" && depth > 0) {
+          depth--;
+          if (depth === 0 && start >= 0) {
+            try { return JSON.parse(source.slice(start, i + 1)); } catch {}
+            start = -1;
+          }
+        }
+      }
+      return null;
+    }
+    
+    function parseAIResponse(result) {
+      if (!result) return null;
+      const candidates = [
+        result?.response,
+        result?.result?.response,
+        result?.response?.response,
+        result?.output,
+        result?.data,
+        result
+      ];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate === "object" && !Array.isArray(candidate)) {
+          if (Array.isArray(candidate.materias)) return candidate;
+          if (candidate.analysis && Array.isArray(candidate.analysis.materias)) return candidate.analysis;
+        } else if (typeof candidate === "string") {
+          const parsed = extractFirstJsonObject(candidate);
+          if (parsed && Array.isArray(parsed.materias)) return parsed;
+        }
+      }
+      return null;
+    }
+    
+    async function authenticateSupabaseUser(request, env) {
+      const authorization = request.headers.get("authorization") || "";
+      if (!authorization.startsWith("Bearer ")) return null;
+    
+      const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          authorization,
+          apikey: env.SUPABASE_ANON_KEY
+        }
+      });
+    
+      if (!response.ok) return null;
+      return response.json();
+    }
+    
+    function sanitizeLockedMaterias(input) {
+      const items = Array.isArray(input) ? input : [];
+      const clean = [];
+      const seen = new Set();
+    
+      let topicCount = 0;
+      for (const item of items.slice(0, MAX_MATERIAS)) {
+        const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);
+        if (!materia) continue;
+    
+        const assuntos = [];
+        const topicSeen = new Set();
+        for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {
+          if (topicCount >= MAX_TOPICS_TOTAL) break;
+          const assunto = cleanText(value, MAX_ASSUNTO_CHARS);
+          const key = fold(assunto);
+          if (!assunto || topicSeen.has(key)) continue;
+          topicSeen.add(key);
+          assuntos.push(assunto);
+          topicCount++;
+        }
+        if (!assuntos.length) continue;
+    
+        const key = fold(materia);
+        if (seen.has(key)) continue;
+        seen.add(key);
+    
+        clean.push({
+          materia,
+          prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+          peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,
+          assuntos
+        });
+      }
+      return clean;
+    }
+    
+    function mergePriorityOnly(lockedMaterias, aiResult) {
+      const scores = new Map();
+      for (const item of (Array.isArray(aiResult?.materias) ? aiResult.materias : [])) {
+        const name = String(item?.materia || "").trim();
+        if (!name) continue;
+        scores.set(fold(name), {
+          prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+          peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null
+        });
+      }
+    
+      return lockedMaterias.map(item => {
+        const score = scores.get(fold(item.materia));
+        return {
+          materia: item.materia,
+          // A hierarquia e os assuntos jamais vêm da IA.
+          prioridade: score?.prioridade ?? item.prioridade,
+          // Peso detectado do quadro de provas no frontend tem precedência.
+          peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),
+          assuntos: item.assuntos
+        };
+      });
+    }
+    
+    async function analyzeEdital(request, env) {
+      const contentType = request.headers.get("content-type") || "";
+      if (!contentType.toLowerCase().includes("application/json")) {
+        return json({ error: "Content-Type deve ser application/json." }, 415);
+      }
+      const declaredLength = Number(request.headers.get("content-length") || 0);
+      if (declaredLength > MAX_REQUEST_BYTES) {
+        return json({ error: "Requisição excede o limite de segurança." }, 413);
+      }
+    
+      const user = await authenticateSupabaseUser(request, env);
+      if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+    
+      if (env.AI_RATE_LIMITER?.limit) {
+        const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:analisar-edital` });
+        if (!success) {
+          return json({ error: "Muitas análises em sequência. Aguarde um minuto e tente novamente." }, 429, { "retry-after": "60" });
+        }
+      }
+    
+      let body;
+      try {
+        const rawBody = await request.text();
+        if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+          return json({ error: "Requisição excede o limite de segurança." }, 413);
+        }
+        body = JSON.parse(rawBody);
+      } catch {
+        return json({ error: "Corpo JSON inválido." }, 400);
+      }
+    
+      const rawLockedMaterias = Array.isArray(body?.lockedMaterias) ? body.lockedMaterias : [];
+      if (rawLockedMaterias.length > MAX_MATERIAS) {
+        return json({ error: "Quantidade de matérias excede o limite de segurança." }, 413);
+      }
+      const rawTopicCount = rawLockedMaterias.reduce((sum, item) => sum + (Array.isArray(item?.assuntos) ? item.assuntos.length : 0), 0);
+      if (rawTopicCount > MAX_TOPICS_TOTAL) {
+        return json({ error: "Quantidade de tópicos excede o limite de segurança." }, 413);
+      }
+    
+      const concurso = cleanText(body?.concurso, 200);
+      const banca = cleanText(body?.banca, 120);
+      const fileName = cleanText(body?.fileName || "Edital.pdf", 240);
+      const cargoLabel = cleanText(body?.cargo?.label || body?.cargo, 240);
+      const rawText = cleanText(body?.text, MAX_TEXT_CHARS + 1);
+      const lockedMaterias = sanitizeLockedMaterias(rawLockedMaterias);
+    
+      if (!lockedMaterias.length) {
+        return json({ error: "O frontend não enviou matérias/assuntos determinísticos válidos para o cargo selecionado." }, 422);
+      }
+    
+      if (rawText.length > MAX_TEXT_CHARS) {
+        return json({ error: "Recorte do edital excedeu o limite de segurança." }, 413);
+      }
+    
+      // Resultado-base seguro: mesmo que a IA falhe, matéria/assunto permanecem corretos.
+      let finalMaterias = lockedMaterias;
+      let aiUsed = false;
+    
+      const systemPrompt = `
+    Você auxilia na PRIORIZAÇÃO de um edital já extraído deterministicamente.
+    
+    REGRAS ABSOLUTAS:
+    1. NÃO extraia matérias.
+    2. NÃO crie matérias.
+    3. NÃO remova matérias.
+    4. NÃO renomeie matérias.
+    5. NÃO gere assuntos.
+    6. A lista de matérias fornecida está BLOQUEADA.
+    7. Sua única tarefa é atribuir prioridade 1, 2, 3 ou 4 e peso numérico às matérias usando SOMENTE sinais existentes no edital recebido.
+    8. Se o texto não permitir diferenciar, use prioridade 2. A escala é P1 = prioridade máxima, P2 = alta, P3 = média e P4 = baixa.
+    9. Se o peso já estiver explicitamente indicado no texto/quadro de provas, respeite-o.
+    10. Não use histórico da banca; ele não está disponível nesta fase.
+    11. Retorne somente JSON no schema solicitado.
+    `;
+    
+      const lockedNames = lockedMaterias.map(m => ({
+        materia: m.materia,
+        peso_detectado: m.peso,
+        prioridade_inicial: m.prioridade
+      }));
+    
+      const userPrompt = `
+    Concurso: ${concurso || "não informado"}
+    Cargo/Área/Especialidade: ${cargoLabel || "não informado"}
+    Banca: ${banca || "não informada"}
+    Arquivo: ${fileName}
+    
+    MATÉRIAS BLOQUEADAS:
+    ${JSON.stringify(lockedNames)}
+    
+    RECORTE DO EDITAL DO CARGO:
+    ${rawText.slice(0, MAX_TEXT_CHARS)}
+    `;
+    
+      try {
+        const result = await env.AI.run(MODEL, {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: prioritySchema
+          },
+          temperature: 0,
+          max_tokens: 3000
+        });
+    
+        const parsed = parseAIResponse(result);
+        if (parsed && Array.isArray(parsed.materias)) {
+          finalMaterias = mergePriorityOnly(lockedMaterias, parsed);
+          aiUsed = true;
+        }
+      } catch (error) {
+        console.error("Workers AI priority error; using deterministic fallback", error);
+      }
+    
+      return json({
+        parserVersion: "v8-adaptive-universal",
+        analysis: {
+          concurso,
+          materias: finalMaterias
+        },
+        model: MODEL,
+        aiUsed,
+        extractionLocked: true
+      });
+    }
+    
+    
+    function parseFlashcardAIResponse(result) {
+      if (!result) return null;
+      const candidates = [result?.response, result?.result?.response, result?.response?.response, result?.output, result?.data, result];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate === "object" && !Array.isArray(candidate)) {
+          if (typeof candidate.question === "string" && typeof candidate.answer === "string") return candidate;
+        } else if (typeof candidate === "string") {
+          const parsed = extractFirstJsonObject(candidate);
+          if (parsed && typeof parsed.question === "string" && typeof parsed.answer === "string") return parsed;
+        }
+      }
+      return null;
+    }
+    
+    async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
+      if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+          body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 700,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: { question: { type: "STRING" }, answer: { type: "STRING" } },
+              required: ["question", "answer"]
+            }
+          }
+          })
+        });
+      } catch (error) {
+        if (error?.name === "AbortError") throw new Error("Gemini excedeu o limite de 4 segundos");
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!response.ok) {
+        const detail = cleanText(await response.text(), 500);
+        throw new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+      }
+      const payload = await response.json();
+      const text = payload?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").join("") || "";
+      const parsed = extractFirstJsonObject(text);
+      if (!parsed?.question || !parsed?.answer) throw new Error("Resposta incompleta do Gemini");
+      return parsed;
+    }
+    
+    function withTimeout(promise, ms, label) {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} excedeu o limite de ${ms} ms`)), ms);
+      });
+      return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+    }
+    
+    async function generateFlashcard(request, env) {
+      const user = await authenticateSupabaseUser(request, env);
+      if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+      if (env.AI_RATE_LIMITER?.limit) {
+        const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:flashcard` });
+        if (!success) return json({ error: "Muitas gerações em sequência. Aguarde um minuto." }, 429);
+      }
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
+      const text = cleanText(body?.text, 7000);
+      const existingQuestion = cleanText(body?.existingQuestion, 500);
+      const materia = cleanText(body?.materia, 180);
+      const assunto = cleanText(body?.assunto, 300);
+      const requested = String(body?.model || "auto").toLowerCase();
+      if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
+      if (requested !== "auto" && !FLASHCARD_AI_MODELS[requested]) return json({ error: "Modelo de IA inválido." }, 400);
+      const candidates = requested === "auto" ? FLASHCARD_AUTO_CHAIN : [requested];
+      const systemPrompt = `Crie UM flashcard atômico para concurso usando SOMENTE o trecho-fonte. Faça pergunta autossuficiente, específica e sem pistas; preserve regra, exceções, requisitos, números, prazos e termos jurídicos essenciais. Não invente nem complemente fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
+      const userPrompt = `MATÉRIA (opcional): ${materia || "não informada"}\nASSUNTO (opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL (opcional; melhore se útil): ${existingQuestion || "não fornecida"}\n\nTRECHO-FONTE:\n${text}`;
+      const errors = [];
+      for (let index = 0; index < candidates.length; index++) {
+        const key = candidates[index];
+        const model = FLASHCARD_AI_MODELS[key];
+        try {
+          const parsed = model.provider === "gemini"
+            ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
+            : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), 2500, model.label));
+          const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
+          if (!question || !answer) throw new Error("Resposta incompleta da IA");
+          return json({ question, answer, model: `${model.provider === "gemini" ? "Google Gemini" : "Workers AI"} · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
+        } catch (error) {
+          errors.push(`${model.label}: ${error?.message || error}`);
+          console.warn("Flashcard AI model failed", model.id, error);
+        }
+      }
+      console.error("Flashcard AI exhausted candidates", errors);
+      return json({ error: "Não foi possível gerar a pergunta com IA agora. O modo manual continua disponível." }, 503);
+    }
+    
+    
+    export default {
+      async fetch(request, env) {
+        const url = new URL(request.url);
+    
+        if (request.method === "GET" && CORE_NO_STORE_PATHS.has(url.pathname)) {
+          const assetResponse = await env.ASSETS.fetch(request);
+          const headers = new Headers(assetResponse.headers);
+          headers.set("cache-control", "no-cache, no-store, must-revalidate");
+          headers.set("pragma", "no-cache");
+          headers.set("expires", "0");
+          headers.set("x-app-version", APP_VERSION);
+          return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
+        }
+    
+        const vendorRoute = VENDOR_ROUTES[url.pathname];
+        if (vendorRoute && request.method === "GET") {
+          return serveVendorAsset(request, vendorRoute);
+        }
+    
+        if (url.pathname === "/api/ai/analisar-edital") {
+          if (request.method !== "POST") {
+            return json({ error: "Método não permitido." }, 405);
+          }
+          return analyzeEdital(request, env);
+        }
+    
+        if (url.pathname === "/api/ai/flashcard") {
+          if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
+          return generateFlashcard(request, env);
+        }
+    
+    
+        return env.ASSETS.fetch(request);
+      }
+    };
+    
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/pdf-reader.test.cjs:39:159)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: URL temporária do PDF é revogada ao fechar o Reader
+ok 79 - URL temporária do PDF é revogada ao fechar o Reader
+  ---
+  duration_ms: 0.425224
+  type: 'test'
+  ...
+# Subtest: nomes seguem ordem canônica e desconhecidos ficam ao final alfabeticamente
+ok 80 - nomes seguem ordem canônica e desconhecidos ficam ao final alfabeticamente
+  ---
+  duration_ms: 1.716124
+  type: 'test'
+  ...
+# Subtest: ordenação remove duplicatas sem alterar prioridade
+ok 81 - ordenação remove duplicatas sem alterar prioridade
+  ---
+  duration_ms: 0.169757
+  type: 'test'
+  ...
+# Subtest: Reader é core asset network-first no Service Worker
+ok 82 - Reader é core asset network-first no Service Worker
+  ---
+  duration_ms: 1.834496
+  type: 'test'
+  ...
+# Subtest: Reader próprio faz parte do APP_SHELL offline
+ok 83 - Reader próprio faz parte do APP_SHELL offline
+  ---
+  duration_ms: 0.370902
+  type: 'test'
+  ...
+# Subtest: PDF.js possui rotas locais com fallback e sem PDFium
+ok 84 - PDF.js possui rotas locais com fallback e sem PDFium
+  ---
+  duration_ms: 1.691578
+  type: 'test'
+  ...
+# Subtest: diagnóstico ignora tópicos removidos do edital ativo
+ok 85 - diagnóstico ignora tópicos removidos do edital ativo
+  ---
+  duration_ms: 2.287662
+  type: 'test'
+  ...
+# Subtest: domínio exige evidência objetiva suficiente
+ok 86 - domínio exige evidência objetiva suficiente
+  ---
+  duration_ms: 0.415536
+  type: 'test'
+  ...
+# Subtest: duas recuperações positivas também constituem evidência de domínio
+ok 87 - duas recuperações positivas também constituem evidência de domínio
+  ---
+  duration_ms: 0.2407
+  type: 'test'
+  ...
+# Subtest: merge de sessões deduplica por id e preserva versão primária
+ok 88 - merge de sessões deduplica por id e preserva versão primária
+  ---
+  duration_ms: 33.854289
+  type: 'test'
+  ...
+# Subtest: merge deduplica legado por fingerprint quando não existe id
+ok 89 - merge deduplica legado por fingerprint quando não existe id
+  ---
+  duration_ms: 0.38525
+  type: 'test'
+  ...
+# Subtest: v10.24.1 layout aprovado
+not ok 90 - v10.24.1 layout aprovado
+  ---
+  duration_ms: 4.299389
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-1-layout-fix.test.cjs:1:141'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '10.25.1'
+    - '10.25.0'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '10.25.0'
+  actual: '10.25.1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-1-layout-fix.test.cjs:1:360)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: salvar flashcard mantém o leitor da Biblioteca aberto
+ok 91 - salvar flashcard mantém o leitor da Biblioteca aberto
+  ---
+  duration_ms: 1.343739
+  type: 'test'
+  ...
+# Subtest: Reader mobile inicia com PDF visível e painel recolhido
+ok 92 - Reader mobile inicia com PDF visível e painel recolhido
+  ---
+  duration_ms: 1.664038
+  type: 'test'
+  ...
+# Subtest: Reader mobile mostra todas as ferramentas sem rolagem horizontal obrigatória
+ok 93 - Reader mobile mostra todas as ferramentas sem rolagem horizontal obrigatória
+  ---
+  duration_ms: 0.33739
+  type: 'test'
+  ...
+# Subtest: Ações mobile do cabeçalho e edital usam grids harmônicos
+ok 94 - Ações mobile do cabeçalho e edital usam grids harmônicos
+  ---
+  duration_ms: 0.831854
+  type: 'test'
+  ...
+# Subtest: Reader mobile possui pinch-to-zoom por dois toques
+ok 95 - Reader mobile possui pinch-to-zoom por dois toques
+  ---
+  duration_ms: 1.787228
+  type: 'test'
+  ...
+# Subtest: pinch preserva ponto focal e navegação de um dedo
+ok 96 - pinch preserva ponto focal e navegação de um dedo
+  ---
+  duration_ms: 0.387313
+  type: 'test'
+  ...
+# Subtest: v10.24.7 painel e botões compactos
+not ok 97 - v10.24.7 painel e botões compactos
+  ---
+  duration_ms: 3.563975
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-2-panel-buttons.test.cjs:1:141'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '10.25.1'
+    - '10.25.0'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '10.25.0'
+  actual: '10.25.1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-2-panel-buttons.test.cjs:1:342)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: v10.24.7 painel não corta textos nem ações
+not ok 98 - v10.24.7 painel não corta textos nem ações
+  ---
+  duration_ms: 3.712733
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-3-panel-overflow.test.cjs:1:141'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '10.25.1'
+    - '10.25.0'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '10.25.0'
+  actual: '10.25.1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-3-panel-overflow.test.cjs:1:275)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: v10.24.7 preserva seleção ao clicar em Anotação
+not ok 99 - v10.24.7 preserva seleção ao clicar em Anotação
+  ---
+  duration_ms: 3.710279
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-4-annotation-selection.test.cjs:1:141'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '10.25.1'
+    - '10.25.0'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '10.25.0'
+  actual: '10.25.1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-4-annotation-selection.test.cjs:1:281)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: v10.24.7 abre Anotação sem clipboard
+not ok 100 - v10.24.7 abre Anotação sem clipboard
+  ---
+  duration_ms: 4.012103
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-5-note-direct-editor.test.cjs:1:141'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '10.25.1'
+    - '10.25.0'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '10.25.0'
+  actual: '10.25.1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-5-note-direct-editor.test.cjs:1:270)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: v10.24.7 remove data duplicada do cabeçalho e mantém retenção
+not ok 101 - v10.24.7 remove data duplicada do cabeçalho e mantém retenção
+  ---
+  duration_ms: 4.200665
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-6-remove-header-exam-date.test.cjs:1:141'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '10.25.1'
+    - '10.25.0'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '10.25.0'
+  actual: '10.25.1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-6-remove-header-exam-date.test.cjs:1:287)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: v10.24.7 biblioteca atualiza ao abrir a guia sem ativação duplicada
+not ok 102 - v10.24.7 biblioteca atualiza ao abrir a guia sem ativação duplicada
+  ---
+  duration_ms: 3.301235
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-7-library-auto-load.test.cjs:1:141'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '10.25.1'
+    - '10.25.0'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '10.25.0'
+  actual: '10.25.1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-7-library-auto-load.test.cjs:1:305)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: flashcard manual abre sem clipboard
+ok 103 - flashcard manual abre sem clipboard
+  ---
+  duration_ms: 1.186606
+  type: 'test'
+  ...
+# Subtest: IA é explícita e usa trecho ou resposta manual
+ok 104 - IA é explícita e usa trecho ou resposta manual
+  ---
+  duration_ms: 0.211545
+  type: 'test'
+  ...
+# Subtest: Workers AI mantém parser próprio como fallback do Gemini
+not ok 105 - Workers AI mantém parser próprio como fallback do Gemini
+  ---
+  duration_ms: 3.166663
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-9-flashcard-ai.test.cjs:8:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /parseFlashcardAIResponse\(await env\.AI\.run\(model\.id/. Input:
+    
+    '// Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.\n' +
+      'const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";\n' +
+      'const FLASHCARD_AI_MODELS = Object.freeze({\n' +
+      '  gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },\n' +
+      '  gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },\n' +
+      '  nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },\n' +
+      '  glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },\n' +
+      '  llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }\n' +
+      '});\n' +
+      'const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];\n' +
+      'const MAX_TEXT_CHARS = 110000;\n' +
+      'const MAX_REQUEST_BYTES = 512 * 1024;\n' +
+      'const MAX_MATERIAS = 120;\n' +
+      'const MAX_TOPICS_TOTAL = 5000;\n' +
+      'const MAX_MATERIA_CHARS = 180;\n' +
+      'const MAX_ASSUNTO_CHARS = 1200;\n' +
+      '\n' +
+      'const APP_VERSION = "10.25.1";\n' +
+      'const CORE_NO_STORE_PATHS = new Set([\n' +
+      '  "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",\n' +
+      '  "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",\n' +
+      '  "/js/study-domain.js", "/js/app-core.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"\n' +
+      ']);\n' +
+      '\n' +
+      'const VENDOR_ROUTES = {\n' +
+      '  "/vendor/supabase.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",\n' +
+      '      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/chart.umd.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",\n' +
+      '      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf_viewer.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf_viewer.min.css": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"\n' +
+      '    ],\n' +
+      '    contentType: "text/css; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf.worker.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  }\n' +
+      '};\n' +
+      '\n' +
+      'async function serveVendorAsset(request, route) {\n' +
+      '  const cache = caches.default;\n' +
+      '  const cacheKey = new Request(request.url, { method: "GET" });\n' +
+      '  const cached = await cache.match(cacheKey);\n' +
+      '  if (cached) return cached;\n' +
+      '\n' +
+      '  let lastStatus = 0;\n' +
+      '  for (const upstreamUrl of route.upstreams) {\n' +
+      '    try {\n' +
+      '      const upstream = await fetch(upstreamUrl, { redirect: "follow" });\n' +
+      '      lastStatus = upstream.status;\n' +
+      '      if (!upstream.ok) continue;\n' +
+      '\n' +
+      '      const headers = new Headers();\n' +
+      '      headers.set("content-type", route.contentType);\n' +
+      '      headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");\n' +
+      '      headers.set("x-content-type-options", "nosniff");\n' +
+      '      headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);\n' +
+      '      const response = new Response(upstream.body, { status: 200, headers });\n' +
+      '      await cache.put(cacheKey, response.clone());\n' +
+      '      return response;\n' +
+      '    } catch (error) {\n' +
+      '      console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);\n' +
+      '    }\n' +
+      '  }\n' +
+      '\n' +
+      '  return new Response("Dependência temporariamente indisponível.", {\n' +
+      '    status: 503,\n' +
+      '    headers: {\n' +
+      '      "content-type": "text/plain; charset=utf-8",\n' +
+      '      "cache-control": "no-store",\n' +
+      '      "x-painel-vendor-last-status": String(lastStatus || 0)\n' +
+      '    }\n' +
+      '  });\n' +
+      '}\n' +
+      '\n' +
+      '\n' +
+      'const prioritySchema = {\n' +
+      '  type: "object",\n' +
+      '  properties: {\n' +
+      '    materias: {\n' +
+      '      type: "array",\n' +
+      '      items: {\n' +
+      '        type: "object",\n' +
+      '        properties: {\n' +
+      '          materia: { type: "string" },\n' +
+      '          prioridade: { type: "integer", minimum: 1, maximum: 4 },\n' +
+      '          peso: { type: "number", minimum: 0 }\n' +
+      '        },\n' +
+      '        required: ["materia", "prioridade", "peso"]\n' +
+      '      }\n' +
+      '    }\n' +
+      '  },\n' +
+      '  required: ["materias"]\n' +
+      '};\n' +
+      '\n' +
+      'function json(data, status = 200, extraHeaders = {}) {\n' +
+      '  const headers = new Headers({\n' +
+      '    "content-type": "application/json; charset=utf-8",\n' +
+      '    "cache-control": "no-store",\n' +
+      '    "x-content-type-options": "nosniff",\n' +
+      '    "referrer-policy": "no-referrer"\n' +
+      '  });\n' +
+      '  for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);\n' +
+      '  return new Response(JSON.stringify(data), { status, headers });\n' +
+      '}\n' +
+      '\n' +
+      'function cleanText(value, maxLength) {\n' +
+      '  return String(value || "")\n' +
+      '    .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/g, "")\n' +
+      '    .trim()\n' +
+      '    .slice(0, maxLength);\n' +
+      '}\n' +
+      '\n' +
+      'function fold(value) {\n' +
+      '  return String(value || "")\n' +
+      '    .normalize("NFD")\n' +
+      '    .replace(/[\\u0300-\\u036f]/g, "")\n' +
+      '    .toLowerCase()\n' +
+      '    .replace(/\\s+/g, " ")\n' +
+      '    .trim();\n' +
+      '}\n' +
+      '\n' +
+      'function stripMarkdownJsonFence(value) {\n' +
+      '  return String(value || "")\n' +
+      '    .trim()\n' +
+      '    .replace(/^```(?:json)?\\s*/i, "")\n' +
+      '    .replace(/\\s*```$/i, "")\n' +
+      '    .trim();\n' +
+      '}\n' +
+      '\n' +
+      'function extractFirstJsonObject(text) {\n' +
+      '  const source = stripMarkdownJsonFence(text);\n' +
+      '  if (!source) return null;\n' +
+      '\n' +
+      '  try {\n' +
+      '    const direct = JSON.parse(source);\n' +
+      '    if (direct && typeof direct === "object") return direct;\n' +
+      '  } catch {}\n' +
+      '\n' +
+      '  let start = -1, depth = 0, inString = false, escaped = false;\n' +
+      '  for (let i = 0; i < source.length; i++) {\n' +
+      '    const ch = source[i];\n' +
+      '    if (inString) {\n' +
+      '      if (escaped) escaped = false;\n' +
+      '      else if (ch === "\\\\") escaped = true;\n' +
+      `      else if (ch === '"') inString = false;\n` +
+      '      continue;\n' +
+      '    }\n' +
+      `    if (ch === '"') { inString = true; continue; }\n` +
+      '    if (ch === "{") {\n' +
+      '      if (depth === 0) start = i;\n' +
+      '      depth++;\n' +
+      '    } else if (ch === "}" && depth > 0) {\n' +
+      '      depth--;\n' +
+      '      if (depth === 0 && start >= 0) {\n' +
+      '        try { return JSON.parse(source.slice(start, i + 1)); } catch {}\n' +
+      '        start = -1;\n' +
+      '      }\n' +
+      '    }\n' +
+      '  }\n' +
+      '  return null;\n' +
+      '}\n' +
+      '\n' +
+      'function parseAIResponse(result) {\n' +
+      '  if (!result) return null;\n' +
+      '  const candidates = [\n' +
+      '    result?.response,\n' +
+      '    result?.result?.response,\n' +
+      '    result?.response?.response,\n' +
+      '    result?.output,\n' +
+      '    result?.data,\n' +
+      '    result\n' +
+      '  ];\n' +
+      '  for (const candidate of candidates) {\n' +
+      '    if (!candidate) continue;\n' +
+      '    if (typeof candidate === "object" && !Array.isArray(candidate)) {\n' +
+      '      if (Array.isArray(candidate.materias)) return candidate;\n' +
+      '      if (candidate.analysis && Array.isArray(candidate.analysis.materias)) return candidate.analysis;\n' +
+      '    } else if (typeof candidate === "string") {\n' +
+      '      const parsed = extractFirstJsonObject(candidate);\n' +
+      '      if (parsed && Array.isArray(parsed.materias)) return parsed;\n' +
+      '    }\n' +
+      '  }\n' +
+      '  return null;\n' +
+      '}\n' +
+      '\n' +
+      'async function authenticateSupabaseUser(request, env) {\n' +
+      '  const authorization = request.headers.get("authorization") || "";\n' +
+      '  if (!authorization.startsWith("Bearer ")) return null;\n' +
+      '\n' +
+      '  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {\n' +
+      '    headers: {\n' +
+      '      authorization,\n' +
+      '      apikey: env.SUPABASE_ANON_KEY\n' +
+      '    }\n' +
+      '  });\n' +
+      '\n' +
+      '  if (!response.ok) return null;\n' +
+      '  return response.json();\n' +
+      '}\n' +
+      '\n' +
+      'function sanitizeLockedMaterias(input) {\n' +
+      '  const items = Array.isArray(input) ? input : [];\n' +
+      '  const clean = [];\n' +
+      '  const seen = new Set();\n' +
+      '\n' +
+      '  let topicCount = 0;\n' +
+      '  for (const item of items.slice(0, MAX_MATERIAS)) {\n' +
+      '    const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);\n' +
+      '    if (!materia) continue;\n' +
+      '\n' +
+      '    const assuntos = [];\n' +
+      '    const topicSeen = new Set();\n' +
+      '    for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {\n' +
+      '      if (topicCount >= MAX_TOPICS_TOTAL) break;\n' +
+      '      const assunto = cleanText(value, MAX_ASSUNTO_CHARS);\n' +
+      '      const key = fold(assunto);\n' +
+      '      if (!assunto || topicSeen.has(key)) continue;\n' +
+      '      topicSeen.add(key);\n' +
+      '      assuntos.push(assunto);\n' +
+      '      topicCount++;\n' +
+      '    }\n' +
+      '    if (!assuntos.length) continue;\n' +
+      '\n' +
+      '    const key = fold(materia);\n' +
+      '    if (seen.has(key)) continue;\n' +
+      '    seen.add(key);\n' +
+      '\n' +
+      '    clean.push({\n' +
+      '      materia,\n' +
+      '      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),\n' +
+      '      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,\n' +
+      '      assuntos\n' +
+      '    });\n' +
+      '  }\n' +
+      '  return clean;\n' +
+      '}\n' +
+      '\n' +
+      'function mergePriorityOnly(lockedMaterias, aiResult) {\n' +
+      '  const scores = new Map();\n' +
+      '  for (const item of (Array.isArray(aiResult?.materias) ? aiResult.materias : [])) {\n' +
+      '    const name = String(item?.materia || "").trim();\n' +
+      '    if (!name) continue;\n' +
+      '    scores.set(fold(name), {\n' +
+      '      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),\n' +
+      '      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null\n' +
+      '    });\n' +
+      '  }\n' +
+      '\n' +
+      '  return lockedMaterias.map(item => {\n' +
+      '    const score = scores.get(fold(item.materia));\n' +
+      '    return {\n' +
+      '      materia: item.materia,\n' +
+      '      // A hierarquia e os assuntos jamais vêm da IA.\n' +
+      '      prioridade: score?.prioridade ?? item.prioridade,\n' +
+      '      // Peso detectado do quadro de provas no frontend tem precedência.\n' +
+      '      peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),\n' +
+      '      assuntos: item.assuntos\n' +
+      '    };\n' +
+      '  });\n' +
+      '}\n' +
+      '\n' +
+      'async function analyzeEdital(request, env) {\n' +
+      '  const contentType = request.headers.get("content-type") || "";\n' +
+      '  if (!contentType.toLowerCase().includes("application/json")) {\n' +
+      '    return json({ error: "Content-Type deve ser application/json." }, 415);\n' +
+      '  }\n' +
+      '  const declaredLength = Number(request.headers.get("content-length") || 0);\n' +
+      '  if'... 11092 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
+    const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+    const FLASHCARD_AI_MODELS = Object.freeze({
+      gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },
+      gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
+      nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
+      glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
+      llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
+    });
+    const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];
+    const MAX_TEXT_CHARS = 110000;
+    const MAX_REQUEST_BYTES = 512 * 1024;
+    const MAX_MATERIAS = 120;
+    const MAX_TOPICS_TOTAL = 5000;
+    const MAX_MATERIA_CHARS = 180;
+    const MAX_ASSUNTO_CHARS = 1200;
+    
+    const APP_VERSION = "10.25.1";
+    const CORE_NO_STORE_PATHS = new Set([
+      "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
+      "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
+      "/js/study-domain.js", "/js/app-core.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"
+    ]);
+    
+    const VENDOR_ROUTES = {
+      "/vendor/supabase.js": {
+        upstreams: [
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/chart.umd.min.js": {
+        upstreams: [
+          "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",
+          "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf_viewer.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf_viewer.min.css": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",
+          "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"
+        ],
+        contentType: "text/css; charset=utf-8"
+      },
+      "/vendor/pdf.worker.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      }
+    };
+    
+    async function serveVendorAsset(request, route) {
+      const cache = caches.default;
+      const cacheKey = new Request(request.url, { method: "GET" });
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+    
+      let lastStatus = 0;
+      for (const upstreamUrl of route.upstreams) {
+        try {
+          const upstream = await fetch(upstreamUrl, { redirect: "follow" });
+          lastStatus = upstream.status;
+          if (!upstream.ok) continue;
+    
+          const headers = new Headers();
+          headers.set("content-type", route.contentType);
+          headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");
+          headers.set("x-content-type-options", "nosniff");
+          headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);
+          const response = new Response(upstream.body, { status: 200, headers });
+          await cache.put(cacheKey, response.clone());
+          return response;
+        } catch (error) {
+          console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);
+        }
+      }
+    
+      return new Response("Dependência temporariamente indisponível.", {
+        status: 503,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+          "x-painel-vendor-last-status": String(lastStatus || 0)
+        }
+      });
+    }
+    
+    
+    const prioritySchema = {
+      type: "object",
+      properties: {
+        materias: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              materia: { type: "string" },
+              prioridade: { type: "integer", minimum: 1, maximum: 4 },
+              peso: { type: "number", minimum: 0 }
+            },
+            required: ["materia", "prioridade", "peso"]
+          }
+        }
+      },
+      required: ["materias"]
+    };
+    
+    function json(data, status = 200, extraHeaders = {}) {
+      const headers = new Headers({
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer"
+      });
+      for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);
+      return new Response(JSON.stringify(data), { status, headers });
+    }
+    
+    function cleanText(value, maxLength) {
+      return String(value || "")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+        .trim()
+        .slice(0, maxLength);
+    }
+    
+    function fold(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    
+    function stripMarkdownJsonFence(value) {
+      return String(value || "")
+        .trim()
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+    }
+    
+    function extractFirstJsonObject(text) {
+      const source = stripMarkdownJsonFence(text);
+      if (!source) return null;
+    
+      try {
+        const direct = JSON.parse(source);
+        if (direct && typeof direct === "object") return direct;
+      } catch {}
+    
+      let start = -1, depth = 0, inString = false, escaped = false;
+      for (let i = 0; i < source.length; i++) {
+        const ch = source[i];
+        if (inString) {
+          if (escaped) escaped = false;
+          else if (ch === "\\") escaped = true;
+          else if (ch === '"') inString = false;
+          continue;
+        }
+        if (ch === '"') { inString = true; continue; }
+        if (ch === "{") {
+          if (depth === 0) start = i;
+          depth++;
+        } else if (ch === "}" && depth > 0) {
+          depth--;
+          if (depth === 0 && start >= 0) {
+            try { return JSON.parse(source.slice(start, i + 1)); } catch {}
+            start = -1;
+          }
+        }
+      }
+      return null;
+    }
+    
+    function parseAIResponse(result) {
+      if (!result) return null;
+      const candidates = [
+        result?.response,
+        result?.result?.response,
+        result?.response?.response,
+        result?.output,
+        result?.data,
+        result
+      ];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate === "object" && !Array.isArray(candidate)) {
+          if (Array.isArray(candidate.materias)) return candidate;
+          if (candidate.analysis && Array.isArray(candidate.analysis.materias)) return candidate.analysis;
+        } else if (typeof candidate === "string") {
+          const parsed = extractFirstJsonObject(candidate);
+          if (parsed && Array.isArray(parsed.materias)) return parsed;
+        }
+      }
+      return null;
+    }
+    
+    async function authenticateSupabaseUser(request, env) {
+      const authorization = request.headers.get("authorization") || "";
+      if (!authorization.startsWith("Bearer ")) return null;
+    
+      const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          authorization,
+          apikey: env.SUPABASE_ANON_KEY
+        }
+      });
+    
+      if (!response.ok) return null;
+      return response.json();
+    }
+    
+    function sanitizeLockedMaterias(input) {
+      const items = Array.isArray(input) ? input : [];
+      const clean = [];
+      const seen = new Set();
+    
+      let topicCount = 0;
+      for (const item of items.slice(0, MAX_MATERIAS)) {
+        const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);
+        if (!materia) continue;
+    
+        const assuntos = [];
+        const topicSeen = new Set();
+        for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {
+          if (topicCount >= MAX_TOPICS_TOTAL) break;
+          const assunto = cleanText(value, MAX_ASSUNTO_CHARS);
+          const key = fold(assunto);
+          if (!assunto || topicSeen.has(key)) continue;
+          topicSeen.add(key);
+          assuntos.push(assunto);
+          topicCount++;
+        }
+        if (!assuntos.length) continue;
+    
+        const key = fold(materia);
+        if (seen.has(key)) continue;
+        seen.add(key);
+    
+        clean.push({
+          materia,
+          prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+          peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,
+          assuntos
+        });
+      }
+      return clean;
+    }
+    
+    function mergePriorityOnly(lockedMaterias, aiResult) {
+      const scores = new Map();
+      for (const item of (Array.isArray(aiResult?.materias) ? aiResult.materias : [])) {
+        const name = String(item?.materia || "").trim();
+        if (!name) continue;
+        scores.set(fold(name), {
+          prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+          peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null
+        });
+      }
+    
+      return lockedMaterias.map(item => {
+        const score = scores.get(fold(item.materia));
+        return {
+          materia: item.materia,
+          // A hierarquia e os assuntos jamais vêm da IA.
+          prioridade: score?.prioridade ?? item.prioridade,
+          // Peso detectado do quadro de provas no frontend tem precedência.
+          peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),
+          assuntos: item.assuntos
+        };
+      });
+    }
+    
+    async function analyzeEdital(request, env) {
+      const contentType = request.headers.get("content-type") || "";
+      if (!contentType.toLowerCase().includes("application/json")) {
+        return json({ error: "Content-Type deve ser application/json." }, 415);
+      }
+      const declaredLength = Number(request.headers.get("content-length") || 0);
+      if (declaredLength > MAX_REQUEST_BYTES) {
+        return json({ error: "Requisição excede o limite de segurança." }, 413);
+      }
+    
+      const user = await authenticateSupabaseUser(request, env);
+      if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+    
+      if (env.AI_RATE_LIMITER?.limit) {
+        const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:analisar-edital` });
+        if (!success) {
+          return json({ error: "Muitas análises em sequência. Aguarde um minuto e tente novamente." }, 429, { "retry-after": "60" });
+        }
+      }
+    
+      let body;
+      try {
+        const rawBody = await request.text();
+        if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+          return json({ error: "Requisição excede o limite de segurança." }, 413);
+        }
+        body = JSON.parse(rawBody);
+      } catch {
+        return json({ error: "Corpo JSON inválido." }, 400);
+      }
+    
+      const rawLockedMaterias = Array.isArray(body?.lockedMaterias) ? body.lockedMaterias : [];
+      if (rawLockedMaterias.length > MAX_MATERIAS) {
+        return json({ error: "Quantidade de matérias excede o limite de segurança." }, 413);
+      }
+      const rawTopicCount = rawLockedMaterias.reduce((sum, item) => sum + (Array.isArray(item?.assuntos) ? item.assuntos.length : 0), 0);
+      if (rawTopicCount > MAX_TOPICS_TOTAL) {
+        return json({ error: "Quantidade de tópicos excede o limite de segurança." }, 413);
+      }
+    
+      const concurso = cleanText(body?.concurso, 200);
+      const banca = cleanText(body?.banca, 120);
+      const fileName = cleanText(body?.fileName || "Edital.pdf", 240);
+      const cargoLabel = cleanText(body?.cargo?.label || body?.cargo, 240);
+      const rawText = cleanText(body?.text, MAX_TEXT_CHARS + 1);
+      const lockedMaterias = sanitizeLockedMaterias(rawLockedMaterias);
+    
+      if (!lockedMaterias.length) {
+        return json({ error: "O frontend não enviou matérias/assuntos determinísticos válidos para o cargo selecionado." }, 422);
+      }
+    
+      if (rawText.length > MAX_TEXT_CHARS) {
+        return json({ error: "Recorte do edital excedeu o limite de segurança." }, 413);
+      }
+    
+      // Resultado-base seguro: mesmo que a IA falhe, matéria/assunto permanecem corretos.
+      let finalMaterias = lockedMaterias;
+      let aiUsed = false;
+    
+      const systemPrompt = `
+    Você auxilia na PRIORIZAÇÃO de um edital já extraído deterministicamente.
+    
+    REGRAS ABSOLUTAS:
+    1. NÃO extraia matérias.
+    2. NÃO crie matérias.
+    3. NÃO remova matérias.
+    4. NÃO renomeie matérias.
+    5. NÃO gere assuntos.
+    6. A lista de matérias fornecida está BLOQUEADA.
+    7. Sua única tarefa é atribuir prioridade 1, 2, 3 ou 4 e peso numérico às matérias usando SOMENTE sinais existentes no edital recebido.
+    8. Se o texto não permitir diferenciar, use prioridade 2. A escala é P1 = prioridade máxima, P2 = alta, P3 = média e P4 = baixa.
+    9. Se o peso já estiver explicitamente indicado no texto/quadro de provas, respeite-o.
+    10. Não use histórico da banca; ele não está disponível nesta fase.
+    11. Retorne somente JSON no schema solicitado.
+    `;
+    
+      const lockedNames = lockedMaterias.map(m => ({
+        materia: m.materia,
+        peso_detectado: m.peso,
+        prioridade_inicial: m.prioridade
+      }));
+    
+      const userPrompt = `
+    Concurso: ${concurso || "não informado"}
+    Cargo/Área/Especialidade: ${cargoLabel || "não informado"}
+    Banca: ${banca || "não informada"}
+    Arquivo: ${fileName}
+    
+    MATÉRIAS BLOQUEADAS:
+    ${JSON.stringify(lockedNames)}
+    
+    RECORTE DO EDITAL DO CARGO:
+    ${rawText.slice(0, MAX_TEXT_CHARS)}
+    `;
+    
+      try {
+        const result = await env.AI.run(MODEL, {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: prioritySchema
+          },
+          temperature: 0,
+          max_tokens: 3000
+        });
+    
+        const parsed = parseAIResponse(result);
+        if (parsed && Array.isArray(parsed.materias)) {
+          finalMaterias = mergePriorityOnly(lockedMaterias, parsed);
+          aiUsed = true;
+        }
+      } catch (error) {
+        console.error("Workers AI priority error; using deterministic fallback", error);
+      }
+    
+      return json({
+        parserVersion: "v8-adaptive-universal",
+        analysis: {
+          concurso,
+          materias: finalMaterias
+        },
+        model: MODEL,
+        aiUsed,
+        extractionLocked: true
+      });
+    }
+    
+    
+    function parseFlashcardAIResponse(result) {
+      if (!result) return null;
+      const candidates = [result?.response, result?.result?.response, result?.response?.response, result?.output, result?.data, result];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate === "object" && !Array.isArray(candidate)) {
+          if (typeof candidate.question === "string" && typeof candidate.answer === "string") return candidate;
+        } else if (typeof candidate === "string") {
+          const parsed = extractFirstJsonObject(candidate);
+          if (parsed && typeof parsed.question === "string" && typeof parsed.answer === "string") return parsed;
+        }
+      }
+      return null;
+    }
+    
+    async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
+      if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+          body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 700,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: { question: { type: "STRING" }, answer: { type: "STRING" } },
+              required: ["question", "answer"]
+            }
+          }
+          })
+        });
+      } catch (error) {
+        if (error?.name === "AbortError") throw new Error("Gemini excedeu o limite de 4 segundos");
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!response.ok) {
+        const detail = cleanText(await response.text(), 500);
+        throw new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+      }
+      const payload = await response.json();
+      const text = payload?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").join("") || "";
+      const parsed = extractFirstJsonObject(text);
+      if (!parsed?.question || !parsed?.answer) throw new Error("Resposta incompleta do Gemini");
+      return parsed;
+    }
+    
+    function withTimeout(promise, ms, label) {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} excedeu o limite de ${ms} ms`)), ms);
+      });
+      return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+    }
+    
+    async function generateFlashcard(request, env) {
+      const user = await authenticateSupabaseUser(request, env);
+      if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+      if (env.AI_RATE_LIMITER?.limit) {
+        const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:flashcard` });
+        if (!success) return json({ error: "Muitas gerações em sequência. Aguarde um minuto." }, 429);
+      }
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
+      const text = cleanText(body?.text, 7000);
+      const existingQuestion = cleanText(body?.existingQuestion, 500);
+      const materia = cleanText(body?.materia, 180);
+      const assunto = cleanText(body?.assunto, 300);
+      const requested = String(body?.model || "auto").toLowerCase();
+      if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
+      if (requested !== "auto" && !FLASHCARD_AI_MODELS[requested]) return json({ error: "Modelo de IA inválido." }, 400);
+      const candidates = requested === "auto" ? FLASHCARD_AUTO_CHAIN : [requested];
+      const systemPrompt = `Crie UM flashcard atômico para concurso usando SOMENTE o trecho-fonte. Faça pergunta autossuficiente, específica e sem pistas; preserve regra, exceções, requisitos, números, prazos e termos jurídicos essenciais. Não invente nem complemente fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
+      const userPrompt = `MATÉRIA (opcional): ${materia || "não informada"}\nASSUNTO (opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL (opcional; melhore se útil): ${existingQuestion || "não fornecida"}\n\nTRECHO-FONTE:\n${text}`;
+      const errors = [];
+      for (let index = 0; index < candidates.length; index++) {
+        const key = candidates[index];
+        const model = FLASHCARD_AI_MODELS[key];
+        try {
+          const parsed = model.provider === "gemini"
+            ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
+            : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), 2500, model.label));
+          const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
+          if (!question || !answer) throw new Error("Resposta incompleta da IA");
+          return json({ question, answer, model: `${model.provider === "gemini" ? "Google Gemini" : "Workers AI"} · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
+        } catch (error) {
+          errors.push(`${model.label}: ${error?.message || error}`);
+          console.warn("Flashcard AI model failed", model.id, error);
+        }
+      }
+      console.error("Flashcard AI exhausted candidates", errors);
+      return json({ error: "Não foi possível gerar a pergunta com IA agora. O modo manual continua disponível." }, 503);
+    }
+    
+    
+    export default {
+      async fetch(request, env) {
+        const url = new URL(request.url);
+    
+        if (request.method === "GET" && CORE_NO_STORE_PATHS.has(url.pathname)) {
+          const assetResponse = await env.ASSETS.fetch(request);
+          const headers = new Headers(assetResponse.headers);
+          headers.set("cache-control", "no-cache, no-store, must-revalidate");
+          headers.set("pragma", "no-cache");
+          headers.set("expires", "0");
+          headers.set("x-app-version", APP_VERSION);
+          return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
+        }
+    
+        const vendorRoute = VENDOR_ROUTES[url.pathname];
+        if (vendorRoute && request.method === "GET") {
+          return serveVendorAsset(request, vendorRoute);
+        }
+    
+        if (url.pathname === "/api/ai/analisar-edital") {
+          if (request.method !== "POST") {
+            return json({ error: "Método não permitido." }, 405);
+          }
+          return analyzeEdital(request, env);
+        }
+    
+        if (url.pathname === "/api/ai/flashcard") {
+          if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
+          return generateFlashcard(request, env);
+        }
+    
+    
+        return env.ASSETS.fetch(request);
+      }
+    };
+    
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-9-flashcard-ai.test.cjs:8:278)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: IA de flashcard tem caminho rápido e limites rígidos de latência
+ok 106 - IA de flashcard tem caminho rápido e limites rígidos de latência
+  ---
+  duration_ms: 1.430641
+  type: 'test'
+  ...
+# Subtest: Biblioteca abre no escopo global sem filtros antigos
+ok 107 - Biblioteca abre no escopo global sem filtros antigos
+  ---
+  duration_ms: 0.249736
+  type: 'test'
+  ...
+# Subtest: Gemini é a IA principal dos flashcards com fallback seguro
+ok 108 - Gemini é a IA principal dos flashcards com fallback seguro
+  ---
+  duration_ms: 7.103755
+  type: 'test'
+  ...
+# Subtest: a chave Gemini não é exposta no frontend
+ok 109 - a chave Gemini não é exposta no frontend
+  ---
+  duration_ms: 0.286084
+  type: 'test'
+  ...
+# Subtest: V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
+not ok 110 - V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
+  ---
+  duration_ms: 3.64089
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-25-library-ai-models.test.cjs:5:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /FLASHCARD_AUTO_CHAIN = \["gemini", "gemma", "glm", "llama"\]/. Input:
+    
+    '// Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.\n' +
+      'const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";\n' +
+      'const FLASHCARD_AI_MODELS = Object.freeze({\n' +
+      '  gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },\n' +
+      '  gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },\n' +
+      '  nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },\n' +
+      '  glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },\n' +
+      '  llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }\n' +
+      '});\n' +
+      'const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];\n' +
+      'const MAX_TEXT_CHARS = 110000;\n' +
+      'const MAX_REQUEST_BYTES = 512 * 1024;\n' +
+      'const MAX_MATERIAS = 120;\n' +
+      'const MAX_TOPICS_TOTAL = 5000;\n' +
+      'const MAX_MATERIA_CHARS = 180;\n' +
+      'const MAX_ASSUNTO_CHARS = 1200;\n' +
+      '\n' +
+      'const APP_VERSION = "10.25.1";\n' +
+      'const CORE_NO_STORE_PATHS = new Set([\n' +
+      '  "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",\n' +
+      '  "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",\n' +
+      '  "/js/study-domain.js", "/js/app-core.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"\n' +
+      ']);\n' +
+      '\n' +
+      'const VENDOR_ROUTES = {\n' +
+      '  "/vendor/supabase.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",\n' +
+      '      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/chart.umd.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",\n' +
+      '      "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf_viewer.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf_viewer.min.css": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"\n' +
+      '    ],\n' +
+      '    contentType: "text/css; charset=utf-8"\n' +
+      '  },\n' +
+      '  "/vendor/pdf.worker.min.js": {\n' +
+      '    upstreams: [\n' +
+      '      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",\n' +
+      '      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"\n' +
+      '    ],\n' +
+      '    contentType: "application/javascript; charset=utf-8"\n' +
+      '  }\n' +
+      '};\n' +
+      '\n' +
+      'async function serveVendorAsset(request, route) {\n' +
+      '  const cache = caches.default;\n' +
+      '  const cacheKey = new Request(request.url, { method: "GET" });\n' +
+      '  const cached = await cache.match(cacheKey);\n' +
+      '  if (cached) return cached;\n' +
+      '\n' +
+      '  let lastStatus = 0;\n' +
+      '  for (const upstreamUrl of route.upstreams) {\n' +
+      '    try {\n' +
+      '      const upstream = await fetch(upstreamUrl, { redirect: "follow" });\n' +
+      '      lastStatus = upstream.status;\n' +
+      '      if (!upstream.ok) continue;\n' +
+      '\n' +
+      '      const headers = new Headers();\n' +
+      '      headers.set("content-type", route.contentType);\n' +
+      '      headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");\n' +
+      '      headers.set("x-content-type-options", "nosniff");\n' +
+      '      headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);\n' +
+      '      const response = new Response(upstream.body, { status: 200, headers });\n' +
+      '      await cache.put(cacheKey, response.clone());\n' +
+      '      return response;\n' +
+      '    } catch (error) {\n' +
+      '      console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);\n' +
+      '    }\n' +
+      '  }\n' +
+      '\n' +
+      '  return new Response("Dependência temporariamente indisponível.", {\n' +
+      '    status: 503,\n' +
+      '    headers: {\n' +
+      '      "content-type": "text/plain; charset=utf-8",\n' +
+      '      "cache-control": "no-store",\n' +
+      '      "x-painel-vendor-last-status": String(lastStatus || 0)\n' +
+      '    }\n' +
+      '  });\n' +
+      '}\n' +
+      '\n' +
+      '\n' +
+      'const prioritySchema = {\n' +
+      '  type: "object",\n' +
+      '  properties: {\n' +
+      '    materias: {\n' +
+      '      type: "array",\n' +
+      '      items: {\n' +
+      '        type: "object",\n' +
+      '        properties: {\n' +
+      '          materia: { type: "string" },\n' +
+      '          prioridade: { type: "integer", minimum: 1, maximum: 4 },\n' +
+      '          peso: { type: "number", minimum: 0 }\n' +
+      '        },\n' +
+      '        required: ["materia", "prioridade", "peso"]\n' +
+      '      }\n' +
+      '    }\n' +
+      '  },\n' +
+      '  required: ["materias"]\n' +
+      '};\n' +
+      '\n' +
+      'function json(data, status = 200, extraHeaders = {}) {\n' +
+      '  const headers = new Headers({\n' +
+      '    "content-type": "application/json; charset=utf-8",\n' +
+      '    "cache-control": "no-store",\n' +
+      '    "x-content-type-options": "nosniff",\n' +
+      '    "referrer-policy": "no-referrer"\n' +
+      '  });\n' +
+      '  for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);\n' +
+      '  return new Response(JSON.stringify(data), { status, headers });\n' +
+      '}\n' +
+      '\n' +
+      'function cleanText(value, maxLength) {\n' +
+      '  return String(value || "")\n' +
+      '    .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/g, "")\n' +
+      '    .trim()\n' +
+      '    .slice(0, maxLength);\n' +
+      '}\n' +
+      '\n' +
+      'function fold(value) {\n' +
+      '  return String(value || "")\n' +
+      '    .normalize("NFD")\n' +
+      '    .replace(/[\\u0300-\\u036f]/g, "")\n' +
+      '    .toLowerCase()\n' +
+      '    .replace(/\\s+/g, " ")\n' +
+      '    .trim();\n' +
+      '}\n' +
+      '\n' +
+      'function stripMarkdownJsonFence(value) {\n' +
+      '  return String(value || "")\n' +
+      '    .trim()\n' +
+      '    .replace(/^```(?:json)?\\s*/i, "")\n' +
+      '    .replace(/\\s*```$/i, "")\n' +
+      '    .trim();\n' +
+      '}\n' +
+      '\n' +
+      'function extractFirstJsonObject(text) {\n' +
+      '  const source = stripMarkdownJsonFence(text);\n' +
+      '  if (!source) return null;\n' +
+      '\n' +
+      '  try {\n' +
+      '    const direct = JSON.parse(source);\n' +
+      '    if (direct && typeof direct === "object") return direct;\n' +
+      '  } catch {}\n' +
+      '\n' +
+      '  let start = -1, depth = 0, inString = false, escaped = false;\n' +
+      '  for (let i = 0; i < source.length; i++) {\n' +
+      '    const ch = source[i];\n' +
+      '    if (inString) {\n' +
+      '      if (escaped) escaped = false;\n' +
+      '      else if (ch === "\\\\") escaped = true;\n' +
+      `      else if (ch === '"') inString = false;\n` +
+      '      continue;\n' +
+      '    }\n' +
+      `    if (ch === '"') { inString = true; continue; }\n` +
+      '    if (ch === "{") {\n' +
+      '      if (depth === 0) start = i;\n' +
+      '      depth++;\n' +
+      '    } else if (ch === "}" && depth > 0) {\n' +
+      '      depth--;\n' +
+      '      if (depth === 0 && start >= 0) {\n' +
+      '        try { return JSON.parse(source.slice(start, i + 1)); } catch {}\n' +
+      '        start = -1;\n' +
+      '      }\n' +
+      '    }\n' +
+      '  }\n' +
+      '  return null;\n' +
+      '}\n' +
+      '\n' +
+      'function parseAIResponse(result) {\n' +
+      '  if (!result) return null;\n' +
+      '  const candidates = [\n' +
+      '    result?.response,\n' +
+      '    result?.result?.response,\n' +
+      '    result?.response?.response,\n' +
+      '    result?.output,\n' +
+      '    result?.data,\n' +
+      '    result\n' +
+      '  ];\n' +
+      '  for (const candidate of candidates) {\n' +
+      '    if (!candidate) continue;\n' +
+      '    if (typeof candidate === "object" && !Array.isArray(candidate)) {\n' +
+      '      if (Array.isArray(candidate.materias)) return candidate;\n' +
+      '      if (candidate.analysis && Array.isArray(candidate.analysis.materias)) return candidate.analysis;\n' +
+      '    } else if (typeof candidate === "string") {\n' +
+      '      const parsed = extractFirstJsonObject(candidate);\n' +
+      '      if (parsed && Array.isArray(parsed.materias)) return parsed;\n' +
+      '    }\n' +
+      '  }\n' +
+      '  return null;\n' +
+      '}\n' +
+      '\n' +
+      'async function authenticateSupabaseUser(request, env) {\n' +
+      '  const authorization = request.headers.get("authorization") || "";\n' +
+      '  if (!authorization.startsWith("Bearer ")) return null;\n' +
+      '\n' +
+      '  const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {\n' +
+      '    headers: {\n' +
+      '      authorization,\n' +
+      '      apikey: env.SUPABASE_ANON_KEY\n' +
+      '    }\n' +
+      '  });\n' +
+      '\n' +
+      '  if (!response.ok) return null;\n' +
+      '  return response.json();\n' +
+      '}\n' +
+      '\n' +
+      'function sanitizeLockedMaterias(input) {\n' +
+      '  const items = Array.isArray(input) ? input : [];\n' +
+      '  const clean = [];\n' +
+      '  const seen = new Set();\n' +
+      '\n' +
+      '  let topicCount = 0;\n' +
+      '  for (const item of items.slice(0, MAX_MATERIAS)) {\n' +
+      '    const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);\n' +
+      '    if (!materia) continue;\n' +
+      '\n' +
+      '    const assuntos = [];\n' +
+      '    const topicSeen = new Set();\n' +
+      '    for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {\n' +
+      '      if (topicCount >= MAX_TOPICS_TOTAL) break;\n' +
+      '      const assunto = cleanText(value, MAX_ASSUNTO_CHARS);\n' +
+      '      const key = fold(assunto);\n' +
+      '      if (!assunto || topicSeen.has(key)) continue;\n' +
+      '      topicSeen.add(key);\n' +
+      '      assuntos.push(assunto);\n' +
+      '      topicCount++;\n' +
+      '    }\n' +
+      '    if (!assuntos.length) continue;\n' +
+      '\n' +
+      '    const key = fold(materia);\n' +
+      '    if (seen.has(key)) continue;\n' +
+      '    seen.add(key);\n' +
+      '\n' +
+      '    clean.push({\n' +
+      '      materia,\n' +
+      '      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),\n' +
+      '      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,\n' +
+      '      assuntos\n' +
+      '    });\n' +
+      '  }\n' +
+      '  return clean;\n' +
+      '}\n' +
+      '\n' +
+      'function mergePriorityOnly(lockedMaterias, aiResult) {\n' +
+      '  const scores = new Map();\n' +
+      '  for (const item of (Array.isArray(aiResult?.materias) ? aiResult.materias : [])) {\n' +
+      '    const name = String(item?.materia || "").trim();\n' +
+      '    if (!name) continue;\n' +
+      '    scores.set(fold(name), {\n' +
+      '      prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),\n' +
+      '      peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null\n' +
+      '    });\n' +
+      '  }\n' +
+      '\n' +
+      '  return lockedMaterias.map(item => {\n' +
+      '    const score = scores.get(fold(item.materia));\n' +
+      '    return {\n' +
+      '      materia: item.materia,\n' +
+      '      // A hierarquia e os assuntos jamais vêm da IA.\n' +
+      '      prioridade: score?.prioridade ?? item.prioridade,\n' +
+      '      // Peso detectado do quadro de provas no frontend tem precedência.\n' +
+      '      peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),\n' +
+      '      assuntos: item.assuntos\n' +
+      '    };\n' +
+      '  });\n' +
+      '}\n' +
+      '\n' +
+      'async function analyzeEdital(request, env) {\n' +
+      '  const contentType = request.headers.get("content-type") || "";\n' +
+      '  if (!contentType.toLowerCase().includes("application/json")) {\n' +
+      '    return json({ error: "Content-Type deve ser application/json." }, 415);\n' +
+      '  }\n' +
+      '  const declaredLength = Number(request.headers.get("content-length") || 0);\n' +
+      '  if'... 11092 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
+    const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+    const FLASHCARD_AI_MODELS = Object.freeze({
+      gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },
+      gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
+      nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
+      glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
+      llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
+    });
+    const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];
+    const MAX_TEXT_CHARS = 110000;
+    const MAX_REQUEST_BYTES = 512 * 1024;
+    const MAX_MATERIAS = 120;
+    const MAX_TOPICS_TOTAL = 5000;
+    const MAX_MATERIA_CHARS = 180;
+    const MAX_ASSUNTO_CHARS = 1200;
+    
+    const APP_VERSION = "10.25.1";
+    const CORE_NO_STORE_PATHS = new Set([
+      "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
+      "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
+      "/js/study-domain.js", "/js/app-core.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"
+    ]);
+    
+    const VENDOR_ROUTES = {
+      "/vendor/supabase.js": {
+        upstreams: [
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js",
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/chart.umd.min.js": {
+        upstreams: [
+          "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",
+          "https://cdn.jsdelivr.net/npm/chart.js@4.5.1"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf_viewer.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      },
+      "/vendor/pdf_viewer.min.css": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",
+          "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"
+        ],
+        contentType: "text/css; charset=utf-8"
+      },
+      "/vendor/pdf.worker.min.js": {
+        upstreams: [
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+          "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+        ],
+        contentType: "application/javascript; charset=utf-8"
+      }
+    };
+    
+    async function serveVendorAsset(request, route) {
+      const cache = caches.default;
+      const cacheKey = new Request(request.url, { method: "GET" });
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+    
+      let lastStatus = 0;
+      for (const upstreamUrl of route.upstreams) {
+        try {
+          const upstream = await fetch(upstreamUrl, { redirect: "follow" });
+          lastStatus = upstream.status;
+          if (!upstream.ok) continue;
+    
+          const headers = new Headers();
+          headers.set("content-type", route.contentType);
+          headers.set("cache-control", "public, max-age=86400, s-maxage=31536000");
+          headers.set("x-content-type-options", "nosniff");
+          headers.set("x-painel-vendor-source", new URL(upstreamUrl).hostname);
+          const response = new Response(upstream.body, { status: 200, headers });
+          await cache.put(cacheKey, response.clone());
+          return response;
+        } catch (error) {
+          console.warn("Falha ao obter dependência vendor:", upstreamUrl, error?.message || error);
+        }
+      }
+    
+      return new Response("Dependência temporariamente indisponível.", {
+        status: 503,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+          "x-painel-vendor-last-status": String(lastStatus || 0)
+        }
+      });
+    }
+    
+    
+    const prioritySchema = {
+      type: "object",
+      properties: {
+        materias: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              materia: { type: "string" },
+              prioridade: { type: "integer", minimum: 1, maximum: 4 },
+              peso: { type: "number", minimum: 0 }
+            },
+            required: ["materia", "prioridade", "peso"]
+          }
+        }
+      },
+      required: ["materias"]
+    };
+    
+    function json(data, status = 200, extraHeaders = {}) {
+      const headers = new Headers({
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer"
+      });
+      for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);
+      return new Response(JSON.stringify(data), { status, headers });
+    }
+    
+    function cleanText(value, maxLength) {
+      return String(value || "")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+        .trim()
+        .slice(0, maxLength);
+    }
+    
+    function fold(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    
+    function stripMarkdownJsonFence(value) {
+      return String(value || "")
+        .trim()
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+    }
+    
+    function extractFirstJsonObject(text) {
+      const source = stripMarkdownJsonFence(text);
+      if (!source) return null;
+    
+      try {
+        const direct = JSON.parse(source);
+        if (direct && typeof direct === "object") return direct;
+      } catch {}
+    
+      let start = -1, depth = 0, inString = false, escaped = false;
+      for (let i = 0; i < source.length; i++) {
+        const ch = source[i];
+        if (inString) {
+          if (escaped) escaped = false;
+          else if (ch === "\\") escaped = true;
+          else if (ch === '"') inString = false;
+          continue;
+        }
+        if (ch === '"') { inString = true; continue; }
+        if (ch === "{") {
+          if (depth === 0) start = i;
+          depth++;
+        } else if (ch === "}" && depth > 0) {
+          depth--;
+          if (depth === 0 && start >= 0) {
+            try { return JSON.parse(source.slice(start, i + 1)); } catch {}
+            start = -1;
+          }
+        }
+      }
+      return null;
+    }
+    
+    function parseAIResponse(result) {
+      if (!result) return null;
+      const candidates = [
+        result?.response,
+        result?.result?.response,
+        result?.response?.response,
+        result?.output,
+        result?.data,
+        result
+      ];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate === "object" && !Array.isArray(candidate)) {
+          if (Array.isArray(candidate.materias)) return candidate;
+          if (candidate.analysis && Array.isArray(candidate.analysis.materias)) return candidate.analysis;
+        } else if (typeof candidate === "string") {
+          const parsed = extractFirstJsonObject(candidate);
+          if (parsed && Array.isArray(parsed.materias)) return parsed;
+        }
+      }
+      return null;
+    }
+    
+    async function authenticateSupabaseUser(request, env) {
+      const authorization = request.headers.get("authorization") || "";
+      if (!authorization.startsWith("Bearer ")) return null;
+    
+      const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          authorization,
+          apikey: env.SUPABASE_ANON_KEY
+        }
+      });
+    
+      if (!response.ok) return null;
+      return response.json();
+    }
+    
+    function sanitizeLockedMaterias(input) {
+      const items = Array.isArray(input) ? input : [];
+      const clean = [];
+      const seen = new Set();
+    
+      let topicCount = 0;
+      for (const item of items.slice(0, MAX_MATERIAS)) {
+        const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);
+        if (!materia) continue;
+    
+        const assuntos = [];
+        const topicSeen = new Set();
+        for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {
+          if (topicCount >= MAX_TOPICS_TOTAL) break;
+          const assunto = cleanText(value, MAX_ASSUNTO_CHARS);
+          const key = fold(assunto);
+          if (!assunto || topicSeen.has(key)) continue;
+          topicSeen.add(key);
+          assuntos.push(assunto);
+          topicCount++;
+        }
+        if (!assuntos.length) continue;
+    
+        const key = fold(materia);
+        if (seen.has(key)) continue;
+        seen.add(key);
+    
+        clean.push({
+          materia,
+          prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+          peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : 1,
+          assuntos
+        });
+      }
+      return clean;
+    }
+    
+    function mergePriorityOnly(lockedMaterias, aiResult) {
+      const scores = new Map();
+      for (const item of (Array.isArray(aiResult?.materias) ? aiResult.materias : [])) {
+        const name = String(item?.materia || "").trim();
+        if (!name) continue;
+        scores.set(fold(name), {
+          prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
+          peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null
+        });
+      }
+    
+      return lockedMaterias.map(item => {
+        const score = scores.get(fold(item.materia));
+        return {
+          materia: item.materia,
+          // A hierarquia e os assuntos jamais vêm da IA.
+          prioridade: score?.prioridade ?? item.prioridade,
+          // Peso detectado do quadro de provas no frontend tem precedência.
+          peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),
+          assuntos: item.assuntos
+        };
+      });
+    }
+    
+    async function analyzeEdital(request, env) {
+      const contentType = request.headers.get("content-type") || "";
+      if (!contentType.toLowerCase().includes("application/json")) {
+        return json({ error: "Content-Type deve ser application/json." }, 415);
+      }
+      const declaredLength = Number(request.headers.get("content-length") || 0);
+      if (declaredLength > MAX_REQUEST_BYTES) {
+        return json({ error: "Requisição excede o limite de segurança." }, 413);
+      }
+    
+      const user = await authenticateSupabaseUser(request, env);
+      if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+    
+      if (env.AI_RATE_LIMITER?.limit) {
+        const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:analisar-edital` });
+        if (!success) {
+          return json({ error: "Muitas análises em sequência. Aguarde um minuto e tente novamente." }, 429, { "retry-after": "60" });
+        }
+      }
+    
+      let body;
+      try {
+        const rawBody = await request.text();
+        if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+          return json({ error: "Requisição excede o limite de segurança." }, 413);
+        }
+        body = JSON.parse(rawBody);
+      } catch {
+        return json({ error: "Corpo JSON inválido." }, 400);
+      }
+    
+      const rawLockedMaterias = Array.isArray(body?.lockedMaterias) ? body.lockedMaterias : [];
+      if (rawLockedMaterias.length > MAX_MATERIAS) {
+        return json({ error: "Quantidade de matérias excede o limite de segurança." }, 413);
+      }
+      const rawTopicCount = rawLockedMaterias.reduce((sum, item) => sum + (Array.isArray(item?.assuntos) ? item.assuntos.length : 0), 0);
+      if (rawTopicCount > MAX_TOPICS_TOTAL) {
+        return json({ error: "Quantidade de tópicos excede o limite de segurança." }, 413);
+      }
+    
+      const concurso = cleanText(body?.concurso, 200);
+      const banca = cleanText(body?.banca, 120);
+      const fileName = cleanText(body?.fileName || "Edital.pdf", 240);
+      const cargoLabel = cleanText(body?.cargo?.label || body?.cargo, 240);
+      const rawText = cleanText(body?.text, MAX_TEXT_CHARS + 1);
+      const lockedMaterias = sanitizeLockedMaterias(rawLockedMaterias);
+    
+      if (!lockedMaterias.length) {
+        return json({ error: "O frontend não enviou matérias/assuntos determinísticos válidos para o cargo selecionado." }, 422);
+      }
+    
+      if (rawText.length > MAX_TEXT_CHARS) {
+        return json({ error: "Recorte do edital excedeu o limite de segurança." }, 413);
+      }
+    
+      // Resultado-base seguro: mesmo que a IA falhe, matéria/assunto permanecem corretos.
+      let finalMaterias = lockedMaterias;
+      let aiUsed = false;
+    
+      const systemPrompt = `
+    Você auxilia na PRIORIZAÇÃO de um edital já extraído deterministicamente.
+    
+    REGRAS ABSOLUTAS:
+    1. NÃO extraia matérias.
+    2. NÃO crie matérias.
+    3. NÃO remova matérias.
+    4. NÃO renomeie matérias.
+    5. NÃO gere assuntos.
+    6. A lista de matérias fornecida está BLOQUEADA.
+    7. Sua única tarefa é atribuir prioridade 1, 2, 3 ou 4 e peso numérico às matérias usando SOMENTE sinais existentes no edital recebido.
+    8. Se o texto não permitir diferenciar, use prioridade 2. A escala é P1 = prioridade máxima, P2 = alta, P3 = média e P4 = baixa.
+    9. Se o peso já estiver explicitamente indicado no texto/quadro de provas, respeite-o.
+    10. Não use histórico da banca; ele não está disponível nesta fase.
+    11. Retorne somente JSON no schema solicitado.
+    `;
+    
+      const lockedNames = lockedMaterias.map(m => ({
+        materia: m.materia,
+        peso_detectado: m.peso,
+        prioridade_inicial: m.prioridade
+      }));
+    
+      const userPrompt = `
+    Concurso: ${concurso || "não informado"}
+    Cargo/Área/Especialidade: ${cargoLabel || "não informado"}
+    Banca: ${banca || "não informada"}
+    Arquivo: ${fileName}
+    
+    MATÉRIAS BLOQUEADAS:
+    ${JSON.stringify(lockedNames)}
+    
+    RECORTE DO EDITAL DO CARGO:
+    ${rawText.slice(0, MAX_TEXT_CHARS)}
+    `;
+    
+      try {
+        const result = await env.AI.run(MODEL, {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: prioritySchema
+          },
+          temperature: 0,
+          max_tokens: 3000
+        });
+    
+        const parsed = parseAIResponse(result);
+        if (parsed && Array.isArray(parsed.materias)) {
+          finalMaterias = mergePriorityOnly(lockedMaterias, parsed);
+          aiUsed = true;
+        }
+      } catch (error) {
+        console.error("Workers AI priority error; using deterministic fallback", error);
+      }
+    
+      return json({
+        parserVersion: "v8-adaptive-universal",
+        analysis: {
+          concurso,
+          materias: finalMaterias
+        },
+        model: MODEL,
+        aiUsed,
+        extractionLocked: true
+      });
+    }
+    
+    
+    function parseFlashcardAIResponse(result) {
+      if (!result) return null;
+      const candidates = [result?.response, result?.result?.response, result?.response?.response, result?.output, result?.data, result];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (typeof candidate === "object" && !Array.isArray(candidate)) {
+          if (typeof candidate.question === "string" && typeof candidate.answer === "string") return candidate;
+        } else if (typeof candidate === "string") {
+          const parsed = extractFirstJsonObject(candidate);
+          if (parsed && typeof parsed.question === "string" && typeof parsed.answer === "string") return parsed;
+        }
+      }
+      return null;
+    }
+    
+    async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
+      if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+          body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 700,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: { question: { type: "STRING" }, answer: { type: "STRING" } },
+              required: ["question", "answer"]
+            }
+          }
+          })
+        });
+      } catch (error) {
+        if (error?.name === "AbortError") throw new Error("Gemini excedeu o limite de 4 segundos");
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!response.ok) {
+        const detail = cleanText(await response.text(), 500);
+        throw new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+      }
+      const payload = await response.json();
+      const text = payload?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").join("") || "";
+      const parsed = extractFirstJsonObject(text);
+      if (!parsed?.question || !parsed?.answer) throw new Error("Resposta incompleta do Gemini");
+      return parsed;
+    }
+    
+    function withTimeout(promise, ms, label) {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} excedeu o limite de ${ms} ms`)), ms);
+      });
+      return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+    }
+    
+    async function generateFlashcard(request, env) {
+      const user = await authenticateSupabaseUser(request, env);
+      if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+      if (env.AI_RATE_LIMITER?.limit) {
+        const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:flashcard` });
+        if (!success) return json({ error: "Muitas gerações em sequência. Aguarde um minuto." }, 429);
+      }
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
+      const text = cleanText(body?.text, 7000);
+      const existingQuestion = cleanText(body?.existingQuestion, 500);
+      const materia = cleanText(body?.materia, 180);
+      const assunto = cleanText(body?.assunto, 300);
+      const requested = String(body?.model || "auto").toLowerCase();
+      if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
+      if (requested !== "auto" && !FLASHCARD_AI_MODELS[requested]) return json({ error: "Modelo de IA inválido." }, 400);
+      const candidates = requested === "auto" ? FLASHCARD_AUTO_CHAIN : [requested];
+      const systemPrompt = `Crie UM flashcard atômico para concurso usando SOMENTE o trecho-fonte. Faça pergunta autossuficiente, específica e sem pistas; preserve regra, exceções, requisitos, números, prazos e termos jurídicos essenciais. Não invente nem complemente fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
+      const userPrompt = `MATÉRIA (opcional): ${materia || "não informada"}\nASSUNTO (opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL (opcional; melhore se útil): ${existingQuestion || "não fornecida"}\n\nTRECHO-FONTE:\n${text}`;
+      const errors = [];
+      for (let index = 0; index < candidates.length; index++) {
+        const key = candidates[index];
+        const model = FLASHCARD_AI_MODELS[key];
+        try {
+          const parsed = model.provider === "gemini"
+            ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
+            : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), 2500, model.label));
+          const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
+          if (!question || !answer) throw new Error("Resposta incompleta da IA");
+          return json({ question, answer, model: `${model.provider === "gemini" ? "Google Gemini" : "Workers AI"} · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
+        } catch (error) {
+          errors.push(`${model.label}: ${error?.message || error}`);
+          console.warn("Flashcard AI model failed", model.id, error);
+        }
+      }
+      console.error("Flashcard AI exhausted candidates", errors);
+      return json({ error: "Não foi possível gerar a pergunta com IA agora. O modo manual continua disponível." }, 503);
+    }
+    
+    
+    export default {
+      async fetch(request, env) {
+        const url = new URL(request.url);
+    
+        if (request.method === "GET" && CORE_NO_STORE_PATHS.has(url.pathname)) {
+          const assetResponse = await env.ASSETS.fetch(request);
+          const headers = new Headers(assetResponse.headers);
+          headers.set("cache-control", "no-cache, no-store, must-revalidate");
+          headers.set("pragma", "no-cache");
+          headers.set("expires", "0");
+          headers.set("x-app-version", APP_VERSION);
+          return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
+        }
+    
+        const vendorRoute = VENDOR_ROUTES[url.pathname];
+        if (vendorRoute && request.method === "GET") {
+          return serveVendorAsset(request, vendorRoute);
+        }
+    
+        if (url.pathname === "/api/ai/analisar-edital") {
+          if (request.method !== "POST") {
+            return json({ error: "Método não permitido." }, 405);
+          }
+          return analyzeEdital(request, env);
+        }
+    
+        if (url.pathname === "/api/ai/flashcard") {
+          if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
+          return generateFlashcard(request, env);
+        }
+    
+    
+        return env.ASSETS.fetch(request);
+      }
+    };
+    
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-25-library-ai-models.test.cjs:20:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..110
+# tests 110
+# suites 0
+# pass 98
+# fail 12
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 783.369316
+
+=== AUDIT ===
+OK  public/version.json é JSON válido
+OK  versão de release: 10.25.1
+OK  nome da pasta raiz liberado para CI
+OK  app.js monolítico removido
+OK  app.css monolítico removido
+OK  CSS dividido carregado em ordem determinística
+OK  JavaScript dividido carregado em ordem determinística
+OK  index.html sem versão hardcoded
+OK  sw.js sincronizado
+OK  Cloudflare Worker sincronizado
+OK  package.json sincronizado
+OK  atualização determinística do PWA preservada
+OK  Service Worker suporta skipWaiting/clients.claim
+OK  novos chunks cobertos por offline/no-store
+OK  Reader coberto por network-first no Service Worker
+OK  Reader PDF com anotações/versionamento versionado
+OK  hardening RLS do Reader PDF versionado
+OK  diagnóstico e retry de upload em lote versionados
+OK  public/js/study-domain.js passou no node --check
+OK  public/js/app-core.js passou no node --check
+OK  public/js/app-ai.js passou no node --check
+OK  public/js/app-ui.js passou no node --check
+OK  public/js/app-pwa.js passou no node --check
+OK  public/js/pdf/pdf-core.js passou no node --check
+OK  public/js/pdf/pdf-workspaces.js passou no node --check
+OK  public/js/pdf/pdf-links.js passou no node --check
+OK  public/js/pdf/pdf-library.js passou no node --check
+OK  public/js/pdf/pdf-upload.js passou no node --check
+OK  public/js/pdf/pdf-annotations.js passou no node --check
+OK  public/js/pdf/pdf-reader.js passou no node --check
+OK  public/js/pdf/pdf-library-ui.js passou no node --check
+OK  public/pwa-update.js passou no node --check
+OK  public/sw.js passou no node --check
+OK  src/index.js passou no node --check
+OK  public/manifest.json é JSON válido
+OK  wrangler.jsonc é JSON válido
+OK  package.json é JSON válido
+OK  regras críticas compartilham StudyDomain com os testes
+OK  GitHub Actions de qualidade presente
+OK  backup Supabase preparado para banco + Storage + integridade
+OK  baseline e hardening Supabase versionados
+ERRO testes automatizados falharam
+OK  fundação PDF privada com RLS/Storage/limite versionada
+OK  PDF global desacoplado do concurso com vínculos contextuais
+OK  Timer absoluto preservado
+OK  Pomodoro manual vinculado preservado
+OK  ordem canônica do gráfico preservada
+OK  retenção ativa preservada
+OK  editor rico de notas preservado
+OK  exclusão granular preservada
+OK  layout aprovado de Retenção preservado
+
+AUDITORIA REPROVADA: 1 problema(s).
