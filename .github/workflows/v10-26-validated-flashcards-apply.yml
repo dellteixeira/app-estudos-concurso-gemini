@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,7 +12,7 @@ permissions:
 
 jobs:
   apply-and-validate:
-    if: github.head_ref == 'feat/v10-26-validated-flashcards'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feat/v10-26-validated-flashcards'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout feature branch
@@ -19,31 +20,67 @@ jobs:
         with:
           ref: feat/v10-26-validated-flashcards
           fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply v10.26.0
-        run: node scripts/apply-v10-26-validated-flashcards.mjs
+
+      - name: Apply v10.26.0 functional implementation
+        run: node scripts/apply-v10-26-direct.mjs
+
       - name: Check critical syntax
         run: node --check src/index.js
+
       - name: Run automated tests
         run: node --test tests/*.test.cjs
+
       - name: Run structural audit
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: node scripts/audit-release.mjs
-      - name: Remove applicator and commit validated tree
+
+      - name: Commit only the validated functional tree
         shell: bash
         run: |
-          rm -f scripts/apply-v10-26-validated-flashcards.mjs
+          rm -f scripts/apply-v10-26-direct.mjs
           rm -f .github/workflows/v10-26-validated-flashcards-apply.yml
           rm -f v10-26-trigger.txt
+
+          cat > .github/workflows/quality-check.yml <<'YAML'
+          name: Quality Check
+
+          on:
+            push:
+              branches: [main]
+            pull_request:
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+
+          jobs:
+            test-and-audit:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-node@v4
+                  with:
+                    node-version: '22'
+                - name: Testes automatizados
+                  run: node --test tests/*.test.cjs
+                - name: Auditoria estrutural
+                  env:
+                    AUDIT_ALLOW_ANY_ROOT: '1'
+                  run: node scripts/audit-release.mjs
+          YAML
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
+          git diff --cached --check
           if git diff --cached --quiet; then
             echo 'No validated changes to commit.'
             exit 0
           fi
-          git commit -m 'feat: validated source-grounded flashcards v10.26.0'
+          git commit -m 'feat: source-grounded validated flashcards v10.26.0'
           git push origin HEAD:feat/v10-26-validated-flashcards
