@@ -1,0 +1,37 @@
+name: Temporary Safe V10.25 PR Migration
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    if: github.head_ref == 'feature/v10-25-library-ai-models-safe'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Apply guarded migration
+        run: python3 scripts/apply-v1025-safe.py
+      - name: Validate tests
+        run: npm test
+      - name: Validate audit
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: npm run audit
+      - name: Commit migration
+        run: |
+          if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+            echo 'No migration changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/js/pdf/pdf-library-ui.js public/js/pdf/pdf-reader.js src/index.js public/sw.js package.json public/version.json tests/v10-25-library-ai-models.test.cjs
+          git commit -m 'feat: safe V10.25 library views and multi-model flashcard AI'
+          git push origin HEAD:${{ github.head_ref }}
