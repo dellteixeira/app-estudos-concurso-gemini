@@ -22,7 +22,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.25.5";
+const APP_VERSION = "10.25.6";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -485,6 +485,102 @@ function buildDeterministicFlashcard({ text, materia, assunto, generationIndex, 
   return {question: assunto||materia ? `O que o trecho estabelece sobre ${cleanText(assunto||materia,90)}?` : 'O que o trecho selecionado estabelece?',answer:cleanText(sentences[0]?.sentence||text,4000)};
 }
 
+function isValidFlashcardObject(value) {
+  return Boolean(value && typeof value.question === "string" && typeof value.answer === "string" && value.question.trim() && value.answer.trim());
+}
+
+function recoverGeminiFlashcardText(value) {
+  const source = stripMarkdownJsonFence(value);
+  if (!source) return null;
+
+  const direct = extractFirstJsonObject(source);
+  if (isValidFlashcardObject(direct)) return { flashcard: direct, mode: "json" };
+
+  let relaxed = source
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/([{,]\s*)(question|answer)\s*:/gi, '$1"$2":')
+    .replace(/,\s*([}\]])/g, '$1')
+    .trim();
+
+  if (relaxed.startsWith('{') && !relaxed.endsWith('}')) relaxed += '}';
+  const normalized = extractFirstJsonObject(relaxed);
+  if (isValidFlashcardObject(normalized)) return { flashcard: normalized, mode: "relaxed-json" };
+
+  const readField = field => {
+    const markers = ['"' + field + '"', "'" + field + "'", field];
+    let markerIndex = -1, markerLength = 0;
+    const lower = relaxed.toLowerCase();
+    for (const marker of markers) {
+      markerIndex = lower.indexOf(marker.toLowerCase());
+      if (markerIndex >= 0) { markerLength = marker.length; break; }
+    }
+    if (markerIndex < 0) return '';
+    const colonIndex = relaxed.indexOf(':', markerIndex + markerLength);
+    if (colonIndex < 0) return '';
+    const rest = relaxed.slice(colonIndex + 1).trim();
+    const quote = rest[0];
+    if (quote === '"' || quote === "'") {
+      const endQuote = rest.indexOf(quote, 1);
+      return endQuote > 0 ? rest.slice(1, endQuote) : rest.slice(1);
+    }
+    const newlineIndex = rest.indexOf(String.fromCharCode(10));
+    const braceIndex = rest.indexOf('}');
+    const ends = [newlineIndex, braceIndex].filter(value => value >= 0);
+    const lineEnd = ends.length ? Math.min(...ends) : -1;
+    let raw = (lineEnd >= 0 ? rest.slice(0, lineEnd) : rest).trim();
+    if (raw.endsWith(',')) raw = raw.slice(0, -1).trim();
+    return raw;
+  };
+
+  const question = cleanText(readField('question'), 500);
+  const answer = cleanText(readField('answer'), 4000);
+  return question && answer ? { flashcard: { question, answer }, mode: "field-recovery" } : null;
+}
+
+function summarizeGeminiFlashcardPayload(payload) {
+  const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
+  let parts = 0, textParts = 0, textChars = 0;
+  const finishReasons = [];
+  for (const candidate of candidates) {
+    finishReasons.push(cleanText(candidate?.finishReason || "unknown", 40));
+    const candidateParts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+    parts += candidateParts.length;
+    for (const part of candidateParts) {
+      if (typeof part?.text === "string") {
+        textParts += 1;
+        textChars += part.text.length;
+      }
+    }
+  }
+  return {
+    candidates: candidates.length,
+    parts,
+    textParts,
+    textChars,
+    finishReasons: finishReasons.filter(Boolean).join(',') || 'none'
+  };
+}
+
+function parseGeminiFlashcardPayload(payload) {
+  const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
+  for (let candidateIndex = 0; candidateIndex < candidates.length; candidateIndex++) {
+    const parts = Array.isArray(candidates[candidateIndex]?.content?.parts) ? candidates[candidateIndex].content.parts : [];
+    const texts = parts.map(part => typeof part?.text === "string" ? part.text : '').filter(Boolean);
+
+    for (const text of texts) {
+      const recovered = recoverGeminiFlashcardText(text);
+      if (recovered) return { ...recovered, candidateIndex };
+    }
+
+    if (texts.length > 1) {
+      const recovered = recoverGeminiFlashcardText(texts.join('\n'));
+      if (recovered) return { ...recovered, candidateIndex };
+    }
+  }
+  return null;
+}
+
 async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
   if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
@@ -498,18 +594,18 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
       signal: controller.signal,
       headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      generationConfig: {
-        temperature: 0.35,
-        maxOutputTokens: 600,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "OBJECT",
-          properties: { question: { type: "STRING" }, answer: { type: "STRING" } },
-          required: ["question", "answer"]
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          temperature: 0.35,
+          maxOutputTokens: 600,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: { question: { type: "STRING" }, answer: { type: "STRING" } },
+            required: ["question", "answer"]
+          }
         }
-      }
       })
     });
   } catch (error) {
@@ -541,19 +637,26 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
     httpError.durationMs = Date.now() - startedAt;
     throw httpError;
   }
+
   const payload = await response.json();
-  const text = payload?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").join("") || "";
-  const parsed = extractFirstJsonObject(text);
-  if (!parsed?.question || !parsed?.answer) {
+  const summary = summarizeGeminiFlashcardPayload(payload);
+  console.info(`Flashcard Gemini response model=${model.id} status=200 candidates=${summary.candidates} parts=${summary.parts} textParts=${summary.textParts} textChars=${summary.textChars} finishReasons=${summary.finishReasons}`);
+
+  const recovered = parseGeminiFlashcardPayload(payload);
+  if (!recovered?.flashcard) {
     const parseError = new Error("Resposta incompleta do Gemini");
     parseError.provider = "gemini";
     parseError.model = model.id;
     parseError.status = 200;
-    parseError.reason = "incomplete JSON response";
+    parseError.reason = `incomplete JSON response finishReasons=${summary.finishReasons} candidates=${summary.candidates} textParts=${summary.textParts} textChars=${summary.textChars}`;
     parseError.durationMs = Date.now() - startedAt;
     throw parseError;
   }
-  return parsed;
+
+  if (recovered.mode !== "json" || recovered.candidateIndex > 0) {
+    console.info(`Flashcard Gemini recovered model=${model.id} mode=${recovered.mode} candidate=${recovered.candidateIndex} finishReasons=${summary.finishReasons}`);
+  }
+  return recovered.flashcard;
 }
 
 function withTimeout(promise, ms, label) {
