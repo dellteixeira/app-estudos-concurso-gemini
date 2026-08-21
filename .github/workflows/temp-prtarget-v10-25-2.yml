@@ -1,7 +1,8 @@
-name: TEMP PR Target v10.25.2
+name: TEMP Direct Functional v10.25.2
 on:
-  pull_request_target:
-    types: [opened]
+  pull_request:
+    branches: [main]
+    types: [reopened]
 permissions:
   contents: write
 jobs:
@@ -26,10 +27,10 @@ jobs:
           node --check public/js/pdf/pdf-library-ui.js
           npm test
           npm run audit
-      - name: Commit functional files and clean PR scaffolding
+      - name: Commit functional files
         run: |
           rm -f scripts/temp-v10-25-2-direct.py scripts/temp-v10-25-2.py
-          rm -f .github/workflows/temp-apply-v10-25-2-functional.yml .github/workflows/temp-v10-25-2-push.yml
+          rm -f .github/workflows/temp-direct-functional.yml .github/workflows/temp-apply-v10-25-2-functional.yml .github/workflows/temp-v10-25-2-push.yml
           rm -f .v10-25-2-functional-trigger .v10-25-2-prtarget-trigger .v10-25-2-qc-trigger .v10-25-2-trigger .v10-25-2-trigger-2 .v10-25-2-trigger-3 .v10-25-2-trigger-4
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
