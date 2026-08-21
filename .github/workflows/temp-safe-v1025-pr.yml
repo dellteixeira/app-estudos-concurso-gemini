@@ -17,7 +17,9 @@ jobs:
         with:
           node-version: 20
       - name: Apply guarded migration
-        run: python3 scripts/apply-v1025-safe.py
+        run: |
+          python3 scripts/apply-v1025-safe.py
+          python3 scripts/apply-v1025-compat.py
       - name: Validate tests
         run: npm test
       - name: Validate audit
@@ -32,6 +34,6 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/js/pdf/pdf-library-ui.js public/js/pdf/pdf-reader.js src/index.js public/sw.js package.json public/version.json tests/v10-25-library-ai-models.test.cjs
+          git add public/js/pdf/pdf-library-ui.js public/js/pdf/pdf-reader.js src/index.js public/sw.js package.json public/version.json tests/*.test.cjs
           git commit -m 'feat: safe V10.25 library views and multi-model flashcard AI'
           git push origin HEAD:${{ github.head_ref }}
