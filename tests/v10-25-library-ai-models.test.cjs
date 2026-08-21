@@ -17,13 +17,13 @@ test('V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
   assert.match(worker,/@cf\/google\/gemma-4-26b-a4b-it/);
   assert.match(worker,/@cf\/nvidia\/nemotron-3-120b-a12b/);
   assert.match(worker,/@cf\/zai-org\/glm-4\.7-flash/);
-  assert.match(worker,/FLASHCARD_AUTO_CHAIN = \["gemini", "gemma", "glm", "llama"\]/);
+  assert.match(worker,/FLASHCARD_AUTO_CHAIN = \["gemini", "llama"\]/);
   assert.match(worker,/GEMINI_API_KEY/);
   assert.match(worker,/model\.provider === "gemini"/);
   assert.match(pwa,/window\.switchTab = switchTab/);
   assert.match(pwa,/window\.handleLogin = handleLogin/);
   assert.match(pwa,/window\.installPwaApp = installPwaApp/);
   assert.ok(pwa.length>10000,'app-pwa.js não pode ser truncado');
-  assert.equal(JSON.parse(read('package.json')).version,'10.25.0');
-  assert.equal(JSON.parse(read('public/version.json')).version,'10.25.0');
+  assert.equal(JSON.parse(read('package.json')).version,'10.25.1');
+  assert.equal(JSON.parse(read('public/version.json')).version,'10.25.1');
 });

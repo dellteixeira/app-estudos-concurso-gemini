@@ -1,13 +1,13 @@
 // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const FLASHCARD_AI_MODELS = Object.freeze({
-  gemini: { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
+  gemini: { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", provider: "gemini" },
   gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
   nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
   glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
   llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
 });
-const FLASHCARD_AUTO_CHAIN = ["gemini", "gemma", "glm", "llama"];
+const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];
 const MAX_TEXT_CHARS = 110000;
 const MAX_REQUEST_BYTES = 512 * 1024;
 const MAX_MATERIAS = 120;
@@ -15,7 +15,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.25.0";
+const APP_VERSION = "10.25.1";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -439,15 +439,20 @@ function parseFlashcardAIResponse(result) {
 async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
   if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
-    body: JSON.stringify({
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4000);
+  let response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+      body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: "user", parts: [{ text: userPrompt }] }],
       generationConfig: {
         temperature: 0.1,
-        maxOutputTokens: 1600,
+        maxOutputTokens: 700,
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
@@ -455,8 +460,14 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
           required: ["question", "answer"]
         }
       }
-    })
-  });
+      })
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error("Gemini excedeu o limite de 4 segundos");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!response.ok) {
     const detail = cleanText(await response.text(), 500);
     throw new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
@@ -468,6 +479,14 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
   return parsed;
 }
 
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} excedeu o limite de ${ms} ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 async function generateFlashcard(request, env) {
   const user = await authenticateSupabaseUser(request, env);
   if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
@@ -477,7 +496,7 @@ async function generateFlashcard(request, env) {
   }
   let body;
   try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
-  const text = cleanText(body?.text, 12000);
+  const text = cleanText(body?.text, 7000);
   const existingQuestion = cleanText(body?.existingQuestion, 500);
   const materia = cleanText(body?.materia, 180);
   const assunto = cleanText(body?.assunto, 300);
@@ -485,7 +504,7 @@ async function generateFlashcard(request, env) {
   if (text.length < 8) return json({ error: "Selecione um trecho mais completo." }, 422);
   if (requested !== "auto" && !FLASHCARD_AI_MODELS[requested]) return json({ error: "Modelo de IA inválido." }, 400);
   const candidates = requested === "auto" ? FLASHCARD_AUTO_CHAIN : [requested];
-  const systemPrompt = `Você é um especialista sênior em aprendizagem ativa e elaboração de flashcards para concursos públicos brasileiros. Antes de responder, raciocine silenciosamente em cinco etapas: (1) identifique a unidade de conhecimento central; (2) classifique-a como conceito, regra, exceção, requisito, prazo, competência, consequência, comparação, causa/efeito ou pegadinha; (3) separe regra, condições, exceções, números e prazos; (4) formule uma pergunta autossuficiente que exija recuperação ativa sem entregar a resposta; (5) critique a pergunta quanto a ambiguidade, pistas, generalidade e fidelidade ao trecho e reescreva se necessário. Trabalhe EXCLUSIVAMENTE com o trecho-fonte recebido: não invente, não complemente com conhecimento externo e não altere o sentido jurídico. Identifique silenciosamente a unidade de conhecimento central e classifique-a, quando aplicável, como conceito, regra, exceção, requisito, prazo, competência, consequência, comparação, causa/efeito ou pegadinha. Gere UM flashcard atômico e de alta qualidade. A pergunta deve ser autossuficiente, específica, inequívoca, exigir recuperação ativa e evitar formatos vagos ou de sim/não. Preserve na resposta condições, exceções, números, prazos e termos jurídicos essenciais. Se houver matéria/assunto, use-os apenas para contextualização, nunca para acrescentar fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
+  const systemPrompt = `Crie UM flashcard atômico para concurso usando SOMENTE o trecho-fonte, com aprendizagem ativa e recuperação ativa; raciocine silenciosamente em cinco etapas e critique a pergunta antes de responder. Faça pergunta autossuficiente, específica e sem pistas; preserve regra, exceções, requisitos, números, prazos e termos jurídicos essenciais. Não invente nem complemente fatos. Retorne somente JSON válido no formato {"question":"...","answer":"..."}.`;
   const userPrompt = `MATÉRIA (opcional): ${materia || "não informada"}\nASSUNTO (opcional): ${assunto || "não informado"}\nPERGUNTA ATUAL (opcional; melhore se útil): ${existingQuestion || "não fornecida"}\n\nTRECHO-FONTE:\n${text}`;
   const errors = [];
   for (let index = 0; index < candidates.length; index++) {
@@ -494,7 +513,7 @@ async function generateFlashcard(request, env) {
     try {
       const parsed = model.provider === "gemini"
         ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
-        : parseFlashcardAIResponse(await env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 1600 }));
+        : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), 2500, model.label));
       const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
       if (!question || !answer) throw new Error("Resposta incompleta da IA");
       return json({ question, answer, model: `${model.provider === "gemini" ? "Google Gemini" : "Workers AI"} · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
