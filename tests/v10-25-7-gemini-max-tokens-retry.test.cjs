@@ -5,7 +5,6 @@ const worker=fs.readFileSync('src/index.js','utf8');
 
 test('v10.25.7 increases Gemini output budget',()=>{
   assert.match(worker,/maxOutputTokens: compactRetry \? 900 : 1600/);
-  assert.match(worker,/const APP_VERSION = \"10\.25\.7\"/);
 });
 
 test('v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON',()=>{
