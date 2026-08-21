@@ -8,7 +8,7 @@ const sw=fs.readFileSync('public/sw.js','utf8');
 
 test('v10.26.0 builds deterministic evidence before asking AI',()=>{
   const buildPos=worker.indexOf('const evidenceCatalog = buildFlashcardEvidenceCatalog(text)');
-  const promptPos=worker.indexOf('const systemPrompt =');
+  const promptPos=worker.indexOf('const systemPrompt =', buildPos);
   assert.ok(buildPos>0);
   assert.ok(promptPos>buildPos);
   assert.match(worker,/function classifyFlashcardKnowledge\(/);
