@@ -1,17 +1,17 @@
 name: TEMP PR Target v10.25.2
 on:
   pull_request_target:
-    types: [reopened, synchronize]
+    types: [opened]
 permissions:
   contents: write
 jobs:
   apply:
-    if: github.event.pull_request.number == 85 && github.event.pull_request.head.ref == 'fix/v10-25-2-smart-flashcards-mobile-library' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.ref == 'fix/v10-25-2-functional-direct' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fix/v10-25-2-smart-flashcards-mobile-library
+          ref: fix/v10-25-2-functional-direct
           token: ${{ github.token }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
@@ -37,4 +37,4 @@ jobs:
           git add -u scripts .github/workflows .v10-25-2-functional-trigger .v10-25-2-prtarget-trigger .v10-25-2-qc-trigger .v10-25-2-trigger .v10-25-2-trigger-2 .v10-25-2-trigger-3 .v10-25-2-trigger-4 || true
           git diff --cached --quiet && exit 0
           git commit -m "fix: smarter iterative flashcards and reliable mobile library v10.25.2"
-          git push origin HEAD:fix/v10-25-2-smart-flashcards-mobile-library
+          git push origin HEAD:fix/v10-25-2-functional-direct
