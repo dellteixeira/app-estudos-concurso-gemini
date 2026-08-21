@@ -73,8 +73,16 @@ replace('public/js/pdf/pdf-reader.js',"Automático — rápido (Gemini + fallbac
 replace('public/js/pdf/pdf-reader.js','Automático prioriza qualidade e usa fallback se o modelo principal estiver indisponível.','O modelo escolhido é a preferência. Se falhar, o app tenta fallback e, por último, o gerador local sem IA.');
 replace('public/js/pdf/pdf-reader.js',"result.fallbackUsed?`⚠️ Gemini indisponível — gerado por ${result.model||'Workers AI'}. Revise antes de salvar.`:`✅ Gerado por ${result.model||'IA'}. Revise antes de salvar.`","result.provider==='local-deterministic'?`⚠️ IAs externas indisponíveis — pergunta criada pelo ${result.model||'gerador local sem IA'}. Revise antes de salvar.`:result.fallbackUsed?`⚠️ Modelo preferido indisponível — gerado por ${result.model||'IA de fallback'}. Revise antes de salvar.`:`✅ Gerado por ${result.model||'IA'}. Revise antes de salvar.`");
 
-for(const p of ['tests/v10-25-1-gemini-flashcards.test.cjs','tests/v10-25-library-ai-models.test.cjs','tests/v10-25-3-ai-resilience.test.cjs']){
-  let s=read(p).replaceAll('Automático — rápido (Gemini + fallback)','Automático — Gemini 3.6 + fallback').replaceAll('⚠️ Gemini indisponível — gerado por','⚠️ Modelo preferido indisponível — gerado por').replaceAll("'10.25.3'","'10.25.4'").replaceAll('"10.25.3"','"10.25.4"');
+for(const name of fs.readdirSync('tests').filter(name=>name.endsWith('.test.cjs'))){
+  const p=`tests/${name}`;
+  let s=read(p)
+    .replaceAll('10.25.3','10.25.4')
+    .replaceAll('gemini-2.5-flash','gemini-3.6-flash')
+    .replaceAll('Gemini 2.5 Flash','Gemini 3.6 Flash')
+    .replaceAll('gemini-2\\.5-flash','gemini-3\\.6-flash')
+    .replaceAll('Gemini 2\\.5 Flash','Gemini 3\\.6 Flash')
+    .replaceAll('Automático — rápido (Gemini + fallback)','Automático — Gemini 3.6 + fallback')
+    .replaceAll('⚠️ Gemini indisponível — gerado por','⚠️ Modelo preferido indisponível — gerado por');
   write(p,s);
 }
 
