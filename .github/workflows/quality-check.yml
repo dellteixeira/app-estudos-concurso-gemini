@@ -7,72 +7,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Aplicar hotfix temporário nesta PR
-        if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-1-ai-library-hotfix'
-        run: python3 scripts/apply-ai-library-hotfix.py
-      - name: Finalizar compatibilidade v10.25.1
-        if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-1-ai-library-hotfix'
-        run: python3 scripts/finalize-v10-25-1.py
-      - name: Sintaxe crítica
-        id: syntax
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          {
-            node --check src/index.js
-            node --check public/js/pdf/pdf-reader.js
-            node --check public/js/pdf/pdf-library-ui.js
-          } 2>&1 | tee ci-syntax.log
       - name: Testes automatizados
-        id: tests
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          node --test tests/*.test.cjs 2>&1 | tee ci-tests.log
+        run: node --test tests/*.test.cjs
       - name: Auditoria estrutural
-        id: audit
-        continue-on-error: true
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
-        run: |
-          set -o pipefail
-          node scripts/audit-release.mjs 2>&1 | tee ci-audit.log
-      - name: Persistir diagnóstico e hotfix na branch da PR
-        if: always() && github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-1-ai-library-hotfix'
-        run: |
-          {
-            echo '=== SYNTAX ==='
-            cat ci-syntax.log 2>/dev/null || true
-            echo
-            echo '=== TESTS ==='
-            cat ci-tests.log 2>/dev/null || true
-            echo
-            echo '=== AUDIT ==='
-            cat ci-audit.log 2>/dev/null || true
-          } > ci-debug.txt
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/index.js public/js/pdf/pdf-reader.js public/js/pdf/pdf-library-ui.js public/sw.js public/version.json package.json tests/*.test.cjs scripts/finalize-v10-25-1.py ci-debug.txt
-          if ! git diff --cached --quiet; then
-            git commit -m 'fix: finalize v10.25.1 compatibility'
-            git push origin HEAD:${{ github.head_ref }}
-          fi
-      - name: Falhar se qualquer validação falhou
-        if: always()
-        run: |
-          if [ '${{ steps.syntax.outcome }}' != 'success' ] || [ '${{ steps.tests.outcome }}' != 'success' ] || [ '${{ steps.audit.outcome }}' != 'success' ]; then
-            exit 1
-          fi
+        run: node scripts/audit-release.mjs
