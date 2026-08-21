@@ -19,11 +19,11 @@ test('V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
   assert.match(worker,/@cf\/zai-org\/glm-4\.7-flash/);
   assert.match(worker,/FLASHCARD_AUTO_CHAIN = \["gemini", "llama"\]/);
   assert.match(worker,/GEMINI_API_KEY/);
-  assert.match(worker,/model\.provider === "gemini"/);
+  assert.match(worker,/model\?\.provider === "gemini"/);
   assert.match(pwa,/window\.switchTab = switchTab/);
   assert.match(pwa,/window\.handleLogin = handleLogin/);
   assert.match(pwa,/window\.installPwaApp = installPwaApp/);
   assert.ok(pwa.length>10000,'app-pwa.js não pode ser truncado');
-  assert.equal(JSON.parse(read('package.json')).version,'10.25.4');
-  assert.equal(JSON.parse(read('public/version.json')).version,'10.25.4');
+  assert.equal(JSON.parse(read('package.json')).version,'10.25.5');
+  assert.equal(JSON.parse(read('public/version.json')).version,'10.25.5');
 });

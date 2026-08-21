@@ -10,7 +10,7 @@ test('Gemini é a IA principal dos flashcards com fallback seguro',()=>{
   assert.ok(worker.includes('const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"]'));
   assert.ok(worker.includes('responseMimeType: "application/json"'));
   assert.ok(worker.includes('x-goog-api-key'));
-  assert.ok(worker.includes('model.provider === "gemini"'));
+  assert.ok(worker.includes('model?.provider === "gemini"'));
   assert.ok(reader.includes('Gemini 3.6 Flash'));
   assert.ok(reader.includes('Automático — Gemini 3.6 + fallback'));
 });
