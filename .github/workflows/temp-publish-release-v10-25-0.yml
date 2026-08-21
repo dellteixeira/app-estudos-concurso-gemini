@@ -11,19 +11,26 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Publish GitHub Release
+      - name: Publish and verify GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: v10.25.0
           TARGET_SHA: 25bd02d6a65342c13563d4e755ba6262883aa68e
         run: |
           set -euo pipefail
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; nothing to do."
-            exit 0
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$TARGET_SHA" \
+              --title "V10.25.0 — Backup Canônico" \
+              --notes $'Backup canônico da versão 10.25.0 do Estudo Adaptativo Inteligente.\n\nCommit protegido: 25bd02d6a65342c13563d4e755ba6262883aa68e\n\nInclui a Biblioteca com atualização automática, modos Cards/Lista e IA multi-modelo para flashcards.\n\nUse os arquivos Source code (zip) ou Source code (tar.gz) disponibilizados automaticamente pelo GitHub para restauração integral do código.'
           fi
-          gh release create "$TAG" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$TARGET_SHA" \
-            --title "V10.25.0 — Backup Canônico" \
-            --notes $'Backup canônico da versão 10.25.0 do Estudo Adaptativo Inteligente.\n\nCommit protegido: 25bd02d6a65342c13563d4e755ba6262883aa68e\n\nInclui a Biblioteca com atualização automática, modos Cards/Lista e IA multi-modelo para flashcards.\n\nUse os arquivos Source code (zip) ou Source code (tar.gz) disponibilizados automaticamente pelo GitHub para restauração integral do código.'
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
+          printf '%s\n' '# Release v10.25.0 criado com sucesso' '' 'Tag: v10.25.0' 'Commit: 25bd02d6a65342c13563d4e755ba6262883aa68e' > RELEASE_V10_25_0_CREATED.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RELEASE_V10_25_0_CREATED.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: confirm canonical v10.25.0 release'
+            git push origin HEAD:chore/publish-release-v10-25-0
+          fi
