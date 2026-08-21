@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const read=p=>fs.readFileSync(p,'utf8');
 const write=(p,s)=>fs.writeFileSync(p,s);
@@ -73,7 +74,7 @@ replace('public/js/pdf/pdf-reader.js',"Automático — rápido (Gemini + fallbac
 replace('public/js/pdf/pdf-reader.js','Automático prioriza qualidade e usa fallback se o modelo principal estiver indisponível.','O modelo escolhido é a preferência. Se falhar, o app tenta fallback e, por último, o gerador local sem IA.');
 replace('public/js/pdf/pdf-reader.js',"result.fallbackUsed?`⚠️ Gemini indisponível — gerado por ${result.model||'Workers AI'}. Revise antes de salvar.`:`✅ Gerado por ${result.model||'IA'}. Revise antes de salvar.`","result.provider==='local-deterministic'?`⚠️ IAs externas indisponíveis — pergunta criada pelo ${result.model||'gerador local sem IA'}. Revise antes de salvar.`:result.fallbackUsed?`⚠️ Modelo preferido indisponível — gerado por ${result.model||'IA de fallback'}. Revise antes de salvar.`:`✅ Gerado por ${result.model||'IA'}. Revise antes de salvar.`");
 
-for(const name of fs.readdirSync('tests').filter(name=>name.endsWith('.test.cjs'))){
+for(const name of fs.readdirSync('tests').filter(name=>name.endsWith('.test.cjs') && name!=='v10-25-4-ai-local-fallback.test.cjs')){
   const p=`tests/${name}`;
   let s=read(p)
     .replaceAll('10.25.3','10.25.4')
@@ -86,4 +87,5 @@ for(const name of fs.readdirSync('tests').filter(name=>name.endsWith('.test.cjs'
   write(p,s);
 }
 
+execFileSync('git',['add','tests'],{stdio:'inherit'});
 console.log('v10.25.4 patch applied');
