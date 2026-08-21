@@ -23,6 +23,9 @@ jobs:
       - name: Aplicar hotfix temporário nesta PR
         if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-1-ai-library-hotfix'
         run: python3 scripts/apply-ai-library-hotfix.py
+      - name: Finalizar compatibilidade v10.25.1
+        if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-1-ai-library-hotfix'
+        run: python3 scripts/finalize-v10-25-1.py
       - name: Sintaxe crítica
         id: syntax
         continue-on-error: true
@@ -62,9 +65,9 @@ jobs:
           } > ci-debug.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/index.js public/js/pdf/pdf-reader.js public/js/pdf/pdf-library-ui.js public/sw.js public/version.json package.json tests/v10-25-1-gemini-flashcards.test.cjs tests/library-activation.test.cjs tests/v10-25-1-ai-library-hotfix.test.cjs ci-debug.txt
+          git add src/index.js public/js/pdf/pdf-reader.js public/js/pdf/pdf-library-ui.js public/sw.js public/version.json package.json tests/*.test.cjs scripts/finalize-v10-25-1.py ci-debug.txt
           if ! git diff --cached --quiet; then
-            git commit -m 'ci: persist hotfix diagnostics'
+            git commit -m 'fix: finalize v10.25.1 compatibility'
             git push origin HEAD:${{ github.head_ref }}
           fi
       - name: Falhar se qualquer validação falhou
