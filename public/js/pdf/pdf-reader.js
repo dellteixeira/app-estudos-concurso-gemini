@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),core=()=>global.PdfStudyCore,ann=()=>global.PdfStudyAnnotations;
 const FLASHCARD_AI_MODEL_KEY='pdfFlashcardAiModel';
-const FLASHCARD_AI_MODEL_OPTIONS=[['auto','Automático — recomendado'],['gemma','Gemma 4 26B — equilíbrio'],['nemotron','Nemotron 3 120B — elaborado'],['glm','GLM-4.7 Flash — rápido'],['llama','Llama 3.1 8B Fast — econômico']];
+const FLASHCARD_AI_MODEL_OPTIONS=[['auto','Automático — Gemini + fallback'],['gemini','Gemini 2.5 Flash — melhor qualidade'],['gemma','Gemma 4 26B — equilíbrio'],['nemotron','Nemotron 3 120B — elaborado'],['glm','GLM-4.7 Flash — rápido'],['llama','Llama 3.1 8B Fast — econômico']];
 let pdfDoc=null,pageObserver=null,baseViewport=null,renderToken=0,currentScale=1,nativeObjectUrl=null,flashcardDraft=null,loadTimer=null,searchIndex=new Map(),searchResults=[],searchCursor=-1,currentSearchQuery='',pinchBound=false,pinchState={points:new Map(),active:false,startDistance:0,startScale:1,targetScale:1,anchorX:0,anchorY:0,scrollLeft:0,scrollTop:0};
 const blank=()=>({doc:null,page:1,total:0,viewMode:'width',annotations:[],bookmarks:[],selected:null,openedAt:0,importedNotes:[],openToken:0});let state=blank();
 function currentContest(){return $('concursoSelect')?.value||global.getLastStudiedConcurso?.()||'Concurso Geral'}
