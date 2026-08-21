@@ -7,19 +7,39 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Aplicar hotfix temporário nesta PR
+        if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-1-ai-library-hotfix'
+        run: python3 scripts/apply-ai-library-hotfix.py
+      - name: Sintaxe crítica
+        run: |
+          node --check src/index.js
+          node --check public/js/pdf/pdf-reader.js
+          node --check public/js/pdf/pdf-library-ui.js
       - name: Testes automatizados
         run: node --test tests/*.test.cjs
       - name: Auditoria estrutural
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: node scripts/audit-release.mjs
+      - name: Persistir hotfix na branch da PR
+        if: github.event_name == 'pull_request' && github.head_ref == 'fix/v10-25-1-ai-library-hotfix'
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/index.js public/js/pdf/pdf-reader.js public/js/pdf/pdf-library-ui.js public/sw.js public/version.json package.json tests/v10-25-1-gemini-flashcards.test.cjs tests/library-activation.test.cjs tests/v10-25-1-ai-library-hotfix.test.cjs
+          git commit -m 'fix: accelerate flashcard AI and restore global PDF library'
+          git push origin HEAD:${{ github.head_ref }}
