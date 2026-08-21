@@ -5,67 +5,67 @@ TAP version 13
 # Subtest: exclusão granular seleciona somente o assunto escolhido
 ok 1 - exclusão granular seleciona somente o assunto escolhido
   ---
-  duration_ms: 1.471929
+  duration_ms: 1.510012
   type: 'test'
   ...
 # Subtest: exclusão granular não remove assunto homônimo de outra matéria
 ok 2 - exclusão granular não remove assunto homônimo de outra matéria
   ---
-  duration_ms: 0.193832
+  duration_ms: 0.214069
   type: 'test'
   ...
 # Subtest: backup Supabase preserva banco e está preparado para Storage privado
 ok 3 - backup Supabase preserva banco e está preparado para Storage privado
   ---
-  duration_ms: 1.388624
+  duration_ms: 0.703692
   type: 'test'
   ...
 # Subtest: baseline não inventa schema remoto e possui capturador verificável
 ok 4 - baseline não inventa schema remoto e possui capturador verificável
   ---
-  duration_ms: 1.269691
+  duration_ms: 0.747763
   type: 'test'
   ...
 # Subtest: RPC versionada de exclusão usa auth.uid e cobre tabelas conhecidas
 ok 5 - RPC versionada de exclusão usa auth.uid e cobre tabelas conhecidas
   ---
-  duration_ms: 0.448667
+  duration_ms: 0.263854
   type: 'test'
   ...
 # Subtest: exclusão de conta prepara limpeza do bucket study-pdfs antes do auth.users
 ok 6 - exclusão de conta prepara limpeza do bucket study-pdfs antes do auth.users
   ---
-  duration_ms: 0.419934
+  duration_ms: 0.201617
   type: 'test'
   ...
 # Subtest: cabeçalho deixa sincronização fora da barra de concurso
 ok 7 - cabeçalho deixa sincronização fora da barra de concurso
   ---
-  duration_ms: 2.336464
+  duration_ms: 1.459075
   type: 'test'
   ...
 # Subtest: pipeline Supabase valida migrations em PR e aplica somente após merge na main
 ok 8 - pipeline Supabase valida migrations em PR e aplica somente após merge na main
   ---
-  duration_ms: 0.415155
+  duration_ms: 0.192785
   type: 'test'
   ...
 # Subtest: Biblioteca usa somente o hook oficial de ativação da guia
 ok 9 - Biblioteca usa somente o hook oficial de ativação da guia
   ---
-  duration_ms: 2.009452
+  duration_ms: 1.453543
   type: 'test'
   ...
 # Subtest: reabrir Biblioteca sempre volta ao acervo global e recarrega documentos
 ok 10 - reabrir Biblioteca sempre volta ao acervo global e recarrega documentos
   ---
-  duration_ms: 0.454308
+  duration_ms: 0.442184
   type: 'test'
   ...
 # Subtest: v10.24 biblioteca e reader
 not ok 11 - v10.24 biblioteca e reader
   ---
-  duration_ms: 3.778686
+  duration_ms: 3.502277
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/library-reader-v10-24.test.cjs:3:1'
   failureType: 'testCodeFailure'
@@ -92,385 +92,385 @@ not ok 11 - v10.24 biblioteca e reader
 # Subtest: questões não valem metade do progresso com um único registro
 ok 12 - questões não valem metade do progresso com um único registro
   ---
-  duration_ms: 1.385647
+  duration_ms: 1.023226
   type: 'test'
   ...
 # Subtest: volume e desempenho elevam progressivamente a contribuição
 ok 13 - volume e desempenho elevam progressivamente a contribuição
   ---
-  duration_ms: 0.296695
+  duration_ms: 0.248702
   type: 'test'
   ...
 # Subtest: checkbox legado mantém contribuição mínima e não domínio artificial
 ok 14 - checkbox legado mantém contribuição mínima e não domínio artificial
   ---
-  duration_ms: 0.221473
+  duration_ms: 0.15886
   type: 'test'
   ...
 # Subtest: minutos usam a primeira duração válida e arredondam corretamente
 ok 15 - minutos usam a primeira duração válida e arredondam corretamente
   ---
-  duration_ms: 1.486746
+  duration_ms: 1.003867
   type: 'test'
   ...
 # Subtest: total permanente soma somente minutos válidos de studySessions
 ok 16 - total permanente soma somente minutos válidos de studySessions
   ---
-  duration_ms: 0.3589
+  duration_ms: 0.358367
   type: 'test'
   ...
 # Subtest: Reader nunca usa vínculo de outro concurso como fallback
 ok 17 - Reader nunca usa vínculo de outro concurso como fallback
   ---
-  duration_ms: 1.560514
+  duration_ms: 1.379043
   type: 'test'
   ...
 # Subtest: Flashcard independe de vínculo e exportação mantém contexto válido
 ok 18 - Flashcard independe de vínculo e exportação mantém contexto válido
   ---
-  duration_ms: 0.493742
+  duration_ms: 0.390189
   type: 'test'
   ...
 # Subtest: hardening RLS valida propriedade do PDF e torna versões imutáveis ao cliente
 ok 19 - hardening RLS valida propriedade do PDF e torna versões imutáveis ao cliente
   ---
-  duration_ms: 0.431426
+  duration_ms: 0.352933
   type: 'test'
   ...
 # Subtest: fundação PDF cria Workspaces, documentos e progresso com RLS
 ok 20 - fundação PDF cria Workspaces, documentos e progresso com RLS
   ---
-  duration_ms: 1.641857
+  duration_ms: 1.185574
   type: 'test'
   ...
 # Subtest: bucket study-pdfs é privado, limitado a PDF e 100 MiB
 ok 21 - bucket study-pdfs é privado, limitado a PDF e 100 MiB
   ---
-  duration_ms: 0.391802
+  duration_ms: 0.220057
   type: 'test'
   ...
 # Subtest: metadados impõem limites e evitam caminhos duplicados por usuário
 ok 22 - metadados impõem limites e evitam caminhos duplicados por usuário
   ---
-  duration_ms: 0.20886
+  duration_ms: 0.141313
   type: 'test'
   ...
 # Subtest: exclusão de dados cobre fundação PDF na ordem correta
 ok 23 - exclusão de dados cobre fundação PDF na ordem correta
   ---
-  duration_ms: 0.430764
+  duration_ms: 0.178789
   type: 'test'
   ...
 # Subtest: serviços JS de fundação são privados, limitam PDF e constroem caminho por user_id
 ok 24 - serviços JS de fundação são privados, limitam PDF e constroem caminho por user_id
   ---
-  duration_ms: 0.368829
+  duration_ms: 0.180444
   type: 'test'
   ...
 # Subtest: Biblioteca tem escopo global e vínculo contextual
 ok 25 - Biblioteca tem escopo global e vínculo contextual
   ---
-  duration_ms: 2.016726
+  duration_ms: 2.15536
   type: 'test'
   ...
 # Subtest: PDF global não carrega concurso workspace matéria ou assunto
 ok 26 - PDF global não carrega concurso workspace matéria ou assunto
   ---
-  duration_ms: 0.588969
+  duration_ms: 0.524613
   type: 'test'
   ...
 # Subtest: Storage novo independe de workspace
 ok 27 - Storage novo independe de workspace
   ---
-  duration_ms: 0.341989
+  duration_ms: 0.272879
   type: 'test'
   ...
 # Subtest: link table permite múltiplos contextos sem duplicar PDF
 ok 28 - link table permite múltiplos contextos sem duplicar PDF
   ---
-  duration_ms: 0.438509
+  duration_ms: 0.35782
   type: 'test'
   ...
 # Subtest: excluir concurso remove somente vínculos
 ok 29 - excluir concurso remove somente vínculos
   ---
-  duration_ms: 3.48597
+  duration_ms: 2.402149
   type: 'test'
   ...
 # Subtest: excluir PDF global remove arquivo e documento explicitamente
 ok 30 - excluir PDF global remove arquivo e documento explicitamente
   ---
-  duration_ms: 0.29433
+  duration_ms: 0.212896
   type: 'test'
   ...
 # Subtest: upload PDF tem dropzone explícita e seletor múltiplo acessível
 ok 31 - upload PDF tem dropzone explícita e seletor múltiplo acessível
   ---
-  duration_ms: 1.706006
+  duration_ms: 1.6932
   type: 'test'
   ...
 # Subtest: modal de upload garante Workspace padrão e permite criar Workspace inline
 ok 32 - modal de upload garante Workspace padrão e permite criar Workspace inline
   ---
-  duration_ms: 0.736065
+  duration_ms: 0.747341
   type: 'test'
   ...
 # Subtest: upload modal preserva Biblioteca Global e abre Reader interno
 ok 33 - upload modal preserva Biblioteca Global e abre Reader interno
   ---
-  duration_ms: 0.907495
+  duration_ms: 1.068865
   type: 'test'
   ...
 # Subtest: Biblioteca mantém PDFs visíveis quando a releitura remota falha
 ok 34 - Biblioteca mantém PDFs visíveis quando a releitura remota falha
   ---
-  duration_ms: 0.634154
+  duration_ms: 0.658777
   type: 'test'
   ...
 # Subtest: Workspace padrão é idempotente e corrida 23505 é recuperada
 ok 35 - Workspace padrão é idempotente e corrida 23505 é recuperada
   ---
-  duration_ms: 0.302805
+  duration_ms: 0.347702
   type: 'test'
   ...
 # Subtest: Biblioteca abre global por padrão e Workspace não bloqueia PDFs
 ok 36 - Biblioteca abre global por padrão e Workspace não bloqueia PDFs
   ---
-  duration_ms: 0.644133
+  duration_ms: 0.671139
   type: 'test'
   ...
 # Subtest: Biblioteca usa cache local para renderização quase instantânea antes da sincronização
 ok 37 - Biblioteca usa cache local para renderização quase instantânea antes da sincronização
   ---
-  duration_ms: 0.613065
+  duration_ms: 0.479517
   type: 'test'
   ...
 # Subtest: Biblioteca carrega links e progresso em paralelo e prioriza cache no first paint
 ok 38 - Biblioteca carrega links e progresso em paralelo e prioriza cache no first paint
   ---
-  duration_ms: 0.467112
+  duration_ms: 1.464495
   type: 'test'
   ...
 # Subtest: ações da Biblioteca não estouram no mobile com quatro comandos
 ok 39 - ações da Biblioteca não estouram no mobile com quatro comandos
   ---
-  duration_ms: 0.260506
+  duration_ms: 0.280418
   type: 'test'
   ...
 # Subtest: upload em lote aceita múltiplos PDFs com concorrência controlada
 ok 40 - upload em lote aceita múltiplos PDFs com concorrência controlada
   ---
-  duration_ms: 1.730251
+  duration_ms: 1.212189
   type: 'test'
   ...
 # Subtest: Biblioteca permite seleção múltipla e exclusão em lote
 ok 41 - Biblioteca permite seleção múltipla e exclusão em lote
   ---
-  duration_ms: 1.07136
+  duration_ms: 0.731036
   type: 'test'
   ...
 # Subtest: upload em lote diagnostica falha por arquivo com código etapa e mensagem amigável
 ok 42 - upload em lote diagnostica falha por arquivo com código etapa e mensagem amigável
   ---
-  duration_ms: 1.091589
+  duration_ms: 0.760723
   type: 'test'
   ...
 # Subtest: lote não aborta por um PDF inválido e permite retry somente das falhas
 ok 43 - lote não aborta por um PDF inválido e permite retry somente das falhas
   ---
-  duration_ms: 0.366765
+  duration_ms: 0.294157
   type: 'test'
   ...
 # Subtest: diagnóstico detecta assinatura PDF inválida antes do Storage e permite copiar relatório
 ok 44 - diagnóstico detecta assinatura PDF inválida antes do Storage e permite copiar relatório
   ---
-  duration_ms: 0.335146
+  duration_ms: 0.365852
   type: 'test'
   ...
 # Subtest: upload de PDF permite destino somente no Workspace sem matéria obrigatória
 ok 45 - upload de PDF permite destino somente no Workspace sem matéria obrigatória
   ---
-  duration_ms: 0.646728
+  duration_ms: 0.824493
   type: 'test'
   ...
 # Subtest: upload desfaz falha parcial sem usar catch direto em query builder do Supabase
 ok 46 - upload desfaz falha parcial sem usar catch direto em query builder do Supabase
   ---
-  duration_ms: 0.297676
+  duration_ms: 0.22811
   type: 'test'
   ...
 # Subtest: serviço de vínculos cria, remove e sincroniza concurso
 ok 47 - serviço de vínculos cria, remove e sincroniza concurso
   ---
-  duration_ms: 1.656754
+  duration_ms: 1.369356
   type: 'test'
   ...
 # Subtest: migration desacopla colunas contextuais de pdf_documents
 ok 48 - migration desacopla colunas contextuais de pdf_documents
   ---
-  duration_ms: 0.435934
+  duration_ms: 0.36113
   type: 'test'
   ...
 # Subtest: RPC de exclusão completa inclui pdf_document_links
 ok 49 - RPC de exclusão completa inclui pdf_document_links
   ---
-  duration_ms: 0.276666
+  duration_ms: 0.22182
   type: 'test'
   ...
 # Subtest: Fase 2 remove CSS de renderers obsoletos e preserva renderer atual
 ok 50 - Fase 2 remove CSS de renderers obsoletos e preserva renderer atual
   ---
-  duration_ms: 1.749366
+  duration_ms: 1.223447
   type: 'test'
   ...
 # Subtest: Fase 2 preserva controles e correções atuais
 ok 51 - Fase 2 preserva controles e correções atuais
   ---
-  duration_ms: 0.415055
+  duration_ms: 0.334322
   type: 'test'
   ...
 # Subtest: auditoria pós-Fase 2 mantém renderer próprio e elimina assinaturas visuais antigas
 ok 52 - auditoria pós-Fase 2 mantém renderer próprio e elimina assinaturas visuais antigas
   ---
-  duration_ms: 0.353681
+  duration_ms: 0.249094
   type: 'test'
   ...
 # Subtest: Biblioteca usa renderer próprio sobre o núcleo PDF.js
 ok 53 - Biblioteca usa renderer próprio sobre o núcleo PDF.js
   ---
-  duration_ms: 4.495189
+  duration_ms: 3.027955
   type: 'test'
   ...
 # Subtest: renderer próprio cria páginas progressivas sem restrições de container
 ok 54 - renderer próprio cria páginas progressivas sem restrições de container
   ---
-  duration_ms: 0.802579
+  duration_ms: 0.676145
   type: 'test'
   ...
 # Subtest: Reader captura seleção direta e mantém área de transferência como fallback
 ok 55 - Reader captura seleção direta e mantém área de transferência como fallback
   ---
-  duration_ms: 1.18282
+  duration_ms: 0.838572
   type: 'test'
   ...
 # Subtest: Reader mantém marca-texto sublinhado anotação flashcard e troca de ajuste
 ok 56 - Reader mantém marca-texto sublinhado anotação flashcard e troca de ajuste
   ---
-  duration_ms: 1.560414
+  duration_ms: 1.183021
   type: 'test'
   ...
 # Subtest: barra de estudo permanece visível antes e depois da seleção
 ok 57 - barra de estudo permanece visível antes e depois da seleção
   ---
-  duration_ms: 2.713628
+  duration_ms: 1.713495
   type: 'test'
   ...
 # Subtest: flashcard permite matéria e assunto opcionais no modal
 ok 58 - flashcard permite matéria e assunto opcionais no modal
   ---
-  duration_ms: 1.338309
+  duration_ms: 1.193168
   type: 'test'
   ...
 # Subtest: nota é pontual e sublinhado não entra no painel ou exportação
 ok 59 - nota é pontual e sublinhado não entra no painel ou exportação
   ---
-  duration_ms: 0.655764
+  duration_ms: 0.456916
   type: 'test'
   ...
 # Subtest: marca-texto oferece cor e opacidade configuráveis
 ok 60 - marca-texto oferece cor e opacidade configuráveis
   ---
-  duration_ms: 1.269781
+  duration_ms: 0.880801
   type: 'test'
   ...
 # Subtest: anotações PDF têm RLS e versionamento
 ok 61 - anotações PDF têm RLS e versionamento
   ---
-  duration_ms: 0.671294
+  duration_ms: 0.434377
   type: 'test'
   ...
 # Subtest: Reader próprio controla página e escala sem PDFViewer
 ok 62 - Reader próprio controla página e escala sem PDFViewer
   ---
-  duration_ms: 1.003674
+  duration_ms: 0.738887
   type: 'test'
   ...
 # Subtest: seleção copiada alimenta flashcard e pergunta plausível
 ok 63 - seleção copiada alimenta flashcard e pergunta plausível
   ---
-  duration_ms: 1.208317
+  duration_ms: 0.809692
   type: 'test'
   ...
 # Subtest: flashcard de trecho usa pergunta contextual sem fallback genérico
 ok 64 - flashcard de trecho usa pergunta contextual sem fallback genérico
   ---
-  duration_ms: 1.061592
+  duration_ms: 0.847024
   type: 'test'
   ...
 # Subtest: flashcard do PDF salva a partir do modal e mantém a Biblioteca aberta
 ok 65 - flashcard do PDF salva a partir do modal e mantém a Biblioteca aberta
   ---
-  duration_ms: 0.956807
+  duration_ms: 0.757026
   type: 'test'
   ...
 # Subtest: botão de marcador de página comunica função e estado
 ok 66 - botão de marcador de página comunica função e estado
   ---
-  duration_ms: 0.381012
+  duration_ms: 0.901484
   type: 'test'
   ...
 # Subtest: Biblioteca estabiliza loads concorrentes e concurso usa seletor atual
 ok 67 - Biblioteca estabiliza loads concorrentes e concurso usa seletor atual
   ---
-  duration_ms: 0.305821
+  duration_ms: 0.249481
   type: 'test'
   ...
 # Subtest: upload modal tem limites responsivos e sem overflow horizontal
 ok 68 - upload modal tem limites responsivos e sem overflow horizontal
   ---
-  duration_ms: 0.300371
+  duration_ms: 0.187518
   type: 'test'
   ...
 # Subtest: Reader abre Blob privado sem expor URL assinada
 ok 69 - Reader abre Blob privado sem expor URL assinada
   ---
-  duration_ms: 0.351516
+  duration_ms: 0.238552
   type: 'test'
   ...
 # Subtest: Reader mobile usa Pointer Events para pinch sem assistente touch legado
 ok 70 - Reader mobile usa Pointer Events para pinch sem assistente touch legado
   ---
-  duration_ms: 0.654943
+  duration_ms: 0.476344
   type: 'test'
   ...
 # Subtest: seleção usa renderTextLayer e gera retângulos persistentes
 ok 71 - seleção usa renderTextLayer e gera retângulos persistentes
   ---
-  duration_ms: 0.387013
+  duration_ms: 0.272596
   type: 'test'
   ...
 # Subtest: anotação não desenha ícone sobre o PDF e navega ao ponto exato
 ok 72 - anotação não desenha ícone sobre o PDF e navega ao ponto exato
   ---
-  duration_ms: 0.472031
+  duration_ms: 0.285862
   type: 'test'
   ...
 # Subtest: marca-texto e sublinhado podem ser removidos pelo painel ou pela própria marca
 ok 73 - marca-texto e sublinhado podem ser removidos pelo painel ou pela própria marca
   ---
-  duration_ms: 0.459007
+  duration_ms: 0.32004
   type: 'test'
   ...
 # Subtest: marcações sobrevivem a falha de rede e sincronizam depois
 ok 74 - marcações sobrevivem a falha de rede e sincronizam depois
   ---
-  duration_ms: 0.275915
+  duration_ms: 0.168576
   type: 'test'
   ...
 # Subtest: flashcard usa endpoint de IA dedicado com fallback local editável
 not ok 75 - flashcard usa endpoint de IA dedicado com fallback local editável
   ---
-  duration_ms: 3.567211
+  duration_ms: 2.389566
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/pdf-reader.test.cjs:33:1'
   failureType: 'testCodeFailure'
@@ -1360,19 +1360,19 @@ not ok 75 - flashcard usa endpoint de IA dedicado com fallback local editável
 # Subtest: Reader oferece zoom visível e localização de frases completas
 ok 76 - Reader oferece zoom visível e localização de frases completas
   ---
-  duration_ms: 1.401647
+  duration_ms: 0.988088
   type: 'test'
   ...
 # Subtest: ESC ENTER e Ctrl F funcionam no Reader e nos modais
 ok 77 - ESC ENTER e Ctrl F funcionam no Reader e nos modais
   ---
-  duration_ms: 0.591835
+  duration_ms: 3.168697
   type: 'test'
   ...
 # Subtest: motor de flashcard faz crítica silenciosa e informa IA real ou fallback
 not ok 78 - motor de flashcard faz crítica silenciosa e informa IA real ou fallback
   ---
-  duration_ms: 1.991328
+  duration_ms: 0.82635
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/pdf-reader.test.cjs:39:1'
   failureType: 'testCodeFailure'
@@ -2262,73 +2262,73 @@ not ok 78 - motor de flashcard faz crítica silenciosa e informa IA real ou fall
 # Subtest: URL temporária do PDF é revogada ao fechar o Reader
 ok 79 - URL temporária do PDF é revogada ao fechar o Reader
   ---
-  duration_ms: 0.425224
+  duration_ms: 0.308428
   type: 'test'
   ...
 # Subtest: nomes seguem ordem canônica e desconhecidos ficam ao final alfabeticamente
 ok 80 - nomes seguem ordem canônica e desconhecidos ficam ao final alfabeticamente
   ---
-  duration_ms: 1.716124
+  duration_ms: 1.688156
   type: 'test'
   ...
 # Subtest: ordenação remove duplicatas sem alterar prioridade
 ok 81 - ordenação remove duplicatas sem alterar prioridade
   ---
-  duration_ms: 0.169757
+  duration_ms: 0.234974
   type: 'test'
   ...
 # Subtest: Reader é core asset network-first no Service Worker
 ok 82 - Reader é core asset network-first no Service Worker
   ---
-  duration_ms: 1.834496
+  duration_ms: 1.398449
   type: 'test'
   ...
 # Subtest: Reader próprio faz parte do APP_SHELL offline
 ok 83 - Reader próprio faz parte do APP_SHELL offline
   ---
-  duration_ms: 0.370902
+  duration_ms: 0.251769
   type: 'test'
   ...
 # Subtest: PDF.js possui rotas locais com fallback e sem PDFium
 ok 84 - PDF.js possui rotas locais com fallback e sem PDFium
   ---
-  duration_ms: 1.691578
+  duration_ms: 1.216122
   type: 'test'
   ...
 # Subtest: diagnóstico ignora tópicos removidos do edital ativo
 ok 85 - diagnóstico ignora tópicos removidos do edital ativo
   ---
-  duration_ms: 2.287662
+  duration_ms: 1.492938
   type: 'test'
   ...
 # Subtest: domínio exige evidência objetiva suficiente
 ok 86 - domínio exige evidência objetiva suficiente
   ---
-  duration_ms: 0.415536
+  duration_ms: 0.261363
   type: 'test'
   ...
 # Subtest: duas recuperações positivas também constituem evidência de domínio
 ok 87 - duas recuperações positivas também constituem evidência de domínio
   ---
-  duration_ms: 0.2407
+  duration_ms: 0.147139
   type: 'test'
   ...
 # Subtest: merge de sessões deduplica por id e preserva versão primária
 ok 88 - merge de sessões deduplica por id e preserva versão primária
   ---
-  duration_ms: 33.854289
+  duration_ms: 58.124976
   type: 'test'
   ...
 # Subtest: merge deduplica legado por fingerprint quando não existe id
 ok 89 - merge deduplica legado por fingerprint quando não existe id
   ---
-  duration_ms: 0.38525
+  duration_ms: 0.250211
   type: 'test'
   ...
 # Subtest: v10.24.1 layout aprovado
 not ok 90 - v10.24.1 layout aprovado
   ---
-  duration_ms: 4.299389
+  duration_ms: 2.580241
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-1-layout-fix.test.cjs:1:141'
   failureType: 'testCodeFailure'
@@ -2355,43 +2355,43 @@ not ok 90 - v10.24.1 layout aprovado
 # Subtest: salvar flashcard mantém o leitor da Biblioteca aberto
 ok 91 - salvar flashcard mantém o leitor da Biblioteca aberto
   ---
-  duration_ms: 1.343739
+  duration_ms: 0.936148
   type: 'test'
   ...
 # Subtest: Reader mobile inicia com PDF visível e painel recolhido
 ok 92 - Reader mobile inicia com PDF visível e painel recolhido
   ---
-  duration_ms: 1.664038
+  duration_ms: 1.156542
   type: 'test'
   ...
 # Subtest: Reader mobile mostra todas as ferramentas sem rolagem horizontal obrigatória
 ok 93 - Reader mobile mostra todas as ferramentas sem rolagem horizontal obrigatória
   ---
-  duration_ms: 0.33739
+  duration_ms: 0.211559
   type: 'test'
   ...
 # Subtest: Ações mobile do cabeçalho e edital usam grids harmônicos
 ok 94 - Ações mobile do cabeçalho e edital usam grids harmônicos
   ---
-  duration_ms: 0.831854
+  duration_ms: 0.572079
   type: 'test'
   ...
 # Subtest: Reader mobile possui pinch-to-zoom por dois toques
 ok 95 - Reader mobile possui pinch-to-zoom por dois toques
   ---
-  duration_ms: 1.787228
+  duration_ms: 1.431859
   type: 'test'
   ...
 # Subtest: pinch preserva ponto focal e navegação de um dedo
 ok 96 - pinch preserva ponto focal e navegação de um dedo
   ---
-  duration_ms: 0.387313
+  duration_ms: 0.332939
   type: 'test'
   ...
 # Subtest: v10.24.7 painel e botões compactos
 not ok 97 - v10.24.7 painel e botões compactos
   ---
-  duration_ms: 3.563975
+  duration_ms: 2.065676
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-2-panel-buttons.test.cjs:1:141'
   failureType: 'testCodeFailure'
@@ -2418,7 +2418,7 @@ not ok 97 - v10.24.7 painel e botões compactos
 # Subtest: v10.24.7 painel não corta textos nem ações
 not ok 98 - v10.24.7 painel não corta textos nem ações
   ---
-  duration_ms: 3.712733
+  duration_ms: 2.347668
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-3-panel-overflow.test.cjs:1:141'
   failureType: 'testCodeFailure'
@@ -2445,7 +2445,7 @@ not ok 98 - v10.24.7 painel não corta textos nem ações
 # Subtest: v10.24.7 preserva seleção ao clicar em Anotação
 not ok 99 - v10.24.7 preserva seleção ao clicar em Anotação
   ---
-  duration_ms: 3.710279
+  duration_ms: 2.492388
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-4-annotation-selection.test.cjs:1:141'
   failureType: 'testCodeFailure'
@@ -2472,7 +2472,7 @@ not ok 99 - v10.24.7 preserva seleção ao clicar em Anotação
 # Subtest: v10.24.7 abre Anotação sem clipboard
 not ok 100 - v10.24.7 abre Anotação sem clipboard
   ---
-  duration_ms: 4.012103
+  duration_ms: 2.364599
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-5-note-direct-editor.test.cjs:1:141'
   failureType: 'testCodeFailure'
@@ -2499,7 +2499,7 @@ not ok 100 - v10.24.7 abre Anotação sem clipboard
 # Subtest: v10.24.7 remove data duplicada do cabeçalho e mantém retenção
 not ok 101 - v10.24.7 remove data duplicada do cabeçalho e mantém retenção
   ---
-  duration_ms: 4.200665
+  duration_ms: 2.307159
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-6-remove-header-exam-date.test.cjs:1:141'
   failureType: 'testCodeFailure'
@@ -2526,7 +2526,7 @@ not ok 101 - v10.24.7 remove data duplicada do cabeçalho e mantém retenção
 # Subtest: v10.24.7 biblioteca atualiza ao abrir a guia sem ativação duplicada
 not ok 102 - v10.24.7 biblioteca atualiza ao abrir a guia sem ativação duplicada
   ---
-  duration_ms: 3.301235
+  duration_ms: 2.545612
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-7-library-auto-load.test.cjs:1:141'
   failureType: 'testCodeFailure'
@@ -2553,19 +2553,19 @@ not ok 102 - v10.24.7 biblioteca atualiza ao abrir a guia sem ativação duplica
 # Subtest: flashcard manual abre sem clipboard
 ok 103 - flashcard manual abre sem clipboard
   ---
-  duration_ms: 1.186606
+  duration_ms: 1.238498
   type: 'test'
   ...
 # Subtest: IA é explícita e usa trecho ou resposta manual
 ok 104 - IA é explícita e usa trecho ou resposta manual
   ---
-  duration_ms: 0.211545
+  duration_ms: 0.244602
   type: 'test'
   ...
 # Subtest: Workers AI mantém parser próprio como fallback do Gemini
 not ok 105 - Workers AI mantém parser próprio como fallback do Gemini
   ---
-  duration_ms: 3.166663
+  duration_ms: 4.190948
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-24-9-flashcard-ai.test.cjs:8:1'
   failureType: 'testCodeFailure'
@@ -3455,31 +3455,31 @@ not ok 105 - Workers AI mantém parser próprio como fallback do Gemini
 # Subtest: IA de flashcard tem caminho rápido e limites rígidos de latência
 ok 106 - IA de flashcard tem caminho rápido e limites rígidos de latência
   ---
-  duration_ms: 1.430641
+  duration_ms: 0.804857
   type: 'test'
   ...
 # Subtest: Biblioteca abre no escopo global sem filtros antigos
 ok 107 - Biblioteca abre no escopo global sem filtros antigos
   ---
-  duration_ms: 0.249736
+  duration_ms: 0.155128
   type: 'test'
   ...
 # Subtest: Gemini é a IA principal dos flashcards com fallback seguro
 ok 108 - Gemini é a IA principal dos flashcards com fallback seguro
   ---
-  duration_ms: 7.103755
+  duration_ms: 1.18194
   type: 'test'
   ...
 # Subtest: a chave Gemini não é exposta no frontend
 ok 109 - a chave Gemini não é exposta no frontend
   ---
-  duration_ms: 0.286084
+  duration_ms: 3.056535
   type: 'test'
   ...
 # Subtest: V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
 not ok 110 - V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
   ---
-  duration_ms: 3.64089
+  duration_ms: 3.190476
   type: 'test'
   location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/v10-25-library-ai-models.test.cjs:5:1'
   failureType: 'testCodeFailure'
@@ -4372,7 +4372,7 @@ not ok 110 - V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com seg
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 783.369316
+# duration_ms 554.942442
 
 === AUDIT ===
 OK  public/version.json é JSON válido
