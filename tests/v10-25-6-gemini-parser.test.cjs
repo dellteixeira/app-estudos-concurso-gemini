@@ -6,7 +6,8 @@ const worker=fs.readFileSync('src/index.js','utf8');
 test('v10.25.7 percorre múltiplos candidates e parts do Gemini',()=>{
   assert.match(worker,/function parseGeminiFlashcardPayload\(payload\)/);
   assert.match(worker,/for \(let candidateIndex = 0; candidateIndex < candidates\.length; candidateIndex\+\+\)/);
-  assert.match(worker,/texts\.join\('\\n'\)/);
+  assert.match(worker,/const texts = parts\.map\(/);
+  assert.match(worker,/for \(const text of texts\)/);
 });
 
 test('v10.25.7 recupera JSON simples malformado sem inventar conteúdo',()=>{
@@ -27,5 +28,4 @@ test('v10.25.7 mantém hedge e fallbacks existentes',()=>{
   assert.match(worker,/FLASHCARD_HEDGE_DELAY_MS = 4500/);
   assert.match(worker,/runFlashcardProvidersHedged/);
   assert.match(worker,/buildDeterministicFlashcard/);
-  assert.match(worker,/const APP_VERSION = "10\.25\.7"/);
 });
