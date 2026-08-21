@@ -1,0 +1,60 @@
+name: Temporary Gemini flashcard migration
+on:
+  push:
+    branches: [feature/v10-25-1-gemini-flashcards]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply Gemini integration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/index.js')
+          s=p.read_text()
+          old='const FLASHCARD_AI_MODELS = Object.freeze({\n  gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },'
+          new='const FLASHCARD_AI_MODELS = Object.freeze({\n  gemini: { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },\n  gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },'
+          assert old in s
+          s=s.replace(old,new,1)
+          s=s.replace('const FLASHCARD_AUTO_CHAIN = ["gemma", "glm", "llama"];','const FLASHCARD_AUTO_CHAIN = ["gemini", "gemma", "glm", "llama"];',1)
+          marker='async function generateFlashcard(request, env) {'
+          helper='''async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {\n  if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");\n  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;\n  const response = await fetch(endpoint, {\n    method: "POST",\n    headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },\n    body: JSON.stringify({\n      systemInstruction: { parts: [{ text: systemPrompt }] },\n      contents: [{ role: "user", parts: [{ text: userPrompt }] }],\n      generationConfig: {\n        temperature: 0.1,\n        maxOutputTokens: 1600,\n        responseMimeType: "application/json",\n        responseSchema: {\n          type: "OBJECT",\n          properties: { question: { type: "STRING" }, answer: { type: "STRING" } },\n          required: ["question", "answer"]\n        }\n      }\n    })\n  });\n  if (!response.ok) {\n    const detail = cleanText(await response.text(), 500);\n    throw new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);\n  }\n  const payload = await response.json();\n  const text = payload?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").join("") || "";\n  const parsed = extractFirstJsonObject(text);\n  if (!parsed?.question || !parsed?.answer) throw new Error("Resposta incompleta do Gemini");\n  return parsed;\n}\n\n'''
+          assert marker in s
+          s=s.replace(marker,helper+marker,1)
+          oldrun='''      const result = await env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 1600 });\n      const parsed = parseFlashcardAIResponse(result);'''
+          newrun='''      const parsed = model.provider === "gemini"\n        ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)\n        : parseFlashcardAIResponse(await env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 1600 }));'''
+          assert oldrun in s
+          s=s.replace(oldrun,newrun,1)
+          s=s.replace('return json({ question, answer, model: `Workers AI · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });','return json({ question, answer, model: `${model.provider === "gemini" ? "Google Gemini" : "Workers AI"} · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });',1)
+          s=s.replace('console.warn("Workers AI flashcard model failed", model.id, error);','console.warn("Flashcard AI model failed", model.id, error);',1)
+          s=s.replace('console.error("Workers AI flashcard exhausted candidates", errors);','console.error("Flashcard AI exhausted candidates", errors);',1)
+          p.write_text(s)
+
+          p=Path('public/js/pdf/pdf-reader.js'); s=p.read_text()
+          old="const FLASHCARD_AI_MODEL_OPTIONS=[['auto','Automático — recomendado'],['gemma','Gemma 4 26B — equilíbrio']"
+          new="const FLASHCARD_AI_MODEL_OPTIONS=[['auto','Automático — Gemini + fallback'],['gemini','Gemini 2.5 Flash — melhor qualidade'],['gemma','Gemma 4 26B — equilíbrio']"
+          assert old in s
+          p.write_text(s.replace(old,new,1))
+
+          Path('tests/v10-25-1-gemini-flashcards.test.cjs').write_text(r'''const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');\nconst worker=fs.readFileSync('src/index.js','utf8');const reader=fs.readFileSync('public/js/pdf/pdf-reader.js','utf8');\ntest('Gemini is primary flashcard AI with Workers AI fallback',()=>{assert.match(worker,/GEMINI_API_KEY/);assert.match(worker,/gemini-2\.5-flash/);assert.match(worker,/FLASHCARD_AUTO_CHAIN = \["gemini", "gemma", "glm", "llama"\]/);assert.match(worker,/responseMimeType: "application\/json"/);assert.match(reader,/Gemini 2\.5 Flash/);});\n''')
+          PY
+      - name: Validate
+        run: |
+          node --check src/index.js
+          node --check public/js/pdf/pdf-reader.js
+          npm test
+          AUDIT_ALLOW_ANY_ROOT=1 npm run audit
+      - name: Commit functional change
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/index.js public/js/pdf/pdf-reader.js tests/v10-25-1-gemini-flashcards.test.cjs
+          git commit -m "feat: use Gemini for library flashcards with safe fallback"
+          git push
