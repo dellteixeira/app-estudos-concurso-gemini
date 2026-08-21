@@ -1,12 +1,13 @@
 // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const FLASHCARD_AI_MODELS = Object.freeze({
+  gemini: { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
   gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
   nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
   glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
   llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
 });
-const FLASHCARD_AUTO_CHAIN = ["gemma", "glm", "llama"];
+const FLASHCARD_AUTO_CHAIN = ["gemini", "gemma", "glm", "llama"];
 const MAX_TEXT_CHARS = 110000;
 const MAX_REQUEST_BYTES = 512 * 1024;
 const MAX_MATERIAS = 120;
@@ -435,6 +436,38 @@ function parseFlashcardAIResponse(result) {
   return null;
 }
 
+async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
+  if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 1600,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: { question: { type: "STRING" }, answer: { type: "STRING" } },
+          required: ["question", "answer"]
+        }
+      }
+    })
+  });
+  if (!response.ok) {
+    const detail = cleanText(await response.text(), 500);
+    throw new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+  }
+  const payload = await response.json();
+  const text = payload?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").join("") || "";
+  const parsed = extractFirstJsonObject(text);
+  if (!parsed?.question || !parsed?.answer) throw new Error("Resposta incompleta do Gemini");
+  return parsed;
+}
+
 async function generateFlashcard(request, env) {
   const user = await authenticateSupabaseUser(request, env);
   if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
@@ -459,17 +492,18 @@ async function generateFlashcard(request, env) {
     const key = candidates[index];
     const model = FLASHCARD_AI_MODELS[key];
     try {
-      const result = await env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 1600 });
-      const parsed = parseFlashcardAIResponse(result);
+      const parsed = model.provider === "gemini"
+        ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
+        : parseFlashcardAIResponse(await env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 1600 }));
       const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
       if (!question || !answer) throw new Error("Resposta incompleta da IA");
-      return json({ question, answer, model: `Workers AI · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
+      return json({ question, answer, model: `${model.provider === "gemini" ? "Google Gemini" : "Workers AI"} · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
     } catch (error) {
       errors.push(`${model.label}: ${error?.message || error}`);
-      console.warn("Workers AI flashcard model failed", model.id, error);
+      console.warn("Flashcard AI model failed", model.id, error);
     }
   }
-  console.error("Workers AI flashcard exhausted candidates", errors);
+  console.error("Flashcard AI exhausted candidates", errors);
   return json({ error: "Não foi possível gerar a pergunta com IA agora. O modo manual continua disponível." }, 503);
 }
 
