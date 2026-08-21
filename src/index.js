@@ -8,6 +8,8 @@ const FLASHCARD_AI_MODELS = Object.freeze({
   llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
 });
 const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];
+const GEMINI_FLASHCARD_TIMEOUT_MS = 12000;
+const WORKERS_FLASHCARD_TIMEOUT_MS = 8000;
 const MAX_TEXT_CHARS = 110000;
 const MAX_REQUEST_BYTES = 512 * 1024;
 const MAX_MATERIAS = 120;
@@ -15,7 +17,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.25.2";
+const APP_VERSION = "10.25.3";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css",
@@ -440,7 +442,8 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
   if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4000);
+  const startedAt = Date.now();
+  const timeout = setTimeout(() => controller.abort(), GEMINI_FLASHCARD_TIMEOUT_MS);
   let response;
   try {
     response = await fetch(endpoint, {
@@ -463,19 +466,46 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt) {
       })
     });
   } catch (error) {
-    if (error?.name === "AbortError") throw new Error("Gemini excedeu o limite de 4 segundos");
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error(`Gemini excedeu o limite de ${GEMINI_FLASHCARD_TIMEOUT_MS} ms`);
+      timeoutError.provider = "gemini";
+      timeoutError.model = model.id;
+      timeoutError.status = "timeout";
+      timeoutError.reason = "request timeout";
+      timeoutError.durationMs = Date.now() - startedAt;
+      throw timeoutError;
+    }
+    error.provider = error?.provider || "gemini";
+    error.model = error?.model || model.id;
+    error.status = error?.status || "network-error";
+    error.reason = error?.reason || error?.message || "network error";
+    error.durationMs = error?.durationMs || (Date.now() - startedAt);
     throw error;
   } finally {
     clearTimeout(timeout);
   }
   if (!response.ok) {
     const detail = cleanText(await response.text(), 500);
-    throw new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+    const httpError = new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+    httpError.provider = "gemini";
+    httpError.model = model.id;
+    httpError.status = response.status;
+    httpError.reason = detail || response.statusText || "HTTP error";
+    httpError.durationMs = Date.now() - startedAt;
+    throw httpError;
   }
   const payload = await response.json();
   const text = payload?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").join("") || "";
   const parsed = extractFirstJsonObject(text);
-  if (!parsed?.question || !parsed?.answer) throw new Error("Resposta incompleta do Gemini");
+  if (!parsed?.question || !parsed?.answer) {
+    const parseError = new Error("Resposta incompleta do Gemini");
+    parseError.provider = "gemini";
+    parseError.model = model.id;
+    parseError.status = 200;
+    parseError.reason = "incomplete JSON response";
+    parseError.durationMs = Date.now() - startedAt;
+    throw parseError;
+  }
   return parsed;
 }
 
@@ -513,16 +543,23 @@ async function generateFlashcard(request, env) {
   for (let index = 0; index < candidates.length; index++) {
     const key = candidates[index];
     const model = FLASHCARD_AI_MODELS[key];
+    const attemptStartedAt = Date.now();
     try {
       const parsed = model.provider === "gemini"
         ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
-        : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), 2500, model.label));
+        : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), WORKERS_FLASHCARD_TIMEOUT_MS, model.label));
       const question = cleanText(parsed?.question, 500), answer = cleanText(parsed?.answer, 4000);
       if (!question || !answer) throw new Error("Resposta incompleta da IA");
-      return json({ question, answer, model: `${model.provider === "gemini" ? "Google Gemini" : "Workers AI"} · ${model.label}`, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
+      const provider = model.provider === "gemini" ? "gemini" : "workers-ai";
+      const providerLabel = model.provider === "gemini" ? "Google Gemini" : "Workers AI";
+      return json({ question, answer, model: `${providerLabel} · ${model.label}`, provider, modelKey: key, fallbackUsed: requested === "auto" && index > 0 });
     } catch (error) {
-      errors.push(`${model.label}: ${error?.message || error}`);
-      console.warn("Flashcard AI model failed", model.id, error);
+      const provider = model.provider === "gemini" ? "gemini" : "workers-ai";
+      const durationMs = Number(error?.durationMs) || (Date.now() - attemptStartedAt);
+      const status = error?.status ?? "error";
+      const reason = cleanText(error?.reason || error?.message || String(error), 500);
+      errors.push(`${model.label}: ${reason}`);
+      console.warn(`Flashcard AI failure provider=${provider} model=${model.id} status=${status} reason=${reason} duration=${durationMs}ms`);
     }
   }
   console.error("Flashcard AI exhausted candidates", errors);
