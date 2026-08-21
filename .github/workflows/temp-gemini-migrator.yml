@@ -1,17 +1,18 @@
 name: Temporary Gemini Migrator
 on:
-  pull_request_target:
-    branches: [main]
+  issue_comment:
+    types: [created]
 permissions:
   contents: write
+  pull-requests: read
 jobs:
   migrate:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feature/v10-25-1-gemini-flashcards-final'
+    if: github.event.issue.number == 73 && github.event.comment.body == '/run-gemini-migration' && github.event.issue.pull_request
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: feature/v10-25-1-gemini-flashcards-final
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -99,14 +100,11 @@ jobs:
           node --check public/js/pdf/pdf-reader.js
           node --test tests/*.test.cjs
           AUDIT_ALLOW_ANY_ROOT=1 node scripts/audit-release.mjs
-      - name: Commit functional files to feature branch
+      - name: Commit functional files
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/index.js public/js/pdf/pdf-reader.js tests/v10-25-1-gemini-flashcards.test.cjs
-          if git diff --cached --quiet; then
-            echo 'No functional changes to commit.'
-            exit 0
-          fi
+          rm -f docs/.trigger-gemini-final docs/.noop docs/.noop2 docs/.noop3 docs/.noop4 docs/.noop5 docs/.noop6
+          git add -A src/index.js public/js/pdf/pdf-reader.js tests/v10-25-1-gemini-flashcards.test.cjs docs
           git commit -m 'feat: integrate Gemini flashcards with safe Workers AI fallback'
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:feature/v10-25-1-gemini-flashcards-final
