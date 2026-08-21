@@ -1,0 +1,31 @@
+name: TEMP v10.25.2 push
+on:
+  push:
+    branches: [fix/v10-25-2-smart-flashcards-mobile-library]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/v10-25-2-smart-flashcards-mobile-library
+          token: ${{ github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 scripts/temp-v10-25-2.py
+      - run: |
+          node --check src/index.js
+          node --check public/js/pdf/pdf-reader.js
+          node --check public/js/pdf/pdf-library-ui.js
+          npm test
+          npm run audit
+      - run: |
+          rm -f scripts/temp-v10-25-2.py .v10-25-2-trigger .v10-25-2-trigger-2
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "fix: smarter iterative flashcards and reliable mobile library v10.25.2"
+          git push origin HEAD:fix/v10-25-2-smart-flashcards-mobile-library
