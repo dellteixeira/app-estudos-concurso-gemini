@@ -166,4 +166,12 @@
 
   async function updatePageCount(id,pageCount){const u=await core().getAuthenticatedUser(),c=core().getSupabaseClient();const {error}=await c.from('pdf_documents').update({page_count:Number(pageCount)||null,updated_at:new Date().toISOString()}).eq('id',id).eq('user_id',u.id);if(error)throw error;return true;}
   global.PdfStudyLibrary=Object.freeze({list,getCached,setFavorite,remove,removeMany,forgetDocuments,createSignedUrl,rememberDocument,downloadBlob,updatePageCount,persistVisibleOrder});
+
+  if (!document.querySelector('script[data-pdf-library-ordering]')) {
+    const orderingScript = document.createElement('script');
+    orderingScript.src = './js/pdf/pdf-library-ordering.js';
+    orderingScript.defer = true;
+    orderingScript.dataset.pdfLibraryOrdering = 'true';
+    document.head.appendChild(orderingScript);
+  }
 })(window);
