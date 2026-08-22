@@ -22,27 +22,35 @@
     min-width:0!important;
   }
   .pdf-library-actions {
-    display:flex!important;
-    flex-wrap:nowrap!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
     align-items:stretch!important;
-    justify-content:space-between!important;
-    gap:clamp(10px,1.5vw,24px)!important;
+    gap:10px!important;
     width:100%!important;
     max-width:none!important;
-    margin-left:0!important;
+    margin:0!important;
   }
   .pdf-library-actions>.btn,
   .pdf-library-actions>.pdf-library-sort-control {
-    flex:1 1 0!important;
-    width:auto!important;
-    min-width:150px!important;
-    max-width:240px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
     min-height:48px!important;
     height:48px!important;
     box-sizing:border-box!important;
   }
+  .pdf-library-actions>.btn {
+    justify-content:flex-start!important;
+    padding-inline:22px!important;
+    white-space:nowrap!important;
+  }
   .pdf-library-actions>.pdf-library-sort-control {
     display:flex!important;
+    padding-inline:18px!important;
+  }
+  .pdf-library-actions>.pdf-library-sort-control select {
+    width:100%!important;
+    min-width:0!important;
   }
 
   /* Hoje a barra possui exatamente cinco filtros. Eles dividem 100% da linha. */
