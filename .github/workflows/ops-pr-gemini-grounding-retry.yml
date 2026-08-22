@@ -23,8 +23,10 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Apply patch
-        run: python scripts/ops-apply-gemini-grounding-retry.py
+      - name: Apply focused patch
+        run: |
+          python scripts/ops-apply-gemini-grounding-retry.py
+          python scripts/ops-fix-gemini-retry-preserve-hedge.py
 
       - name: Syntax check patched Worker
         run: node --check src/index.js
