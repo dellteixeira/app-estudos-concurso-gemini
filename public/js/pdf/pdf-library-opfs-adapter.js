@@ -111,8 +111,20 @@
 
   global.PdfLibraryOfflineAdapter = Object.freeze({ loadStore, get, put, removeMany, has, capabilities });
 
+  function loadLayoutFix() {
+    if (document.querySelector('script[data-pdf-library-layout-fix]')) return;
+    const fix = document.createElement('script');
+    fix.src = './js/pdf/pdf-library-layout-fix.js';
+    fix.defer = true;
+    fix.dataset.pdfLibraryLayoutFix = '1';
+    document.head.appendChild(fix);
+  }
+
   function loadManagedOfflineLibrary() {
-    if (document.querySelector('script[data-pdf-offline-manager]')) return;
+    if (document.querySelector('script[data-pdf-offline-manager]')) {
+      loadLayoutFix();
+      return;
+    }
     const manager = document.createElement('script');
     manager.src = './js/pdf/pdf-offline-library-manager.js';
     manager.defer = true;
@@ -125,11 +137,15 @@
         integrity.dataset.pdfOfflineIntegrity = '1';
         document.head.appendChild(integrity);
       }
-      if (document.querySelector('script[data-pdf-offline-ui]')) return;
+      if (document.querySelector('script[data-pdf-offline-ui]')) {
+        loadLayoutFix();
+        return;
+      }
       const ui = document.createElement('script');
       ui.src = './js/pdf/pdf-offline-library-ui.js';
       ui.defer = true;
       ui.dataset.pdfOfflineUi = '1';
+      ui.onload = loadLayoutFix;
       document.head.appendChild(ui);
     };
     document.head.appendChild(manager);
