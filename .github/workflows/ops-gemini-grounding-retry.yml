@@ -1,0 +1,299 @@
+name: Ops Gemini Grounding Retry
+
+on:
+  push:
+    branches:
+      - feat/gemini-grounding-retry
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/gemini-grounding-retry
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Apply focused Gemini grounding retry patch
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/index.js')
+          s = path.read_text(encoding='utf-8')
+
+          def replace_once(old, new, label):
+              global s
+              count = s.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly 1 match, got {count}')
+              s = s.replace(old, new, 1)
+
+          replace_once(
+              'const GEMINI_FLASHCARD_TIMEOUT_MS = 12000;\nconst WORKERS_FLASHCARD_TIMEOUT_MS = 8000;',
+              'const GEMINI_FLASHCARD_TIMEOUT_MS = 12000;\nconst GEMINI_GROUNDING_RETRY_TIMEOUT_MS = 4500;\nconst WORKERS_FLASHCARD_TIMEOUT_MS = 8000;',
+              'retry timeout constant'
+          )
+
+          replace_once(
+              'async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compactRetry = false } = {}) {',
+              'async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compactRetry = false, groundingRetry = false } = {}) {',
+              'Gemini signature'
+          )
+
+          replace_once(
+              '  const controller = new AbortController();\n  const startedAt = Date.now();\n  const timeout = setTimeout(() => controller.abort(), GEMINI_FLASHCARD_TIMEOUT_MS);',
+              '''  const controller = new AbortController();
+  const startedAt = Date.now();
+  const requestTimeoutMs = groundingRetry ? GEMINI_GROUNDING_RETRY_TIMEOUT_MS : GEMINI_FLASHCARD_TIMEOUT_MS;
+  const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
+  const groundingRetryInstruction = `CORREÇÃO OBRIGATÓRIA DE GROUNDING: a tentativa anterior foi rejeitada por se afastar lexicalmente da evidência. Na resposta, copie literalmente ou use o menor recorte possível da EVIDÊNCIA AUTORIZADA. Não use sinônimos, explicações, inferências, conectivos novos ou conhecimento externo. Preserve exatamente sujeitos, verbos jurídicos, números, prazos, requisitos, exceções e consequências. A pergunta pode ser reformulada, mas deve cobrar somente o conteúdo expresso na evidência. Retorne apenas o JSON solicitado.`;
+  const effectiveUserPrompt = groundingRetry
+    ? `${userPrompt}\\n\\n${groundingRetryInstruction}`
+    : compactRetry
+      ? `${userPrompt}\\n\\nRETRY COMPACTO: devolva apenas JSON curto, completo e estritamente aderente à evidência indicada.`
+      : userPrompt;''',
+              'Gemini retry setup'
+          )
+
+          replace_once(
+              '        contents: [{ role: "user", parts: [{ text: compactRetry ? `${userPrompt}\\n\\nRETRY COMPACTO: devolva apenas JSON curto, completo e estritamente aderente à evidência indicada.` : userPrompt }] }],',
+              '        contents: [{ role: "user", parts: [{ text: effectiveUserPrompt }] }],',
+              'Gemini effective prompt'
+          )
+
+          replace_once(
+              '          temperature: compactRetry ? 0.1 : 0.2,\n          maxOutputTokens: compactRetry ? 900 : 1600,',
+              '          temperature: groundingRetry ? 0 : (compactRetry ? 0.1 : 0.2),\n          maxOutputTokens: groundingRetry ? 700 : (compactRetry ? 900 : 1600),',
+              'Gemini retry generation config'
+          )
+
+          replace_once(
+              '      const timeoutError = new Error(`Gemini excedeu o limite de ${GEMINI_FLASHCARD_TIMEOUT_MS} ms`);',
+              '      const timeoutError = new Error(`Gemini excedeu o limite de ${requestTimeoutMs} ms`);',
+              'Gemini timeout message'
+          )
+
+          replace_once(
+              '  console.info(`Flashcard Gemini response model=${model.id} status=200 candidates=${summary.candidates} parts=${summary.parts} textParts=${summary.textParts} textChars=${summary.textChars} finishReasons=${summary.finishReasons} compactRetry=${compactRetry}`);',
+              '  console.info(`Flashcard Gemini response model=${model.id} status=200 candidates=${summary.candidates} parts=${summary.parts} textParts=${summary.textParts} textChars=${summary.textChars} finishReasons=${summary.finishReasons} compactRetry=${compactRetry} groundingRetry=${groundingRetry}`);',
+              'Gemini response telemetry'
+          )
+
+          replace_once(
+              "  if (!recovered?.flashcard && !compactRetry && summary.finishReasons.split(',').includes('MAX_TOKENS')) {",
+              "  if (!recovered?.flashcard && !compactRetry && !groundingRetry && summary.finishReasons.split(',').includes('MAX_TOKENS')) {",
+              'MAX_TOKENS retry guard'
+          )
+
+          replace_once(
+              'async function attemptFlashcardModel(env, key, systemPrompt, userPrompt, validationContext, { hedged = false } = {}) {',
+              'async function attemptFlashcardModel(env, key, systemPrompt, userPrompt, validationContext, { hedged = false, groundingRetry = false } = {}) {',
+              'attempt signature'
+          )
+
+          replace_once(
+              '      ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)',
+              '      ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt, { groundingRetry })',
+              'attempt Gemini options'
+          )
+
+          replace_once(
+              '    console.info(`Flashcard AI success provider=${provider} model=${model.id} duration=${durationMs}ms hedged=${hedged} evidence=${validationContext.evidence.id} type=${validationContext.evidence.knowledgeType}`);\n    return { ...checked.flashcard, provider, providerLabel, model, key, durationMs, hedged };',
+              '    console.info(`Flashcard AI success provider=${provider} model=${model.id} duration=${durationMs}ms hedged=${hedged} groundingRetry=${groundingRetry} evidence=${validationContext.evidence.id} type=${validationContext.evidence.knowledgeType}`);\n    return { ...checked.flashcard, provider, providerLabel, model, key, durationMs, hedged, groundingRetry };',
+              'attempt success telemetry'
+          )
+
+          replace_once(
+              '    console.warn(`Flashcard AI failure provider=${provider} model=${model.id} status=${status} reason=${reason} duration=${durationMs}ms hedged=${hedged}`);\n    error.flashcardTelemetry = { provider, model: model.id, status, reason, durationMs, hedged };',
+              '    console.warn(`Flashcard AI failure provider=${provider} model=${model.id} status=${status} reason=${reason} duration=${durationMs}ms hedged=${hedged} groundingRetry=${groundingRetry}`);\n    error.flashcardTelemetry = { provider, model: model.id, status, reason, durationMs, hedged, groundingRetry };',
+              'attempt failure telemetry'
+          )
+
+          old_run = '''async function runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt, validationContext) {
+  if (!candidates.length) throw new Error("Nenhum provedor de IA disponível");
+  if (candidates.length === 1) return attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext);
+  let fallbackStarted = false;
+  let timer = null;
+  let startFallback;
+  const fallbackPromise = new Promise((resolve, reject) => {
+    startFallback = () => {
+      if (fallbackStarted) return;
+      fallbackStarted = true;
+      if (timer) clearTimeout(timer);
+      attemptFlashcardModel(env, candidates[1], systemPrompt, userPrompt, validationContext, { hedged: true }).then(resolve, reject);
+    };
+    timer = setTimeout(startFallback, FLASHCARD_HEDGE_DELAY_MS);
+  });
+  const primaryPromise = attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext).catch(error => {
+    startFallback();
+    throw error;
+  });
+  try {
+    return await firstSuccessfulFlashcard([primaryPromise, fallbackPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}'''
+
+          new_run = '''function isOnlyAnswerNotGrounded(error) {
+  const reason = cleanText(error?.flashcardTelemetry?.reason || error?.reason || "", 200);
+  return reason === "answer-not-grounded";
+}
+
+function aggregateFlashcardFailures(failures) {
+  const aggregate = new Error("Todos os provedores externos falharam");
+  aggregate.causes = failures.filter(Boolean);
+  return aggregate;
+}
+
+async function runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt, validationContext) {
+  if (!candidates.length) throw new Error("Nenhum provedor de IA disponível");
+
+  // Gemini é a fonte principal. O Llama só entra depois de uma eventual
+  // correção curta de grounding, evitando desperdiçar o hedge em uma resposta
+  // que o próprio Gemini consegue corrigir sem relaxar a validação determinística.
+  if (candidates[0] === "gemini") {
+    const failures = [];
+    try {
+      return await attemptFlashcardModel(env, "gemini", systemPrompt, userPrompt, validationContext);
+    } catch (primaryError) {
+      failures.push(primaryError);
+
+      if (isOnlyAnswerNotGrounded(primaryError)) {
+        console.info(`Flashcard Gemini retry reason=answer-not-grounded model=${FLASHCARD_AI_MODELS.gemini.id} timeout=${GEMINI_GROUNDING_RETRY_TIMEOUT_MS}ms`);
+        try {
+          return await attemptFlashcardModel(env, "gemini", systemPrompt, userPrompt, validationContext, { groundingRetry: true });
+        } catch (retryError) {
+          failures.push(retryError);
+        }
+      }
+    }
+
+    if (candidates.length > 1) {
+      try {
+        return await attemptFlashcardModel(env, candidates[1], systemPrompt, userPrompt, validationContext);
+      } catch (fallbackError) {
+        failures.push(fallbackError);
+      }
+    }
+    throw aggregateFlashcardFailures(failures);
+  }
+
+  if (candidates.length === 1) return attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext);
+  let fallbackStarted = false;
+  let timer = null;
+  let startFallback;
+  const fallbackPromise = new Promise((resolve, reject) => {
+    startFallback = () => {
+      if (fallbackStarted) return;
+      fallbackStarted = true;
+      if (timer) clearTimeout(timer);
+      attemptFlashcardModel(env, candidates[1], systemPrompt, userPrompt, validationContext, { hedged: true }).then(resolve, reject);
+    };
+    timer = setTimeout(startFallback, FLASHCARD_HEDGE_DELAY_MS);
+  });
+  const primaryPromise = attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext).catch(error => {
+    startFallback();
+    throw error;
+  });
+  try {
+    return await firstSuccessfulFlashcard([primaryPromise, fallbackPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}'''
+          replace_once(old_run, new_run, 'provider orchestration')
+
+          old_prompt = '  const systemPrompt = `Você é um elaborador especialista de flashcards para concursos públicos brasileiros. Gere exatamente UM flashcard usando SOMENTE a EVIDÊNCIA AUTORIZADA. Não use conhecimento externo, não complete lacunas e não altere números, prazos, sujeitos, requisitos, exceções ou consequências. A resposta deve ficar lexicalmente próxima da evidência para permitir validação automática. A pergunta deve ser autossuficiente, específica, ter um único núcleo de cobrança e não pode ser genérica. Não repita nem parafraseie perguntas anteriores. Retorne somente JSON válido com question, answer, evidenceId e knowledgeType.`;'
+          new_prompt = '  const systemPrompt = `Você é um elaborador especialista de flashcards para concursos públicos brasileiros. Gere exatamente UM flashcard usando SOMENTE a EVIDÊNCIA AUTORIZADA. Não use conhecimento externo, não complete lacunas e não altere números, prazos, sujeitos, requisitos, exceções ou consequências. A RESPOSTA deve permanecer lexicalmente colada à evidência: prefira copiar literalmente o menor trecho suficiente da fonte e não troque termos jurídicos por sinônimos, paráfrases ou explicações. Preserve exatamente sujeitos, verbos, números, prazos, requisitos, exceções e consequências. A pergunta deve ser autossuficiente, específica, ter um único núcleo de cobrança e não pode ser genérica. Não repita nem parafraseie perguntas anteriores. Retorne somente JSON válido com question, answer, evidenceId e knowledgeType.`;'
+          replace_once(old_prompt, new_prompt, 'grounded system prompt')
+
+          replace_once(
+              'return json({ question: result.question, answer: result.answer, model: `${result.providerLabel} · ${result.model.label}`, provider: result.provider, modelKey: result.key, fallbackUsed, hedged: result.hedged, latencyMs: result.durationMs, evidenceId: result.evidenceId, knowledgeType: result.knowledgeType, sourceValidated: true });',
+              'return json({ question: result.question, answer: result.answer, model: `${result.providerLabel} · ${result.model.label}`, provider: result.provider, modelKey: result.key, fallbackUsed, hedged: result.hedged, groundingRetry: Boolean(result.groundingRetry), latencyMs: result.durationMs, evidenceId: result.evidenceId, knowledgeType: result.knowledgeType, sourceValidated: true });',
+              'response retry telemetry'
+          )
+
+          # Safety invariants: grounding stays strict and retry is narrow.
+          if 'return lexicalCoverage >= 0.72 && numbersSupported;' not in s:
+              raise SystemExit('grounding threshold changed unexpectedly')
+          if 'return reason === "answer-not-grounded";' not in s:
+              raise SystemExit('grounding retry gate missing')
+          if 'GEMINI_GROUNDING_RETRY_TIMEOUT_MS = 4500' not in s:
+              raise SystemExit('short retry timeout missing')
+
+          path.write_text(s, encoding='utf-8')
+
+          test = Path('tests/gemini-grounding-retry.test.cjs')
+          test.write_text(r'''const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+
+const src = fs.readFileSync('src/index.js', 'utf8');
+
+test('prompt do Gemini exige aderência lexical e preserva literalidade jurídica', () => {
+  assert.match(src, /A RESPOSTA deve permanecer lexicalmente colada à evidência/);
+  assert.match(src, /prefira copiar literalmente o menor trecho suficiente/);
+  assert.match(src, /não troque termos jurídicos por sinônimos/);
+});
+
+test('retry de grounding é curto e ocorre somente para answer-not-grounded', () => {
+  assert.match(src, /GEMINI_GROUNDING_RETRY_TIMEOUT_MS = 4500/);
+  assert.match(src, /function isOnlyAnswerNotGrounded\(error\)/);
+  assert.match(src, /return reason === "answer-not-grounded"/);
+  assert.match(src, /\{ groundingRetry: true \}/);
+});
+
+test('retry de grounding antecede o fallback Llama na cadeia Gemini', () => {
+  const start = src.indexOf('if (candidates[0] === "gemini")');
+  assert.ok(start >= 0);
+  const block = src.slice(start, src.indexOf('if (candidates.length === 1)', start));
+  const retry = block.indexOf('{ groundingRetry: true }');
+  const fallback = block.indexOf('candidates[1]');
+  assert.ok(retry >= 0 && fallback > retry, 'fallback deve começar somente após o retry de grounding');
+});
+
+test('timeout e outras falhas não acionam grounding retry', () => {
+  assert.match(src, /if \(isOnlyAnswerNotGrounded\(primaryError\)\)/);
+  assert.doesNotMatch(src, /reason === "request timeout"[\s\S]{0,250}groundingRetry: true/);
+});
+
+test('validador determinístico permanece estrito e não foi afrouxado', () => {
+  assert.match(src, /return lexicalCoverage >= 0\.72 && numbersSupported/);
+  assert.match(src, /answer-not-grounded/);
+  assert.match(src, /duplicate-question/);
+});
+
+test('telemetria identifica quando o Gemini respondeu após retry de grounding', () => {
+  assert.match(src, /groundingRetry=\$\{groundingRetry\}/);
+  assert.match(src, /groundingRetry: Boolean\(result\.groundingRetry\)/);
+});
+''', encoding='utf-8')
+
+      - name: Validate syntax and tests
+        run: |
+          node --check src/index.js
+          npm test
+          npm run audit
+
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/index.js tests/gemini-grounding-retry.test.cjs
+          if git diff --cached --quiet; then
+            echo "No patch changes to commit"
+            exit 0
+          fi
+          git commit -m "feat: retry Gemini when grounding validation alone fails"
+          git push origin HEAD:feat/gemini-grounding-retry
