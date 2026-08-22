@@ -124,8 +124,8 @@ function boot(){
   // Compatibilidade: o módulo auxiliar continua referenciado, mas se a V2 já foi
   // instalada ele apenas encerra sem substituir a implementação ativa.
   load('./js/pdf/pdf-reader-panel-layout.js?rev=20260822-2','data-pdf-reader-panel-layout-v2');
-  if(window.StudyPerformanceReport){load('./js/study-performance-report-v2.js','data-study-report-v2');return;}
-  load('./js/study-performance-report-core.js','data-study-report-core',()=>load('./js/study-performance-report-v2.js','data-study-report-v2'));
+  if(window.StudyPerformanceReport){load('./js/study-performance-report-v2.js?rev=20260822-4','data-study-report-v2');return;}
+  load('./js/study-performance-report-core.js?rev=20260822-4','data-study-report-core',()=>load('./js/study-performance-report-v2.js?rev=20260822-4','data-study-report-v2'));
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
