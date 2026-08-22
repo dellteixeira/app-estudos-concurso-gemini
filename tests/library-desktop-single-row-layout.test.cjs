@@ -11,10 +11,17 @@ test('painel offline é reposicionado para fora da barra de filtros', () => {
   assert.match(layout, /filters\.insertAdjacentElement\('afterend', panel\)/);
 });
 
-test('desktop mantém filtros, visualização e ordenação em uma única linha', () => {
+test('desktop usa cabeçalho em largura total e ações justificadas', () => {
   assert.match(layout, /@media \(min-width:1101px\)/);
-  assert.match(layout, /grid-template-columns:minmax\(220px,1\.35fr\).*minmax\(170px,\.82fr\)/s);
-  assert.match(layout, /\.pdf-library-filters>\*\{min-width:0!important;width:100%!important/);
+  assert.match(layout, /\.pdf-library-hero[\s\S]*display:grid!important;[\s\S]*width:100%!important/);
+  assert.match(layout, /\.pdf-library-actions[\s\S]*display:flex!important;[\s\S]*justify-content:space-between!important;[\s\S]*width:100%!important;[\s\S]*max-width:none!important/);
+  assert.match(layout, /\.pdf-library-actions>\.btn,[\s\S]*\.pdf-library-actions>\.pdf-library-sort-control[\s\S]*flex:1 1 0!important/);
+});
+
+test('desktop distribui exatamente os cinco filtros por toda a linha', () => {
+  assert.match(layout, /grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
+  assert.match(layout, /\.pdf-library-filters>\*[\s\S]*min-width:0!important;[\s\S]*width:100%!important/);
+  assert.match(layout, /#pdfAssuntoFilter[\s\S]*width:100%!important;[\s\S]*min-width:0!important/);
 });
 
 test('controles offline ficam em uma única linha no desktop', () => {
@@ -22,8 +29,9 @@ test('controles offline ficam em uma única linha no desktop', () => {
   assert.match(layout, /\.pdf-offline-actions\{display:flex!important;flex-wrap:nowrap!important/);
 });
 
-test('tablet e mobile preservam linha única com rolagem horizontal', () => {
+test('tablet e mobile preservam linhas roláveis e alvos de toque', () => {
   assert.match(layout, /@media \(max-width:1100px\)/);
+  assert.match(layout, /\.pdf-library-actions[\s\S]*display:flex!important;[\s\S]*overflow-x:auto!important/);
   assert.match(layout, /\.pdf-library-filters[\s\S]*display:flex!important;[\s\S]*flex-wrap:nowrap!important;[\s\S]*overflow-x:auto!important/);
   assert.match(layout, /#pdfOfflineManager \.pdf-offline-controls[\s\S]*display:flex!important;[\s\S]*flex-wrap:nowrap!important;[\s\S]*overflow-x:auto!important/);
 });

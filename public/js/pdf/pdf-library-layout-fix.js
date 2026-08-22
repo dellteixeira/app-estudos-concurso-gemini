@@ -8,25 +8,63 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-/* Desktop: filtros + visualização + ordenação em UMA única linha, sem o painel offline dentro dela. */
+/* Desktop: cabeçalho, ações e filtros ocupam toda a largura útil da Biblioteca. */
 @media (min-width:1101px) {
+  .pdf-library-hero {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    align-items:start!important;
+    gap:16px!important;
+    width:100%!important;
+  }
+  .pdf-library-title {
+    width:100%!important;
+    min-width:0!important;
+  }
+  .pdf-library-actions {
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:stretch!important;
+    justify-content:space-between!important;
+    gap:clamp(10px,1.5vw,24px)!important;
+    width:100%!important;
+    max-width:none!important;
+    margin-left:0!important;
+  }
+  .pdf-library-actions>.btn,
+  .pdf-library-actions>.pdf-library-sort-control {
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:150px!important;
+    max-width:240px!important;
+    min-height:48px!important;
+    height:48px!important;
+    box-sizing:border-box!important;
+  }
+  .pdf-library-actions>.pdf-library-sort-control {
+    display:flex!important;
+  }
+
+  /* Hoje a barra possui exatamente cinco filtros. Eles dividem 100% da linha. */
   .pdf-library-filters {
     display:grid!important;
-    grid-template-columns:minmax(220px,1.35fr) minmax(170px,.9fr) minmax(185px,1fr) minmax(185px,1fr) minmax(185px,1fr) minmax(145px,.72fr) minmax(170px,.82fr)!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
     gap:10px!important;
     align-items:stretch!important;
     overflow:visible!important;
     padding-bottom:0!important;
     width:100%!important;
   }
-  .pdf-library-filters>*{min-width:0!important;width:100%!important;max-width:none!important;}
+  .pdf-library-filters>* {
+    min-width:0!important;
+    width:100%!important;
+    max-width:none!important;
+  }
   .pdf-library-filters #pdfLibrarySearch,
   .pdf-library-filters #pdfLibraryScope,
   .pdf-library-filters #pdfWorkspaceFilter,
   .pdf-library-filters #pdfMateriaFilter,
-  .pdf-library-filters #pdfAssuntoFilter,
-  .pdf-library-filters .pdf-library-view-toggle,
-  .pdf-library-filters .pdf-library-sort-control {
+  .pdf-library-filters #pdfAssuntoFilter {
     width:100%!important;
     min-width:0!important;
     max-width:none!important;
@@ -55,8 +93,30 @@
   #pdfOfflineManager .pdf-offline-actions .primary{min-width:150px!important;}
 }
 
-/* Tablet/mobile: continua UMA linha, mas com rolagem horizontal confortável. */
+/* Tablet/mobile: uma linha rolável, sem reduzir os alvos de toque. */
 @media (max-width:1100px) {
+  .pdf-library-hero{width:100%!important;}
+  .pdf-library-actions {
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin-left:0!important;
+    gap:9px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    padding-bottom:6px!important;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-inline:contain;
+    scrollbar-width:thin;
+  }
+  .pdf-library-actions>* {
+    flex:0 0 150px!important;
+    width:150px!important;
+    min-width:150px!important;
+    max-width:150px!important;
+  }
+
   .pdf-library-filters {
     display:flex!important;
     flex-wrap:nowrap!important;
@@ -75,8 +135,6 @@
   .pdf-library-filters #pdfWorkspaceFilter{width:210px!important;min-width:210px!important;}
   .pdf-library-filters #pdfMateriaFilter,
   .pdf-library-filters #pdfAssuntoFilter{width:200px!important;min-width:200px!important;}
-  .pdf-library-filters .pdf-library-view-toggle{width:150px!important;min-width:150px!important;grid-column:auto!important;}
-  .pdf-library-filters .pdf-library-sort-control{width:190px!important;min-width:190px!important;grid-column:auto!important;}
 
   #pdfOfflineManager{width:100%!important;max-width:none!important;}
   #pdfOfflineManager .pdf-offline-controls{
