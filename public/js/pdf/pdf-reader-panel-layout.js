@@ -18,6 +18,7 @@ function install(){
   if(installed)return true;
   const reader=global.PdfStudyReader;
   if(!reader?.toggleSide||!reader?.zoom||!reader?.fitWidth||!reader?.fitPage)return false;
+  if(reader.toggleSide?.__panelExpansionV2){installed=true;return true;}
 
   const enhancedToggleSide=function(){
     const overlay=document.getElementById('pdfReaderOverlay');
@@ -36,17 +37,9 @@ function install(){
     afterLayout(()=>{
       const afterWidth=canvasWrap.clientWidth;
       const mobile=global.matchMedia?.(MOBILE_BREAKPOINT)?.matches;
-
-      // No mobile o painel é um drawer sobreposto: o PDF já ocupa 100% da tela.
-      // Não alteramos o zoom ao abrir/fechar para evitar saltos de leitura.
       if(mobile)return;
-
-      // Nos modos de encaixe, reutilize o cálculo canônico do próprio Reader.
       if(fitWidthActive){reader.fitWidth();return;}
       if(fitPageActive){reader.fitPage();return;}
-
-      // Em zoom manual, o Reader antigo mantinha a escala e deixava um vazio
-      // onde estava o painel. A escala passa a acompanhar a largura liberada.
       if(customScale&&beforeWidth>0&&afterWidth>0){
         const widthRatio=afterWidth/beforeWidth;
         if(Number.isFinite(widthRatio)&&Math.abs(widthRatio-1)>.01){
@@ -56,6 +49,7 @@ function install(){
       }
     });
   };
+  enhancedToggleSide.__panelExpansionV2=true;
 
   global.PdfStudyReader=Object.freeze({...reader,toggleSide:enhancedToggleSide});
   installed=true;
