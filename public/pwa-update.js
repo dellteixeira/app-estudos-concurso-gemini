@@ -95,7 +95,6 @@
     const running = await resolveRunningVersion();
 
     if (!running && remote) {
-      // Primeira instalação: a versão publicada é a melhor referência até o SW assumir.
       syncRuntimeVersionUi(remote);
     }
 
@@ -209,8 +208,6 @@
     try {
       const remoteVersion = (await fetchRemoteVersion()) || window.__remoteVersionAvailable;
       if (!remoteVersion) throw new Error('Não foi possível confirmar a versão publicada.');
-
-      // A URL do SW usa a versão REMOTA, não a versão gravada no HTML atual.
       const reg = await registerLatestWorker(remoteVersion);
 
       let candidate = reg.waiting;
@@ -228,7 +225,6 @@
       }
 
       if (!candidate) {
-        // Força uma segunda consulta; alguns navegadores promovem installing->waiting assincronamente.
         await reg.update();
         if (reg.installing) await waitForState(reg.installing, ['installed', 'activated'], 6000);
         candidate = reg.waiting || reg.installing;
@@ -289,8 +285,19 @@
     }
   }
 
+  function loadNotesImportExport() {
+    if (window.NotesImportExport || document.querySelector('script[data-notes-import-export]')) return;
+    const script = document.createElement('script');
+    script.src = './js/notes-import-export.js';
+    script.defer = true;
+    script.dataset.notesImportExport = '1';
+    script.onerror = () => console.warn('Não foi possível carregar os recursos de importação/exportação de anotações.');
+    document.head.appendChild(script);
+  }
+
   document.addEventListener('DOMContentLoaded', () => syncRuntimeVersionUi(window.APP_VERSION), { once: true });
   window.addEventListener('load', bootstrapPwa, { once: true });
+  window.addEventListener('load', loadNotesImportExport, { once: true });
   window.applyPwaUpdate = applyPwaUpdate;
   window.checkForPwaUpdate = checkForPwaUpdate;
 })();
