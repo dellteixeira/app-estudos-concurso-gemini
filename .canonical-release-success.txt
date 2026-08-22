@@ -1,4 +1,5 @@
 release_tag=v10.26.0-stable.20260822
 source_commit=33289bd3a7e9e467f99c1c355207ea53efde9aca
 zip_asset=app-estudos-concurso-gemini-v10.26.0-stable-20260822.zip
+workflow_run_id=32569859689
 verified=true
