@@ -5,12 +5,11 @@ const path = require('node:path');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'pdf', 'pdf-offline-library-ui.js'), 'utf8');
 
-test('filtros da Biblioteca permanecem em uma única linha com scroll horizontal', () => {
+test('filtros da Biblioteca ocupam uma única linha e dividem igualmente o desktop', () => {
   assert.match(source, /\.pdf-library-filters\{display:flex!important;grid-template-columns:none!important;flex-wrap:nowrap!important/);
-  assert.match(source, /overflow-x:auto/);
-  assert.match(source, /-webkit-overflow-scrolling:touch/);
-  assert.match(source, /#pdfLibrarySearch\{width:260px!important;min-width:260px!important\}/);
-  assert.match(source, /\.pdf-library-sort-control\{width:210px!important;min-width:210px!important;grid-column:auto!important\}/);
+  assert.match(source, /width:100%!important;overflow-x:hidden/);
+  assert.match(source, /\.pdf-library-filters>\*\{flex:1 1 0!important;min-width:0!important;width:0!important/);
+  assert.match(source, /#pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfWorkspaceFilter,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter/);
 });
 
 test('controles offline ficam no mesmo trilho horizontal', () => {
@@ -28,6 +27,7 @@ test('controles offline ficam no mesmo trilho horizontal', () => {
 
 test('mobile mantém alvos de toque e usa scroll em vez de quebrar linha', () => {
   assert.match(source, /@media\(max-width:700px\)/);
+  assert.match(source, /\.pdf-library-filters\{gap:9px;margin-inline:0;overflow-x:auto/);
   assert.match(source, /\.pdf-offline-actions button\{min-height:44px;min-width:116px\}/);
   assert.doesNotMatch(source, /\.pdf-offline-controls\{grid-template-columns:1fr/);
 });
