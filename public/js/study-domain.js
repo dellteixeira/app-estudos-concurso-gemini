@@ -1,4 +1,37 @@
 (function (root, factory) {
+    // Compatibilidade de performance: alguns navegadores (ex.: Firefox) expõem
+    // PerformanceObserver, mas não suportam a entrada "longtask". O app-core
+    // registra essa telemetria apenas como diagnóstico local; nesses navegadores
+    // a observação já não produz dados. Evitamos somente a chamada não suportada
+    // para não gerar warning no console, sem afetar navegadores compatíveis.
+    const NativePerformanceObserver = root?.PerformanceObserver;
+    const supportedEntryTypes = Array.isArray(NativePerformanceObserver?.supportedEntryTypes)
+        ? NativePerformanceObserver.supportedEntryTypes
+        : null;
+
+    if (NativePerformanceObserver && supportedEntryTypes && !supportedEntryTypes.includes('longtask')) {
+        const originalObserve = NativePerformanceObserver.prototype.observe;
+        if (typeof originalObserve === 'function' && !NativePerformanceObserver.prototype.__estudoAdaptativoLongTaskGuard) {
+            Object.defineProperty(NativePerformanceObserver.prototype, '__estudoAdaptativoLongTaskGuard', {
+                value: true,
+                configurable: false,
+                enumerable: false,
+                writable: false
+            });
+            NativePerformanceObserver.prototype.observe = function (options) {
+                if (options?.type === 'longtask') return;
+
+                if (Array.isArray(options?.entryTypes) && options.entryTypes.includes('longtask')) {
+                    const entryTypes = options.entryTypes.filter(type => supportedEntryTypes.includes(type));
+                    if (!entryTypes.length) return;
+                    return originalObserve.call(this, { ...options, entryTypes });
+                }
+
+                return originalObserve.call(this, options);
+            };
+        }
+    }
+
     const api = factory();
     if (typeof module === 'object' && module.exports) module.exports = api;
     if (root) root.StudyDomain = api;
