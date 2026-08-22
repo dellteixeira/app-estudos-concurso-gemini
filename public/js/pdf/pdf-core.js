@@ -11,8 +11,6 @@
 
   async function getAuthenticatedUser() {
     const client = getSupabaseClient();
-    // getSession() lê a sessão persistida localmente e evita uma chamada de rede
-    // desnecessária a cada operação da Biblioteca. getUser() fica como fallback.
     try {
       const { data: sessionData, error: sessionError } = await client.auth.getSession();
       if (!sessionError && sessionData?.session?.user?.id) return sessionData.session.user;
@@ -25,7 +23,17 @@
 
   function isNetworkError(error) {
     const message = String(error?.message || error || '').toLowerCase();
-    return message.includes('networkerror') || message.includes('failed to fetch') || message.includes('fetch resource') || message.includes('network request failed');
+    const name = String(error?.name || '').toLowerCase();
+    return name === 'networkerror' || name === 'aborterror' ||
+      message.includes('networkerror') ||
+      message.includes('failed to fetch') ||
+      message.includes('fetch resource') ||
+      message.includes('network request failed') ||
+      message.includes('load failed') ||
+      message.includes('connection reset') ||
+      message.includes('connection closed') ||
+      message.includes('connection error') ||
+      message.includes('temporarily unavailable');
   }
 
   async function retry(operation, { attempts = 2, delayMs = 350 } = {}) {
