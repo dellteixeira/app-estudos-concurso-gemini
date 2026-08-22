@@ -37,6 +37,7 @@ function load(src,marker,onload){
 }
 function boot(){
   ensureButtonParityStyles();
+  load('./js/pdf/pdf-reader-panel-layout.js','data-pdf-reader-panel-layout');
   if(window.StudyPerformanceReport){load('./js/study-performance-report-v2.js','data-study-report-v2');return;}
   load('./js/study-performance-report-core.js','data-study-report-core',()=>load('./js/study-performance-report-v2.js','data-study-report-v2'));
 }
