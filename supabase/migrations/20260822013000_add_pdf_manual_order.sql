@@ -85,8 +85,7 @@ begin
     end if;
 
     update public.pdf_documents d
-       set sort_order = ordered.position,
-           updated_at = now()
+       set sort_order = ordered.position
       from unnest(p_order) with ordinality as ordered(id, position)
      where d.id = ordered.id
        and d.user_id = v_user;
