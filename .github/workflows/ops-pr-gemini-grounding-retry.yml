@@ -26,11 +26,19 @@ jobs:
       - name: Apply patch
         run: python scripts/ops-apply-gemini-grounding-retry.py
 
-      - name: Validate
-        run: |
-          node --check src/index.js
-          npm test
-          AUDIT_ALLOW_ANY_ROOT=1 npm run audit
+      - name: Syntax check patched Worker
+        run: node --check src/index.js
+
+      - name: Focused Gemini grounding retry tests
+        run: node --test tests/gemini-grounding-retry.test.cjs
+
+      - name: Full automated tests
+        run: npm test
+
+      - name: Structural audit
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: npm run audit
 
       - name: Commit implementation
         run: |
