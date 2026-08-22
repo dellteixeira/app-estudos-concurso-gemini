@@ -2,512 +2,207 @@
 'use strict';
 
 const $ = id => document.getElementById(id);
-const PAGE_W = 595;
-const PAGE_H = 842;
-const MARGIN_X = 48;
-const TOP = 788;
-const BOTTOM = 52;
-const CONTENT_W = PAGE_W - MARGIN_X * 2;
-const DEFAULT_TEXT_COLOR = '#16212f';
-const ACCENT = '#198f8a';
-const TITLE = '#0b293d';
-const MUTED = '#667788';
 let notesSelectionObserver = null;
 let notesSelectionRestoreTimer = null;
 let originalLoadNotesData = null;
 
 const safeName = value => String(value || 'anotacoes')
   .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-  .replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,120) || 'anotacoes';
+  .replace(/[^a-zA-Z0-9._-]+/g,'_')
+  .replace(/^_+|_+$/g,'')
+  .slice(0,120) || 'anotacoes';
 
 function notice(message, title='Anotações') {
-  if (typeof appNotice === 'function') return appNotice(message,{title});
+  if (typeof global.appNotice === 'function') return global.appNotice(message,{title});
   alert(message);
   return Promise.resolve();
 }
 
-function normalizePdfChar(ch) {
-  const map = {'–':'-','—':'-','“':'"','”':'"','‘':"'",'’':"'",'…':'...','•':'•','→':'->','←':'<-','€':'EUR'};
-  if (map[ch] != null) return map[ch];
-  const code = ch.charCodeAt(0);
-  return code <= 255 ? ch : '?';
-}
-function toPdfText(value) {
-  return [...String(value ?? '')].map(normalizePdfChar).join('').replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
-}
-function latin1Bytes(str) {
-  const out = new Uint8Array(str.length);
-  for (let i=0;i<str.length;i++) out[i] = str.charCodeAt(i) & 0xff;
-  return out;
-}
-function pdfColor(value, fallback=[0.08,0.13,0.19]) {
-  const raw = String(value || '').trim();
-  let m = raw.match(/^#?([0-9a-f]{6})$/i);
-  if (m) {
-    const n = parseInt(m[1],16);
-    return [((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255];
-  }
-  m = raw.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i);
-  if (m) return [Number(m[1])/255,Number(m[2])/255,Number(m[3])/255];
-  return fallback;
-}
-function rgb(c){return `${c[0].toFixed(3)} ${c[1].toFixed(3)} ${c[2].toFixed(3)}`;}
-
-function normalizeInlineStyle(style={}) {
-  return {
-    bold: !!style.bold,
-    italic: !!style.italic,
-    underline: !!style.underline,
-    size: Math.max(8,Math.min(26,Number(style.size)||11)),
-    color: style.color || DEFAULT_TEXT_COLOR
-  };
-}
-function mergeStyle(base, patch) { return normalizeInlineStyle({...base,...patch}); }
-function parseFontSize(node, inherited) {
-  const raw = String(node?.style?.fontSize || '').trim();
-  let m = raw.match(/([0-9.]+)px/i);
-  if (m) return Math.max(8,Math.min(26,Number(m[1])*0.75));
-  m = raw.match(/([0-9.]+)pt/i);
-  if (m) return Math.max(8,Math.min(26,Number(m[1])));
-  m = raw.match(/([0-9.]+)em/i);
-  if (m) return Math.max(8,Math.min(26,Number(m[1]) * inherited));
-  return inherited;
-}
-function inlineStyleFromNode(node, inherited) {
-  const tag = String(node?.tagName || '').toUpperCase();
-  const style = {...inherited};
-  if (['B','STRONG'].includes(tag)) style.bold = true;
-  if (['I','EM'].includes(tag)) style.italic = true;
-  if (tag === 'U') style.underline = true;
-  const weight = String(node?.style?.fontWeight || '').toLowerCase();
-  if (weight === 'bold' || Number.parseInt(weight,10) >= 600) style.bold = true;
-  const fontStyle = String(node?.style?.fontStyle || '').toLowerCase();
-  if (fontStyle.includes('italic') || fontStyle.includes('oblique')) style.italic = true;
-  const decoration = String(node?.style?.textDecoration || node?.style?.textDecorationLine || '').toLowerCase();
-  if (decoration.includes('underline')) style.underline = true;
-  style.size = parseFontSize(node,style.size || 11);
-  if (node?.style?.color) style.color = node.style.color;
-  return normalizeInlineStyle(style);
-}
-function collectRuns(node, inherited, out) {
-  if (!node) return;
-  if (node.nodeType === Node.TEXT_NODE) {
-    const text = String(node.nodeValue || '').replace(/\u00a0/g,' ');
-    if (text) out.push({text,style:normalizeInlineStyle(inherited)});
-    return;
-  }
-  if (node.nodeType !== Node.ELEMENT_NODE) return;
-  const tag = node.tagName.toUpperCase();
-  if (tag === 'BR') { out.push({text:'\n',style:normalizeInlineStyle(inherited)}); return; }
-  const style = inlineStyleFromNode(node,inherited);
-  [...node.childNodes].forEach(child=>collectRuns(child,style,out));
-}
-function elementIsVisuallyEmpty(el) {
-  if (!el) return true;
-  const clone=el.cloneNode(true);
-  clone.querySelectorAll?.('br').forEach(br=>br.replaceWith('\n'));
-  return !(clone.textContent || '').replace(/\u00a0/g,' ').trim();
-}
-function blockDefinition(tag) {
-  if (/^H[1-6]$/.test(tag)) {
-    const level=Number(tag[1]);
-    return {type:'heading',before:level<=2?9:6,after:4,size:[20,17,15,13,12,11][level-1],bold:true};
-  }
-  if (tag==='LI') return {type:'list',before:0,after:1.5,size:11};
-  if (tag==='BLOCKQUOTE') return {type:'quote',before:5,after:6,size:11,italic:true};
-  if (tag==='PRE' || tag==='CODE') return {type:'code',before:4,after:5,size:9};
-  if (tag==='P') return {type:'paragraph',before:1,after:5,size:11};
-  if (tag==='DIV') return {type:'paragraph',before:0.5,after:3,size:11};
-  return {type:'paragraph',before:0.5,after:3,size:11};
-}
-function makeBlockFromElement(el, baseStyle, listPrefix='') {
-  const tag=el.tagName.toUpperCase();
-  const def=blockDefinition(tag);
-  let blockStyle=mergeStyle(baseStyle,{size:def.size,bold:def.bold||baseStyle.bold,italic:def.italic||baseStyle.italic});
-  blockStyle=inlineStyleFromNode(el,blockStyle);
-  const runs=[];
-  collectRuns(el,blockStyle,runs);
-  if (listPrefix) runs.unshift({text:listPrefix,style:mergeStyle(blockStyle,{bold:false})});
-  return {type:def.type,runs,before:def.before,after:def.after};
-}
-function collapseBlankBlocks(blocks) {
-  const out=[];
-  for (const block of blocks) {
-    if (block.type==='spacer') {
-      if (out.at(-1)?.type==='spacer') out[out.length-1].height=Math.max(out.at(-1).height,block.height);
-      else out.push(block);
-      continue;
-    }
-    out.push(block);
-  }
-  while(out[0]?.type==='spacer') out.shift();
-  while(out.at(-1)?.type==='spacer') out.pop();
-  return out;
-}
-function appendElementBlocks(node, base, blocks) {
-  if (node.nodeType===Node.TEXT_NODE) {
-    const text=String(node.nodeValue||'').replace(/\u00a0/g,' ');
-    if(text.trim()) blocks.push({type:'paragraph',runs:[{text,style:base}],before:0,after:3});
-    return;
-  }
-  if(node.nodeType!==Node.ELEMENT_NODE) return;
-  const tag=node.tagName.toUpperCase();
-  if(['SCRIPT','STYLE','NOSCRIPT'].includes(tag)) return;
-  if(elementIsVisuallyEmpty(node)) { blocks.push({type:'spacer',height:7}); return; }
-  if(tag==='UL' || tag==='OL') {
-    let index=1;
-    [...node.children].forEach(child=>{
-      if(child.tagName?.toUpperCase()!=='LI') return;
-      const prefix=tag==='OL'?`${index++}. `:'• ';
-      blocks.push(makeBlockFromElement(child,base,prefix));
-    });
-    return;
-  }
-  if(['P','DIV','H1','H2','H3','H4','H5','H6','LI','BLOCKQUOTE','PRE'].includes(tag)) {
-    blocks.push(makeBlockFromElement(node,base));
-    return;
-  }
-  const runs=[]; collectRuns(node,base,runs);
-  if(runs.some(run=>String(run.text||'').trim())) blocks.push({type:'paragraph',runs,before:0,after:3});
-}
-function noteHtmlToBlocks(note) {
-  const html=String(note?.conteudo||'').trim();
-  const base=normalizeInlineStyle({size:11,color:DEFAULT_TEXT_COLOR});
-  if(!html) {
-    const text=String(note?.conteudoTexto||'').replace(/\r\n?/g,'\n').trim();
-    if(!text) return [];
-    const blocks=[];
-    text.split('\n').forEach(line=>{
-      if(!line.trim()) blocks.push({type:'spacer',height:7});
-      else blocks.push({type:'paragraph',runs:[{text:line,style:base}],before:0,after:3});
-    });
-    return collapseBlankBlocks(blocks);
-  }
-  const holder=document.createElement('div');
-  holder.innerHTML=html;
-  const blocks=[];
-  [...holder.childNodes].forEach(node=>appendElementBlocks(node,base,blocks));
-  return collapseBlankBlocks(blocks);
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"]/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'
+  }[ch]));
 }
 
-function fontKey(style){
-  if(style.bold && style.italic) return 'F4';
-  if(style.bold) return 'F2';
-  if(style.italic) return 'F3';
-  return 'F1';
-}
-function estimateWidth(text,size,bold=false){
-  let units=0;
-  for(const ch of String(text||'')) {
-    if(/[MW@#%&]/.test(ch)) units+=0.88;
-    else if(/[ilI1.,:;'|!]/.test(ch)) units+=0.28;
-    else if(/\s/.test(ch)) units+=0.34;
-    else units+=0.53;
-  }
-  return units*size*(bold?1.035:1);
-}
-function tokenizeRuns(runs){
-  const tokens=[];
-  for(const run of runs){
-    const source=String(run.text||'').replace(/\r\n?/g,'\n');
-    const parts=source.match(/\n|[^\S\n]*[^\s\n]+|[^\S\n]+/g)||[];
-    for(const part of parts){
-      if(part==='\n') tokens.push({newline:true,style:run.style});
-      else tokens.push({text:part,style:run.style});
-    }
-  }
-  return tokens;
-}
-function layoutBlock(block,maxWidth=CONTENT_W){
-  const tokens=tokenizeRuns(block.runs||[]);
-  const lines=[]; let line=[]; let width=0; let maxSize=11;
-  const flush=()=>{lines.push({runs:line,width,maxSize});line=[];width=0;maxSize=11;};
-  for(const token of tokens){
-    if(token.newline){flush();continue;}
-    let text=token.text;
-    const style=normalizeInlineStyle(token.style);
-    if(!line.length) text=text.replace(/^\s+/, '');
-    if(!text) continue;
-    const w=estimateWidth(text,style.size,style.bold);
-    if(line.length && width+w>maxWidth && text.trim()) {
-      flush();
-      text=text.replace(/^\s+/, '');
-    }
-    if(!text) continue;
-    const finalWidth=estimateWidth(text,style.size,style.bold);
-    line.push({text,style,width}); width+=finalWidth; maxSize=Math.max(maxSize,style.size);
-  }
-  if(line.length||!lines.length) flush();
-  return lines;
-}
-
-function buildDocumentItems(materia,notes){
-  const items=[];
-  items.push({kind:'coverTitle',text:'Caderno de Anotações',size:21,bold:true,before:0,after:3,color:TITLE});
-  items.push({kind:'coverSubtitle',text:materia,size:15,bold:true,before:0,after:2,color:ACCENT});
-  items.push({kind:'meta',text:`Concurso: ${String(currentConcurso||'Concurso').trim()}`,size:9,bold:false,before:0,after:14,color:MUTED});
-  notes.forEach((note,index)=>{
-    if(index) items.push({kind:'separator',before:7,after:10});
-    items.push({kind:'noteTitle',text:note.titulo||note.assunto||`Nota ${index+1}`,size:14,bold:true,before:0,after:3,color:TITLE});
-    if(note.assunto&&note.assunto!==note.titulo) items.push({kind:'meta',text:`Assunto: ${note.assunto}`,size:9,bold:true,before:0,after:1,color:ACCENT});
-    if(note.data) items.push({kind:'meta',text:`Editado em ${note.data}`,size:8.5,bold:false,before:0,after:7,color:'#778899'});
-    noteHtmlToBlocks(note).forEach(block=>items.push({kind:'rich',block}));
-  });
-  return items;
-}
-function paginate(materia,notes){
-  const pages=[]; let current=[]; let y=TOP;
-  const pushPage=()=>{pages.push(current);current=[];y=TOP;};
-  const ensure=height=>{if(y-height<BOTTOM&&current.length)pushPage();};
-  for(const item of buildDocumentItems(materia,notes)){
-    if(item.kind==='separator'){
-      ensure(24); y-=item.before||0; current.push({kind:'rule',y}); y-=item.after||0; continue;
-    }
-    if(item.kind!=='rich'){
-      const style=normalizeInlineStyle({size:item.size,bold:item.bold,color:item.color});
-      const lines=layoutBlock({runs:[{text:item.text,style}]},CONTENT_W);
-      const h=(item.before||0)+(item.after||0)+lines.reduce((n,l)=>n+Math.max(12,l.maxSize*1.35),0);
-      ensure(h); y-=item.before||0;
-      for(const line of lines){current.push({kind:'line',runs:line.runs,y,maxSize:line.maxSize});y-=Math.max(12,line.maxSize*1.35);}
-      y-=item.after||0; continue;
-    }
-    const block=item.block;
-    if(block.type==='spacer'){ensure(block.height||7);y-=Math.min(10,Math.max(4,block.height||7));continue;}
-    y-=Math.min(10,Math.max(0,block.before||0));
-    const indent=block.type==='quote'?18:block.type==='list'?10:0;
-    const lines=layoutBlock(block,CONTENT_W-indent);
-    for(const line of lines){
-      const leading=Math.max(12,line.maxSize*1.32);
-      ensure(leading+(block.after||0));
-      current.push({kind:'line',runs:line.runs,y,maxSize:line.maxSize,indent,quote:block.type==='quote'});
-      y-=leading;
-    }
-    y-=Math.min(10,Math.max(0,block.after||0));
-  }
-  if(current.length||!pages.length) pages.push(current);
-  return pages;
-}
-
-function makeRichPdfBlob(materia,notes){
-  const pages=paginate(materia,notes);
-  const objects=[];
-  const fontIds={F1:3,F2:4,F3:5,F4:6};
-  const firstPageId=7;
-  const pageIds=[],contentIds=[];
-  for(let i=0;i<pages.length;i++){pageIds.push(firstPageId+i*2);contentIds.push(firstPageId+i*2+1);}
-  objects[1]='<< /Type /Catalog /Pages 2 0 R >>';
-  objects[2]=`<< /Type /Pages /Kids [${pageIds.map(id=>`${id} 0 R`).join(' ')}] /Count ${pages.length} >>`;
-  objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
-  objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
-  objects[5]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>';
-  objects[6]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding >>';
-  pages.forEach((page,pageIndex)=>{
-    const cmds=[];
-    cmds.push(`${rgb(pdfColor(ACCENT))} RG 1.2 w ${MARGIN_X} 806 m ${PAGE_W-MARGIN_X} 806 l S`);
-    page.forEach(item=>{
-      if(item.kind==='rule') {cmds.push(`${rgb(pdfColor('#d8e2e8'))} RG 0.7 w ${MARGIN_X} ${item.y.toFixed(1)} m ${PAGE_W-MARGIN_X} ${item.y.toFixed(1)} l S`);return;}
-      if(item.quote) cmds.push(`${rgb(pdfColor('#58cfc7'))} RG 2 w ${(MARGIN_X+4).toFixed(1)} ${(item.y+3).toFixed(1)} m ${(MARGIN_X+4).toFixed(1)} ${(item.y-item.maxSize*1.2).toFixed(1)} l S`);
-      for(const run of item.runs){
-        const s=normalizeInlineStyle(run.style); const x=MARGIN_X+(item.indent||0)+(run.width||0); const color=pdfColor(s.color);
-        cmds.push(`BT /${fontKey(s)} ${s.size.toFixed(2)} Tf ${rgb(color)} rg ${x.toFixed(1)} ${item.y.toFixed(1)} Td (${toPdfText(run.text)}) Tj ET`);
-        if(s.underline&&String(run.text).trim()){
-          const w=estimateWidth(run.text,s.size,s.bold); const uy=item.y-1.6;
-          cmds.push(`${rgb(color)} RG 0.55 w ${x.toFixed(1)} ${uy.toFixed(1)} m ${(x+w).toFixed(1)} ${uy.toFixed(1)} l S`);
-        }
-      }
-    });
-    const footer=`${String(currentConcurso||'').trim()}  •  ${materia}  •  Página ${pageIndex+1}/${pages.length}`;
-    cmds.push(`BT /F1 7.5 Tf ${rgb(pdfColor('#7b8a99'))} rg ${MARGIN_X} 28 Td (${toPdfText(footer)}) Tj ET`);
-    const stream=latin1Bytes(cmds.join('\n'));
-    objects[pageIds[pageIndex]]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Resources << /Font << /F1 ${fontIds.F1} 0 R /F2 ${fontIds.F2} 0 R /F3 ${fontIds.F3} 0 R /F4 ${fontIds.F4} 0 R >> >> /Contents ${contentIds[pageIndex]} 0 R >>`;
-    objects[contentIds[pageIndex]]={stream};
-  });
-  const maxId=Math.max(...Object.keys(objects).map(Number)); const chunks=[]; let offset=0;
-  const add=str=>{const b=latin1Bytes(str);chunks.push(b);offset+=b.length;};
-  add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'); const offsets=new Array(maxId+1).fill(0);
-  for(let id=1;id<=maxId;id++){
-    offsets[id]=offset;add(`${id} 0 obj\n`);const obj=objects[id];
-    if(obj?.stream){add(`<< /Length ${obj.stream.length} >>\nstream\n`);chunks.push(obj.stream);offset+=obj.stream.length;add('\nendstream\n');}
-    else add(String(obj||'<<>>')+'\n');
-    add('endobj\n');
-  }
-  const xref=offset;add(`xref\n0 ${maxId+1}\n0000000000 65535 f \n`);
-  for(let id=1;id<=maxId;id++) add(`${String(offsets[id]).padStart(10,'0')} 00000 n \n`);
-  add(`trailer\n<< /Size ${maxId+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
-  const total=chunks.reduce((n,c)=>n+c.length,0),joined=new Uint8Array(total);let pos=0;chunks.forEach(c=>{joined.set(c,pos);pos+=c.length;});
-  return new Blob([joined],{type:'application/pdf'});
+function escapeAttr(value){
+  return escapeHtml(value).replace(/'/g,'&#39;');
 }
 
 function sanitizePrintableHtml(html){
-  const holder=document.createElement('div');
-  holder.innerHTML=String(html||'');
-  holder.querySelectorAll('script,iframe,object,embed,link,meta,base').forEach(node=>node.remove());
-  holder.querySelectorAll('*').forEach(node=>{
-    [...node.attributes].forEach(attr=>{
-      const name=String(attr.name||'').toLowerCase();
-      const value=String(attr.value||'').trim();
-      if(name.startsWith('on')) node.removeAttribute(attr.name);
-      if((name==='href'||name==='src'||name==='xlink:href') && /^javascript:/i.test(value)) node.removeAttribute(attr.name);
+  const holder = document.createElement('div');
+  holder.innerHTML = String(html || '');
+  holder.querySelectorAll('script,iframe,object,embed,meta,base').forEach(node => node.remove());
+  holder.querySelectorAll('*').forEach(node => {
+    [...node.attributes].forEach(attr => {
+      const name = String(attr.name || '').toLowerCase();
+      const value = String(attr.value || '').trim();
+      if (name.startsWith('on')) node.removeAttribute(attr.name);
+      if ((name === 'href' || name === 'src' || name === 'xlink:href') && /^javascript:/i.test(value)) node.removeAttribute(attr.name);
     });
   });
   return holder.innerHTML;
 }
 
-function escapeHtml(value){
-  return String(value??'').replace(/[&<>\"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[ch]));
+function collectRootCssVariables(){
+  try{
+    const computed = getComputedStyle(document.documentElement);
+    const vars = [];
+    for(let i=0;i<computed.length;i++){
+      const name = computed[i];
+      if(!name || !name.startsWith('--')) continue;
+      const value = computed.getPropertyValue(name);
+      if(value) vars.push(`${name}:${value.trim()}`);
+    }
+    return vars.length ? `:root{${vars.join(';')}}` : '';
+  }catch(_){ return ''; }
+}
+
+function collectPrintableStyles(){
+  const pieces = [];
+  try{
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+      const href = link.href || link.getAttribute('href');
+      if(href) pieces.push(`<link rel="stylesheet" href="${escapeAttr(href)}">`);
+    });
+  }catch(_){ }
+  try{
+    document.querySelectorAll('style').forEach(style => {
+      const media = style.getAttribute('media');
+      pieces.push(`<style${media ? ` media="${escapeAttr(media)}"` : ''}>${style.textContent || ''}</style>`);
+    });
+  }catch(_){ }
+  const vars = collectRootCssVariables();
+  if(vars) pieces.push(`<style>${vars}</style>`);
+  return pieces.join('\n');
+}
+
+function normalizeSavedMedia(html){
+  const holder = document.createElement('div');
+  holder.innerHTML = sanitizePrintableHtml(html);
+  holder.querySelectorAll('img').forEach(img => {
+    if(!img.getAttribute('alt')) img.setAttribute('alt','Imagem da anotação');
+    img.setAttribute('loading','eager');
+    img.setAttribute('decoding','sync');
+  });
+  holder.querySelectorAll('svg').forEach(svg => {
+    if(!svg.getAttribute('xmlns')) svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  });
+  return holder.innerHTML;
 }
 
 function buildHighFidelityPrintHtml(materia,notes){
-  const title=`${safeName(currentConcurso)}_${safeName(materia)}_anotacoes`;
-  const noteHtml=notes.map((note,index)=>{
-    const body=sanitizePrintableHtml(note?.conteudo||'') || `<p>${escapeHtml(note?.conteudoTexto||'')}</p>`;
-    const heading=escapeHtml(note?.titulo||note?.assunto||`Nota ${index+1}`);
-    const assunto=note?.assunto&&note.assunto!==note.titulo?`<div class="note-subject">Assunto: ${escapeHtml(note.assunto)}</div>`:'';
-    const data=note?.data?`<div class="note-date">Editado em ${escapeHtml(note.data)}</div>`:'';
-    return `<section class="note-section"><header class="note-head"><h2>${heading}</h2>${assunto}${data}</header><div class="note-body">${body}</div></section>`;
+  const title = `${safeName(global.currentConcurso)}_${safeName(materia)}_anotacoes`;
+  const baseHref = document.baseURI || global.location?.href || '/';
+  const inheritedStyles = collectPrintableStyles();
+  const noteHtml = notes.map((note,index) => {
+    const rawBody = String(note?.conteudo || '');
+    const body = rawBody.trim() ? normalizeSavedMedia(rawBody) : `<p>${escapeHtml(note?.conteudoTexto || '')}</p>`;
+    const heading = escapeHtml(note?.titulo || note?.assunto || `Nota ${index+1}`);
+    const assunto = note?.assunto && note.assunto !== note.titulo ? `<div class="pdf-note-subject">Assunto: ${escapeHtml(note.assunto)}</div>` : '';
+    const data = note?.data ? `<div class="pdf-note-date">Editado em ${escapeHtml(note.data)}</div>` : '';
+    return `<section class="pdf-note-section"><header class="pdf-note-head"><h2>${heading}</h2>${assunto}${data}</header><div class="pdf-note-body">${body}</div></section>`;
   }).join('');
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>
-    @page{size:A4;margin:15mm 16mm 16mm}
-    *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-    html,body{margin:0;padding:0;background:#fff;color:#16212f;font-family:Arial,"Segoe UI Symbol","Segoe UI Emoji","Apple Color Emoji","Noto Sans","Noto Color Emoji",sans-serif;font-size:11pt;line-height:1.48;text-rendering:geometricPrecision}
-    body{overflow:visible}
-    .report-head{border-top:3px solid #198f8a;padding-top:8mm;margin-bottom:8mm}
-    .report-head h1{margin:0 0 2mm;font-size:21pt;line-height:1.08;color:#0b293d}
-    .report-head .materia{font-size:15pt;font-weight:700;color:#198f8a;margin-bottom:1.5mm}
-    .report-head .contest{font-size:9pt;color:#667788}
-    .note-section{margin:0 0 8mm;padding:0 0 7mm;border-bottom:.45pt solid #d8e2e8;break-inside:auto;page-break-inside:auto}
-    .note-section:last-child{border-bottom:0}
-    .note-head{break-after:avoid-page;page-break-after:avoid}
-    .note-head h2{margin:0 0 2mm;color:#0b293d;font-size:14pt;line-height:1.18}
-    .note-subject{font-size:9pt;font-weight:700;color:#198f8a;margin:0 0 1mm}
-    .note-date{font-size:8.5pt;color:#778899;margin:0 0 4mm}
-    .note-body{min-width:0;overflow:visible;word-break:normal;overflow-wrap:break-word;hyphens:auto}
-    .note-body p,.note-body div{max-width:100%}
-    .note-body h1,.note-body h2,.note-body h3,.note-body h4,.note-body h5,.note-body h6{break-after:avoid-page;page-break-after:avoid;line-height:1.2}
-    .note-body p{orphans:3;widows:3}
-    .note-body ul,.note-body ol{padding-left:1.6em}
-    .note-body li{margin:.7mm 0}
-    .note-body blockquote{margin:4mm 0;padding:2mm 0 2mm 4mm;border-left:2.2pt solid #58cfc7;break-inside:avoid-page;page-break-inside:avoid}
-    .note-body pre,.note-body code{white-space:pre-wrap;overflow-wrap:anywhere;font-family:Consolas,"Liberation Mono",Menlo,monospace}
-    .note-body pre{break-inside:avoid-page;page-break-inside:avoid}
-    .note-body table{width:100%;border-collapse:collapse;break-inside:avoid-page;page-break-inside:avoid}
-    .note-body th,.note-body td{vertical-align:top}
-    .note-body img,.note-body svg,.note-body figure,.note-body video{max-width:100%!important;height:auto!important;break-inside:avoid-page;page-break-inside:avoid;object-fit:contain}
-    .note-body figure{margin:4mm 0}
-    .note-body figcaption{font-size:9pt;color:#667788;margin-top:1.5mm}
-    .note-body a{color:inherit;text-decoration:underline}
-    @media print{html,body{width:auto!important;min-width:0!important}.no-print{display:none!important}}
-  </style></head><body><header class="report-head"><h1>Caderno de Anotações</h1><div class="materia">${escapeHtml(materia)}</div><div class="contest">Concurso: ${escapeHtml(String(currentConcurso||'Concurso').trim())}</div></header>${noteHtml}</body></html>`;
+
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="${escapeAttr(baseHref)}"><title>${escapeHtml(title)}</title>${inheritedStyles}<style>
+@page{size:A4;margin:15mm 16mm 16mm}
+html,body{margin:0!important;padding:0!important;background:#fff!important;color:#16212f!important;overflow:visible!important}
+body{width:auto!important;min-width:0!important;max-width:none!important;font-family:Arial,"Segoe UI","Segoe UI Symbol","Segoe UI Emoji","Apple Color Emoji","Noto Sans","Noto Sans Symbols 2","Noto Color Emoji",sans-serif!important;font-size:11pt!important;line-height:1.48!important;text-rendering:geometricPrecision;-webkit-font-smoothing:antialiased}
+*,*::before,*::after{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+.pdf-report-head{border-top:3px solid #198f8a;padding-top:8mm;margin:0 0 8mm!important}
+.pdf-report-head h1{margin:0 0 2mm!important;font-size:21pt!important;line-height:1.08!important;color:#0b293d!important;font-weight:700!important}
+.pdf-report-head .pdf-materia{font-size:15pt!important;font-weight:700!important;color:#198f8a!important;margin:0 0 1.5mm!important}
+.pdf-report-head .pdf-contest{font-size:9pt!important;color:#667788!important}
+.pdf-note-section{display:block!important;position:static!important;float:none!important;width:100%!important;max-width:100%!important;margin:0 0 8mm!important;padding:0 0 7mm!important;border:0!important;border-bottom:.45pt solid #d8e2e8!important;background:transparent!important;box-shadow:none!important;transform:none!important;overflow:visible!important;break-inside:auto;page-break-inside:auto}
+.pdf-note-section:last-child{border-bottom:0!important}
+.pdf-note-head{display:block!important;position:static!important;break-after:avoid-page;page-break-after:avoid}
+.pdf-note-head h2{margin:0 0 2mm!important;color:#0b293d!important;font-size:14pt!important;line-height:1.18!important;font-weight:700!important}
+.pdf-note-subject{font-size:9pt!important;font-weight:700!important;color:#198f8a!important;margin:0 0 1mm!important}
+.pdf-note-date{font-size:8.5pt!important;color:#778899!important;margin:0 0 4mm!important}
+.pdf-note-body{display:block!important;position:static!important;float:none!important;width:100%!important;max-width:100%!important;min-width:0!important;height:auto!important;max-height:none!important;overflow:visible!important;word-break:normal;overflow-wrap:anywhere;transform:none!important;filter:none!important;opacity:1!important}
+.pdf-note-body [contenteditable]{outline:0!important}.pdf-note-body [hidden],.pdf-note-body .no-print{display:none!important}
+.pdf-note-body p{orphans:3;widows:3}.pdf-note-body h1,.pdf-note-body h2,.pdf-note-body h3,.pdf-note-body h4,.pdf-note-body h5,.pdf-note-body h6{break-after:avoid-page;page-break-after:avoid;line-height:1.2}
+.pdf-note-body ul,.pdf-note-body ol{padding-left:1.6em}.pdf-note-body li{margin:.7mm 0}.pdf-note-body blockquote{break-inside:avoid-page;page-break-inside:avoid}
+.pdf-note-body pre,.pdf-note-body code{white-space:pre-wrap!important;overflow-wrap:anywhere!important;max-width:100%!important}.pdf-note-body pre{break-inside:avoid-page;page-break-inside:avoid}
+.pdf-note-body table{max-width:100%!important;break-inside:avoid-page;page-break-inside:avoid;border-collapse:collapse}
+.pdf-note-body img,.pdf-note-body svg,.pdf-note-body picture,.pdf-note-body figure,.pdf-note-body video{max-width:100%!important;height:auto!important;object-fit:contain!important;break-inside:avoid-page!important;page-break-inside:avoid!important}
+.pdf-note-body svg{overflow:visible!important}.pdf-note-body figure{margin-left:0!important;margin-right:0!important}.pdf-note-body a{color:inherit;text-decoration:underline}
+.pdf-note-body [class*="icon"],.pdf-note-body [class*="symbol"],.pdf-note-body i,.pdf-note-body span{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+@media print{html,body{width:auto!important;min-width:0!important}.pdf-note-body *{animation:none!important;transition:none!important}}
+</style></head><body><header class="pdf-report-head"><h1>Caderno de Anotações</h1><div class="pdf-materia">${escapeHtml(materia)}</div><div class="pdf-contest">Concurso: ${escapeHtml(String(global.currentConcurso || 'Concurso').trim())}</div></header>${noteHtml}</body></html>`;
 }
 
-function waitForPrintAssets(doc,timeoutMs=6000){
+function waitForPrintAssets(doc,timeoutMs=12000){
   const waits=[];
-  if(doc?.fonts?.ready) waits.push(Promise.resolve(doc.fonts.ready).catch(()=>{}));
-  [...(doc?.images||[])].forEach(img=>{
-    if(img.complete) return;
-    waits.push(new Promise(resolve=>{
-      const done=()=>resolve();
-      img.addEventListener('load',done,{once:true});
-      img.addEventListener('error',done,{once:true});
-    }));
-  });
+  try{ if(doc?.fonts?.ready) waits.push(Promise.resolve(doc.fonts.ready).catch(()=>{})); }catch(_){ }
+  try{
+    [...(doc?.images || [])].forEach(img => {
+      if(img.complete && img.naturalWidth > 0) return;
+      waits.push(new Promise(resolve => {
+        const done=()=>resolve();
+        img.addEventListener('load',done,{once:true});
+        img.addEventListener('error',done,{once:true});
+      }));
+    });
+  }catch(_){ }
+  try{
+    doc.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+      if(link.sheet) return;
+      waits.push(new Promise(resolve => {
+        const done=()=>resolve();
+        link.addEventListener('load',done,{once:true});
+        link.addEventListener('error',done,{once:true});
+      }));
+    });
+  }catch(_){ }
   return Promise.race([Promise.allSettled(waits),new Promise(resolve=>setTimeout(resolve,timeoutMs))]);
 }
 
 async function printHighFidelityDocument(materia,notes){
   const frame=document.createElement('iframe');
-  frame.setAttribute('aria-hidden','true');
-  frame.tabIndex=-1;
+  frame.setAttribute('aria-hidden','true');frame.tabIndex=-1;
   Object.assign(frame.style,{position:'fixed',right:'0',bottom:'0',width:'1px',height:'1px',border:'0',opacity:'0',pointerEvents:'none'});
   document.body.appendChild(frame);
-  const cleanup=()=>{setTimeout(()=>{try{frame.remove();}catch(_){}},700)};
+  let cleaned=false;
+  const cleanup=()=>{if(cleaned)return;cleaned=true;setTimeout(()=>{try{frame.remove();}catch(_){}},700)};
   try{
     const doc=frame.contentDocument||frame.contentWindow?.document;
     if(!doc) throw new Error('O navegador não disponibilizou o documento de impressão.');
     doc.open();doc.write(buildHighFidelityPrintHtml(materia,notes));doc.close();
     await waitForPrintAssets(doc);
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     const win=frame.contentWindow;
     if(!win||typeof win.print!=='function') throw new Error('A impressão em PDF não está disponível neste navegador.');
     win.addEventListener?.('afterprint',cleanup,{once:true});
-    win.focus();
-    win.print();
-    setTimeout(cleanup,120000);
+    win.focus();win.print();setTimeout(cleanup,120000);
   }catch(error){cleanup();throw error;}
 }
 
 async function exportRich(){
   const materia=String($('notesMateriaSelect')?.value||'').trim();
-  if(!materia)return notice('Selecione uma matéria antes de exportar.');
+  if(!materia) return notice('Selecione uma matéria antes de exportar.');
   let notes=[];
-  try{const metadata=getConcursosMetadata();notes=(metadata?.[currentConcurso]?.structuredNotes||[]).filter(note=>String(note?.materia||'').trim()===materia);}catch(_){notes=[];}
-  if(!notes.length)return notice(`Não há anotações em “${materia}” para exportar.`);
   try{
-    await printHighFidelityDocument(materia,notes);
-  }catch(error){console.error('[Rich notes export]',error);await notice(`Não foi possível preparar o PDF com fidelidade visual: ${error.message}`,'Falha na exportação');}
+    const metadata=typeof global.getConcursosMetadata==='function'?global.getConcursosMetadata():{};
+    notes=(metadata?.[global.currentConcurso]?.structuredNotes||[]).filter(note=>String(note?.materia||'').trim()===materia);
+  }catch(_){notes=[];}
+  if(!notes.length) return notice(`Não há anotações em “${materia}” para exportar.`);
+  try{await printHighFidelityDocument(materia,notes);}catch(error){console.error('[Rich notes export]',error);await notice(`Não foi possível preparar o PDF com fidelidade visual: ${error.message}`,'Falha na exportação');}
 }
 
-function selectionStorageKey(){
-  const userId=String(global.currentUser?.id||global.currentUser?.email||'anon');
-  const concurso=String(global.currentConcurso||'Concurso Geral');
-  return `notes_selected_materia:${userId}:${concurso}`;
-}
+function selectionStorageKey(){const userId=String(global.currentUser?.id||global.currentUser?.email||'anon');const concurso=String(global.currentConcurso||'Concurso Geral');return `notes_selected_materia:${userId}:${concurso}`;}
 function readSavedMateria(){try{return String(localStorage.getItem(selectionStorageKey())||'').trim();}catch(_){return '';}}
-function saveSelectedMateria(value){
-  const materia=String(value||'').trim();
-  if(!materia)return;
-  try{localStorage.setItem(selectionStorageKey(),materia);}catch(_){ }
-}
-function restoreSelectedMateria(preferred=''){
-  const select=$('notesMateriaSelect');
-  if(!select||!select.options?.length)return false;
-  const desired=String(preferred||readSavedMateria()||'').trim();
-  if(!desired)return false;
-  if(![...select.options].some(option=>option.value===desired))return false;
-  if(select.value!==desired){select.value=desired;if(typeof global.renderNotesList==='function')global.renderNotesList();}
-  return true;
-}
-function scheduleRestore(preferred=''){
-  clearTimeout(notesSelectionRestoreTimer);
-  notesSelectionRestoreTimer=setTimeout(()=>restoreSelectedMateria(preferred),0);
-}
-function installSelectionPersistence(){
-  const select=$('notesMateriaSelect');
-  if(!select)return false;
-  if(select.dataset.selectionPersistence!=='1'){
-    select.dataset.selectionPersistence='1';
-    select.addEventListener('change',()=>saveSelectedMateria(select.value));
-    select.addEventListener('input',()=>saveSelectedMateria(select.value));
-  }
-  if(notesSelectionObserver)notesSelectionObserver.disconnect();
-  notesSelectionObserver=new MutationObserver(()=>scheduleRestore());
-  notesSelectionObserver.observe(select,{childList:true,subtree:true});
-  scheduleRestore();
-  if(typeof global.loadNotesData==='function'&&!global.loadNotesData.__notesSelectionWrapped){
-    originalLoadNotesData=global.loadNotesData;
-    const wrapped=function(...args){
-      const desired=readSavedMateria()||String($('notesMateriaSelect')?.value||'');
-      const result=originalLoadNotesData.apply(this,args);
-      scheduleRestore(desired);
-      return result;
-    };
-    wrapped.__notesSelectionWrapped=true;
-    global.loadNotesData=wrapped;
-  }
-  return true;
-}
-
-function install(){
-  installSelectionPersistence();
-  const wrap=$('notesIoActions'); if(!wrap)return false;
-  const old=[...wrap.querySelectorAll('button')].find(btn=>/^\s*Exportar\s*$/i.test(btn.textContent||''));
-  if(!old)return false;
-  if(old.dataset.richExport==='1')return true;
-  const button=old.cloneNode(true);button.dataset.richExport='1';button.title='Exportar em PDF preservando caracteres especiais, símbolos, imagens, figuras, títulos e formatação';button.addEventListener('click',exportRich);old.replaceWith(button);return true;
-}
+function saveSelectedMateria(value){const materia=String(value||'').trim();if(!materia)return;try{localStorage.setItem(selectionStorageKey(),materia);}catch(_){}}
+function restoreSelectedMateria(preferred=''){const select=$('notesMateriaSelect');if(!select||!select.options?.length)return false;const desired=String(preferred||readSavedMateria()||'').trim();if(!desired)return false;if(![...select.options].some(option=>option.value===desired))return false;if(select.value!==desired){select.value=desired;if(typeof global.renderNotesList==='function')global.renderNotesList();}return true;}
+function scheduleRestore(preferred=''){clearTimeout(notesSelectionRestoreTimer);notesSelectionRestoreTimer=setTimeout(()=>restoreSelectedMateria(preferred),0);}
+function installSelectionPersistence(){const select=$('notesMateriaSelect');if(!select)return false;if(select.dataset.selectionPersistence!=='1'){select.dataset.selectionPersistence='1';select.addEventListener('change',()=>saveSelectedMateria(select.value));select.addEventListener('input',()=>saveSelectedMateria(select.value));}if(notesSelectionObserver)notesSelectionObserver.disconnect();notesSelectionObserver=new MutationObserver(()=>scheduleRestore());notesSelectionObserver.observe(select,{childList:true,subtree:true});scheduleRestore();if(typeof global.loadNotesData==='function'&&!global.loadNotesData.__notesSelectionWrapped){originalLoadNotesData=global.loadNotesData;const wrapped=function(...args){const desired=readSavedMateria()||String($('notesMateriaSelect')?.value||'');const result=originalLoadNotesData.apply(this,args);scheduleRestore(desired);return result;};wrapped.__notesSelectionWrapped=true;global.loadNotesData=wrapped;}return true;}
+function install(){installSelectionPersistence();const wrap=$('notesIoActions');if(!wrap)return false;const old=[...wrap.querySelectorAll('button')].find(btn=>/^\s*Exportar\s*$/i.test(btn.textContent||''));if(!old)return false;if(old.dataset.richExport==='1')return true;const button=old.cloneNode(true);button.dataset.richExport='1';button.title='Exportar em PDF preservando Unicode, símbolos, imagens, SVGs, estilos, cores e formatação';button.removeAttribute('onclick');button.addEventListener('click',exportRich);old.replaceWith(button);return true;}
 function boot(){if(!install())setTimeout(boot,120);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,80));else setTimeout(boot,80);
 global.addEventListener('load',()=>setTimeout(boot,120));
 document.addEventListener('click',event=>{const btn=event.target.closest('button');if((btn?.getAttribute('onclick')||'').includes("switchTab('tab-anotacoes'"))setTimeout(()=>{installSelectionPersistence();scheduleRestore();},20);});
+
+function makeRichPdfBlob(){throw new Error('Exportação binária legada desativada: use printHighFidelityDocument para preservar Unicode e formatação.');}
+function noteHtmlToBlocks(note){return normalizeSavedMedia(note?.conteudo||'');}
 
 global.NotesRichExport=Object.freeze({exportRich,makeRichPdfBlob,noteHtmlToBlocks,buildHighFidelityPrintHtml,printHighFidelityDocument,sanitizePrintableHtml,restoreSelectedMateria,saveSelectedMateria});
 })(window);
