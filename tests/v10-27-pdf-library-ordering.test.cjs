@@ -12,6 +12,12 @@ const ordering = read('public/js/pdf/pdf-library-ordering.js');
 const core = read('public/js/pdf/pdf-core.js');
 const sw = read('public/sw.js');
 
+test('novos módulos JavaScript compilam sem erro de sintaxe', () => {
+  assert.doesNotThrow(() => new Function(library));
+  assert.doesNotThrow(() => new Function(ordering));
+  assert.doesNotThrow(() => new Function(core));
+});
+
 test('ordem manual de PDFs é persistida com isolamento por usuário', () => {
   assert.match(migration, /add column if not exists sort_order bigint/i);
   assert.match(migration, /assign_pdf_document_sort_order/i);
@@ -20,7 +26,7 @@ test('ordem manual de PDFs é persistida com isolamento por usuário', () => {
   assert.match(migration, /security invoker/i);
   assert.match(migration, /v_user uuid := auth\.uid\(\)/i);
   assert.match(migration, /d\.user_id = v_user/i);
-  assert.match(migration, /count\(distinct value\)/i);
+  assert.match(migration, /count\(distinct item\.id\)/i);
   assert.doesNotMatch(migration, /set sort_order = ordered\.position,\s*updated_at/i);
 });
 
