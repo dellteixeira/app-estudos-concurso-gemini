@@ -40,3 +40,5 @@ jobs:
 
       - name: Preview pending migrations
         run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
+
+# Verificação operacional pós-deploy; não mesclar esta alteração temporária.
