@@ -26,11 +26,13 @@ jobs:
         with:
           node-version: '22'
       - name: Apply focused patch
-        run: python scripts/ops-single-page-report-chart.py
+        run: |
+          python scripts/ops-single-page-report-chart.py
+          python scripts/ops-fix-report-compat.py
       - name: Syntax check
         run: node --check public/js/study-performance-report-core.js && node --check public/js/study-performance-report.js
       - name: Focused tests
-        run: node --test tests/study-performance-report-single-page.test.cjs
+        run: node --test tests/study-performance-report-single-page.test.cjs tests/study-performance-report-polish.test.cjs
       - name: Full test suite
         run: npm test
       - name: Structural audit
@@ -41,7 +43,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/js/study-performance-report-core.js public/js/study-performance-report.js tests/study-performance-report-single-page.test.cjs
+          git add public/js/study-performance-report-core.js public/js/study-performance-report.js tests/study-performance-report-single-page.test.cjs tests/study-performance-report-polish.test.cjs
           if git diff --cached --quiet; then
             echo "No changes"
             exit 0
