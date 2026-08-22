@@ -1,15 +1,17 @@
 name: Fix Firefox longtask observer
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/firefox-longtask-observer
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   patch:
+    if: github.head_ref == 'fix/firefox-longtask-observer'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,6 +61,9 @@ jobs:
           workflow = Path('.github/workflows/fix-firefox-longtask.yml')
           if workflow.exists():
               workflow.unlink()
+
+      - name: Validate syntax target
+        run: node --check public/js/app-core.js
 
       - name: Commit patch
         run: |
