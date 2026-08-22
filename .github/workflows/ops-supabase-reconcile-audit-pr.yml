@@ -1,0 +1,129 @@
+name: OPS Supabase Reconcile Audit PR
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ops-supabase-reconcile-audit-pr.yml'
+      - '.github/workflows/ops-supabase-reconcile-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: github.head_ref == 'ops/supabase-reconcile-audit-20260821'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_ID"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test -n "$SUPABASE_DB_URL"
+
+      - name: Prepare directories
+        run: mkdir -p audit/database audit/storage audit/inventory audit/dry-run
+
+      - name: Create fresh database backup
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db dump --db-url "$SUPABASE_DB_URL" --role-only -f audit/database/roles.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f audit/database/schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" --data-only --use-copy -f audit/database/data.sql
+
+      - name: Backup Supabase Storage
+        env:
+          STORAGE_BACKUP_DIR: audit/storage
+        run: node scripts/backup-supabase-storage.mjs
+
+      - name: Inventory migration history
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -P pager=off -A -F '|' -c "select * from supabase_migrations.schema_migrations order by version;" > audit/inventory/migration-history.txt
+
+      - name: Inventory production schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -P pager=off -A -F '|' <<'SQL' > audit/inventory/schema-inventory.txt
+          select 'TABLE|'||n.nspname||'.'||c.relname||'|rls='||c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','storage') and c.relkind='r' order by n.nspname,c.relname;
+          select 'COLUMN|'||table_schema||'.'||table_name||'.'||column_name||'|'||data_type||'|nullable='||is_nullable||'|default='||coalesce(column_default,'') from information_schema.columns where table_schema='public' order by table_name,ordinal_position;
+          select 'CONSTRAINT|'||n.nspname||'.'||c.relname||'|'||con.conname||'|'||pg_get_constraintdef(con.oid) from pg_constraint con join pg_class c on c.oid=con.conrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' order by c.relname,con.conname;
+          select 'INDEX|'||schemaname||'.'||tablename||'|'||indexname||'|'||indexdef from pg_indexes where schemaname='public' order by tablename,indexname;
+          select 'POLICY|'||schemaname||'.'||tablename||'|'||policyname||'|'||cmd||'|roles='||array_to_string(roles,',')||'|qual='||coalesce(qual,'')||'|check='||coalesce(with_check,'') from pg_policies where schemaname in ('public','storage') order by schemaname,tablename,policyname;
+          select 'TRIGGER|'||event_object_schema||'.'||event_object_table||'|'||trigger_name||'|'||action_timing||'|'||event_manipulation||'|'||action_statement from information_schema.triggers where event_object_schema='public' order by event_object_table,trigger_name,event_manipulation;
+          select 'FUNCTION|public.'||p.proname||'|security_definer='||p.prosecdef||'|'||pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('delete_my_study_data','snapshot_pdf_annotation_version') order by p.proname;
+          select 'BUCKET|'||id||'|public='||public||'|file_size_limit='||coalesce(file_size_limit::text,'')||'|mime='||coalesce(array_to_string(allowed_mime_types,','),'') from storage.buckets order by id;
+          SQL
+
+      - name: Evaluate material migration state
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -P pager=off -A -F '|' <<'SQL' > audit/inventory/material-state.txt
+          select '20260816_add_videoaula_to_edital|' || case when exists(select 1 from information_schema.columns where table_schema='public' and table_name='edital' and column_name='videoaula' and data_type='boolean' and is_nullable='NO') then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          select '20260818_harden_delete_my_study_data|' || case when exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='delete_my_study_data' and not p.prosecdef) then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          select '20260818210000_create_pdf_foundation|' || case when to_regclass('public.study_workspaces') is not null and to_regclass('public.pdf_documents') is not null and to_regclass('public.pdf_progress') is not null and exists(select 1 from storage.buckets where id='study-pdfs' and public=false) then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          select '20260818210100_extend_delete_my_study_data_for_pdf|' || case when coalesce((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='delete_my_study_data' limit 1),'') like '%pdf_documents%' and coalesce((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='delete_my_study_data' limit 1),'') like '%pdf_progress%' then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          select '20260818220000_link_pdf_workspace_to_concurso|TRANSITIONAL_SUPERSEDED';
+          select '20260818230000_decouple_pdf_from_concurso|' || case when to_regclass('public.pdf_document_links') is not null and not exists(select 1 from information_schema.columns where table_schema='public' and table_name='pdf_documents' and column_name in ('workspace_id','concurso','materia','assunto')) and not exists(select 1 from information_schema.columns where table_schema='public' and table_name='study_workspaces' and column_name='concurso') then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          select '20260818230100_extend_delete_my_study_data_for_pdf_links|' || case when coalesce((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='delete_my_study_data' limit 1),'') like '%pdf_document_links%' then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          select '20260819030000_create_pdf_reader_annotations|' || case when to_regclass('public.pdf_annotations') is not null and to_regclass('public.pdf_annotation_versions') is not null and to_regclass('public.pdf_bookmarks') is not null and exists(select 1 from pg_trigger where tgname='trg_pdf_annotation_version' and not tgisinternal) then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          select '20260819090000_harden_pdf_reader_rls|' || case when exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='snapshot_pdf_annotation_version' and p.prosecdef) and not exists(select 1 from pg_policies where schemaname='public' and tablename='pdf_annotation_versions' and cmd='INSERT') then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          select '20260819183000_allow_workspace_only_pdf_links|' || case when exists(select 1 from pg_constraint con where con.conrelid='public.pdf_document_links'::regclass and con.conname='pdf_document_links_assunto_check' and pg_get_constraintdef(con.oid) like '%>= 0%' and pg_get_constraintdef(con.oid) like '%<= 300%') and exists(select 1 from pg_constraint con where con.conrelid='public.pdf_document_links'::regclass and con.conname='pdf_document_links_materia_check' and pg_get_constraintdef(con.oid) like '%>= 0%' and pg_get_constraintdef(con.oid) like '%<= 180%') then 'MATERIAL_STATE_PRESENT' else 'MISSING_OR_DIFFERENT' end;
+          SQL
+
+      - name: Link project and dry-run only
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_ID"
+          supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD" 2>&1 | tee audit/dry-run/db-push-dry-run.txt
+
+      - name: Print audit summary
+        shell: bash
+        run: |
+          echo '=== MATERIAL STATE ==='
+          cat audit/inventory/material-state.txt
+          echo '=== REMOTE MIGRATION HISTORY ==='
+          cat audit/inventory/migration-history.txt
+          echo '=== DRY RUN ==='
+          cat audit/dry-run/db-push-dry-run.txt
+
+      - name: Create integrity manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'created_at=%s\nbranch=%s\ncommit=%s\nmode=backup+read-only-audit\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_HEAD_REF" "$GITHUB_SHA" > audit/AUDIT_INFO.txt
+          find audit -type f ! -name MANIFEST_SHA256.txt -print0 | sort -z | xargs -0 sha256sum > audit/MANIFEST_SHA256.txt
+          tar -czf supabase-reconcile-audit-${{ github.run_id }}.tar.gz audit
+
+      - name: Upload audit and backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-reconcile-audit-${{ github.run_id }}
+          path: supabase-reconcile-audit-${{ github.run_id }}.tar.gz
+          retention-days: 14
+          if-no-files-found: error
