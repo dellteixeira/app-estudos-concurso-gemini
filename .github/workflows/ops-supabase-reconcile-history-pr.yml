@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -At <<'SQL' > /tmp/schema-before.txt
-          select n.nspname||'|'||c.relname||'|'||c.relkind||'|'||c.relrowsecurity
+          select n.nspname||'|'||c.relname||'|'||c.relkind::text||'|'||c.relrowsecurity::text
           from pg_class c join pg_namespace n on n.oid=c.relnamespace
           where n.nspname in ('public','storage') order by 1;
           select table_schema||'|'||table_name||'|'||column_name||'|'||data_type||'|'||is_nullable||'|'||coalesce(column_default,'')
@@ -53,7 +53,7 @@ jobs:
           where n.nspname='public' order by 1,2,3;
           select schemaname||'|'||tablename||'|'||policyname||'|'||cmd||'|'||coalesce(qual,'')||'|'||coalesce(with_check,'')
           from pg_policies where schemaname in ('public','storage') order by 1,2,3;
-          select n.nspname||'|'||p.proname||'|'||p.prosecdef||'|'||pg_get_functiondef(p.oid)
+          select n.nspname||'|'||p.proname||'|'||p.prosecdef::text||'|'||pg_get_functiondef(p.oid)
           from pg_proc p join pg_namespace n on n.oid=p.pronamespace
           where n.nspname='public' order by 1,2,p.oid;
           SQL
@@ -93,7 +93,7 @@ jobs:
         run: |
           set -euo pipefail
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -At <<'SQL' > /tmp/schema-after.txt
-          select n.nspname||'|'||c.relname||'|'||c.relkind||'|'||c.relrowsecurity
+          select n.nspname||'|'||c.relname||'|'||c.relkind::text||'|'||c.relrowsecurity::text
           from pg_class c join pg_namespace n on n.oid=c.relnamespace
           where n.nspname in ('public','storage') order by 1;
           select table_schema||'|'||table_name||'|'||column_name||'|'||data_type||'|'||is_nullable||'|'||coalesce(column_default,'')
@@ -103,7 +103,7 @@ jobs:
           where n.nspname='public' order by 1,2,3;
           select schemaname||'|'||tablename||'|'||policyname||'|'||cmd||'|'||coalesce(qual,'')||'|'||coalesce(with_check,'')
           from pg_policies where schemaname in ('public','storage') order by 1,2,3;
-          select n.nspname||'|'||p.proname||'|'||p.prosecdef||'|'||pg_get_functiondef(p.oid)
+          select n.nspname||'|'||p.proname||'|'||p.prosecdef::text||'|'||pg_get_functiondef(p.oid)
           from pg_proc p join pg_namespace n on n.oid=p.pronamespace
           where n.nspname='public' order by 1,2,p.oid;
           SQL
