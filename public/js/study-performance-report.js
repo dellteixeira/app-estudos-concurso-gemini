@@ -96,15 +96,9 @@ function installReaderPanelExpansion(attempt=0){
 
     afterReaderLayout(()=>{
       const afterWidth=canvasWrap.getBoundingClientRect().width||canvasWrap.clientWidth;
-
-      // No mobile o painel é sobreposto; o documento já ocupa toda a largura.
       if(mobile)return;
-
-      // Em modos de encaixe, force novo cálculo com a largura efetivamente disponível.
       if(fitWidthActive){reader.fitWidth();return;}
       if(fitPageActive){reader.fitPage();return;}
-
-      // Em zoom manual, preserve a proporção visual e use a área liberada pelo painel.
       if(customScale&&beforeWidth>0&&afterWidth>0){
         const ratio=afterWidth/beforeWidth;
         if(Number.isFinite(ratio)&&Math.abs(ratio-1)>.01){
@@ -115,7 +109,6 @@ function installReaderPanelExpansion(attempt=0){
     });
   };
   enhancedToggleSide.__panelExpansionV2=true;
-
   window.PdfStudyReader=Object.freeze({...reader,toggleSide:enhancedToggleSide});
   return true;
 }
@@ -128,6 +121,9 @@ function load(src,marker,onload){
 function boot(){
   ensureButtonParityStyles();
   installReaderPanelExpansion();
+  // Compatibilidade: o módulo auxiliar continua referenciado, mas se a V2 já foi
+  // instalada ele apenas encerra sem substituir a implementação ativa.
+  load('./js/pdf/pdf-reader-panel-layout.js?rev=20260822-2','data-pdf-reader-panel-layout-v2');
   if(window.StudyPerformanceReport){load('./js/study-performance-report-v2.js','data-study-report-v2');return;}
   load('./js/study-performance-report-core.js','data-study-report-core',()=>load('./js/study-performance-report-v2.js','data-study-report-v2'));
 }
