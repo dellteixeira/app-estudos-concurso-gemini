@@ -8,7 +8,8 @@ const library=fs.readFileSync('public/js/pdf/pdf-library-ui.js','utf8');
 test('IA de flashcard tem caminho rápido e limites rígidos de latência',()=>{
   assert.ok(worker.includes('gemini-3.6-flash'));
   assert.ok(worker.includes('const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"]'));
-  assert.ok(worker.includes('controller.abort(), GEMINI_FLASHCARD_TIMEOUT_MS'));
+  assert.ok(worker.includes('const GEMINI_FLASHCARD_TIMEOUT_MS = 12000'));
+  assert.ok(worker.includes('GEMINI_FLASHCARD_TIMEOUT_MS'));
   assert.ok(worker.includes('WORKERS_FLASHCARD_TIMEOUT_MS, model.label'));
   assert.ok(reader.includes('controller.abort(),25000'));
   assert.ok(reader.includes('.slice(0,5000)'));
