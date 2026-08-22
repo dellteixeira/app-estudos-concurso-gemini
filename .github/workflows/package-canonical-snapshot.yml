@@ -1,0 +1,43 @@
+name: Package Canonical Snapshot
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout canonical snapshot
+        uses: actions/checkout@v4
+        with:
+          ref: 671a5c86298a972a15f33284d2fa897f9f31eb04
+          fetch-depth: 1
+
+      - name: Validate canonical version
+        shell: bash
+        run: |
+          test "$(node -p "require('./package.json').version")" = "10.26.0"
+          grep -q '"version": "10.26.0"' public/version.json
+          grep -q "const APP_VERSION = '10.26.0';" public/sw.js
+          grep -q 'const APP_VERSION = "10.26.0";' src/index.js
+
+      - name: Build canonical ZIP
+        shell: bash
+        run: |
+          rm -rf .git
+          zip -r "Estudo-Adaptativo-v10.26.0-canonical-2026-08-22.zip" . -x "*.DS_Store"
+          sha256sum "Estudo-Adaptativo-v10.26.0-canonical-2026-08-22.zip" > SHA256SUMS.txt
+
+      - name: Upload canonical package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Estudo-Adaptativo-v10.26.0-canonical-2026-08-22
+          path: |
+            Estudo-Adaptativo-v10.26.0-canonical-2026-08-22.zip
+            SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
