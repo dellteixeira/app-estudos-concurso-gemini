@@ -6,7 +6,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 
 const root=path.resolve(__dirname,'..');
-const report=fs.readFileSync(path.join(root,'public/js/study-performance-report.js'),'utf8');
+const report=fs.readFileSync(path.join(root,'public/js/study-performance-report-core.js'),'utf8');
+const reportLoader=fs.readFileSync(path.join(root,'public/js/study-performance-report.js'),'utf8');
 const loader=fs.readFileSync(path.join(root,'public/pwa-update.js'),'utf8');
 const sw=fs.readFileSync(path.join(root,'public/sw.js'),'utf8');
 
@@ -48,10 +49,12 @@ test('botão Exportar dados é inserido ao lado de Estudar agora e é responsivo
   assert.match(report,/@media\(max-width:430px\)/);
 });
 
-test('relatório é carregado pelo app e armazenado no PWA',()=>{
+test('relatório é carregado pelo app, preserva core e permanece no PWA',()=>{
   assert.match(loader,/loadStudyPerformanceReport/);
   assert.match(loader,/\.\/js\/study-performance-report\.js/);
   assert.match(sw,/\.\/js\/study-performance-report\.js/);
+  assert.match(reportLoader,/study-performance-report-core\.js/);
+  assert.match(reportLoader,/study-performance-report-v2\.js/);
 });
 
 test('exportação gera PDF diretamente no navegador',()=>{
