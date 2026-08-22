@@ -1,0 +1,46 @@
+name: Create Canonical Release
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.head_ref == 'temp/create-release-v10.26.0-canonical'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout canonical snapshot
+        uses: actions/checkout@v4
+        with:
+          ref: 671a5c86298a972a15f33284d2fa897f9f31eb04
+          fetch-depth: 0
+
+      - name: Package canonical ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP='Estudo-Adaptativo-v10.26.0-canonical-2026-08-22.zip'
+          git archive --format=zip --output="$ZIP" 671a5c86298a972a15f33284d2fa897f9f31eb04
+          sha256sum "$ZIP" | tee SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG='v10.26.0-canonical'
+          TITLE='Estudo Adaptativo v10.26.0 — Canonical Production Snapshot'
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG já existe; atualizando assets."
+            gh release upload "$TAG" Estudo-Adaptativo-v10.26.0-canonical-2026-08-22.zip SHA256SUMS.txt --clobber
+          else
+            gh release create "$TAG" \
+              --target 671a5c86298a972a15f33284d2fa897f9f31eb04 \
+              --title "$TITLE" \
+              --notes $'Snapshot canônico da produção antes da migração da Biblioteca PDF para OPFS.\n\nCommit canônico: `671a5c86298a972a15f33284d2fa897f9f31eb04`\n\nInclui as correções de PWA/offline e leitura offline de PDFs previamente preparados. Este release é o ponto seguro de restauração pré-OPFS.' \
+              Estudo-Adaptativo-v10.26.0-canonical-2026-08-22.zip SHA256SUMS.txt
+          fi
