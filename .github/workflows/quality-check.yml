@@ -38,8 +38,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git fetch --no-tags --depth=1 origin 75b1ff0af9b24145ef28fc7c222ca1b27b889070
           mkdir -p canonical-source
-          git archive 75b1ff0af9b24145ef28fc7c222ca1b27b889070 | tar -x -C canonical-source
+          git archive FETCH_HEAD | tar -x -C canonical-source
           cat > canonical-source/CANONICAL_BACKUP_INFO.txt <<'EOF'
           APP: app-estudos-concurso-gemini
           VERSION: 10.26.0
