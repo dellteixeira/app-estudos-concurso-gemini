@@ -11,11 +11,11 @@ test('painel offline é reposicionado para fora da barra de filtros', () => {
   assert.match(layout, /filters\.insertAdjacentElement\('afterend', panel\)/);
 });
 
-test('desktop usa cabeçalho em largura total e ações justificadas', () => {
+test('desktop usa cabeçalho em largura total e ações em cinco colunas harmônicas', () => {
   assert.match(layout, /@media \(min-width:1101px\)/);
   assert.match(layout, /\.pdf-library-hero[\s\S]*display:grid!important;[\s\S]*width:100%!important/);
-  assert.match(layout, /\.pdf-library-actions[\s\S]*display:flex!important;[\s\S]*justify-content:space-between!important;[\s\S]*width:100%!important;[\s\S]*max-width:none!important/);
-  assert.match(layout, /\.pdf-library-actions>\.btn,[\s\S]*\.pdf-library-actions>\.pdf-library-sort-control[\s\S]*flex:1 1 0!important/);
+  assert.match(layout, /\.pdf-library-actions[\s\S]*display:grid!important;[\s\S]*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important;[\s\S]*gap:10px!important;[\s\S]*width:100%!important/);
+  assert.match(layout, /\.pdf-library-actions>\.btn,[\s\S]*\.pdf-library-actions>\.pdf-library-sort-control[\s\S]*width:100%!important;[\s\S]*min-width:0!important;[\s\S]*max-width:none!important/);
 });
 
 test('desktop distribui exatamente os cinco filtros por toda a linha', () => {
