@@ -53,10 +53,11 @@ jobs:
       - name: Wait for native Cloudflare deployment and verify production
         shell: bash
         env:
-          APP_URL: https://app-estudos-concurso-gemini.d3-concursos.workers.dev
+          APP_URL: https://estudoadaptativo.com
         run: |
           expected="$(node -p "require('./public/version.json').version")"
           echo "Expecting Cloudflare production version: $expected"
+          echo "Canonical production URL: $APP_URL"
 
           matched=0
           for attempt in $(seq 1 24); do
@@ -76,7 +77,7 @@ jobs:
           done
 
           if [ "$matched" -ne 1 ]; then
-            echo "::error::Native Cloudflare deployment did not expose version $expected within the verification window"
+            echo "::error::Canonical production domain did not expose version $expected within the verification window"
             exit 1
           fi
 
@@ -89,4 +90,4 @@ jobs:
             exit 1
           }
 
-          echo "Cloudflare production verified at version $expected"
+          echo "Cloudflare production verified at $APP_URL with version $expected"
