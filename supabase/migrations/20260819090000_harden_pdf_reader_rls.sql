@@ -1,5 +1,6 @@
 -- V10.15.3 — hardening do Reader PDF.
 -- Reforça integridade entre usuário, PDF e marcações sem alterar dados existentes.
+-- Revalidado para aplicação controlada em produção após reconciliação do histórico de migrations.
 
 -- UPDATE de anotação: o PDF referenciado continua obrigatoriamente pertencendo ao usuário.
 drop policy if exists pdf_annotations_update_own on public.pdf_annotations;
