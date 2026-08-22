@@ -1,4 +1,4 @@
-const APP_VERSION = '10.26.1';
+const APP_VERSION = '10.26.0';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
@@ -22,12 +22,6 @@ const OPTIONAL_OFFLINE_ASSETS = [
   './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js',
   './vendor/pdf.min.js', './vendor/pdf_viewer.min.css', './vendor/pdf.worker.min.js'
 ];
-
-const CORE_PATHS = new Set(
-  [...CRITICAL_APP_SHELL, ...OPTIONAL_OFFLINE_ASSETS]
-    .map(asset => new URL(asset, self.location.origin).pathname)
-    .concat(['/sw.js'])
-);
 
 function offlineResponse(message = 'Recurso indisponível offline.', contentType = 'text/plain; charset=utf-8') {
   return new Response(message, {
@@ -154,7 +148,17 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (CORE_PATHS.has(url.pathname)) {
+  // Mantido de forma explícita porque este bloco também funciona como contrato
+  // auditável dos arquivos centrais que usam estratégia network-first.
+  const isCoreAsset = url.origin === self.location.origin && [
+    '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json', '/vendor/pdf.min.js', '/vendor/pdf_viewer.min.css', '/vendor/pdf.worker.min.js',
+    '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css', '/css/pdf-reader.css',
+    '/js/study-domain.js', '/js/app-core.js', '/js/adaptive-schedule-reconciliation.js', '/js/notes-import-export.js', '/js/notes-export-rich.js', '/js/study-performance-report.js',
+    '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js',
+    '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
+  ].some(path => url.pathname.endsWith(path));
+
+  if (isCoreAsset) {
     // Network-first para o núcleo: online recebe sempre a versão publicada;
     // offline utiliza a última cópia íntegra preparada para esta versão.
     event.respondWith((async () => {
