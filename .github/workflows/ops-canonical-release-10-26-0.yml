@@ -1,0 +1,74 @@
+name: Canonical Stable Release 10.26.0
+
+on:
+  push:
+    branches:
+      - ops/canonical-release-10.26.0-20260822
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      MAIN_SHA: 33289bd3a7e9e467f99c1c355207ea53efde9aca
+      RELEASE_TAG: v10.26.0-stable.20260822
+      RELEASE_ZIP: app-estudos-concurso-gemini-v10.26.0-stable-20260822.zip
+    steps:
+      - name: Checkout exact stable main commit
+        uses: actions/checkout@v4
+        with:
+          ref: 33289bd3a7e9e467f99c1c355207ea53efde9aca
+          fetch-depth: 0
+
+      - name: Verify version and exact commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$MAIN_SHA"
+          node -e "const p=require('./package.json'); if (p.version !== '10.26.0') { throw new Error('Expected version 10.26.0, found ' + p.version); }"
+
+      - name: Refuse to move an existing tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          existing="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG" | awk '{print $1}')"
+          if [ -n "$existing" ] && [ "$existing" != "$MAIN_SHA" ]; then
+            echo "Tag $RELEASE_TAG already exists at $existing, expected $MAIN_SHA. Refusing to move canonical release tag."
+            exit 1
+          fi
+
+      - name: Build canonical source ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=zip --prefix="app-estudos-concurso-gemini-v10.26.0/" --output="$RELEASE_ZIP" "$MAIN_SHA"
+          sha256sum "$RELEASE_ZIP" | tee "$RELEASE_ZIP.sha256"
+
+      - name: Publish canonical GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; preserving it."
+          else
+            gh release create "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$MAIN_SHA" \
+              --title "v10.26.0 — Stable snapshot 2026-08-22" \
+              --notes "Canonical stable snapshot created before the grounding-retry hardening work. Source commit: $MAIN_SHA. This release is a rollback/reference point and is not a prerelease." \
+              --latest=false
+          fi
+          gh release upload "$RELEASE_TAG" "$RELEASE_ZIP" "$RELEASE_ZIP.sha256" --repo "$GITHUB_REPOSITORY" --clobber
+
+      - name: Verify published release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,targetCommitish,assets,url
