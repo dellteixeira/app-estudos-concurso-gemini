@@ -1,0 +1,126 @@
+name: OPS Supabase Reconcile History PR
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ops-supabase-reconcile-history-pr.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile-history:
+    if: github.head_ref == 'ops/supabase-reconcile-audit-20260821'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_ID"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test -n "$SUPABASE_DB_URL"
+
+      - name: Capture schema fingerprint before history repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -At <<'SQL' > /tmp/schema-before.txt
+          select n.nspname||'|'||c.relname||'|'||c.relkind||'|'||c.relrowsecurity
+          from pg_class c join pg_namespace n on n.oid=c.relnamespace
+          where n.nspname in ('public','storage') order by 1;
+          select table_schema||'|'||table_name||'|'||column_name||'|'||data_type||'|'||is_nullable||'|'||coalesce(column_default,'')
+          from information_schema.columns where table_schema='public' order by 1,2,ordinal_position;
+          select n.nspname||'|'||c.relname||'|'||con.conname||'|'||pg_get_constraintdef(con.oid)
+          from pg_constraint con join pg_class c on c.oid=con.conrelid join pg_namespace n on n.oid=c.relnamespace
+          where n.nspname='public' order by 1,2,3;
+          select schemaname||'|'||tablename||'|'||policyname||'|'||cmd||'|'||coalesce(qual,'')||'|'||coalesce(with_check,'')
+          from pg_policies where schemaname in ('public','storage') order by 1,2,3;
+          select n.nspname||'|'||p.proname||'|'||p.prosecdef||'|'||pg_get_functiondef(p.oid)
+          from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+          where n.nspname='public' order by 1,2,p.oid;
+          SQL
+          sha256sum /tmp/schema-before.txt | tee /tmp/schema-before.sha256
+
+      - name: Link Supabase project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Show migration history before
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== BEFORE ==='
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -P pager=off -A -F '|' -c "select version,name from supabase_migrations.schema_migrations order by version;"
+
+      - name: Reconcile only materially present migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          versions=(
+            20260818
+            20260818210000
+            20260818210100
+            20260818220000
+            20260818230000
+            20260818230100
+            20260819030000
+            20260819183000
+          )
+          for version in "${versions[@]}"; do
+            echo "Repairing history only: $version => applied"
+            supabase migration repair "$version" --status applied --password "$SUPABASE_DB_PASSWORD"
+          done
+
+      - name: Capture schema fingerprint after history repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -At <<'SQL' > /tmp/schema-after.txt
+          select n.nspname||'|'||c.relname||'|'||c.relkind||'|'||c.relrowsecurity
+          from pg_class c join pg_namespace n on n.oid=c.relnamespace
+          where n.nspname in ('public','storage') order by 1;
+          select table_schema||'|'||table_name||'|'||column_name||'|'||data_type||'|'||is_nullable||'|'||coalesce(column_default,'')
+          from information_schema.columns where table_schema='public' order by 1,2,ordinal_position;
+          select n.nspname||'|'||c.relname||'|'||con.conname||'|'||pg_get_constraintdef(con.oid)
+          from pg_constraint con join pg_class c on c.oid=con.conrelid join pg_namespace n on n.oid=c.relnamespace
+          where n.nspname='public' order by 1,2,3;
+          select schemaname||'|'||tablename||'|'||policyname||'|'||cmd||'|'||coalesce(qual,'')||'|'||coalesce(with_check,'')
+          from pg_policies where schemaname in ('public','storage') order by 1,2,3;
+          select n.nspname||'|'||p.proname||'|'||p.prosecdef||'|'||pg_get_functiondef(p.oid)
+          from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+          where n.nspname='public' order by 1,2,p.oid;
+          SQL
+          sha256sum /tmp/schema-after.txt | tee /tmp/schema-after.sha256
+          cmp /tmp/schema-before.txt /tmp/schema-after.txt
+          echo 'SCHEMA_UNCHANGED_AFTER_HISTORY_REPAIR=YES'
+
+      - name: Show migration history after
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== AFTER ==='
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -P pager=off -A -F '|' -c "select version,name from supabase_migrations.schema_migrations order by version;"
+
+      - name: Final dry-run only
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== FINAL DRY RUN ==='
+          supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
