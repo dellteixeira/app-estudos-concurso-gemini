@@ -1,0 +1,112 @@
+name: Canonical Stable Release 10.26.0 Snapshot 2
+
+on:
+  push:
+    branches:
+      - ops/canonical-release-10.26.0-20260822-2
+
+permissions:
+  contents: write
+
+env:
+  MAIN_SHA: bd3ebd2a8c402c08e215b7c7912b92ea04fdcfbf
+  RELEASE_TAG: v10.26.0-stable.20260822.2
+  RELEASE_ZIP: app-estudos-concurso-gemini-v10.26.0-stable-20260822-2.zip
+
+jobs:
+  release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout operational branch
+        uses: actions/checkout@v4
+        with:
+          ref: ops/canonical-release-10.26.0-20260822-2
+          fetch-depth: 0
+
+      - name: Verify exact source commit and version
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$MAIN_SHA^{commit}"
+          git show "$MAIN_SHA:package.json" > /tmp/package.json
+          node -e "const p=require('/tmp/package.json'); if (p.version !== '10.26.0') throw new Error('Expected 10.26.0, found '+p.version)"
+
+      - name: Refuse to move an existing canonical tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          existing="$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG" | awk '{print $1}')"
+          if [ -n "$existing" ] && [ "$existing" != "$MAIN_SHA" ]; then
+            echo "Tag $RELEASE_TAG already exists at $existing; refusing to move it."
+            exit 1
+          fi
+
+      - name: Build canonical ZIP and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=zip --prefix="app-estudos-concurso-gemini-v10.26.0-stable-20260822-2/" --output="$RELEASE_ZIP" "$MAIN_SHA"
+          sha256sum "$RELEASE_ZIP" | tee "$RELEASE_ZIP.sha256"
+
+      - name: Publish canonical GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists; preserving it."
+          else
+            gh release create "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$MAIN_SHA" \
+              --title "v10.26.0 — Stable snapshot 2 — 2026-08-22" \
+              --notes "Canonical stable snapshot after Gemini grounding-retry hardening. Source commit: $MAIN_SHA. Published as a rollback/reference point; not a prerelease." \
+              --latest=false
+          fi
+          gh release upload "$RELEASE_TAG" "$RELEASE_ZIP" "$RELEASE_ZIP.sha256" --repo "$GITHUB_REPOSITORY" --clobber
+
+      - name: Verify published release and assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_json="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,targetCommitish,assets,url)"
+          echo "$release_json"
+          node -e '
+            const r=JSON.parse(process.argv[1]);
+            if(r.tagName!==process.env.RELEASE_TAG) throw new Error("Unexpected tag");
+            if(r.isDraft||r.isPrerelease) throw new Error("Release must be stable and published");
+            const names=new Set((r.assets||[]).map(a=>a.name));
+            if(!names.has(process.env.RELEASE_ZIP)) throw new Error("ZIP asset missing");
+            if(!names.has(process.env.RELEASE_ZIP+".sha256")) throw new Error("Checksum asset missing");
+          ' "$release_json"
+
+      - name: Upload downloadable workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-release-v10.26.0-stable-20260822-2
+          path: |
+            ${{ env.RELEASE_ZIP }}
+            ${{ env.RELEASE_ZIP }}.sha256
+          retention-days: 30
+
+      - name: Write verified marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .canonical-release-success-2.txt <<EOF
+          release_tag=$RELEASE_TAG
+          source_commit=$MAIN_SHA
+          zip_asset=$RELEASE_ZIP
+          workflow_run_id=$GITHUB_RUN_ID
+          verified=true
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .canonical-release-success-2.txt
+          git commit -m "ops: mark second canonical release verified"
+          git push origin HEAD:ops/canonical-release-10.26.0-20260822-2
