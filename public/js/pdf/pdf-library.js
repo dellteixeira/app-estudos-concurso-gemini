@@ -3,6 +3,9 @@
   const core = () => global.PdfStudyCore;
   const links = () => global.PdfStudyLinks;
   const CACHE_PREFIX = 'pdf_study_library_cache_';
+  const PDF_BLOB_DB = 'estudo-adaptativo-pdf-cache';
+  const PDF_BLOB_STORE = 'pdf_blobs';
+  const PDF_BLOB_DB_VERSION = 1;
 
   function cacheKey(userId) { return `${CACHE_PREFIX}${userId}`; }
   function writeCache(userId, docs) {
@@ -14,6 +17,70 @@
       return Array.isArray(parsed?.docs) ? parsed.docs : [];
     } catch (_) { return []; }
   }
+
+  function pdfBlobKey(userId,pdfId){return `${userId}:${pdfId}`;}
+  function openPdfBlobDb(){
+    if(!('indexedDB' in global))return Promise.resolve(null);
+    return new Promise(resolve=>{
+      let settled=false;
+      const finish=value=>{if(settled)return;settled=true;resolve(value)};
+      try{
+        const request=indexedDB.open(PDF_BLOB_DB,PDF_BLOB_DB_VERSION);
+        request.onupgradeneeded=()=>{
+          const db=request.result;
+          if(!db.objectStoreNames.contains(PDF_BLOB_STORE))db.createObjectStore(PDF_BLOB_STORE,{keyPath:'key'});
+        };
+        request.onsuccess=()=>finish(request.result);
+        request.onerror=()=>finish(null);
+        request.onblocked=()=>finish(null);
+      }catch(_){finish(null)}
+    });
+  }
+  async function readPdfBlob(userId,doc){
+    if(!userId||!doc?.id)return null;
+    const db=await openPdfBlobDb();if(!db)return null;
+    return new Promise(resolve=>{
+      try{
+        const tx=db.transaction(PDF_BLOB_STORE,'readonly');
+        const request=tx.objectStore(PDF_BLOB_STORE).get(pdfBlobKey(userId,doc.id));
+        request.onsuccess=()=>{
+          const record=request.result;
+          if(!record?.blob?.size)return resolve(null);
+          const expectedUpdated=String(doc.updated_at||'');
+          if(expectedUpdated&&record.updatedAt&&record.updatedAt!==expectedUpdated)return resolve(null);
+          resolve(record.blob);
+        };
+        request.onerror=()=>resolve(null);
+      }catch(_){resolve(null)}
+    });
+  }
+  async function writePdfBlob(userId,doc,blob){
+    if(!userId||!doc?.id||!blob?.size)return false;
+    const db=await openPdfBlobDb();if(!db)return false;
+    return new Promise(resolve=>{
+      try{
+        const tx=db.transaction(PDF_BLOB_STORE,'readwrite');
+        tx.objectStore(PDF_BLOB_STORE).put({
+          key:pdfBlobKey(userId,doc.id),userId:String(userId),pdfId:String(doc.id),updatedAt:String(doc.updated_at||''),savedAt:Date.now(),size:Number(blob.size)||0,blob
+        });
+        tx.oncomplete=()=>resolve(true);
+        tx.onerror=()=>resolve(false);
+        tx.onabort=()=>resolve(false);
+      }catch(_){resolve(false)}
+    });
+  }
+  async function deletePdfBlobs(userId,ids){
+    const list=(Array.isArray(ids)?ids:[ids]).filter(Boolean);if(!userId||!list.length)return;
+    const db=await openPdfBlobDb();if(!db)return;
+    await new Promise(resolve=>{
+      try{
+        const tx=db.transaction(PDF_BLOB_STORE,'readwrite'),store=tx.objectStore(PDF_BLOB_STORE);
+        list.forEach(id=>store.delete(pdfBlobKey(userId,id)));
+        tx.oncomplete=()=>resolve();tx.onerror=()=>resolve();tx.onabort=()=>resolve();
+      }catch(_){resolve()}
+    });
+  }
+
   function manualCompare(a,b) {
     const ap = Number.isFinite(Number(a?.sort_order)) ? Number(a.sort_order) : Number.MAX_SAFE_INTEGER;
     const bp = Number.isFinite(Number(b?.sort_order)) ? Number(b.sort_order) : Number.MAX_SAFE_INTEGER;
@@ -84,6 +151,7 @@
   async function forgetDocuments(ids){
     const list=new Set((Array.isArray(ids)?ids:[ids]).filter(Boolean));if(!list.size)return;
     const user=await core().getAuthenticatedUser();writeCache(user.id,readCache(user.id).filter(d=>!list.has(d.id)));
+    await deletePdfBlobs(user.id,[...list]);
   }
 
   async function persistVisibleOrder(visibleIds){
@@ -135,16 +203,22 @@
 
   async function downloadBlob(doc){
     if(!doc?.storage_path)throw new Error('PDF sem caminho de Storage.');
+    const user=await core().getAuthenticatedUser();
+    const cachedBlob=await readPdfBlob(user.id,doc);
+    if(!navigator.onLine&&cachedBlob)return cachedBlob;
     const c=core().getSupabaseClient();
     try{
-      return await core().retry(async()=>{
+      const blob=await core().retry(async()=>{
         const {data,error}=await c.storage.from(core().BUCKET).download(doc.storage_path);
         if(error)throw error;
         if(!data)throw new Error('Não foi possível baixar o PDF.');
         return data;
       },{attempts:5,delayMs:500});
+      await writePdfBlob(user.id,doc,blob).catch(()=>false);
+      return blob;
     }catch(primaryError){
       if(!core().isNetworkError(primaryError))throw primaryError;
+      if(cachedBlob)return cachedBlob;
       try{
         const signedUrl=await createSignedUrl(doc,180);
         const response=await core().retry(async()=>{
@@ -154,10 +228,15 @@
         },{attempts:3,delayMs:650});
         const blob=await response.blob();
         if(!blob?.size)throw new Error('O PDF retornou vazio.');
+        await writePdfBlob(user.id,doc,blob).catch(()=>false);
         return blob;
       }catch(fallbackError){
+        const lateCachedBlob=await readPdfBlob(user.id,doc);
+        if(lateCachedBlob)return lateCachedBlob;
         console.warn('[PDF Library] download temporariamente indisponível após retries:',fallbackError);
-        const friendly=new Error('A conexão oscilou ao abrir este PDF. O arquivo continua salvo com segurança. Aguarde alguns segundos e tente novamente.');
+        const friendly=new Error(navigator.onLine
+          ? 'A conexão oscilou ao abrir este PDF. O arquivo continua salvo com segurança. Aguarde alguns segundos e tente novamente.'
+          : 'Este PDF ainda não foi preparado para leitura offline. Conecte-se à internet, abra-o uma vez e depois ele ficará disponível neste dispositivo.');
         friendly.cause=fallbackError;
         throw friendly;
       }
