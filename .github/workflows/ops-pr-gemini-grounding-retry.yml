@@ -1,0 +1,45 @@
+name: Ops PR Gemini Grounding Retry
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.head_ref == 'feat/gemini-grounding-retry' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/gemini-grounding-retry
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Apply patch
+        run: python scripts/ops-apply-gemini-grounding-retry.py
+
+      - name: Validate
+        run: |
+          node --check src/index.js
+          npm test
+          AUDIT_ALLOW_ANY_ROOT=1 npm run audit
+
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/index.js tests/gemini-grounding-retry.test.cjs
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "feat: retry Gemini after grounding-only rejection"
+          git push origin HEAD:feat/gemini-grounding-retry
