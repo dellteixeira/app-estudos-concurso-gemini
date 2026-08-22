@@ -93,16 +93,9 @@
   async function refreshUpdateState() {
     const remote = await fetchRemoteVersion();
     const running = await resolveRunningVersion();
-
-    if (!running && remote) {
-      syncRuntimeVersionUi(remote);
-    }
-
-    if (remote && running && compareVersions(remote, running) > 0) {
-      setPwaUpdateBannerVisible(true, remote);
-    } else {
-      setPwaUpdateBannerVisible(false);
-    }
+    if (!running && remote) syncRuntimeVersionUi(remote);
+    if (remote && running && compareVersions(remote, running) > 0) setPwaUpdateBannerVisible(true, remote);
+    else setPwaUpdateBannerVisible(false);
     return { remote, running };
   }
 
@@ -155,11 +148,7 @@
     if (!('caches' in window)) return;
     const keepName = keepVersion ? `${CACHE_PREFIX}v${keepVersion.replace(/\./g, '-')}` : null;
     const cacheNames = await caches.keys();
-    await Promise.allSettled(
-      cacheNames
-        .filter(name => name.startsWith(CACHE_PREFIX) && name !== keepName)
-        .map(name => caches.delete(name))
-    );
+    await Promise.allSettled(cacheNames.filter(name => name.startsWith(CACHE_PREFIX) && name !== keepName).map(name => caches.delete(name)));
   }
 
   function reloadFromNetwork(targetVersion = null) {
@@ -172,10 +161,7 @@
   async function registerLatestWorker(remoteVersion = null) {
     const token = remoteVersion || `check-${Date.now()}`;
     const swUrl = `./sw.js?v=${encodeURIComponent(token)}`;
-    const reg = await navigator.serviceWorker.register(swUrl, {
-      scope: './',
-      updateViaCache: 'none'
-    });
+    const reg = await navigator.serviceWorker.register(swUrl, { scope: './', updateViaCache: 'none' });
     window.__pwaRegistration = reg;
     await reg.update();
     return reg;
@@ -192,11 +178,8 @@
       console.warn('Falha ao verificar Service Worker:', error);
     }
     const running = await resolveRunningVersion(reg);
-    if (remote && running && compareVersions(remote, running) > 0) {
-      setPwaUpdateBannerVisible(true, remote);
-    } else {
-      setPwaUpdateBannerVisible(false);
-    }
+    if (remote && running && compareVersions(remote, running) > 0) setPwaUpdateBannerVisible(true, remote);
+    else setPwaUpdateBannerVisible(false);
     return { remote, running };
   }
 
@@ -204,18 +187,13 @@
     if (!navigator.onLine || window.__pwaUpdateInProgress) return;
     window.__pwaUpdateInProgress = true;
     setPwaUpdateBannerVisible(true, window.__remoteVersionAvailable, 'Preparando a versão mais recente…');
-
     try {
       const remoteVersion = (await fetchRemoteVersion()) || window.__remoteVersionAvailable;
       if (!remoteVersion) throw new Error('Não foi possível confirmar a versão publicada.');
       const reg = await registerLatestWorker(remoteVersion);
-
       let candidate = reg.waiting;
-      if (!candidate && reg.installing) {
-        candidate = await waitForState(reg.installing, ['installed', 'activated']);
-      }
+      if (!candidate && reg.installing) candidate = await waitForState(reg.installing, ['installed', 'activated']);
       if (!candidate && reg.waiting) candidate = reg.waiting;
-
       const activeVersion = await getWorkerVersion(reg.active || navigator.serviceWorker.controller);
       if (activeVersion === remoteVersion && !candidate) {
         await deleteOldAppCaches(remoteVersion);
@@ -223,22 +201,17 @@
         reloadFromNetwork(remoteVersion);
         return;
       }
-
       if (!candidate) {
         await reg.update();
         if (reg.installing) await waitForState(reg.installing, ['installed', 'activated'], 6000);
         candidate = reg.waiting || reg.installing;
       }
-
       if (candidate && candidate.state !== 'activated') {
         setPwaUpdateBannerVisible(true, remoteVersion, `Instalando versão ${remoteVersion}…`);
         candidate.postMessage({ type: 'SKIP_WAITING' });
         const switchedVersion = await waitForControllerVersion(remoteVersion);
-        if (switchedVersion !== remoteVersion) {
-          throw new Error(`O novo Service Worker não assumiu o controle (ativo: ${switchedVersion || 'desconhecido'}).`);
-        }
+        if (switchedVersion !== remoteVersion) throw new Error(`O novo Service Worker não assumiu o controle (ativo: ${switchedVersion || 'desconhecido'}).`);
       }
-
       await deleteOldAppCaches(remoteVersion);
       syncRuntimeVersionUi(remoteVersion);
       sessionStorage.setItem('__pwa_last_applied_version', remoteVersion);
@@ -246,11 +219,7 @@
     } catch (error) {
       console.error('Erro ao aplicar atualização do app:', error);
       window.__pwaUpdateInProgress = false;
-      setPwaUpdateBannerVisible(
-        true,
-        window.__remoteVersionAvailable,
-        'Não foi possível concluir a atualização automática. Toque novamente em “Atualizar agora”.'
-      );
+      setPwaUpdateBannerVisible(true, window.__remoteVersionAvailable, 'Não foi possível concluir a atualização automática. Toque novamente em “Atualizar agora”.');
     }
   }
 
@@ -261,28 +230,33 @@
       if (remote) syncRuntimeVersionUi(remote);
       return;
     }
-
     const remote = await fetchRemoteVersion();
     try {
       const reg = await registerLatestWorker(remote);
       await navigator.serviceWorker.ready;
       await resolveRunningVersion(reg);
       await refreshUpdateState();
-
       const worker = navigator.serviceWorker.controller || reg.active;
       if (worker) worker.postMessage({ type: 'PRIME_OFFLINE_ASSETS' });
-
       window.addEventListener('online', checkForPwaUpdate);
       window.addEventListener('focus', checkForPwaUpdate);
       window.addEventListener('pageshow', checkForPwaUpdate);
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') checkForPwaUpdate();
-      });
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForPwaUpdate(); });
       window.__pwaUpdateCheckTimer = window.setInterval(checkForPwaUpdate, CHECK_INTERVAL_MS);
     } catch (error) {
       console.error('Erro no Service Worker:', error);
       if (remote) syncRuntimeVersionUi(remote);
     }
+  }
+
+  function loadStudyPerformanceReport() {
+    if (window.StudyPerformanceReport || document.querySelector('script[data-study-performance-report]')) return;
+    const script = document.createElement('script');
+    script.src = './js/study-performance-report.js';
+    script.defer = true;
+    script.dataset.studyPerformanceReport = '1';
+    script.onerror = () => console.warn('Não foi possível carregar o relatório de desempenho.');
+    document.head.appendChild(script);
   }
 
   function loadNotesRichExport() {
@@ -312,6 +286,7 @@
   document.addEventListener('DOMContentLoaded', () => syncRuntimeVersionUi(window.APP_VERSION), { once: true });
   window.addEventListener('load', bootstrapPwa, { once: true });
   window.addEventListener('load', loadNotesImportExport, { once: true });
+  window.addEventListener('load', loadStudyPerformanceReport, { once: true });
   window.applyPwaUpdate = applyPwaUpdate;
   window.checkForPwaUpdate = checkForPwaUpdate;
 })();
