@@ -45,17 +45,17 @@ jobs:
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -At <<'SQL' > /tmp/schema-before.txt
           select n.nspname||'|'||c.relname||'|'||c.relkind::text||'|'||c.relrowsecurity::text
           from pg_class c join pg_namespace n on n.oid=c.relnamespace
-          where n.nspname in ('public','storage') order by 1;
+          where n.nspname in ('public','storage') order by n.nspname,c.relname,c.relkind;
           select table_schema||'|'||table_name||'|'||column_name||'|'||data_type||'|'||is_nullable||'|'||coalesce(column_default,'')
-          from information_schema.columns where table_schema='public' order by 1,2,ordinal_position;
+          from information_schema.columns where table_schema='public' order by table_schema,table_name,ordinal_position;
           select n.nspname||'|'||c.relname||'|'||con.conname||'|'||pg_get_constraintdef(con.oid)
           from pg_constraint con join pg_class c on c.oid=con.conrelid join pg_namespace n on n.oid=c.relnamespace
-          where n.nspname='public' order by 1,2,3;
+          where n.nspname='public' order by n.nspname,c.relname,con.conname;
           select schemaname||'|'||tablename||'|'||policyname||'|'||cmd||'|'||coalesce(qual,'')||'|'||coalesce(with_check,'')
-          from pg_policies where schemaname in ('public','storage') order by 1,2,3;
+          from pg_policies where schemaname in ('public','storage') order by schemaname,tablename,policyname;
           select n.nspname||'|'||p.proname||'|'||p.prosecdef::text||'|'||pg_get_functiondef(p.oid)
           from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-          where n.nspname='public' order by 1,2,p.oid;
+          where n.nspname='public' order by n.nspname,p.proname,p.oid;
           SQL
           sha256sum /tmp/schema-before.txt | tee /tmp/schema-before.sha256
 
@@ -95,17 +95,17 @@ jobs:
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -At <<'SQL' > /tmp/schema-after.txt
           select n.nspname||'|'||c.relname||'|'||c.relkind::text||'|'||c.relrowsecurity::text
           from pg_class c join pg_namespace n on n.oid=c.relnamespace
-          where n.nspname in ('public','storage') order by 1;
+          where n.nspname in ('public','storage') order by n.nspname,c.relname,c.relkind;
           select table_schema||'|'||table_name||'|'||column_name||'|'||data_type||'|'||is_nullable||'|'||coalesce(column_default,'')
-          from information_schema.columns where table_schema='public' order by 1,2,ordinal_position;
+          from information_schema.columns where table_schema='public' order by table_schema,table_name,ordinal_position;
           select n.nspname||'|'||c.relname||'|'||con.conname||'|'||pg_get_constraintdef(con.oid)
           from pg_constraint con join pg_class c on c.oid=con.conrelid join pg_namespace n on n.oid=c.relnamespace
-          where n.nspname='public' order by 1,2,3;
+          where n.nspname='public' order by n.nspname,c.relname,con.conname;
           select schemaname||'|'||tablename||'|'||policyname||'|'||cmd||'|'||coalesce(qual,'')||'|'||coalesce(with_check,'')
-          from pg_policies where schemaname in ('public','storage') order by 1,2,3;
+          from pg_policies where schemaname in ('public','storage') order by schemaname,tablename,policyname;
           select n.nspname||'|'||p.proname||'|'||p.prosecdef::text||'|'||pg_get_functiondef(p.oid)
           from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-          where n.nspname='public' order by 1,2,p.oid;
+          where n.nspname='public' order by n.nspname,p.proname,p.oid;
           SQL
           sha256sum /tmp/schema-after.txt | tee /tmp/schema-after.sha256
           cmp /tmp/schema-before.txt /tmp/schema-after.txt
