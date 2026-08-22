@@ -118,6 +118,13 @@
     manager.defer = true;
     manager.dataset.pdfOfflineManager = '1';
     manager.onload = () => {
+      if (!document.querySelector('script[data-pdf-offline-integrity]')) {
+        const integrity = document.createElement('script');
+        integrity.src = './js/pdf/pdf-offline-integrity.js';
+        integrity.defer = true;
+        integrity.dataset.pdfOfflineIntegrity = '1';
+        document.head.appendChild(integrity);
+      }
       if (document.querySelector('script[data-pdf-offline-ui]')) return;
       const ui = document.createElement('script');
       ui.src = './js/pdf/pdf-offline-library-ui.js';
