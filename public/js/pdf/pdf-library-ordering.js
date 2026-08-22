@@ -1,3 +1,83 @@
+(function installPdfLibraryOfflineStore(global){
+'use strict';
+if(global.__pdfLibraryOfflineStoreBridgeInstalled)return;
+global.__pdfLibraryOfflineStoreBridgeInstalled=true;
+
+function loadAdapter(){
+  if(global.PdfLibraryOfflineAdapter)return Promise.resolve(global.PdfLibraryOfflineAdapter);
+  return new Promise(resolve=>{
+    const existing=document.querySelector('script[data-pdf-library-offline-adapter]');
+    if(existing){
+      if(global.PdfLibraryOfflineAdapter)return resolve(global.PdfLibraryOfflineAdapter);
+      existing.addEventListener('load',()=>resolve(global.PdfLibraryOfflineAdapter||null),{once:true});
+      existing.addEventListener('error',()=>resolve(null),{once:true});
+      return;
+    }
+    const script=document.createElement('script');
+    script.src='./js/pdf/pdf-library-opfs-adapter.js';
+    script.defer=true;
+    script.dataset.pdfLibraryOfflineAdapter='1';
+    script.onload=()=>resolve(global.PdfLibraryOfflineAdapter||null);
+    script.onerror=()=>resolve(null);
+    document.head.appendChild(script);
+  });
+}
+
+async function install(){
+  const adapter=await loadAdapter();
+  const library=global.PdfStudyLibrary;
+  if(!adapter||!library||library.__offlineStoreIntegrated)return;
+
+  const originalDownload=library.downloadBlob?.bind(library);
+  const originalForget=library.forgetDocuments?.bind(library);
+  if(typeof originalDownload!=='function'||typeof originalForget!=='function')return;
+
+  async function downloadBlob(doc){
+    const user=await global.PdfStudyCore?.getAuthenticatedUser?.();
+    const userId=user?.id;
+    if(userId){
+      const cached=await adapter.get(userId,doc);
+      if(!global.navigator.onLine&&cached?.size)return cached;
+    }
+
+    try{
+      const blob=await originalDownload(doc);
+      if(userId&&blob?.size)await adapter.put(userId,doc,blob);
+      return blob;
+    }catch(error){
+      if(userId){
+        const cached=await adapter.get(userId,doc);
+        if(cached?.size)return cached;
+      }
+      throw error;
+    }
+  }
+
+  async function forgetDocuments(ids){
+    const user=await global.PdfStudyCore?.getAuthenticatedUser?.();
+    const result=await originalForget(ids);
+    if(user?.id)await adapter.removeMany(user.id,ids);
+    return result;
+  }
+
+  async function hasOfflineCopy(doc){
+    const user=await global.PdfStudyCore?.getAuthenticatedUser?.();
+    return user?.id?adapter.has(user.id,doc):false;
+  }
+
+  global.PdfStudyLibrary=Object.freeze({
+    ...library,
+    downloadBlob,
+    forgetDocuments,
+    hasOfflineCopy,
+    getOfflineCapabilities:()=>adapter.capabilities(),
+    __offlineStoreIntegrated:true
+  });
+}
+
+setTimeout(()=>install().catch(error=>console.warn('[PDF offline bridge]',error)),0);
+})(window);
+
 (function(global){
 'use strict';
 const KEY='pdfLibrarySortMode';
