@@ -58,5 +58,5 @@ test('exportação gera PDF diretamente no navegador',()=>{
   assert.match(report,/application\/pdf/);
   assert.match(report,/URL\.createObjectURL/);
   assert.match(report,/relatorio_desempenho/);
-  assert.match(report,/Caderno de Anotações/,{message:'placeholder'});
+  assert.match(report,/Relatório de Desempenho/);
 });
