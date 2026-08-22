@@ -5,7 +5,7 @@ const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 const APP_SHELL = [
   './', './index.html', './manifest.json', './version.json', './pwa-update.js',
   './css/base.css', './css/dashboard.css', './css/features.css', './css/pdf-library.css', './css/pdf-reader.css',
-  './js/study-domain.js', './js/app-core.js', './js/pdf/pdf-core.js', './js/pdf/pdf-workspaces.js', './js/pdf/pdf-links.js', './js/pdf/pdf-library.js', './js/pdf/pdf-upload.js', './js/app-ai.js', './js/app-ui.js', './js/pdf/pdf-annotations.js', './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js', './js/app-pwa.js',
+  './js/study-domain.js', './js/app-core.js', './js/pdf/pdf-core.js', './js/pdf/pdf-workspaces.js', './js/pdf/pdf-links.js', './js/pdf/pdf-library.js', './js/pdf/pdf-library-ordering.js', './js/pdf/pdf-upload.js', './js/app-ai.js', './js/app-ui.js', './js/pdf/pdf-annotations.js', './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js', './js/app-pwa.js',
   './vendor/supabase.js', './vendor/chart.umd.min.js', './vendor/pdf.min.js', './vendor/pdf_viewer.min.css', './vendor/pdf.worker.min.js',
   './icon-192.png', './icon-512.png'
 ];
@@ -31,7 +31,6 @@ async function deleteOldAppCaches() {
 }
 
 self.addEventListener('install', event => {
-  // A ativação continua controlada pelo usuário quando já existe uma versão em execução.
   event.waitUntil(primeOfflineAssets().catch(() => {}));
 });
 
@@ -90,7 +89,7 @@ self.addEventListener('fetch', event => {
   const isCoreAsset = url.origin === self.location.origin && [
     '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json', '/vendor/pdf.min.js', '/vendor/pdf_viewer.min.css', '/vendor/pdf.worker.min.js',
     '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css', '/css/pdf-reader.css',
-    '/js/study-domain.js', '/js/app-core.js', '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-upload.js', '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
+    '/js/study-domain.js', '/js/app-core.js', '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js', '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
   ].some(path => url.pathname.endsWith(path));
 
   if (isCoreAsset) {
@@ -129,4 +128,3 @@ self.addEventListener('fetch', event => {
     })
   );
 });
-
