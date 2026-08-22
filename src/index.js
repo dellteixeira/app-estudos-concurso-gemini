@@ -13,6 +13,7 @@ function flashcardCandidateChain(requested) {
   return [...new Set(preferred.filter(key => FLASHCARD_AI_MODELS[key]))];
 }
 const GEMINI_FLASHCARD_TIMEOUT_MS = 12000;
+const GEMINI_GROUNDING_RETRY_TIMEOUT_MS = 4500;
 const WORKERS_FLASHCARD_TIMEOUT_MS = 8000;
 const FLASHCARD_HEDGE_DELAY_MS = 4500;
 const MAX_TEXT_CHARS = 110000;
@@ -700,12 +701,19 @@ function parseGeminiFlashcardPayload(payload) {
   return null;
 }
 
-async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compactRetry = false } = {}) {
+async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compactRetry = false, groundingRetry = false } = {}) {
   if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.id)}:generateContent`;
   const controller = new AbortController();
   const startedAt = Date.now();
-  const timeout = setTimeout(() => controller.abort(), GEMINI_FLASHCARD_TIMEOUT_MS);
+  const requestTimeoutMs = groundingRetry ? GEMINI_GROUNDING_RETRY_TIMEOUT_MS : GEMINI_FLASHCARD_TIMEOUT_MS;
+  const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
+  const groundingRetryInstruction = `CORREÇÃO OBRIGATÓRIA DE GROUNDING: a tentativa anterior foi rejeitada por se afastar lexicalmente da evidência. Na resposta, copie literalmente ou use o menor recorte possível da EVIDÊNCIA AUTORIZADA. Não use sinônimos, explicações, inferências, conectivos novos ou conhecimento externo. Preserve exatamente sujeitos, verbos jurídicos, números, prazos, requisitos, exceções e consequências. A pergunta pode ser reformulada, mas deve cobrar somente o conteúdo expresso na evidência. Retorne apenas o JSON solicitado.`;
+  const effectiveUserPrompt = groundingRetry
+    ? `${userPrompt}\n\n${groundingRetryInstruction}`
+    : compactRetry
+      ? `${userPrompt}\n\nRETRY COMPACTO: devolva apenas JSON curto, completo e estritamente aderente à evidência indicada.`
+      : userPrompt;
   let response;
   try {
     response = await fetch(endpoint, {
@@ -714,10 +722,10 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compac
       headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: compactRetry ? `${userPrompt}\n\nRETRY COMPACTO: devolva apenas JSON curto, completo e estritamente aderente à evidência indicada.` : userPrompt }] }],
+        contents: [{ role: "user", parts: [{ text: effectiveUserPrompt }] }],
         generationConfig: {
-          temperature: compactRetry ? 0.1 : 0.2,
-          maxOutputTokens: compactRetry ? 900 : 1600,
+          temperature: groundingRetry ? 0 : (compactRetry ? 0.1 : 0.2),
+          maxOutputTokens: groundingRetry ? 700 : (compactRetry ? 900 : 1600),
           responseMimeType: "application/json",
           responseSchema: {
             type: "OBJECT",
@@ -735,7 +743,7 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compac
     });
   } catch (error) {
     if (error?.name === "AbortError") {
-      const timeoutError = new Error(`Gemini excedeu o limite de ${GEMINI_FLASHCARD_TIMEOUT_MS} ms`);
+      const timeoutError = new Error(`Gemini excedeu o limite de ${requestTimeoutMs} ms`);
       timeoutError.provider = "gemini";
       timeoutError.model = model.id;
       timeoutError.status = "timeout";
@@ -766,10 +774,10 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compac
 
   const payload = await response.json();
   const summary = summarizeGeminiFlashcardPayload(payload);
-  console.info(`Flashcard Gemini response model=${model.id} status=200 candidates=${summary.candidates} parts=${summary.parts} textParts=${summary.textParts} textChars=${summary.textChars} finishReasons=${summary.finishReasons} compactRetry=${compactRetry}`);
+  console.info(`Flashcard Gemini response model=${model.id} status=200 candidates=${summary.candidates} parts=${summary.parts} textParts=${summary.textParts} textChars=${summary.textChars} finishReasons=${summary.finishReasons} compactRetry=${compactRetry} groundingRetry=${groundingRetry}`);
 
   const recovered = parseGeminiFlashcardPayload(payload);
-  if (!recovered?.flashcard && !compactRetry && summary.finishReasons.split(',').includes('MAX_TOKENS')) {
+  if (!recovered?.flashcard && !compactRetry && !groundingRetry && summary.finishReasons.split(',').includes('MAX_TOKENS')) {
     console.info(`Flashcard Gemini retry reason=MAX_TOKENS model=${model.id} firstDuration=${Date.now() - startedAt}ms`);
     return runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compactRetry: true });
   }
@@ -793,14 +801,14 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-async function attemptFlashcardModel(env, key, systemPrompt, userPrompt, validationContext, { hedged = false } = {}) {
+async function attemptFlashcardModel(env, key, systemPrompt, userPrompt, validationContext, { hedged = false, groundingRetry = false } = {}) {
   const model = FLASHCARD_AI_MODELS[key];
   const provider = model?.provider === "gemini" ? "gemini" : "workers-ai";
   const providerLabel = provider === "gemini" ? "Google Gemini" : "Workers AI";
   const startedAt = Date.now();
   try {
     const parsed = provider === "gemini"
-      ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt)
+      ? await runGeminiFlashcard(env, model, systemPrompt, userPrompt, { groundingRetry })
       : parseFlashcardAIResponse(await withTimeout(env.AI.run(model.id, { messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.1, max_tokens: 700 }), WORKERS_FLASHCARD_TIMEOUT_MS, model.label));
     const checked = validateFlashcardCandidate(parsed, validationContext);
     if (!checked.valid) {
@@ -809,14 +817,14 @@ async function attemptFlashcardModel(env, key, systemPrompt, userPrompt, validat
       throw validationError;
     }
     const durationMs = Date.now() - startedAt;
-    console.info(`Flashcard AI success provider=${provider} model=${model.id} duration=${durationMs}ms hedged=${hedged} evidence=${validationContext.evidence.id} type=${validationContext.evidence.knowledgeType}`);
-    return { ...checked.flashcard, provider, providerLabel, model, key, durationMs, hedged };
+    console.info(`Flashcard AI success provider=${provider} model=${model.id} duration=${durationMs}ms hedged=${hedged} groundingRetry=${groundingRetry} evidence=${validationContext.evidence.id} type=${validationContext.evidence.knowledgeType}`);
+    return { ...checked.flashcard, provider, providerLabel, model, key, durationMs, hedged, groundingRetry };
   } catch (error) {
     const durationMs = Number(error?.durationMs) || (Date.now() - startedAt);
     const status = error?.status ?? "error";
     const reason = cleanText(error?.reason || error?.message || String(error), 500);
-    console.warn(`Flashcard AI failure provider=${provider} model=${model.id} status=${status} reason=${reason} duration=${durationMs}ms hedged=${hedged}`);
-    error.flashcardTelemetry = { provider, model: model.id, status, reason, durationMs, hedged };
+    console.warn(`Flashcard AI failure provider=${provider} model=${model.id} status=${status} reason=${reason} duration=${durationMs}ms hedged=${hedged} groundingRetry=${groundingRetry}`);
+    error.flashcardTelemetry = { provider, model: model.id, status, reason, durationMs, hedged, groundingRetry };
     throw error;
   }
 }
@@ -839,9 +847,26 @@ function firstSuccessfulFlashcard(promises) {
   });
 }
 
+function isOnlyAnswerNotGrounded(error) {
+  const reason = cleanText(error?.flashcardTelemetry?.reason || error?.reason || "", 200);
+  return reason === "answer-not-grounded";
+}
+
 async function runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt, validationContext) {
   if (!candidates.length) throw new Error("Nenhum provedor de IA disponível");
-  if (candidates.length === 1) return attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext);
+
+  if (candidates.length === 1) {
+    try {
+      return await attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext);
+    } catch (error) {
+      if (candidates[0] === "gemini" && isOnlyAnswerNotGrounded(error)) {
+        console.info(`Flashcard Gemini retry reason=answer-not-grounded model=${FLASHCARD_AI_MODELS.gemini.id} timeout=${GEMINI_GROUNDING_RETRY_TIMEOUT_MS}ms`);
+        return attemptFlashcardModel(env, "gemini", systemPrompt, userPrompt, validationContext, { groundingRetry: true });
+      }
+      throw error;
+    }
+  }
+
   let fallbackStarted = false;
   let timer = null;
   let startFallback;
@@ -854,10 +879,24 @@ async function runFlashcardProvidersHedged(env, candidates, systemPrompt, userPr
     };
     timer = setTimeout(startFallback, FLASHCARD_HEDGE_DELAY_MS);
   });
-  const primaryPromise = attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext).catch(error => {
+
+  const primaryPromise = attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext).catch(async error => {
+    if (candidates[0] === "gemini" && isOnlyAnswerNotGrounded(error)) {
+      console.info(`Flashcard Gemini retry reason=answer-not-grounded model=${FLASHCARD_AI_MODELS.gemini.id} timeout=${GEMINI_GROUNDING_RETRY_TIMEOUT_MS}ms`);
+      try {
+        return await attemptFlashcardModel(env, "gemini", systemPrompt, userPrompt, validationContext, { groundingRetry: true });
+      } catch (retryError) {
+        // O hedge original continua disponível: caso ainda não tenha iniciado,
+        // a falha do retry o libera imediatamente; caso já esteja em andamento,
+        // firstSuccessfulFlashcard continua aguardando a primeira resposta válida.
+        startFallback();
+        throw retryError;
+      }
+    }
     startFallback();
     throw error;
   });
+
   try {
     return await firstSuccessfulFlashcard([primaryPromise, fallbackPromise]);
   } finally {
@@ -888,7 +927,7 @@ async function generateFlashcard(request, env) {
   if (!evidence) return json({ error: "Não foi possível extrair evidência suficiente do trecho selecionado." }, 422);
   const candidates = flashcardCandidateChain(requested);
   const validationContext = { evidence, previousQuestions, existingQuestion };
-  const systemPrompt = `Você é um elaborador especialista de flashcards para concursos públicos brasileiros. Gere exatamente UM flashcard usando SOMENTE a EVIDÊNCIA AUTORIZADA. Não use conhecimento externo, não complete lacunas e não altere números, prazos, sujeitos, requisitos, exceções ou consequências. A resposta deve ficar lexicalmente próxima da evidência para permitir validação automática. A pergunta deve ser autossuficiente, específica, ter um único núcleo de cobrança e não pode ser genérica. Não repita nem parafraseie perguntas anteriores. Retorne somente JSON válido com question, answer, evidenceId e knowledgeType.`;
+  const systemPrompt = `Você é um elaborador especialista de flashcards para concursos públicos brasileiros. Gere exatamente UM flashcard usando SOMENTE a EVIDÊNCIA AUTORIZADA. Não use conhecimento externo, não complete lacunas e não altere números, prazos, sujeitos, requisitos, exceções ou consequências. A RESPOSTA deve permanecer lexicalmente colada à evidência: prefira copiar literalmente o menor trecho suficiente da fonte e não troque termos jurídicos por sinônimos, paráfrases ou explicações. Preserve exatamente sujeitos, verbos, números, prazos, requisitos, exceções e consequências. A pergunta deve ser autossuficiente, específica, ter um único núcleo de cobrança e não pode ser genérica. Não repita nem parafraseie perguntas anteriores. Retorne somente JSON válido com question, answer, evidenceId e knowledgeType.`;
   const avoid = previousQuestions.length ? previousQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n") : "nenhuma";
   const userPrompt = `GERAÇÃO: ${generationIndex}
 MATÉRIA: ${materia || "não informada"}
@@ -909,7 +948,7 @@ DEVOLVA EXATAMENTE:
     const preferredKey = requested === "auto" ? candidates[0] : requested;
     const fallbackUsed = result.key !== preferredKey;
     console.info(`Flashcard AI selected provider=${result.provider} model=${result.model.id} duration=${result.durationMs}ms fallback=${fallbackUsed} hedged=${result.hedged} evidence=${result.evidenceId}`);
-    return json({ question: result.question, answer: result.answer, model: `${result.providerLabel} · ${result.model.label}`, provider: result.provider, modelKey: result.key, fallbackUsed, hedged: result.hedged, latencyMs: result.durationMs, evidenceId: result.evidenceId, knowledgeType: result.knowledgeType, sourceValidated: true });
+    return json({ question: result.question, answer: result.answer, model: `${result.providerLabel} · ${result.model.label}`, provider: result.provider, modelKey: result.key, fallbackUsed, hedged: result.hedged, groundingRetry: Boolean(result.groundingRetry), latencyMs: result.durationMs, evidenceId: result.evidenceId, knowledgeType: result.knowledgeType, sourceValidated: true });
   } catch (aggregate) {
     const errors = Array.isArray(aggregate?.causes) ? aggregate.causes.map(error => {
       const telemetry = error?.flashcardTelemetry;
