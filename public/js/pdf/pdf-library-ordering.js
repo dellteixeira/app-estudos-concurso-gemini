@@ -146,13 +146,37 @@ function augment(){
   if(mutating)return;const list=[...document.querySelectorAll('#pdfLibraryGrid .pdf-library-card')];list.forEach(augmentCard);sortVisible(mode(),mode()!=='manual');
 }
 function ensureStyles(){if($('pdfLibraryOrderingStyles'))return;const style=document.createElement('style');style.id='pdfLibraryOrderingStyles';style.textContent=`
-.pdf-library-sort-control{display:flex;align-items:center;gap:8px;min-height:48px;padding:4px 10px;border:1px solid var(--border-color,#29445d);border-radius:12px;background:rgba(7,25,41,.55);color:var(--text-muted,#9fb2c6)}.pdf-library-sort-control span{font-size:.78rem;font-weight:750;white-space:nowrap}.pdf-library-sort-control select{min-width:148px;background:#071d2d;color:#e8f3ff;border:0;outline:0;font:inherit;font-weight:650}.pdf-card-title-link{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:800;line-height:1.35;text-align:left;cursor:pointer}.pdf-card-title-link:hover,.pdf-card-title-link:focus-visible{color:var(--accent-color,#55ddd2);text-decoration:underline;text-underline-offset:3px;outline:none}.pdf-drag-hint{margin-left:8px;color:#6f8ca4;font-weight:900;letter-spacing:-2px;cursor:grab;user-select:none}.pdf-library-card[draggable="true"]{cursor:grab}.pdf-library-card.dragging{opacity:.55;cursor:grabbing}.pdf-library-card.drag-over{outline:2px solid var(--accent-color,#55ddd2);outline-offset:2px;transform:translateY(-2px)}@media(max-width:700px){.pdf-library-sort-control{width:100%;grid-column:1/-1}.pdf-library-sort-control select{flex:1;min-width:0}.pdf-drag-hint{display:none}.pdf-library-card{cursor:default!important}}
+.pdf-library-sort-control{display:flex;align-items:center;gap:8px;min-height:48px;padding:4px 10px;border:1px solid var(--border-color,#29445d);border-radius:12px;background:rgba(7,25,41,.55);color:var(--text-muted,#9fb2c6)}.pdf-library-sort-control span{font-size:.78rem;font-weight:750;white-space:nowrap}.pdf-library-sort-control select{min-width:148px;background:#071d2d;color:#e8f3ff;border:0;outline:0;font:inherit;font-weight:650}.pdf-library-sort-control--actions{height:48px;min-width:220px;max-width:260px;padding-block:3px;flex:0 0 auto}.pdf-library-action-equal{min-height:48px!important;height:48px!important}.pdf-card-title-link{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:800;line-height:1.35;text-align:left;cursor:pointer}.pdf-card-title-link:hover,.pdf-card-title-link:focus-visible{color:var(--accent-color,#55ddd2);text-decoration:underline;text-underline-offset:3px;outline:none}.pdf-drag-hint{margin-left:8px;color:#6f8ca4;font-weight:900;letter-spacing:-2px;cursor:grab;user-select:none}.pdf-library-card[draggable="true"]{cursor:grab}.pdf-library-card.dragging{opacity:.55;cursor:grabbing}.pdf-library-card.drag-over{outline:2px solid var(--accent-color,#55ddd2);outline-offset:2px;transform:translateY(-2px)}@media(max-width:700px){.pdf-library-sort-control--actions{width:100%;min-width:190px;max-width:none}.pdf-library-sort-control--actions select{flex:1;min-width:0}.pdf-drag-hint{display:none}.pdf-library-card{cursor:default!important}}
 `;document.head.appendChild(style)}
-function ensureControl(){
-  ensureStyles();if($('pdfLibrarySortControl'))return;const anchor=$('pdfLibraryViewToggle')||$('pdfAssuntoFilter');if(!anchor)return;
-  const wrap=document.createElement('label');wrap.id='pdfLibrarySortControl';wrap.className='pdf-library-sort-control';wrap.innerHTML='<span>Ordenar</span><select id="pdfLibrarySort" aria-label="Ordenação dos PDFs"><option value="manual">Manual</option><option value="number-asc">Numérica ↑</option><option value="number-desc">Numérica ↓</option><option value="alpha-asc">A–Z</option><option value="alpha-desc">Z–A</option></select>';anchor.insertAdjacentElement('afterend',wrap);$('pdfLibrarySort').value=mode();$('pdfLibrarySort').addEventListener('change',event=>{const next=setMode(event.target.value);sortVisible(next,true);if(next==='manual')status('Ordem manual ativa. Segure e arraste um PDF para reposicioná-lo.','ok');else status('Organizando e salvando a nova ordem…','warn')})
+function findActionButton(predicate){return [...document.querySelectorAll('.pdf-library-actions button')].find(predicate)||null}
+function syncActionButtons(){
+  const selectBtn=$('btnPdfSelectionMode');
+  const addBtn=findActionButton(btn=>(btn.getAttribute('onclick')||'').includes('openUploadModal'));
+  if(!selectBtn||!addBtn)return;
+  addBtn.classList.remove('btn-primary');addBtn.classList.add('btn-secondary');
+  selectBtn.classList.add('pdf-library-action-equal');addBtn.classList.add('pdf-library-action-equal');
+  selectBtn.style.width='';selectBtn.style.minWidth='';addBtn.style.width='';addBtn.style.minWidth='';
+  const width=Math.max(150,Math.ceil(selectBtn.getBoundingClientRect().width||0),Math.ceil(addBtn.getBoundingClientRect().width||0));
+  selectBtn.style.width=`${width}px`;selectBtn.style.minWidth=`${width}px`;addBtn.style.width=`${width}px`;addBtn.style.minWidth=`${width}px`;
 }
-function boot(){ensureControl();augment();const grid=$('pdfLibraryGrid');if(grid&&!grid.dataset.orderObserver){grid.dataset.orderObserver='1';new MutationObserver(()=>{if(mutating)return;requestAnimationFrame(()=>{ensureControl();augment()})}).observe(grid,{childList:true,subtree:true})}}
+function placeSortControl(wrap){
+  const selectBtn=$('btnPdfSelectionMode');
+  const actions=selectBtn?.closest('.pdf-library-actions');
+  if(!actions)return false;
+  wrap.classList.add('pdf-library-sort-control--actions');
+  if(wrap.parentElement!==actions||wrap.nextElementSibling!==selectBtn)actions.insertBefore(wrap,selectBtn);
+  return true;
+}
+function ensureControl(){
+  ensureStyles();let wrap=$('pdfLibrarySortControl');
+  if(!wrap){
+    wrap=document.createElement('label');wrap.id='pdfLibrarySortControl';wrap.className='pdf-library-sort-control';wrap.innerHTML='<span>Ordenar</span><select id="pdfLibrarySort" aria-label="Ordenação dos PDFs"><option value="manual">Manual</option><option value="number-asc">Numérica ↑</option><option value="number-desc">Numérica ↓</option><option value="alpha-asc">A–Z</option><option value="alpha-desc">Z–A</option></select>';
+    if(!placeSortControl(wrap)){const anchor=$('pdfLibraryViewToggle')||$('pdfAssuntoFilter');if(!anchor)return;anchor.insertAdjacentElement('afterend',wrap)}
+    $('pdfLibrarySort').addEventListener('change',event=>{const next=setMode(event.target.value);sortVisible(next,true);if(next==='manual')status('Ordem manual ativa. Segure e arraste um PDF para reposicioná-lo.','ok');else status('Organizando e salvando a nova ordem…','warn')});
+  }else placeSortControl(wrap);
+  $('pdfLibrarySort').value=mode();syncActionButtons();
+}
+function boot(){ensureControl();syncActionButtons();augment();const grid=$('pdfLibraryGrid');if(grid&&!grid.dataset.orderObserver){grid.dataset.orderObserver='1';new MutationObserver(()=>{if(mutating)return;requestAnimationFrame(()=>{ensureControl();syncActionButtons();augment()})}).observe(grid,{childList:true,subtree:true})}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0));else setTimeout(boot,0);
 document.addEventListener('click',event=>{const button=event.target.closest('button');if((button?.getAttribute('onclick')||'').includes("switchTab('tab-biblioteca'"))setTimeout(boot,40)});
 global.addEventListener('pageshow',()=>setTimeout(boot,40));
