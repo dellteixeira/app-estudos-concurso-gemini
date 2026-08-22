@@ -56,7 +56,7 @@ test('arrastar PDF troca a ordem canônica para manual e salva', () => {
 test('título do PDF vira atalho para abrir e botão Visualizar é removido da interface renderizada', () => {
   assert.match(ordering, /pdf-card-title-link/);
   assert.match(ordering, /PdfStudyLibraryUI\?\.openDocument/);
-  assert.match(ordering, /Visualizar\\s\*\$\/i);
+  assert.ok(ordering.includes("/^\\s*Visualizar\\s*$/i"));
   assert.match(ordering, /visual\?\.remove\(\)/);
   assert.match(ordering, /:hover/);
 });
