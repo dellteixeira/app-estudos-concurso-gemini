@@ -84,6 +84,16 @@ jobs:
             if (!names.has(process.env.RELEASE_ZIP + ".sha256")) throw new Error("SHA256 asset missing");
           ' "$release_json"
 
+      - name: Upload canonical ZIP as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-release-v10.26.0-stable-20260822
+          path: |
+            app-estudos-concurso-gemini-v10.26.0-stable-20260822.zip
+            app-estudos-concurso-gemini-v10.26.0-stable-20260822.zip.sha256
+          retention-days: 30
+          if-no-files-found: error
+
       - name: Write success marker on operational branch
         shell: bash
         run: |
@@ -92,6 +102,7 @@ jobs:
           release_tag=$RELEASE_TAG
           source_commit=$MAIN_SHA
           zip_asset=$RELEASE_ZIP
+          workflow_run_id=$GITHUB_RUN_ID
           verified=true
           EOF
           git config user.name "github-actions[bot]"
@@ -100,6 +111,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Success marker already present."
           else
-            git commit -m "ops: mark canonical release verified"
+            git commit -m "ops: mark canonical release artifact verified"
             git push origin HEAD:ops/canonical-release-10.26.0-20260822
           fi
