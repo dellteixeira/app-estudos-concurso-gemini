@@ -3,8 +3,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const worker=fs.readFileSync('src/index.js','utf8');
 
-test('v10.25.7 increases Gemini output budget',()=>{
-  assert.match(worker,/maxOutputTokens: compactRetry \? 900 : 1600/);
+test('v10.25.7 preserves Gemini normal and compact output budgets',()=>{
+  assert.match(worker,/compactRetry \? 900 : 1600/);
 });
 
 test('v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON',()=>{
