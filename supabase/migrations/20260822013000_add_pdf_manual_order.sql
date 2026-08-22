@@ -66,9 +66,9 @@ begin
         return;
     end if;
 
-    select count(distinct value)
+    select count(distinct item.id)
       into v_distinct
-      from unnest(p_order) as value;
+      from unnest(p_order) as item(id);
 
     if v_distinct <> v_requested then
         raise exception 'A ordem contém PDFs duplicados';
