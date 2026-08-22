@@ -32,3 +32,35 @@ jobs:
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: npm run audit
+
+      - name: Build canonical v10.26.0 backup
+        if: github.head_ref == 'ops/canonical-backup-v10-26-0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p canonical-source
+          git archive 75b1ff0af9b24145ef28fc7c222ca1b27b889070 | tar -x -C canonical-source
+          cat > canonical-source/CANONICAL_BACKUP_INFO.txt <<'EOF'
+          APP: app-estudos-concurso-gemini
+          VERSION: 10.26.0
+          CANONICAL_BRANCH: main
+          CANONICAL_COMMIT: 75b1ff0af9b24145ef28fc7c222ca1b27b889070
+          RELEASE: v10.26.0
+          CREATED_AT_UTC: 2026-08-22T00:11:00Z
+          PURPOSE: Canonical downloadable source backup of the validated production release.
+          SECRETS_INCLUDED: no
+          EOF
+          find canonical-source -type f -print0 | sort -z | xargs -0 sha256sum > canonical-source/CANONICAL_MANIFEST_SHA256.txt
+          zip -qr app-estudos-concurso-gemini_v10.26.0_CANONICO_2026-08-21.zip canonical-source
+          sha256sum app-estudos-concurso-gemini_v10.26.0_CANONICO_2026-08-21.zip > app-estudos-concurso-gemini_v10.26.0_CANONICO_2026-08-21.zip.sha256
+
+      - name: Upload canonical backup
+        if: github.head_ref == 'ops/canonical-backup-v10-26-0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-estudos-concurso-gemini-v10.26.0-canonical
+          path: |
+            app-estudos-concurso-gemini_v10.26.0_CANONICO_2026-08-21.zip
+            app-estudos-concurso-gemini_v10.26.0_CANONICO_2026-08-21.zip.sha256
+          retention-days: 7
+          if-no-files-found: error
