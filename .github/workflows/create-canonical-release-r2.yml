@@ -1,0 +1,82 @@
+name: Create Canonical Release R2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/create-canonical-release-r2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.head_ref == 'ops/create-canonical-release-2026-08-22-r2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TARGET_SHA: ea771e5203fe95074ced2083b532845699eab09f
+      TAG: v10.26.0-canonical-2026-08-22-r2
+      ARCHIVE: Estudo-Adaptativo-v10.26.0-canonical-2026-08-22-r2.zip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate canonical commit
+        run: |
+          test "$(git rev-parse "$TARGET_SHA")" = "$TARGET_SHA"
+          test "$(git rev-parse origin/main)" = "$TARGET_SHA"
+
+      - name: Build canonical archive
+        run: |
+          git archive --format=zip --prefix=Estudo-Adaptativo-v10.26.0-canonical-2026-08-22-r2/ "$TARGET_SHA" -o "$ARCHIVE"
+          sha256sum "$ARCHIVE" > SHA256SUMS.txt
+          cat > RELEASE_NOTES.md <<'EOF'
+          # Estudo Adaptativo v10.26.0 — Canonical Snapshot R2
+
+          Snapshot canônico da produção em 22/08/2026, congelado antes de novas alterações.
+
+          Principais marcos incluídos:
+          - Biblioteca Offline Gerenciada;
+          - OPFS como armazenamento preferencial de PDFs, com fallback IndexedDB;
+          - modos: PDFs abertos, favoritos e biblioteca inteira;
+          - fila mobile-first e controle de armazenamento;
+          - validação SHA-256 e estados de integridade;
+          - política LRU segura para pressão de espaço;
+          - melhorias do Reader e funcionamento offline;
+          - organização visual atual da Biblioteca em desktop e mobile.
+
+          Commit canônico:
+          `ea771e5203fe95074ced2083b532845699eab09f`
+
+          Branch congelada:
+          `release/v10.26.0-canonical-2026-08-22-r2`
+
+          O arquivo ZIP anexado foi criado diretamente desse commit com `git archive`.
+          EOF
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ARCHIVE" SHA256SUMS.txt --clobber
+          else
+            gh release create "$TAG" \
+              --target "$TARGET_SHA" \
+              --title "Estudo Adaptativo v10.26.0 — Canonical Snapshot R2" \
+              --notes-file RELEASE_NOTES.md \
+              "$ARCHIVE" SHA256SUMS.txt
+          fi
+
+      - name: Upload canonical artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-v10.26.0-r2
+          path: |
+            ${{ env.ARCHIVE }}
+            SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
