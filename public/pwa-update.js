@@ -285,12 +285,26 @@
     }
   }
 
+  function loadNotesRichExport() {
+    if (window.NotesRichExport || document.querySelector('script[data-notes-rich-export]')) return;
+    const rich = document.createElement('script');
+    rich.src = './js/notes-export-rich.js';
+    rich.defer = true;
+    rich.dataset.notesRichExport = '1';
+    rich.onerror = () => console.warn('Não foi possível carregar o exportador PDF formatado. O exportador simples continuará disponível.');
+    document.head.appendChild(rich);
+  }
+
   function loadNotesImportExport() {
-    if (window.NotesImportExport || document.querySelector('script[data-notes-import-export]')) return;
+    if (window.NotesImportExport || document.querySelector('script[data-notes-import-export]')) {
+      loadNotesRichExport();
+      return;
+    }
     const script = document.createElement('script');
     script.src = './js/notes-import-export.js';
     script.defer = true;
     script.dataset.notesImportExport = '1';
+    script.onload = loadNotesRichExport;
     script.onerror = () => console.warn('Não foi possível carregar os recursos de importação/exportação de anotações.');
     document.head.appendChild(script);
   }
