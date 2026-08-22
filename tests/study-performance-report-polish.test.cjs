@@ -23,6 +23,6 @@ test('study and export buttons have exact parity on desktop and mobile',()=>{
 });
 
 test('report loader uses explicit cache-busting revision',()=>{
-  assert.match(loader,/study-performance-report-core\.js\?rev=20260822-4/);
-  assert.match(loader,/study-performance-report-v2\.js\?rev=20260822-4/);
+  assert.match(loader,/study-performance-report-core\.js\?rev=20260822-5/);
+  assert.match(loader,/study-performance-report-v2\.js\?rev=20260822-5/);
 });
