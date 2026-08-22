@@ -77,3 +77,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 document.addEventListener('click',event=>{const button=event.target.closest('button');if((button?.getAttribute('onclick')||'').includes("switchTab('tab-biblioteca'"))setTimeout(boot,40)});
 global.addEventListener('pageshow',()=>setTimeout(boot,40));
 })(window);
+
+(function loadAdaptiveScheduleReconciliation(){
+  if(document.querySelector('script[data-adaptive-schedule-reconciliation]'))return;
+  const script=document.createElement('script');
+  script.src='./js/adaptive-schedule-reconciliation.js';
+  script.defer=true;
+  script.dataset.adaptiveScheduleReconciliation='1';
+  document.head.appendChild(script);
+})();
