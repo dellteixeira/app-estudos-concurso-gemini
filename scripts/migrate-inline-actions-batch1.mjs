@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Batch 1: migração determinística dos primeiros controles estáticos do index.html.
 import fs from 'node:fs';
 import path from 'node:path';
 
