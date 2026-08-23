@@ -44,6 +44,13 @@
         .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1rem; }
         .auth-card { background: var(--card-bg); padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
         .auth-card h2 { margin-bottom: 1.5rem; color: var(--primary-blue); }
+        .auth-brand-logo { display:flex; justify-content:center; align-items:center; width:100%; margin:0 auto 1rem; }
+        .auth-brand-logo img { display:block; width:82px; height:82px; object-fit:contain; border-radius:50%; filter:drop-shadow(0 6px 16px rgba(0,0,0,.28)); }
+        @media (max-width:700px) {
+            .auth-card { padding:2rem 1.5rem; }
+            .auth-brand-logo { margin-bottom:.85rem; }
+            .auth-brand-logo img { width:68px; height:68px; }
+        }
 
         #app-dashboard { display: none; max-width: 1300px; margin: 0 auto; padding: 1.5rem; width: 100%; }
 
