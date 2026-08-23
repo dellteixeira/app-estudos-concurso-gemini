@@ -2,13 +2,13 @@ name: Quality Check
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [reopened]
 
 permissions:
   contents: write
 
 jobs:
-  apply-inline-style-batch6:
+  inspect-inline-style-batch6:
     if: github.event.pull_request.head.ref == 'hardening/inline-style-debt-batch6'
     runs-on: ubuntu-24.04
     steps:
@@ -17,15 +17,24 @@ jobs:
         with:
           ref: hardening/inline-style-debt-batch6
           fetch-depth: 0
-      - name: Apply patch
-        run: python3 scripts/apply-inline-style-batch6.py
-      - name: Commit patch
-        shell: bash
+      - name: Inspect remaining styles
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          text=Path('public/index.html').read_text(encoding='utf-8')
+          out=[]
+          for i,line in enumerate(text.splitlines(),1):
+              if 'style="' in line:
+                  for m in re.finditer(r'style="([^"]*)"',line):
+                      out.append(f'{i}: {m.group(1)} | {line.strip()}')
+          Path('security/.batch6-remaining.txt').write_text('\n'.join(out)+'\n',encoding='utf-8')
+          print('\n'.join(out))
+          PY
+      - name: Commit report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/index.html public/css/base.css scripts/audit-inline-csp.mjs tests/inline-style-batch6.test.cjs security/inline-style-batch6-result.json
-          if ! git diff --cached --quiet; then
-            git commit -m "refactor(css): migrate fixed inline layouts batch 6"
-            git push origin HEAD:hardening/inline-style-debt-batch6
-          fi
+          git add security/.batch6-remaining.txt
+          git commit -m "chore: inspect remaining batch6 inline styles"
+          git push origin HEAD:hardening/inline-style-debt-batch6
