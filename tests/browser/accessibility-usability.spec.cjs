@@ -6,13 +6,13 @@ const VIEWPORTS = [
   { name: 'desktop-1366', width: 1366, height: 768, minTarget: 36 }
 ];
 
-async function waitForAccessibilityBaseline(page) {
+async function waitForCanonicalUi(page) {
   await page.waitForFunction(() => {
-    const link = document.querySelector('link[data-accessibility-baseline]');
+    const link = document.querySelector('link[data-canonical-ui]');
     if (!link) return false;
     return [...document.styleSheets].some(sheet => {
       try {
-        return sheet.href && sheet.href.includes('/css/accessibility-baseline.css');
+        return sheet.href && sheet.href.includes('/css/canonical-ui.css');
       } catch {
         return false;
       }
@@ -166,7 +166,7 @@ for (const viewport of VIEWPORTS) {
   test(`${viewport.name}: autenticação mantém nomes, foco e alvos utilizáveis`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await waitForAccessibilityBaseline(page);
+    await waitForCanonicalUi(page);
     await exposeAuth(page);
     await expect(page.locator('#auth-screen')).toBeVisible();
     await auditAccessibleNames(page, '#auth-screen');
@@ -177,7 +177,7 @@ for (const viewport of VIEWPORTS) {
   test(`${viewport.name}: header mantém nomes, foco e alvos utilizáveis`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await waitForAccessibilityBaseline(page);
+    await waitForCanonicalUi(page);
     await exposeDashboard(page);
     await expect(page.locator('.modern-header')).toBeVisible();
     await auditAccessibleNames(page, '.modern-header');
