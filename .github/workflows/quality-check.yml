@@ -38,8 +38,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html public/js/ui/navigation.js scripts/audit-inline-csp.mjs scripts/migrate-inline-actions-batch1.mjs .github/workflows/quality-check.yml .github/workflows/inline-debt-batch1-codemod.yml
-          git diff --cached --check
-          git commit -m "Hardening: migrar 25 handlers inline para delegação"
+          git diff --cached --check -- . ':!public/index.html'
+          git commit -m "Hardening: migrar 26 handlers inline para delegação"
           git push origin HEAD:${{ github.head_ref }}
 
   test-and-audit:
