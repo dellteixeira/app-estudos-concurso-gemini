@@ -1,161 +1,243 @@
 /* ================================================================
-   UI TEXT SAFETY — adaptive controls and retention metrics
-   Prevents labels from being clipped or escaping their controls.
-   Loaded late so it can safely override legacy responsive rules.
+   UI TEXT SAFETY — FINAL RESPONSIVE CONTRACT
+   One deterministic late layer for header actions and retention cards.
    ================================================================ */
 
-header.modern-header .header-account-actions,
+/* ----------------------------------------------------------------
+   HEADER ACTIONS — always one line
+   ---------------------------------------------------------------- */
+header.modern-header .concurso-selector-bar {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: clamp(6px, .75vw, 10px) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+header.modern-header .concurso-selector-bar > select {
+    flex: 1 1 180px !important;
+    width: auto !important;
+    min-width: 150px !important;
+    max-width: none !important;
+}
+
+header.modern-header .concurso-selector-bar > .btn {
+    flex: 0 0 auto !important;
+    width: auto !important;
+}
+
 header.modern-header .header-utility-cluster {
-    min-width: 0;
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: clamp(6px, .75vw, 10px) !important;
+    width: auto !important;
+    min-width: max-content !important;
+    max-width: none !important;
 }
 
 header.modern-header .header-account-actions {
-    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)) !important;
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: clamp(6px, .75vw, 10px) !important;
+    width: auto !important;
+    min-width: max-content !important;
 }
 
 header.modern-header .header-account-actions .btn,
 header.modern-header .btn-search-header,
 header.modern-header .concurso-selector-bar > .btn,
 header.modern-header .mobile-tools-toggle {
-    box-sizing: border-box;
-    max-width: 100%;
+    box-sizing: border-box !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
     min-width: 0 !important;
-    height: auto !important;
-    min-height: var(--control-md, 44px);
-    padding: 8px 12px !important;
-    line-height: 1.2;
-    white-space: normal !important;
+    max-width: none !important;
+    height: var(--control-md, 44px) !important;
+    min-height: var(--control-md, 44px) !important;
+    padding-inline: clamp(8px, .85vw, 13px) !important;
+    padding-block: 0 !important;
+    font-size: clamp(.66rem, .58rem + .22vw, .78rem) !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
     overflow: visible !important;
     text-overflow: clip !important;
-    overflow-wrap: normal;
-    word-break: keep-all;
-    text-align: center;
-    justify-content: center;
+    overflow-wrap: normal !important;
+    word-break: keep-all !important;
+    text-align: center !important;
+    justify-content: center !important;
 }
 
 header.modern-header .btn-theme-header {
-    min-width: 138px !important;
+    min-width: 0 !important;
 }
 
-header.modern-header .header-utility-cluster {
-    grid-template-columns: minmax(0, 1fr) minmax(112px, auto) !important;
+header.modern-header .btn-search-header {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+/* ----------------------------------------------------------------
+   RETENTION METRICS — respond to the actual component width
+   ---------------------------------------------------------------- */
+.rd-center-v1077 {
+    min-width: 0 !important;
+    width: 100% !important;
+    container-type: inline-size;
+    container-name: retentionMetrics;
 }
 
 .rd-metrics-v1077 {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: clamp(8px, 1vw, 12px) !important;
-    width: 100%;
-    min-width: 0;
-    align-items: stretch;
+    width: 100% !important;
+    min-width: 0 !important;
+    align-items: stretch !important;
 }
 
 .rd-metrics-v1077 .rd-metric-card-v1077 {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto auto 1fr auto !important;
-    justify-items: center !important;
-    align-items: start !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
     gap: 8px !important;
+    position: relative !important;
     min-width: 0 !important;
     width: 100% !important;
-    min-height: 196px;
+    min-height: 196px !important;
     padding: clamp(12px, 1.4vw, 16px) !important;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
     overflow: hidden !important;
     text-align: center !important;
 }
 
 .rd-metrics-v1077 .rd-metric-icon-v1077 {
-    grid-row: 1;
+    order: 1 !important;
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    float: none !important;
     display: grid !important;
     place-items: center !important;
+    flex: 0 0 auto !important;
+    align-self: center !important;
     margin: 0 auto 2px !important;
-    flex: none !important;
 }
 
 .rd-metrics-v1077 .rd-metric-label-v1077 {
-    grid-row: 2;
+    order: 2 !important;
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    float: none !important;
     display: block !important;
+    flex: 0 0 auto !important;
     width: 100% !important;
     min-width: 0 !important;
-    min-height: 2.5em;
+    min-height: 2.45em !important;
     margin: 0 !important;
-    padding: 0 4px !important;
-    box-sizing: border-box;
-    font-size: clamp(.72rem, .68rem + .18vw, .84rem) !important;
-    font-weight: 700;
+    padding: 0 2px !important;
+    box-sizing: border-box !important;
+    font-size: clamp(.70rem, .66rem + .18vw, .82rem) !important;
+    font-weight: 700 !important;
     line-height: 1.22 !important;
     text-align: center !important;
     white-space: normal !important;
     overflow: visible !important;
     text-overflow: clip !important;
-    overflow-wrap: normal !important;
+    overflow-wrap: break-word !important;
     word-break: normal !important;
     hyphens: none !important;
 }
 
 .rd-metrics-v1077 .rd-metric-card-v1077 > strong {
-    grid-row: 3;
-    align-self: end;
-    justify-self: stretch;
-    width: 100%;
-    min-width: 0;
-    margin: 8px 0 0 !important;
-    text-align: left;
+    order: 3 !important;
+    position: static !important;
+    flex: 0 0 auto !important;
+    align-self: stretch !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: auto 0 0 !important;
+    text-align: left !important;
 }
 
 .rd-metrics-v1077 .rd-metric-progress-v1077 {
-    grid-row: 4;
+    order: 4 !important;
+    position: static !important;
+    flex: 0 0 auto !important;
+    align-self: stretch !important;
     width: 100% !important;
-    min-width: 0;
+    min-width: 0 !important;
 }
 
-@media (max-width: 900px) {
-    header.modern-header .header-utility-cluster {
+/* The retention center is often much narrower than the viewport because the
+   diagnostic panel has sibling columns. Container queries are therefore the
+   authoritative adaptation mechanism here. */
+@container retentionMetrics (max-width: 760px) {
+    .rd-metrics-v1077 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .rd-metrics-v1077 .rd-metric-card-v1077 {
+        min-height: 184px !important;
+    }
+}
+
+@container retentionMetrics (max-width: 380px) {
+    .rd-metrics-v1077 {
         grid-template-columns: 1fr !important;
     }
 
-    header.modern-header .header-account-actions {
-        grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)) !important;
+    .rd-metrics-v1077 .rd-metric-card-v1077 {
+        min-height: 170px !important;
+    }
+}
+
+/* Viewport adaptation for header controls: preserve a single row. The row
+   may scroll horizontally only when the physical viewport cannot contain all
+   controls, rather than stacking or clipping labels. */
+@media (max-width: 900px) {
+    header.modern-header .concurso-selector-bar {
+        gap: 6px !important;
+        padding-inline: 6px !important;
     }
 
-    header.modern-header .btn-theme-header {
-        min-width: 0 !important;
+    header.modern-header .concurso-selector-bar > select {
+        flex-basis: 145px !important;
+        min-width: 135px !important;
     }
 
-    .rd-metrics-v1077 {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    header.modern-header .header-account-actions .btn,
+    header.modern-header .btn-search-header,
+    header.modern-header .concurso-selector-bar > .btn {
+        height: 42px !important;
+        min-height: 42px !important;
+        padding-inline: 9px !important;
+        font-size: clamp(.62rem, 1.7vw, .72rem) !important;
     }
 }
 
 @media (max-width: 600px) {
-    header.modern-header .header-account-actions {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    header.modern-header .concurso-selector-bar > select {
+        flex-basis: 132px !important;
+        min-width: 125px !important;
     }
 
-    header.modern-header .header-account-actions .btn:last-child:nth-child(odd) {
-        grid-column: 1 / -1;
-    }
-
-    .rd-metrics-v1077 .rd-metric-card-v1077 {
-        min-height: 184px;
-        padding: 12px 10px !important;
-    }
-
-    .rd-metrics-v1077 .rd-metric-label-v1077 {
-        min-height: 2.7em;
-        font-size: clamp(.70rem, 3vw, .80rem) !important;
-    }
-}
-
-@media (max-width: 360px) {
-    header.modern-header .header-account-actions,
-    .rd-metrics-v1077 {
-        grid-template-columns: 1fr !important;
-    }
-
-    header.modern-header .header-account-actions .btn {
-        grid-column: auto !important;
+    header.modern-header .header-account-actions .btn,
+    header.modern-header .btn-search-header,
+    header.modern-header .concurso-selector-bar > .btn {
+        padding-inline: 8px !important;
+        font-size: .66rem !important;
     }
 }
