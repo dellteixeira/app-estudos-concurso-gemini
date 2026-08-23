@@ -31,14 +31,13 @@ else ok('index.html sem blocos script inline executáveis');
 const inlineHandlers = [...html.matchAll(/\son[a-z]+\s*=\s*["'][^"']*["']/gi)];
 const inlineStyles = [...html.matchAll(/\sstyle\s*=\s*["'][^"']*["']/gi)];
 
-// Baseline de dívida: não é uma licença para crescer. Estes tetos existem para
-// impedir regressão enquanto os handlers/estilos restantes são migrados em lotes.
-const HANDLER_BUDGET = 220;
-const STYLE_BUDGET = 220;
-if (inlineHandlers.length > HANDLER_BUDGET) fail(`handlers inline=${inlineHandlers.length} excedem orçamento=${HANDLER_BUDGET}`);
-else ok(`handlers inline sob orçamento de migração: ${inlineHandlers.length}/${HANDLER_BUDGET}`);
-if (inlineStyles.length > STYLE_BUDGET) fail(`style= inline=${inlineStyles.length} excedem orçamento=${STYLE_BUDGET}`);
-else ok(`estilos inline sob orçamento de migração: ${inlineStyles.length}/${STYLE_BUDGET}`);
+// Baseline congelado em 2026-08-23. A partir daqui a dívida só pode diminuir.
+const HANDLER_BUDGET = 246;
+const STYLE_BUDGET = 124;
+if (inlineHandlers.length > HANDLER_BUDGET) fail(`handlers inline=${inlineHandlers.length} excedem baseline=${HANDLER_BUDGET}`);
+else ok(`handlers inline congelados/reduzidos: ${inlineHandlers.length}/${HANDLER_BUDGET}`);
+if (inlineStyles.length > STYLE_BUDGET) fail(`style= inline=${inlineStyles.length} excedem baseline=${STYLE_BUDGET}`);
+else ok(`estilos inline congelados/reduzidos: ${inlineStyles.length}/${STYLE_BUDGET}`);
 
 if (!/object-src 'self' blob:/.test(csp)) fail("object-src esperado não está explícito");
 if (!/base-uri 'self'/.test(csp)) fail("base-uri 'self' ausente");
@@ -48,4 +47,4 @@ if (errors.length) {
   console.error(`\nAUDITORIA CSP REPROVADA: ${errors.length} problema(s).`);
   process.exit(1);
 }
-console.log('\nAUDITORIA CSP APROVADA: scripts inline de bloco bloqueados e dívida inline limitada.');
+console.log('\nAUDITORIA CSP APROVADA: scripts inline de bloco bloqueados e dívida inline não pode crescer.');
