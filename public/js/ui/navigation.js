@@ -5,7 +5,7 @@
         if (!document.querySelector('link[data-retention-metrics-fix]')) {
             const retentionLink = document.createElement('link');
             retentionLink.rel = 'stylesheet';
-            retentionLink.href = './css/retention-metrics-fix.css?v=20260823-final2';
+            retentionLink.href = './css/retention-metrics-fix.css?v=20260823-final3';
             retentionLink.dataset.retentionMetricsFix = '1';
             document.head.appendChild(retentionLink);
         }
@@ -13,7 +13,7 @@
         if (!document.querySelector('link[data-ui-text-safety]')) {
             const safetyLink = document.createElement('link');
             safetyLink.rel = 'stylesheet';
-            safetyLink.href = './css/ui-text-safety.css?v=20260823-final2';
+            safetyLink.href = './css/ui-text-safety.css?v=20260823-final3';
             safetyLink.dataset.uiTextSafety = '1';
             document.head.appendChild(safetyLink);
         }
@@ -61,12 +61,8 @@
         mobileSwitchTab
     });
 
-    // Visual safety styles are intentionally injected late and in deterministic
-    // order: retention base first, final safety contract second.
     ensureRetentionMetricLayoutStyle();
 
-    // Performance extras are deliberately non-critical: the app remains fully
-    // functional if this enhancement cannot be loaded.
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', ensurePerformanceLoader, { once: true });
     } else {
