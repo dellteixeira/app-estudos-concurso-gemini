@@ -1,6 +1,15 @@
 (function (global) {
     'use strict';
 
+    function ensureRetentionMetricLayoutStyle() {
+        if (document.querySelector('link[data-retention-metrics-fix]')) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = './css/retention-metrics-fix.css';
+        link.dataset.retentionMetricsFix = '1';
+        document.head.appendChild(link);
+    }
+
     function ensurePerformanceLoader() {
         if (global.AppPerformanceLoader || document.querySelector('script[data-performance-loader]')) return;
         const script = document.createElement('script');
@@ -46,6 +55,10 @@
     // Compatibility API used by existing inline handlers and legacy modules.
     global.findDesktopTabButton = findDesktopTabButton;
     global.mobileSwitchTab = mobileSwitchTab;
+
+    // The retention metric layout is a visual hotfix and must be available as
+    // soon as the navigation layer is parsed. It has no data dependencies.
+    ensureRetentionMetricLayoutStyle();
 
     // Performance extras are deliberately non-critical: the app remains fully
     // functional if this enhancement cannot be loaded.
