@@ -1,0 +1,53 @@
+name: Temporary Responsive Phase 1 Cleanup
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'refactor/responsive-design-system-phase-1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Restore exact base bytes and apply minimal patch
+        shell: bash
+        run: |
+          git fetch origin main
+          git checkout origin/main -- public/index.html public/sw.js
+          python - <<'PY'
+          from pathlib import Path
+
+          index = Path('public/index.html')
+          data = index.read_bytes()
+          marker = b'<link rel="stylesheet" href="./css/features.css">'
+          addition = marker + b'\r\n    <link rel="stylesheet" href="./css/responsive-system.css">'
+          if b'./css/responsive-system.css' not in data:
+              if marker not in data:
+                  raise SystemExit('index marker not found')
+              data = data.replace(marker, addition, 1)
+              index.write_bytes(data)
+
+          sw = Path('public/sw.js')
+          data = sw.read_bytes()
+          old = b"'./css/base.css', './css/dashboard.css', './css/features.css', './css/pdf-library.css', './css/pdf-reader.css',"
+          new = b"'./css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/pdf-library.css', './css/pdf-reader.css',"
+          if b'./css/responsive-system.css' not in data:
+              if old not in data:
+                  raise SystemExit('service worker CSS app-shell marker not found')
+              data = data.replace(old, new, 1)
+              sw.write_bytes(data)
+          PY
+
+          git rm .github/workflows/tmp-responsive-phase1-cleanup.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/index.html public/sw.js
+          git commit -m 'Limpar integração responsiva preservando arquivos base'
+          git push origin HEAD:${{ github.head_ref }}
