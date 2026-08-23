@@ -718,7 +718,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (options.maxLength) input.maxLength = options.maxLength; else input.removeAttribute('maxlength');
             if (help) {
                 help.textContent = options.help || '';
-                help.style.display = options.help ? '' : 'none';
+                setVisualState(help, Boolean(options.help));
             }
             if (confirmBtn) confirmBtn.textContent = options.confirmText || 'Salvar';
             modal.style.display = 'flex';
@@ -3501,7 +3501,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             });
 
             const btnReset = document.getElementById('btnResetFcFilter');
-            if (btnReset) btnReset.style.display = (activeFcMateriaFilter || activeFcAssuntoFilter) ? 'inline-flex' : 'none';
+            if (btnReset) setVisualState(btnReset, Boolean(activeFcMateriaFilter || activeFcAssuntoFilter));
         }
 
         function toggleFcFolder(matName) {
@@ -7775,8 +7775,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 `;
             }
             if (ringEl) {
-                ringEl.style.setProperty('--timer-progress', String(getPomodoroRingProgress()));
-                ringEl.style.setProperty('--timer-accent', timerMode === 'focus' ? 'var(--modern-blue-2)' : 'var(--modern-warning)');
+                const progressPercent = Math.max(0, Math.min(100, Math.round(getPomodoroRingProgress() * 100)));
+                const progressClass = `pomodoro-progress-${progressPercent}`;
+                const previousProgressClass = ringEl.dataset.progressClass || 'pomodoro-progress-0';
+                if (previousProgressClass !== progressClass) {
+                    ringEl.classList.remove(previousProgressClass);
+                    ringEl.classList.add(progressClass);
+                    ringEl.dataset.progressClass = progressClass;
+                }
                 ringEl.dataset.mode = timerMode;
                 ringEl.setAttribute('aria-label', `${min} minutos e ${sec} segundos restantes — ${modeLabel}`);
             }
