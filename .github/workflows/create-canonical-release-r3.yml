@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - ops/create-canonical-release-2026-08-23-r3
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
