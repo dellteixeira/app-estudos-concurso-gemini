@@ -267,6 +267,23 @@ header.modern-header .btn-search-header {
     }
 }
 
+/* Tablet: cada rótulo de navegação deve caber inteiro no próprio botão.
+   Se os cinco itens excederem a largura útil, a rolagem fica confinada ao
+   trilho da navegação e nunca ao documento. */
+@media (min-width: 601px) and (max-width: 900px) {
+    header.modern-header .header-nav-tabs .tab-btn {
+        flex: 1 0 auto !important;
+        min-width: max-content !important;
+        padding-inline: 6px !important;
+        font-size: clamp(.70rem, 1.45vw, .76rem) !important;
+        line-height: 1 !important;
+        letter-spacing: -.01em !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+}
+
 @media (max-width: 600px) {
     header.modern-header .concurso-selector-bar > select {
         flex-basis: 132px !important;
