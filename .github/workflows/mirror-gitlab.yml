@@ -15,7 +15,7 @@ concurrency:
 jobs:
   mirror:
     name: Sync repository to GitLab
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
@@ -35,9 +35,7 @@ jobs:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         run: |
           set -euo pipefail
-
           AUTH="$(printf '%s:%s' "$GITLAB_USERNAME" "$GITLAB_TOKEN" | base64 -w0)"
-
           git -C mirror.git \
             -c http.extraHeader="Authorization: Basic ${AUTH}" \
             push --mirror \
