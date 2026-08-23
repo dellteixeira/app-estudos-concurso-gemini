@@ -1,4 +1,5 @@
 'use strict';
+// PR #191: visual-state inline-style hardening gate.
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
