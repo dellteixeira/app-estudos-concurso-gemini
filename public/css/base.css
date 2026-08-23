@@ -3510,3 +3510,37 @@
 .schedule-hours-input { width: 70px; }
 .schedule-weekend-options { display: flex; gap: 1.5rem; flex-wrap: wrap; }
 
+/* INLINE_STYLE_BATCH6_FIXED_LAYOUTS */
+.u-layout-b6-001 { min-height: 80px; }
+.u-layout-b6-002 { z-index: 1400; }
+.u-layout-b6-003 { max-width: 560px; }
+.u-layout-b6-004 { z-index: 1410; }
+.u-layout-b6-005 { z-index: 1360; }
+.u-layout-b6-006 { max-width: 720px; }
+.u-layout-b6-007 { z-index: 1398; }
+.u-layout-b6-008 { max-width: 620px; }
+.u-layout-b6-009 { width: 100%; }
+.u-layout-b6-010 { max-width: 860px; }
+.u-layout-b6-011 { z-index: 1420; }
+.u-layout-b6-012 { max-width: 820px; }
+.u-layout-b6-013 { z-index: 1430; }
+.u-layout-b6-014 { max-width: 700px; }
+.u-layout-b6-015 { z-index: 1434; }
+.u-layout-b6-016 { z-index: 1435; }
+.u-layout-b6-017 { z-index: 1440; }
+.u-layout-b6-018 { max-width: 680px; }
+.u-layout-b6-019 { max-width: 650px; }
+.u-layout-b6-020 { font-size: .9rem; opacity: .82; }
+.u-layout-b6-021 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.u-layout-b6-022 { display: flex; gap: 8px; align-items: center; font-size: .86rem; }
+.u-layout-b6-023 { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 10px; font-size: .78rem; opacity: .78; }
+.u-layout-b6-024 { height: auto; max-height: 92vh; }
+.u-layout-b6-025 { flex-wrap: wrap; }
+.u-layout-b6-026 { display: flex; justify-content: space-between; align-items: center; }
+.u-layout-b6-027 { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.u-layout-b6-028 { display: flex; gap: 8px; flex-wrap: wrap; }
+.u-layout-b6-029 { opacity: 0.85; margin-bottom: 12px; }
+
+/* INLINE_STYLE_BATCH6_FINAL_STATIC */
+.study-card-label { font-size: .85rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; }
+.edital-viewer-empty-state { flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,.15); }

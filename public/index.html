@@ -670,11 +670,11 @@
             </div>
             <div class="form-group">
                 <label>Frente / Pergunta</label>
-                <textarea id="editFcPergunta" style="min-height:80px;"></textarea>
+                <textarea id="editFcPergunta" class="u-layout-b6-001"></textarea>
             </div>
             <div class="form-group">
                 <label>Verso / Resposta</label>
-                <textarea id="editFcResposta" style="min-height:80px;"></textarea>
+                <textarea id="editFcResposta" class="u-layout-b6-001"></textarea>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" data-action="call" data-call="closeModalEditarFlashcard">Cancelar (ESC)</button>
@@ -684,8 +684,8 @@
     </div>
 
     <!-- MODAL INTERNO DE CONFIRMAÇÃO / AVISO (não depende de confirm/alert do navegador) -->
-    <div class="modal-overlay" id="modalAppDialog" style="z-index:1400;">
-        <div class="modal" style="max-width:560px;">
+    <div class="modal-overlay u-layout-b6-002" id="modalAppDialog">
+        <div class="modal u-layout-b6-003">
             <h3 id="appDialogTitle">Confirmar ação</h3>
             <div class="u-static-008" id="appDialogMessage"></div>
             <div class="modal-actions">
@@ -696,8 +696,8 @@
     </div>
 
     <!-- DIÁLOGO INTERNO DE ENTRADA — evita prompt() nativo e funciona melhor em PWA/mobile -->
-    <div class="modal-overlay" id="modalAppPrompt" style="z-index:1410;">
-        <div class="modal" style="max-width:560px;">
+    <div class="modal-overlay u-layout-b6-004" id="modalAppPrompt">
+        <div class="modal u-layout-b6-003">
             <h3 id="appPromptTitle">Editar</h3>
             <div class="form-group">
                 <label id="appPromptLabel" for="appPromptInput">Valor</label>
@@ -712,8 +712,8 @@
     </div>
 
     <!-- V9.51 — MINHA CONTA / SEGURANÇA / EXCLUSÃO TOTAL -->
-    <div class="modal-overlay" id="modalAccount" style="z-index:1360;">
-        <div class="modal" style="max-width:720px;">
+    <div class="modal-overlay u-layout-b6-005" id="modalAccount">
+        <div class="modal u-layout-b6-006">
             <h3>Minha Conta</h3>
             <div class="account-summary">
                 <span class="account-summary-label">E-mail da conta</span>
@@ -972,21 +972,21 @@
     </div>
 
     <!-- V10.9.2 — seleção obrigatória de contexto para Pomodoro iniciado manualmente -->
-    <div class="modal-overlay" id="modalPomodoroContext" style="z-index:1398;">
-        <div class="modal" style="max-width:620px;">
+    <div class="modal-overlay u-layout-b6-007" id="modalPomodoroContext">
+        <div class="modal u-layout-b6-008">
             <h3>Vincular sessão de estudo</h3>
             <p class="pomodoro-context-help">Selecione a matéria e o assunto antes de iniciar o foco. Assim, os minutos serão contabilizados corretamente no histórico e nas métricas.</p>
             <div class="form-group">
                 <label><strong>Matéria:</strong></label>
-                <select id="pomodoroContextMateria" data-change-call="updatePomodoroContextAssuntos" style="width:100%;"></select>
+                <select id="pomodoroContextMateria" data-change-call="updatePomodoroContextAssuntos" class="u-layout-b6-009"></select>
             </div>
             <div class="form-group">
                 <label><strong>Assunto:</strong></label>
-                <select id="pomodoroContextAssunto" style="width:100%;"></select>
+                <select id="pomodoroContextAssunto" class="u-layout-b6-009"></select>
             </div>
             <div class="form-group">
                 <label><strong>Tipo de estudo:</strong></label>
-                <select id="pomodoroContextActivity" style="width:100%;">
+                <select id="pomodoroContextActivity" class="u-layout-b6-009">
                     <option value="teoria">Teoria</option>
                     <option value="questoes">Questões</option>
                     <option value="videoaula">Vídeoaula</option>
@@ -1001,8 +1001,8 @@
     </div>
 
     <!-- V9.59 — CONFIGURAÇÃO DO ESTUDO POR OPORTUNIDADE -->
-    <div class="modal-overlay" id="modalFlexibleStudyConfig" style="z-index:1400;">
-        <div class="modal modal-large" style="max-width:860px;">
+    <div class="modal-overlay u-layout-b6-002" id="modalFlexibleStudyConfig">
+        <div class="modal modal-large u-layout-b6-010">
             <h3> Estudo por Oportunidade</h3>
             <p class="u-static-014">Você não precisa definir horários. Informe apenas como cada dia deve se comportar; quando surgir uma oportunidade, toque em <strong>Estudar agora</strong>.</p>
             <div class="form-group">
@@ -1016,7 +1016,7 @@
             </div>
             <div class="form-group">
                 <label><strong>Estratégia de revisão:</strong></label>
-                <select id="flexRevisionStrategy" style="width:100%;">
+                <select id="flexRevisionStrategy" class="u-layout-b6-009">
                     <option value="retencao_adaptativa" selected>Retenção Adaptativa — recomendado</option>
                     <option value="nenhuma">Sem revisões automáticas</option>
                 </select>
@@ -1029,8 +1029,8 @@
     </div>
 
     <!-- V9.59 — OPORTUNIDADE DE ESTUDO AGORA -->
-    <div class="modal-overlay" id="modalOpportunityStudy" style="z-index:1420;">
-        <div class="modal modal-large" style="max-width:820px;">
+    <div class="modal-overlay u-layout-b6-011" id="modalOpportunityStudy">
+        <div class="modal modal-large u-layout-b6-012">
             <h3>Estudar agora</h3>
             <p class="u-static-017" id="opportunityModeHint">Diga quanto tempo você tem. O sistema cruza memória, desempenho, prioridade, fase da prova e contexto para escolher o assunto e o método de estudo.</p>
             <h4 class="u-static-015">Quanto tempo você tem?</h4>
@@ -1056,8 +1056,8 @@
     </div>
 
     <!-- V9.64 — REVISÃO ATIVA GUIADA -->
-    <div class="modal-overlay" id="modalActiveRecallGuide" style="z-index:1430;">
-        <div class="modal" style="max-width:700px;">
+    <div class="modal-overlay u-layout-b6-013" id="modalActiveRecallGuide">
+        <div class="modal u-layout-b6-014">
             <h3>Revisão ativa guiada</h3>
             <div class="active-recall-summary">
                 <strong id="activeRecallGuideTopic">—</strong>
@@ -1073,7 +1073,7 @@
 
     <!-- V9.65 — REVISÃO POR CAMADAS -->
 
-    <div class="modal-overlay" id="modalRetentionMetricDetails" style="z-index:1434;">
+    <div class="modal-overlay u-layout-b6-015" id="modalRetentionMetricDetails">
         <div class="modal-content retention-metric-modal-content">
             <div class="modal-header">
                 <div>
@@ -1086,7 +1086,7 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="modalRetentionMore" style="z-index:1435;">
+    <div class="modal-overlay u-layout-b6-016" id="modalRetentionMore">
         <div class="modal-content retention-more-modal-content">
             <div class="modal-header">
                 <h3>Outros pontos críticos</h3>
@@ -1096,8 +1096,8 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="modalLayeredReview" style="z-index:1440;">
-        <div class="modal" style="max-width:720px;">
+    <div class="modal-overlay u-layout-b6-017" id="modalLayeredReview">
+        <div class="modal u-layout-b6-006">
             <h3>Revisão por camadas</h3>
             <div class="layered-review-summary">
                 <strong id="layeredReviewTopic">—</strong>
@@ -1114,8 +1114,8 @@
     <!-- V9.58 — FEEDBACK DE REVISÃO ADAPTATIVA -->
     </div>
 
-    <div class="modal-overlay" id="modalAdaptiveReviewFeedback" style="z-index:1410;">
-        <div class="modal" style="max-width:680px;">
+    <div class="modal-overlay u-layout-b6-004" id="modalAdaptiveReviewFeedback">
+        <div class="modal u-layout-b6-018">
             <h3>Como foi esta revisão?</h3>
             <div class="adaptive-review-feedback-summary">
                 <strong id="adaptiveReviewFeedbackTopic">—</strong>
@@ -1140,8 +1140,8 @@
     </div>
 
     <!-- V9.61 — ACTIVE RECALL ENGINE / RESULTADO DE QUESTÕES -->
-    <div class="modal-overlay" id="modalQuestionPerformance" style="z-index:1420;">
-        <div class="modal" style="max-width:650px;">
+    <div class="modal-overlay u-layout-b6-011" id="modalQuestionPerformance">
+        <div class="modal u-layout-b6-019">
             <h3>Registrar desempenho em questões</h3>
             <div class="question-performance-summary">
                 <strong id="questionPerformanceTopic">—</strong>
@@ -1226,9 +1226,9 @@
 
     <!-- MODAL ANALISAR EDITAL COM IA — UNIVERSAL PARSER V8 -->
     <div class="modal-overlay" id="modalLegalReading">
-        <div class="modal" style="max-width:720px;">
+        <div class="modal u-layout-b6-006">
             <h3>Lei Seca</h3>
-            <div id="legalReadingContext" style="font-size:.9rem; opacity:.82;"></div>
+            <div id="legalReadingContext" class="u-layout-b6-020"></div>
             <div class="form-group">
                 <label>Blocos cadastrados para esta matéria</label>
                 <select id="legalReadingBlockSelect" data-change-call="fillLegalReadingFromSelectedBlock">
@@ -1239,7 +1239,7 @@
                 <label>Norma / diploma legal</label>
                 <input id="legalReadingNorm" type="text" placeholder="Ex.: Lei nº 11.343/2006 — Lei de Drogas">
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="u-layout-b6-021">
                 <div class="form-group">
                     <label>Artigo inicial</label>
                     <input id="legalReadingStartArticle" type="text" inputmode="numeric" placeholder="Ex.: 5">
@@ -1253,10 +1253,10 @@
                 <label>Tempo de foco (min)</label>
                 <input id="legalReadingMinutes" type="number" min="1" max="240" value="40">
             </div>
-            <label style="display:flex;gap:8px;align-items:center;font-size:.86rem;">
+            <label class="u-layout-b6-022">
                 <input id="legalReadingSaveBlock" type="checkbox" checked> Salvar/atualizar este intervalo na biblioteca de Lei Seca
             </label>
-            <div style="padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;font-size:.78rem;opacity:.78;">
+            <div class="u-layout-b6-023">
                 Ao concluir a sessão antes do tempo, o app perguntará qual foi o último artigo efetivamente lido. As horas serão contabilizadas pela mesma base de Teoria e Questões.
             </div>
             <div class="modal-actions">
@@ -1267,7 +1267,7 @@
     </div>
 
     <div class="modal-overlay" id="modalAnaliseEditalIA">
-        <div class="modal modal-large" style="height:auto; max-height:92vh;">
+        <div class="modal modal-large u-layout-b6-024">
             <h3 class="u-static-022">Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
                 <strong>Universal Parser V9.20 — análise estrutural adaptativa do edital.</strong><br>
@@ -1288,7 +1288,7 @@
             </div>
             <div id="aiEditalStatus" class="ai-analysis-status" aria-live="polite"></div>
             <div id="aiEditalPreview" class="ai-analysis-preview"></div>
-            <div class="modal-actions" style="flex-wrap:wrap;">
+            <div class="modal-actions u-layout-b6-025">
                 <button class="btn btn-secondary" data-action="call" data-call="closeModalAnaliseEditalIA">Fechar</button>
                 <button class="btn btn-info" id="btnExecutarAnaliseIA" data-enter-default="true" data-action="call" data-call="executarAnaliseEditalIA">Analisar Agora</button>
                 <button class="btn btn-success" id="btnImportarAnaliseIA" data-action="call" data-call="importarAnaliseEditalIA" disabled>Importar para o Edital</button>
@@ -1344,14 +1344,14 @@
     <!-- MODAL ESTUDO FLASHCARDS EMBARALHADOS -->
     <div class="modal-overlay" id="modalStudyFlashcards">
         <div class="modal flashcard-study-modal">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="u-layout-b6-026">
                 <h3 id="studyModalTitle">Sessão de Estudos</h3>
                 <span class="u-static-025" id="studyModalProgress">0 / 0</span>
             </div>
             <div class="flashcard-meta" id="studyCardMeta"></div>
             <div class="study-card-container" data-action="call" data-call="toggleStudyCardAnswer">
                 <div class="study-card-inner">
-                    <p style="font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;" id="studyCardLabel">Pergunta (Clique para virar)</p>
+                    <p class="study-card-label" id="studyCardLabel">Pergunta (Clique para virar)</p>
                     <h3 class="u-static-026" id="studyCardText"></h3>
                 </div>
             </div>
@@ -1366,9 +1366,9 @@
     <!-- MODAL VIEW EDITAL PDF -->
     <div class="modal-overlay" id="modalViewEdital">
         <div class="modal modal-large">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div class="u-layout-b6-027">
                 <h3 id="editalModalTitle">Documento do Edital</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <div class="u-layout-b6-028">
                     <label class="btn btn-success btn-sm u-static-003">
                         Anexar Novo Arquivo
                         <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" hidden data-inline-change="ih-077">
@@ -1377,8 +1377,8 @@
                     <button id="btnRemoveEdital" class="btn btn-danger btn-sm" hidden aria-hidden="true" data-action="call" data-call="removerEditalFile">Apagar Edital</button>
                 </div>
             </div>
-            <div id="editalViewerContainer" style="flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
-                <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
+            <div id="editalViewerContainer" class="edital-viewer-empty-state">
+                <p class="u-layout-b6-029">Nenhum documento anexado para o concurso atual.</p>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" data-action="call" data-call="closeModalViewEdital">Fechar (ESC)</button>
