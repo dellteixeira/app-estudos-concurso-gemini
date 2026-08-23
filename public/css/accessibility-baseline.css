@@ -31,9 +31,10 @@ header.modern-header .btn:focus-visible,
 }
 
 /* No mobile o texto curto "Sair" encolhia o botão para ~37,5px.
-   O alvo mínimo fica alinhado ao token canônico de 44px. */
+   A especificidade é intencional para vencer a regra legada do cluster de
+   conta que define min-width: 0 com !important. */
 @media (max-width: 600px) {
-    header.modern-header .btn-logout-header {
+    header.modern-header .header-account-actions .btn.btn-logout-header {
         min-width: var(--touch-target, 44px) !important;
     }
 }
