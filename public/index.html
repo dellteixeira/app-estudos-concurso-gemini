@@ -208,7 +208,7 @@
             <button class="btn-action" data-inline-click="ih-002">Ver / Anexar Edital PDF</button>
             <label class="btn-action u-static-003">
                 Importar JSON
-                <input type="file" id="jsonInput" accept=".json" style="display: none;" data-inline-change="ih-003">
+                <input type="file" id="jsonInput" accept=".json" hidden data-inline-change="ih-003">
             </label>
             <button class="btn-action" data-inline-click="ih-004">Analisar Edital com IA</button>
             <button class="btn-action" data-inline-click="ih-005">Como Gerar JSON com IA</button>
@@ -484,7 +484,7 @@
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="exportAllFlashcards" title="Exportar todos os flashcards deste concurso organizados por matéria e assunto">Exportar Flashcards</button>
                         <button class="btn btn-primary btn-sm" type="button" data-inline-click="ih-019" title="Importar flashcards exportados de outro concurso">Importar Flashcards</button>
-                        <input id="flashcardsImportFile" type="file" accept="application/json,.json" style="display:none;" data-inline-change="ih-020">
+                        <input id="flashcardsImportFile" type="file" accept="application/json,.json" hidden data-inline-change="ih-020">
                         <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" data-inline-click="ih-021" style="display: none;">
                             Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
                         </button>
@@ -1371,7 +1371,7 @@
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <label class="btn btn-success btn-sm u-static-003">
                         Anexar Novo Arquivo
-                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" style="display: none;" data-inline-change="ih-077">
+                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" hidden data-inline-change="ih-077">
                     </label>
                     <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" data-action="call" data-call="downloadEditalFile">Baixar Arquivo</button>
                     <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" data-action="call" data-call="removerEditalFile">Apagar Edital</button>
@@ -1527,4 +1527,3 @@
 <div id="modalPdfNoteEditor" class="pdf-note-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle"><div class="pdf-note-card"><div class="pdf-note-head"><div><h3 id="pdfNoteEditorTitle">Nova anotação</h3><p>Edite como em uma folha de estudos.</p></div><button type="button" class="btn btn-secondary btn-sm" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Fechar</button></div><div class="pdf-note-toolbar" role="toolbar" aria-label="Formatação da anotação"><button type="button" data-inline-click="ih-085"><b>B</b></button><button type="button" data-inline-click="ih-086"><i>I</i></button><button type="button" data-inline-click="ih-087"><u>U</u></button><label>Tamanho <select data-inline-change="ih-088"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="4">Grande</option><option value="5">Título</option></select></label></div><div id="pdfNoteEditor" class="pdf-note-paper" contenteditable="true" spellcheck="true" aria-label="Conteúdo da anotação"></div><div class="pdf-note-actions"><button type="button" class="btn btn-secondary" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Cancelar</button><button type="button" class="btn btn-primary" data-action="call" data-call="PdfStudyReader.savePdfNoteEditor">Salvar anotação</button></div></div></div>
 </body>
 </html>
-
