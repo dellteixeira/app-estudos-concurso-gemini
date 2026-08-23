@@ -75,7 +75,8 @@ jobs:
       - name: Generate integrity manifests
         run: |
           set -euo pipefail
-          find backups -type f -print0 | sort -z | xargs -0 sha256sum > backups/manifest.sha256
+          # Exclui o próprio manifesto para evitar checksum autorreferente.
+          find backups -type f ! -name 'manifest.sha256' -print0 | sort -z | xargs -0 sha256sum > backups/manifest.sha256
           {
             echo "created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "repository=${GITHUB_REPOSITORY}"
