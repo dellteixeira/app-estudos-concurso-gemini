@@ -4,6 +4,7 @@
   "version": "10.26.0",
   "scripts": {
     "test": "node --test tests/*.test.cjs",
+    "test:browser": "playwright test -c playwright.config.cjs",
     "audit": "node scripts/audit-release.mjs && node scripts/audit-css-ownership.cjs",
     "check": "npm run test && npm run audit"
   },
