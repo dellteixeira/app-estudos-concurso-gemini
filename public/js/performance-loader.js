@@ -6,6 +6,16 @@
   const loadedScripts = new Map();
   const loadedStyles = new Map();
 
+  function connectionProfile() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+    const effectiveType = String(connection?.effectiveType || '').toLowerCase();
+    return {
+      saveData: Boolean(connection?.saveData),
+      constrained: Boolean(connection?.saveData) || effectiveType === 'slow-2g' || effectiveType === '2g',
+      effectiveType
+    };
+  }
+
   function idle(callback, timeout = 1800) {
     if (typeof global.requestIdleCallback === 'function') {
       return global.requestIdleCallback(callback, { timeout });
@@ -82,13 +92,15 @@
   }
 
   function warmOptionalFeatures() {
-    if (!navigator.onLine) return;
-    scheduleIdleTask(() => loadScript('./js/notes-import-export.js', { dataset: { notesImportExport: '1' } }), 2200);
-    scheduleIdleTask(() => loadScript('./js/study-performance-report.js', { dataset: { studyPerformanceReport: '1' } }), 3200);
+    const profile = connectionProfile();
+    if (!navigator.onLine || profile.constrained) return;
+    scheduleIdleTask(() => loadScript('./js/notes-import-export.js', { dataset: { notesImportExport: '1' } }), 2400);
+    scheduleIdleTask(() => loadScript('./js/study-performance-report.js', { dataset: { studyPerformanceReport: '1' } }), 3600);
   }
 
   function bindIntentPreload() {
     const warmPdf = () => {
+      if (!navigator.onLine && !global.pdfjsLib) return;
       scheduleIdleTask(() => Promise.all([
         loadScript('./vendor/pdf.min.js'),
         loadStyle('./vendor/pdf_viewer.min.css')
@@ -102,17 +114,27 @@
     });
   }
 
+  function markHeavyRegions() {
+    document.querySelectorAll('.retention-diagnostic-panel, .tab-workspace-anchor').forEach(region => {
+      if (!region.style.contentVisibility) region.style.contentVisibility = 'auto';
+      if (!region.style.containIntrinsicSize) region.style.containIntrinsicSize = '1px 760px';
+    });
+  }
+
   function bootstrap() {
+    markHeavyRegions();
     bindIntentPreload();
-    global.setTimeout(warmOptionalFeatures, 900);
+    global.setTimeout(warmOptionalFeatures, 1100);
   }
 
   global.AppPerformanceLoader = Object.freeze({
+    connectionProfile,
     idle,
     loadScript,
     loadStyle,
     scheduleIdleTask,
-    warmOptionalFeatures
+    warmOptionalFeatures,
+    markHeavyRegions
   });
 
   if (document.readyState === 'loading') {
