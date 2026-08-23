@@ -81,18 +81,19 @@ async function auditRetentionCards(page) {
 
 async function loadAuditStyles(page) {
   await page.evaluate(async () => {
-    const hrefs = ['./css/retention-metrics-fix.css', './css/ui-text-safety.css'];
-    await Promise.all(hrefs.map(href => new Promise(resolve => {
-      const absolute = new URL(href, location.href).href;
-      const existing = [...document.styleSheets].some(sheet => sheet.href === absolute);
-      if (existing) return resolve();
+    const href = './css/canonical-ui.css?v=20260823-phase5';
+    const absolute = new URL(href, location.href).href;
+    const existing = [...document.styleSheets].some(sheet => sheet.href === absolute || sheet.href?.includes('/css/canonical-ui.css'));
+    if (existing) return;
+    await new Promise(resolve => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
+      link.dataset.canonicalUi = '1';
       link.onload = resolve;
       link.onerror = resolve;
       document.head.appendChild(link);
-    })));
+    });
   });
 }
 
@@ -131,6 +132,10 @@ async function exposeDashboardAuditFixture(page) {
       tab.style.setProperty('display', 'none', 'important');
     }
 
+    // O fixture precisa exercitar exatamente o seletor canônico de produção.
+    // Remove o painel real (oculto nesta auditoria isolada) para não criar IDs duplicados.
+    document.getElementById('retentionDiagnosticPanel')?.remove();
+
     let fixture = document.getElementById('visualAuditRetentionFixture');
     if (!fixture) {
       fixture = document.createElement('section');
@@ -138,11 +143,15 @@ async function exposeDashboardAuditFixture(page) {
       fixture.className = 'card retention-diagnostic-panel';
       fixture.setAttribute('aria-label', 'Fixture visual dos cards de retenção');
       fixture.innerHTML = `
-        <div class="rd-metrics-v1077">
-          <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção consolidada</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
-          <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
-          <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">↗</span><span class="rd-metric-label-v1077">Revisões em dia</span><strong>24</strong><div class="rd-metric-progress-v1077"></div></div>
-          <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Pontos de atenção</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
+        <div id="retentionDiagnosticPanel">
+          <div class="rd-center-v1077">
+            <div class="rd-metrics-v1077">
+              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção consolidada</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">↗</span><span class="rd-metric-label-v1077">Revisões em dia</span><strong>24</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Pontos de atenção</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
+            </div>
+          </div>
         </div>`;
       dashboard.appendChild(fixture);
     }

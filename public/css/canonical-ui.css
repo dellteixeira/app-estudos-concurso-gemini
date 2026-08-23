@@ -1,10 +1,13 @@
 /* ================================================================
-   UI TEXT SAFETY — FINAL RESPONSIVE CONTRACT
-   Header em linha única + métricas de retenção compactas.
+   CANONICAL UI CASCADE — PHASE 5
+   Owner of final cross-component responsive, text-safety and accessibility
+   rules that must win after base/dashboard/features/responsive-system.
+   Replaces the legacy retention-metrics-fix.css, ui-text-safety.css and
+   accessibility-baseline.css late hotfix layers with one audited contract.
    ================================================================ */
 
 /* ----------------------------------------------------------------
-   HEADER ACTIONS — always one line
+   HEADER ACTIONS — single-row, overflow-safe contract
    ---------------------------------------------------------------- */
 header.modern-header .concurso-selector-bar {
     display: flex !important;
@@ -75,10 +78,7 @@ header.modern-header .btn-search-header {
 }
 
 /* ----------------------------------------------------------------
-   RETENTION METRICS — COMPACT DESKTOP CONTRACT
-   Reverte o crescimento visual do redesign anterior. No desktop os quatro
-   indicadores ficam em uma única linha, baixos e discretos. A adaptação 2x2
-   acontece apenas em viewport mobile real, não pela largura da coluna central.
+   RETENTION METRICS — compact final contract
    ---------------------------------------------------------------- */
 #retentionDiagnosticPanel .rd-center-v1077 {
     min-width: 0 !important;
@@ -200,7 +200,67 @@ header.modern-header .btn-search-header {
     height: 6px !important;
 }
 
-/* Mobile real: prioriza leitura sem ampliar o painel em desktop/notebook. */
+/* ----------------------------------------------------------------
+   ACCESSIBILITY BASELINE
+   ---------------------------------------------------------------- */
+header.modern-header #concursoSelect:focus,
+header.modern-header #concursoSelect:focus-visible {
+    outline: 3px solid #60a5fa !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, .28) !important;
+}
+
+header.modern-header button:focus-visible,
+header.modern-header .tab-btn:focus-visible,
+header.modern-header .btn:focus-visible,
+#auth-screen input:focus-visible,
+#auth-screen button:focus-visible {
+    outline: 3px solid #60a5fa !important;
+    outline-offset: 2px !important;
+}
+
+#auth-screen button.btn {
+    min-height: var(--touch-target, 44px) !important;
+}
+
+/* ----------------------------------------------------------------
+   VIEWPORT ADAPTATION
+   ---------------------------------------------------------------- */
+@media (max-width: 900px) {
+    header.modern-header .concurso-selector-bar {
+        gap: 6px !important;
+        padding-inline: 6px !important;
+    }
+
+    header.modern-header .concurso-selector-bar > select {
+        flex-basis: 145px !important;
+        min-width: 135px !important;
+    }
+
+    header.modern-header .header-account-actions .btn,
+    header.modern-header .btn-search-header,
+    header.modern-header .concurso-selector-bar > .btn {
+        height: 42px !important;
+        min-height: 42px !important;
+        padding-inline: 9px !important;
+        font-size: clamp(.62rem, 1.7vw, .72rem) !important;
+    }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+    header.modern-header .header-nav-tabs .tab-btn {
+        flex: 1 0 auto !important;
+        min-width: max-content !important;
+        padding-inline: 6px !important;
+        font-size: clamp(.70rem, 1.45vw, .76rem) !important;
+        line-height: 1 !important;
+        letter-spacing: -.01em !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+}
+
 @media (max-width: 600px) {
     #retentionDiagnosticPanel .rd-metrics-v1077 {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -237,54 +297,7 @@ header.modern-header .btn-search-header {
     #retentionDiagnosticPanel .rd-metric-progress-v1077 > span {
         height: 5px !important;
     }
-}
 
-@media (max-width: 340px) {
-    #retentionDiagnosticPanel .rd-metrics-v1077 {
-        grid-template-columns: 1fr !important;
-    }
-}
-
-/* Viewport adaptation for header controls: preserve a single row. */
-@media (max-width: 900px) {
-    header.modern-header .concurso-selector-bar {
-        gap: 6px !important;
-        padding-inline: 6px !important;
-    }
-
-    header.modern-header .concurso-selector-bar > select {
-        flex-basis: 145px !important;
-        min-width: 135px !important;
-    }
-
-    header.modern-header .header-account-actions .btn,
-    header.modern-header .btn-search-header,
-    header.modern-header .concurso-selector-bar > .btn {
-        height: 42px !important;
-        min-height: 42px !important;
-        padding-inline: 9px !important;
-        font-size: clamp(.62rem, 1.7vw, .72rem) !important;
-    }
-}
-
-/* Tablet: cada rótulo de navegação deve caber inteiro no próprio botão.
-   Se os cinco itens excederem a largura útil, a rolagem fica confinada ao
-   trilho da navegação e nunca ao documento. */
-@media (min-width: 601px) and (max-width: 900px) {
-    header.modern-header .header-nav-tabs .tab-btn {
-        flex: 1 0 auto !important;
-        min-width: max-content !important;
-        padding-inline: 6px !important;
-        font-size: clamp(.70rem, 1.45vw, .76rem) !important;
-        line-height: 1 !important;
-        letter-spacing: -.01em !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-    }
-}
-
-@media (max-width: 600px) {
     header.modern-header .concurso-selector-bar > select {
         flex-basis: 132px !important;
         min-width: 125px !important;
@@ -295,5 +308,16 @@ header.modern-header .btn-search-header {
     header.modern-header .concurso-selector-bar > .btn {
         padding-inline: 8px !important;
         font-size: .66rem !important;
+    }
+
+    /* Keep the short logout label from collapsing below the touch token. */
+    header.modern-header .header-account-actions .btn.btn-logout-header {
+        min-width: var(--touch-target, 44px) !important;
+    }
+}
+
+@media (max-width: 340px) {
+    #retentionDiagnosticPanel .rd-metrics-v1077 {
+        grid-template-columns: 1fr !important;
     }
 }
