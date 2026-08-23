@@ -7,11 +7,24 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=r=>fs.readFileSync(path.join(root,r),'utf8');
 
-test('state-style batch reduces inline-style budget below 85',()=>{
+test('state-style batch reduces inline-style budget from 85 to 82',()=>{
+  const html=read('public/index.html');
   const budget=JSON.parse(read('security/inline-style-state-budget.json'));
+  const count=(html.match(/\sstyle\s*=\s*["']/gi)||[]).length;
   assert.equal(budget.baseline,85);
-  assert.ok(budget.budget < 85, `expected budget < 85, got ${budget.budget}`);
-  assert.ok(budget.migrated > 0);
+  assert.equal(budget.budget,82);
+  assert.equal(budget.migrated,3);
+  assert.equal(count,82);
+});
+
+test('permanently hidden file inputs use native hidden attribute',()=>{
+  const html=read('public/index.html');
+  for(const id of ['jsonInput','flashcardsImportFile','editalFileInput']){
+    const tag=html.match(new RegExp(`<input[^>]*\\bid=["']${id}["'][^>]*>`,`i`))?.[0] || '';
+    assert.ok(tag,`missing #${id}`);
+    assert.match(tag,/\shidden(?:\s|>|=)/i,`#${id} must use hidden`);
+    assert.doesNotMatch(tag,/\sstyle\s*=/i,`#${id} must not use inline style`);
+  }
 });
 
 test('state-style batch does not reintroduce inline event handlers',()=>{
