@@ -32,9 +32,18 @@
         document.head.appendChild(script);
     }
 
+    function callGlobal(name, ...args) {
+        const fn = global[name];
+        if (typeof fn !== 'function') {
+            console.warn(`Ação indisponível: ${name}`);
+            return undefined;
+        }
+        return fn(...args);
+    }
+
     function findDesktopTabButton(tabId) {
-        return [...document.querySelectorAll('.nav-tabs .tab-btn')]
-            .find(btn => (btn.getAttribute('onclick') || '').includes(`'${tabId}'`));
+        return [...document.querySelectorAll('.nav-tabs .tab-btn[data-tab]')]
+            .find(btn => btn.dataset.tab === tabId) || null;
     }
 
     function syncMobileNav(tabId) {
@@ -57,6 +66,48 @@
         return navigateTo(tabId);
     }
 
+    const actionHandlers = Object.freeze({
+        'pwa-update': () => callGlobal('applyPwaUpdate'),
+        'pwa-install': () => callGlobal('installPwaApp'),
+        'pwa-dismiss': () => callGlobal('dismissPwaBanner'),
+        'auth-login': () => callGlobal('handleLogin'),
+        'auth-signup': () => callGlobal('handleSignUp'),
+        'toggle-modern-tools': () => callGlobal('toggleModernTools'),
+        'new-concurso': () => callGlobal('openModalNovoConcurso'),
+        'rename-concurso': () => callGlobal('renomearConcursoAtual'),
+        'delete-concurso': element => callGlobal('removerConcursoAtual', element),
+        'open-account': () => callGlobal('openAccountModal'),
+        'toggle-theme': () => callGlobal('toggleDarkMode'),
+        'logout': () => callGlobal('handleLogout'),
+        'global-search': () => callGlobal('openGlobalSearchModal'),
+        'switch-tab': element => navigateTo(element.dataset.tab, { desktopButton: element }),
+        'opportunity-study': () => callGlobal('openOpportunityStudyModal'),
+        'edit-exam-date': () => callGlobal('editarDataProva'),
+        'retention-details': element => callGlobal('openRetentionMetricDetails', element.dataset.metric),
+        'retention-more': () => callGlobal('openRetentionMoreModal')
+    });
+
+    function installDelegatedActions() {
+        if (document.documentElement.dataset.inlineActionDelegation === '1') return;
+        document.documentElement.dataset.inlineActionDelegation = '1';
+
+        document.addEventListener('click', event => {
+            const element = event.target.closest('[data-action]');
+            if (!element) return;
+            const handler = actionHandlers[element.dataset.action];
+            if (!handler) return;
+            handler(element, event);
+        });
+
+        document.addEventListener('change', event => {
+            const element = event.target.closest('[data-change-action]');
+            if (!element) return;
+            if (element.dataset.changeAction === 'change-concurso') {
+                callGlobal('changeConcurso', element.value);
+            }
+        });
+    }
+
     global.AppNavigation = Object.freeze({
         findDesktopTabButton,
         syncMobileNav,
@@ -66,6 +117,7 @@
 
     ensureCanonicalUiStyle();
     ensureAccessibleNames();
+    installDelegatedActions();
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
