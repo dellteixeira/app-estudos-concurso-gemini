@@ -36,24 +36,35 @@ for (const forbidden of ['.pdf-library-actions', '.pdf-reader-shell', '.pdf-read
   }
 }
 
-const links = [
+const legacyLinks = [
   './css/base.css',
   './css/dashboard.css',
-  './css/features.css',
-  './css/pdf-library.css',
-  './css/pdf-reader.css',
-  './css/responsive-system.css'
+  './css/features.css'
 ];
+const specializedLinks = [
+  './css/pdf-library.css',
+  './css/pdf-reader.css'
+];
+const responsiveLink = './css/responsive-system.css';
+const links = [...legacyLinks, responsiveLink, ...specializedLinks];
 
 const positions = new Map(links.map(link => [link, index.indexOf(link)]));
 for (const link of links) {
   if (positions.get(link) < 0) errors.push(`index.html não carrega ${link}`);
 }
 
-const responsivePos = positions.get('./css/responsive-system.css');
-for (const link of links.filter(link => link !== './css/responsive-system.css')) {
-  if (positions.get(link) >= 0 && responsivePos >= 0 && responsivePos < positions.get(link)) {
+const responsivePos = positions.get(responsiveLink);
+for (const link of legacyLinks) {
+  const pos = positions.get(link);
+  if (pos >= 0 && responsivePos >= 0 && responsivePos < pos) {
     errors.push(`responsive-system.css deve carregar depois de ${link}`);
+  }
+}
+
+for (const link of specializedLinks) {
+  const pos = positions.get(link);
+  if (pos >= 0 && responsivePos >= 0 && responsivePos > pos) {
+    errors.push(`responsive-system.css deve carregar antes de ${link} para preservar o ownership especializado`);
   }
 }
 
@@ -96,4 +107,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('CSS ownership audit OK: responsive-system.css permanece como camada canônica final.');
+console.log('CSS ownership audit OK: camada transversal canônica preservada e CSS especializado permanece autoritativo.');
