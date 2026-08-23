@@ -17,6 +17,26 @@
             safetyLink.dataset.uiTextSafety = '1';
             document.head.appendChild(safetyLink);
         }
+
+        if (!document.querySelector('link[data-accessibility-baseline]')) {
+            const accessibilityLink = document.createElement('link');
+            accessibilityLink.rel = 'stylesheet';
+            accessibilityLink.href = './css/accessibility-baseline.css?v=20260823-phase4';
+            accessibilityLink.dataset.accessibilityBaseline = '1';
+            document.head.appendChild(accessibilityLink);
+        }
+    }
+
+    function ensureAccessibleNames() {
+        const email = document.getElementById('email');
+        if (email && !email.getAttribute('aria-label') && !email.getAttribute('aria-labelledby')) {
+            email.setAttribute('aria-label', 'E-mail');
+        }
+
+        const password = document.getElementById('password');
+        if (password && !password.getAttribute('aria-label') && !password.getAttribute('aria-labelledby')) {
+            password.setAttribute('aria-label', 'Senha');
+        }
     }
 
     function ensurePerformanceLoader() {
@@ -62,9 +82,13 @@
     });
 
     ensureRetentionMetricLayoutStyle();
+    ensureAccessibleNames();
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', ensurePerformanceLoader, { once: true });
+        document.addEventListener('DOMContentLoaded', () => {
+            ensureAccessibleNames();
+            ensurePerformanceLoader();
+        }, { once: true });
     } else {
         ensurePerformanceLoader();
     }
