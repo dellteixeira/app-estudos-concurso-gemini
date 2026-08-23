@@ -254,3 +254,26 @@
     if (root.document.readyState === 'loading') root.document.addEventListener('DOMContentLoaded', boot, { once:true });
     else root.setTimeout(boot, 0);
 })(typeof window !== 'undefined' ? window : globalThis);
+
+(function centerAuthButtonLabels(root) {
+    'use strict';
+    if (!root?.document || root.__authButtonLabelsCentered) return;
+    root.__authButtonLabelsCentered = true;
+
+    function apply() {
+        const screen = root.document.getElementById('auth-screen');
+        if (!screen) return false;
+        const buttons = screen.querySelectorAll('.auth-card .btn');
+        buttons.forEach(button => {
+            button.style.justifyContent = 'center';
+            button.style.textAlign = 'center';
+        });
+        return buttons.length > 0;
+    }
+
+    if (root.document.readyState === 'loading') {
+        root.document.addEventListener('DOMContentLoaded', apply, { once:true });
+    } else {
+        apply();
+    }
+})(typeof window !== 'undefined' ? window : globalThis);
