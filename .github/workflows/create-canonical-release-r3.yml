@@ -1,0 +1,61 @@
+name: Create Canonical Release R3
+
+on:
+  push:
+    branches:
+      - ops/create-canonical-release-2026-08-23-r3
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TAG: v10.26.0-canonical-2026-08-23-r3
+      TARGET_SHA: 17546e078ad868ca09573474135340f359325df4
+      ASSET: Estudo-Adaptativo-v10.26.0-canonical-2026-08-23-r3.zip
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build canonical ZIP from exact production commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$TARGET_SHA^{commit}"
+          git archive --format=zip \
+            --prefix="Estudo-Adaptativo-v10.26.0-canonical-2026-08-23-r3/" \
+            -o "$ASSET" "$TARGET_SHA"
+          sha256sum "$ASSET" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create formal GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; uploading canonical assets again."
+            gh release upload "$TAG" "$ASSET" SHA256SUMS.txt --clobber
+          else
+            gh release create "$TAG" \
+              "$ASSET#Canonical application source ZIP" \
+              "SHA256SUMS.txt#SHA-256 checksum" \
+              --target "$TARGET_SHA" \
+              --title "Estudo Adaptativo v10.26.0 — Canonical Snapshot R3" \
+              --notes "Canonical recovery snapshot before any sidebar/navigation redesign. Exact source commit: $TARGET_SHA. Includes the current authentication branding, strengthened password policy, managed offline PDF library with OPFS/IndexedDB fallback, and all production changes merged through PR #161."
+          fi
+
+      - name: Publish workflow artifact for verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-v10.26.0-r3
+          path: |
+            ${{ env.ASSET }}
+            SHA256SUMS.txt
+          if-no-files-found: error
