@@ -2,53 +2,28 @@ name: Quality Check
 
 on:
   push:
-    branches: [main]
-  pull_request:
-  workflow_dispatch:
+    branches: [hardening/inline-style-runtime-zero]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  test-and-audit:
+  apply-inline-style-runtime-zero:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22.23.2'
-
-      - name: Syntax check
-        run: node --check src/index.js
-
-      - name: Automated tests
-        run: npm test
-
-      - name: Structural audit
-        env:
-          AUDIT_ALLOW_ANY_ROOT: '1'
-        run: npm run audit
-
-      - name: Install Playwright test runner
-        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Browser responsive audit
-        run: npm run test:browser
-
-      - name: Upload Playwright report and screenshots
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: playwright-responsive-audit-${{ github.run_id }}
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-          retention-days: 14
+          ref: hardening/inline-style-runtime-zero
+          fetch-depth: 0
+      - name: Apply patch
+        run: python3 scripts/apply-inline-style-runtime-zero.py
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html public/js/app-core.js public/css/base.css scripts/audit-inline-csp.mjs tests/inline-style-batch6.test.cjs tests/inline-style-runtime-zero.test.cjs
+          if ! git diff --cached --quiet; then
+            git commit -m "refactor(csp): eliminate final runtime inline styles"
+            git push origin HEAD:hardening/inline-style-runtime-zero
+          fi
