@@ -91,6 +91,15 @@
     });
   }
 
+  function ensurePerformanceMetrics() {
+    if (global.AppPerformanceMetrics) return Promise.resolve(global.AppPerformanceMetrics);
+    return loadScript('./js/performance-metrics.js', { dataset: { performanceMetrics: '1' } })
+      .catch(error => {
+        console.warn('[performance] métricas indisponíveis:', error);
+        return null;
+      });
+  }
+
   function warmOptionalFeatures() {
     const profile = connectionProfile();
     if (!navigator.onLine || profile.constrained) return;
@@ -122,6 +131,7 @@
   }
 
   function bootstrap() {
+    ensurePerformanceMetrics();
     markHeavyRegions();
     bindIntentPreload();
     global.setTimeout(warmOptionalFeatures, 1100);
@@ -133,6 +143,7 @@
     loadScript,
     loadStyle,
     scheduleIdleTask,
+    ensurePerformanceMetrics,
     warmOptionalFeatures,
     markHeavyRegions
   });
