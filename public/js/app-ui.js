@@ -123,7 +123,7 @@
                 return;
             }
             box.innerHTML = limited.map((r, idx) => `
-                <button class="search-result-item" type="button" onclick="activateGlobalSearchResult(${idx})">
+                <button class="search-result-item" type="button" data-dynamic-action="global-search-result" data-result-index="${idx}">
                     <span class="search-result-type">${escapeHtml(r.type)}</span>${escapeHtml(r.title)}
                     <span class="search-result-sub">${escapeHtml(r.sub || '')}</span>
                 </button>`).join('');
@@ -140,7 +140,7 @@
         }
 
         function findDesktopTabButton(tabId) {
-            return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => btn.dataset.tabTarget === tabId);
+            return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => btn.dataset.tab === tabId);
         }
 
         function openSearchEditalResult(materia) {
@@ -249,7 +249,7 @@
             if(topic) topic.textContent=`${item.materia} — ${item.assunto}`;
             const perf = plan.accuracy == null ? '' : ` · Questões ${Math.round(plan.accuracy)}%`;
             if(meta) meta.textContent=`Retenção ${Math.round(plan.retention)}%${perf}. ${plan.reason}`;
-            if(steps) steps.innerHTML=plan.layers.map(layer=>`<div class="layered-review-step ${layer.layer===plan.recommendedLayer?'recommended':''}"><div class="layered-review-number">${layer.layer}</div><div class="layered-review-content"><strong>${escapeHtml(layer.label)}${layer.layer===plan.recommendedLayer?' · recomendada':''}</strong><span>${escapeHtml(layer.description)} · ${layer.minutes} min sugeridos</span></div><button class="btn btn-secondary btn-sm" type="button" onclick="startLayeredReviewLayer(${layer.layer})">Iniciar</button></div>`).join('');
+            if(steps) steps.innerHTML=plan.layers.map(layer=>`<div class="layered-review-step ${layer.layer===plan.recommendedLayer?'recommended':''}"><div class="layered-review-number">${layer.layer}</div><div class="layered-review-content"><strong>${escapeHtml(layer.label)}${layer.layer===plan.recommendedLayer?' · recomendada':''}</strong><span>${escapeHtml(layer.description)} · ${layer.minutes} min sugeridos</span></div><button class="btn btn-secondary btn-sm" type="button" data-dynamic-action="start-layered-review" data-layer="${layer.layer}">Iniciar</button></div>`).join('');
             const modal=document.getElementById('modalLayeredReview'); if(modal) modal.style.display='flex';
         }
 
@@ -319,7 +319,7 @@
             const status = row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
             const layerDef = plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
             const layerText = plan ? `Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}` : 'Revisão adaptativa';
-            return `<button class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" type="button" onclick="openLayeredReviewModal(${index})" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}. Risco ${severityLabel}. Retenção ${retention}%"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span style="width:${retention}%"></span></span></span><span class="retention-risk-value">${retention}%</span></button>`;
+            return `<button class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" type="button" data-dynamic-action="open-layered-review" data-review-index="${index}" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}. Risco ${severityLabel}. Retenção ${retention}%"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span style="width:${retention}%"></span></span></span><span class="retention-risk-value">${retention}%</span></button>`;
         }
 
         function getRetentionMetricConfig(kind) {
@@ -339,7 +339,7 @@
             const indexInRisk = retentionDiagnosticRows.findIndex(item => item?.state?.key === state.key);
             const clickable = kind !== 'mastered' && indexInRisk >= 0;
             const tag = clickable ? 'button' : 'div';
-            const action = clickable ? ` type="button" onclick="closeRetentionMetricDetails(); openLayeredReviewModal(${indexInRisk})"` : '';
+            const action = clickable ? ` type="button" data-dynamic-action="open-layered-review-from-metric" data-review-index="${indexInRisk}"` : '';
             return `<${tag} class="retention-metric-detail-row${clickable?' is-clickable':''}"${action}><span class="retention-detail-rank">${index+1}</span><span class="retention-detail-copy"><strong>${escapeHtml(state.materia||'Matéria')} — ${escapeHtml(state.assunto||'Assunto')}</strong><span>Retenção ${retention}% · Questões ${accuracy} · ${escapeHtml(overdueText)}</span></span><span class="retention-detail-value">${retention}%</span></${tag}>`;
         }
 
@@ -393,7 +393,7 @@
                 const title = hasExamDate ? `${phase.label}${dayText ? ` · ${dayText}` : ''}` : 'Sem data de prova definida';
                 const guidance = hasExamDate ? phase.guidance : 'Defina a data da prova para ativar a estratégia progressiva.';
                 const actionText = hasExamDate ? 'Alterar data' : 'Definir data da prova';
-                phaseBox.innerHTML = `<span class="rd-exam-icon-v1077" aria-hidden="true">▦</span><span class="rd-exam-copy-v1077"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(guidance)}</span></span><button class="rd-exam-action-v1077" type="button" onclick="editarDataProva()">${escapeHtml(actionText)}</button>`;
+                phaseBox.innerHTML = `<span class="rd-exam-icon-v1077" aria-hidden="true">▦</span><span class="rd-exam-copy-v1077"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(guidance)}</span></span><button class="rd-exam-action-v1077" type="button" data-dynamic-action="edit-exam-date">${escapeHtml(actionText)}</button>`;
             }
 
             const diag = buildRetentionDiagnostics();
@@ -465,6 +465,31 @@
         }
 
         document.addEventListener('click', (event) => {
+            const actionTarget = event.target.closest?.('[data-dynamic-action]');
+            if (actionTarget) {
+                const action = actionTarget.dataset.dynamicAction;
+                if (action === 'global-search-result') {
+                    activateGlobalSearchResult(Number(actionTarget.dataset.resultIndex));
+                    return;
+                }
+                if (action === 'start-layered-review') {
+                    startLayeredReviewLayer(Number(actionTarget.dataset.layer));
+                    return;
+                }
+                if (action === 'open-layered-review') {
+                    openLayeredReviewModal(Number(actionTarget.dataset.reviewIndex));
+                    return;
+                }
+                if (action === 'open-layered-review-from-metric') {
+                    closeRetentionMetricDetails();
+                    openLayeredReviewModal(Number(actionTarget.dataset.reviewIndex));
+                    return;
+                }
+                if (action === 'edit-exam-date') {
+                    editarDataProva();
+                    return;
+                }
+            }
             const modal = document.getElementById('modalGlobalSearch');
             if (modal && event.target === modal) closeGlobalSearchModal();
         });
