@@ -212,7 +212,7 @@
             </label>
             <button class="btn-action" onclick="handleActionButton(this, openModalAnaliseEditalIA)">Analisar Edital com IA</button>
             <button class="btn-action" onclick="handleActionButton(this, openModalPromptIA)">Como Gerar JSON com IA</button>
-            <button class="btn-action" type="button" onclick="clearData()">Limpar Edital Atual</button>
+            <button class="btn-action" type="button" data-action="call" data-call="clearData">Limpar Edital Atual</button>
                     </div>
 
         <!-- TAB 1: EDITAL VERTICALIZADO -->
@@ -232,15 +232,15 @@
                         </div>
                     </div>
                     <div class="pomodoro-actions">
-                        <button class="btn btn-primary" id="startTimerBtn" onclick="startFocusTimer()">Foco</button>
-                        <button class="btn btn-secondary" id="intervalTimerBtn" onclick="startIntervalTimer()">Intervalo</button>
-                        <button class="btn btn-warning" id="pauseTimerBtn" onclick="togglePauseTimer()" disabled>Pausar</button>
-                        <button class="btn btn-secondary" id="completeFocusBtn" onclick="completeFocusSessionNow()" disabled>Concluir sessão</button>
-                        <button class="btn btn-secondary" onclick="resetTimer()">Resetar</button>
+                        <button class="btn btn-primary" id="startTimerBtn" data-action="call" data-call="startFocusTimer">Foco</button>
+                        <button class="btn btn-secondary" id="intervalTimerBtn" data-action="call" data-call="startIntervalTimer">Intervalo</button>
+                        <button class="btn btn-warning" id="pauseTimerBtn" data-action="call" data-call="togglePauseTimer" disabled>Pausar</button>
+                        <button class="btn btn-secondary" id="completeFocusBtn" data-action="call" data-call="completeFocusSessionNow" disabled>Concluir sessão</button>
+                        <button class="btn btn-secondary" data-action="call" data-call="resetTimer">Resetar</button>
                     </div>
                     <div class="timer-settings">
-                        <label>Foco (min): <input type="number" id="focoMin" value="40" min="1" onchange="updateTimerSettings()"></label>
-                        <label>Intervalo (min): <input type="number" id="pausaMin" value="5" min="1" onchange="updateTimerSettings()"></label>
+                        <label>Foco (min): <input type="number" id="focoMin" value="40" min="1" data-change-call="updateTimerSettings"></label>
+                        <label>Intervalo (min): <input type="number" id="pausaMin" value="5" min="1" data-change-call="updateTimerSettings"></label>
                     </div>
 
                     <div class="pomodoro-daily-panel">
@@ -268,9 +268,9 @@
                                 <span class="active-study-context-label">Estudando agora</span>
                                 <span class="active-study-context-title" id="activeStudyContextTitle"></span>
                             </div>
-                            <button class="active-study-context-clear" type="button" onclick="clearActiveStudyContext()" title="Desvincular matéria">Limpar</button>
+                            <button class="active-study-context-clear" type="button" data-action="call" data-call="clearActiveStudyContext" title="Desvincular matéria">Limpar</button>
                         </div>
-                        <button class="btn btn-danger btn-sm pomodoro-reset-hours" type="button" onclick="resetDailyPomodoroHours()">Resetar Horas do Dia</button>
+                        <button class="btn btn-danger btn-sm pomodoro-reset-hours" type="button" data-action="call" data-call="resetDailyPomodoroHours">Resetar Horas do Dia</button>
                         <div class="pomodoro-studied-topics-panel" id="pomodoroStudiedTopicsPanel">
                             <h5>Estudados hoje</h5>
                             <div class="pomodoro-studied-topics-list" id="pomodoroStudiedTopicsList"></div>
@@ -304,9 +304,9 @@
                     <input type="number" id="prioridade" placeholder="Importância" value="1" min="1" title="Nível de importância / prioridade">
                     <div class="edital-manual-actions">
                         <button type="submit" class="btn btn-primary">Adicionar Manualmente</button>
-                        <button type="button" class="btn btn-secondary" onclick="exportMateriasConteudos()" title="Exportar matérias e assuntos do concurso atual em JSON">Exportar Matérias</button>
-                        <button type="button" class="btn btn-danger" onclick="excluirMateriaEspecifica()">Excluir Matéria</button>
-                        <button type="button" class="btn btn-warning" onclick="excluirAssuntoEspecifico()">Excluir Assunto</button>
+                        <button type="button" class="btn btn-secondary" data-action="call" data-call="exportMateriasConteudos" title="Exportar matérias e assuntos do concurso atual em JSON">Exportar Matérias</button>
+                        <button type="button" class="btn btn-danger" data-action="call" data-call="excluirMateriaEspecifica">Excluir Matéria</button>
+                        <button type="button" class="btn btn-warning" data-action="call" data-call="excluirAssuntoEspecifico">Excluir Assunto</button>
                     </div>
                 </form>
 
@@ -344,9 +344,9 @@
                 </div>
 
                 <div class="filter-tabs">
-                    <button class="filter-tab active" onclick="filterDelayedList('hoje', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Hoje</button>
-                    <button class="filter-tab" onclick="filterDelayedList('atrasadas', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Atrasadas</button>
-                    <button class="filter-tab" onclick="filterDelayedList('proximas', this)" ondblclick="toggleDelayedItemsContainer()" title="Duplo clique para expandir ou recolher a lista">Próximas</button>
+                    <button class="filter-tab active" onclick="filterDelayedList('hoje', this)" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Hoje</button>
+                    <button class="filter-tab" onclick="filterDelayedList('atrasadas', this)" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Atrasadas</button>
+                    <button class="filter-tab" onclick="filterDelayedList('proximas', this)" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Próximas</button>
                 </div>
 
                 <div id="delayedItemsContainer"></div>
@@ -363,20 +363,20 @@
                     </div>
 
                     <div class="calendar-shell-nav">
-                        <button class="btn btn-secondary btn-sm" type="button" onclick="goToCurrentMonth()">Hoje</button>
+                        <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="goToCurrentMonth">Hoje</button>
                         <div class="calendar-month-selectors">
                             <label><strong>Mês/Ano:</strong></label>
-                            <select id="monthSelect" onchange="onMonthYearChange()"></select>
-                            <select id="yearSelect" onchange="onMonthYearChange()"></select>
+                            <select id="monthSelect" data-change-call="onMonthYearChange"></select>
+                            <select id="yearSelect" data-change-call="onMonthYearChange"></select>
                         </div>
                     </div>
                 </div>
 
                 <div class="calendar-primary-actions">
-                    <button class="btn btn-primary" onclick="openModalSelectCronogramaType()">Preencher Cronograma</button>
-                    <button class="btn btn-danger" onclick="limparCronogramaMesAtual()">Limpar Cronograma</button>
-                    <button class="btn btn-warning" onclick="limparMateriasEstudadas()">Limpar Matérias</button>
-                    <button class="btn btn-primary" onclick="reorganizarMateriasCronograma()">Reorganizar Matérias</button>
+                    <button class="btn btn-primary" data-action="call" data-call="openModalSelectCronogramaType">Preencher Cronograma</button>
+                    <button class="btn btn-danger" data-action="call" data-call="limparCronogramaMesAtual">Limpar Cronograma</button>
+                    <button class="btn btn-warning" data-action="call" data-call="limparMateriasEstudadas">Limpar Matérias</button>
+                    <button class="btn btn-primary" data-action="call" data-call="reorganizarMateriasCronograma">Reorganizar Matérias</button>
                 </div>
 
                 <div class="month-calendar-header">
@@ -407,10 +407,10 @@
                             <span class="pdf-library-contest">Concurso: <strong id="pdfLibraryContestName">—</strong></span>
                         </div>
                         <div class="pdf-library-actions">
-                            <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.refresh()">↻ Atualizar</button>
-                            <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.openWorkspaceModal()">+ Workspace</button>
-                            <button class="btn btn-primary" type="button" onclick="PdfStudyLibraryUI.openUploadModal()">+ Adicionar PDFs</button>
-                            <button class="btn btn-secondary" id="btnPdfSelectionMode" type="button" onclick="PdfStudyLibraryUI.toggleSelectionMode()">Selecionar</button>
+                            <button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.refresh">↻ Atualizar</button>
+                            <button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.openWorkspaceModal">+ Workspace</button>
+                            <button class="btn btn-primary" type="button" data-action="call" data-call="PdfStudyLibraryUI.openUploadModal">+ Adicionar PDFs</button>
+                            <button class="btn btn-secondary" id="btnPdfSelectionMode" type="button" data-action="call" data-call="PdfStudyLibraryUI.toggleSelectionMode">Selecionar</button>
                         </div>
                     </div>
                     <div class="pdf-library-filters" aria-label="Filtros da Biblioteca">
@@ -424,9 +424,9 @@
                     <div id="pdfBulkToolbar" class="pdf-bulk-toolbar" hidden>
                         <div class="pdf-bulk-count"><strong id="pdfBulkSelectedCount">0</strong> PDF(s) selecionado(s)</div>
                         <div class="pdf-bulk-actions">
-                            <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyLibraryUI.selectAllVisible()">Selecionar todos os visíveis</button>
-                            <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyLibraryUI.clearSelection()">Limpar seleção</button>
-                            <button class="btn btn-danger btn-sm" id="btnDeleteSelectedPdfs" type="button" onclick="PdfStudyLibraryUI.deleteSelected()">Excluir selecionados</button>
+                            <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.selectAllVisible">Selecionar todos os visíveis</button>
+                            <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.clearSelection">Limpar seleção</button>
+                            <button class="btn btn-danger btn-sm" id="btnDeleteSelectedPdfs" type="button" data-action="call" data-call="PdfStudyLibraryUI.deleteSelected">Excluir selecionados</button>
                         </div>
                     </div>
                     <div id="pdfLibraryGrid" class="pdf-library-grid"></div>
@@ -439,12 +439,12 @@
             <div class="card tab-workspace-anchor" id="notesWorkspace">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
                     <h3>Anotações e Caderno de Resumos</h3>
-                    <button class="btn btn-primary" onclick="openModalNovaNota()">Incluir Nota</button>
+                    <button class="btn btn-primary" data-action="call" data-call="openModalNovaNota">Incluir Nota</button>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label><strong>Selecione a Matéria:</strong></label>
-                    <select id="notesMateriaSelect" onchange="renderNotesList()"></select>
+                    <select id="notesMateriaSelect" data-change-call="renderNotesList"></select>
                 </div>
 
                 <div id="notesContainer"></div>
@@ -457,8 +457,8 @@
                 <div class="flashcards-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                     <h3>Flashcards e Estudo Ativo</h3>
                     <div class="flashcard-study-actions">
-                        <button class="btn btn-purple" onclick="startShuffleStudyModal()">Estudar Flashcards Embaralhados</button>
-                        <button class="btn btn-info" onclick="openModalFiltroEstudoFlashcards()">Estudar Matéria / Assunto Específico</button>
+                        <button class="btn btn-purple" data-action="call" data-call="startShuffleStudyModal">Estudar Flashcards Embaralhados</button>
+                        <button class="btn btn-info" data-action="call" data-call="openModalFiltroEstudoFlashcards">Estudar Matéria / Assunto Específico</button>
                     </div>
                 </div>
 
@@ -466,7 +466,7 @@
                     <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">Importação Rápida via Texto (Colar em Lote)</h4>
                     <p style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 10px;">Escolha a matéria e o assunto que receberão os cartões e cole o conteúdo em lote.</p>
                     <div class="flashcard-bulk-targets" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-                        <select id="fcMateriaSelect" onchange="updateFcAssuntoOptions()" style="flex:1; min-width: 180px;">
+                        <select id="fcMateriaSelect" data-change-call="updateFcAssuntoOptions" style="flex:1; min-width: 180px;">
                             <option value="">Selecione a Matéria (Opcional)</option>
                         </select>
                         <select id="fcAssuntoSelect" style="flex:1; min-width: 180px;">
@@ -474,7 +474,7 @@
                         </select>
                     </div>
                     <textarea id="fcPasteTextArea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza" style="min-height: 120px; font-family: monospace; font-size: 0.88rem; margin-bottom: 10px;"></textarea>
-                    <button class="btn btn-success" onclick="processPastedFlashcardsText()">Converter Texto em Flashcards</button>
+                    <button class="btn btn-success" data-action="call" data-call="processPastedFlashcardsText">Converter Texto em Flashcards</button>
                 </div>
 
                 <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:10px;">
@@ -482,7 +482,7 @@
                         Flashcards Estilo Anki
                     </h4>
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <button class="btn btn-secondary btn-sm" type="button" onclick="exportAllFlashcards()" title="Exportar todos os flashcards deste concurso organizados por matéria e assunto">Exportar Flashcards</button>
+                        <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="exportAllFlashcards" title="Exportar todos os flashcards deste concurso organizados por matéria e assunto">Exportar Flashcards</button>
                         <button class="btn btn-primary btn-sm" type="button" onclick="document.getElementById('flashcardsImportFile').click()" title="Importar flashcards exportados de outro concurso">Importar Flashcards</button>
                         <input id="flashcardsImportFile" type="file" accept="application/json,.json" style="display:none;" onchange="importFlashcardsFromFile(event)">
                         <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" onclick="setFlashcardViewFilter('', '')" style="display: none;">
@@ -504,7 +504,7 @@
             <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" onclick="mobileSwitchTab('tab-flashcards', this)"><span>Flashcards</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" onclick="mobileSwitchTab('tab-anotacoes', this)"><span>Anotações</span></button>
             <button class="mobile-nav-btn" type="button" data-action="toggle-modern-tools"><span>Mais</span></button>
-            <button id="contextFab" class="mobile-nav-btn mobile-context-action" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo"><span>Novo</span></button>
+            <button id="contextFab" class="mobile-nav-btn mobile-context-action" type="button" data-action="call" data-call="handleContextFab" aria-label="Adicionar conteúdo"><span>Novo</span></button>
         </nav>
     </div>
 
@@ -527,8 +527,8 @@
             </div>
             <div class="pdf-workspace-help">Depois de criado, o Workspace ficará disponível para qualquer concurso e poderá ser escolhido no upload ou no vínculo de um PDF já existente.</div>
             <div class="modal-actions pdf-modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeWorkspaceModal()">Cancelar</button>
-                <button class="btn btn-primary" id="btnCreatePdfWorkspace" type="button" onclick="PdfStudyLibraryUI.createWorkspace()">Criar Workspace</button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.closeWorkspaceModal">Cancelar</button>
+                <button class="btn btn-primary" id="btnCreatePdfWorkspace" type="button" data-action="call" data-call="PdfStudyLibraryUI.createWorkspace">Criar Workspace</button>
             </div>
         </div>
     </div>
@@ -545,7 +545,7 @@
 
             <div class="pdf-upload-layout">
                 <section class="pdf-upload-stage">
-                    <div id="pdfDropZone" class="pdf-drop-zone" role="button" tabindex="0" aria-label="Selecionar PDFs" onclick="PdfStudyLibraryUI.chooseUploadFile()" onkeydown="PdfStudyLibraryUI.onDropZoneKeydown(event)" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
+                    <div id="pdfDropZone" class="pdf-drop-zone" role="button" tabindex="0" aria-label="Selecionar PDFs" data-action="call" data-call="PdfStudyLibraryUI.chooseUploadFile" onkeydown="PdfStudyLibraryUI.onDropZoneKeydown(event)" ondrop="PdfStudyLibraryUI.handleDrop(event)" ondragover="PdfStudyLibraryUI.handleDragOver(event)" ondragleave="PdfStudyLibraryUI.handleDragLeave()">
                         <div class="pdf-drop-icon" aria-hidden="true">PDF</div>
                         <strong>Arraste seus PDFs aqui</strong>
                         <span class="pdf-drop-subtitle">ou escolha um ou vários arquivos do computador ou celular</span>
@@ -577,7 +577,7 @@
                         </div>
                         <div class="form-group">
                             <label for="pdfUploadMateria">Matéria do edital <span class="pdf-field-optional">(opcional)</span></label>
-                            <select id="pdfUploadMateria" onchange="PdfStudyLibraryUI.onUploadMateriaChange()"><option value="">Sem matéria específica</option></select>
+                            <select id="pdfUploadMateria" data-change-call="PdfStudyLibraryUI.onUploadMateriaChange"><option value="">Sem matéria específica</option></select>
                         </div>
                         <div class="form-group pdf-upload-assunto-field">
                             <label for="pdfUploadAssunto">Assunto do edital <span class="pdf-field-optional">(opcional)</span></label>
@@ -602,17 +602,17 @@
             <section id="pdfUploadResultPanel" class="pdf-upload-result-panel" hidden aria-live="polite">
                 <div class="pdf-upload-result-head">
                     <div><strong>Resultado da importação</strong><p id="pdfUploadResultSummary"></p></div>
-                    <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyLibraryUI.copyUploadReport()">Copiar relatório</button>
+                    <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.copyUploadReport">Copiar relatório</button>
                 </div>
                 <div id="pdfUploadResultList" class="pdf-upload-result-list"></div>
                 <div class="pdf-upload-result-actions">
-                    <button id="btnRetryFailedPdfs" class="btn btn-warning btn-sm" type="button" onclick="PdfStudyLibraryUI.retryFailedUploads()" hidden>Tentar novamente os que falharam</button>
-                    <button id="btnRemoveFailedPdfs" class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyLibraryUI.removeFailedUploads()" hidden>Remover falhas da lista</button>
+                    <button id="btnRetryFailedPdfs" class="btn btn-warning btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.retryFailedUploads" hidden>Tentar novamente os que falharam</button>
+                    <button id="btnRemoveFailedPdfs" class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.removeFailedUploads" hidden>Remover falhas da lista</button>
                 </div>
             </section>
             <div class="modal-actions pdf-modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeUploadModal()">Cancelar</button>
-                <button class="btn btn-primary" id="btnSubmitPdfUpload" type="button" onclick="PdfStudyLibraryUI.submitUpload()">Adicionar à Biblioteca</button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.closeUploadModal">Cancelar</button>
+                <button class="btn btn-primary" id="btnSubmitPdfUpload" type="button" data-action="call" data-call="PdfStudyLibraryUI.submitUpload">Adicionar à Biblioteca</button>
             </div>
         </div>
     </div>
@@ -623,9 +623,9 @@
             <h3>Vincular PDF ao concurso atual</h3>
             <p id="pdfLinkDocumentTitle" style="opacity:.8"></p>
             <div class="form-group"><label for="pdfLinkWorkspace">Workspace</label><select id="pdfLinkWorkspace"></select></div>
-            <div class="form-group"><label for="pdfLinkMateria">Matéria do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkMateria" onchange="PdfStudyLibraryUI.onLinkMateriaChange()"></select></div>
+            <div class="form-group"><label for="pdfLinkMateria">Matéria do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkMateria" data-change-call="PdfStudyLibraryUI.onLinkMateriaChange"></select></div>
             <div class="form-group"><label for="pdfLinkAssunto">Assunto do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkAssunto"></select></div>
-            <div class="modal-actions"><button class="btn btn-secondary" type="button" onclick="PdfStudyLibraryUI.closeLinkModal()">Cancelar</button><button class="btn btn-primary" id="btnCreatePdfLink" type="button" onclick="PdfStudyLibraryUI.submitLink()">Criar vínculo</button></div>
+            <div class="modal-actions"><button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.closeLinkModal">Cancelar</button><button class="btn btn-primary" id="btnCreatePdfLink" type="button" data-action="call" data-call="PdfStudyLibraryUI.submitLink">Criar vínculo</button></div>
         </div>
     </div>
 
@@ -637,7 +637,7 @@
             
             <div class="form-group">
                 <label>Matéria para Estudo:</label>
-                <select id="studyFilterMateria" onchange="updateStudyFilterAssuntoOptions()">
+                <select id="studyFilterMateria" data-change-call="updateStudyFilterAssuntoOptions">
                     <option value="">Todas as Matérias</option>
                 </select>
             </div>
@@ -650,8 +650,8 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalFiltroEstudoFlashcards()">Cancelar (ESC)</button>
-                <button class="btn btn-purple" onclick="startFilteredStudyModal()">Iniciar Treino Focado</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalFiltroEstudoFlashcards">Cancelar (ESC)</button>
+                <button class="btn btn-purple" data-action="call" data-call="startFilteredStudyModal">Iniciar Treino Focado</button>
             </div>
         </div>
     </div>
@@ -677,8 +677,8 @@
                 <textarea id="editFcResposta" style="min-height:80px;"></textarea>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalEditarFlashcard()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="salvarEdicaoFlashcard()">Salvar Alterações</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalEditarFlashcard">Cancelar (ESC)</button>
+                <button class="btn btn-success" data-action="call" data-call="salvarEdicaoFlashcard">Salvar Alterações</button>
             </div>
         </div>
     </div>
@@ -737,7 +737,7 @@
                     </div>
                 </div>
                 <div class="account-inline-actions">
-                    <button class="btn btn-primary" type="button" onclick="changeAccountPassword()">Alterar senha</button>
+                    <button class="btn btn-primary" type="button" data-action="call" data-call="changeAccountPassword">Alterar senha</button>
                 </div>
                 <div class="account-helper">A senha atual é validada antes da alteração. A conta permanece conectada após a troca.</div>
             </section>
@@ -746,7 +746,7 @@
                 <h4>Seus dados</h4>
                 <div class="account-helper">Você pode criar ou restaurar os backups locais já existentes antes de qualquer operação destrutiva.</div>
                 <div class="account-inline-actions">
-                    <button class="btn btn-secondary" type="button" onclick="openBackupFromAccount()">Backup / Restaurar</button>
+                    <button class="btn btn-secondary" type="button" data-action="call" data-call="openBackupFromAccount">Backup / Restaurar</button>
                 </div>
             </section>
 
@@ -767,7 +767,7 @@
                         </div>
                     </div>
                     <div class="account-inline-actions">
-                        <button class="btn btn-danger" type="button" onclick="deleteAllAccountStudyData()">Apagar todos os dados</button>
+                        <button class="btn btn-danger" type="button" data-action="call" data-call="deleteAllAccountStudyData">Apagar todos os dados</button>
                     </div>
                 </div>
 
@@ -785,13 +785,13 @@
                         </div>
                     </div>
                     <div class="account-inline-actions">
-                        <button class="btn btn-danger" type="button" onclick="deleteAccountPermanently()">Excluir minha conta</button>
+                        <button class="btn btn-danger" type="button" data-action="call" data-call="deleteAccountPermanently">Excluir minha conta</button>
                     </div>
                 </div>
             </section>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="closeAccountModal()">Fechar (ESC)</button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="closeAccountModal">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -818,8 +818,8 @@
                 </div>
             </div>
             <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap;">
-                <button class="btn btn-success" type="button" onclick="createBackupNow()">Criar Backup Agora</button>
-                <button class="btn btn-secondary" type="button" onclick="closeBackupManager()">Fechar (ESC)</button>
+                <button class="btn btn-success" type="button" data-action="call" data-call="createBackupNow">Criar Backup Agora</button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="closeBackupManager">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -857,7 +857,7 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalSelectCronogramaType()">Cancelar (ESC)</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalSelectCronogramaType">Cancelar (ESC)</button>
             </div>
         </div>
     </div>
@@ -911,8 +911,8 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalMentorisMethod()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="gerarCronogramaMetodo2()">Gerar Cronograma</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalMentorisMethod">Cancelar (ESC)</button>
+                <button class="btn btn-success" data-action="call" data-call="gerarCronogramaMetodo2">Gerar Cronograma</button>
             </div>
         </div>
     </div>
@@ -965,8 +965,8 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalConfigHorarios()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="gerarCronogramaInteligente()">Gerar Cronograma</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalConfigHorarios">Cancelar (ESC)</button>
+                <button class="btn btn-success" data-action="call" data-call="gerarCronogramaInteligente">Gerar Cronograma</button>
             </div>
         </div>
     </div>
@@ -978,7 +978,7 @@
             <p class="pomodoro-context-help">Selecione a matéria e o assunto antes de iniciar o foco. Assim, os minutos serão contabilizados corretamente no histórico e nas métricas.</p>
             <div class="form-group">
                 <label><strong>Matéria:</strong></label>
-                <select id="pomodoroContextMateria" onchange="updatePomodoroContextAssuntos()" style="width:100%;"></select>
+                <select id="pomodoroContextMateria" data-change-call="updatePomodoroContextAssuntos" style="width:100%;"></select>
             </div>
             <div class="form-group">
                 <label><strong>Assunto:</strong></label>
@@ -994,8 +994,8 @@
                 </select>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="closePomodoroContextModal()">Cancelar (ESC)</button>
-                <button class="btn btn-success" type="button" onclick="confirmPomodoroContextAndStart()">Vincular e iniciar</button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="closePomodoroContextModal">Cancelar (ESC)</button>
+                <button class="btn btn-success" type="button" data-action="call" data-call="confirmPomodoroContextAndStart">Vincular e iniciar</button>
             </div>
         </div>
     </div>
@@ -1022,8 +1022,8 @@
                 </select>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="closeFlexibleStudyConfig()">Cancelar (ESC)</button>
-                <button class="btn btn-success" type="button" onclick="activateFlexibleStudyMode()">Ativar modo flexível </button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="closeFlexibleStudyConfig">Cancelar (ESC)</button>
+                <button class="btn btn-success" type="button" data-action="call" data-call="activateFlexibleStudyMode">Ativar modo flexível </button>
             </div>
         </div>
     </div>
@@ -1050,7 +1050,7 @@
             </div>
             <div id="opportunityRecommendations" class="opportunity-recommendations"></div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="closeOpportunityStudyModal()">Fechar (ESC)</button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="closeOpportunityStudyModal">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -1065,8 +1065,8 @@
             </div>
             <div id="activeRecallGuidePrompts" class="active-recall-guide"></div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" type="button" onclick="closeActiveRecallGuide()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" type="button" onclick="startGuidedActiveRecallSession()" data-enter-default="true">Iniciar revisão</button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="closeActiveRecallGuide">Cancelar (ESC)</button>
+                <button class="btn btn-primary" type="button" data-action="call" data-call="startGuidedActiveRecallSession" data-enter-default="true">Iniciar revisão</button>
             </div>
         </div>
     </div>
@@ -1080,7 +1080,7 @@
                     <h3 id="retentionMetricModalTitle">Detalhes do diagnóstico</h3>
                     <p id="retentionMetricModalSubtitle" class="retention-metric-modal-subtitle"></p>
                 </div>
-                <button class="modal-close" type="button" onclick="closeRetentionMetricDetails()" aria-label="Fechar">×</button>
+                <button class="modal-close" type="button" data-action="call" data-call="closeRetentionMetricDetails" aria-label="Fechar">×</button>
             </div>
             <div id="retentionMetricModalList" class="retention-metric-modal-list"></div>
         </div>
@@ -1090,7 +1090,7 @@
         <div class="modal-content retention-more-modal-content">
             <div class="modal-header">
                 <h3>Outros pontos críticos</h3>
-                <button class="modal-close" type="button" onclick="closeRetentionMoreModal()" aria-label="Fechar">×</button>
+                <button class="modal-close" type="button" data-action="call" data-call="closeRetentionMoreModal" aria-label="Fechar">×</button>
             </div>
             <div id="retentionMoreList" class="retention-more-list"></div>
         </div>
@@ -1105,8 +1105,8 @@
             </div>
             <div id="layeredReviewSteps" class="layered-review-list"></div>
             <div class="layered-review-actions">
-                <button class="btn btn-secondary btn-sm" type="button" onclick="closeLayeredReviewModal()">Fechar (ESC)</button>
-                <button class="btn btn-primary btn-sm" type="button" id="layeredReviewStartRecommended" onclick="startRecommendedLayeredReview()" data-enter-default="true">Iniciar camada recomendada</button>
+                <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="closeLayeredReviewModal">Fechar (ESC)</button>
+                <button class="btn btn-primary btn-sm" type="button" id="layeredReviewStartRecommended" data-action="call" data-call="startRecommendedLayeredReview" data-enter-default="true">Iniciar camada recomendada</button>
             </div>
         </div>
     </div>
@@ -1150,11 +1150,11 @@
             <div class="question-performance-grid">
                 <div class="form-group">
                     <label for="questionPerformanceTotal">Questões resolvidas</label>
-                    <input id="questionPerformanceTotal" type="number" min="1" max="500" inputmode="numeric" placeholder="Ex.: 20" oninput="updateQuestionPerformancePreview()">
+                    <input id="questionPerformanceTotal" type="number" min="1" max="500" inputmode="numeric" placeholder="Ex.: 20" data-input-call="updateQuestionPerformancePreview">
                 </div>
                 <div class="form-group">
                     <label for="questionPerformanceCorrect">Acertos</label>
-                    <input id="questionPerformanceCorrect" type="number" min="0" max="500" inputmode="numeric" placeholder="Ex.: 14" oninput="updateQuestionPerformancePreview()">
+                    <input id="questionPerformanceCorrect" type="number" min="0" max="500" inputmode="numeric" placeholder="Ex.: 14" data-input-call="updateQuestionPerformancePreview">
                 </div>
                 <div class="form-group" id="questionPerformanceMinutesGroup">
                     <label for="questionPerformanceMinutes">Minutos estudados</label>
@@ -1163,8 +1163,8 @@
             </div>
             <div class="question-performance-result" id="questionPerformancePreview">Informe os dois valores para calcular o aproveitamento.</div>
             <div class="question-performance-actions">
-                <button class="btn btn-secondary" type="button" onclick="closeQuestionPerformanceModal()">Registrar depois</button>
-                <button class="btn btn-primary" type="button" onclick="submitQuestionPerformance()" data-enter-default="true">Salvar desempenho</button>
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="closeQuestionPerformanceModal">Registrar depois</button>
+                <button class="btn btn-primary" type="button" data-action="call" data-call="submitQuestionPerformance" data-enter-default="true">Salvar desempenho</button>
             </div>
         </div>
     </div>
@@ -1177,7 +1177,7 @@
                     <h3 id="globalSearchDialogTitle">Pesquisar</h3>
                     <p>Busque matérias, assuntos, anotações e flashcards do concurso atual.</p>
                 </div>
-                <button class="btn btn-secondary btn-sm" type="button" onclick="closeGlobalSearchModal()">Fechar (ESC)</button>
+                <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="closeGlobalSearchModal">Fechar (ESC)</button>
             </div>
             <div class="modern-search-shell global-search-modal-shell">
                 <span class="header-search-mark" aria-hidden="true">⌕</span>
@@ -1214,10 +1214,10 @@
             <div id="dayTopicsContainer"></div>
             <div class="day-modal-footer" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
                 <div id="addNewTopicArea">
-                    <button class="btn btn-primary btn-sm" onclick="showAddTopicSelectors()">Adicionar Novo Tópico</button>
+                    <button class="btn btn-primary btn-sm" data-action="call" data-call="showAddTopicSelectors">Adicionar Novo Tópico</button>
                 </div>
                 <div class="modal-actions" style="margin-top:0;">
-                    <button class="btn btn-secondary" onclick="closeModalDayContent()">Fechar (ESC)</button>
+                    <button class="btn btn-secondary" data-action="call" data-call="closeModalDayContent">Fechar (ESC)</button>
                 </div>
             </div>
         </div>
@@ -1231,7 +1231,7 @@
             <div id="legalReadingContext" style="font-size:.9rem; opacity:.82;"></div>
             <div class="form-group">
                 <label>Blocos cadastrados para esta matéria</label>
-                <select id="legalReadingBlockSelect" onchange="fillLegalReadingFromSelectedBlock()">
+                <select id="legalReadingBlockSelect" data-change-call="fillLegalReadingFromSelectedBlock">
                     <option value="">Leitura livre / novo bloco</option>
                 </select>
             </div>
@@ -1260,8 +1260,8 @@
                 Ao concluir a sessão antes do tempo, o app perguntará qual foi o último artigo efetivamente lido. As horas serão contabilizadas pela mesma base de Teoria e Questões.
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeLegalReadingModal()">Cancelar</button>
-                <button class="btn btn-primary" data-enter-default="true" onclick="startLegalReadingStudy()">Iniciar Lei Seca</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeLegalReadingModal">Cancelar</button>
+                <button class="btn btn-primary" data-enter-default="true" data-action="call" data-call="startLegalReadingStudy">Iniciar Lei Seca</button>
             </div>
         </div>
     </div>
@@ -1289,9 +1289,9 @@
             <div id="aiEditalStatus" class="ai-analysis-status" aria-live="polite"></div>
             <div id="aiEditalPreview" class="ai-analysis-preview"></div>
             <div class="modal-actions" style="flex-wrap:wrap;">
-                <button class="btn btn-secondary" onclick="closeModalAnaliseEditalIA()">Fechar</button>
-                <button class="btn btn-info" id="btnExecutarAnaliseIA" data-enter-default="true" onclick="executarAnaliseEditalIA()">Analisar Agora</button>
-                <button class="btn btn-success" id="btnImportarAnaliseIA" onclick="importarAnaliseEditalIA()" disabled>Importar para o Edital</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalAnaliseEditalIA">Fechar</button>
+                <button class="btn btn-info" id="btnExecutarAnaliseIA" data-enter-default="true" data-action="call" data-call="executarAnaliseEditalIA">Analisar Agora</button>
+                <button class="btn btn-success" id="btnImportarAnaliseIA" data-action="call" data-call="importarAnaliseEditalIA" disabled>Importar para o Edital</button>
             </div>
         </div>
     </div>
@@ -1302,11 +1302,11 @@
             <h3 id="modalNotaTitle">Nova Nota</h3>
             <div class="form-group">
                 <label><strong>Matéria Vinculada:</strong></label>
-                <select id="inputNotaMateria" onchange="populateNotaAssuntoDropdown()"></select>
+                <select id="inputNotaMateria" data-change-call="populateNotaAssuntoDropdown"></select>
             </div>
             <div class="form-group">
                 <label><strong>Assunto Vinculado:</strong></label>
-                <select id="inputNotaAssunto" onchange="handleNotaAssuntoChange()"></select>
+                <select id="inputNotaAssunto" data-change-call="handleNotaAssuntoChange"></select>
             </div>
             <div class="form-group" id="notaTituloCustomGroup" style="display:none;">
                 <label><strong>Título da Anotação:</strong></label>
@@ -1335,8 +1335,8 @@
                 <div id="inputNotaConteudo" class="note-rich-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Digite aqui o conteúdo da sua nota..." spellcheck="true"></div>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalNovaNota()">Cancelar (ESC)</button>
-                <button class="btn btn-success" onclick="salvarNota()">Salvar Nota (ENTER)</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalNovaNota">Cancelar (ESC)</button>
+                <button class="btn btn-success" data-action="call" data-call="salvarNota">Salvar Nota (ENTER)</button>
             </div>
         </div>
     </div>
@@ -1349,16 +1349,16 @@
                 <span id="studyModalProgress" style="font-weight:700; color:var(--primary-blue);">0 / 0</span>
             </div>
             <div class="flashcard-meta" id="studyCardMeta"></div>
-            <div class="study-card-container" onclick="toggleStudyCardAnswer()">
+            <div class="study-card-container" data-action="call" data-call="toggleStudyCardAnswer">
                 <div class="study-card-inner">
                     <p style="font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;" id="studyCardLabel">Pergunta (Clique para virar)</p>
                     <h3 id="studyCardText" style="font-size:1.25rem; font-weight:700;"></h3>
                 </div>
             </div>
             <div class="modal-actions flashcard-study-modal-actions">
-                <button class="btn btn-secondary" onclick="closeStudyModal()">Sair do Treino</button>
-                <button class="btn btn-info" onclick="toggleStudyCardAnswer()">Virar Cartão</button>
-                <button class="btn btn-primary" onclick="nextStudyCard()">Próximo </button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeStudyModal">Sair do Treino</button>
+                <button class="btn btn-info" data-action="call" data-call="toggleStudyCardAnswer">Virar Cartão</button>
+                <button class="btn btn-primary" data-action="call" data-call="nextStudyCard">Próximo </button>
             </div>
         </div>
     </div>
@@ -1373,15 +1373,15 @@
                         Anexar Novo Arquivo
                         <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" style="display: none;" onchange="uploadEditalFile(event)">
                     </label>
-                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" onclick="downloadEditalFile()">Baixar Arquivo</button>
-                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" onclick="removerEditalFile()">Apagar Edital</button>
+                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" data-action="call" data-call="downloadEditalFile">Baixar Arquivo</button>
+                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" data-action="call" data-call="removerEditalFile">Apagar Edital</button>
                 </div>
             </div>
             <div id="editalViewerContainer" style="flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
                 <p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso atual.</p>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalViewEdital()">Fechar (ESC)</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalViewEdital">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -1409,8 +1409,8 @@
   ]
 }"</div>
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="copyPromptToClipboard()">Copiar Prompt (ENTER)</button>
-                <button class="btn btn-secondary" onclick="closeModalPromptIA()">Fechar (ESC)</button>
+                <button class="btn btn-primary" data-action="call" data-call="copyPromptToClipboard">Copiar Prompt (ENTER)</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalPromptIA">Fechar (ESC)</button>
             </div>
         </div>
     </div>
@@ -1428,8 +1428,8 @@
                 <input type="date" id="inputDataConcurso">
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModalNovoConcurso()">Cancelar (ESC)</button>
-                <button class="btn btn-primary" onclick="confirmarNovoConcurso()">Salvar (ENTER)</button>
+                <button class="btn btn-secondary" data-action="call" data-call="closeModalNovoConcurso">Cancelar (ESC)</button>
+                <button class="btn btn-primary" data-action="call" data-call="confirmarNovoConcurso">Salvar (ENTER)</button>
             </div>
         </div>
     </div>
@@ -1440,39 +1440,39 @@
     <section id="pdfReaderOverlay" class="pdf-reader-overlay" aria-label="Leitor PDF interno">
         <header class="pdf-reader-topbar">
             <div class="pdf-reader-title-group">
-                <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.close()">← Biblioteca</button>
+                <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyReader.close">← Biblioteca</button>
                 <div class="pdf-reader-title" id="pdfReaderTitle">PDF</div>
             </div>
             <div class="pdf-reader-engine" title="Motor do visualizador">Leitor próprio · Biblioteca</div>
             <div class="pdf-reader-tools">
                 <div class="pdf-reader-zoom" aria-label="Controles de zoom"><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.zoom(-0.15)" title="Diminuir zoom">−</button><output id="pdfReaderZoomValue">100%</output><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.zoom(0.15)" title="Aumentar zoom">＋</button></div>
-                <button id="pdfReaderFitWidth" class="pdf-reader-icon-btn active" type="button" onclick="PdfStudyReader.fitWidth()" title="Ajustar à largura">↔ <span>Largura</span></button>
-                <button id="pdfReaderFitPage" class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.fitPage()" title="Ajustar página inteira">▣ <span>Página</span></button>
-                <button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.toggleSearch()" title="Localizar palavras ou frases no PDF">⌕ <span>Localizar</span></button>
-                <button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.openNativeTab()" title="Abrir em nova aba">↗</button>
-                <button id="pdfReaderBookmark" class="pdf-reader-icon-btn pdf-reader-bookmark" type="button" onclick="PdfStudyReader.toggleBookmark()" title="Marcar página">🔖</button>
-                <button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.toggleSide()" title="Mostrar ou ocultar painel">☰ <span>Painel</span></button>
+                <button id="pdfReaderFitWidth" class="pdf-reader-icon-btn active" type="button" data-action="call" data-call="PdfStudyReader.fitWidth" title="Ajustar à largura">↔ <span>Largura</span></button>
+                <button id="pdfReaderFitPage" class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.fitPage" title="Ajustar página inteira">▣ <span>Página</span></button>
+                <button class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.toggleSearch" title="Localizar palavras ou frases no PDF">⌕ <span>Localizar</span></button>
+                <button class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.openNativeTab" title="Abrir em nova aba">↗</button>
+                <button id="pdfReaderBookmark" class="pdf-reader-icon-btn pdf-reader-bookmark" type="button" data-action="call" data-call="PdfStudyReader.toggleBookmark" title="Marcar página">🔖</button>
+                <button class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.toggleSide" title="Mostrar ou ocultar painel">☰ <span>Painel</span></button>
             </div>
         </header>
         <form id="pdfReaderSearchBar" class="pdf-reader-search-bar" hidden onsubmit="event.preventDefault();PdfStudyReader.searchPdf()">
-            <span aria-hidden="true">⌕</span><input id="pdfReaderSearchInput" type="search" autocomplete="off" placeholder="Localizar palavra, frase ou período completo" aria-label="Localizar no PDF"><button class="pdf-reader-icon-btn" type="submit">Localizar</button><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.nextSearchResult()" title="Próximo resultado">Próximo ↓</button><output id="pdfReaderSearchCount" aria-live="polite"></output><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.toggleSearch(false)" title="Fechar pesquisa">×</button>
+            <span aria-hidden="true">⌕</span><input id="pdfReaderSearchInput" type="search" autocomplete="off" placeholder="Localizar palavra, frase ou período completo" aria-label="Localizar no PDF"><button class="pdf-reader-icon-btn" type="submit">Localizar</button><button class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.nextSearchResult" title="Próximo resultado">Próximo ↓</button><output id="pdfReaderSearchCount" aria-live="polite"></output><button class="pdf-reader-icon-btn" type="button" onclick="PdfStudyReader.toggleSearch(false)" title="Fechar pesquisa">×</button>
         </form>
         <div id="pdfReaderSelectionBar" class="pdf-reader-selection-bar show" aria-live="polite">
-            <button class="pdf-reader-copy-btn" type="button" onclick="PdfStudyReader.useClipboardSelection()">＋ Colar seleção</button>
+            <button class="pdf-reader-copy-btn" type="button" data-action="call" data-call="PdfStudyReader.useClipboardSelection">＋ Colar seleção</button>
             <span id="pdfReaderSelectionText" class="pdf-reader-selection-text">Selecione diretamente no PDF</span>
             <div class="pdf-reader-study-actions" aria-label="Ações de estudo">
-                <button class="pdf-reader-action highlight" onclick="PdfStudyReader.openHighlightComposer()">Marca-texto</button>
+                <button class="pdf-reader-action highlight" data-action="call" data-call="PdfStudyReader.openHighlightComposer">Marca-texto</button>
                 <button class="pdf-reader-action underline" onclick="PdfStudyReader.saveAnnotation('underline')">Sublinhar</button>
-                <button class="pdf-reader-action note" onclick="PdfStudyReader.promptNote()">Anotação</button>
-                <button class="pdf-reader-action flashcard" onclick="PdfStudyReader.openFlashcardComposer()">Flashcard</button>
+                <button class="pdf-reader-action note" data-action="call" data-call="PdfStudyReader.promptNote">Anotação</button>
+                <button class="pdf-reader-action flashcard" data-action="call" data-call="PdfStudyReader.openFlashcardComposer">Flashcard</button>
             </div>
         </div>
         <div class="pdf-reader-body">
             <div id="pdfReaderCanvasWrap" class="pdf-reader-canvas-wrap" role="main"><div id="pdfReaderPageHost" class="pdf-reader-page-host" aria-label="Documento PDF"></div></div>
             <aside class="pdf-reader-side">
-                <div class="pdf-reader-side-head"><div><strong>Marcações</strong><div id="pdfReaderStatus" class="pdf-reader-status">Use o mouse, roda ou setas.</div></div><button class="btn btn-secondary btn-sm" onclick="PdfStudyReader.toggleSide()">×</button></div>
+                <div class="pdf-reader-side-head"><div><strong>Marcações</strong><div id="pdfReaderStatus" class="pdf-reader-status">Use o mouse, roda ou setas.</div></div><button class="btn btn-secondary btn-sm" data-action="call" data-call="PdfStudyReader.toggleSide">×</button></div>
                 <div id="pdfReaderAnnotationsList" class="pdf-reader-side-list"></div>
-                <div class="pdf-reader-side-actions"><div class="pdf-export-menu-wrap"><button id="pdfExportMenuButton" class="pdf-reader-side-action primary" type="button" aria-haspopup="menu" aria-expanded="false" onclick="PdfStudyReader.toggleExportMenu()">↑ Exportar⌄</button><div id="pdfExportMenu" class="pdf-export-menu" role="menu" hidden><button type="button" role="menuitem" onclick="PdfStudyReader.exportFromMenu('doc')">Exportar como DOC</button><button type="button" role="menuitem" onclick="PdfStudyReader.exportFromMenu('txt')">Exportar como TXT</button></div></div><button class="pdf-reader-side-action" onclick="PdfStudyReader.importNotes()" title="Importar anotações da matéria">↓ Importar</button></div>
+                <div class="pdf-reader-side-actions"><div class="pdf-export-menu-wrap"><button id="pdfExportMenuButton" class="pdf-reader-side-action primary" type="button" aria-haspopup="menu" aria-expanded="false" data-action="call" data-call="PdfStudyReader.toggleExportMenu">↑ Exportar⌄</button><div id="pdfExportMenu" class="pdf-export-menu" role="menu" hidden><button type="button" role="menuitem" onclick="PdfStudyReader.exportFromMenu('doc')">Exportar como DOC</button><button type="button" role="menuitem" onclick="PdfStudyReader.exportFromMenu('txt')">Exportar como TXT</button></div></div><button class="pdf-reader-side-action" data-action="call" data-call="PdfStudyReader.importNotes" title="Importar anotações da matéria">↓ Importar</button></div>
             </aside>
         </div>
         <div id="modalPdfFlashcard" class="pdf-reader-flashcard-modal" aria-label="Criar flashcard do trecho selecionado">
@@ -1493,9 +1493,9 @@
                 </label>
                 <p id="pdfFlashcardAiStatus" class="pdf-reader-ai-status" aria-live="polite">A pergunta será aprimorada automaticamente.</p>
                 <div class="pdf-reader-flashcard-actions">
-                    <button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.closeFlashcardComposer()">Cancelar</button>
-                    <button id="pdfFlashcardAiButton" class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.enhanceFlashcardWithAI()">Gerar novamente com IA</button>
-                    <button class="btn btn-success btn-sm" type="button" onclick="PdfStudyReader.createFlashcard()">Salvar flashcard</button>
+                    <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyReader.closeFlashcardComposer">Cancelar</button>
+                    <button id="pdfFlashcardAiButton" class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyReader.enhanceFlashcardWithAI">Gerar novamente com IA</button>
+                    <button class="btn btn-success btn-sm" type="button" data-action="call" data-call="PdfStudyReader.createFlashcard">Salvar flashcard</button>
                 </div>
             </div>
         </div>
@@ -1503,9 +1503,9 @@
             <div class="modal-card pdf-reader-highlight-card">
                 <h3>Personalizar marca-texto</h3>
                 <div id="pdfHighlightPreview" class="pdf-reader-highlight-preview">Exemplo de marcação</div>
-                <label><span class="pdf-reader-import-hint">Cor</span><input id="pdfHighlightColor" type="color" value="#fff176" oninput="PdfStudyReader.updateHighlightPreview()"></label>
-                <label><span class="pdf-reader-import-hint">Opacidade: <output id="pdfHighlightOpacityValue">25%</output></span><input id="pdfHighlightOpacity" type="range" min="8" max="65" value="25" oninput="PdfStudyReader.updateHighlightPreview()"></label>
-                <div class="pdf-reader-flashcard-actions"><button class="btn btn-secondary btn-sm" type="button" onclick="PdfStudyReader.closeHighlightComposer()">Cancelar</button><button class="btn btn-warning btn-sm" type="button" onclick="PdfStudyReader.applyHighlight()">Aplicar marca-texto</button></div>
+                <label><span class="pdf-reader-import-hint">Cor</span><input id="pdfHighlightColor" type="color" value="#fff176" data-input-call="PdfStudyReader.updateHighlightPreview"></label>
+                <label><span class="pdf-reader-import-hint">Opacidade: <output id="pdfHighlightOpacityValue">25%</output></span><input id="pdfHighlightOpacity" type="range" min="8" max="65" value="25" data-input-call="PdfStudyReader.updateHighlightPreview"></label>
+                <div class="pdf-reader-flashcard-actions"><button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyReader.closeHighlightComposer">Cancelar</button><button class="btn btn-warning btn-sm" type="button" data-action="call" data-call="PdfStudyReader.applyHighlight">Aplicar marca-texto</button></div>
             </div>
         </div>
     </section>
@@ -1524,7 +1524,7 @@
     <script src="./js/pdf/pdf-library-ui.js" defer></script>
     <script src="./js/app-pwa.js" defer></script>
 
-<div id="modalPdfNoteEditor" class="pdf-note-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle"><div class="pdf-note-card"><div class="pdf-note-head"><div><h3 id="pdfNoteEditorTitle">Nova anotação</h3><p>Edite como em uma folha de estudos.</p></div><button type="button" class="btn btn-secondary btn-sm" onclick="PdfStudyReader.closePdfNoteEditor()">Fechar</button></div><div class="pdf-note-toolbar" role="toolbar" aria-label="Formatação da anotação"><button type="button" onclick="PdfStudyReader.formatPdfNote('bold')"><b>B</b></button><button type="button" onclick="PdfStudyReader.formatPdfNote('italic')"><i>I</i></button><button type="button" onclick="PdfStudyReader.formatPdfNote('underline')"><u>U</u></button><label>Tamanho <select onchange="PdfStudyReader.setPdfNoteFontSize(this.value)"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="4">Grande</option><option value="5">Título</option></select></label></div><div id="pdfNoteEditor" class="pdf-note-paper" contenteditable="true" spellcheck="true" aria-label="Conteúdo da anotação"></div><div class="pdf-note-actions"><button type="button" class="btn btn-secondary" onclick="PdfStudyReader.closePdfNoteEditor()">Cancelar</button><button type="button" class="btn btn-primary" onclick="PdfStudyReader.savePdfNoteEditor()">Salvar anotação</button></div></div></div>
+<div id="modalPdfNoteEditor" class="pdf-note-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle"><div class="pdf-note-card"><div class="pdf-note-head"><div><h3 id="pdfNoteEditorTitle">Nova anotação</h3><p>Edite como em uma folha de estudos.</p></div><button type="button" class="btn btn-secondary btn-sm" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Fechar</button></div><div class="pdf-note-toolbar" role="toolbar" aria-label="Formatação da anotação"><button type="button" onclick="PdfStudyReader.formatPdfNote('bold')"><b>B</b></button><button type="button" onclick="PdfStudyReader.formatPdfNote('italic')"><i>I</i></button><button type="button" onclick="PdfStudyReader.formatPdfNote('underline')"><u>U</u></button><label>Tamanho <select onchange="PdfStudyReader.setPdfNoteFontSize(this.value)"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="4">Grande</option><option value="5">Título</option></select></label></div><div id="pdfNoteEditor" class="pdf-note-paper" contenteditable="true" spellcheck="true" aria-label="Conteúdo da anotação"></div><div class="pdf-note-actions"><button type="button" class="btn btn-secondary" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Cancelar</button><button type="button" class="btn btn-primary" data-action="call" data-call="PdfStudyReader.savePdfNoteEditor">Salvar anotação</button></div></div></div>
 </body>
 </html>
 

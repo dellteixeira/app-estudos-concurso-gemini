@@ -32,7 +32,7 @@ const inlineHandlers = [...html.matchAll(/\son[a-z]+\s*=\s*["'][^"']*["']/gi)];
 const inlineStyles = [...html.matchAll(/\sstyle\s*=\s*["'][^"']*["']/gi)];
 
 // Baseline congelado em 2026-08-23. A partir daqui a dívida só pode diminuir.
-const HANDLER_BUDGET = 220;
+const HANDLER_BUDGET = 88;
 const STYLE_BUDGET = 124;
 if (inlineHandlers.length > HANDLER_BUDGET) fail(`handlers inline=${inlineHandlers.length} excedem baseline=${HANDLER_BUDGET}`);
 else ok(`handlers inline congelados/reduzidos: ${inlineHandlers.length}/${HANDLER_BUDGET}`);
