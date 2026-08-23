@@ -27,6 +27,15 @@ test('batch3 JS uses semantic visibility',()=>{
   assert.doesNotMatch(domain,/box\.style\.(?:display|background|borderColor|color)/);
 });
 
+test('visual-state helper is installed before auth bootstrap',()=>{
+  const domain=read('public/js/study-domain.js');
+  const helper=domain.indexOf('function installVisualStateHelper');
+  const authPolicy=domain.indexOf('function installStrongSignupPasswordPolicy');
+  assert.ok(helper >= 0,'early visual-state helper missing');
+  assert.ok(authPolicy > helper,'visual-state helper must load before auth policy');
+  assert.match(domain,/root\.setVisualState\s*=\s*function setVisualState/);
+});
+
 test('semantic CSS preserves visual modes',()=>{
   const base=read('public/css/base.css'), pdf=read('public/css/pdf-reader.css');
   assert.match(base,/\.auth-status-message\s*\{/);
