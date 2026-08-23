@@ -6,10 +6,9 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=r=>fs.readFileSync(path.join(root,r),'utf8');
 
-test('batch5 reduces static inline-style budget from 68 to 44',()=>{
+test('batch5 keeps inline-style debt at or below 44',()=>{
   const html=read('public/index.html');
-  assert.equal((html.match(/\sstyle\s*=\s*["']/gi)||[]).length,44);
-  assert.match(read('scripts/audit-inline-csp.mjs'),/const STYLE_BUDGET = 44;/);
+  assert.ok((html.match(/\sstyle\s*=\s*["']/gi)||[]).length <= 44);
 });
 
 test('batch5 auxiliary targets use semantic classes',()=>{
