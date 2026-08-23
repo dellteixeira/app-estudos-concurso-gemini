@@ -32,13 +32,30 @@
         document.head.appendChild(script);
     }
 
-    function callGlobal(name, ...args) {
-        const fn = global[name];
-        if (typeof fn !== 'function') {
-            console.warn(`Ação indisponível: ${name}`);
+    function resolveCallable(path) {
+        const parts = String(path || '').split('.').filter(Boolean);
+        if (!parts.length) return null;
+        let owner = global;
+        let value = global;
+        for (const part of parts) {
+            owner = value;
+            value = value?.[part];
+            if (value == null) return null;
+        }
+        return typeof value === 'function' ? { fn: value, owner } : null;
+    }
+
+    function callPath(path, ...args) {
+        const callable = resolveCallable(path);
+        if (!callable) {
+            console.warn(`Ação indisponível: ${path}`);
             return undefined;
         }
-        return fn(...args);
+        return callable.fn.apply(callable.owner, args);
+    }
+
+    function callGlobal(name, ...args) {
+        return callPath(name, ...args);
     }
 
     function findDesktopTabButton(tabId) {
@@ -67,6 +84,7 @@
     }
 
     const actionHandlers = Object.freeze({
+        'call': element => callPath(element.dataset.call),
         'pwa-update': () => callGlobal('applyPwaUpdate'),
         'pwa-install': () => callGlobal('installPwaApp'),
         'pwa-dismiss': () => callGlobal('dismissPwaBanner'),
@@ -99,12 +117,29 @@
             handler(element, event);
         });
 
+        document.addEventListener('dblclick', event => {
+            const element = event.target.closest('[data-dblclick-call]');
+            if (element) callPath(element.dataset.dblclickCall);
+        });
+
         document.addEventListener('change', event => {
-            const element = event.target.closest('[data-change-action]');
+            const element = event.target.closest('[data-change-action], [data-change-call]');
             if (!element) return;
             if (element.dataset.changeAction === 'change-concurso') {
                 callGlobal('changeConcurso', element.value);
+                return;
             }
+            if (element.dataset.changeCall) callPath(element.dataset.changeCall);
+        });
+
+        document.addEventListener('input', event => {
+            const element = event.target.closest('[data-input-call]');
+            if (element) callPath(element.dataset.inputCall);
+        });
+
+        document.addEventListener('focusin', event => {
+            const element = event.target.closest('[data-focus-call]');
+            if (element) callPath(element.dataset.focusCall);
         });
     }
 
@@ -112,7 +147,8 @@
         findDesktopTabButton,
         syncMobileNav,
         navigateTo,
-        mobileSwitchTab
+        mobileSwitchTab,
+        callPath
     });
 
     ensureCanonicalUiStyle();
