@@ -81,10 +81,10 @@ jobs:
               raise SystemExit(f'Chave de backup fora do padrão esperado: {key!r}')
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
               out.write(f'key={key}\n')
+          with open('safe-report/restore-drill-report.txt', 'a', encoding='utf-8') as report:
+              report.write(f'r2_key={key}\n')
           print(f'Backup selecionado: {key}')
           PY
-
-          echo "r2_key=${{ steps.latest.outputs.key }}" >> safe-report/restore-drill-report.txt
 
       - name: Download encrypted backup and checksum
         env:
