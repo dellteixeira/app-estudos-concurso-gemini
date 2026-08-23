@@ -12,6 +12,7 @@ permissions:
 jobs:
   backup:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -27,11 +28,22 @@ jobs:
         with:
           version: latest
 
+      - name: Validate encryption secret
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ ${#BACKUP_ENCRYPTION_PASSPHRASE} -lt 24 ]; then
+            echo "::error::BACKUP_ENCRYPTION_PASSPHRASE deve existir e possuir ao menos 24 caracteres."
+            exit 1
+          fi
+
       - name: Create backup directory
-        run: mkdir -p backups/database backups/storage
+        run: mkdir -p backups/database backups/storage dist-backup
 
       - name: Backup roles
         run: |
+          set -euo pipefail
           supabase db dump \
             --db-url "${{ secrets.SUPABASE_DB_URL }}" \
             --role-only \
@@ -39,12 +51,14 @@ jobs:
 
       - name: Backup schema, RLS, RPCs and grants
         run: |
+          set -euo pipefail
           supabase db dump \
             --db-url "${{ secrets.SUPABASE_DB_URL }}" \
             -f backups/database/schema.sql
 
       - name: Backup data
         run: |
+          set -euo pipefail
           supabase db dump \
             --db-url "${{ secrets.SUPABASE_DB_URL }}" \
             --data-only \
@@ -60,6 +74,7 @@ jobs:
 
       - name: Generate integrity manifests
         run: |
+          set -euo pipefail
           find backups -type f -print0 | sort -z | xargs -0 sha256sum > backups/manifest.sha256
           {
             echo "created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -68,14 +83,119 @@ jobs:
             echo "run_id=${GITHUB_RUN_ID}"
           } > backups/backup-info.txt
 
-      - name: Compact backup
+      - name: Compact plaintext backup inside runner
+        id: package
+        shell: bash
         run: |
-          tar -czf supabase-backup-${{ github.run_id }}.tar.gz backups
+          set -euo pipefail
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          archive="supabase-backup-${stamp}-${GITHUB_RUN_ID}.tar.gz"
+          tar -czf "$archive" backups
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+          echo "encrypted=${archive}.gpg" >> "$GITHUB_OUTPUT"
 
-      - name: Upload backup artifact
+      - name: Encrypt backup with AES-256 before persistence
+        id: encrypt
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          ARCHIVE: ${{ steps.package.outputs.archive }}
+          ENCRYPTED: ${{ steps.package.outputs.encrypted }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gpg --batch --yes \
+            --symmetric \
+            --cipher-algo AES256 \
+            --s2k-digest-algo SHA512 \
+            --s2k-count 65011712 \
+            --pinentry-mode loopback \
+            --passphrase "$BACKUP_ENCRYPTION_PASSPHRASE" \
+            --output "dist-backup/$ENCRYPTED" \
+            "$ARCHIVE"
+
+          sha256sum "dist-backup/$ENCRYPTED" > "dist-backup/$ENCRYPTED.sha256"
+
+          # Nenhum dump ou pacote em texto puro deve sobreviver no workspace.
+          rm -f "$ARCHIVE"
+          rm -rf backups
+
+          test -s "dist-backup/$ENCRYPTED"
+          test -s "dist-backup/$ENCRYPTED.sha256"
+          if find . -maxdepth 2 \( -name '*.sql' -o -name 'supabase-backup-*.tar.gz' \) -print -quit | grep -q .; then
+            echo "::error::Foi detectado material de backup em texto puro após a criptografia."
+            exit 1
+          fi
+
+      - name: Detect private Cloudflare R2 destination
+        id: r2
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_BACKUP_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          configured=true
+          for value in "$R2_ACCOUNT_ID" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" "$R2_BUCKET"; do
+            if [ -z "$value" ]; then configured=false; fi
+          done
+          echo "configured=$configured" >> "$GITHUB_OUTPUT"
+          if [ "$configured" != "true" ]; then
+            echo "::warning::R2 privado ainda não configurado. Será mantido apenas o artifact criptografado de contingência."
+          fi
+
+      - name: Upload encrypted backup to private Cloudflare R2
+        if: steps.r2.outputs.configured == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_BACKUP_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+          ENCRYPTED: ${{ steps.package.outputs.encrypted }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          prefix="supabase/$(date -u +%Y/%m/%d)"
+
+          aws s3 cp \
+            "dist-backup/$ENCRYPTED" \
+            "s3://${R2_BUCKET}/${prefix}/$ENCRYPTED" \
+            --endpoint-url "$endpoint" \
+            --only-show-errors
+
+          aws s3 cp \
+            "dist-backup/$ENCRYPTED.sha256" \
+            "s3://${R2_BUCKET}/${prefix}/$ENCRYPTED.sha256" \
+            --endpoint-url "$endpoint" \
+            --only-show-errors
+
+          # Confirma que o objeto criptografado está realmente no destino externo.
+          aws s3api head-object \
+            --bucket "$R2_BUCKET" \
+            --key "${prefix}/$ENCRYPTED" \
+            --endpoint-url "$endpoint" >/dev/null
+
+          echo "Backup criptografado confirmado no R2 privado: ${prefix}/$ENCRYPTED"
+
+      - name: Upload encrypted contingency artifact
         uses: actions/upload-artifact@v4
         with:
-          name: supabase-backup-${{ github.run_id }}
-          path: supabase-backup-${{ github.run_id }}.tar.gz
-          retention-days: 30
+          name: encrypted-supabase-backup-${{ github.run_id }}
+          path: |
+            dist-backup/${{ steps.package.outputs.encrypted }}
+            dist-backup/${{ steps.package.outputs.encrypted }}.sha256
+          retention-days: 7
           if-no-files-found: error
+
+      - name: Final safety assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find . -maxdepth 3 \( -name '*.sql' -o -name 'supabase-backup-*.tar.gz' \) -print -quit | grep -q .; then
+            echo "::error::Backup plaintext permaneceu no runner."
+            exit 1
+          fi
+          echo "OK: somente artefatos criptografados permanecem após o backup."
