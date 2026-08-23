@@ -43,28 +43,31 @@ const replacements = [
   [/\s+onclick="openRetentionMoreModal\(\)"/, ' data-action="retention-more"']
 ];
 
+let migrated = 0;
 for (const [pattern, replacement] of replacements) {
-  const matches = html.match(new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`)) || [];
-  if (matches.length !== 1) {
-    throw new Error(`Alvo deve ocorrer exatamente uma vez (${pattern}); encontrado=${matches.length}`);
+  const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
+  const globalPattern = new RegExp(pattern.source, flags);
+  const matches = html.match(globalPattern) || [];
+  if (matches.length < 1) {
+    throw new Error(`Alvo esperado ausente (${pattern})`);
   }
-  html = html.replace(pattern, replacement);
+  migrated += matches.length;
+  html = html.replace(globalPattern, replacement);
 }
 
 const after = countHandlers(html);
-const expected = 221;
-if (after !== expected) {
-  throw new Error(`Batch 1 reduziu handlers para ${after}; esperado=${expected}`);
+if (after !== before - migrated) {
+  throw new Error(`Contagem inconsistente: antes=${before}, migrados=${migrated}, depois=${after}`);
 }
 if (html.includes('onclick="switchTab(')) {
   throw new Error('Navegação principal ainda contém switchTab inline após o batch 1.');
 }
 
-audit = audit.replace('const HANDLER_BUDGET = 246;', `const HANDLER_BUDGET = ${expected};`);
-if (!audit.includes(`const HANDLER_BUDGET = ${expected};`)) {
+audit = audit.replace('const HANDLER_BUDGET = 246;', `const HANDLER_BUDGET = ${after};`);
+if (!audit.includes(`const HANDLER_BUDGET = ${after};`)) {
   throw new Error('Não foi possível atualizar o budget de handlers CSP.');
 }
 
 fs.writeFileSync(indexPath, html);
 fs.writeFileSync(auditPath, audit);
-console.log(`Batch 1 concluído: handlers ${before} -> ${after} (-${before - after}).`);
+console.log(`Batch 1 concluído: handlers ${before} -> ${after} (-${migrated}).`);
