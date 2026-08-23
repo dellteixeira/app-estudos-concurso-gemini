@@ -208,7 +208,7 @@
             <button class="btn-action" data-inline-click="ih-002">Ver / Anexar Edital PDF</button>
             <label class="btn-action u-static-003">
                 Importar JSON
-                <input type="file" id="jsonInput" accept=".json" style="display: none;" data-inline-change="ih-003">
+                <input type="file" id="jsonInput" accept=".json" hidden data-inline-change="ih-003">
             </label>
             <button class="btn-action" data-inline-click="ih-004">Analisar Edital com IA</button>
             <button class="btn-action" data-inline-click="ih-005">Como Gerar JSON com IA</button>
@@ -484,7 +484,7 @@
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="exportAllFlashcards" title="Exportar todos os flashcards deste concurso organizados por matéria e assunto">Exportar Flashcards</button>
                         <button class="btn btn-primary btn-sm" type="button" data-inline-click="ih-019" title="Importar flashcards exportados de outro concurso">Importar Flashcards</button>
-                        <input id="flashcardsImportFile" type="file" accept="application/json,.json" style="display:none;" data-inline-change="ih-020">
+                        <input id="flashcardsImportFile" type="file" accept="application/json,.json" hidden data-inline-change="ih-020">
                         <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" data-inline-click="ih-021" style="display: none;">
                             Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
                         </button>
@@ -1371,7 +1371,7 @@
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <label class="btn btn-success btn-sm u-static-003">
                         Anexar Novo Arquivo
-                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" style="display: none;" data-inline-change="ih-077">
+                        <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" hidden data-inline-change="ih-077">
                     </label>
                     <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" data-action="call" data-call="downloadEditalFile">Baixar Arquivo</button>
                     <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" data-action="call" data-call="removerEditalFile">Apagar Edital</button>
