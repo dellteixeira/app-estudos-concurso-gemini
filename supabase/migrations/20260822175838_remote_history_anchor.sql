@@ -1,0 +1,9 @@
+-- Historical migration anchor.
+--
+-- The production Supabase migration history already records version
+-- 20260822175838 as applied, but the corresponding local migration file was
+-- no longer present in the repository when the pinned CLI audit was enabled.
+--
+-- This file is intentionally a no-op. Its only purpose is to preserve the
+-- immutable version identifier locally so `supabase db push --dry-run` can
+-- compare local and remote history without repairing or mutating production.
