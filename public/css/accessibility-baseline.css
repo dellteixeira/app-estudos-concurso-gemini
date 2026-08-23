@@ -24,6 +24,12 @@ header.modern-header .btn:focus-visible,
     outline-offset: 2px !important;
 }
 
+/* Autenticação é uma superfície primária do PWA e precisa manter o alvo
+   canônico de toque, inclusive em browsers com métricas de fonte distintas. */
+#auth-screen button.btn {
+    min-height: var(--touch-target, 44px) !important;
+}
+
 /* No mobile o texto curto "Sair" encolhia o botão para ~37,5px.
    O alvo mínimo fica alinhado ao token canônico de 44px. */
 @media (max-width: 600px) {
