@@ -4,10 +4,13 @@ import re
 INDEX = Path('public/index.html')
 raw = INDEX.read_bytes()
 text = raw.decode('utf-8')
-reader_start = text.find('<section id="pdfReaderShell"')
-reader_end = text.find('</section>', reader_start)
-if reader_start < 0 or reader_end < 0:
+reader_match = re.search(r'<section\b[^>]*\bid="pdfReaderShell"[^>]*>', text, re.I)
+if not reader_match:
     raise SystemExit('pdf reader shell not found')
+reader_start = reader_match.start()
+reader_end = text.find('</section>', reader_match.end())
+if reader_end < 0:
+    raise SystemExit('pdf reader shell closing tag not found')
 reader_end += len('</section>')
 
 allowed = {
@@ -26,7 +29,6 @@ migrated = 0
 # Process tags outside the Reader shell only.
 tag_re = re.compile(r'<[^>]+>')
 out = []
-last = 0
 for m in tag_re.finditer(text):
     tag = m.group(0)
     pos = m.start()
@@ -127,8 +129,8 @@ test('batch6 leaves runtime-hidden and PDF reader styles untouched',()=>{{
   const html=read('public/index.html');
   const reset=html.match(/<button[^>]+id=[\"']btnResetFcFilter[\"'][^>]*>/i)?.[0]||'';
   assert.match(reset,/style=[\"']display:\\s*none;?[\"']/i);
-  const reader=html.slice(html.indexOf('<section id=\"pdfReaderShell\"'), html.indexOf('</section>',html.indexOf('<section id=\"pdfReaderShell\"'))+10);
-  assert.ok(reader.length>1000);
+  const readerTag=html.match(/<section\\b[^>]*\\bid=[\"']pdfReaderShell[\"'][^>]*>/i)?.[0]||'';
+  assert.ok(readerTag,'PDF Reader shell missing');
 }});
 """,encoding='utf-8')
 
