@@ -462,26 +462,26 @@
                     </div>
                 </div>
 
-                <div style="background: rgba(0,0,0,0.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem;">
+                <div class="flashcard-bulk-import">
                     <h4 class="u-static-006">Importação Rápida via Texto (Colar em Lote)</h4>
-                    <p style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 10px;">Escolha a matéria e o assunto que receberão os cartões e cole o conteúdo em lote.</p>
-                    <div class="flashcard-bulk-targets" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-                        <select id="fcMateriaSelect" data-change-call="updateFcAssuntoOptions" style="flex:1; min-width: 180px;">
+                    <p class="flashcard-bulk-help">Escolha a matéria e o assunto que receberão os cartões e cole o conteúdo em lote.</p>
+                    <div class="flashcard-bulk-targets">
+                        <select id="fcMateriaSelect" class="flashcard-bulk-select" data-change-call="updateFcAssuntoOptions">
                             <option value="">Selecione a Matéria (Opcional)</option>
                         </select>
-                        <select id="fcAssuntoSelect" style="flex:1; min-width: 180px;">
+                        <select id="fcAssuntoSelect" class="flashcard-bulk-select">
                             <option value="">Selecione o Assunto (Opcional)</option>
                         </select>
                     </div>
-                    <textarea id="fcPasteTextArea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza" style="min-height: 120px; font-family: monospace; font-size: 0.88rem; margin-bottom: 10px;"></textarea>
+                    <textarea id="fcPasteTextArea" class="flashcard-bulk-textarea" placeholder="P: Qual o prazo do recurso?&#10;R: 15 dias úteis&#10;&#10;Qual a capital do Ceará?; Fortaleza"></textarea>
                     <button class="btn btn-success" data-action="call" data-call="processPastedFlashcardsText">Converter Texto em Flashcards</button>
                 </div>
 
-                <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:10px;">
-                    <h4 style="color: var(--header-materia-text); display: flex; align-items: center; gap: 8px; margin:0;">
+                <div class="flashcard-anki-header">
+                    <h4 class="flashcard-anki-title">
                         Flashcards Estilo Anki
                     </h4>
-                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <div class="flashcard-anki-actions">
                         <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="exportAllFlashcards" title="Exportar todos os flashcards deste concurso organizados por matéria e assunto">Exportar Flashcards</button>
                         <button class="btn btn-primary btn-sm" type="button" data-inline-click="ih-019" title="Importar flashcards exportados de outro concurso">Importar Flashcards</button>
                         <input id="flashcardsImportFile" type="file" accept="application/json,.json" hidden data-inline-change="ih-020">
@@ -621,7 +621,7 @@
     <div class="modal-overlay" id="modalPdfLink">
         <div class="modal">
             <h3>Vincular PDF ao concurso atual</h3>
-            <p id="pdfLinkDocumentTitle" style="opacity:.8"></p>
+            <p id="pdfLinkDocumentTitle" class="pdf-link-document-title"></p>
             <div class="form-group"><label for="pdfLinkWorkspace">Workspace</label><select id="pdfLinkWorkspace"></select></div>
             <div class="form-group"><label for="pdfLinkMateria">Matéria do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkMateria" data-change-call="PdfStudyLibraryUI.onLinkMateriaChange"></select></div>
             <div class="form-group"><label for="pdfLinkAssunto">Assunto do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkAssunto"></select></div>
@@ -797,8 +797,8 @@
     </div>
 
     <!-- V9.46 — BACKUP LOCAL / RECUPERAÇÃO -->
-    <div class="modal-overlay" id="modalBackupManager" style="z-index:1350;">
-        <div class="modal" style="max-width:760px;">
+    <div class="modal-overlay modal-backup-manager" id="modalBackupManager">
+        <div class="modal backup-manager-dialog">
             <h3>Backup e Recuperação Local</h3>
             <div class="backup-help">
                 O Painel mantém automaticamente dois snapshots locais: <strong>Atual</strong> e <strong>Anterior</strong>.
@@ -817,7 +817,7 @@
                     <button id="restorePreviousBackupBtn" class="btn btn-secondary btn-sm" type="button" data-inline-click="ih-039" disabled>Restaurar Anterior</button>
                 </div>
             </div>
-            <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap;">
+            <div class="modal-actions backup-manager-actions">
                 <button class="btn btn-success" type="button" data-action="call" data-call="createBackupNow">Criar Backup Agora</button>
                 <button class="btn btn-secondary" type="button" data-action="call" data-call="closeBackupManager">Fechar (ESC)</button>
             </div>
@@ -828,9 +828,9 @@
     <div class="modal-overlay" id="modalSelectCronogramaType">
         <div class="modal">
             <h3>Escolha o Método de Preenchimento</h3>
-            <p style="font-size:0.9rem; opacity:0.85;">Selecione como prefere planejar sua rotina de estudos:</p>
+            <p class="schedule-method-help">Selecione como prefere planejar sua rotina de estudos:</p>
 
-            <div style="display:flex; flex-direction:column; gap:12px; margin: 10px 0;">
+            <div class="schedule-method-options">
                 <div class="hours-option-card" data-inline-click="ih-040">
                     <div>
                         <strong>Preenchimento 1: Horários Definidos por Turnos</strong>
@@ -867,7 +867,7 @@
         <div class="modal modal-large">
             <h3>Configurar Rotina Semanal e Revisão Espaçada</h3>
             
-            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
+            <div class="form-group schedule-start-card">
                 <label><strong>Data de Início do Cronograma:</strong></label>
                 <input type="date" id="m2DataInicio">
             </div>
@@ -898,7 +898,7 @@
 
             <h4 class="u-static-012">Estratégia de Revisão Espaçada</h4>
             <div class="form-group">
-                <select id="m2RevisionStrategy" style="width:100%;">
+                <select id="m2RevisionStrategy" class="form-control-full">
                     <option value="nenhuma">Sem Revisão Espaçada</option>
                     <option value="retencao_adaptativa">Retenção Adaptativa — Ebbinghaus + desempenho</option>
                     <option value="revisao24730" selected>Revisão 1d, 7d e 30d</option>
@@ -921,11 +921,11 @@
     <div class="modal-overlay" id="modalConfigHorarios">
         <div class="modal modal-large">
             <h3>Configurar Horários e Turnos de Estudo (Método 1)</h3>
-            <p style="font-size:0.9rem; opacity:0.85;">
+            <p class="schedule-method-help">
                 Configure seus horários de estudo. O sistema alocará <strong>100% dos tópicos organizados por PRIORIDADE</strong>.
             </p>
 
-            <div class="form-group" style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px;">
+            <div class="form-group schedule-start-card">
                 <label><strong>Data de Início do Cronograma:</strong></label>
                 <input type="date" id="cfgDataInicio">
             </div>
@@ -933,26 +933,26 @@
             <h4 class="u-static-011">Horários Padrão (Segunda a Sexta):</h4>
             <div class="shift-box">
                 <span><strong>Manhã Início:</strong> <input type="time" id="cfgManhaInicio" value="10:00"></span>
-                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgManhaQtd" value="1" min="0" max="12" style="width:70px;"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgManhaQtd" class="schedule-hours-input" value="1" min="0" max="12"></span>
             </div>
             <div class="shift-box">
                 <span><strong>Tarde Início:</strong> <input type="time" id="cfgTardeInicio" value="13:00"></span>
-                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgTardeQtd" value="1" min="0" max="12" style="width:70px;"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgTardeQtd" class="schedule-hours-input" value="1" min="0" max="12"></span>
             </div>
             <div class="shift-box">
                 <span><strong>Noite Início:</strong> <input type="time" id="cfgNoiteInicio" value="21:00"></span>
-                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgNoiteQtd" value="1" min="0" max="12" style="width:70px;"></span>
+                <span><strong>Qtd Horas:</strong> <input type="number" id="cfgNoiteQtd" class="schedule-hours-input" value="1" min="0" max="12"></span>
             </div>
 
             <h4 class="u-static-011">Dias de Estudo no Fim de Semana:</h4>
-            <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+            <div class="schedule-weekend-options">
                 <label><input type="checkbox" id="cfgIncluirSabado" checked> Incluir Sábado</label>
                 <label><input type="checkbox" id="cfgIncluirDomingo" checked> Incluir Domingo</label>
             </div>
 
             <div class="form-group u-static-013">
                 <label><strong>Estratégia de Revisões:</strong></label>
-                <select id="m1RevisionStrategy" style="width:100%;">
+                <select id="m1RevisionStrategy" class="form-control-full">
                     <option value="nenhuma">Sem revisões automáticas</option>
                     <option value="retencao_adaptativa">Retenção Adaptativa — Ebbinghaus + desempenho</option>
                     <option value="revisao24730" selected>1d, 7d e 30d — revisão recomendada</option>
