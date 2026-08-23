@@ -71,10 +71,10 @@
             </div>
             <h2>Entrar no Sistema</h2>
             <div class="u-static-001">
-                <input type="email" id="email" placeholder="seu@email.com" style="width:100%; margin-bottom: 0.5rem;" required>
-                <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" style="width:100%;" required>
+                <input type="email" id="email" class="auth-field auth-field-spaced" placeholder="seu@email.com" required>
+                <input type="password" id="password" class="auth-field" placeholder="Senha (min. 6 caracteres)" required>
             </div>
-            <div style="display:flex; gap:0.5rem;">
+            <div class="auth-action-row">
                 <button class="btn btn-primary u-static-002" data-action="auth-login">Entrar</button>
                 <button class="btn btn-secondary u-static-002" data-action="auth-signup">Cadastrar</button>
             </div>
@@ -290,7 +290,7 @@
                     <div class="subject-hours-panel">
                         <h4>Horas por Matéria</h4>
                         <div class="subject-hours-list" id="subjectStudyHoursList"></div>
-                        <div id="studyActivityDistribution" style="margin-top:12px;font-size:.78rem;opacity:.8;"></div>
+                        <div id="studyActivityDistribution" class="study-activity-distribution"></div>
                     </div>
                 </div>
             </div>
@@ -319,7 +319,7 @@
                     <table>
                         <thead>
                             <tr id="editalTableHeaderRow">
-                                <th style="width: 90px;">Prioridade</th>
+                                <th class="edital-priority-column">Prioridade</th>
                                 <th class="u-static-004">Assunto</th>
                                 <th>Teoria</th>
                                 <th>Questões</th>
@@ -437,7 +437,7 @@
         <!-- TAB 3: ANOTAÇÕES -->
         <div id="tab-anotacoes" class="tab-content">
             <div class="card tab-workspace-anchor" id="notesWorkspace">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="notes-section-header">
                     <h3>Anotações e Caderno de Resumos</h3>
                     <button class="btn btn-primary" data-action="call" data-call="openModalNovaNota">Incluir Nota</button>
                 </div>
@@ -454,7 +454,7 @@
         <!-- TAB 4: FLASHCARDS -->
         <div id="tab-flashcards" class="tab-content">
             <div class="card tab-workspace-anchor" id="flashcardsWorkspace">
-                <div class="flashcards-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                <div class="flashcards-header">
                     <h3>Flashcards e Estudo Ativo</h3>
                     <div class="flashcard-study-actions">
                         <button class="btn btn-purple" data-action="call" data-call="startShuffleStudyModal">Estudar Flashcards Embaralhados</button>
