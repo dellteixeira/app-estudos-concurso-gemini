@@ -283,10 +283,49 @@
     document.head.appendChild(script);
   }
 
-  document.addEventListener('DOMContentLoaded', () => syncRuntimeVersionUi(window.APP_VERSION), { once: true });
+  function loadClassicScript(src, marker) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[data-ui-module="${marker}"]`);
+      if (existing) {
+        if (existing.dataset.loaded === '1') return resolve();
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = false;
+      script.dataset.uiModule = marker;
+      script.onload = () => {
+        script.dataset.loaded = '1';
+        resolve();
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function loadUiModules() {
+    try {
+      await loadClassicScript('./js/ui/mobile.js', 'mobile');
+      await loadClassicScript('./js/ui/navigation.js', 'navigation');
+      await loadClassicScript('./js/ui/search.js', 'search');
+      window.__uiModulesReady = true;
+      window.dispatchEvent(new CustomEvent('app:ui-modules-ready'));
+    } catch (error) {
+      window.__uiModulesReady = false;
+      console.warn('Os módulos modernos de interface não puderam ser carregados; a compatibilidade legada permanecerá ativa.', error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    syncRuntimeVersionUi(window.APP_VERSION);
+    loadUiModules();
+  }, { once: true });
   window.addEventListener('load', bootstrapPwa, { once: true });
   window.addEventListener('load', loadNotesImportExport, { once: true });
   window.addEventListener('load', loadStudyPerformanceReport, { once: true });
   window.applyPwaUpdate = applyPwaUpdate;
   window.checkForPwaUpdate = checkForPwaUpdate;
+  window.loadUiModules = loadUiModules;
 })();
