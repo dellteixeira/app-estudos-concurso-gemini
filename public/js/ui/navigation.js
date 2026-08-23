@@ -5,7 +5,7 @@
         if (!document.querySelector('link[data-retention-metrics-fix]')) {
             const retentionLink = document.createElement('link');
             retentionLink.rel = 'stylesheet';
-            retentionLink.href = './css/retention-metrics-fix.css';
+            retentionLink.href = './css/retention-metrics-fix.css?v=20260823-final';
             retentionLink.dataset.retentionMetricsFix = '1';
             document.head.appendChild(retentionLink);
         }
@@ -13,7 +13,7 @@
         if (!document.querySelector('link[data-ui-text-safety]')) {
             const safetyLink = document.createElement('link');
             safetyLink.rel = 'stylesheet';
-            safetyLink.href = './css/ui-text-safety.css';
+            safetyLink.href = './css/ui-text-safety.css?v=20260823-final';
             safetyLink.dataset.uiTextSafety = '1';
             document.head.appendChild(safetyLink);
         }
@@ -61,12 +61,8 @@
         mobileSwitchTab
     });
 
-    // Compatibility API used by existing inline handlers and legacy modules.
-    global.findDesktopTabButton = findDesktopTabButton;
-    global.mobileSwitchTab = mobileSwitchTab;
-
-    // Visual safety styles are intentionally injected late so they override
-    // older fixed-width rules without touching business logic or data.
+    // Visual safety styles are intentionally injected late and in deterministic
+    // order: retention base first, final safety contract second.
     ensureRetentionMetricLayoutStyle();
 
     // Performance extras are deliberately non-critical: the app remains fully
