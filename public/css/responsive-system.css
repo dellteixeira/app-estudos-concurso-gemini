@@ -1,0 +1,153 @@
+/* ================================================================
+   RESPONSIVE DESIGN SYSTEM — PHASE 1
+   Canonical responsive foundation for Estudo Adaptativo.
+
+   Official viewport bands:
+   - Mobile:   <= 600px
+   - Tablet:   601px–900px
+   - Notebook: 901px–1200px
+   - Desktop:  >= 1201px
+
+   Legacy feature-specific media queries may continue to exist during
+   migration, but new responsive work must use these four bands.
+   ================================================================ */
+
+:root {
+    /* Spacing scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 40px;
+    --space-8: 48px;
+
+    /* Control/touch scale */
+    --control-sm: 36px;
+    --control-md: 44px;
+    --control-lg: 48px;
+    --touch-target: 44px;
+
+    /* Radius scale */
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 13px;
+    --radius-xl: 16px;
+    --radius-pill: 999px;
+
+    /* Responsive layout */
+    --content-max: 1300px;
+    --page-gutter: clamp(10px, 2vw, 24px);
+    --section-gap: clamp(12px, 1.6vw, 24px);
+    --grid-gap: clamp(8px, 1vw, 16px);
+    --card-padding-fluid: clamp(12px, 1.4vw, 20px);
+
+    /* Fluid type */
+    --font-ui-sm: clamp(.72rem, .69rem + .12vw, .80rem);
+    --font-ui-md: clamp(.84rem, .80rem + .18vw, .96rem);
+    --font-title: clamp(1.05rem, .98rem + .35vw, 1.32rem);
+
+    /* Safe areas */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+
+    /* Documentation tokens: CSS custom properties cannot be used in
+       @media conditions, but keep the canonical values discoverable. */
+    --bp-mobile-max: 600px;
+    --bp-tablet-max: 900px;
+    --bp-notebook-max: 1200px;
+}
+
+/* Safe, non-destructive primitives used by current and future screens. */
+.app-responsive-container {
+    width: min(100%, var(--content-max));
+    margin-inline: auto;
+    padding-inline: max(var(--page-gutter), var(--safe-left), var(--safe-right));
+}
+
+.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: var(--grid-gap);
+}
+
+.responsive-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.touch-target {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+}
+
+/* Current shell adopts only spacing/container tokens in Phase 1. */
+#app-dashboard {
+    max-width: var(--content-max);
+    padding-left: max(var(--page-gutter), var(--safe-left));
+    padding-right: max(var(--page-gutter), var(--safe-right));
+}
+
+/* MOBILE <= 600px */
+@media (max-width: 600px) {
+    :root {
+        --page-gutter: 10px;
+        --section-gap: 12px;
+        --grid-gap: 8px;
+        --card-padding-fluid: 12px;
+    }
+
+    #app-dashboard {
+        padding-left: max(var(--page-gutter), var(--safe-left)) !important;
+        padding-right: max(var(--page-gutter), var(--safe-right)) !important;
+    }
+
+    .responsive-toolbar {
+        gap: var(--space-2);
+    }
+}
+
+/* TABLET 601px–900px */
+@media (min-width: 601px) and (max-width: 900px) {
+    :root {
+        --page-gutter: 14px;
+        --section-gap: 16px;
+        --grid-gap: 10px;
+        --card-padding-fluid: 14px;
+    }
+}
+
+/* NOTEBOOK 901px–1200px */
+@media (min-width: 901px) and (max-width: 1200px) {
+    :root {
+        --page-gutter: 18px;
+        --section-gap: 20px;
+        --grid-gap: 12px;
+        --card-padding-fluid: 16px;
+    }
+}
+
+/* DESKTOP >= 1201px */
+@media (min-width: 1201px) {
+    :root {
+        --page-gutter: 24px;
+        --section-gap: 24px;
+        --grid-gap: 16px;
+        --card-padding-fluid: 18px;
+    }
+}
+
+/* Respect reduced-motion preference globally without changing behavior. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
