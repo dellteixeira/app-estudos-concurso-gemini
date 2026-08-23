@@ -1,14 +1,15 @@
 name: Quality Check
 
 on:
-  push:
-    branches: [hardening/inline-style-runtime-zero]
+  pull_request:
+    types: [reopened]
 
 permissions:
   contents: write
 
 jobs:
   apply-inline-style-runtime-zero:
+    if: github.event.pull_request.head.ref == 'hardening/inline-style-runtime-zero'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
