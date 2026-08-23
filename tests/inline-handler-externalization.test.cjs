@@ -1,5 +1,5 @@
 'use strict';
-// Contrato da migração integral dos handlers estáticos.
+// Contrato da migração integral dos handlers estáticos e dinâmicos.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -10,6 +10,11 @@ const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
 test('index não contém handlers de evento inline', () => {
   const html = read('public/index.html');
   assert.doesNotMatch(html, /\son[a-z]+\s*=\s*["']/i);
+});
+
+test('app-ui não gera handlers de evento inline dinamicamente', () => {
+  const ui = read('public/js/app-ui.js');
+  assert.doesNotMatch(ui, /\son[a-z]+\s*=\s*["']/i);
 });
 
 test('handlers complexos usam adapters externos sem execução dinâmica', () => {
