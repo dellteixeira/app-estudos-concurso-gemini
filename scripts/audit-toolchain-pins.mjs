@@ -19,6 +19,9 @@ for (const name of files) {
   if (/uses:\s*actions\/(?:checkout|setup-node|upload-artifact)@v\d+/g.test(text)) {
     fail(`${name}: action oficial usa referência móvel em vez de SHA`);
   }
+  if (/uses:\s*supabase\/setup-cli@v\d+/g.test(text)) {
+    fail(`${name}: supabase/setup-cli usa referência móvel em vez de SHA`);
+  }
   const nodeVersions = [...text.matchAll(/node-version:\s*['"]?([^'"\s]+)['"]?/g)].map(m => m[1]);
   for (const version of nodeVersions) {
     if (!/^\d+\.\d+\.\d+$/.test(version)) fail(`${name}: node-version não é exato: ${version}`);
@@ -26,9 +29,10 @@ for (const name of files) {
 }
 
 const all = files.map(name => fs.readFileSync(path.join(workflowsDir, name), 'utf8')).join('\n');
-if (!/supabase\/setup-cli@v3\.0\.0[\s\S]*?version:\s*2\.115\.0/.test(all)) {
-  fail('Supabase setup-cli/CLI não estão pinados em v3.0.0 / 2.115.0');
-} else ok('Supabase CLI pinado em 2.115.0 com setup-cli v3.0.0');
+const supabaseActionSha = '46f7f98c7f948ad727d22c1e67fab04c223a0520';
+if (!new RegExp(`supabase/setup-cli@${supabaseActionSha}[\\s\\S]*?version:\\s*2\\.115\\.0`).test(all)) {
+  fail('Supabase setup-cli/CLI não estão pinados no SHA de v3.0.0 / CLI 2.115.0');
+} else ok('Supabase CLI pinado em 2.115.0 com setup-cli v3.0.0 por SHA');
 
 if (!/wrangler@4\.120\.0\s+deploy/.test(all)) fail('Wrangler de produção não está pinado em 4.120.0');
 else ok('Wrangler de produção permanece pinado em 4.120.0');
