@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  inspect-inline-style-batch6:
+  finalize-inline-style-batch6:
     if: github.event.pull_request.head.ref == 'hardening/inline-style-debt-batch6'
     runs-on: ubuntu-24.04
     steps:
@@ -17,24 +17,12 @@ jobs:
         with:
           ref: hardening/inline-style-debt-batch6
           fetch-depth: 0
-      - name: Inspect remaining styles
-        run: |
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
-          text=Path('public/index.html').read_text(encoding='utf-8')
-          out=[]
-          for i,line in enumerate(text.splitlines(),1):
-              if 'style="' in line:
-                  for m in re.finditer(r'style="([^"]*)"',line):
-                      out.append(f'{i}: {m.group(1)} | {line.strip()}')
-          Path('security/.batch6-remaining.txt').write_text('\n'.join(out)+'\n',encoding='utf-8')
-          print('\n'.join(out))
-          PY
-      - name: Commit report
+      - name: Finalize patch
+        run: python3 scripts/finalize-inline-style-batch6.py
+      - name: Commit patch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add security/.batch6-remaining.txt
-          git commit -m "chore: inspect remaining batch6 inline styles"
+          git add public/index.html public/css/base.css scripts/audit-inline-csp.mjs tests/inline-style-batch6.test.cjs
+          git commit -m "refactor(css): finalize static inline styles batch 6"
           git push origin HEAD:hardening/inline-style-debt-batch6
