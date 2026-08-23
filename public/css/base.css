@@ -3480,3 +3480,13 @@
 .u-static-025{font-weight:700;color:var(--primary-blue);}
 .u-static-026{font-size:1.25rem;font-weight:700;}
 /* INLINE_STATIC_BATCH1_END */
+
+/* INLINE_STYLE_BATCH4_STATIC_COMPONENTS */
+.auth-field { width: 100%; }
+.auth-field-spaced { margin-bottom: .5rem; }
+.auth-action-row { display: flex; gap: .5rem; }
+.study-activity-distribution { margin-top: 12px; font-size: .78rem; opacity: .8; }
+.edital-priority-column { width: 90px; }
+.notes-section-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.flashcards-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+

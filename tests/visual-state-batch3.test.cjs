@@ -6,10 +6,11 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=r=>fs.readFileSync(path.join(root,r),'utf8');
 
-test('batch3 removes seven static inline visual states',()=>{
+test('batch3 removes seven static inline visual states and later batches may reduce further',()=>{
   const html=read('public/index.html');
   const ids=['authStatusMessage','superUserBadge','customDailyHoursPanel','notaTituloCustomGroup','btnDownloadEdital','btnRemoveEdital','modalPdfNoteEditor'];
-  assert.equal((html.match(/\sstyle\s*=\s*["']/gi)||[]).length,75);
+  const count=(html.match(/\sstyle\s*=\s*["']/gi)||[]).length;
+  assert.ok(count<=75,`inline style count regressed above batch3 baseline: ${count}`);
   for(const id of ids){
     const tag=html.match(new RegExp(`<[^>]+id=["']${id}["'][^>]*>`,`i`))?.[0]||'';
     assert.ok(tag,`missing #${id}`);
