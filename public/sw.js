@@ -17,6 +17,7 @@ const CRITICAL_APP_SHELL = [
 // Recursos complementares podem ser preparados quando disponíveis sem impedir
 // a atualização do app. Eles serão buscados novamente quando a conexão voltar.
 const OPTIONAL_OFFLINE_ASSETS = [
+  './js/performance-loader.js', './js/performance-metrics.js',
   './js/notes-import-export.js', './js/notes-export-rich.js', './js/study-performance-report.js',
   './js/pdf/pdf-core.js', './js/pdf/pdf-workspaces.js', './js/pdf/pdf-links.js', './js/pdf/pdf-library.js',
   './js/pdf/pdf-library-ordering.js', './js/pdf/pdf-upload.js', './js/pdf/pdf-annotations.js',
@@ -155,6 +156,7 @@ self.addEventListener('fetch', event => {
     '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json', '/vendor/pdf.min.js', '/vendor/pdf_viewer.min.css', '/vendor/pdf.worker.min.js',
     '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css', '/css/pdf-reader.css',
     '/js/study-domain.js', '/js/app-core.js', '/js/adaptive-schedule-reconciliation.js', '/js/notes-import-export.js', '/js/notes-export-rich.js', '/js/study-performance-report.js',
+    '/js/performance-loader.js', '/js/performance-metrics.js',
     '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js',
     '/js/app-ai.js', '/js/app-ui.js', '/js/ui/mobile.js', '/js/ui/navigation.js', '/js/ui/search.js',
     '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
