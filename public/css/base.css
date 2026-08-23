@@ -3540,3 +3540,7 @@
 .u-layout-b6-027 { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .u-layout-b6-028 { display: flex; gap: 8px; flex-wrap: wrap; }
 .u-layout-b6-029 { opacity: 0.85; margin-bottom: 12px; }
+
+/* INLINE_STYLE_BATCH6_FINAL_STATIC */
+.study-card-label { font-size: .85rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; }
+.edital-viewer-empty-state { flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,.15); }

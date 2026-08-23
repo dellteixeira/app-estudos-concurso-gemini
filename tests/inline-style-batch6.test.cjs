@@ -8,8 +8,8 @@ const read=r=>fs.readFileSync(path.join(root,r),'utf8');
 
 test('batch6 reduces fixed inline layout budget',()=>{
   const html=read('public/index.html');
-  assert.equal((html.match(/\sstyle\s*=\s*["']/gi)||[]).length,5);
-  assert.match(read('scripts/audit-inline-csp.mjs'),/const STYLE_BUDGET = 5;/);
+  assert.equal((html.match(/\sstyle\s*=\s*["']/gi)||[]).length,3);
+  assert.match(read('scripts/audit-inline-csp.mjs'),/const STYLE_BUDGET = 3;/);
 });
 
 test('batch6 generated layout classes are present',()=>{
