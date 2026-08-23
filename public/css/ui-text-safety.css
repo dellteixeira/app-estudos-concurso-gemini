@@ -87,25 +87,32 @@ header.modern-header .btn-search-header {
 }
 
 /* ----------------------------------------------------------------
-   RETENTION METRICS — respond to the actual component width
+   RETENTION METRICS — definitive redesign
+
+   features.css contains legacy #retentionDiagnosticPanel rules with
+   !important that used a 54px + text two-column card. All selectors below
+   intentionally include #retentionDiagnosticPanel so this late layer wins
+   the cascade and makes the card genuinely vertical.
    ---------------------------------------------------------------- */
-.rd-center-v1077 {
+#retentionDiagnosticPanel .rd-center-v1077 {
     min-width: 0 !important;
     width: 100% !important;
-    container-type: inline-size;
+    container-type: inline-size !important;
     container-name: retentionMetrics;
 }
 
-.rd-metrics-v1077 {
+#retentionDiagnosticPanel .rd-metrics-v1077 {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: clamp(8px, 1vw, 12px) !important;
+    grid-auto-rows: auto !important;
+    gap: clamp(10px, 1.2vw, 14px) !important;
     width: 100% !important;
     min-width: 0 !important;
     align-items: stretch !important;
 }
 
-.rd-metrics-v1077 .rd-metric-card-v1077 {
+#retentionDiagnosticPanel .rd-metric-card-v1077 {
+    appearance: none !important;
     display: flex !important;
     flex-direction: column !important;
     flex-wrap: nowrap !important;
@@ -113,16 +120,21 @@ header.modern-header .btn-search-header {
     justify-content: flex-start !important;
     gap: 8px !important;
     position: relative !important;
-    min-width: 0 !important;
+    inset: auto !important;
+    transform: none !important;
+    float: none !important;
     width: 100% !important;
-    min-height: 196px !important;
-    padding: clamp(12px, 1.4vw, 16px) !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 190px !important;
+    max-height: none !important;
+    padding: 14px 12px 13px !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
     text-align: center !important;
 }
 
-.rd-metrics-v1077 .rd-metric-icon-v1077 {
+#retentionDiagnosticPanel .rd-metric-icon-v1077 {
     order: 1 !important;
     position: static !important;
     inset: auto !important;
@@ -132,10 +144,17 @@ header.modern-header .btn-search-header {
     place-items: center !important;
     flex: 0 0 auto !important;
     align-self: center !important;
+    justify-self: auto !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
     margin: 0 auto 2px !important;
 }
 
-.rd-metrics-v1077 .rd-metric-label-v1077 {
+#retentionDiagnosticPanel .rd-metric-label-v1077 {
     order: 2 !important;
     position: static !important;
     inset: auto !important;
@@ -143,64 +162,96 @@ header.modern-header .btn-search-header {
     float: none !important;
     display: block !important;
     flex: 0 0 auto !important;
+    align-self: stretch !important;
+    justify-self: auto !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
     width: 100% !important;
+    max-width: 100% !important;
     min-width: 0 !important;
     min-height: 2.45em !important;
-    margin: 0 !important;
-    padding: 0 2px !important;
+    height: auto !important;
+    margin: 0 auto 4px !important;
+    padding: 0 3px !important;
     box-sizing: border-box !important;
-    font-size: clamp(.70rem, .66rem + .18vw, .82rem) !important;
-    font-weight: 700 !important;
-    line-height: 1.22 !important;
+    font-size: clamp(.72rem, .67rem + .22vw, .86rem) !important;
+    font-weight: 750 !important;
+    line-height: 1.2 !important;
     text-align: center !important;
     white-space: normal !important;
     overflow: visible !important;
     text-overflow: clip !important;
-    overflow-wrap: break-word !important;
+    overflow-wrap: normal !important;
     word-break: normal !important;
     hyphens: none !important;
 }
 
-.rd-metrics-v1077 .rd-metric-card-v1077 > strong {
+#retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
     order: 3 !important;
     position: static !important;
+    inset: auto !important;
+    display: block !important;
     flex: 0 0 auto !important;
     align-self: stretch !important;
+    justify-self: auto !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
     width: 100% !important;
     min-width: 0 !important;
     margin: auto 0 0 !important;
+    font-size: clamp(2rem, 2.5vw, 2.7rem) !important;
+    line-height: .95 !important;
     text-align: left !important;
 }
 
-.rd-metrics-v1077 .rd-metric-progress-v1077 {
+#retentionDiagnosticPanel .rd-metric-progress-v1077 {
     order: 4 !important;
     position: static !important;
+    inset: auto !important;
+    display: block !important;
     flex: 0 0 auto !important;
     align-self: stretch !important;
+    justify-self: auto !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
     width: 100% !important;
     min-width: 0 !important;
+    margin-top: 2px !important;
 }
 
-/* The retention center is often much narrower than the viewport because the
-   diagnostic panel has sibling columns. Container queries are therefore the
-   authoritative adaptation mechanism here. */
+/* The metrics column can be narrow while the viewport is wide. Adapt to the
+   actual component width, not just the browser width. */
 @container retentionMetrics (max-width: 760px) {
-    .rd-metrics-v1077 {
+    #retentionDiagnosticPanel .rd-metrics-v1077 {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-auto-rows: auto !important;
     }
 
-    .rd-metrics-v1077 .rd-metric-card-v1077 {
-        min-height: 184px !important;
+    #retentionDiagnosticPanel .rd-metric-card-v1077 {
+        height: auto !important;
+        min-height: 176px !important;
+        max-height: none !important;
+    }
+
+    #retentionDiagnosticPanel .rd-metric-icon-v1077 {
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
     }
 }
 
-@container retentionMetrics (max-width: 380px) {
-    .rd-metrics-v1077 {
+@container retentionMetrics (max-width: 420px) {
+    #retentionDiagnosticPanel .rd-metrics-v1077 {
         grid-template-columns: 1fr !important;
     }
 
-    .rd-metrics-v1077 .rd-metric-card-v1077 {
-        min-height: 170px !important;
+    #retentionDiagnosticPanel .rd-metric-card-v1077 {
+        min-height: 164px !important;
+    }
+
+    #retentionDiagnosticPanel .rd-metric-label-v1077 {
+        min-height: 0 !important;
     }
 }
 
