@@ -2,12 +2,21 @@
     'use strict';
 
     function ensureRetentionMetricLayoutStyle() {
-        if (document.querySelector('link[data-retention-metrics-fix]')) return;
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = './css/retention-metrics-fix.css';
-        link.dataset.retentionMetricsFix = '1';
-        document.head.appendChild(link);
+        if (!document.querySelector('link[data-retention-metrics-fix]')) {
+            const retentionLink = document.createElement('link');
+            retentionLink.rel = 'stylesheet';
+            retentionLink.href = './css/retention-metrics-fix.css';
+            retentionLink.dataset.retentionMetricsFix = '1';
+            document.head.appendChild(retentionLink);
+        }
+
+        if (!document.querySelector('link[data-ui-text-safety]')) {
+            const safetyLink = document.createElement('link');
+            safetyLink.rel = 'stylesheet';
+            safetyLink.href = './css/ui-text-safety.css';
+            safetyLink.dataset.uiTextSafety = '1';
+            document.head.appendChild(safetyLink);
+        }
     }
 
     function ensurePerformanceLoader() {
@@ -56,8 +65,8 @@
     global.findDesktopTabButton = findDesktopTabButton;
     global.mobileSwitchTab = mobileSwitchTab;
 
-    // The retention metric layout is a visual hotfix and must be available as
-    // soon as the navigation layer is parsed. It has no data dependencies.
+    // Visual safety styles are intentionally injected late so they override
+    // older fixed-width rules without touching business logic or data.
     ensureRetentionMetricLayoutStyle();
 
     // Performance extras are deliberately non-critical: the app remains fully
