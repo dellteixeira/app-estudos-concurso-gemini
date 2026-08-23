@@ -1,5 +1,5 @@
 /* ================================================================
-   RESPONSIVE DESIGN SYSTEM — PHASE 1
+   RESPONSIVE DESIGN SYSTEM — PHASES 1–2
    Canonical responsive foundation for Estudo Adaptativo.
 
    Official viewport bands:
@@ -8,8 +8,9 @@
    - Notebook: 901px–1200px
    - Desktop:  >= 1201px
 
-   Legacy feature-specific media queries may continue to exist during
-   migration, but new responsive work must use these four bands.
+   Phase 2 adds fluid containers and grid primitives while preserving
+   feature-specific layouts (PDF Library, Reader and Calendar) until
+   their dedicated migration phases.
    ================================================================ */
 
 :root {
@@ -38,10 +39,15 @@
 
     /* Responsive layout */
     --content-max: 1300px;
+    --content-reading-max: 920px;
     --page-gutter: clamp(10px, 2vw, 24px);
     --section-gap: clamp(12px, 1.6vw, 24px);
     --grid-gap: clamp(8px, 1vw, 16px);
     --card-padding-fluid: clamp(12px, 1.4vw, 20px);
+    --grid-card-min: 220px;
+    --grid-card-min-wide: 320px;
+    --grid-metric-min: 150px;
+    --toolbar-item-min: 140px;
 
     /* Fluid type */
     --font-ui-sm: clamp(.72rem, .69rem + .12vw, .80rem);
@@ -61,24 +67,129 @@
     --bp-notebook-max: 1200px;
 }
 
-/* Safe, non-destructive primitives used by current and future screens. */
+/* ================================================================
+   CANONICAL CONTAINERS
+   ================================================================ */
 .app-responsive-container {
     width: min(100%, var(--content-max));
     margin-inline: auto;
     padding-inline: max(var(--page-gutter), var(--safe-left), var(--safe-right));
 }
 
-.responsive-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-    gap: var(--grid-gap);
+.app-reading-container {
+    width: min(100%, var(--content-reading-max));
+    margin-inline: auto;
 }
 
+.responsive-region {
+    width: 100%;
+    min-width: 0;
+    container-type: inline-size;
+}
+
+/* Current shell adopts the canonical width without changing its
+   existing component hierarchy. */
+#app-dashboard {
+    width: min(100%, var(--content-max));
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding-left: max(var(--page-gutter), var(--safe-left));
+    padding-right: max(var(--page-gutter), var(--safe-right));
+}
+
+#app-dashboard > *,
+.tab-content,
+.card,
+.study-overview-grid,
+.grid-top,
+.header-control-stack {
+    min-width: 0;
+}
+
+/* Avoid intrinsic content forcing a grid/flex child wider than the
+   available viewport. */
+.study-overview-grid > *,
+.grid-top > *,
+.responsive-grid > *,
+.responsive-toolbar > * {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* Media should never enlarge the page horizontally. Canvas keeps its
+   intrinsic height because only max-width is constrained. */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+}
+
+/* ================================================================
+   FLUID GRID PRIMITIVES
+   ================================================================ */
+.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--grid-card-min)), 1fr));
+    gap: var(--grid-gap);
+    width: 100%;
+}
+
+.responsive-grid--wide {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--grid-card-min-wide)), 1fr));
+}
+
+.responsive-grid--metrics {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--grid-metric-min)), 1fr));
+}
+
+.responsive-grid--two {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+}
+
+/* Existing dashboard overview becomes intrinsically fluid. This is a
+   low-risk migration because the cards already tolerate variable width. */
+.study-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--grid-metric-min)), 1fr));
+    gap: var(--grid-gap);
+    width: 100%;
+}
+
+/* Existing generic two-column content grid now decides its column count
+   from available space rather than a hard viewport breakpoint. */
+.grid-top {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--grid-card-min-wide)), 1fr));
+    gap: var(--section-gap);
+    width: 100%;
+}
+
+/* ================================================================
+   FLUID TOOLBAR PRIMITIVES
+   Phase 2 does not replace specialized Library/header toolbars yet.
+   ================================================================ */
 .responsive-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-2);
+    width: 100%;
+    min-width: 0;
+}
+
+.responsive-toolbar--grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--toolbar-item-min)), 1fr));
+    align-items: stretch;
+}
+
+.responsive-toolbar--grid > .btn,
+.responsive-toolbar--grid > button,
+.responsive-toolbar--grid > select,
+.responsive-toolbar--grid > input {
+    width: 100%;
+    min-width: 0;
 }
 
 .touch-target {
@@ -86,11 +197,20 @@
     min-height: var(--touch-target);
 }
 
-/* Current shell adopts only spacing/container tokens in Phase 1. */
-#app-dashboard {
-    max-width: var(--content-max);
-    padding-left: max(var(--page-gutter), var(--safe-left));
-    padding-right: max(var(--page-gutter), var(--safe-right));
+/* ================================================================
+   CONTAINER-QUERY OPT-IN
+   New/refactored modules can adapt to their actual allocated width,
+   not only to the browser viewport.
+   ================================================================ */
+@container (max-width: 520px) {
+    .responsive-region .responsive-toolbar--grid {
+        grid-template-columns: 1fr;
+    }
+
+    .responsive-region .responsive-grid--wide,
+    .responsive-region .responsive-grid--two {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* MOBILE <= 600px */
@@ -100,6 +220,10 @@
         --section-gap: 12px;
         --grid-gap: 8px;
         --card-padding-fluid: 12px;
+        --grid-card-min: 170px;
+        --grid-card-min-wide: 100%;
+        --grid-metric-min: 135px;
+        --toolbar-item-min: 132px;
     }
 
     #app-dashboard {
@@ -110,6 +234,10 @@
     .responsive-toolbar {
         gap: var(--space-2);
     }
+
+    .grid-top {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* TABLET 601px–900px */
@@ -119,6 +247,9 @@
         --section-gap: 16px;
         --grid-gap: 10px;
         --card-padding-fluid: 14px;
+        --grid-card-min: 200px;
+        --grid-card-min-wide: 290px;
+        --grid-metric-min: 145px;
     }
 }
 
@@ -129,6 +260,9 @@
         --section-gap: 20px;
         --grid-gap: 12px;
         --card-padding-fluid: 16px;
+        --grid-card-min: 210px;
+        --grid-card-min-wide: 310px;
+        --grid-metric-min: 150px;
     }
 }
 
@@ -139,6 +273,9 @@
         --section-gap: 24px;
         --grid-gap: 16px;
         --card-padding-fluid: 18px;
+        --grid-card-min: 220px;
+        --grid-card-min-wide: 320px;
+        --grid-metric-min: 160px;
     }
 }
 
