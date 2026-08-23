@@ -123,7 +123,7 @@
                 return;
             }
             box.innerHTML = limited.map((r, idx) => `
-                <button class="search-result-item" type="button" onclick="activateGlobalSearchResult(${idx})">
+                <button class="search-result-item" type="button" data-dynamic-action="global-search-result" data-result-index="${idx}">
                     <span class="search-result-type">${escapeHtml(r.type)}</span>${escapeHtml(r.title)}
                     <span class="search-result-sub">${escapeHtml(r.sub || '')}</span>
                 </button>`).join('');
@@ -140,7 +140,7 @@
         }
 
         function findDesktopTabButton(tabId) {
-            return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => (btn.getAttribute('onclick') || '').includes(`'${tabId}'`));
+            return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => btn.dataset.tab === tabId);
         }
 
         function openSearchEditalResult(materia) {
@@ -249,7 +249,7 @@
             if(topic) topic.textContent=`${item.materia} — ${item.assunto}`;
             const perf = plan.accuracy == null ? '' : ` · Questões ${Math.round(plan.accuracy)}%`;
             if(meta) meta.textContent=`Retenção ${Math.round(plan.retention)}%${perf}. ${plan.reason}`;
-            if(steps) steps.innerHTML=plan.layers.map(layer=>`<div class="layered-review-step ${layer.layer===plan.recommendedLayer?'recommended':''}"><div class="layered-review-number">${layer.layer}</div><div class="layered-review-content"><strong>${escapeHtml(layer.label)}${layer.layer===plan.recommendedLayer?' · recomendada':''}</strong><span>${escapeHtml(layer.description)} · ${layer.minutes} min sugeridos</span></div><button class="btn btn-secondary btn-sm" type="button" onclick="startLayeredReviewLayer(${layer.layer})">Iniciar</button></div>`).join('');
+            if(steps) steps.innerHTML=plan.layers.map(layer=>`<div class="layered-review-step ${layer.layer===plan.recommendedLayer?'recommended':''}"><div class="layered-review-number">${layer.layer}</div><div class="layered-review-content"><strong>${escapeHtml(layer.label)}${layer.layer===plan.recommendedLayer?' · recomendada':''}</strong><span>${escapeHtml(layer.description)} · ${layer.minutes} min sugeridos</span></div><button class="btn btn-secondary btn-sm" type="button" data-dynamic-action="start-layered-review" data-layer="${layer.layer}">Iniciar</button></div>`).join('');
             const modal=document.getElementById('modalLayeredReview'); if(modal) modal.style.display='flex';
         }
 
@@ -319,7 +319,7 @@
             const status = row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
             const layerDef = plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
             const layerText = plan ? `Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}` : 'Revisão adaptativa';
-            return `<button class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" type="button" onclick="openLayeredReviewModal(${index})" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}. Risco ${severityLabel}. Retenção ${retention}%"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span style="width:${retention}%"></span></span></span><span class="retention-risk-value">${retention}%</span></button>`;
+            return `<button class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" type="button" data-dynamic-action="open-layered-review" data-review-index="${index}" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}. Risco ${severityLabel}. Retenção ${retention}%"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span style="width:${retention}%"></span></span></span><span class="retention-risk-value">${retention}%</span></button>`;
         }
 
         function getRetentionMetricConfig(kind) {
@@ -339,7 +339,7 @@
             const indexInRisk = retentionDiagnosticRows.findIndex(item => item?.state?.key === state.key);
             const clickable = kind !== 'mastered' && indexInRisk >= 0;
             const tag = clickable ? 'button' : 'div';
-            const action = clickable ? ` type="button" onclick="closeRetentionMetricDetails(); openLayeredReviewModal(${indexInRisk})"` : '';
+            const action = clickable ? ` type="button" data-dynamic-action="open-layered-review-from-metric" data-review-index="${indexInRisk}"` : '';
             return `<${tag} class="retention-metric-detail-row${clickable?' is-clickable':''}"${action}><span class="retention-detail-rank">${index+1}</span><span class="retention-detail-copy"><strong>${escapeHtml(state.materia||'Matéria')} — ${escapeHtml(state.assunto||'Assunto')}</strong><span>Retenção ${retention}% · Questões ${accuracy} · ${escapeHtml(overdueText)}</span></span><span class="retention-detail-value">${retention}%</span></${tag}>`;
         }
 
@@ -393,7 +393,7 @@
                 const title = hasExamDate ? `${phase.label}${dayText ? ` · ${dayText}` : ''}` : 'Sem data de prova definida';
                 const guidance = hasExamDate ? phase.guidance : 'Defina a data da prova para ativar a estratégia progressiva.';
                 const actionText = hasExamDate ? 'Alterar data' : 'Definir data da prova';
-                phaseBox.innerHTML = `<span class="rd-exam-icon-v1077" aria-hidden="true">▦</span><span class="rd-exam-copy-v1077"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(guidance)}</span></span><button class="rd-exam-action-v1077" type="button" onclick="editarDataProva()">${escapeHtml(actionText)}</button>`;
+                phaseBox.innerHTML = `<span class="rd-exam-icon-v1077" aria-hidden="true">▦</span><span class="rd-exam-copy-v1077"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(guidance)}</span></span><button class="rd-exam-action-v1077" type="button" data-dynamic-action="edit-exam-date">${escapeHtml(actionText)}</button>`;
             }
 
             const diag = buildRetentionDiagnostics();
@@ -465,6 +465,31 @@
         }
 
         document.addEventListener('click', (event) => {
+            const actionTarget = event.target.closest?.('[data-dynamic-action]');
+            if (actionTarget) {
+                const action = actionTarget.dataset.dynamicAction;
+                if (action === 'global-search-result') {
+                    activateGlobalSearchResult(Number(actionTarget.dataset.resultIndex));
+                    return;
+                }
+                if (action === 'start-layered-review') {
+                    startLayeredReviewLayer(Number(actionTarget.dataset.layer));
+                    return;
+                }
+                if (action === 'open-layered-review') {
+                    openLayeredReviewModal(Number(actionTarget.dataset.reviewIndex));
+                    return;
+                }
+                if (action === 'open-layered-review-from-metric') {
+                    closeRetentionMetricDetails();
+                    openLayeredReviewModal(Number(actionTarget.dataset.reviewIndex));
+                    return;
+                }
+                if (action === 'edit-exam-date') {
+                    editarDataProva();
+                    return;
+                }
+            }
             const modal = document.getElementById('modalGlobalSearch');
             if (modal && event.target === modal) closeGlobalSearchModal();
         });
@@ -485,3 +510,122 @@
             });
         });
 
+
+
+        // INLINE_HANDLER_ADAPTERS_START
+        // Generated once from the former static inline handlers. Explicit external functions only.
+        (function installExternalizedInlineHandlers() {
+            const adapters = {
+            'ih-001': function(event) { handleActionButton(this, forceFullSync) },
+            'ih-002': function(event) { handleActionButton(this, openModalViewEdital) },
+            'ih-003': function(event) { handleActionButton(this.parentElement, importJSON, event) },
+            'ih-004': function(event) { handleActionButton(this, openModalAnaliseEditalIA) },
+            'ih-005': function(event) { handleActionButton(this, openModalPromptIA) },
+            'ih-006': function(event) { addManualItem(event) },
+            'ih-007': function(event) { openMobileEditalFieldEditor('materia', this) },
+            'ih-008': function(event) { openMobileEditalFieldEditor('assunto', this) },
+            'ih-009': function(event) { toggleAllAccordions(true) },
+            'ih-010': function(event) { toggleAllAccordions(false) },
+            'ih-011': function(event) { filterDelayedList('hoje', this) },
+            'ih-012': function(event) { filterDelayedList('atrasadas', this) },
+            'ih-013': function(event) { filterDelayedList('proximas', this) },
+            'ih-014': function(event) { PdfStudyLibraryUI.onSearch(this.value) },
+            'ih-015': function(event) { PdfStudyLibraryUI.onScopeChange(this.value) },
+            'ih-016': function(event) { PdfStudyLibraryUI.onWorkspaceFilterChange(this.value) },
+            'ih-017': function(event) { PdfStudyLibraryUI.onMateriaFilterChange(this.value) },
+            'ih-018': function(event) { PdfStudyLibraryUI.onAssuntoFilterChange(this.value) },
+            'ih-019': function(event) { document.getElementById('flashcardsImportFile').click() },
+            'ih-020': function(event) { importFlashcardsFromFile(event) },
+            'ih-021': function(event) { setFlashcardViewFilter('', '') },
+            'ih-022': function(event) { mobileSwitchTab('tab-edital', this) },
+            'ih-023': function(event) { mobileSwitchTab('tab-calendario', this) },
+            'ih-024': function(event) { mobileSwitchTab('tab-biblioteca', this) },
+            'ih-025': function(event) { mobileSwitchTab('tab-flashcards', this) },
+            'ih-026': function(event) { mobileSwitchTab('tab-anotacoes', this) },
+            'ih-027': function(event) { PdfStudyLibraryUI.onDropZoneKeydown(event) },
+            'ih-028': function(event) { PdfStudyLibraryUI.handleDrop(event) },
+            'ih-029': function(event) { PdfStudyLibraryUI.handleDragOver(event) },
+            'ih-030': function(event) { PdfStudyLibraryUI.handleDragLeave() },
+            'ih-031': function(event) { event.stopPropagation(); PdfStudyLibraryUI.chooseUploadFile() },
+            'ih-032': function(event) { PdfStudyLibraryUI.onUploadFileChange(this) },
+            'ih-033': function(event) { PdfStudyLibraryUI.openWorkspaceModal('upload') },
+            'ih-034': function(event) { resolveAppDialog(false) },
+            'ih-035': function(event) { resolveAppDialog(true) },
+            'ih-036': function(event) { resolveAppPrompt(false) },
+            'ih-037': function(event) { resolveAppPrompt(true) },
+            'ih-038': function(event) { restoreLocalBackup('current') },
+            'ih-039': function(event) { restoreLocalBackup('previous') },
+            'ih-040': function(event) { chooseCronogramaType(1) },
+            'ih-041': function(event) { chooseCronogramaType(2) },
+            'ih-042': function(event) { chooseCronogramaType(3) },
+            'ih-043': function(event) { toggleWeekdaySelect(this, 0) },
+            'ih-044': function(event) { toggleWeekdaySelect(this, 1) },
+            'ih-045': function(event) { toggleWeekdaySelect(this, 2) },
+            'ih-046': function(event) { toggleWeekdaySelect(this, 3) },
+            'ih-047': function(event) { toggleWeekdaySelect(this, 4) },
+            'ih-048': function(event) { toggleWeekdaySelect(this, 5) },
+            'ih-049': function(event) { toggleWeekdaySelect(this, 6) },
+            'ih-050': function(event) { selectHoursOption(this, 1) },
+            'ih-051': function(event) { selectHoursOption(this, 2) },
+            'ih-052': function(event) { selectHoursOption(this, 4) },
+            'ih-053': function(event) { selectHoursOption(this, 5) },
+            'ih-054': function(event) { selectCustomDailyHoursOption(this) },
+            'ih-055': function(event) { selectOpportunityMinutes(5,this) },
+            'ih-056': function(event) { selectOpportunityMinutes(10,this) },
+            'ih-057': function(event) { selectOpportunityMinutes(20,this) },
+            'ih-058': function(event) { selectOpportunityMinutes(40,this) },
+            'ih-059': function(event) { selectOpportunityMinutes(60,this) },
+            'ih-060': function(event) { selectOpportunityContext('any',this) },
+            'ih-061': function(event) { selectOpportunityContext('transit',this) },
+            'ih-062': function(event) { selectOpportunityContext('walking',this) },
+            'ih-063': function(event) { selectOpportunityContext('focus',this) },
+            'ih-064': function(event) { submitAdaptiveReviewFeedback('forgot') },
+            'ih-065': function(event) { submitAdaptiveReviewFeedback('hard') },
+            'ih-066': function(event) { submitAdaptiveReviewFeedback('good') },
+            'ih-067': function(event) { submitAdaptiveReviewFeedback('easy') },
+            'ih-068': function(event) { scheduleGlobalStudySearch(this.value) },
+            'ih-069': function(event) { closeMobileEditalFieldEditor(false) },
+            'ih-070': function(event) { handleMobileEditalFieldKeydown(event) },
+            'ih-071': function(event) { closeMobileEditalFieldEditor(false) },
+            'ih-072': function(event) { closeMobileEditalFieldEditor(true) },
+            'ih-073': function(event) { formatNoteText('bold') },
+            'ih-074': function(event) { formatNoteText('italic') },
+            'ih-075': function(event) { formatNoteText('underline') },
+            'ih-076': function(event) { setNoteFontSize(this.value) },
+            'ih-077': function(event) { uploadEditalFile(event) },
+            'ih-078': function(event) { PdfStudyReader.zoom(-0.15) },
+            'ih-079': function(event) { PdfStudyReader.zoom(0.15) },
+            'ih-080': function(event) { event.preventDefault();PdfStudyReader.searchPdf() },
+            'ih-081': function(event) { PdfStudyReader.toggleSearch(false) },
+            'ih-082': function(event) { PdfStudyReader.saveAnnotation('underline') },
+            'ih-083': function(event) { PdfStudyReader.exportFromMenu('doc') },
+            'ih-084': function(event) { PdfStudyReader.exportFromMenu('txt') },
+            'ih-085': function(event) { PdfStudyReader.formatPdfNote('bold') },
+            'ih-086': function(event) { PdfStudyReader.formatPdfNote('italic') },
+            'ih-087': function(event) { PdfStudyReader.formatPdfNote('underline') },
+            'ih-088': function(event) { PdfStudyReader.setPdfNoteFontSize(this.value) }
+            };
+            const eventTypes = ["change","click","dragleave","dragover","drop","focus","input","keydown","submit"];
+            const bindHandlers = () => {
+                for (const type of eventTypes) {
+                    const selector = '[data-inline-' + type + ']';
+                    document.querySelectorAll(selector).forEach(element => {
+                        if (element.dataset.inlineHandlerBound === '1') return;
+                        const id = element.getAttribute('data-inline-' + type);
+                        const adapter = adapters[id];
+                        if (typeof adapter !== 'function') return;
+                        element.addEventListener(type, function externalizedInlineHandler(event) {
+                            const result = adapter.call(this, event);
+                            if (result === false) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                        });
+                        element.dataset.inlineHandlerBound = '1';
+                    });
+                }
+            };
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindHandlers, { once:true });
+            else bindHandlers();
+        })();
+        // INLINE_HANDLER_ADAPTERS_END
