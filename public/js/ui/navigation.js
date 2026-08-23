@@ -1,30 +1,13 @@
 (function (global) {
     'use strict';
 
-    function ensureRetentionMetricLayoutStyle() {
-        if (!document.querySelector('link[data-retention-metrics-fix]')) {
-            const retentionLink = document.createElement('link');
-            retentionLink.rel = 'stylesheet';
-            retentionLink.href = './css/retention-metrics-fix.css?v=20260823-final3';
-            retentionLink.dataset.retentionMetricsFix = '1';
-            document.head.appendChild(retentionLink);
-        }
-
-        if (!document.querySelector('link[data-ui-text-safety]')) {
-            const safetyLink = document.createElement('link');
-            safetyLink.rel = 'stylesheet';
-            safetyLink.href = './css/ui-text-safety.css?v=20260823-final3';
-            safetyLink.dataset.uiTextSafety = '1';
-            document.head.appendChild(safetyLink);
-        }
-
-        if (!document.querySelector('link[data-accessibility-baseline]')) {
-            const accessibilityLink = document.createElement('link');
-            accessibilityLink.rel = 'stylesheet';
-            accessibilityLink.href = './css/accessibility-baseline.css?v=20260823-phase4';
-            accessibilityLink.dataset.accessibilityBaseline = '1';
-            document.head.appendChild(accessibilityLink);
-        }
+    function ensureCanonicalUiStyle() {
+        if (document.querySelector('link[data-canonical-ui]')) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = './css/canonical-ui.css?v=20260823-phase5';
+        link.dataset.canonicalUi = '1';
+        document.head.appendChild(link);
     }
 
     function ensureAccessibleNames() {
@@ -81,7 +64,7 @@
         mobileSwitchTab
     });
 
-    ensureRetentionMetricLayoutStyle();
+    ensureCanonicalUiStyle();
     ensureAccessibleNames();
 
     if (document.readyState === 'loading') {
