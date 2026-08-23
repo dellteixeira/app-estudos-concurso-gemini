@@ -1,177 +1,30 @@
 name: Quality Check
 
 on:
-  pull_request:
-  workflow_dispatch:
+  push:
+    branches: [hardening/visual-state-manager-batch3]
 
 permissions:
   contents: write
 
 jobs:
   apply-visual-state-batch3:
-    if: github.event_name == 'pull_request' && github.head_ref == 'hardening/visual-state-manager-batch3'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: hardening/visual-state-manager-batch3
           fetch-depth: 0
-      - name: Apply coordinated visual-state migration
+      - name: Apply patch
+        run: python3 scripts/apply-visual-state-batch3.py
+      - name: Commit patch
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          # Preserve mixed/CRLF line endings in index.html by doing byte-exact replacements only.
-          p=Path('public/index.html')
-          raw=p.read_bytes()
-          replacements=[
-            (b'<div id="authStatusMessage" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.82rem; line-height:1.4; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.28); color:#86efac;"></div>', b'<div id="authStatusMessage" class="auth-status-message" hidden aria-hidden="true"></div>'),
-            (b'<span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usu\xc3\xa1rio</span>', b'<span id="superUserBadge" class="super-user-badge" hidden aria-hidden="true">Super Usu\xc3\xa1rio</span>'),
-            (b'<div id="customDailyHoursPanel" class="custom-daily-hours-panel" style="display:none;">', b'<div id="customDailyHoursPanel" class="custom-daily-hours-panel" hidden aria-hidden="true">'),
-            (b'<div class="form-group" id="notaTituloCustomGroup" style="display:none;">', b'<div class="form-group" id="notaTituloCustomGroup" hidden aria-hidden="true">'),
-            (b'<button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" data-action="call" data-call="downloadEditalFile">Baixar Arquivo</button>', b'<button id="btnDownloadEdital" class="btn btn-primary btn-sm" hidden aria-hidden="true" data-action="call" data-call="downloadEditalFile">Baixar Arquivo</button>'),
-            (b'<button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" data-action="call" data-call="removerEditalFile">Apagar Edital</button>', b'<button id="btnRemoveEdital" class="btn btn-danger btn-sm" hidden aria-hidden="true" data-action="call" data-call="removerEditalFile">Apagar Edital</button>'),
-            (b'<div id="modalPdfNoteEditor" class="pdf-note-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle">', b'<div id="modalPdfNoteEditor" class="pdf-note-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle">'),
-          ]
-          for old,new in replacements:
-              count=raw.count(old)
-              if count != 1:
-                  raise SystemExit(f'index target count={count}, expected 1: {old[:80]!r}')
-              raw=raw.replace(old,new,1)
-          p.write_bytes(raw)
-
-          def replace_exact(path, pairs):
-              fp=Path(path)
-              text=fp.read_text(encoding='utf-8')
-              for old,new in pairs:
-                  count=text.count(old)
-                  if count < 1:
-                      raise SystemExit(f'{path}: target not found: {old[:100]!r}')
-                  text=text.replace(old,new)
-              fp.write_text(text,encoding='utf-8')
-
-          replace_exact('public/js/app-ai.js', [
-            ("btnDownload.style.display = 'none';", "setVisualState(btnDownload, false);"),
-            ("btnRemove.style.display = 'none';", "setVisualState(btnRemove, false);"),
-            ("btnDownload.style.display = 'inline-flex';", "setVisualState(btnDownload, true);"),
-            ("btnRemove.style.display = 'inline-flex';", "setVisualState(btnRemove, true);"),
-            ("status.style.display = message ? 'block' : 'none';", "status.classList.remove('is-error');\n                setVisualState(status, Boolean(message));"),
-            ("if (badge) badge.style.display = isSuperUser ? 'inline-block' : 'none';", "setVisualState(badge, isSuperUser);"),
-          ])
-
-          replace_exact('public/js/app-core.js', [
-            ("document.getElementById('customDailyHoursPanel').style.display = useCustomDailyHours ? 'block' : 'none';", "setVisualState(document.getElementById('customDailyHoursPanel'), useCustomDailyHours);"),
-            ("if (panel) panel.style.display = 'none';", "setVisualState(panel, false);"),
-            ("if (panel) panel.style.display = 'block';", "setVisualState(panel, true);"),
-            ("titleGroup.style.display = isOutro ? 'flex' : 'none';", "setVisualState(titleGroup, isOutro);"),
-          ])
-
-          replace_exact('public/js/pdf/pdf-reader.js', [
-            ("$('modalPdfNoteEditor').style.display='flex'", "setVisualState($('modalPdfNoteEditor'),true)"),
-            ("function closePdfNoteEditor(){if($('modalPdfNoteEditor'))$('modalPdfNoteEditor').style.display='none'}", "function closePdfNoteEditor(){setVisualState($('modalPdfNoteEditor'),false)}"),
-          ])
-
-          study=Path('public/js/study-domain.js')
-          text=study.read_text(encoding='utf-8')
-          old="""        box.style.display = 'block';
-        box.textContent = message;
-        if (kind === 'error') {
-            box.style.background = 'rgba(239,68,68,.10)';
-            box.style.borderColor = 'rgba(239,68,68,.35)';
-            box.style.color = '#fca5a5';
-        } else {
-            box.style.background = 'rgba(34,197,94,.10)';
-            box.style.borderColor = 'rgba(34,197,94,.28)';
-            box.style.color = '#86efac';
-        }
-"""
-          new="""        if (typeof root.setVisualState === 'function') root.setVisualState(box, true);
-        else { box.hidden = false; box.setAttribute('aria-hidden', 'false'); }
-        box.textContent = message;
-        box.classList.toggle('is-error', kind === 'error');
-"""
-          if text.count(old)!=1: raise SystemExit('study-domain policy block not found exactly once')
-          study.write_text(text.replace(old,new,1),encoding='utf-8')
-
-          css=Path('public/css/base.css')
-          c=css.read_text(encoding='utf-8')
-          anchor="""        .super-user-badge {
-            background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.75rem;
-            font-weight: 800; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-"""
-          addition=anchor+"""        .super-user-badge.is-open { display: inline-block; }
-        .auth-status-message { margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.82rem; line-height:1.4; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.28); color:#86efac; }
-        .auth-status-message.is-error { background:rgba(239,68,68,.10); border-color:rgba(239,68,68,.35); color:#fca5a5; }
-"""
-          if '.auth-status-message {' not in c:
-              if c.count(anchor)!=1: raise SystemExit('base.css super-user anchor mismatch')
-              c=c.replace(anchor,addition,1)
-          css.write_text(c,encoding='utf-8')
-
-          prcss=Path('public/css/pdf-reader.css')
-          pc=prcss.read_text(encoding='utf-8')
-          marker='.pdf-note-modal{position:fixed;inset:0;z-index:3060;background:rgba(2,10,18,.76);align-items:center;justify-content:center;padding:18px}'
-          if '.pdf-note-modal.is-open{display:flex}' not in pc:
-              if marker not in pc: raise SystemExit('pdf-note-modal CSS marker missing')
-              pc=pc.replace(marker,marker+'.pdf-note-modal.is-open{display:flex}',1)
-          prcss.write_text(pc,encoding='utf-8')
-
-          audit=Path('scripts/audit-inline-csp.mjs')
-          a=audit.read_text(encoding='utf-8')
-          if 'const STYLE_BUDGET = 82;' not in a: raise SystemExit('expected style budget 82 not found')
-          audit.write_text(a.replace('const STYLE_BUDGET = 82;','const STYLE_BUDGET = 75;',1),encoding='utf-8')
-
-          test=Path('tests/visual-state-batch3.test.cjs')
-          test.write_text(r'''\'use strict\';
-const test=require('node:test');
-const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const path=require('node:path');
-const root=path.resolve(__dirname,'..');
-const read=r=>fs.readFileSync(path.join(root,r),'utf8');
-
-test('batch3 removes seven static inline visual states',()=>{
-  const html=read('public/index.html');
-  const ids=['authStatusMessage','superUserBadge','customDailyHoursPanel','notaTituloCustomGroup','btnDownloadEdital','btnRemoveEdital','modalPdfNoteEditor'];
-  assert.equal((html.match(/\\sstyle\\s*=\\s*["']/gi)||[]).length,75);
-  for(const id of ids){
-    const tag=html.match(new RegExp(`<[^>]+\\bid=["']${id}["'][^>]*>`,`i`))?.[0]||'';
-    assert.ok(tag,`missing #${id}`);
-    assert.match(tag,/\\shidden(?:\\s|>|=)/i,`#${id} must start hidden`);
-    assert.doesNotMatch(tag,/\\sstyle\\s*=/i,`#${id} must not carry inline style`);
-  }
-});
-
-test('batch3 uses semantic visual state in JS targets',()=>{
-  const ai=read('public/js/app-ai.js');
-  const core=read('public/js/app-core.js');
-  const reader=read('public/js/pdf/pdf-reader.js');
-  const domain=read('public/js/study-domain.js');
-  assert.doesNotMatch(ai,/btn(?:Download|Remove)\\.style\\.display/);
-  assert.doesNotMatch(ai,/badge\\.style\\.display/);
-  assert.doesNotMatch(ai,/status\\.style\\.display/);
-  assert.doesNotMatch(core,/customDailyHoursPanel[^\\n]{0,120}style\\.display/);
-  assert.doesNotMatch(core,/titleGroup\\.style\\.display/);
-  assert.doesNotMatch(reader,/modalPdfNoteEditor[^\\n]{0,120}style\\.display/);
-  assert.doesNotMatch(domain,/box\\.style\\.(?:display|background|borderColor|color)/);
-});
-
-test('semantic CSS states preserve component display modes',()=>{
-  const base=read('public/css/base.css');
-  const pdf=read('public/css/pdf-reader.css');
-  assert.match(base,/\\.auth-status-message\\s*\\{/);
-  assert.match(base,/\\.auth-status-message\\.is-error\\s*\\{/);
-  assert.match(base,/\\.super-user-badge\\.is-open\\s*\\{\\s*display:\s*inline-block;/);
-  assert.match(pdf,/\\.pdf-note-modal\\.is-open\\{display:flex\\}/);
-});
-'''.replace("\\'use strict\\';","'use strict';"),encoding='utf-8')
-          PY
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html public/js/app-ai.js public/js/app-core.js public/js/study-domain.js public/js/pdf/pdf-reader.js public/css/base.css public/css/pdf-reader.css scripts/audit-inline-csp.mjs tests/visual-state-batch3.test.cjs
-          git commit -m "refactor(ui): migrate dynamic visual states batch 3"
-          git push origin HEAD:${{ github.head_ref }}
+          if ! git diff --cached --quiet; then
+            git commit -m "refactor(ui): migrate dynamic visual states batch 3"
+            git push origin HEAD:hardening/visual-state-manager-batch3
+          fi
