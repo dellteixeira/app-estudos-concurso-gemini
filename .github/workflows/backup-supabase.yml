@@ -191,11 +191,25 @@ jobs:
           if-no-files-found: error
 
       - name: Final safety assertion
+        env:
+          ARCHIVE: ${{ steps.package.outputs.archive }}
+          ENCRYPTED: ${{ steps.package.outputs.encrypted }}
         shell: bash
         run: |
           set -euo pipefail
-          if find . -maxdepth 3 \( -name '*.sql' -o -name 'supabase-backup-*.tar.gz' \) -print -quit | grep -q .; then
-            echo "::error::Backup plaintext permaneceu no runner."
+
+          # Não escaneamos o repositório inteiro por *.sql porque as migrations
+          # versionadas do Supabase são SQL legítimo e não são dumps do backup.
+          if [ -e "backups" ]; then
+            echo "::error::Diretório temporário de backup permaneceu no runner."
             exit 1
           fi
-          echo "OK: somente artefatos criptografados permanecem após o backup."
+
+          if [ -e "$ARCHIVE" ]; then
+            echo "::error::Pacote plaintext do backup permaneceu no runner: $ARCHIVE"
+            exit 1
+          fi
+
+          test -s "dist-backup/$ENCRYPTED"
+          test -s "dist-backup/$ENCRYPTED.sha256"
+          echo "OK: somente artefatos criptografados do backup permanecem após a execução."
