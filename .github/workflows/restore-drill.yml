@@ -1,0 +1,212 @@
+name: Backup Restore Readiness Drill
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 1 * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-restore-readiness-drill
+  cancel-in-progress: false
+
+jobs:
+  restore-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Initialize drill report
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p safe-report restore-drill
+          {
+            echo "restore_readiness_drill=started"
+            echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+          } > safe-report/restore-drill-report.txt
+
+      - name: Validate restore credentials
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_BACKUP_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ${#BACKUP_ENCRYPTION_PASSPHRASE} -ge 24 || { echo "::error::Passphrase de backup ausente ou curta."; exit 1; }
+          for value in "$R2_ACCOUNT_ID" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" "$R2_BUCKET"; do
+            test -n "$value" || { echo "::error::Credencial R2 obrigatória ausente."; exit 1; }
+          done
+          echo "credentials=present" >> safe-report/restore-drill-report.txt
+
+      - name: Locate newest encrypted R2 backup
+        id: latest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_BACKUP_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3api list-objects-v2 \
+            --bucket "$R2_BUCKET" \
+            --prefix "supabase/" \
+            --endpoint-url "$endpoint" \
+            --output json > /tmp/r2-backups.json
+
+          python3 <<'PY'
+          import json, os, re
+          with open('/tmp/r2-backups.json', encoding='utf-8') as fh:
+              data = json.load(fh)
+          candidates = [
+              item for item in data.get('Contents', [])
+              if str(item.get('Key', '')).endswith('.tar.gz.gpg')
+          ]
+          if not candidates:
+              raise SystemExit('Nenhum backup .tar.gz.gpg encontrado no prefixo supabase/')
+          latest = max(candidates, key=lambda item: item.get('LastModified', ''))
+          key = str(latest['Key'])
+          pattern = r'^supabase/\d{4}/\d{2}/\d{2}/supabase-backup-[A-Za-z0-9T_-]+\.tar\.gz\.gpg$'
+          if not re.match(pattern, key):
+              raise SystemExit(f'Chave de backup fora do padrão esperado: {key!r}')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
+              out.write(f'key={key}\n')
+          print(f'Backup selecionado: {key}')
+          PY
+
+          echo "r2_key=${{ steps.latest.outputs.key }}" >> safe-report/restore-drill-report.txt
+
+      - name: Download encrypted backup and checksum
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_BACKUP_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+          BACKUP_KEY: ${{ steps.latest.outputs.key }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp "s3://${R2_BUCKET}/${BACKUP_KEY}" restore-drill/backup.gpg \
+            --endpoint-url "$endpoint" --only-show-errors
+          aws s3 cp "s3://${R2_BUCKET}/${BACKUP_KEY}.sha256" restore-drill/backup.gpg.sha256 \
+            --endpoint-url "$endpoint" --only-show-errors
+          test -s restore-drill/backup.gpg
+          test -s restore-drill/backup.gpg.sha256
+
+      - name: Verify encrypted object checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(awk 'NR==1 {print $1}' restore-drill/backup.gpg.sha256)"
+          actual="$(sha256sum restore-drill/backup.gpg | awk '{print $1}')"
+          [[ "$expected" =~ ^[0-9a-fA-F]{64}$ ]] || { echo "::error::Checksum externo inválido."; exit 1; }
+          [ "${expected,,}" = "${actual,,}" ] || { echo "::error::Checksum do objeto criptografado não confere."; exit 1; }
+          echo "encrypted_checksum=verified" >> safe-report/restore-drill-report.txt
+          echo "encrypted_sha256=${actual,,}" >> safe-report/restore-drill-report.txt
+
+      - name: Decrypt backup inside ephemeral runner
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gpg --batch --yes \
+            --pinentry-mode loopback \
+            --passphrase "$BACKUP_ENCRYPTION_PASSPHRASE" \
+            --output restore-drill/backup.tar.gz \
+            --decrypt restore-drill/backup.gpg
+          test -s restore-drill/backup.tar.gz
+          echo "decryption=verified" >> safe-report/restore-drill-report.txt
+
+      - name: Validate archive paths and extract
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p restore-drill/extracted
+          python3 <<'PY'
+          import pathlib, tarfile
+          archive = 'restore-drill/backup.tar.gz'
+          target = 'restore-drill/extracted'
+          with tarfile.open(archive, 'r:gz') as tf:
+              members = tf.getmembers()
+              if not members:
+                  raise SystemExit('Arquivo de backup está vazio.')
+              for member in members:
+                  path = pathlib.PurePosixPath(member.name)
+                  if path.is_absolute() or '..' in path.parts or member.issym() or member.islnk():
+                      raise SystemExit(f'Entrada insegura no arquivo: {member.name!r}')
+              tf.extractall(target, members=members, filter='data')
+          PY
+
+      - name: Verify internal backup integrity and restore payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="restore-drill/extracted"
+          test -s "$root/backups/database/roles.sql"
+          test -s "$root/backups/database/schema.sql"
+          test -s "$root/backups/database/data.sql"
+          test -s "$root/backups/manifest.sha256"
+          test -s "$root/backups/backup-info.txt"
+
+          legacy_self_manifest=false
+          cd "$root"
+          if grep -Eq '[[:space:]]+backups/manifest\.sha256$' backups/manifest.sha256; then
+            legacy_self_manifest=true
+            grep -Ev '[[:space:]]+backups/manifest\.sha256$' backups/manifest.sha256 > /tmp/restore-manifest.sha256
+            test -s /tmp/restore-manifest.sha256
+            sha256sum -c /tmp/restore-manifest.sha256
+          else
+            sha256sum -c backups/manifest.sha256
+          fi
+          cd - >/dev/null
+
+          roles_bytes="$(stat -c%s "$root/backups/database/roles.sql")"
+          schema_bytes="$(stat -c%s "$root/backups/database/schema.sql")"
+          data_bytes="$(stat -c%s "$root/backups/database/data.sql")"
+          storage_files="$(find "$root/backups/storage" -type f 2>/dev/null | wc -l | tr -d ' ')"
+          manifest_entries="$(grep -Ev '[[:space:]]+backups/manifest\.sha256$' "$root/backups/manifest.sha256" | grep -c . || true)"
+
+          {
+            echo "internal_manifest=verified"
+            echo "legacy_self_manifest=$legacy_self_manifest"
+            echo "manifest_entries=$manifest_entries"
+            echo "roles_sql_bytes=$roles_bytes"
+            echo "schema_sql_bytes=$schema_bytes"
+            echo "data_sql_bytes=$data_bytes"
+            echo "storage_files=$storage_files"
+            echo "restore_payload=readable"
+            echo "production_database_mutated=false"
+            echo "completed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "restore_readiness_drill=passed"
+          } >> safe-report/restore-drill-report.txt
+
+      - name: Cleanup all downloaded and decrypted backup material
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf restore-drill
+          rm -f /tmp/r2-backups.json /tmp/restore-manifest.sha256
+          test ! -e restore-drill
+
+      - name: Upload report only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backup-restore-readiness-${{ github.run_id }}
+          path: safe-report/restore-drill-report.txt
+          if-no-files-found: error
+          retention-days: 30
