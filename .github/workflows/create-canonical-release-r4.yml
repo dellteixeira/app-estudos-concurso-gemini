@@ -1,0 +1,78 @@
+name: Create Canonical Release R4
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  canonical-release:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'ops/create-canonical-release-2026-08-23-r4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TARGET_SHA: d020f4a5f18d48be8230f5f35b07f34bb60c254c
+      TAG: v10.26.0-canonical-2026-08-23-r4
+      ASSET: Estudo-Adaptativo-v10.26.0-canonical-2026-08-23-r4.zip
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate canonical target
+        run: |
+          set -euo pipefail
+          git cat-file -e "${TARGET_SHA}^{commit}"
+          echo "Canonical source: ${TARGET_SHA}"
+
+      - name: Build exact canonical ZIP
+        run: |
+          set -euo pipefail
+          git archive \
+            --format=zip \
+            --prefix="Estudo-Adaptativo-v10.26.0-canonical-2026-08-23-r4/" \
+            -o "${ASSET}" \
+            "${TARGET_SHA}"
+          sha256sum "${ASSET}" | tee SHA256SUMS.txt
+
+      - name: Prepare release notes
+        run: |
+          cat > RELEASE_NOTES.md <<EOF
+          # Snapshot canônico R4
+
+          Ponto de recuperação canônico do Estudo Adaptativo em 23/08/2026.
+
+          **Commit exato:** \`${TARGET_SHA}\`
+
+          Este snapshot inclui todas as alterações de produção até o PR #174, incluindo o sistema responsivo, modularização da interface, melhorias de performance/observabilidade, Biblioteca Offline Gerenciada e a versão compacta dos cards de Retenção e Diagnóstico.
+
+          O ZIP foi produzido diretamente do commit acima com \`git archive\`. O arquivo \`SHA256SUMS.txt\` permite verificar sua integridade.
+          EOF
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${ASSET}" SHA256SUMS.txt --clobber
+          else
+            gh release create "${TAG}" \
+              "${ASSET}" SHA256SUMS.txt \
+              --target "${TARGET_SHA}" \
+              --title "Estudo Adaptativo v10.26.0 — Canonical Snapshot R4" \
+              --notes-file RELEASE_NOTES.md
+          fi
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-v10.26.0-r4
+          path: |
+            ${{ env.ASSET }}
+            SHA256SUMS.txt
+          if-no-files-found: error
