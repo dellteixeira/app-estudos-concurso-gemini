@@ -45,7 +45,7 @@
                 <span>Atualize para usar a versão mais recente do aplicativo.</span>
             </div>
             <div class="pwa-update-actions">
-                <button class="btn btn-primary btn-sm" type="button" onclick="applyPwaUpdate()">Atualizar agora</button>
+                <button class="btn btn-primary btn-sm" type="button" data-action="pwa-update">Atualizar agora</button>
             </div>
         </div>
     </div>
@@ -57,8 +57,8 @@
                 <span id="pwaInstallText">Instale o app para abrir em tela cheia e facilitar o uso offline.</span>
             </div>
             <div class="pwa-install-actions">
-                <button id="pwaInstallButton" class="btn btn-primary btn-sm" type="button" onclick="installPwaApp()">Instalar</button>
-                <button class="btn btn-secondary btn-sm" type="button" onclick="dismissPwaBanner()">Agora não</button>
+                <button id="pwaInstallButton" class="btn btn-primary btn-sm" type="button" data-action="pwa-install">Instalar</button>
+                <button class="btn btn-secondary btn-sm" type="button" data-action="pwa-dismiss">Agora não</button>
             </div>
         </div>
     </div>
@@ -75,8 +75,8 @@
                 <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" style="width:100%;" required>
             </div>
             <div style="display:flex; gap:0.5rem;">
-                <button class="btn btn-primary" style="flex:1;" onclick="handleLogin()">Entrar</button>
-                <button class="btn btn-secondary" style="flex:1;" onclick="handleSignUp()">Cadastrar</button>
+                <button class="btn btn-primary" style="flex:1;" data-action="auth-login">Entrar</button>
+                <button class="btn btn-secondary" style="flex:1;" data-action="auth-signup">Cadastrar</button>
             </div>
             <div id="authStatusMessage" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.82rem; line-height:1.4; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.28); color:#86efac;"></div>
         </div>
@@ -99,33 +99,33 @@
                 <span id="syncStatusText">Verificando…</span>
                 <span id="syncStatusLast" class="sync-last"></span>
             </div>
-            <button class="mobile-tools-toggle" type="button" onclick="toggleModernTools()" aria-label="Abrir ferramentas">Menu</button>
+            <button class="mobile-tools-toggle" type="button" data-action="toggle-modern-tools" aria-label="Abrir ferramentas">Menu</button>
             
             <div class="header-control-stack">
                 <div class="concurso-selector-bar">
-                    <select id="concursoSelect" onchange="changeConcurso(this.value)" aria-label="Selecionar concurso"></select>
-                    <button class="btn btn-primary btn-sm" onclick="openModalNovoConcurso()">Novo</button>
-                    <button id="btnRenomearConcurso" class="btn btn-warning btn-sm" onclick="renomearConcursoAtual()">Renomear</button>
-                    <button id="btnExcluirConcurso" class="btn btn-danger btn-sm" onclick="removerConcursoAtual(this)">Excluir</button>
+                    <select id="concursoSelect" data-change-action="change-concurso" aria-label="Selecionar concurso"></select>
+                    <button class="btn btn-primary btn-sm" data-action="new-concurso">Novo</button>
+                    <button id="btnRenomearConcurso" class="btn btn-warning btn-sm" data-action="rename-concurso">Renomear</button>
+                    <button id="btnExcluirConcurso" class="btn btn-danger btn-sm" data-action="delete-concurso">Excluir</button>
                     
                     <div class="header-utility-cluster" aria-label="Conta, aparência e pesquisa">
                         <div class="header-account-actions">
-                            <button class="btn btn-secondary btn-sm btn-account-header" type="button" onclick="openAccountModal()" title="Abrir dados e segurança da conta">Conta</button>
-                            <button class="btn btn-secondary btn-sm btn-theme-header" type="button" onclick="toggleDarkMode()" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
-                            <button class="btn btn-secondary btn-sm btn-logout-header" type="button" onclick="handleLogout()" title="Sair da conta">Sair</button>
+                            <button class="btn btn-secondary btn-sm btn-account-header" type="button" data-action="open-account" title="Abrir dados e segurança da conta">Conta</button>
+                            <button class="btn btn-secondary btn-sm btn-theme-header" type="button" data-action="toggle-theme" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
+                            <button class="btn btn-secondary btn-sm btn-logout-header" type="button" data-action="logout" title="Sair da conta">Sair</button>
                         </div>
-                        <button class="btn btn-secondary btn-sm btn-search-header" type="button" onclick="openGlobalSearchModal()" title="Pesquisar matéria, assunto, flashcard ou anotação">
+                        <button class="btn btn-secondary btn-sm btn-search-header" type="button" data-action="global-search" title="Pesquisar matéria, assunto, flashcard ou anotação">
                             <span class="btn-search-header-icon" aria-hidden="true">⌕</span>
                             <span>Pesquisar</span>
                         </button>
                     </div>
                 </div>
                 <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
-                    <button class="tab-btn active" onclick="switchTab('tab-edital', this)">Edital Verticalizado</button>
-                    <button class="tab-btn" onclick="switchTab('tab-calendario', this)">Cronograma Mensal</button>
-                    <button class="tab-btn" onclick="switchTab('tab-biblioteca', this)">Biblioteca</button>
-                    <button class="tab-btn" onclick="switchTab('tab-flashcards', this)">Flashcards</button>
-                    <button class="tab-btn" onclick="switchTab('tab-anotacoes', this)">Anotações</button>
+                    <button class="tab-btn active" data-action="switch-tab" data-tab="tab-edital">Edital Verticalizado</button>
+                    <button class="tab-btn" data-action="switch-tab" data-tab="tab-calendario">Cronograma Mensal</button>
+                    <button class="tab-btn" data-action="switch-tab" data-tab="tab-biblioteca">Biblioteca</button>
+                    <button class="tab-btn" data-action="switch-tab" data-tab="tab-flashcards">Flashcards</button>
+                    <button class="tab-btn" data-action="switch-tab" data-tab="tab-anotacoes">Anotações</button>
                 </div>
             </div>
         </header>
@@ -146,7 +146,7 @@
                     <h3>Retenção e Diagnóstico</h3>
                     <p class="retention-diagnostic-subtitle">Memória estimada a partir das sessões, revisões e desempenho em questões.</p>
                 </div>
-                <button class="btn btn-secondary btn-sm retention-study-now-v1072" type="button" onclick="openOpportunityStudyModal()"><span class="retention-study-now-icon" aria-hidden="true">▣</span>Estudar agora</button>
+                <button class="btn btn-secondary btn-sm retention-study-now-v1072" type="button" data-action="opportunity-study"><span class="retention-study-now-icon" aria-hidden="true">▣</span>Estudar agora</button>
             </div>
             <div class="rd-center-v1077">
                 <div id="retentionExamPhase" class="rd-exam-banner-v1077" aria-live="polite">
@@ -155,7 +155,7 @@
                         <strong>Sem data de prova definida</strong>
                         <span>Defina a data da prova para ativar a estratégia progressiva.</span>
                     </span>
-                    <button class="rd-exam-action-v1077" type="button" onclick="editarDataProva()">Definir data da prova</button>
+                    <button class="rd-exam-action-v1077" type="button" data-action="edit-exam-date">Definir data da prova</button>
                 </div>
 
                 <div class="rd-metrics-v1077">
@@ -165,19 +165,19 @@
                         <strong id="retentionDiagAverage">—</strong>
                         <span class="rd-metric-progress-v1077" aria-hidden="true"><span id="retentionDiagAverageBar"></span></span>
                     </div>
-                    <button class="rd-metric-card-v1077 rd-metric-action-v1077 rd-metric-risk-v1077" type="button" onclick="openRetentionMetricDetails('risk')" aria-label="Abrir assuntos em risco">
+                    <button class="rd-metric-card-v1077 rd-metric-action-v1077 rd-metric-risk-v1077" type="button" data-action="retention-details" data-metric="risk" aria-label="Abrir assuntos em risco">
                         <span class="rd-metric-icon-v1077" aria-hidden="true">△</span>
                         <span class="rd-metric-label-v1077">Assuntos em risco</span>
                         <strong id="retentionDiagRisk">0</strong>
                         <span class="rd-metric-progress-v1077" aria-hidden="true"><span id="retentionDiagRiskBar"></span></span>
                     </button>
-                    <button class="rd-metric-card-v1077 rd-metric-action-v1077 rd-metric-overdue-v1077" type="button" onclick="openRetentionMetricDetails('overdue')" aria-label="Abrir revisões vencidas">
+                    <button class="rd-metric-card-v1077 rd-metric-action-v1077 rd-metric-overdue-v1077" type="button" data-action="retention-details" data-metric="overdue" aria-label="Abrir revisões vencidas">
                         <span class="rd-metric-icon-v1077" aria-hidden="true">◷</span>
                         <span class="rd-metric-label-v1077">Revisões vencidas</span>
                         <strong id="retentionDiagOverdue">0</strong>
                         <span class="rd-metric-progress-v1077" aria-hidden="true"><span id="retentionDiagOverdueBar"></span></span>
                     </button>
-                    <button class="rd-metric-card-v1077 rd-metric-action-v1077 rd-metric-mastered-v1077" type="button" onclick="openRetentionMetricDetails('mastered')" aria-label="Abrir assuntos dominados">
+                    <button class="rd-metric-card-v1077 rd-metric-action-v1077 rd-metric-mastered-v1077" type="button" data-action="retention-details" data-metric="mastered" aria-label="Abrir assuntos dominados">
                         <span class="rd-metric-icon-v1077" aria-hidden="true">✓</span>
                         <span class="rd-metric-label-v1077">Assuntos dominados</span>
                         <strong id="retentionDiagMastered">0</strong>
@@ -198,7 +198,7 @@
                     </div>
                 </div>
                 <div id="retentionDiagnosticRiskList" class="retention-risk-list retention-risk-list-v1072"></div>
-                <button id="retentionMoreButton" class="retention-more-button" type="button" onclick="openRetentionMoreModal()" aria-label="Ver mais pontos críticos" title="Ver mais pontos críticos" hidden>+</button>
+                <button id="retentionMoreButton" class="retention-more-button" type="button" data-action="retention-more" aria-label="Ver mais pontos críticos" title="Ver mais pontos críticos" hidden>+</button>
             </div>
         </section>
 
@@ -503,7 +503,7 @@
             <button class="mobile-nav-btn" type="button" data-tab="tab-biblioteca" onclick="mobileSwitchTab('tab-biblioteca', this)"><span>Biblioteca</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" onclick="mobileSwitchTab('tab-flashcards', this)"><span>Flashcards</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" onclick="mobileSwitchTab('tab-anotacoes', this)"><span>Anotações</span></button>
-            <button class="mobile-nav-btn" type="button" onclick="toggleModernTools()"><span>Mais</span></button>
+            <button class="mobile-nav-btn" type="button" data-action="toggle-modern-tools"><span>Mais</span></button>
             <button id="contextFab" class="mobile-nav-btn mobile-context-action" type="button" onclick="handleContextFab()" aria-label="Adicionar conteúdo"><span>Novo</span></button>
         </nav>
     </div>
