@@ -1,5 +1,0 @@
-225: --timer-progress:0; | <div class="pomodoro-ring" id="pomodoroRing" style="--timer-progress:0;">
-488: display: none; | <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" data-inline-click="ih-021" style="display: none;">
-705: display:none; | <div id="appPromptHelp" class="account-helper" style="display:none;"></div>
-1354: font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px; | <p style="font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;" id="studyCardLabel">Pergunta (Clique para virar)</p>
-1380: flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15); | <div id="editalViewerContainer" style="flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
