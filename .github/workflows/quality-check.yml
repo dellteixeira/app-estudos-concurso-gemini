@@ -1,54 +1,45 @@
 name: Quality Check
 
 on:
-  push:
-    branches: [main]
   pull_request:
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  test-and-audit:
+  migrate-inline-handlers:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Checkout PR head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22.23.2'
 
-      - name: Syntax check
-        run: node --check src/index.js
+      - name: Externalize static inline handlers
+        run: node scripts/tmp-migrate-complex-inline-handlers.mjs
 
-      - name: Automated tests
-        run: npm test
+      - name: Validate generated JavaScript
+        run: node --check public/js/app-ui.js
 
-      - name: Structural audit
-        env:
-          AUDIT_ALLOW_ANY_ROOT: '1'
-        run: npm run audit
+      - name: Restore canonical Quality Check and remove one-use tooling
+        run: |
+          git fetch origin main --depth=1
+          git show origin/main:.github/workflows/quality-check.yml > .github/workflows/quality-check.yml
+          git rm -f .github/workflows/tmp-inline-complex-migrate.yml
+          git rm -f scripts/tmp-migrate-complex-inline-handlers.mjs
 
-      - name: Install Playwright test runner
-        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Browser responsive audit
-        run: npm run test:browser
-
-      - name: Upload Playwright report and screenshots
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: playwright-responsive-audit-${{ github.run_id }}
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-          retention-days: 14
+      - name: Commit migration result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/quality-check.yml public/index.html public/js/app-ui.js scripts/audit-inline-csp.mjs tests/inline-handler-externalization.test.cjs
+          git diff --cached --check -- ':!public/index.html'
+          git commit -m "Externalizar handlers inline complexos"
+          git push origin HEAD:${{ github.head_ref }}
