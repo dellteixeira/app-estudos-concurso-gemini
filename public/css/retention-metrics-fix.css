@@ -1,0 +1,90 @@
+/* ================================================================
+   RETENTION METRICS — ADAPTIVE LABEL LAYOUT
+   Keeps the diagnostic cards readable at narrow widths.
+   Icon stays centered above the label; labels wrap naturally.
+   ================================================================ */
+
+.rd-metrics-v1077 {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)) !important;
+    gap: clamp(8px, 1vw, 12px) !important;
+    width: 100%;
+    min-width: 0;
+}
+
+.rd-metrics-v1077 .rd-metric-card-v1077 {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    min-height: 196px;
+    padding: clamp(12px, 1.4vw, 16px) !important;
+    overflow: visible !important;
+    box-sizing: border-box;
+}
+
+.rd-metrics-v1077 .rd-metric-icon-v1077 {
+    order: 1;
+    align-self: center !important;
+    flex: 0 0 auto;
+    margin: 0 auto 2px !important;
+}
+
+.rd-metrics-v1077 .rd-metric-label-v1077 {
+    order: 2;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 2.4em;
+    margin: 0 !important;
+    padding: 0 2px;
+    text-align: center !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+    line-height: 1.2 !important;
+    font-size: clamp(.72rem, .68rem + .18vw, .84rem) !important;
+}
+
+.rd-metrics-v1077 .rd-metric-card-v1077 > strong {
+    order: 3;
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.rd-metrics-v1077 .rd-metric-progress-v1077 {
+    order: 4;
+    width: 100% !important;
+    min-width: 0;
+}
+
+@media (max-width: 600px) {
+    .rd-metrics-v1077 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .rd-metrics-v1077 .rd-metric-card-v1077 {
+        min-height: 184px;
+        padding: 12px 10px !important;
+    }
+
+    .rd-metrics-v1077 .rd-metric-label-v1077 {
+        min-height: 2.5em;
+        font-size: clamp(.70rem, 3.1vw, .80rem) !important;
+    }
+}
+
+@media (max-width: 340px) {
+    .rd-metrics-v1077 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .rd-metrics-v1077 .rd-metric-card-v1077 {
+        min-height: 176px;
+    }
+}
