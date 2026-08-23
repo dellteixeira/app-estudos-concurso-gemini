@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('header controls stay on one row with complete labels', () => {
-  const css = read('public/css/ui-text-safety.css');
+  const css = read('public/css/canonical-ui.css');
   assert.match(css, /\.concurso-selector-bar[\s\S]*display:\s*flex\s*!important/);
   assert.match(css, /\.concurso-selector-bar[\s\S]*flex-wrap:\s*nowrap\s*!important/);
   assert.match(css, /\.concurso-selector-bar[\s\S]*overflow-x:\s*auto\s*!important/);
@@ -19,7 +19,7 @@ test('header controls stay on one row with complete labels', () => {
 });
 
 test('retention metrics are compact and remain four-across outside real mobile', () => {
-  const css = read('public/css/ui-text-safety.css');
+  const css = read('public/css/canonical-ui.css');
   assert.match(css, /#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*grid-auto-rows:\s*142px\s*!important/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077[\s\S]*height:\s*142px\s*!important/);
@@ -31,12 +31,12 @@ test('retention metrics are compact and remain four-across outside real mobile',
   assert.doesNotMatch(css, /@container retentionMetrics/);
 });
 
-test('text-safety styles are cache-busted and available offline', () => {
+test('canonical UI styles are cache-busted and available offline', () => {
   const nav = read('public/js/ui/navigation.js');
   const sw = read('public/sw.js');
-  assert.match(nav, /retention-metrics-fix\.css\?v=20260823-final3/);
-  assert.match(nav, /ui-text-safety\.css\?v=20260823-final3/);
-  assert.match(nav, /data-ui-text-safety|dataset\.uiTextSafety/);
-  assert.match(sw, /\.\/css\/ui-text-safety\.css/);
-  assert.match(sw, /\/css\/ui-text-safety\.css/);
+  assert.match(nav, /canonical-ui\.css\?v=20260823-phase5/);
+  assert.match(nav, /data-canonical-ui|dataset\.canonicalUi/);
+  assert.doesNotMatch(nav, /retention-metrics-fix|ui-text-safety|accessibility-baseline/);
+  assert.match(sw, /\.\/css\/canonical-ui\.css/);
+  assert.match(sw, /\/css\/canonical-ui\.css/);
 });
