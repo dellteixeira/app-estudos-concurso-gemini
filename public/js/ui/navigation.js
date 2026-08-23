@@ -1,6 +1,16 @@
 (function (global) {
     'use strict';
 
+    function ensurePerformanceLoader() {
+        if (global.AppPerformanceLoader || document.querySelector('script[data-performance-loader]')) return;
+        const script = document.createElement('script');
+        script.src = './js/performance-loader.js';
+        script.defer = true;
+        script.dataset.performanceLoader = '1';
+        script.onerror = () => console.warn('Não foi possível carregar o otimizador de performance.');
+        document.head.appendChild(script);
+    }
+
     function findDesktopTabButton(tabId) {
         return [...document.querySelectorAll('.nav-tabs .tab-btn')]
             .find(btn => (btn.getAttribute('onclick') || '').includes(`'${tabId}'`));
@@ -36,4 +46,12 @@
     // Compatibility API used by existing inline handlers and legacy modules.
     global.findDesktopTabButton = findDesktopTabButton;
     global.mobileSwitchTab = mobileSwitchTab;
+
+    // Performance extras are deliberately non-critical: the app remains fully
+    // functional if this enhancement cannot be loaded.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensurePerformanceLoader, { once: true });
+    } else {
+        ensurePerformanceLoader();
+    }
 })(window);
