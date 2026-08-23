@@ -11,7 +11,7 @@ test('batch3 removes seven static inline visual states',()=>{
   const ids=['authStatusMessage','superUserBadge','customDailyHoursPanel','notaTituloCustomGroup','btnDownloadEdital','btnRemoveEdital','modalPdfNoteEditor'];
   assert.equal((html.match(/\sstyle\s*=\s*["']/gi)||[]).length,75);
   for(const id of ids){
-    const tag=html.match(new RegExp(`<[^>]+\bid=["']${id}["'][^>]*>`,`i`))?.[0]||'';
+    const tag=html.match(new RegExp(`<[^>]+id=["']${id}["'][^>]*>`,`i`))?.[0]||'';
     assert.ok(tag,`missing #${id}`);
     assert.match(tag,/\shidden(?:\s|>|=)/i);
     assert.doesNotMatch(tag,/\sstyle\s*=/i);
