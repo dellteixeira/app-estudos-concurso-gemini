@@ -31,9 +31,9 @@ else ok('index.html sem blocos script inline executáveis');
 const inlineHandlers = [...html.matchAll(/\son[a-z]+\s*=\s*["'][^"']*["']/gi)];
 const inlineStyles = [...html.matchAll(/\sstyle\s*=\s*["'][^"']*["']/gi)];
 
-// Baseline congelado em 2026-08-23. A partir daqui a dívida só pode diminuir.
+// Baseline endurecido em 2026-08-23. A partir daqui a dívida só pode diminuir.
 const HANDLER_BUDGET = 0;
-const STYLE_BUDGET = 124;
+const STYLE_BUDGET = 82;
 if (inlineHandlers.length > HANDLER_BUDGET) fail(`handlers inline=${inlineHandlers.length} excedem baseline=${HANDLER_BUDGET}`);
 else ok(`handlers inline congelados/reduzidos: ${inlineHandlers.length}/${HANDLER_BUDGET}`);
 if (inlineStyles.length > STYLE_BUDGET) fail(`style= inline=${inlineStyles.length} excedem baseline=${STYLE_BUDGET}`);
