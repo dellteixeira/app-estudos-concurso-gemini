@@ -17,47 +17,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Audit inline visibility state candidates
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          html=Path('public/index.html').read_text(encoding='utf-8')
-          print('=== INLINE STYLE ATTRIBUTES CONTAINING display/visibility ===')
-          tag_re=re.compile(r'<([A-Za-z][A-Za-z0-9:-]*)([^<>]*?)\sstyle="([^"]*)"([^<>]*?)>',re.S)
-          ids=[]
-          for m in tag_re.finditer(html):
-              tag,before,style,after=m.groups()
-              if not re.search(r'(^|;)\s*(display|visibility)\s*:',style,re.I):
-                  continue
-              attrs=before+after
-              idm=re.search(r'\bid="([^"]+)"',attrs)
-              cls=re.search(r'\bclass="([^"]+)"',attrs)
-              ident=idm.group(1) if idm else '(no-id)'
-              ids.append(ident)
-              print(f'{ident}\t<{tag}>\tclass={cls.group(1) if cls else ""}\tstyle={style}')
-
-          print('\n=== JS REFERENCES TO style.display / style.visibility / hidden ===')
-          for p in sorted(Path('public/js').rglob('*.js')):
-              text=p.read_text(encoding='utf-8',errors='replace')
-              for n,line in enumerate(text.splitlines(),1):
-                  if re.search(r'\.style\.(display|visibility)\b|\.hidden\b|setAttribute\(["\']hidden|removeAttribute\(["\']hidden',line):
-                      print(f'{p}:{n}: {line.strip()}')
-
-          print('\n=== CANDIDATE ID REFERENCES ===')
-          for ident in ids:
-              if ident == '(no-id)':
-                  continue
-              needle=re.compile(re.escape(ident))
-              for p in sorted(Path('public/js').rglob('*.js')):
-                  text=p.read_text(encoding='utf-8',errors='replace')
-                  for n,line in enumerate(text.splitlines(),1):
-                      if needle.search(line):
-                          print(f'{ident}\t{p}:{n}: {line.strip()}')
-          PY
-
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
