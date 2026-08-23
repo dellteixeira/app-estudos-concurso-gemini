@@ -1,6 +1,14 @@
         // =========================================================
         // UI MODERNA 2026 — BUSCA, RESUMO, NAVEGAÇÃO MOBILE E FAB
         // =========================================================
+        function setVisualState(element, visible) {
+            if (!element) return;
+            const isVisible = Boolean(visible);
+            element.classList.toggle('is-open', isVisible);
+            element.hidden = !isVisible;
+            element.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        }
+
         function toggleModernTools() {
             const bar = document.querySelector('.action-bar');
             if (!bar) return;
@@ -34,7 +42,7 @@
             if (help) help.textContent = isMateria ? 'Digite o nome da matéria.' : 'Digite o nome do assunto.';
             editor.value = original.value || '';
             editor.placeholder = isMateria ? 'Ex.: Direito Administrativo' : 'Ex.: Atos Administrativos';
-            modal.style.display = 'flex';
+            setVisualState(modal, true);
             setTimeout(() => { editor.focus(); editor.select(); }, 50);
         }
 
@@ -49,7 +57,7 @@
                     original.dispatchEvent(new Event('change', { bubbles:true }));
                 }
             }
-            if (modal) modal.style.display = 'none';
+            setVisualState(modal, false);
             activeMobileEditalFieldId = null;
         }
 
@@ -63,7 +71,7 @@
             const input = document.getElementById('globalStudySearch');
             const results = document.getElementById('globalSearchResults');
             if (!modal) return;
-            modal.style.display = 'flex';
+            setVisualState(modal, true);
             if (results) {
                 results.innerHTML = '<div class="global-search-empty">Digite ao menos 2 caracteres para pesquisar.</div>';
                 results.classList.add('visible');
@@ -79,7 +87,7 @@
         function closeGlobalSearchModal() {
             const modal = document.getElementById('modalGlobalSearch');
             const results = document.getElementById('globalSearchResults');
-            if (modal) modal.style.display = 'none';
+            setVisualState(modal, false);
             if (results) results.classList.remove('visible');
         }
 
@@ -250,11 +258,11 @@
             const perf = plan.accuracy == null ? '' : ` · Questões ${Math.round(plan.accuracy)}%`;
             if(meta) meta.textContent=`Retenção ${Math.round(plan.retention)}%${perf}. ${plan.reason}`;
             if(steps) steps.innerHTML=plan.layers.map(layer=>`<div class="layered-review-step ${layer.layer===plan.recommendedLayer?'recommended':''}"><div class="layered-review-number">${layer.layer}</div><div class="layered-review-content"><strong>${escapeHtml(layer.label)}${layer.layer===plan.recommendedLayer?' · recomendada':''}</strong><span>${escapeHtml(layer.description)} · ${layer.minutes} min sugeridos</span></div><button class="btn btn-secondary btn-sm" type="button" data-dynamic-action="start-layered-review" data-layer="${layer.layer}">Iniciar</button></div>`).join('');
-            const modal=document.getElementById('modalLayeredReview'); if(modal) modal.style.display='flex';
+            const modal=document.getElementById('modalLayeredReview'); setVisualState(modal, true);
         }
 
         function closeLayeredReviewModal() {
-            const modal=document.getElementById('modalLayeredReview'); if(modal) modal.style.display='none';
+            const modal=document.getElementById('modalLayeredReview'); setVisualState(modal, false);
             pendingLayeredReview=null;
         }
 
@@ -268,7 +276,7 @@
             const item=pending.item;
             const def=pending.plan.layers.find(x=>x.layer===Number(layer)); if(!def) return;
             const base={kind:'study',materia:item.materia,assunto:item.assunto,itemId:item.id,isRevision:true,minutes:def.minutes,source:'layered_review',layer:Number(layer)};
-            const modal=document.getElementById('modalLayeredReview'); if(modal) modal.style.display='none';
+            const modal=document.getElementById('modalLayeredReview'); setVisualState(modal, false);
             pendingLayeredReview=null;
             if(Number(layer)===1) return openActiveRecallGuide({...base,activityType:'revisao_ativa',method:'revisao_ativa',methodLabel:'Recuperação mental',recoveryMethod:'revisao_ativa'});
             if(Number(layer)===2) return launchOpportunityPomodoro({...base,activityType:'teoria',method:'revisao_curta',methodLabel:'Revisão curta',recoveryMethod:'revisao_curta'});
@@ -355,12 +363,12 @@
             title.textContent=config.title;
             subtitle.textContent=config.subtitle;
             list.innerHTML=rows.length ? rows.map((row,index)=>renderRetentionMetricDetailRow(row,index,kind)).join('') : '<div class="retention-empty">Nenhum conteúdo nesta categoria no momento.</div>';
-            modal.style.display='flex';
+            setVisualState(modal, true);
         }
 
         function closeRetentionMetricDetails() {
             const modal=document.getElementById('modalRetentionMetricDetails');
-            if(modal) modal.style.display='none';
+            setVisualState(modal, false);
         }
 
         function renderRetentionDiagnostics() {
@@ -434,12 +442,12 @@
             if(!modal || !list) return;
             const rows=retentionDiagnosticRows.slice(2);
             list.innerHTML=rows.length ? rows.map((row,offset)=>renderRetentionRiskCard(row,offset+2)).join('') : '<div class="retention-empty">Não há outros pontos críticos.</div>';
-            modal.style.display='flex';
+            setVisualState(modal, true);
         }
 
         function closeRetentionMoreModal() {
             const modal=document.getElementById('modalRetentionMore');
-            if(modal) modal.style.display='none';
+            setVisualState(modal, false);
         }
 
         function startRetentionDiagnosticTopic(index) {
