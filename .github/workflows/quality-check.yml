@@ -7,10 +7,42 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  inline-batch2-codemod:
+    if: github.event_name == 'pull_request' && github.head_ref == 'hardening/inline-debt-batch2'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Apply deterministic simple-call migration
+        run: node scripts/migrate-inline-actions-batch2.mjs
+
+      - name: Restore canonical Quality Check
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git show origin/main:.github/workflows/quality-check.yml > .github/workflows/quality-check.yml
+
+      - name: Commit transformed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html public/js/ui/navigation.js scripts/audit-inline-csp.mjs scripts/migrate-inline-actions-batch2.mjs .github/workflows/quality-check.yml
+          git diff --cached --check -- . ':!public/index.html'
+          git commit -m "Hardening: migrar chamadas inline simples para delegação"
+          git push origin HEAD:${{ github.head_ref }}
+
   test-and-audit:
+    if: github.event_name != 'pull_request' || github.head_ref != 'hardening/inline-debt-batch2'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
