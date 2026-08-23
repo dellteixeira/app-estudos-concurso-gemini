@@ -5,7 +5,7 @@
         if (!document.querySelector('link[data-retention-metrics-fix]')) {
             const retentionLink = document.createElement('link');
             retentionLink.rel = 'stylesheet';
-            retentionLink.href = './css/retention-metrics-fix.css?v=20260823-final';
+            retentionLink.href = './css/retention-metrics-fix.css?v=20260823-final2';
             retentionLink.dataset.retentionMetricsFix = '1';
             document.head.appendChild(retentionLink);
         }
@@ -13,7 +13,7 @@
         if (!document.querySelector('link[data-ui-text-safety]')) {
             const safetyLink = document.createElement('link');
             safetyLink.rel = 'stylesheet';
-            safetyLink.href = './css/ui-text-safety.css?v=20260823-final';
+            safetyLink.href = './css/ui-text-safety.css?v=20260823-final2';
             safetyLink.dataset.uiTextSafety = '1';
             document.head.appendChild(safetyLink);
         }
