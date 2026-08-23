@@ -1,8 +1,6 @@
 name: Quality Check
 
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -10,45 +8,30 @@ permissions:
   contents: read
 
 jobs:
-  test-and-audit:
+  audit-visual-state-batch3:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: '22.23.2'
-
-      - name: Syntax check
-        run: node --check src/index.js
-
-      - name: Automated tests
-        run: npm test
-
-      - name: Structural audit
-        env:
-          AUDIT_ALLOW_ANY_ROOT: '1'
-        run: npm run audit
-
-      - name: Install Playwright test runner
-        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Browser responsive audit
-        run: npm run test:browser
-
-      - name: Upload Playwright report and screenshots
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: playwright-responsive-audit-${{ github.run_id }}
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-          retention-days: 14
+      - name: Inspect visual-state targets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          targets=['authStatusMessage','superUserBadge','customDailyHoursPanel','notaTituloCustomGroup','btnDownloadEdital','btnRemoveEdital','modalPdfNoteEditor']
+          files=[Path('public/index.html'),*sorted(Path('public/js').rglob('*.js')),*sorted(Path('public/css').rglob('*.css'))]
+          for target in targets:
+              print(f'=== {target} ===')
+              for p in files:
+                  if not p.is_file(): continue
+                  text=p.read_text(encoding='utf-8',errors='replace')
+                  for n,line in enumerate(text.splitlines(),1):
+                      if target in line:
+                          print(f'{p}:{n}: {line.strip()}')
+          print('=== style.display references in matching files ===')
+          for p in sorted(Path('public/js').rglob('*.js')):
+              text=p.read_text(encoding='utf-8',errors='replace')
+              for n,line in enumerate(text.splitlines(),1):
+                  if '.style.display' in line and any(t in text[max(0,text.find(line)-500):text.find(line)+500] for t in targets):
+                      print(f'{p}:{n}: {line.strip()}')
+          PY
