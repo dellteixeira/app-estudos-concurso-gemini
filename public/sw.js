@@ -7,7 +7,7 @@ const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 // substitui a versão anterior, evitando um PWA parcialmente instalado.
 const CRITICAL_APP_SHELL = [
   './', './index.html', './manifest.json', './version.json', './pwa-update.js',
-  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/pdf-library.css', './css/pdf-reader.css',
+  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/retention-metrics-fix.css', './css/pdf-library.css', './css/pdf-reader.css',
   './js/study-domain.js', './js/app-core.js', './js/adaptive-schedule-reconciliation.js', './js/app-ai.js', './js/app-ui.js',
   './js/ui/mobile.js', './js/ui/navigation.js', './js/ui/search.js', './js/app-pwa.js',
   './vendor/supabase.js', './vendor/chart.umd.min.js',
@@ -154,7 +154,7 @@ self.addEventListener('fetch', event => {
   // auditável dos arquivos centrais que usam estratégia network-first.
   const isCoreAsset = url.origin === self.location.origin && [
     '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json', '/vendor/pdf.min.js', '/vendor/pdf_viewer.min.css', '/vendor/pdf.worker.min.js',
-    '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css', '/css/pdf-reader.css',
+    '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/retention-metrics-fix.css', '/css/pdf-library.css', '/css/pdf-reader.css',
     '/js/study-domain.js', '/js/app-core.js', '/js/adaptive-schedule-reconciliation.js', '/js/notes-import-export.js', '/js/notes-export-rich.js', '/js/study-performance-report.js',
     '/js/performance-loader.js', '/js/performance-metrics.js',
     '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js',
