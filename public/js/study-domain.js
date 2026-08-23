@@ -124,6 +124,26 @@
         return (Array.isArray(states) ? states : []).filter(state => state?.lastStudyAt && state?.key && keys.has(state.key));
     }
 
+    function validateStrongPassword(password) {
+        const value = String(password || '');
+        const checks = {
+            minLength: value.length >= 8,
+            uppercase: /[A-Z]/.test(value),
+            lowercase: /[a-z]/.test(value),
+            number: /[0-9]/.test(value),
+            special: /[^A-Za-z0-9\s]/.test(value)
+        };
+        const labels = {
+            minLength:'mínimo de 8 caracteres',
+            uppercase:'uma letra maiúscula',
+            lowercase:'uma letra minúscula',
+            number:'um número',
+            special:'um caractere especial'
+        };
+        const missing = Object.entries(checks).filter(([,ok]) => !ok).map(([key]) => labels[key]);
+        return { valid:missing.length === 0, checks, missing };
+    }
+
     return {
         getSessionMinutes,
         getStudySessionIdentity,
@@ -133,6 +153,104 @@
         getTopicItemsForDeletion,
         questionProgressFraction,
         hasRetentionMasteryEvidence,
-        filterActiveRetentionStates
+        filterActiveRetentionStates,
+        validateStrongPassword
     };
 });
+
+(function installStrongSignupPasswordPolicy(root) {
+    'use strict';
+    if (!root?.document || root.__strongSignupPasswordPolicyInstalled) return;
+    root.__strongSignupPasswordPolicyInstalled = true;
+
+    const POLICY_HELP = 'Para cadastrar: mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial.';
+    const POLICY_PLACEHOLDER = 'Senha (mín. 8: A-Z, a-z, 0-9 e especial)';
+
+    function showPolicyMessage(message, kind = 'error') {
+        const box = root.document.getElementById('authStatusMessage');
+        if (!box) return;
+        box.style.display = 'block';
+        box.textContent = message;
+        if (kind === 'error') {
+            box.style.background = 'rgba(239,68,68,.10)';
+            box.style.borderColor = 'rgba(239,68,68,.35)';
+            box.style.color = '#fca5a5';
+        } else {
+            box.style.background = 'rgba(34,197,94,.10)';
+            box.style.borderColor = 'rgba(34,197,94,.28)';
+            box.style.color = '#86efac';
+        }
+    }
+
+    function enhancePasswordField() {
+        const input = root.document.getElementById('password');
+        if (!input) return false;
+        input.placeholder = POLICY_PLACEHOLDER;
+        input.minLength = 8;
+        input.setAttribute('aria-describedby', 'passwordPolicyHint');
+        input.setAttribute('title', POLICY_HELP);
+
+        let hint = root.document.getElementById('passwordPolicyHint');
+        if (!hint) {
+            hint = root.document.createElement('div');
+            hint.id = 'passwordPolicyHint';
+            hint.textContent = POLICY_HELP;
+            hint.style.cssText = 'margin-top:6px;font-size:.74rem;line-height:1.35;color:#9fb2c6;';
+            input.insertAdjacentElement('afterend', hint);
+        }
+
+        if (!input.dataset.strongPolicyBound) {
+            input.dataset.strongPolicyBound = '1';
+            input.addEventListener('input', () => {
+                if (!input.value) {
+                    hint.textContent = POLICY_HELP;
+                    hint.style.color = '#9fb2c6';
+                    return;
+                }
+                const result = root.StudyDomain?.validateStrongPassword?.(input.value);
+                if (result?.valid) {
+                    hint.textContent = 'Senha atende aos requisitos para cadastro.';
+                    hint.style.color = '#86efac';
+                } else {
+                    hint.textContent = `Falta: ${(result?.missing || []).join(', ')}.`;
+                    hint.style.color = '#fca5a5';
+                }
+            });
+        }
+        return true;
+    }
+
+    function wrapSignUp() {
+        const original = root.handleSignUp;
+        if (typeof original !== 'function') return false;
+        if (original.__strongPasswordPolicyWrapped) return true;
+
+        const wrapped = async function (...args) {
+            const input = root.document.getElementById('password');
+            const result = root.StudyDomain?.validateStrongPassword?.(input?.value || '');
+            if (!result?.valid) {
+                showPolicyMessage(`A senha para cadastro precisa ter ${result?.missing?.join(', ') || POLICY_HELP}.`);
+                input?.focus();
+                return;
+            }
+            return original.apply(this, args);
+        };
+        Object.defineProperty(wrapped, '__strongPasswordPolicyWrapped', { value:true });
+        root.handleSignUp = wrapped;
+        return true;
+    }
+
+    function boot() {
+        enhancePasswordField();
+        let attempts = 0;
+        const install = () => {
+            enhancePasswordField();
+            if (wrapSignUp() || attempts++ >= 40) return;
+            root.setTimeout(install, 100);
+        };
+        install();
+    }
+
+    if (root.document.readyState === 'loading') root.document.addEventListener('DOMContentLoaded', boot, { once:true });
+    else root.setTimeout(boot, 0);
+})(typeof window !== 'undefined' ? window : globalThis);
