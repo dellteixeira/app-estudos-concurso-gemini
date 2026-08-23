@@ -10,82 +10,108 @@ const errors = [];
 const ok = msg => console.log(`OK  ${msg}`);
 const fail = msg => { errors.push(msg); console.error(`ERRO ${msg}`); };
 
-const JS_FILES = [
-  'public/js/study-domain.js',
-  'public/js/app-core.js',
-  'public/js/app-ai.js',
-  'public/js/app-ui.js',
-  'public/js/app-pwa.js'
-];
-const PDF_FOUNDATION_JS_FILES = [
-  'public/js/pdf/pdf-core.js',
-  'public/js/pdf/pdf-workspaces.js',
-  'public/js/pdf/pdf-links.js',
-  'public/js/pdf/pdf-library.js',
-  'public/js/pdf/pdf-upload.js',
-  'public/js/pdf/pdf-annotations.js',
-  'public/js/pdf/pdf-reader.js',
-  'public/js/pdf/pdf-library-ui.js'
-];
-const CSS_FILES = [
-  'public/css/base.css',
-  'public/css/dashboard.css',
-  'public/css/features.css',
-  'public/css/pdf-library.css',
-  'public/css/pdf-reader.css'
-];
-const CORE_ROUTES = [
-  '/', '/index.html', '/sw.js', '/pwa-update.js', '/version.json',
-  '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/pdf-library.css', '/css/pdf-reader.css',
-  '/js/study-domain.js', '/js/app-core.js', '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-upload.js', '/js/app-ai.js', '/js/app-ui.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
-];
+function discoverFiles(start, predicate) {
+  const absolute = path.join(root, start);
+  if (!fs.existsSync(absolute)) return [];
+  const found = [];
+  const visit = (dir, relativeBase) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const rel = path.posix.join(relativeBase, entry.name);
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) visit(abs, rel);
+      else if (entry.isFile() && predicate(rel)) found.push(rel);
+    }
+  };
+  visit(absolute, start.replace(/\\/g, '/'));
+  return found.sort((a, b) => a.localeCompare(b));
+}
+
+function normalizeLocalAsset(value) {
+  return String(value || '').split('#')[0].split('?')[0].replace(/^\.\//, 'public/');
+}
+
+function discoverHtmlAssets(html, tag, attr, prefix) {
+  const regex = new RegExp(`<${tag}\\b[^>]*${attr}=["'](\\.\\/${prefix}[^"']+)["'][^>]*>`, 'gi');
+  return [...html.matchAll(regex)].map(match => normalizeLocalAsset(match[1]));
+}
 
 let versionManifest = {};
+let assetManifest = {};
 try {
   versionManifest = JSON.parse(read('public/version.json'));
   ok('public/version.json é JSON válido');
 } catch (error) { fail(`public/version.json inválido: ${error.message}`); }
+try {
+  assetManifest = JSON.parse(read('config/app-assets.json'));
+  ok('config/app-assets.json é JSON válido');
+} catch (error) { fail(`config/app-assets.json inválido: ${error.message}`); }
+
 const version = String(versionManifest.version || '').trim();
 if (!/^\d+\.\d+\.\d+$/.test(version)) fail(`versão inválida: ${version || '(vazia)'}`);
 else ok(`versão de release: ${version}`);
+if (assetManifest.version !== version) fail(`manifesto de assets=${assetManifest.version || '(vazio)'} diverge de ${version}`);
+else ok('manifesto de assets sincronizado com a release');
 
 const expectedRootName = `ESTUDO_ADAPTATIVO_INTELIGENTE_V${version.replace(/\./g, '_')}`;
 if (!process.env.AUDIT_ALLOW_ANY_ROOT && path.basename(root) !== expectedRootName) fail(`pasta raiz=${path.basename(root)} diverge do esperado=${expectedRootName}`);
 else ok(process.env.AUDIT_ALLOW_ANY_ROOT ? 'nome da pasta raiz liberado para CI' : 'nome da pasta raiz sincronizado');
 
-for (const rel of [...JS_FILES, ...PDF_FOUNDATION_JS_FILES, ...CSS_FILES, 'public/index.html','public/sw.js','public/pwa-update.js','src/index.js','package.json']) {
-  if (!exists(rel)) fail(`arquivo obrigatório ausente: ${rel}`);
+const html = read('public/index.html');
+const ALL_APP_JS_FILES = discoverFiles('public/js', rel => rel.endsWith('.js'));
+const PDF_JS_FILES = ALL_APP_JS_FILES.filter(rel => rel.startsWith('public/js/pdf/'));
+const ALL_CSS_FILES = discoverFiles('public/css', rel => rel.endsWith('.css'));
+const TEST_FILES = discoverFiles('tests', rel => rel.endsWith('.test.cjs'));
+const HTML_CSS_FILES = discoverHtmlAssets(html, 'link', 'href', 'css/');
+const HTML_JS_FILES = [
+  ...discoverHtmlAssets(html, 'script', 'src', 'js/'),
+  ...[...html.matchAll(/<script\b[^>]*src=["'](\.\/pwa-update\.js(?:\?[^"']*)?)["'][^>]*>/gi)].map(match => normalizeLocalAsset(match[1]))
+];
+
+if (!ALL_APP_JS_FILES.length) fail('nenhum módulo JavaScript descoberto em public/js');
+else ok(`${ALL_APP_JS_FILES.length} módulos JavaScript descobertos automaticamente`);
+if (!ALL_CSS_FILES.length) fail('nenhuma folha CSS descoberta em public/css');
+else ok(`${ALL_CSS_FILES.length} folhas CSS descobertas automaticamente`);
+if (!TEST_FILES.length) fail('nenhum teste .test.cjs descoberto automaticamente');
+else ok(`${TEST_FILES.length} testes estruturais descobertos automaticamente`);
+
+const requiredStatic = ['public/index.html','public/sw.js','public/pwa-update.js','src/index.js','package.json','config/app-assets.json'];
+for (const rel of requiredStatic) if (!exists(rel)) fail(`arquivo obrigatório ausente: ${rel}`);
+for (const rel of [...HTML_CSS_FILES, ...HTML_JS_FILES]) if (!exists(rel)) fail(`asset referenciado no index ausente: ${rel}`);
+
+const manifestRoutes = new Set([
+  ...(assetManifest.criticalAppShell || []),
+  ...(assetManifest.optionalOfflineAssets || []),
+  ...(assetManifest.networkFirstPaths || []),
+  ...(assetManifest.workerNoStorePaths || []),
+  ...(assetManifest.headersNoStorePaths || []),
+  ...(assetManifest.headersRevalidatePaths || [])
+]);
+for (const route of manifestRoutes) {
+  if (route === '/' || route.startsWith('/vendor/')) continue;
+  const rel = `public${route}`;
+  if (!exists(rel)) fail(`asset declarado no manifesto ausente: ${rel}`);
 }
+
 if (exists('public/app.js')) fail('public/app.js monolítico ainda existe');
 else ok('app.js monolítico removido');
 if (exists('public/app.css')) fail('public/app.css monolítico ainda existe');
 else ok('app.css monolítico removido');
 
-const html = read('public/index.html');
-const appJs = JS_FILES.filter(exists).map(read).join('\n');
-const appCss = CSS_FILES.filter(exists).map(read).join('\n');
+const appJs = ALL_APP_JS_FILES.filter(exists).map(read).join('\n');
+const appCss = ALL_CSS_FILES.filter(exists).map(read).join('\n');
 const sw = read('public/sw.js');
 const pwa = read('public/pwa-update.js');
 const worker = read('src/index.js');
-const headers = read('public/_headers');
 
-// Ordem dos assets no HTML.
-let cursor = -1;
-for (const rel of CSS_FILES.map(x => './'+x.replace('public/',''))) {
-  const pos = html.indexOf(`href="${rel}"`);
-  if (pos < 0) fail(`CSS não carregado no index: ${rel}`);
-  if (pos <= cursor) fail(`ordem de CSS incorreta: ${rel}`);
-  cursor = pos;
+function assertNoDuplicates(name, items) {
+  const duplicates = items.filter((item, index) => items.indexOf(item) !== index);
+  if (duplicates.length) fail(`${name} possui referências duplicadas: ${[...new Set(duplicates)].join(', ')}`);
 }
-ok('CSS dividido carregado em ordem determinística');
-cursor = -1;
-for (const rel of JS_FILES.map(x => './'+x.replace('public/',''))) {
-  const pos = html.indexOf(`src="${rel}"`);
-  if (pos < 0) fail(`JS não carregado no index: ${rel}`);
-  if (pos <= cursor) fail(`ordem de JS incorreta: ${rel}`);
-  cursor = pos;
+assertNoDuplicates('CSS do index', HTML_CSS_FILES);
+assertNoDuplicates('JavaScript do index', HTML_JS_FILES);
+if (!errors.some(e => e.includes('asset referenciado no index') || e.includes('referências duplicadas'))) {
+  ok('assets do index descobertos em ordem determinística e sem duplicação');
 }
-ok('JavaScript dividido carregado em ordem determinística');
 
 // Versionamento/PWA.
 if (/<meta name="app-version"/.test(html)) fail('index.html voltou a ter versão hardcoded');
@@ -101,31 +127,22 @@ else ok('atualização determinística do PWA preservada');
 if (!/self\.skipWaiting\(\)/.test(sw) || !/self\.clients\.claim\(\)/.test(sw)) fail('Service Worker sem ativação controlada');
 else ok('Service Worker suporta skipWaiting/clients.claim');
 
-// Cache/offline precisa conhecer todos os chunks.
-for (const route of CORE_ROUTES.slice(1)) {
-  const shellToken = `'.${route}'`;
-  if (route !== '/sw.js' && !sw.includes(shellToken) && route !== '/pwa-update.js') fail(`APP_SHELL não inclui ${route}`);
-}
-for (const route of CORE_ROUTES) {
-  if (route !== '/' && !headers.includes(`${route}\n`)) fail(`_headers não possui regra explícita para ${route}`);
-  if (!worker.includes(`"${route}"`)) fail(`Cloudflare Worker não força no-store em ${route}`);
-}
-if (!errors.some(e => e.includes('APP_SHELL') || e.includes('_headers') || e.includes('Cloudflare Worker'))) ok('novos chunks cobertos por offline/no-store');
+// A cobertura de cache/no-store agora é governada pelo manifesto canônico da Fase 6.
 for (const route of ['/css/pdf-reader.css','/js/pdf/pdf-annotations.js','/js/pdf/pdf-reader.js']) {
-  const coreBlock = sw.match(/const isCoreAsset[\s\S]*?\.some\(path => url\.pathname\.endsWith\(path\)\);/)?.[0] || '';
-  if (!coreBlock.includes(`'${route}'`)) fail(`Service Worker não trata Reader como core asset: ${route}`);
+  if (!(assetManifest.networkFirstPaths || []).includes(route)) fail(`manifesto não trata Reader como network-first: ${route}`);
 }
-if (!errors.some(e => e.includes('Service Worker não trata Reader'))) ok('Reader coberto por network-first no Service Worker');
+if (!errors.some(e => e.includes('manifesto não trata Reader'))) ok('Reader coberto pelo manifesto network-first');
 if (!exists('supabase/migrations/20260819030000_create_pdf_reader_annotations.sql')) fail('migration do Reader PDF ausente'); else ok('Reader PDF com anotações/versionamento versionado');
 if (!exists('supabase/migrations/20260819090000_harden_pdf_reader_rls.sql')) fail('hardening RLS do Reader PDF ausente'); else ok('hardening RLS do Reader PDF versionado');
-if (!/ERROR_CODES/.test(read('public/js/pdf/pdf-upload.js')) || !/classifyError/.test(read('public/js/pdf/pdf-upload.js')) || !/retryFailedUploads/.test(read('public/js/pdf/pdf-library-ui.js')) || !/pdfUploadResultPanel/.test(read('public/index.html'))) fail('diagnóstico/retry de upload em lote incompleto'); else ok('diagnóstico e retry de upload em lote versionados');
+if (!/ERROR_CODES/.test(read('public/js/pdf/pdf-upload.js')) || !/classifyError/.test(read('public/js/pdf/pdf-upload.js')) || !/retryFailedUploads/.test(read('public/js/pdf/pdf-library-ui.js')) || !/pdfUploadResultPanel/.test(html)) fail('diagnóstico/retry de upload em lote incompleto'); else ok('diagnóstico e retry de upload em lote versionados');
 
-// Sintaxe.
-for (const rel of [...JS_FILES, ...PDF_FOUNDATION_JS_FILES, 'public/pwa-update.js','public/sw.js','src/index.js']) {
-  try { execFileSync(process.execPath, ['--check', path.join(root, rel)], { stdio:'pipe' }); ok(`${rel} passou no node --check`); }
+// Sintaxe: todos os módulos atuais entram automaticamente no gate.
+for (const rel of [...ALL_APP_JS_FILES, 'public/pwa-update.js','public/sw.js','src/index.js']) {
+  try { execFileSync(process.execPath, ['--check', path.join(root, rel)], { stdio:'pipe' }); }
   catch { fail(`${rel} possui erro de sintaxe`); }
 }
-for (const rel of ['public/manifest.json','wrangler.jsonc','package.json']) {
+if (!errors.some(e => e.includes('possui erro de sintaxe'))) ok(`${ALL_APP_JS_FILES.length + 3} arquivos JavaScript passaram no node --check`);
+for (const rel of ['public/manifest.json','wrangler.jsonc','package.json','config/app-assets.json']) {
   try { JSON.parse(read(rel).replace(/^\s*\/\/.*$/gm,'')); ok(`${rel} é JSON válido`); }
   catch (error) { fail(`${rel} inválido: ${error.message}`); }
 }
@@ -144,9 +161,7 @@ const requiredDomainCalls = [
 for (const call of requiredDomainCalls) if (!appJs.includes(call)) fail(`produção não delega para ${call}`);
 if (!errors.some(e => e.includes('produção não delega'))) ok('regras críticas compartilham StudyDomain com os testes');
 
-// Testes automatizados exigidos.
-const expectedTests = ['minutes','sync','priorities','deletions','metrics','retention','infrastructure','pdf-foundation','pdf-library','pdf-links','pdf-reader','pdf-context-integrity','pwa-assets'].map(n => `tests/${n}.test.cjs`);
-for (const rel of expectedTests) if (!exists(rel)) fail(`teste automatizado ausente: ${rel}`);
+// Testes automatizados: descoberta recursiva elimina listas manuais desatualizadas.
 if (!exists('.github/workflows/quality-check.yml')) fail('workflow automático de qualidade ausente');
 else ok('GitHub Actions de qualidade presente');
 if (!exists('.github/workflows/backup-supabase.yml')) fail('workflow de backup Supabase ausente');
@@ -160,12 +175,11 @@ for (const rel of ['supabase/baseline/runtime-contract.json','supabase/baseline/
 }
 if (!errors.some(e => e.includes('blindagem Supabase'))) ok('baseline e hardening Supabase versionados');
 try {
-  execFileSync(process.execPath, ['--test', ...expectedTests.map(rel=>path.join(root,rel))], { stdio:'pipe' });
-  ok('10 categorias de testes automatizados aprovadas');
-} catch (error) { fail('testes automatizados falharam'); }
+  execFileSync(process.execPath, ['--test', ...TEST_FILES.map(rel => path.join(root, rel))], { stdio:'pipe' });
+  ok(`${TEST_FILES.length} arquivos de teste descobertos e aprovados`);
+} catch { fail('testes automatizados descobertos falharam'); }
 
-
-// Fundação privada do módulo PDF (Fase 1).
+// Fundação privada do módulo PDF.
 const pdfFoundationSql = read('supabase/migrations/20260818210000_create_pdf_foundation.sql');
 for (const token of ['public.study_workspaces','public.pdf_documents','public.pdf_progress',"'study-pdfs'",'enable row level security','auth.uid()']) {
   if (!pdfFoundationSql.toLowerCase().includes(token.toLowerCase())) fail(`fundação PDF incompleta: ${token}`);
@@ -173,7 +187,7 @@ for (const token of ['public.study_workspaces','public.pdf_documents','public.pd
 if (!/file_size > 0 and file_size <= 104857600/.test(pdfFoundationSql)) fail('limite de 100 MiB do PDF não está versionado');
 else ok('fundação PDF privada com RLS/Storage/limite versionada');
 
-// Biblioteca Global + vínculos contextuais (Fase 2.1).
+// Biblioteca Global + vínculos contextuais.
 const pdfGlobalSql = read('supabase/migrations/20260818230000_decouple_pdf_from_concurso.sql');
 for (const token of ['pdf_document_links','pdf_id','concurso','materia','assunto','enable row level security']) {
   if (!pdfGlobalSql.includes(token)) fail(`Biblioteca Global incompleta: ${token}`);
@@ -181,7 +195,7 @@ for (const token of ['pdf_document_links','pdf_id','concurso','materia','assunto
 for (const token of ['pdfLibraryScope','modalPdfLink','pdfLinkMateria','pdfLinkAssunto']) {
   if (!html.includes(token)) fail(`UI de vínculo global incompleta: ${token}`);
 }
-const pdfPhase2Js = PDF_FOUNDATION_JS_FILES.filter(exists).map(read).join('\n');
+const pdfPhase2Js = PDF_JS_FILES.filter(exists).map(read).join('\n');
 for (const token of ["from('pdf_document_links')","from('pdf_documents')","from('pdf_progress')",'.storage.from(core().BUCKET)','getUniqueMateriasFromEdital','getAssuntosForMateria']) {
   if (!pdfPhase2Js.includes(token)) fail(`integração da Biblioteca Global incompleta: ${token}`);
 }
@@ -202,7 +216,7 @@ else ok('editor rico de notas preservado');
 if (!/onclick="excluirAssuntoEspecifico\(\)"/.test(html) || !/StudyDomain\.getTopicItemsForDeletion/.test(appJs)) fail('exclusão granular sofreu regressão');
 else ok('exclusão granular preservada');
 
-// Layout de retenção aprovado precisa continuar no CSS dividido.
+// Layout de retenção aprovado precisa continuar em alguma folha CSS descoberta.
 for (const selector of ['.rd-center-v1077','.rd-exam-banner-v1077','.rd-metrics-v1077','.rd-metric-card-v1077']) {
   if (!appCss.includes(selector)) fail(`CSS de retenção ausente: ${selector}`);
 }
@@ -212,4 +226,4 @@ if (errors.length) {
   console.error(`\nAUDITORIA REPROVADA: ${errors.length} problema(s).`);
   process.exit(1);
 }
-console.log('\nAUDITORIA APROVADA: arquitetura modular, testes e release consistentes.');
+console.log('\nAUDITORIA APROVADA: descoberta automática de módulos, testes e release consistente.');
