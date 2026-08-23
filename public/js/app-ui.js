@@ -140,7 +140,7 @@
         }
 
         function findDesktopTabButton(tabId) {
-            return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => (btn.getAttribute('onclick') || '').includes(`'${tabId}'`));
+            return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => btn.dataset.tabTarget === tabId);
         }
 
         function openSearchEditalResult(materia) {
@@ -485,3 +485,122 @@
             });
         });
 
+
+
+        // INLINE_HANDLER_ADAPTERS_START
+        // Generated once from the former static inline handlers. Explicit external functions only.
+        (function installExternalizedInlineHandlers() {
+            const adapters = {
+            'ih-001': function(event) { handleActionButton(this, forceFullSync) },
+            'ih-002': function(event) { handleActionButton(this, openModalViewEdital) },
+            'ih-003': function(event) { handleActionButton(this.parentElement, importJSON, event) },
+            'ih-004': function(event) { handleActionButton(this, openModalAnaliseEditalIA) },
+            'ih-005': function(event) { handleActionButton(this, openModalPromptIA) },
+            'ih-006': function(event) { addManualItem(event) },
+            'ih-007': function(event) { openMobileEditalFieldEditor('materia', this) },
+            'ih-008': function(event) { openMobileEditalFieldEditor('assunto', this) },
+            'ih-009': function(event) { toggleAllAccordions(true) },
+            'ih-010': function(event) { toggleAllAccordions(false) },
+            'ih-011': function(event) { filterDelayedList('hoje', this) },
+            'ih-012': function(event) { filterDelayedList('atrasadas', this) },
+            'ih-013': function(event) { filterDelayedList('proximas', this) },
+            'ih-014': function(event) { PdfStudyLibraryUI.onSearch(this.value) },
+            'ih-015': function(event) { PdfStudyLibraryUI.onScopeChange(this.value) },
+            'ih-016': function(event) { PdfStudyLibraryUI.onWorkspaceFilterChange(this.value) },
+            'ih-017': function(event) { PdfStudyLibraryUI.onMateriaFilterChange(this.value) },
+            'ih-018': function(event) { PdfStudyLibraryUI.onAssuntoFilterChange(this.value) },
+            'ih-019': function(event) { document.getElementById('flashcardsImportFile').click() },
+            'ih-020': function(event) { importFlashcardsFromFile(event) },
+            'ih-021': function(event) { setFlashcardViewFilter('', '') },
+            'ih-022': function(event) { mobileSwitchTab('tab-edital', this) },
+            'ih-023': function(event) { mobileSwitchTab('tab-calendario', this) },
+            'ih-024': function(event) { mobileSwitchTab('tab-biblioteca', this) },
+            'ih-025': function(event) { mobileSwitchTab('tab-flashcards', this) },
+            'ih-026': function(event) { mobileSwitchTab('tab-anotacoes', this) },
+            'ih-027': function(event) { PdfStudyLibraryUI.onDropZoneKeydown(event) },
+            'ih-028': function(event) { PdfStudyLibraryUI.handleDrop(event) },
+            'ih-029': function(event) { PdfStudyLibraryUI.handleDragOver(event) },
+            'ih-030': function(event) { PdfStudyLibraryUI.handleDragLeave() },
+            'ih-031': function(event) { event.stopPropagation(); PdfStudyLibraryUI.chooseUploadFile() },
+            'ih-032': function(event) { PdfStudyLibraryUI.onUploadFileChange(this) },
+            'ih-033': function(event) { PdfStudyLibraryUI.openWorkspaceModal('upload') },
+            'ih-034': function(event) { resolveAppDialog(false) },
+            'ih-035': function(event) { resolveAppDialog(true) },
+            'ih-036': function(event) { resolveAppPrompt(false) },
+            'ih-037': function(event) { resolveAppPrompt(true) },
+            'ih-038': function(event) { restoreLocalBackup('current') },
+            'ih-039': function(event) { restoreLocalBackup('previous') },
+            'ih-040': function(event) { chooseCronogramaType(1) },
+            'ih-041': function(event) { chooseCronogramaType(2) },
+            'ih-042': function(event) { chooseCronogramaType(3) },
+            'ih-043': function(event) { toggleWeekdaySelect(this, 0) },
+            'ih-044': function(event) { toggleWeekdaySelect(this, 1) },
+            'ih-045': function(event) { toggleWeekdaySelect(this, 2) },
+            'ih-046': function(event) { toggleWeekdaySelect(this, 3) },
+            'ih-047': function(event) { toggleWeekdaySelect(this, 4) },
+            'ih-048': function(event) { toggleWeekdaySelect(this, 5) },
+            'ih-049': function(event) { toggleWeekdaySelect(this, 6) },
+            'ih-050': function(event) { selectHoursOption(this, 1) },
+            'ih-051': function(event) { selectHoursOption(this, 2) },
+            'ih-052': function(event) { selectHoursOption(this, 4) },
+            'ih-053': function(event) { selectHoursOption(this, 5) },
+            'ih-054': function(event) { selectCustomDailyHoursOption(this) },
+            'ih-055': function(event) { selectOpportunityMinutes(5,this) },
+            'ih-056': function(event) { selectOpportunityMinutes(10,this) },
+            'ih-057': function(event) { selectOpportunityMinutes(20,this) },
+            'ih-058': function(event) { selectOpportunityMinutes(40,this) },
+            'ih-059': function(event) { selectOpportunityMinutes(60,this) },
+            'ih-060': function(event) { selectOpportunityContext('any',this) },
+            'ih-061': function(event) { selectOpportunityContext('transit',this) },
+            'ih-062': function(event) { selectOpportunityContext('walking',this) },
+            'ih-063': function(event) { selectOpportunityContext('focus',this) },
+            'ih-064': function(event) { submitAdaptiveReviewFeedback('forgot') },
+            'ih-065': function(event) { submitAdaptiveReviewFeedback('hard') },
+            'ih-066': function(event) { submitAdaptiveReviewFeedback('good') },
+            'ih-067': function(event) { submitAdaptiveReviewFeedback('easy') },
+            'ih-068': function(event) { scheduleGlobalStudySearch(this.value) },
+            'ih-069': function(event) { closeMobileEditalFieldEditor(false) },
+            'ih-070': function(event) { handleMobileEditalFieldKeydown(event) },
+            'ih-071': function(event) { closeMobileEditalFieldEditor(false) },
+            'ih-072': function(event) { closeMobileEditalFieldEditor(true) },
+            'ih-073': function(event) { formatNoteText('bold') },
+            'ih-074': function(event) { formatNoteText('italic') },
+            'ih-075': function(event) { formatNoteText('underline') },
+            'ih-076': function(event) { setNoteFontSize(this.value) },
+            'ih-077': function(event) { uploadEditalFile(event) },
+            'ih-078': function(event) { PdfStudyReader.zoom(-0.15) },
+            'ih-079': function(event) { PdfStudyReader.zoom(0.15) },
+            'ih-080': function(event) { event.preventDefault();PdfStudyReader.searchPdf() },
+            'ih-081': function(event) { PdfStudyReader.toggleSearch(false) },
+            'ih-082': function(event) { PdfStudyReader.saveAnnotation('underline') },
+            'ih-083': function(event) { PdfStudyReader.exportFromMenu('doc') },
+            'ih-084': function(event) { PdfStudyReader.exportFromMenu('txt') },
+            'ih-085': function(event) { PdfStudyReader.formatPdfNote('bold') },
+            'ih-086': function(event) { PdfStudyReader.formatPdfNote('italic') },
+            'ih-087': function(event) { PdfStudyReader.formatPdfNote('underline') },
+            'ih-088': function(event) { PdfStudyReader.setPdfNoteFontSize(this.value) }
+            };
+            const eventTypes = ["change","click","dragleave","dragover","drop","focus","input","keydown","submit"];
+            const bindHandlers = () => {
+                for (const type of eventTypes) {
+                    const selector = '[data-inline-' + type + ']';
+                    document.querySelectorAll(selector).forEach(element => {
+                        if (element.dataset.inlineHandlerBound === '1') return;
+                        const id = element.getAttribute('data-inline-' + type);
+                        const adapter = adapters[id];
+                        if (typeof adapter !== 'function') return;
+                        element.addEventListener(type, function externalizedInlineHandler(event) {
+                            const result = adapter.call(this, event);
+                            if (result === false) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                        });
+                        element.dataset.inlineHandlerBound = '1';
+                    });
+                }
+            };
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindHandlers, { once:true });
+            else bindHandlers();
+        })();
+        // INLINE_HANDLER_ADAPTERS_END
