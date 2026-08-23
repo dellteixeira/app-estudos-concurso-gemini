@@ -7,7 +7,7 @@ const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 // substitui a versão anterior, evitando um PWA parcialmente instalado.
 const CRITICAL_APP_SHELL = [
   './', './index.html', './manifest.json', './version.json', './pwa-update.js',
-  './css/base.css', './css/dashboard.css', './css/features.css', './css/pdf-library.css', './css/pdf-reader.css',
+  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/pdf-library.css', './css/pdf-reader.css',
   './js/study-domain.js', './js/app-core.js', './js/adaptive-schedule-reconciliation.js', './js/app-ai.js', './js/app-ui.js', './js/app-pwa.js',
   './vendor/supabase.js', './vendor/chart.umd.min.js',
   './icon-192.png', './icon-512.png'
