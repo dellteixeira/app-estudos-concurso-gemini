@@ -24,6 +24,9 @@ jobs:
         if: github.event_name == 'pull_request' && github.head_ref == 'hardening/inline-style-static-batch1'
         shell: bash
         run: |
+          # Rebuild the two transformed source files from main on every run so the
+          # migration is deterministic and preserves their original line endings.
+          git checkout origin/main -- public/index.html public/css/base.css
           python3 - <<'PY'
           from pathlib import Path
           import re, json
@@ -32,12 +35,11 @@ jobs:
           css_path=Path('public/css/base.css')
           test_path=Path('tests/inline-style-static-budget.test.cjs')
           budget_path=Path('security/inline-style-budget.json')
-          html=html_path.read_text(encoding='utf-8')
-          css=css_path.read_text(encoding='utf-8')
-          marker='/* INLINE_STATIC_BATCH1_START */'
-          if marker in css:
-              print('migration already applied')
-              raise SystemExit(0)
+
+          html_raw=html_path.read_bytes(); css_raw=css_path.read_bytes()
+          html=html_raw.decode('utf-8'); css=css_raw.decode('utf-8')
+          html_nl='\r\n' if b'\r\n' in html_raw else '\n'
+          css_nl='\r\n' if b'\r\n' in css_raw else '\n'
 
           original=len(re.findall(r'\sstyle\s*=\s*["\']',html,re.I))
           allowed={'margin','margin-top','margin-right','margin-bottom','margin-left','padding','padding-top','padding-right','padding-bottom','padding-left','gap','row-gap','column-gap','flex','flex-grow','flex-shrink','flex-basis','cursor','text-align','font-size','font-weight','font-style','line-height','letter-spacing','white-space','border','border-top','border-right','border-bottom','border-left','border-radius','color','text-decoration'}
@@ -72,19 +74,21 @@ jobs:
           remaining=len(re.findall(r'\sstyle\s*=\s*["\']',migrated,re.I))
           moved=original-remaining
           if moved<=0: raise SystemExit('refusing empty migration')
-          block='\n\n/* INLINE_STATIC_BATCH1_START */\n'+'\n'.join(f'.{c}{{{d}}}' for c,d in generated)+'\n/* INLINE_STATIC_BATCH1_END */\n'
-          html_path.write_text(migrated,encoding='utf-8')
-          css_path.write_text(css.rstrip()+block,encoding='utf-8')
+          block=css_nl+css_nl+'/* INLINE_STATIC_BATCH1_START */'+css_nl+css_nl.join([])
+          block=css_nl+css_nl+'/* INLINE_STATIC_BATCH1_START */'+css_nl+css_nl.join(f'.{c}{{{d}}}' for c,d in generated)+css_nl+'/* INLINE_STATIC_BATCH1_END */'+css_nl
+
+          html_path.write_bytes(migrated.encode('utf-8'))
+          css_path.write_bytes((css.rstrip('\r\n')+block).encode('utf-8'))
           budget_path.parent.mkdir(parents=True,exist_ok=True)
           budget_path.write_text(json.dumps({'baseline':original,'budget':remaining,'migrated':moved,'classes':len(generated),'policy':'Only presentation-only styles are externalized. JS-controlled state/dynamic inline styles remain temporarily.'},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          test_path.write_text("""const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst path=require('node:path');\nconst root=path.resolve(__dirname,'..');\nconst read=r=>fs.readFileSync(path.join(root,r),'utf8');\ntest('inline style budget only permits state/dynamic styles after static migration',()=>{const h=read('public/index.html');const c=read('public/css/base.css');const b=JSON.parse(read('security/inline-style-budget.json'));const count=(h.match(/\\sstyle\\s*=\\s*[\\\"']/gi)||[]).length;assert.ok(count<=b.budget,`inline style budget exceeded: ${count} > ${b.budget}`);assert.ok(b.migrated>0);assert.match(c,/INLINE_STATIC_BATCH1_START/);assert.match(c,/\\.u-static-\\d{3}\\{/);});\ntest('safe presentation-only inline styles are not reintroduced',()=>{const h=read('public/index.html');const allowed=new Set(['margin','margin-top','margin-right','margin-bottom','margin-left','padding','padding-top','padding-right','padding-bottom','padding-left','gap','row-gap','column-gap','flex','flex-grow','flex-shrink','flex-basis','cursor','text-align','font-size','font-weight','font-style','line-height','letter-spacing','white-space','border','border-top','border-right','border-bottom','border-left','border-radius','color','text-decoration']);for(const m of h.matchAll(/\\sstyle=\\\"([^\\\"]*)\\\"/gi)){const ps=m[1].split(';').map(x=>x.trim()).filter(Boolean).map(x=>x.split(':',1)[0].trim().toLowerCase());assert.ok(ps.some(p=>!allowed.has(p)),`safe static inline style should be CSS: ${m[1]}`);}});\n""",encoding='utf-8')
-          print(f'inline styles {original} -> {remaining}; migrated {moved}; classes {len(generated)}')
+          test_path.write_text("""const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst path=require('node:path');\nconst root=path.resolve(__dirname,'..');\nconst read=r=>fs.readFileSync(path.join(root,r),'utf8');\ntest('inline style budget only permits state/dynamic styles after static migration',()=>{const h=read('public/index.html');const c=read('public/css/base.css');const b=JSON.parse(read('security/inline-style-budget.json'));const count=(h.match(/\\sstyle\\s*=\\s*[\\\"']/gi)||[]).length;assert.ok(count<=b.budget,`inline style budget exceeded: ${count} > ${b.budget}`);assert.equal(b.baseline,124);assert.equal(b.budget,85);assert.equal(b.migrated,39);assert.match(c,/INLINE_STATIC_BATCH1_START/);assert.match(c,/\\.u-static-\\d{3}\\{/);});\ntest('safe presentation-only inline styles are not reintroduced',()=>{const h=read('public/index.html');const allowed=new Set(['margin','margin-top','margin-right','margin-bottom','margin-left','padding','padding-top','padding-right','padding-bottom','padding-left','gap','row-gap','column-gap','flex','flex-grow','flex-shrink','flex-basis','cursor','text-align','font-size','font-weight','font-style','line-height','letter-spacing','white-space','border','border-top','border-right','border-bottom','border-left','border-radius','color','text-decoration']);for(const m of h.matchAll(/\\sstyle=\\\"([^\\\"]*)\\\"/gi)){const ps=m[1].split(';').map(x=>x.trim()).filter(Boolean).map(x=>x.split(':',1)[0].trim().toLowerCase());assert.ok(ps.some(p=>!allowed.has(p)),`safe static inline style should be CSS: ${m[1]}`);}});\n""",encoding='utf-8')
+          print(f'inline styles {original} -> {remaining}; migrated {moved}; classes {len(generated)}; html_nl={html_nl!r}; css_nl={css_nl!r}')
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html public/css/base.css tests/inline-style-static-budget.test.cjs security/inline-style-budget.json
           if ! git diff --cached --quiet; then
-            git commit -m "refactor: migrate safe static inline styles to CSS classes"
+            git commit -m "refactor: preserve line endings in static style migration"
             git push origin HEAD:${{ github.head_ref }}
           fi
 
