@@ -1626,12 +1626,12 @@
                 const fileObj = await getEditalFileRecord();
                 if (!fileObj) {
                     container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${escapeHtml(currentConcurso)}</strong>.</p>`;
-                    btnDownload.style.display = 'none';
-                    btnRemove.style.display = 'none';
+                    setVisualState(btnDownload, false);
+                    setVisualState(btnRemove, false);
                     return;
                 }
-                btnDownload.style.display = 'inline-flex';
-                btnRemove.style.display = 'inline-flex';
+                setVisualState(btnDownload, true);
+                setVisualState(btnRemove, true);
                 activeObjectUrl = URL.createObjectURL(fileObj.blob);
                 if (fileObj.type.includes('pdf')) {
                     container.innerHTML = `<embed src="${activeObjectUrl}#toolbar=1" type="application/pdf" style="width:100%; height:100%; min-height:500px; border:none; border-radius:6px;"></embed>`;
@@ -1966,7 +1966,8 @@
             const status = document.getElementById('authStatusMessage');
             if (status) {
                 status.textContent = message || '';
-                status.style.display = message ? 'block' : 'none';
+                status.classList.remove('is-error');
+                setVisualState(status, Boolean(message));
             }
         }
 
@@ -2050,7 +2051,7 @@
             const appRole = currentUser?.app_metadata?.role || currentUser?.user_metadata?.role || '';
             isSuperUser = appRole === 'super_user' || appRole === 'admin';
             const badge = document.getElementById('superUserBadge');
-            if (badge) badge.style.display = isSuperUser ? 'inline-block' : 'none';
+            setVisualState(badge, isSuperUser);
         }
 
         function showDashboard() {

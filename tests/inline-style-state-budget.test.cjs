@@ -7,14 +7,14 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=r=>fs.readFileSync(path.join(root,r),'utf8');
 
-test('state-style batch reduces inline-style budget from 85 to 82',()=>{
+test('state-style batch keeps historical 85 to 82 contract while later batches may reduce further',()=>{
   const html=read('public/index.html');
   const budget=JSON.parse(read('security/inline-style-state-budget.json'));
   const count=(html.match(/\sstyle\s*=\s*["']/gi)||[]).length;
   assert.equal(budget.baseline,85);
   assert.equal(budget.budget,82);
   assert.equal(budget.migrated,3);
-  assert.equal(count,82);
+  assert.ok(count <= budget.budget,`current inline styles ${count} must not exceed historical budget ${budget.budget}`);
 });
 
 test('permanently hidden file inputs use native hidden attribute',()=>{
