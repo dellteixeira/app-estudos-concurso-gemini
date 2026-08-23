@@ -15,8 +15,9 @@ test('index não contém handlers de evento inline', () => {
 test('handlers complexos usam adapters externos sem execução dinâmica', () => {
   const ui = read('public/js/app-ui.js');
   assert.match(ui, /INLINE_HANDLER_ADAPTERS_START/);
-  assert.match(ui, /delegatedExternalizedHandler/);
-  assert.match(ui, /adapter\.call\(element, event\)/);
+  assert.match(ui, /externalizedInlineHandler/);
+  assert.match(ui, /element\.addEventListener\(type/);
+  assert.match(ui, /adapter\.call\(this, event\)/);
   const adapterBlock = ui.match(/INLINE_HANDLER_ADAPTERS_START[\s\S]*INLINE_HANDLER_ADAPTERS_END/)?.[0] || '';
   assert.doesNotMatch(adapterBlock, /\beval\s*\(|\bnew\s+Function\b/);
 });
