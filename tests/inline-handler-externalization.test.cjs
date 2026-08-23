@@ -17,6 +17,17 @@ test('app-ui não gera handlers de evento inline dinamicamente', () => {
   assert.doesNotMatch(ui, /\son[a-z]+\s*=\s*["']/i);
 });
 
+test('handlers dinâmicos usam delegação por data-*', () => {
+  const ui = read('public/js/app-ui.js');
+  assert.match(ui, /data-dynamic-action="global-search-result"/);
+  assert.match(ui, /data-dynamic-action="start-layered-review"/);
+  assert.match(ui, /data-dynamic-action="open-layered-review"/);
+  assert.match(ui, /data-dynamic-action="open-layered-review-from-metric"/);
+  assert.match(ui, /data-dynamic-action="edit-exam-date"/);
+  assert.match(ui, /closest\?\.\('\[data-dynamic-action\]'\)/);
+  assert.doesNotMatch(ui, /\beval\s*\(|\bnew\s+Function\b/);
+});
+
 test('handlers complexos usam adapters externos sem execução dinâmica', () => {
   const ui = read('public/js/app-ui.js');
   assert.match(ui, /INLINE_HANDLER_ADAPTERS_START/);
@@ -27,11 +38,11 @@ test('handlers complexos usam adapters externos sem execução dinâmica', () =>
   assert.doesNotMatch(adapterBlock, /\beval\s*\(|\bnew\s+Function\b/);
 });
 
-test('navegação desktop usa metadado semântico em vez de inspecionar onclick', () => {
+test('navegação desktop usa data-tab sem inspecionar onclick', () => {
   const html = read('public/index.html');
   const ui = read('public/js/app-ui.js');
-  assert.match(html, /data-tab-target="tab-edital"/);
-  assert.match(ui, /btn\.dataset\.tabTarget === tabId/);
+  assert.match(html, /data-tab="tab-edital"/);
+  assert.match(ui, /btn\.dataset\.tab === tabId/);
   assert.doesNotMatch(ui, /getAttribute\(['"]onclick['"]\)/);
 });
 
