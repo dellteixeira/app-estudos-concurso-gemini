@@ -1705,7 +1705,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (useCustomDailyHours) customDailyHoursByWeekday = {...customDailyHoursByWeekday, ...cfg.customDailyHoursByWeekday};
             document.querySelectorAll('.weekday-btn').forEach((btn, idx) => btn.classList.toggle('selected', selectedWeekdays.includes(idx)));
             renderCustomDailyHoursGrid();
-            document.getElementById('customDailyHoursPanel').style.display = useCustomDailyHours ? 'block' : 'none';
+            setVisualState(document.getElementById('customDailyHoursPanel'), useCustomDailyHours);
             const hourCards = [...document.querySelectorAll('#hoursSelectionContainer .hours-option-card')];
             hourCards.forEach(card => card.classList.remove('selected'));
             if (useCustomDailyHours && hourCards.length) hourCards[hourCards.length - 1].classList.add('selected');
@@ -1733,7 +1733,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             selectedDailyHoursSlots = slots;
             useCustomDailyHours = false;
             const panel = document.getElementById('customDailyHoursPanel');
-            if (panel) panel.style.display = 'none';
+            setVisualState(panel, false);
         }
 
         function selectCustomDailyHoursOption(elem) {
@@ -1742,7 +1742,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             useCustomDailyHours = true;
             renderCustomDailyHoursGrid();
             const panel = document.getElementById('customDailyHoursPanel');
-            if (panel) panel.style.display = 'block';
+            setVisualState(panel, true);
         }
 
         function renderCustomDailyHoursGrid() {
@@ -2966,7 +2966,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!assuntoSel || !titleGroup || !titleInput) return;
 
             const isOutro = assuntoSel.value === '__outro__';
-            titleGroup.style.display = isOutro ? 'flex' : 'none';
+            setVisualState(titleGroup, isOutro);
             if (!isOutro) titleInput.value = '';
         }
 

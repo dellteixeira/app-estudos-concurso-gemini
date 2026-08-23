@@ -169,17 +169,10 @@
     function showPolicyMessage(message, kind = 'error') {
         const box = root.document.getElementById('authStatusMessage');
         if (!box) return;
-        box.style.display = 'block';
+        if (typeof root.setVisualState === 'function') root.setVisualState(box, true);
+        else { box.hidden = false; box.setAttribute('aria-hidden', 'false'); }
         box.textContent = message;
-        if (kind === 'error') {
-            box.style.background = 'rgba(239,68,68,.10)';
-            box.style.borderColor = 'rgba(239,68,68,.35)';
-            box.style.color = '#fca5a5';
-        } else {
-            box.style.background = 'rgba(34,197,94,.10)';
-            box.style.borderColor = 'rgba(34,197,94,.28)';
-            box.style.color = '#86efac';
-        }
+        box.classList.toggle('is-error', kind === 'error');
     }
 
     function enhancePasswordField() {

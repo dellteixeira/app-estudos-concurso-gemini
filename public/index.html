@@ -78,7 +78,7 @@
                 <button class="btn btn-primary u-static-002" data-action="auth-login">Entrar</button>
                 <button class="btn btn-secondary u-static-002" data-action="auth-signup">Cadastrar</button>
             </div>
-            <div id="authStatusMessage" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.82rem; line-height:1.4; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.28); color:#86efac;"></div>
+            <div id="authStatusMessage" class="auth-status-message" hidden aria-hidden="true"></div>
         </div>
     </div>
 
@@ -91,7 +91,7 @@
                     <h2>Estudo Adaptativo Inteligente</h2>
                     <span class="header-brand-signature">by Dell</span>
                 </div>
-                <span id="superUserBadge" class="super-user-badge" style="display: none;">Super Usuário</span>
+                <span id="superUserBadge" class="super-user-badge" hidden aria-hidden="true">Super Usuário</span>
                 <span class="app-version-badge" title="Versão em execução">V—</span>
             </div>
             <div id="syncStatusPill" class="sync-status-pill header-sync-status" role="status" aria-live="polite" title="Estado da sincronização">
@@ -891,7 +891,7 @@
                 <div class="hours-option-card" data-inline-click="ih-053"><span>5h ou mais</span></div>
                 <div class="hours-option-card" data-inline-click="ih-054"><span>Personalizar horas por dia da semana</span></div>
             </div>
-            <div id="customDailyHoursPanel" class="custom-daily-hours-panel" style="display:none;">
+            <div id="customDailyHoursPanel" class="custom-daily-hours-panel" hidden aria-hidden="true">
                 <div class="custom-hours-help">Informe quantas horas livres você realmente possui em cada dia selecionado.</div>
                 <div id="customDailyHoursGrid" class="custom-daily-hours-grid"></div>
             </div>
@@ -1308,7 +1308,7 @@
                 <label><strong>Assunto Vinculado:</strong></label>
                 <select id="inputNotaAssunto" data-change-call="handleNotaAssuntoChange"></select>
             </div>
-            <div class="form-group" id="notaTituloCustomGroup" style="display:none;">
+            <div class="form-group" id="notaTituloCustomGroup" hidden aria-hidden="true">
                 <label><strong>Título da Anotação:</strong></label>
                 <input type="text" id="inputNotaTitulo" placeholder="Digite o título personalizado da anotação...">
             </div>
@@ -1373,8 +1373,8 @@
                         Anexar Novo Arquivo
                         <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" hidden data-inline-change="ih-077">
                     </label>
-                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" style="display: none;" data-action="call" data-call="downloadEditalFile">Baixar Arquivo</button>
-                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" style="display: none;" data-action="call" data-call="removerEditalFile">Apagar Edital</button>
+                    <button id="btnDownloadEdital" class="btn btn-primary btn-sm" hidden aria-hidden="true" data-action="call" data-call="downloadEditalFile">Baixar Arquivo</button>
+                    <button id="btnRemoveEdital" class="btn btn-danger btn-sm" hidden aria-hidden="true" data-action="call" data-call="removerEditalFile">Apagar Edital</button>
                 </div>
             </div>
             <div id="editalViewerContainer" style="flex: 1; min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; overflow: hidden; background: rgba(0,0,0,0.15);">
@@ -1524,7 +1524,7 @@
     <script src="./js/pdf/pdf-library-ui.js" defer></script>
     <script src="./js/app-pwa.js" defer></script>
 
-<div id="modalPdfNoteEditor" class="pdf-note-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle"><div class="pdf-note-card"><div class="pdf-note-head"><div><h3 id="pdfNoteEditorTitle">Nova anotação</h3><p>Edite como em uma folha de estudos.</p></div><button type="button" class="btn btn-secondary btn-sm" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Fechar</button></div><div class="pdf-note-toolbar" role="toolbar" aria-label="Formatação da anotação"><button type="button" data-inline-click="ih-085"><b>B</b></button><button type="button" data-inline-click="ih-086"><i>I</i></button><button type="button" data-inline-click="ih-087"><u>U</u></button><label>Tamanho <select data-inline-change="ih-088"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="4">Grande</option><option value="5">Título</option></select></label></div><div id="pdfNoteEditor" class="pdf-note-paper" contenteditable="true" spellcheck="true" aria-label="Conteúdo da anotação"></div><div class="pdf-note-actions"><button type="button" class="btn btn-secondary" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Cancelar</button><button type="button" class="btn btn-primary" data-action="call" data-call="PdfStudyReader.savePdfNoteEditor">Salvar anotação</button></div></div></div>
+<div id="modalPdfNoteEditor" class="pdf-note-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle"><div class="pdf-note-card"><div class="pdf-note-head"><div><h3 id="pdfNoteEditorTitle">Nova anotação</h3><p>Edite como em uma folha de estudos.</p></div><button type="button" class="btn btn-secondary btn-sm" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Fechar</button></div><div class="pdf-note-toolbar" role="toolbar" aria-label="Formatação da anotação"><button type="button" data-inline-click="ih-085"><b>B</b></button><button type="button" data-inline-click="ih-086"><i>I</i></button><button type="button" data-inline-click="ih-087"><u>U</u></button><label>Tamanho <select data-inline-change="ih-088"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="4">Grande</option><option value="5">Título</option></select></label></div><div id="pdfNoteEditor" class="pdf-note-paper" contenteditable="true" spellcheck="true" aria-label="Conteúdo da anotação"></div><div class="pdf-note-actions"><button type="button" class="btn btn-secondary" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Cancelar</button><button type="button" class="btn btn-primary" data-action="call" data-call="PdfStudyReader.savePdfNoteEditor">Salvar anotação</button></div></div></div>
 </body>
 </html>
 

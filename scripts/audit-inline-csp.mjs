@@ -33,7 +33,7 @@ const inlineStyles = [...html.matchAll(/\sstyle\s*=\s*["'][^"']*["']/gi)];
 
 // Baseline endurecido em 2026-08-23. A partir daqui a dívida só pode diminuir.
 const HANDLER_BUDGET = 0;
-const STYLE_BUDGET = 82;
+const STYLE_BUDGET = 75;
 if (inlineHandlers.length > HANDLER_BUDGET) fail(`handlers inline=${inlineHandlers.length} excedem baseline=${HANDLER_BUDGET}`);
 else ok(`handlers inline congelados/reduzidos: ${inlineHandlers.length}/${HANDLER_BUDGET}`);
 if (inlineStyles.length > STYLE_BUDGET) fail(`style= inline=${inlineStyles.length} excedem baseline=${STYLE_BUDGET}`);
