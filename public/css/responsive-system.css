@@ -1,5 +1,5 @@
 /* ================================================================
-   RESPONSIVE DESIGN SYSTEM — PHASES 1–2
+   RESPONSIVE DESIGN SYSTEM — PHASES 1–3
    Canonical responsive foundation for Estudo Adaptativo.
 
    Official viewport bands:
@@ -11,6 +11,10 @@
    Phase 2 adds fluid containers and grid primitives while preserving
    feature-specific layouts (PDF Library, Reader and Calendar) until
    their dedicated migration phases.
+
+   Phase 3 normalizes the application header, navigation and generic
+   action toolbars across the canonical viewport bands without changing
+   navigation/authentication business logic.
    ================================================================ */
 
 :root {
@@ -48,6 +52,8 @@
     --grid-card-min-wide: 320px;
     --grid-metric-min: 150px;
     --toolbar-item-min: 140px;
+    --header-gap: clamp(8px, 1vw, 14px);
+    --header-control-min: 108px;
 
     /* Fluid type */
     --font-ui-sm: clamp(.72rem, .69rem + .12vw, .80rem);
@@ -167,7 +173,6 @@ svg {
 
 /* ================================================================
    FLUID TOOLBAR PRIMITIVES
-   Phase 2 does not replace specialized Library/header toolbars yet.
    ================================================================ */
 .responsive-toolbar {
     display: flex;
@@ -198,9 +203,153 @@ svg {
 }
 
 /* ================================================================
+   PHASE 3 — HEADER / NAVIGATION / GENERIC ACTION BARS
+   ================================================================ */
+header.modern-header {
+    width: 100%;
+    min-width: 0;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "brand sync"
+        "controls controls";
+    align-items: center;
+    column-gap: var(--header-gap);
+    row-gap: var(--space-3);
+    padding: clamp(10px, 1.2vw, 16px) !important;
+}
+
+header.modern-header .header-brand {
+    grid-area: brand;
+    min-width: 0;
+    width: auto;
+    overflow: hidden;
+}
+
+header.modern-header .header-brand-copy {
+    min-width: 0;
+}
+
+header.modern-header .header-brand-copy h2,
+header.modern-header .header-brand-signature {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+header.modern-header .header-brand-copy h2 {
+    white-space: nowrap;
+    font-size: var(--font-title);
+}
+
+header.modern-header .header-sync-status {
+    grid-area: sync;
+    margin: 0 !important;
+    justify-self: end;
+    max-width: min(100%, 280px);
+}
+
+header.modern-header .header-control-stack {
+    grid-area: controls;
+    width: 100%;
+    min-width: 0;
+    margin: 0 !important;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+}
+
+header.modern-header .concurso-selector-bar {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    display: grid !important;
+    grid-template-columns:
+        minmax(180px, 1.8fr)
+        repeat(3, minmax(var(--header-control-min), auto))
+        minmax(260px, 1.4fr);
+    align-items: center;
+    gap: var(--space-2) !important;
+    padding: var(--space-2) !important;
+}
+
+header.modern-header .concurso-selector-bar > select,
+header.modern-header .concurso-selector-bar > .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--control-sm);
+}
+
+header.modern-header .header-utility-cluster {
+    min-width: 0;
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+header.modern-header .header-account-actions {
+    min-width: 0;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+}
+
+header.modern-header .header-account-actions .btn,
+header.modern-header .btn-search-header {
+    min-width: 0;
+    width: 100%;
+    justify-content: center;
+}
+
+header.modern-header .header-nav-tabs {
+    width: 100%;
+    min-width: 0;
+    margin: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--space-1) !important;
+    padding: var(--space-1) !important;
+    overflow: visible;
+}
+
+header.modern-header .header-nav-tabs .tab-btn {
+    min-width: 0;
+    min-height: var(--control-sm);
+    padding-inline: var(--space-2);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Generic action bar: equal distribution when room exists, graceful wrap
+   when it does not. The mobile open/closed state remains controlled by
+   the existing application CSS/JS. */
+.action-bar {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--toolbar-item-min)), 1fr));
+    gap: var(--space-2) !important;
+    align-items: stretch;
+}
+
+.action-bar .btn-action {
+    min-width: 0 !important;
+    width: 100%;
+    min-height: var(--control-sm);
+    justify-content: center;
+    text-align: center;
+}
+
+.mobile-tools-toggle {
+    min-height: var(--control-md);
+    min-width: var(--touch-target);
+}
+
+/* ================================================================
    CONTAINER-QUERY OPT-IN
-   New/refactored modules can adapt to their actual allocated width,
-   not only to the browser viewport.
    ================================================================ */
 @container (max-width: 520px) {
     .responsive-region .responsive-toolbar--grid {
@@ -224,6 +373,7 @@ svg {
         --grid-card-min-wide: 100%;
         --grid-metric-min: 135px;
         --toolbar-item-min: 132px;
+        --header-control-min: 100%;
     }
 
     #app-dashboard {
@@ -238,6 +388,94 @@ svg {
     .grid-top {
         grid-template-columns: 1fr;
     }
+
+    header.modern-header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "brand tools"
+            "sync sync"
+            "controls controls";
+        row-gap: var(--space-2);
+        padding: var(--space-3) !important;
+    }
+
+    header.modern-header .mobile-tools-toggle {
+        grid-area: tools;
+        justify-self: end;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    header.modern-header .header-sync-status {
+        grid-area: sync;
+        justify-self: stretch;
+        width: 100%;
+        max-width: none;
+        justify-content: center;
+    }
+
+    header.modern-header .header-brand-copy h2 {
+        font-size: clamp(.96rem, 4vw, 1.12rem);
+    }
+
+    header.modern-header .concurso-selector-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    header.modern-header .concurso-selector-bar > select,
+    header.modern-header .header-utility-cluster {
+        grid-column: 1 / -1;
+    }
+
+    header.modern-header .header-utility-cluster {
+        grid-template-columns: 1fr;
+    }
+
+    header.modern-header .header-account-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    header.modern-header .header-account-actions .btn,
+    header.modern-header .btn-search-header,
+    header.modern-header .concurso-selector-bar > .btn {
+        min-height: var(--control-md);
+        padding-inline: var(--space-2);
+    }
+
+    /* When legacy rules keep the desktop tab strip visible, use one-row
+       horizontal navigation instead of a multi-line block. */
+    header.modern-header .header-nav-tabs {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    header.modern-header .header-nav-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    header.modern-header .header-nav-tabs .tab-btn {
+        flex: 0 0 auto;
+        min-width: max-content;
+        min-height: var(--control-md);
+        padding-inline: var(--space-3);
+        scroll-snap-align: start;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .action-bar.mobile-open {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .action-bar.mobile-open .btn-action {
+        min-height: var(--control-md);
+    }
 }
 
 /* TABLET 601px–900px */
@@ -250,6 +488,40 @@ svg {
         --grid-card-min: 200px;
         --grid-card-min-wide: 290px;
         --grid-metric-min: 145px;
+        --header-control-min: 96px;
+    }
+
+    header.modern-header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "brand sync"
+            "controls controls";
+    }
+
+    header.modern-header .concurso-selector-bar {
+        grid-template-columns:
+            minmax(220px, 1fr)
+            repeat(3, minmax(96px, auto));
+    }
+
+    header.modern-header .header-utility-cluster {
+        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 1fr) minmax(120px, .36fr);
+    }
+
+    header.modern-header .header-nav-tabs {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
+    header.modern-header .header-nav-tabs .tab-btn {
+        flex: 1 0 150px;
+    }
+
+    .action-bar {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
 }
 
@@ -263,6 +535,22 @@ svg {
         --grid-card-min: 210px;
         --grid-card-min-wide: 310px;
         --grid-metric-min: 150px;
+        --header-control-min: 96px;
+    }
+
+    header.modern-header .concurso-selector-bar {
+        grid-template-columns:
+            minmax(210px, 1.5fr)
+            repeat(3, minmax(92px, auto));
+    }
+
+    header.modern-header .header-utility-cluster {
+        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 1fr) minmax(130px, .32fr);
+    }
+
+    header.modern-header .header-nav-tabs .tab-btn {
+        font-size: var(--font-ui-md);
     }
 }
 
@@ -276,6 +564,11 @@ svg {
         --grid-card-min: 220px;
         --grid-card-min-wide: 320px;
         --grid-metric-min: 160px;
+        --header-control-min: 106px;
+    }
+
+    header.modern-header .mobile-tools-toggle {
+        display: none !important;
     }
 }
 
