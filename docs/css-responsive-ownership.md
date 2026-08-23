@@ -18,6 +18,12 @@ A partir das Fases 1–4, `public/css/responsive-system.css` é a camada canôni
 
 `pdf-library.css` e `pdf-reader.css` continuam donos exclusivos dos layouts especializados da Biblioteca e do leitor de PDF. O sistema responsivo global não deve capturar seletores internos desses módulos.
 
+A ordem de cascata intencional é:
+
+`base.css` / `dashboard.css` / `features.css` → `responsive-system.css` → CSS especializados de PDF.
+
+Assim, a camada canônica corrige o layout transversal sem retirar a autoridade final de Biblioteca e Reader sobre os seus componentes internos.
+
 ## Breakpoints oficiais
 
 - Mobile: `<= 600px`
@@ -32,7 +38,7 @@ Novos breakpoints transversais devem usar somente essas quatro faixas. Container
 `scripts/audit-css-ownership.cjs` roda no pipeline de auditoria e verifica:
 
 1. presença dos seletores canônicos;
-2. ordem correta de carregamento, com `responsive-system.css` depois das folhas legadas e especializadas;
+2. ordem correta de carregamento: folhas legadas → `responsive-system.css` → folhas especializadas de PDF;
 3. ausência de seletores especializados de PDF na camada global;
 4. uso apenas dos breakpoints canônicos na camada responsiva;
 5. detecção informativa da dívida legada ainda existente.
