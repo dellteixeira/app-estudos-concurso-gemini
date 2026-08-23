@@ -5,7 +5,7 @@
         if (document.querySelector('link[data-canonical-ui]')) return;
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = './css/canonical-ui.css?v=20260823-inline1';
+        link.href = './css/canonical-ui.css?v=20260823-phase5';
         link.dataset.canonicalUi = '1';
         document.head.appendChild(link);
     }
