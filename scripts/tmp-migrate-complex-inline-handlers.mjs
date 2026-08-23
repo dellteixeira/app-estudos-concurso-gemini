@@ -38,6 +38,7 @@ html = html.replace(/(\s+)(on[a-z]+)\s*=\s*(["'])([\s\S]*?)\3/gi, migrateAttribu
 const leftovers = [...html.matchAll(/\son[a-z]+\s*=\s*["']/gi)];
 if (leftovers.length) throw new Error(`Inline handlers remaining after migration: ${leftovers.length}`);
 if (!adapters.length) throw new Error('No inline handlers found to migrate.');
+if (adapters.length !== 88) throw new Error(`Expected 88 static handlers, found ${adapters.length}.`);
 
 // findDesktopTabButton historically inspected onclick source. It now uses semantic tab metadata.
 const oldFinder = "return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => (btn.getAttribute('onclick') || '').includes(`'${tabId}'`));";
@@ -50,13 +51,14 @@ const adapterEntries = adapters.map(({ id, code }) => {
 }).join(',\n');
 const eventList = JSON.stringify([...events].sort());
 
-const block = `\n\n        // INLINE_HANDLER_ADAPTERS_START\n        // Generated once from the former static inline handlers. Explicit external functions only; no eval/new Function.\n        (function installExternalizedInlineHandlers() {\n            const adapters = {\n${adapterEntries}\n            };\n            const eventTypes = ${eventList};\n            const findTarget = (event, type) => {\n                const selector = '[data-inline-' + type + ']';\n                const raw = event.target;\n                if (!raw) return null;\n                if (raw.matches?.(selector)) return raw;\n                return raw.closest?.(selector) || null;\n            };\n            for (const type of eventTypes) {\n                document.addEventListener(type, function delegatedExternalizedHandler(event) {\n                    const element = findTarget(event, type);\n                    if (!element) return;\n                    const id = element.getAttribute('data-inline-' + type);\n                    const adapter = adapters[id];\n                    if (typeof adapter !== 'function') return;\n                    const result = adapter.call(element, event);\n                    if (result === false) event.preventDefault();\n                }, true);\n            }\n        })();\n        // INLINE_HANDLER_ADAPTERS_END\n`;
+const block = `\n\n        // INLINE_HANDLER_ADAPTERS_START\n        // Generated once from the former static inline handlers. Explicit external functions only; no eval/new Function.\n        (function installExternalizedInlineHandlers() {\n            const adapters = {\n${adapterEntries}\n            };\n            const eventTypes = ${eventList};\n            const bindHandlers = () => {\n                for (const type of eventTypes) {\n                    const selector = '[data-inline-' + type + ']';\n                    document.querySelectorAll(selector).forEach(element => {\n                        if (element.dataset.inlineHandlerBound === '1') return;\n                        const id = element.getAttribute('data-inline-' + type);\n                        const adapter = adapters[id];\n                        if (typeof adapter !== 'function') return;\n                        element.addEventListener(type, function externalizedInlineHandler(event) {\n                            const result = adapter.call(this, event);\n                            if (result === false) {\n                                event.preventDefault();\n                                event.stopPropagation();\n                            }\n                        });\n                        element.dataset.inlineHandlerBound = '1';\n                    });\n                }\n            };\n            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindHandlers, { once:true });\n            else bindHandlers();\n        })();\n        // INLINE_HANDLER_ADAPTERS_END\n`;
 ui += block;
 
 if (/\beval\s*\(|\bnew\s+Function\b/.test(block)) throw new Error('Unsafe dynamic execution detected in generated adapters.');
 
 const beforeBudget = audit.match(/const HANDLER_BUDGET = (\d+);/)?.[1];
 if (!beforeBudget) throw new Error('Handler budget not found.');
+if (Number(beforeBudget) !== 88) throw new Error(`Expected handler budget 88, found ${beforeBudget}.`);
 audit = audit.replace(/const HANDLER_BUDGET = \d+;/, 'const HANDLER_BUDGET = 0;');
 
 fs.writeFileSync(indexPath, html, 'utf8');
