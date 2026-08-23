@@ -5,6 +5,7 @@
 
   const STORAGE_KEY = 'app_performance_samples_v1';
   const MAX_SAMPLES = 20;
+  const supportedEntryTypes = new Set(global.PerformanceObserver?.supportedEntryTypes || []);
   const state = {
     startedAt: performance.now(),
     lcp: null,
@@ -14,7 +15,13 @@
     navigation: {},
     interactions: new Map(),
     finalized: false,
-    observers: []
+    observers: [],
+    support: {
+      lcp: supportedEntryTypes.has('largest-contentful-paint'),
+      cls: supportedEntryTypes.has('layout-shift'),
+      inp: supportedEntryTypes.has('event'),
+      longtask: supportedEntryTypes.has('longtask')
+    }
   };
 
   const thresholds = Object.freeze({
@@ -31,20 +38,20 @@
     return Math.round(Number(value) * factor) / factor;
   }
 
-  function rating(value, limit) {
-    if (!Number.isFinite(Number(value))) return 'indisponível';
+  function rating(value, limit, isSupported = true) {
+    if (!isSupported || !Number.isFinite(Number(value))) return 'indisponível';
     if (Number(value) <= limit.good) return 'bom';
     if (Number(value) <= limit.needsImprovement) return 'atenção';
     return 'ruim';
   }
 
   function observe(type, callback, options = {}) {
-    if (!('PerformanceObserver' in global)) return null;
-    const supported = PerformanceObserver.supportedEntryTypes || [];
-    if (!supported.includes(type)) return null;
+    if (!('PerformanceObserver' in global) || !supportedEntryTypes.has(type)) return null;
     try {
       const observer = new PerformanceObserver(list => callback(list.getEntries()));
-      observer.observe({ type, buffered: options.buffered !== false, durationThreshold: options.durationThreshold });
+      const config = { type, buffered: options.buffered !== false };
+      if (options.durationThreshold != null) config.durationThreshold = options.durationThreshold;
+      observer.observe(config);
       state.observers.push(observer);
       return observer;
     } catch (_) {
@@ -96,28 +103,30 @@
     readNavigationTiming();
     state.inp = computeInp();
     const startupMs = state.navigation.loadMs ?? round(performance.now());
+    const longTaskMax = state.support.longtask ? state.longTasks.maxMs : null;
     return {
       collectedAt: new Date().toISOString(),
       version: String(global.APP_VERSION || '—'),
       deviceClass: getDeviceClass(),
       connection: getConnectionClass(),
+      support: { ...state.support },
       metrics: {
-        lcpMs: round(state.lcp),
-        inpMs: round(state.inp),
-        cls: round(state.cls, 3),
+        lcpMs: state.support.lcp ? round(state.lcp) : null,
+        inpMs: state.support.inp ? round(state.inp) : null,
+        cls: state.support.cls ? round(state.cls, 3) : null,
         startupMs: round(startupMs),
         domContentLoadedMs: round(state.navigation.domContentLoadedMs),
         ttfbMs: round(state.navigation.ttfbMs),
-        longTaskCount: state.longTasks.count,
-        longTaskTotalMs: round(state.longTasks.totalMs),
-        longTaskMaxMs: round(state.longTasks.maxMs)
+        longTaskCount: state.support.longtask ? state.longTasks.count : null,
+        longTaskTotalMs: state.support.longtask ? round(state.longTasks.totalMs) : null,
+        longTaskMaxMs: round(longTaskMax)
       },
       ratings: {
-        lcp: rating(state.lcp, thresholds.lcp),
-        inp: rating(state.inp, thresholds.inp),
-        cls: rating(state.cls, thresholds.cls),
-        startup: rating(startupMs, thresholds.startup),
-        longTask: rating(state.longTasks.maxMs, thresholds.longTaskMax)
+        lcp: rating(state.lcp, thresholds.lcp, state.support.lcp),
+        inp: rating(state.inp, thresholds.inp, state.support.inp),
+        cls: rating(state.cls, thresholds.cls, state.support.cls),
+        startup: rating(startupMs, thresholds.startup, true),
+        longTask: rating(longTaskMax, thresholds.longTaskMax, state.support.longtask)
       }
     };
   }
@@ -135,9 +144,10 @@
     const report = getCurrentReport();
     try {
       const samples = loadSamples();
-      const last = samples[samples.length - 1];
-      if (last?.sessionId === global.__performanceSessionId) return report;
-      samples.push({ ...report, sessionId: global.__performanceSessionId });
+      const index = samples.findIndex(sample => sample.sessionId === global.__performanceSessionId);
+      const next = { ...report, sessionId: global.__performanceSessionId };
+      if (index >= 0) samples[index] = next;
+      else samples.push(next);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(samples.slice(-MAX_SAMPLES)));
     } catch (_) {}
     return report;
@@ -146,10 +156,11 @@
   function finalize() {
     if (state.finalized) return getCurrentReport();
     state.finalized = true;
+    const report = saveSample();
     state.observers.forEach(observer => {
-      try { observer.takeRecords?.(); observer.disconnect(); } catch (_) {}
+      try { observer.disconnect(); } catch (_) {}
     });
-    return saveSample();
+    return report;
   }
 
   function formatMetric(label, value, unit, metricRating) {
@@ -170,6 +181,7 @@
         <div id="performanceDiagnosticsSummary" class="perf-diagnostics-grid"></div>
         <div id="performanceDiagnosticsDetails" style="margin-top:14px;font-size:.82rem;line-height:1.55;"></div>
         <div class="modal-actions">
+          <button class="btn btn-secondary" type="button" onclick="AppPerformanceMetrics.copyDiagnostics()">Copiar diagnóstico</button>
           <button class="btn btn-secondary" type="button" onclick="AppPerformanceMetrics.clearHistory()">Limpar histórico</button>
           <button class="btn btn-secondary" type="button" onclick="AppPerformanceMetrics.closeDiagnostics()">Fechar</button>
         </div>
@@ -202,7 +214,8 @@
     const samples = loadSamples();
     const details = document.getElementById('performanceDiagnosticsDetails');
     if (details) {
-      details.innerHTML = `<strong>Detalhes da sessão</strong><br>TTFB: ${m.ttfbMs ?? '—'} ms · DOMContentLoaded: ${m.domContentLoadedMs ?? '—'} ms · Long tasks: ${m.longTaskCount} (${m.longTaskTotalMs ?? 0} ms acumulados) · Perfil: ${report.deviceClass} · Rede: ${report.connection}<br><br><strong>Histórico local:</strong> ${samples.length} sessão(ões) armazenada(s), máximo ${MAX_SAMPLES}.`;
+      const longTaskText = m.longTaskCount == null ? 'indisponível neste navegador' : `${m.longTaskCount} (${m.longTaskTotalMs ?? 0} ms acumulados)`;
+      details.innerHTML = `<strong>Detalhes da sessão</strong><br>TTFB: ${m.ttfbMs ?? '—'} ms · DOMContentLoaded: ${m.domContentLoadedMs ?? '—'} ms · Long tasks: ${longTaskText} · Perfil: ${report.deviceClass} · Rede: ${report.connection}<br><br><strong>Histórico local:</strong> ${samples.length} sessão(ões) armazenada(s), máximo ${MAX_SAMPLES}.`;
     }
     return report;
   }
@@ -221,6 +234,18 @@
   function clearHistory() {
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
     renderDiagnostics();
+  }
+
+  async function copyDiagnostics() {
+    const report = saveSample();
+    const payload = JSON.stringify({ current: report, recent: loadSamples().slice(-5) }, null, 2);
+    try {
+      await navigator.clipboard.writeText(payload);
+      if (typeof global.appNotice === 'function') global.appNotice('Diagnóstico copiado.', { title: 'Performance' });
+    } catch (_) {
+      console.info('Diagnóstico de performance:', payload);
+    }
+    return payload;
   }
 
   function installAccountButton() {
@@ -291,6 +316,7 @@
     openDiagnostics,
     closeDiagnostics,
     clearHistory,
+    copyDiagnostics,
     renderDiagnostics,
     thresholds
   });
