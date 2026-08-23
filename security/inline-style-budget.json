@@ -1,0 +1,7 @@
+{
+  "baseline": 124,
+  "budget": 85,
+  "migrated": 39,
+  "classes": 26,
+  "policy": "Only presentation-only styles are externalized. JS-controlled state/dynamic inline styles remain temporarily."
+}

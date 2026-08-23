@@ -70,13 +70,13 @@
                 <img src="./icon-192.png" alt="" width="82" height="82">
             </div>
             <h2>Entrar no Sistema</h2>
-            <div style="margin-bottom: 1rem;">
+            <div class="u-static-001">
                 <input type="email" id="email" placeholder="seu@email.com" style="width:100%; margin-bottom: 0.5rem;" required>
                 <input type="password" id="password" placeholder="Senha (min. 6 caracteres)" style="width:100%;" required>
             </div>
             <div style="display:flex; gap:0.5rem;">
-                <button class="btn btn-primary" style="flex:1;" data-action="auth-login">Entrar</button>
-                <button class="btn btn-secondary" style="flex:1;" data-action="auth-signup">Cadastrar</button>
+                <button class="btn btn-primary u-static-002" data-action="auth-login">Entrar</button>
+                <button class="btn btn-secondary u-static-002" data-action="auth-signup">Cadastrar</button>
             </div>
             <div id="authStatusMessage" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.82rem; line-height:1.4; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.28); color:#86efac;"></div>
         </div>
@@ -206,7 +206,7 @@
         <div class="action-bar">
             <button class="btn-action" data-inline-click="ih-001">Sincronizar Agora</button>
             <button class="btn-action" data-inline-click="ih-002">Ver / Anexar Edital PDF</button>
-            <label class="btn-action" style="cursor: pointer;">
+            <label class="btn-action u-static-003">
                 Importar JSON
                 <input type="file" id="jsonInput" accept=".json" style="display: none;" data-inline-change="ih-003">
             </label>
@@ -320,7 +320,7 @@
                         <thead>
                             <tr id="editalTableHeaderRow">
                                 <th style="width: 90px;">Prioridade</th>
-                                <th style="text-align: left; padding-left: 1rem;">Assunto</th>
+                                <th class="u-static-004">Assunto</th>
                                 <th>Teoria</th>
                                 <th>Questões</th>
                                 <th>Rev. 1d</th>
@@ -442,7 +442,7 @@
                     <button class="btn btn-primary" data-action="call" data-call="openModalNovaNota">Incluir Nota</button>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 1.5rem;">
+                <div class="form-group u-static-005">
                     <label><strong>Selecione a Matéria:</strong></label>
                     <select id="notesMateriaSelect" data-change-call="renderNotesList"></select>
                 </div>
@@ -463,7 +463,7 @@
                 </div>
 
                 <div style="background: rgba(0,0,0,0.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem;">
-                    <h4 style="color: var(--header-materia-text); margin-bottom: 8px;">Importação Rápida via Texto (Colar em Lote)</h4>
+                    <h4 class="u-static-006">Importação Rápida via Texto (Colar em Lote)</h4>
                     <p style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 10px;">Escolha a matéria e o assunto que receberão os cartões e cole o conteúdo em lote.</p>
                     <div class="flashcard-bulk-targets" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
                         <select id="fcMateriaSelect" data-change-call="updateFcAssuntoOptions" style="flex:1; min-width: 180px;">
@@ -491,7 +491,7 @@
                     </div>
                 </div>
 
-                <div id="flashcardFoldersContainer" style="margin-bottom: 1.5rem;"></div>
+                <div class="u-static-005" id="flashcardFoldersContainer"></div>
 
                 <div id="flashcardsContainer"></div>
             </div>
@@ -633,7 +633,7 @@
     <div class="modal-overlay" id="modalFiltroEstudoFC">
         <div class="modal">
             <h3>Estudo Focado de Flashcards</h3>
-            <p style="font-size:0.88rem; color:#94a3b8;">Escolha a matéria e/ou assunto específico que você deseja revisar agora:</p>
+            <p class="u-static-007">Escolha a matéria e/ou assunto específico que você deseja revisar agora:</p>
             
             <div class="form-group">
                 <label>Matéria para Estudo:</label>
@@ -687,7 +687,7 @@
     <div class="modal-overlay" id="modalAppDialog" style="z-index:1400;">
         <div class="modal" style="max-width:560px;">
             <h3 id="appDialogTitle">Confirmar ação</h3>
-            <div id="appDialogMessage" style="white-space:pre-line; line-height:1.55; color:var(--text-color);"></div>
+            <div class="u-static-008" id="appDialogMessage"></div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" id="appDialogCancelBtn" data-inline-click="ih-034">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="appDialogConfirmBtn" data-enter-default="true" data-inline-click="ih-035">Confirmar</button>
@@ -756,7 +756,7 @@
                 <div class="account-danger-action">
                     <h5>Apagar dados e manter a conta</h5>
                     <p>Remove concursos, edital, cronogramas, sessões, horas, revisões, anotações, flashcards, configurações, PDFs, filas offline e backups. Seu e-mail e login continuam ativos.</p>
-                    <div class="account-field-grid" style="margin-top:12px;">
+                    <div class="account-field-grid u-static-009">
                         <div class="form-group">
                             <label for="accountDeletePassword">Senha atual</label>
                             <input type="password" id="accountDeletePassword" autocomplete="current-password" placeholder="Confirme sua senha">
@@ -774,7 +774,7 @@
                 <div class="account-danger-action">
                     <h5>Excluir minha conta permanentemente</h5>
                     <p>Remove todos os dados e também exclui o usuário do Supabase Auth. Depois disso, esta conta não poderá entrar novamente com o mesmo login/senha sem realizar um novo cadastro.</p>
-                    <div class="account-field-grid" style="margin-top:12px;">
+                    <div class="account-field-grid u-static-009">
                         <div class="form-group">
                             <label for="accountPermanentDeletePassword">Senha atual</label>
                             <input type="password" id="accountPermanentDeletePassword" autocomplete="current-password" placeholder="Confirme sua senha">
@@ -834,7 +834,7 @@
                 <div class="hours-option-card" data-inline-click="ih-040">
                     <div>
                         <strong>Preenchimento 1: Horários Definidos por Turnos</strong>
-                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Define início e carga horária exata para Manhã, Tarde e Noite.</p>
+                        <p class="u-static-010">Define início e carga horária exata para Manhã, Tarde e Noite.</p>
                     </div>
                     
                 </div>
@@ -842,7 +842,7 @@
                 <div class="hours-option-card" data-inline-click="ih-041">
                     <div>
                         <strong>Preenchimento 2: Dias da Semana + Carga Horária Diária</strong>
-                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Selecione os dias ativos e a quantidade de horas gerais disponíveis.</p>
+                        <p class="u-static-010">Selecione os dias ativos e a quantidade de horas gerais disponíveis.</p>
                     </div>
                     
                 </div>
@@ -850,7 +850,7 @@
                 <div class="hours-option-card" data-inline-click="ih-042">
                     <div>
                         <strong>Preenchimento 3: Estudo por Oportunidade</strong>
-                        <p style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Sem horário e sem meta diária fixa. O app escolhe a melhor atividade quando você disser quanto tempo tem agora.</p>
+                        <p class="u-static-010">Sem horário e sem meta diária fixa. O app escolhe a melhor atividade quando você disser quanto tempo tem agora.</p>
                     </div>
                     
                 </div>
@@ -872,7 +872,7 @@
                 <input type="date" id="m2DataInicio">
             </div>
 
-            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Quais dias você pode estudar?</h4>
+            <h4 class="u-static-011">Quais dias você pode estudar?</h4>
             <div class="weekday-picker">
                 <div class="weekday-btn selected" data-inline-click="ih-043"><strong>D</strong><span>DOM</span></div>
                 <div class="weekday-btn selected" data-inline-click="ih-044"><strong>S</strong><span>SEG</span></div>
@@ -883,7 +883,7 @@
                 <div class="weekday-btn selected" data-inline-click="ih-049"><strong>S</strong><span>SÁB</span></div>
             </div>
 
-            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Quanto tempo por dia você consegue estudar?</h4>
+            <h4 class="u-static-012">Quanto tempo por dia você consegue estudar?</h4>
             <div id="hoursSelectionContainer">
                 <div class="hours-option-card" data-inline-click="ih-050"><span>Até 1h por dia</span></div>
                 <div class="hours-option-card selected" data-inline-click="ih-051"><span>Até 2h por dia</span></div>
@@ -896,7 +896,7 @@
                 <div id="customDailyHoursGrid" class="custom-daily-hours-grid"></div>
             </div>
 
-            <h4 style="color: var(--primary-blue); margin-top: 1rem;">Estratégia de Revisão Espaçada</h4>
+            <h4 class="u-static-012">Estratégia de Revisão Espaçada</h4>
             <div class="form-group">
                 <select id="m2RevisionStrategy" style="width:100%;">
                     <option value="nenhuma">Sem Revisão Espaçada</option>
@@ -930,7 +930,7 @@
                 <input type="date" id="cfgDataInicio">
             </div>
 
-            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Horários Padrão (Segunda a Sexta):</h4>
+            <h4 class="u-static-011">Horários Padrão (Segunda a Sexta):</h4>
             <div class="shift-box">
                 <span><strong>Manhã Início:</strong> <input type="time" id="cfgManhaInicio" value="10:00"></span>
                 <span><strong>Qtd Horas:</strong> <input type="number" id="cfgManhaQtd" value="1" min="0" max="12" style="width:70px;"></span>
@@ -944,13 +944,13 @@
                 <span><strong>Qtd Horas:</strong> <input type="number" id="cfgNoiteQtd" value="1" min="0" max="12" style="width:70px;"></span>
             </div>
 
-            <h4 style="color: var(--primary-blue); margin-top: 0.5rem;">Dias de Estudo no Fim de Semana:</h4>
+            <h4 class="u-static-011">Dias de Estudo no Fim de Semana:</h4>
             <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
                 <label><input type="checkbox" id="cfgIncluirSabado" checked> Incluir Sábado</label>
                 <label><input type="checkbox" id="cfgIncluirDomingo" checked> Incluir Domingo</label>
             </div>
 
-            <div class="form-group" style="margin-top: 1rem;">
+            <div class="form-group u-static-013">
                 <label><strong>Estratégia de Revisões:</strong></label>
                 <select id="m1RevisionStrategy" style="width:100%;">
                     <option value="nenhuma">Sem revisões automáticas</option>
@@ -1004,14 +1004,14 @@
     <div class="modal-overlay" id="modalFlexibleStudyConfig" style="z-index:1400;">
         <div class="modal modal-large" style="max-width:860px;">
             <h3> Estudo por Oportunidade</h3>
-            <p style="font-size:.88rem;color:#94a3b8;line-height:1.5;">Você não precisa definir horários. Informe apenas como cada dia deve se comportar; quando surgir uma oportunidade, toque em <strong>Estudar agora</strong>.</p>
+            <p class="u-static-014">Você não precisa definir horários. Informe apenas como cada dia deve se comportar; quando surgir uma oportunidade, toque em <strong>Estudar agora</strong>.</p>
             <div class="form-group">
                 <label><strong>Data de início:</strong></label>
                 <input type="date" id="flexDataInicio">
             </div>
-            <h4 style="color:var(--primary-blue);margin-top:.8rem;">Como cada dia deve funcionar?</h4>
+            <h4 class="u-static-015">Como cada dia deve funcionar?</h4>
             <div id="flexibleDayModesGrid" class="flex-day-grid"></div>
-            <div style="font-size:.76rem;color:#94a3b8;line-height:1.45;margin:8px 0 14px;">
+            <div class="u-static-016">
                 <strong>Estudo completo:</strong> conteúdo novo + revisões. <strong>Somente revisão:</strong> recuperação ativa/flashcards/revisões. <strong>Descanso:</strong> o app não sugere estudo, salvo se você decidir ignorar o descanso naquele momento.
             </div>
             <div class="form-group">
@@ -1032,8 +1032,8 @@
     <div class="modal-overlay" id="modalOpportunityStudy" style="z-index:1420;">
         <div class="modal modal-large" style="max-width:820px;">
             <h3>Estudar agora</h3>
-            <p id="opportunityModeHint" style="font-size:.84rem;color:#94a3b8;line-height:1.45;">Diga quanto tempo você tem. O sistema cruza memória, desempenho, prioridade, fase da prova e contexto para escolher o assunto e o método de estudo.</p>
-            <h4 style="color:var(--primary-blue);margin-top:.8rem;">Quanto tempo você tem?</h4>
+            <p class="u-static-017" id="opportunityModeHint">Diga quanto tempo você tem. O sistema cruza memória, desempenho, prioridade, fase da prova e contexto para escolher o assunto e o método de estudo.</p>
+            <h4 class="u-static-015">Quanto tempo você tem?</h4>
             <div class="opportunity-time-grid">
                 <button class="opportunity-time-btn" data-minutes="5" data-inline-click="ih-055">5 min</button>
                 <button class="opportunity-time-btn" data-minutes="10" data-inline-click="ih-056">10 min</button>
@@ -1041,7 +1041,7 @@
                 <button class="opportunity-time-btn" data-minutes="40" data-inline-click="ih-058">40 min</button>
                 <button class="opportunity-time-btn" data-minutes="60" data-inline-click="ih-059">60+ min</button>
             </div>
-            <h4 style="color:var(--primary-blue);margin-top:.7rem;">Onde / como você está?</h4>
+            <h4 class="u-static-018">Onde / como você está?</h4>
             <div class="opportunity-context-grid">
                 <button class="opportunity-context-btn selected" data-context="any" data-inline-click="ih-060">Qualquer situação</button>
                 <button class="opportunity-context-btn" data-context="transit" data-inline-click="ih-061">Em deslocamento</button>
@@ -1209,14 +1209,14 @@
     <div class="modal-overlay" id="modalDayContent">
         <div class="modal">
             <h3 id="dayModalTitle">Gerenciar Conteúdo do Dia</h3>
-            <div id="dayModalSummary" style="font-size:0.82rem; color:#93c5fd; font-weight:700;"></div>
-            <p style="font-size:0.88rem; color:#94a3b8;">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
+            <div class="u-static-019" id="dayModalSummary"></div>
+            <p class="u-static-007">Marque o status para integrar diretamente com a tabela do edital verticalizado.</p>
             <div id="dayTopicsContainer"></div>
-            <div class="day-modal-footer" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
+            <div class="day-modal-footer u-static-020">
                 <div id="addNewTopicArea">
                     <button class="btn btn-primary btn-sm" data-action="call" data-call="showAddTopicSelectors">Adicionar Novo Tópico</button>
                 </div>
-                <div class="modal-actions" style="margin-top:0;">
+                <div class="modal-actions u-static-021">
                     <button class="btn btn-secondary" data-action="call" data-call="closeModalDayContent">Fechar (ESC)</button>
                 </div>
             </div>
@@ -1268,23 +1268,23 @@
 
     <div class="modal-overlay" id="modalAnaliseEditalIA">
         <div class="modal modal-large" style="height:auto; max-height:92vh;">
-            <h3 style="margin-bottom:0;">Analisar Edital com IA</h3>
+            <h3 class="u-static-022">Analisar Edital com IA</h3>
             <div class="ai-edital-intro">
                 <strong>Universal Parser V9.20 — análise estrutural adaptativa do edital.</strong><br>
                 O Painel identifica automaticamente a <strong>estrutura do documento</strong>, os blocos de cargo/área/especialidade, disciplinas e assuntos usando layout, títulos, numeração e delimitadores do próprio PDF. O Workers AI permanece restrito à priorização e ao fallback estrutural validado; não pode inventar conteúdo. A prioridade usa a escala <strong>P1 = máxima</strong>, <strong>P2 = alta</strong>, <strong>P3 = média</strong> e <strong>P4 = baixa</strong>, sempre com sinais do próprio edital.
             </div>
             <div id="aiEditalFileInfo" class="ai-source-note">Carregando informações do edital...</div>
-            <div class="form-group" style="margin-top:0.8rem;">
+            <div class="form-group u-static-023">
                 <label><strong>Cargo / Área / Especialidade:</strong></label>
                 <select id="selectAiCargo" disabled>
                     <option value="">Detectando a estrutura do conteúdo programático...</option>
                 </select>
-                <small id="aiCargoHint" style="color:#94a3b8; line-height:1.35;">O Painel detectará automaticamente se o edital possui cargos separados ou um único conteúdo programático.</small>
+                <small class="u-static-024" id="aiCargoHint">O Painel detectará automaticamente se o edital possui cargos separados ou um único conteúdo programático.</small>
             </div>
-            <div class="form-group" style="margin-top:0.8rem;">
+            <div class="form-group u-static-023">
                 <label><strong>Banca examinadora (opcional nesta fase):</strong></label>
                 <input type="text" id="inputAiBanca" placeholder="Ex.: FCC, FGV, Cebraspe...">
-                <small style="color:#94a3b8; line-height:1.35;">A banca é enviada como contexto, mas a Fase 1 ainda não consulta automaticamente o histórico de questões. Não será inventada frequência histórica.</small>
+                <small class="u-static-024">A banca é enviada como contexto, mas a Fase 1 ainda não consulta automaticamente o histórico de questões. Não será inventada frequência histórica.</small>
             </div>
             <div id="aiEditalStatus" class="ai-analysis-status" aria-live="polite"></div>
             <div id="aiEditalPreview" class="ai-analysis-preview"></div>
@@ -1346,13 +1346,13 @@
         <div class="modal flashcard-study-modal">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3 id="studyModalTitle">Sessão de Estudos</h3>
-                <span id="studyModalProgress" style="font-weight:700; color:var(--primary-blue);">0 / 0</span>
+                <span class="u-static-025" id="studyModalProgress">0 / 0</span>
             </div>
             <div class="flashcard-meta" id="studyCardMeta"></div>
             <div class="study-card-container" data-action="call" data-call="toggleStudyCardAnswer">
                 <div class="study-card-inner">
                     <p style="font-size:0.85rem; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;" id="studyCardLabel">Pergunta (Clique para virar)</p>
-                    <h3 id="studyCardText" style="font-size:1.25rem; font-weight:700;"></h3>
+                    <h3 class="u-static-026" id="studyCardText"></h3>
                 </div>
             </div>
             <div class="modal-actions flashcard-study-modal-actions">
@@ -1369,7 +1369,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <h3 id="editalModalTitle">Documento do Edital</h3>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <label class="btn btn-success btn-sm" style="cursor: pointer;">
+                    <label class="btn btn-success btn-sm u-static-003">
                         Anexar Novo Arquivo
                         <input type="file" id="editalFileInput" accept=".pdf,.doc,.docx,.rtf,.txt,image/*" style="display: none;" data-inline-change="ih-077">
                     </label>
