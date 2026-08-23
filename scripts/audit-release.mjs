@@ -213,7 +213,8 @@ if (!/StudyDomain\.filterActiveRetentionStates/.test(appJs)) fail('retenção n�
 else ok('retenção ativa preservada');
 if (!/class="note-format-toolbar"/.test(html) || !/contenteditable="true"/.test(html) || !/function sanitizeNoteHtml\(/.test(appJs)) fail('editor rico de notas sofreu regressão');
 else ok('editor rico de notas preservado');
-if (!/onclick="excluirAssuntoEspecifico\(\)"/.test(html) || !/StudyDomain\.getTopicItemsForDeletion/.test(appJs)) fail('exclusão granular sofreu regressão');
+const granularDeletionAction = /data-action="call"\s+data-call="excluirAssuntoEspecifico"/.test(html) || /data-call="excluirAssuntoEspecifico"\s+data-action="call"/.test(html);
+if (!granularDeletionAction || !/StudyDomain\.getTopicItemsForDeletion/.test(appJs)) fail('exclusão granular sofreu regressão');
 else ok('exclusão granular preservada');
 
 // Layout de retenção aprovado precisa continuar em alguma folha CSS descoberta.
