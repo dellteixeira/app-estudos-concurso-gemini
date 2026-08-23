@@ -1,6 +1,6 @@
 /* ================================================================
    UI TEXT SAFETY — FINAL RESPONSIVE CONTRACT
-   One deterministic late layer for header actions and retention cards.
+   Header em linha única + métricas de retenção compactas.
    ================================================================ */
 
 /* ----------------------------------------------------------------
@@ -31,17 +31,7 @@ header.modern-header .concurso-selector-bar > .btn {
     width: auto !important;
 }
 
-header.modern-header .header-utility-cluster {
-    display: flex !important;
-    flex: 0 0 auto !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    gap: clamp(6px, .75vw, 10px) !important;
-    width: auto !important;
-    min-width: max-content !important;
-    max-width: none !important;
-}
-
+header.modern-header .header-utility-cluster,
 header.modern-header .header-account-actions {
     display: flex !important;
     flex: 0 0 auto !important;
@@ -50,6 +40,7 @@ header.modern-header .header-account-actions {
     gap: clamp(6px, .75vw, 10px) !important;
     width: auto !important;
     min-width: max-content !important;
+    max-width: none !important;
 }
 
 header.modern-header .header-account-actions .btn,
@@ -76,10 +67,7 @@ header.modern-header .mobile-tools-toggle {
     justify-content: center !important;
 }
 
-header.modern-header .btn-theme-header {
-    min-width: 0 !important;
-}
-
+header.modern-header .btn-theme-header { min-width: 0 !important; }
 header.modern-header .btn-search-header {
     display: inline-flex !important;
     align-items: center !important;
@@ -87,25 +75,21 @@ header.modern-header .btn-search-header {
 }
 
 /* ----------------------------------------------------------------
-   RETENTION METRICS — definitive redesign
-
-   features.css contains legacy #retentionDiagnosticPanel rules with
-   !important that used a 54px + text two-column card. All selectors below
-   intentionally include #retentionDiagnosticPanel so this late layer wins
-   the cascade and makes the card genuinely vertical.
+   RETENTION METRICS — COMPACT DESKTOP CONTRACT
+   Reverte o crescimento visual do redesign anterior. No desktop os quatro
+   indicadores ficam em uma única linha, baixos e discretos. A adaptação 2x2
+   acontece apenas em viewport mobile real, não pela largura da coluna central.
    ---------------------------------------------------------------- */
 #retentionDiagnosticPanel .rd-center-v1077 {
     min-width: 0 !important;
     width: 100% !important;
-    container-type: inline-size !important;
-    container-name: retentionMetrics;
 }
 
 #retentionDiagnosticPanel .rd-metrics-v1077 {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    grid-auto-rows: auto !important;
-    gap: clamp(10px, 1.2vw, 14px) !important;
+    grid-auto-rows: 142px !important;
+    gap: 8px !important;
     width: 100% !important;
     min-width: 0 !important;
     align-items: stretch !important;
@@ -113,70 +97,67 @@ header.modern-header .btn-search-header {
 
 #retentionDiagnosticPanel .rd-metric-card-v1077 {
     appearance: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 8px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 38px minmax(24px, auto) 1fr 6px !important;
+    place-items: center stretch !important;
+    row-gap: 4px !important;
     position: relative !important;
     inset: auto !important;
     transform: none !important;
     float: none !important;
     width: 100% !important;
     min-width: 0 !important;
-    height: auto !important;
-    min-height: 190px !important;
-    max-height: none !important;
-    padding: 14px 12px 13px !important;
+    height: 142px !important;
+    min-height: 142px !important;
+    max-height: 142px !important;
+    padding: 9px 8px 9px !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
     text-align: center !important;
 }
 
 #retentionDiagnosticPanel .rd-metric-icon-v1077 {
-    order: 1 !important;
     position: static !important;
     inset: auto !important;
     transform: none !important;
     float: none !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: center !important;
+    align-self: center !important;
     display: grid !important;
     place-items: center !important;
-    flex: 0 0 auto !important;
-    align-self: center !important;
-    justify-self: auto !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
-    width: 50px !important;
-    height: 50px !important;
-    min-width: 50px !important;
-    min-height: 50px !important;
-    margin: 0 auto 2px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    font-size: .92rem !important;
 }
 
 #retentionDiagnosticPanel .rd-metric-label-v1077 {
-    order: 2 !important;
     position: static !important;
     inset: auto !important;
     transform: none !important;
     float: none !important;
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    justify-self: stretch !important;
+    align-self: start !important;
     display: block !important;
-    flex: 0 0 auto !important;
-    align-self: stretch !important;
-    justify-self: auto !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    min-height: 2.45em !important;
+    min-height: 0 !important;
     height: auto !important;
-    margin: 0 auto 4px !important;
-    padding: 0 3px !important;
+    margin: 0 !important;
+    padding: 0 1px !important;
     box-sizing: border-box !important;
-    font-size: clamp(.72rem, .67rem + .22vw, .86rem) !important;
-    font-weight: 750 !important;
-    line-height: 1.2 !important;
+    font-size: clamp(.54rem, .48rem + .16vw, .66rem) !important;
+    font-weight: 740 !important;
+    line-height: 1.08 !important;
+    letter-spacing: -.01em !important;
     text-align: center !important;
     white-space: normal !important;
     overflow: visible !important;
@@ -187,77 +168,84 @@ header.modern-header .btn-search-header {
 }
 
 #retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
-    order: 3 !important;
     position: static !important;
     inset: auto !important;
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+    justify-self: start !important;
+    align-self: end !important;
     display: block !important;
-    flex: 0 0 auto !important;
-    align-self: stretch !important;
-    justify-self: auto !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
     width: 100% !important;
     min-width: 0 !important;
-    margin: auto 0 0 !important;
-    font-size: clamp(2rem, 2.5vw, 2.7rem) !important;
-    line-height: .95 !important;
+    margin: 0 !important;
+    font-size: clamp(1.65rem, 2vw, 2.15rem) !important;
+    line-height: .94 !important;
     text-align: left !important;
 }
 
 #retentionDiagnosticPanel .rd-metric-progress-v1077 {
-    order: 4 !important;
     position: static !important;
     inset: auto !important;
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+    align-self: end !important;
     display: block !important;
-    flex: 0 0 auto !important;
-    align-self: stretch !important;
-    justify-self: auto !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
     width: 100% !important;
     min-width: 0 !important;
-    margin-top: 2px !important;
+    height: 6px !important;
+    margin: 0 !important;
 }
 
-/* The metrics column can be narrow while the viewport is wide. Adapt to the
-   actual component width, not just the browser width. */
-@container retentionMetrics (max-width: 760px) {
+#retentionDiagnosticPanel .rd-metric-progress-v1077 > span {
+    height: 6px !important;
+}
+
+/* Mobile real: prioriza leitura sem ampliar o painel em desktop/notebook. */
+@media (max-width: 600px) {
     #retentionDiagnosticPanel .rd-metrics-v1077 {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        grid-auto-rows: auto !important;
+        grid-auto-rows: 128px !important;
+        gap: 8px !important;
     }
 
     #retentionDiagnosticPanel .rd-metric-card-v1077 {
-        height: auto !important;
-        min-height: 176px !important;
-        max-height: none !important;
+        grid-template-rows: 34px minmax(22px, auto) 1fr 5px !important;
+        height: 128px !important;
+        min-height: 128px !important;
+        max-height: 128px !important;
+        padding: 8px !important;
     }
 
     #retentionDiagnosticPanel .rd-metric-icon-v1077 {
-        width: 48px !important;
-        height: 48px !important;
-        min-width: 48px !important;
-        min-height: 48px !important;
-    }
-}
-
-@container retentionMetrics (max-width: 420px) {
-    #retentionDiagnosticPanel .rd-metrics-v1077 {
-        grid-template-columns: 1fr !important;
-    }
-
-    #retentionDiagnosticPanel .rd-metric-card-v1077 {
-        min-height: 164px !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        font-size: .82rem !important;
     }
 
     #retentionDiagnosticPanel .rd-metric-label-v1077 {
-        min-height: 0 !important;
+        font-size: .62rem !important;
+        line-height: 1.08 !important;
+    }
+
+    #retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
+        font-size: 1.7rem !important;
+    }
+
+    #retentionDiagnosticPanel .rd-metric-progress-v1077,
+    #retentionDiagnosticPanel .rd-metric-progress-v1077 > span {
+        height: 5px !important;
     }
 }
 
-/* Viewport adaptation for header controls: preserve a single row. The row
-   may scroll horizontally only when the physical viewport cannot contain all
-   controls, rather than stacking or clipping labels. */
+@media (max-width: 340px) {
+    #retentionDiagnosticPanel .rd-metrics-v1077 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Viewport adaptation for header controls: preserve a single row. */
 @media (max-width: 900px) {
     header.modern-header .concurso-selector-bar {
         gap: 6px !important;
