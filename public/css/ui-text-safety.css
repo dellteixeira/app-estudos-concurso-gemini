@@ -1,0 +1,168 @@
+/* ================================================================
+   UI TEXT SAFETY — adaptive controls and retention metrics
+   Prevents labels from being clipped or escaping their controls.
+   Loaded as a late UI override so it wins over legacy responsive rules.
+   ================================================================ */
+
+/* Generic header controls: never clip visible action labels. */
+header.modern-header .header-account-actions,
+header.modern-header .header-utility-cluster {
+    min-width: 0;
+}
+
+header.modern-header .header-account-actions {
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)) !important;
+}
+
+header.modern-header .header-account-actions .btn,
+header.modern-header .btn-search-header,
+header.modern-header .concurso-selector-bar > .btn,
+header.modern-header .mobile-tools-toggle {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: var(--control-md, 44px);
+    padding: 8px 12px !important;
+    line-height: 1.2;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: normal;
+    word-break: keep-all;
+    text-align: center;
+    justify-content: center;
+}
+
+/* The theme label is the longest header action; give it enough intrinsic room. */
+header.modern-header .btn-theme-header {
+    min-width: 138px !important;
+}
+
+/* Allow the utility cluster itself to reflow instead of squeezing buttons. */
+header.modern-header .header-utility-cluster {
+    grid-template-columns: minmax(0, 1fr) minmax(112px, auto) !important;
+}
+
+/* Retention metric cards: icon above, readable label below, no clipping. */
+.rd-metrics-v1077 {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: clamp(8px, 1vw, 12px) !important;
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+}
+
+.rd-metrics-v1077 .rd-metric-card-v1077 {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto 1fr auto !important;
+    justify-items: center !important;
+    align-items: start !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 196px;
+    padding: clamp(12px, 1.4vw, 16px) !important;
+    box-sizing: border-box;
+    overflow: hidden !important;
+    text-align: center !important;
+}
+
+.rd-metrics-v1077 .rd-metric-icon-v1077 {
+    grid-row: 1;
+    display: grid !important;
+    place-items: center !important;
+    margin: 0 auto 2px !important;
+    flex: none !important;
+}
+
+.rd-metrics-v1077 .rd-metric-label-v1077 {
+    grid-row: 2;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 2.5em;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    box-sizing: border-box;
+    font-size: clamp(.72rem, .68rem + .18vw, .84rem) !important;
+    font-weight: 700;
+    line-height: 1.22 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+}
+
+.rd-metrics-v1077 .rd-metric-card-v1077 > strong {
+    grid-row: 3;
+    align-self: end;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+    margin: 8px 0 0 !important;
+    text-align: left;
+}
+
+.rd-metrics-v1077 .rd-metric-progress-v1077 {
+    grid-row: 4;
+    width: 100% !important;
+    min-width: 0;
+}
+
+/* Tablet and smaller: never keep four narrow metric cards side by side. */
+@media (max-width: 900px) {
+    header.modern-header .header-utility-cluster {
+        grid-template-columns: 1fr !important;
+    }
+
+    header.modern-header .header-account-actions {
+        grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)) !important;
+    }
+
+    header.modern-header .btn-theme-header {
+        min-width: 0 !important;
+    }
+
+    .rd-metrics-v1077 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Phones: keep comfortable two-column cards while preserving complete words. */
+@media (max-width: 600px) {
+    header.modern-header .header-account-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    header.modern-header .header-account-actions .btn:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+
+    .rd-metrics-v1077 .rd-metric-card-v1077 {
+        min-height: 184px;
+        padding: 12px 10px !important;
+    }
+
+    .rd-metrics-v1077 .rd-metric-label-v1077 {
+        min-height: 2.7em;
+        font-size: clamp(.70rem, 3vw, .80rem) !important;
+    }
+}
+
+/* Very narrow devices: one column is safer than broken words. */
+@media (max-width: 360px) {
+    header.modern-header .header-account-actions,
+    .rd-metrics-v1077 {
+        grid-template-columns: 1fr !important;
+    }
+
+    header.modern-header .header-account-actions .btn {
+        grid-column: auto !important;
+    }
+}
