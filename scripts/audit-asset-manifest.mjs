@@ -29,7 +29,9 @@ for (const key of ['criticalAppShell','optionalOfflineAssets','networkFirstPaths
 }
 
 function parseQuotedPaths(block) {
-  return [...block.matchAll(/['"](\.?\/[^'"]+)['"]/g)]
+  // O sufixo usa * (e não +) para que a raiz '/' e './' também sejam
+  // inventariadas. Isso mantém o parser fiel às listas reais do SW/Worker.
+  return [...block.matchAll(/['"](\.?\/[^'"]*)['"]/g)]
     .map(match => match[1].replace(/^\.\//, '/'));
 }
 
