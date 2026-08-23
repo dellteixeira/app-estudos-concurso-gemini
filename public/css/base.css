@@ -3490,3 +3490,23 @@
 .notes-section-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
 .flashcards-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
 
+/* INLINE_STYLE_BATCH5_AUXILIARY_COMPONENTS */
+.flashcard-bulk-import { background: rgba(0,0,0,.25); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--primary-blue); margin-bottom: 1.5rem; }
+.flashcard-bulk-help { font-size: .85rem; opacity: .9; margin-bottom: 10px; }
+.flashcard-bulk-targets { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.flashcard-bulk-select { flex: 1; min-width: 180px; }
+.flashcard-bulk-textarea { min-height: 120px; font-family: monospace; font-size: .88rem; margin-bottom: 10px; }
+.flashcard-anki-header { margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.flashcard-anki-title { color: var(--header-materia-text); display: flex; align-items: center; gap: 8px; margin: 0; }
+.flashcard-anki-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pdf-link-document-title { opacity: .8; }
+.modal-backup-manager { z-index: 1350; }
+.backup-manager-dialog { max-width: 760px; }
+.backup-manager-actions { justify-content: space-between; flex-wrap: wrap; }
+.schedule-method-help { font-size: .9rem; opacity: .85; }
+.schedule-method-options { display: flex; flex-direction: column; gap: 12px; margin: 10px 0; }
+.schedule-start-card { background: rgba(59,130,246,.1); border: 1px solid var(--primary-blue); padding: 1rem; border-radius: 8px; }
+.form-control-full { width: 100%; }
+.schedule-hours-input { width: 70px; }
+.schedule-weekend-options { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+

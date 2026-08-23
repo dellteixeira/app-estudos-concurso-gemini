@@ -6,11 +6,13 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=r=>fs.readFileSync(path.join(root,r),'utf8');
 
-test('batch4 reduces static inline-style budget from 75 to 68',()=>{
+test('batch4 keeps historical 75 to 68 contract while later batches may reduce further',()=>{
   const html=read('public/index.html');
-  assert.equal((html.match(/\sstyle\s*=\s*["']/gi)||[]).length,68);
+  const count=(html.match(/\sstyle\s*=\s*["']/gi)||[]).length;
+  assert.ok(count<=68,`inline style debt regressed above batch4 baseline: ${count}`);
   const audit=read('scripts/audit-inline-csp.mjs');
-  assert.match(audit,/const STYLE_BUDGET = 68;/);
+  const budget=Number(audit.match(/const STYLE_BUDGET = (\d+);/)?.[1]);
+  assert.ok(Number.isFinite(budget) && budget<=68,`audit budget regressed above batch4 baseline: ${budget}`);
 });
 
 test('batch4 static targets use semantic classes instead of style attributes',()=>{
