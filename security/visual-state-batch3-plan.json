@@ -1,0 +1,13 @@
+{
+  "baselineInlineStyles": 82,
+  "targets": [
+    "authStatusMessage",
+    "superUserBadge",
+    "customDailyHoursPanel",
+    "notaTituloCustomGroup",
+    "btnDownloadEdital",
+    "btnRemoveEdital",
+    "modalPdfNoteEditor"
+  ],
+  "policy": "Migrate only coordinated HTML+JavaScript visual state; preserve PDF geometry and computed dimensions."
+}
