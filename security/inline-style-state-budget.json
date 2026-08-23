@@ -1,0 +1,6 @@
+{
+  "baseline": 85,
+  "budget": 82,
+  "migrated": 3,
+  "policy": "Permanent hidden file inputs use the native hidden attribute; dynamic visual states remain for coordinated JavaScript migration in a later batch."
+}
