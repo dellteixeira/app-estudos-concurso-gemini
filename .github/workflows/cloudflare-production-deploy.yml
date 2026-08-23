@@ -20,6 +20,7 @@ jobs:
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout validated revision
         uses: actions/checkout@v4
@@ -30,6 +31,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+
+      - name: Resolve exact deployment identity
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          version="$(node -p "require('./public/version.json').version")"
+          short_sha="${sha:0:12}"
+          build_id="${version}+${short_sha}.${GITHUB_RUN_ID}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build_id=$build_id" >> "$GITHUB_OUTPUT"
+          echo "Validated source identity: version=$version sha=$sha build=$build_id"
 
       - name: Validate release version consistency
         shell: bash
@@ -44,31 +59,92 @@ jobs:
           const swVersion = sw.match(/const APP_VERSION = '([^']+)'/)?.[1];
           const versions = { package: pkg, public: publicVersion, worker: workerVersion, serviceWorker: swVersion };
           if (!pkg || Object.values(versions).some(version => version !== pkg)) {
-            console.error('Version mismatch before Cloudflare verification:', versions);
+            console.error('Version mismatch before Cloudflare deployment:', versions);
             process.exit(1);
           }
           console.log(`Validated release version ${pkg}`);
           NODE
 
-      - name: Wait for native Cloudflare deployment and verify production
+      - name: Validate Cloudflare deployment credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::CLOUDFLARE_API_TOKEN não configurado"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::CLOUDFLARE_ACCOUNT_ID não configurado"; exit 1; }
+
+      - name: Prepare exact deployment manifest
+        env:
+          DEPLOY_SHA: ${{ steps.identity.outputs.sha }}
+          BUILD_ID: ${{ steps.identity.outputs.build_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'public/version.json';
+          const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const sha = process.env.DEPLOY_SHA;
+          const buildId = process.env.BUILD_ID;
+          if (!/^[0-9a-f]{40}$/.test(sha || '')) throw new Error(`DEPLOY_SHA inválido: ${sha || '(vazio)'}`);
+          manifest.build = buildId;
+          manifest.commit = sha;
+          manifest.deployed_at = new Date().toISOString();
+          fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');
+          NODE
+
+          # Torna o Service Worker único para cada commit publicado, mesmo quando
+          # a versão semântica permanece igual entre correções internas.
+          printf '\n// DEPLOY_COMMIT_SHA: %s\n' "$DEPLOY_SHA" >> public/sw.js
+
+          echo "Deployment manifest:"
+          cat public/version.json
+          tail -n 2 public/sw.js
+
+      - name: Deploy exact validated revision to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.120.0 deploy
+
+      - name: Verify exact production identity
         shell: bash
         env:
           APP_URL: https://estudoadaptativo.com
+          EXPECTED_SHA: ${{ steps.identity.outputs.sha }}
+          EXPECTED_VERSION: ${{ steps.identity.outputs.version }}
+          EXPECTED_BUILD: ${{ steps.identity.outputs.build_id }}
         run: |
-          expected="$(node -p "require('./public/version.json').version")"
-          echo "Expecting Cloudflare production version: $expected"
-          echo "Canonical production URL: $APP_URL"
+          set -euo pipefail
+          expected_sha="$EXPECTED_SHA"
+          expected_version="$EXPECTED_VERSION"
+          expected_build="$EXPECTED_BUILD"
+
+          echo "Expecting Cloudflare production identity:"
+          echo "  version=$expected_version"
+          echo "  commit=$expected_sha"
+          echo "  build=$expected_build"
+          echo "  url=$APP_URL"
 
           matched=0
           for attempt in $(seq 1 24); do
-            cache_buster="${GITHUB_SHA}-${GITHUB_RUN_ID}-${attempt}"
+            cache_buster="${expected_sha}-${GITHUB_RUN_ID}-${attempt}"
             if curl --fail --silent --show-error \
               --header 'Cache-Control: no-cache, no-store' \
               "$APP_URL/version.json?verify=$cache_buster" \
               --output /tmp/cloudflare-version.json; then
-              actual="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).version||''))}catch{}")"
-              echo "Verification attempt $attempt: remote=$actual expected=$expected"
-              if [ "$actual" = "$expected" ]; then
+              remote_version="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).version||''))}catch{}")"
+              remote_commit="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).commit||''))}catch{}")"
+              remote_build="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).build||''))}catch{}")"
+              echo "Verification attempt $attempt: version=$remote_version commit=$remote_commit build=$remote_build"
+              if [ "$remote_version" = "$expected_version" ] && \
+                 [ "$remote_commit" = "$expected_sha" ] && \
+                 [ "$remote_build" = "$expected_build" ]; then
                 matched=1
                 break
               fi
@@ -77,17 +153,43 @@ jobs:
           done
 
           if [ "$matched" -ne 1 ]; then
-            echo "::error::Canonical production domain did not expose version $expected within the verification window"
+            echo "::error::Produção não expôs o SHA/build exatos do commit validado dentro da janela de verificação"
             exit 1
           fi
 
           curl --fail --silent --show-error \
             --header 'Cache-Control: no-cache, no-store' \
-            "$APP_URL/sw.js?verify=${GITHUB_SHA}-${GITHUB_RUN_ID}" \
+            "$APP_URL/sw.js?verify=${expected_sha}-${GITHUB_RUN_ID}" \
             --output /tmp/cloudflare-sw.js
-          grep -F "const APP_VERSION = '$expected';" /tmp/cloudflare-sw.js >/dev/null || {
-            echo "::error::Service Worker version does not match production release $expected"
+
+          grep -F "const APP_VERSION = '$expected_version';" /tmp/cloudflare-sw.js >/dev/null || {
+            echo "::error::Service Worker não corresponde à versão $expected_version"
+            exit 1
+          }
+          grep -F "// DEPLOY_COMMIT_SHA: $expected_sha" /tmp/cloudflare-sw.js >/dev/null || {
+            echo "::error::Service Worker não corresponde ao commit $expected_sha"
             exit 1
           }
 
-          echo "Cloudflare production verified at $APP_URL with version $expected"
+          echo "Cloudflare production verified with exact source identity."
+
+      - name: Stability re-check
+        shell: bash
+        env:
+          APP_URL: https://estudoadaptativo.com
+          EXPECTED_SHA: ${{ steps.identity.outputs.sha }}
+          EXPECTED_BUILD: ${{ steps.identity.outputs.build_id }}
+        run: |
+          set -euo pipefail
+          sleep 20
+          curl --fail --silent --show-error \
+            --header 'Cache-Control: no-cache, no-store' \
+            "$APP_URL/version.json?stability=${EXPECTED_SHA}-${GITHUB_RUN_ID}" \
+            --output /tmp/cloudflare-stability.json
+          remote_commit="$(node -e "const fs=require('fs');process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-stability.json','utf8')).commit||''))")"
+          remote_build="$(node -e "const fs=require('fs');process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-stability.json','utf8')).build||''))")"
+          if [ "$remote_commit" != "$EXPECTED_SHA" ] || [ "$remote_build" != "$EXPECTED_BUILD" ]; then
+            echo "::error::Produção mudou após a verificação inicial: commit=$remote_commit build=$remote_build"
+            exit 1
+          fi
+          echo "Stability re-check OK: production remains on commit $EXPECTED_SHA"
