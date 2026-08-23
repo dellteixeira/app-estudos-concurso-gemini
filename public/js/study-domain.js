@@ -1,3 +1,15 @@
+(function installVisualStateHelper(root) {
+    'use strict';
+    if (!root || typeof root.setVisualState === 'function') return;
+    root.setVisualState = function setVisualState(element, visible) {
+        if (!element) return;
+        const isVisible = Boolean(visible);
+        element.classList.toggle('is-open', isVisible);
+        element.hidden = !isVisible;
+        element.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 (function (root, factory) {
     // Compatibilidade de performance: alguns navegadores (ex.: Firefox) expõem
     // PerformanceObserver, mas não suportam a entrada "longtask". O app-core
