@@ -104,25 +104,27 @@ test('Salvar no dispositivo gera arquivo PDF externo ao armazenamento privado', 
   expect(download.suggestedFilename()).toBe('Direito Constitucional - Aula 01.pdf');
 });
 
-test('remoção da Biblioteca Global também solicita limpeza local moderna', async ({ page }) => {
+test('forgetDocuments solicita limpeza local moderna pelo caminho canônico', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => !!window.PdfDeviceStorage, null, { timeout: 10000 });
+  await page.waitForFunction(() => !!window.PdfStudyLibrary?.forgetDocuments, null, { timeout: 10000 });
 
   const result = await page.evaluate(async () => {
     const calls = [];
-    window.PdfStudyCore = { getAuthenticatedUser: async () => ({ id: 'user-test' }) };
+    window.PdfStudyCore = {
+      ...(window.PdfStudyCore || {}),
+      getAuthenticatedUser: async () => ({ id: 'user-test' })
+    };
     window.PdfLibraryOfflineAdapter = {
-      removeMany: async (userId, ids) => { calls.push({ userId, ids: [...ids] }); return ids.length; }
+      ...(window.PdfLibraryOfflineAdapter || {}),
+      removeMany: async (userId, ids) => {
+        calls.push({ userId, ids: [...ids] });
+        return ids.length;
+      }
     };
-    window.PdfStudyLibrary = {
-      removeMany: async docs => ({ deleted: docs.length, total: docs.length }),
-      remove: async () => true
-    };
-    await window.PdfDeviceStorage.integrateDeletion();
-    const deleted = await window.PdfStudyLibrary.remove({ id: 'pdf-a' });
-    return { deleted, calls };
+
+    await window.PdfStudyLibrary.forgetDocuments(['pdf-a', 'pdf-a']);
+    return { calls };
   });
 
-  expect(result.deleted).toBe(true);
   expect(result.calls).toEqual([{ userId: 'user-test', ids: ['pdf-a'] }]);
 });
