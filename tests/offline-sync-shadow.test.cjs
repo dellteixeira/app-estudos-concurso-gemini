@@ -115,9 +115,9 @@ test('diagnóstico compara ids da fila legada com o espelho sem promover shadow 
   assert.equal(await env.context.OfflineOutboxStore.countPending('user-shadow-test'),0);
 });
 
-test('AppState carrega outbox antes do bridge mantendo versão canônica durante experimento',()=>{
-  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.31\.0/);
-  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.31\.0/);
+test('AppState carrega outbox antes do bridge na release v10.32.0',()=>{
+  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.32\.0/);
+  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.32\.0/);
   assert.match(appStateSource,/loadOfflineShadowFoundation/);
   assert.match(appStateSource,/OfflineSyncShadow\?\.install/);
   assert.match(appStateSource,/getOfflineShadowDiagnostics/);
