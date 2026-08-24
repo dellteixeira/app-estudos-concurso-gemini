@@ -6,6 +6,7 @@ const cp=require('node:child_process');
 const read=file=>fs.readFileSync(file,'utf8');
 
 const client=read('public/js/learning-advisor.js');
+const css=read('public/css/learning-advisor.css');
 const server=read('src/learning-diagnosis.js');
 const wrapper=read('src/worker.js');
 const wrangler=read('wrangler.jsonc');
@@ -38,6 +39,17 @@ test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
   assert.match(client,/Abrir intervenção local/);
   assert.doesNotMatch(client,/gerarCronogramaInteligente\(/);
   assert.doesNotMatch(client,/gerarCronogramaMetodo2\(/);
+});
+
+test('barra do Advisor ocupa toda a largura e possui contrato de texto resiliente',()=>{
+  assert.match(css,/\.learning-advisor\{grid-column:1\/-1;width:100%;max-width:100%;min-width:0;box-sizing:border-box;container-type:inline-size/);
+  assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
+  assert.match(css,/@container \(max-width:640px\)/);
+  assert.match(css,/min-height:44px/);
+  assert.match(css,/overflow-wrap:anywhere/);
+  assert.match(css,/#app-dashboard :where\(/);
+  assert.match(css,/white-space:normal/);
+  assert.match(css,/word-break:normal/);
 });
 
 test('endpoint usa Gemini com autenticação, rate limit, schema fechado e fallback local',()=>{
