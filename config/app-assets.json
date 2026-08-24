@@ -123,7 +123,6 @@
     "/js/study-domain.js",
     "/js/core/local-backup-store.js",
     "/js/app-core.js",
-    "/js/adaptive-schedule-reconciliation.js",
     "/js/pdf/pdf-core.js",
     "/js/pdf/pdf-workspaces.js",
     "/js/pdf/pdf-links.js",
