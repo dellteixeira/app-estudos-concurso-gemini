@@ -12,7 +12,7 @@ const headers=fs.readFileSync('public/_headers','utf8');
 const assets=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
 
-test('v10.27 state and sync modules have valid JavaScript syntax',()=>{
+test('state and sync modules have valid JavaScript syntax',()=>{
   for(const file of ['public/js/app-state.js','public/js/sync-engine.js','public/pwa-update.js']) {
     cp.execFileSync(process.execPath,['--check',file],{stdio:'pipe'});
   }
@@ -60,9 +60,10 @@ test('production no-store policy covers state and sync modules',()=>{
   }
 });
 
-test('v10.27 release sources remain synchronized',()=>{
-  assert.equal(pkg.version,'10.27.0');
-  assert.equal(assets.version,'10.27.0');
-  assert.match(worker,/const APP_VERSION = "10\.27\.0"/);
-  assert.match(sw,/const APP_VERSION = '10\.27\.0'/);
+test('state-sync release sources remain synchronized with canonical package version',()=>{
+  const version=String(pkg.version);
+  const escaped=version.replace(/\./g,'\\.');
+  assert.equal(assets.version,version);
+  assert.match(worker,new RegExp(`const APP_VERSION = "${escaped}"`));
+  assert.match(sw,new RegExp(`const APP_VERSION = '${escaped}'`));
 });
