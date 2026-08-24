@@ -7,6 +7,8 @@ const appState=fs.readFileSync('public/js/app-state.js','utf8');
 const syncEngine=fs.readFileSync('public/js/sync-engine.js','utf8');
 const pwa=fs.readFileSync('public/pwa-update.js','utf8');
 const sw=fs.readFileSync('public/sw.js','utf8');
+const worker=fs.readFileSync('src/index.js','utf8');
+const headers=fs.readFileSync('public/_headers','utf8');
 const assets=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
 
@@ -48,8 +50,19 @@ test('state and sync architecture is bootstrapped and available offline',()=>{
   }
 });
 
+test('production no-store policy covers state and sync modules',()=>{
+  for(const path of ['/js/app-state.js','/js/sync-engine.js']) {
+    assert.ok(assets.workerNoStorePaths.includes(path),`${path} must be in Worker no-store manifest`);
+    assert.ok(assets.headersNoStorePaths.includes(path),`${path} must be in _headers no-store manifest`);
+    assert.ok(worker.includes(`"${path}"`),`${path} must be no-store in Cloudflare Worker`);
+    const escaped=path.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    assert.match(headers,new RegExp(`(?:^|\\n)${escaped}\\n\\s+Cache-Control: [^\\n]*no-store`));
+  }
+});
+
 test('v10.27 release sources remain synchronized',()=>{
   assert.equal(pkg.version,'10.27.0');
   assert.equal(assets.version,'10.27.0');
+  assert.match(worker,/const APP_VERSION = "10\.27\.0"/);
   assert.match(sw,/const APP_VERSION = '10\.27\.0'/);
 });
