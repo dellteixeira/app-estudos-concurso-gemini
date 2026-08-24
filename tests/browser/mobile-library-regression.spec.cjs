@@ -60,7 +60,9 @@ async function assertScrollableRail(page, selector) {
     const rect = el.getBoundingClientRect();
     const before = { clientWidth: el.clientWidth, scrollWidth: el.scrollWidth, left: rect.left, right: rect.right };
     el.scrollLeft = el.scrollWidth;
-    const last = el.lastElementChild?.getBoundingClientRect();
+    const lastGroup = el.lastElementChild;
+    const terminal = lastGroup?.querySelector?.('button:last-of-type, select:last-of-type, input:last-of-type, a:last-of-type') || lastGroup;
+    const last = terminal?.getBoundingClientRect();
     return {
       ...before,
       viewport: document.documentElement.clientWidth,
