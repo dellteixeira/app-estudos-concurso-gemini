@@ -160,15 +160,14 @@
   #pdfOfflineManager .pdf-offline-controls>*{flex:0 0 auto!important;}
   #pdfOfflineManager .pdf-offline-limit-wrap{width:190px!important;}
   #pdfOfflineManager .pdf-offline-storage{white-space:nowrap!important;}
-  #pdfOfflineManager .pdf-offline-actions{
-    display:flex!important;
-    flex:0 0 max-content!important;
-    width:max-content!important;
-    min-width:max-content!important;
-    flex-wrap:nowrap!important;
-    gap:7px!important;
+  #pdfOfflineManager .pdf-offline-actions{display:contents!important;}
+  #pdfOfflineManager .pdf-offline-actions button{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:116px!important;
+    min-height:44px!important;
+    white-space:nowrap!important;
   }
-  #pdfOfflineManager .pdf-offline-actions button{width:auto!important;min-width:116px!important;min-height:44px!important;white-space:nowrap!important;}
   #pdfOfflineManager .pdf-offline-actions .primary{min-width:145px!important;}
 }
 
