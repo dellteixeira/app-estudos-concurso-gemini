@@ -12,7 +12,6 @@
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 
-
 /css/base.css
   Cache-Control: no-cache, no-store, must-revalidate
 
@@ -61,6 +60,9 @@
 /css/pdf-library.css
   Cache-Control: no-cache, no-store, must-revalidate
 
+/css/pdf-mobile-card-actions.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/pdf/pdf-core.js
   Cache-Control: no-cache, no-store, must-revalidate
 
@@ -77,6 +79,27 @@
   Cache-Control: no-cache, no-store, must-revalidate
 
 /js/pdf/pdf-library-ui.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-library-opfs-adapter.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-library-layout-fix.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-device-storage.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/offline-pdf-store.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-offline-library-manager.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-offline-integrity.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/pdf/pdf-offline-library-ui.js
   Cache-Control: no-cache, no-store, must-revalidate
 
 /css/pdf-reader.css
