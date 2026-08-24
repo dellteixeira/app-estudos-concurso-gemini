@@ -1,5 +1,5 @@
 {
-  "version": "10.26.1",
+  "version": "10.27.0",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -25,7 +25,9 @@
     "/vendor/supabase.js",
     "/vendor/chart.umd.min.js",
     "/icon-192.png",
-    "/icon-512.png"
+    "/icon-512.png",
+    "/js/app-state.js",
+    "/js/sync-engine.js"
   ],
   "optionalOfflineAssets": [
     "/js/performance-loader.js",
@@ -84,7 +86,9 @@
     "/js/pdf/pdf-annotations.js",
     "/js/pdf/pdf-reader.js",
     "/js/pdf/pdf-library-ui.js",
-    "/js/app-pwa.js"
+    "/js/app-pwa.js",
+    "/js/app-state.js",
+    "/js/sync-engine.js"
   ],
   "workerNoStorePaths": [
     "/",
@@ -109,7 +113,9 @@
     "/js/pdf/pdf-annotations.js",
     "/js/pdf/pdf-reader.js",
     "/js/pdf/pdf-library-ui.js",
-    "/js/app-pwa.js"
+    "/js/app-pwa.js",
+    "/js/app-state.js",
+    "/js/sync-engine.js"
   ],
   "headersNoStorePaths": [
     "/",
@@ -134,7 +140,9 @@
     "/js/pdf/pdf-library-ui.js",
     "/css/pdf-reader.css",
     "/js/pdf/pdf-annotations.js",
-    "/js/pdf/pdf-reader.js"
+    "/js/pdf/pdf-reader.js",
+    "/js/app-state.js",
+    "/js/sync-engine.js"
   ],
   "headersRevalidatePaths": [
     "/manifest.json"

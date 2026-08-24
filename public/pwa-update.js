@@ -305,6 +305,19 @@
     });
   }
 
+  async function loadStateSyncModules() {
+    try {
+      await loadClassicScript('./js/app-state.js', 'app-state');
+      await loadClassicScript('./js/sync-engine.js', 'sync-engine');
+      window.AppState?.refresh?.('runtime:ready');
+      window.__stateSyncReady = true;
+      window.dispatchEvent(new CustomEvent('app:state-sync-ready'));
+    } catch (error) {
+      window.__stateSyncReady = false;
+      console.warn('AppState/SyncEngine indisponíveis; a compatibilidade legada permanecerá ativa.', error);
+    }
+  }
+
   async function loadUiModules() {
     try {
       await loadClassicScript('./js/ui/mobile.js', 'mobile');
@@ -320,6 +333,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     syncRuntimeVersionUi(window.APP_VERSION);
+    loadStateSyncModules();
     loadUiModules();
   }, { once: true });
   window.addEventListener('load', bootstrapPwa, { once: true });
@@ -327,5 +341,6 @@
   window.addEventListener('load', loadStudyPerformanceReport, { once: true });
   window.applyPwaUpdate = applyPwaUpdate;
   window.checkForPwaUpdate = checkForPwaUpdate;
+  window.loadStateSyncModules = loadStateSyncModules;
   window.loadUiModules = loadUiModules;
 })();
