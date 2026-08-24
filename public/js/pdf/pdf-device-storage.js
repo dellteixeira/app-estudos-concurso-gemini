@@ -2,11 +2,6 @@
   'use strict';
 
   const STYLE_ID = 'pdfDeviceStorageStyles';
-  const WRAP_FLAG = '__deviceStorageIntegrated';
-  let wrapping = false;
-  let wrappedLibrary = null;
-
-  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   function sanitizeFileName(value) {
     const base = String(value || 'documento.pdf')
@@ -17,45 +12,12 @@
     return /\.pdf$/i.test(base) ? base : `${base}.pdf`;
   }
 
-  async function getUser() {
-    return global.PdfStudyCore?.getAuthenticatedUser?.() || null;
-  }
-
   async function findDocument(pdfId) {
     if (!pdfId) throw new Error('PDF inválido.');
     const docs = await global.PdfStudyLibrary?.list?.({ scope: 'global' });
     const doc = (docs || []).find(item => String(item.id) === String(pdfId));
     if (!doc) throw new Error('PDF não encontrado na Biblioteca Global.');
     return doc;
-  }
-
-  async function purgeLocalCopies(userId, ids) {
-    const pdfIds = [...new Set((Array.isArray(ids) ? ids : [ids]).filter(Boolean).map(String))];
-    if (!userId || !pdfIds.length) return { removed: 0 };
-
-    let removed = 0;
-    const adapter = global.PdfLibraryOfflineAdapter;
-    if (adapter?.removeMany) {
-      try {
-        removed = Number(await adapter.removeMany(userId, pdfIds)) || 0;
-      } catch (error) {
-        console.warn('[PDF Device Storage] falha ao remover cópias locais via adapter:', error);
-      }
-    } else if (global.OfflinePdfStore?.removeMany) {
-      try {
-        removed = Number(await global.OfflinePdfStore.removeMany(userId, pdfIds)) || 0;
-      } catch (error) {
-        console.warn('[PDF Device Storage] falha ao remover cópias locais:', error);
-      }
-    }
-
-    try {
-      global.dispatchEvent(new CustomEvent('pdf-local-copies-purged', {
-        detail: { userId: String(userId), pdfIds, removed }
-      }));
-    } catch (_) {}
-
-    return { removed, pdfIds };
   }
 
   async function saveBlobWithPicker(blob, fileName) {
@@ -196,51 +158,6 @@
     }
   }
 
-  async function integrateDeletion() {
-    const library = global.PdfStudyLibrary;
-    if (!library?.removeMany) return false;
-    if (library === wrappedLibrary && library[WRAP_FLAG]) return true;
-    if (wrapping) {
-      for (let attempt = 0; attempt < 20 && wrapping; attempt++) await wait(10);
-      const current = global.PdfStudyLibrary;
-      if (current === wrappedLibrary && current?.[WRAP_FLAG]) return true;
-      if (current !== library) return integrateDeletion();
-      if (wrapping) return false;
-    }
-
-    wrapping = true;
-    try {
-      const sourceLibrary = global.PdfStudyLibrary;
-      if (!sourceLibrary?.removeMany) return false;
-      if (sourceLibrary === wrappedLibrary && sourceLibrary[WRAP_FLAG]) return true;
-
-      const originalRemoveMany = sourceLibrary.removeMany.bind(sourceLibrary);
-      const next = {
-        ...sourceLibrary,
-        async removeMany(docs, options) {
-          const validDocs = (Array.isArray(docs) ? docs : []).filter(doc => doc?.id);
-          const result = await originalRemoveMany(docs, options);
-          if (result?.deleted > 0 && validDocs.length) {
-            const user = await getUser();
-            if (user?.id) await purgeLocalCopies(user.id, validDocs.map(doc => doc.id));
-          }
-          return result;
-        },
-        async remove(doc) {
-          const result = await this.removeMany([doc]);
-          return result.deleted === 1;
-        },
-        [WRAP_FLAG]: true
-      };
-      const frozen = Object.freeze(next);
-      global.PdfStudyLibrary = frozen;
-      wrappedLibrary = frozen;
-      return true;
-    } finally {
-      wrapping = false;
-    }
-  }
-
   function observeLibrary() {
     const root = document.getElementById('tab-biblioteca') || document.body;
     if (!root || root.dataset.pdfDeviceStorageObserved === '1') return;
@@ -250,23 +167,16 @@
     injectSaveButtons(root);
   }
 
-  async function boot() {
+  function boot() {
     ensureStyles();
-    for (let attempt = 0; attempt < 80; attempt++) {
-      const integrated = await integrateDeletion();
-      if (integrated && global.PdfStudyLibraryUI) break;
-      await wait(100);
-    }
     observeLibrary();
     injectSaveButtons();
   }
 
   global.PdfDeviceStorage = Object.freeze({
     saveToDevice,
-    purgeLocalCopies,
     sanitizeFileName,
-    injectSaveButtons,
-    integrateDeletion
+    injectSaveButtons
   });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
