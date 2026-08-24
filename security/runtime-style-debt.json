@@ -2,7 +2,7 @@
   "batch": 8,
   "policy": "UI/non-PDF runtime styles are migrated incrementally; PDF reader geometry remains excluded.",
   "migratedDisplay": {
-    "core": 55,
+    "core": 0,
     "ui": 0
   },
   "remaining": {
