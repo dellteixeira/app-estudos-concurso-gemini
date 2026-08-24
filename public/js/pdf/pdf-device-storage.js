@@ -77,11 +77,11 @@
     style.id = STYLE_ID;
     style.textContent = `
       .pdf-device-save-action { min-width:0; }
-      @media (max-width:700px) {
+      @media (max-width:900px) {
         .pdf-card-actions.pdf-device-storage-actions {
           display:grid!important;
           grid-template-columns:repeat(2,minmax(0,1fr))!important;
-          gap:8px!important;
+          gap:10px!important;
           width:100%!important;
           max-width:100%!important;
           min-width:0!important;
@@ -96,25 +96,46 @@
           min-width:0!important;
           max-width:100%!important;
           min-height:44px!important;
-          padding:8px 7px!important;
+          padding:9px 8px!important;
           white-space:normal!important;
-          overflow:hidden!important;
-          overflow-wrap:anywhere!important;
+          overflow:visible!important;
+          overflow-wrap:break-word!important;
+          word-break:normal!important;
+          text-wrap:balance!important;
           text-align:center!important;
-          line-height:1.12!important;
-          font-size:clamp(.69rem,3.2vw,.82rem)!important;
+          line-height:1.15!important;
+          font-size:clamp(.72rem,2.4vw,.88rem)!important;
           grid-column:auto!important;
           box-sizing:border-box!important;
         }
+        .pdf-card-actions.pdf-device-storage-actions > .pdf-device-save-action {
+          font-size:clamp(.68rem,2.25vw,.82rem)!important;
+          line-height:1.12!important;
+          padding-inline:6px!important;
+        }
         .pdf-card-actions.pdf-device-storage-actions > .pdf-library-card-action:last-child:nth-child(odd) {
           grid-column:1/-1!important;
+        }
+      }
+      @media (max-width:420px) {
+        .pdf-card-actions.pdf-device-storage-actions { gap:8px!important; }
+        .pdf-card-actions.pdf-device-storage-actions > .pdf-library-card-action {
+          padding:8px 6px!important;
+          font-size:clamp(.69rem,3vw,.82rem)!important;
+        }
+        .pdf-card-actions.pdf-device-storage-actions > .pdf-device-save-action {
+          font-size:clamp(.64rem,2.85vw,.76rem)!important;
+          padding-inline:4px!important;
         }
       }
       @media (max-width:340px) {
         .pdf-card-actions.pdf-device-storage-actions { gap:6px!important; }
         .pdf-card-actions.pdf-device-storage-actions > .pdf-library-card-action {
           padding:7px 5px!important;
-          font-size:clamp(.66rem,3.45vw,.76rem)!important;
+          font-size:clamp(.66rem,3.2vw,.76rem)!important;
+        }
+        .pdf-card-actions.pdf-device-storage-actions > .pdf-device-save-action {
+          font-size:clamp(.61rem,3vw,.72rem)!important;
         }
       }
     `;
