@@ -60,7 +60,7 @@
     catch (_) {}
   }
 
-  async function shadowEditalUpsert(item, reason = 'queueEditalUpsert') {
+  async function shadowEditalUpsert(item, reason = 'queueEditalUpsert', options = {}) {
     const store = global.OfflineOutboxStore;
     const userId = currentUserId();
     if (!store || !userId || !item || item.id == null) return null;
@@ -86,7 +86,7 @@
       }));
     } catch (_) {}
 
-    await recordParitySnapshot(reason).catch(() => null);
+    if (options.recordParity !== false) await recordParitySnapshot(reason).catch(() => null);
     return operation;
   }
 
