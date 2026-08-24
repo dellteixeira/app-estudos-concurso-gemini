@@ -4,6 +4,7 @@
   const STYLE_ID = 'pdfDeviceStorageStyles';
   const WRAP_FLAG = '__deviceStorageIntegrated';
   let wrapping = false;
+  let wrappedLibrary = null;
 
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -196,14 +197,26 @@
   }
 
   async function integrateDeletion() {
-    if (wrapping) return false;
     const library = global.PdfStudyLibrary;
-    if (!library?.removeMany || library[WRAP_FLAG]) return !!library?.[WRAP_FLAG];
+    if (!library?.removeMany) return false;
+    if (library === wrappedLibrary && library[WRAP_FLAG]) return true;
+    if (wrapping) {
+      for (let attempt = 0; attempt < 20 && wrapping; attempt++) await wait(10);
+      const current = global.PdfStudyLibrary;
+      if (current === wrappedLibrary && current?.[WRAP_FLAG]) return true;
+      if (current !== library) return integrateDeletion();
+      if (wrapping) return false;
+    }
+
     wrapping = true;
     try {
-      const originalRemoveMany = library.removeMany.bind(library);
+      const sourceLibrary = global.PdfStudyLibrary;
+      if (!sourceLibrary?.removeMany) return false;
+      if (sourceLibrary === wrappedLibrary && sourceLibrary[WRAP_FLAG]) return true;
+
+      const originalRemoveMany = sourceLibrary.removeMany.bind(sourceLibrary);
       const next = {
-        ...library,
+        ...sourceLibrary,
         async removeMany(docs, options) {
           const validDocs = (Array.isArray(docs) ? docs : []).filter(doc => doc?.id);
           const result = await originalRemoveMany(docs, options);
@@ -219,7 +232,9 @@
         },
         [WRAP_FLAG]: true
       };
-      global.PdfStudyLibrary = Object.freeze(next);
+      const frozen = Object.freeze(next);
+      global.PdfStudyLibrary = frozen;
+      wrappedLibrary = frozen;
       return true;
     } finally {
       wrapping = false;
