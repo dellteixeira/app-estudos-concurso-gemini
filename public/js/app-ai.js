@@ -1321,7 +1321,7 @@
             try{
                 const fileObj=await getEditalFileRecord(); if(!fileObj){info.innerHTML='Nenhum edital está anexado ao concurso atual. Use <strong>Ver / Anexar Edital PDF</strong> antes de iniciar a análise.';return}
                 const sizeMB=fileObj.blob?.size?(fileObj.blob.size/(1024*1024)).toFixed(2):'—'; info.innerHTML=`Arquivo: <strong>${escapeHtml(fileObj.name||'Edital')}</strong> · ${escapeHtml(sizeMB)} MB · concurso atual: <strong>${escapeHtml(currentConcurso)}</strong>`;
-                if(!(fileObj.type||'').includes('pdf')&&!String(fileObj.name||'').toLowerCase().endsWith('.pdf')){info.innerHTML+='<br><span style="color:#fbbf24;">A análise automática aceita PDF com texto pesquisável.</span>';return}
+                if(!(fileObj.type||'').includes('pdf')&&!String(fileObj.name||'').toLowerCase().endsWith('.pdf')){info.innerHTML+='<br><span class="ai-inline-warning">A análise automática aceita PDF com texto pesquisável.</span>';return}
                 await prepareAiCargoSelector(fileObj);
             }catch(error){info.textContent='Não foi possível ler o edital anexado.';setAiEditalStatus(error.message||'Não foi possível ler o edital.',true)}
         }
@@ -1356,7 +1356,7 @@
                 : '—';
 
             let html = `
-                <div class="ai-source-note" style="margin-bottom:0.8rem; padding:0.65rem 0.75rem; border:1px solid rgba(139,92,246,.35); border-radius:9px;">
+                <div class="ai-source-note ai-source-note-compact">
                     <strong>Cargo analisado:</strong> ${escapeHtml(cargoSelectLabel(extractionMeta?.cargo) || '—')}<br>
                     <strong>Modo:</strong> Universal Parser V9.20 · confiança estrutural: <strong>${Math.round((extractionMeta?.confidence || 0) * 100)}%</strong>. A IA não altera a relação matéria → assuntos.
                 </div>
@@ -1369,7 +1369,7 @@
             analysis.materias.forEach(mat => {
                 html += `<div class="ai-preview-materia">
                     <div class="ai-preview-materia-title">
-                        <span>${escapeHtml(mat.materia)} <small style="opacity:.65;">(${mat.assuntos.length} assuntos · peso ${escapeHtml(String(mat.peso))}${mat.confidence ? ` · confiança ${Math.round(mat.confidence*100)}%` : ''})</small></span>
+                        <span>${escapeHtml(mat.materia)} <small class="ai-preview-meta">(${mat.assuntos.length} assuntos · peso ${escapeHtml(String(mat.peso))}${mat.confidence ? ` · confiança ${Math.round(mat.confidence*100)}%` : ''})</small></span>
                         <span class="ai-priority-badge ai-priority-${mat.prioridade}" title="Prioridade da matéria">P${mat.prioridade}</span>
                     </div>
                     <div class="ai-preview-topics">`;
@@ -1625,7 +1625,7 @@
             try {
                 const fileObj = await getEditalFileRecord();
                 if (!fileObj) {
-                    container.innerHTML = `<p style="opacity: 0.85; margin-bottom: 12px;">Nenhum documento anexado para o concurso <strong>${escapeHtml(currentConcurso)}</strong>.</p>`;
+                    container.innerHTML = `<p class="edital-viewer-empty">Nenhum documento anexado para o concurso <strong>${escapeHtml(currentConcurso)}</strong>.</p>`;
                     setVisualState(btnDownload, false);
                     setVisualState(btnRemove, false);
                     return;
@@ -1634,14 +1634,14 @@
                 setVisualState(btnRemove, true);
                 activeObjectUrl = URL.createObjectURL(fileObj.blob);
                 if (fileObj.type.includes('pdf')) {
-                    container.innerHTML = `<embed src="${activeObjectUrl}#toolbar=1" type="application/pdf" style="width:100%; height:100%; min-height:500px; border:none; border-radius:6px;"></embed>`;
+                    container.innerHTML = `<embed class="edital-viewer-embed" src="${activeObjectUrl}#toolbar=1" type="application/pdf"></embed>`;
                 } else if (fileObj.type.includes('image')) {
-                    container.innerHTML = `<img src="${activeObjectUrl}" alt="Pré-visualização do edital" style="max-width:100%; max-height:480px; border-radius:6px; object-fit:contain;">`;
+                    container.innerHTML = `<img class="edital-viewer-image" src="${activeObjectUrl}" alt="Pré-visualização do edital">`;
                 } else {
-                    container.innerHTML = `<p style="font-size:1.1rem; font-weight:700; color:var(--primary-blue);">${escapeHtml(fileObj.name)}</p>`;
+                    container.innerHTML = `<p class="edital-viewer-filename">${escapeHtml(fileObj.name)}</p>`;
                 }
             } catch (e) {
-                container.innerHTML = `<p style="color:#ef4444;">Erro ao carregar arquivo do edital.</p>`;
+                container.innerHTML = `<p class="edital-viewer-error">Erro ao carregar arquivo do edital.</p>`;
             }
         }
 
