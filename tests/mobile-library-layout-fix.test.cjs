@@ -16,6 +16,7 @@ test('mobile library contains cards and exposes horizontal rails',()=>{
   assert.match(layout,/\.pdf-library-actions,[\s\S]*\.pdf-library-filters,[\s\S]*#pdfOfflineManager \.pdf-offline-controls[\s\S]*padding:0 14px 9px 2px!important/);
   assert.match(layout,/::-webkit-scrollbar[\s\S]*height:8px!important/);
   assert.match(layout,/scrollbar-color:rgba\(83,227,213,\.48\)/);
+  assert.match(layout,/#pdfOfflineManager \.pdf-offline-actions\{[\s\S]*flex:0 0 max-content!important;[\s\S]*width:max-content!important;[\s\S]*min-width:max-content!important/);
 });
 
 test('mobile edital keeps delete actions side by side and sync compact',()=>{
