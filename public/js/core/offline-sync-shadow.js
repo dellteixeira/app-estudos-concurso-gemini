@@ -44,9 +44,7 @@
     return (hash >>> 0).toString(16).padStart(8, '0');
   }
 
-  function parityStorageKey(userId) {
-    return `${PARITY_STORAGE_PREFIX}${String(userId || '')}`;
-  }
+  function parityStorageKey(userId) { return `${PARITY_STORAGE_PREFIX}${String(userId || '')}`; }
 
   function readParityHistory(userId) {
     if (!userId) return [];
@@ -58,10 +56,8 @@
 
   function writeParityHistory(userId, samples) {
     if (!userId) return;
-    try {
-      const bounded = samples.slice(-MAX_PARITY_SAMPLES);
-      global.localStorage?.setItem(parityStorageKey(userId), JSON.stringify(bounded));
-    } catch (_) {}
+    try { global.localStorage?.setItem(parityStorageKey(userId), JSON.stringify(samples.slice(-MAX_PARITY_SAMPLES))); }
+    catch (_) {}
   }
 
   async function shadowEditalUpsert(item, reason = 'queueEditalUpsert') {
@@ -110,7 +106,10 @@
       return Object.freeze({ mode:MODE, installed, userId:userId || null, legacyUpserts:legacyIds.length, shadowUpserts:0, matched:0, matchedIds:[], missingShadowIds:legacyIds, shadowOnlyIds:[], coverage:legacyIds.length ? 0 : 1, healthy:legacyIds.length === 0 });
     }
 
-    const rows = await store.list(userId, { statuses:['shadow'], limit:500 });
+    // A operação continua sendo evidência do espelho após avançar de shadow para
+    // sending/failed/synced. Filtrar apenas status=shadow geraria falso negativo
+    // de paridade justamente depois de uma sincronização bem-sucedida.
+    const rows = await store.list(userId, { limit:500 });
     const shadowIds = [...new Set(rows.filter(row => row.entity === ENTITY && row.action === 'upsert').map(row => String(row.entityId)))].sort();
     const legacySet = new Set(legacyIds);
     const shadowSet = new Set(shadowIds);
@@ -158,9 +157,8 @@
     history.push(sample);
     writeParityHistory(diagnostics.userId, history);
 
-    try {
-      global.dispatchEvent(new CustomEvent('offline-sync-shadow:parity', { detail:sample }));
-    } catch (_) {}
+    try { global.dispatchEvent(new CustomEvent('offline-sync-shadow:parity', { detail:sample })); }
+    catch (_) {}
     return sample;
   }
 
@@ -203,10 +201,8 @@
   function clearParityHistory() {
     const userId = currentUserId();
     if (!userId) return false;
-    try {
-      global.localStorage?.removeItem(parityStorageKey(userId));
-      return true;
-    } catch (_) { return false; }
+    try { global.localStorage?.removeItem(parityStorageKey(userId)); return true; }
+    catch (_) { return false; }
   }
 
   function install() {
