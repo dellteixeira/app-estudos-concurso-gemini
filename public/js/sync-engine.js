@@ -80,7 +80,7 @@
 
     function writeState(next, reason = 'state') {
         const previous = readState();
-        const state = normalizeState({ ...next, online:Boolean(navigator.onLine), updatedAt:new Date().toISOString() });
+        const state = normalizeState({ ...next, updatedAt:new Date().toISOString() });
         try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch (_) {}
         appendHistory(previous, state, reason);
         listeners.forEach(listener => {
@@ -145,15 +145,15 @@
         if (userId() === 'guest') return setStatus('idle', { lastError:null, nextRetryAt:null }, 'guest');
 
         const pendingBefore = pendingCount();
-        if (!navigator.onLine) return setStatus(pendingBefore ? 'pending' : 'synced', { nextRetryAt:null }, 'offline');
-        if (!pendingBefore && !options.force) return setStatus('synced', { attempt:0, lastError:null, nextRetryAt:null }, options.reason || 'noop');
+        if (!navigator.onLine) return setStatus(pendingBefore ? 'pending' : 'synced', { nextRetryAt:null, online:false }, 'offline');
+        if (!pendingBefore && !options.force) return setStatus('synced', { attempt:0, lastError:null, nextRetryAt:null, online:true }, options.reason || 'noop');
         if (typeof syncAllWithSupabase !== 'function') throw new Error('Sincronização com Supabase indisponível.');
 
         clearRetry();
         const previous = readState();
         const attempt = Math.max(0, Number(previous.attempt) || 0);
         const revisionBefore = Math.max(0, Number(queueState()?.metadataRevision) || 0);
-        setStatus('syncing', { attempt, lastError:null, nextRetryAt:null, conflict:null }, options.reason || 'sync:start');
+        setStatus('syncing', { attempt, lastError:null, nextRetryAt:null, conflict:null, online:true }, options.reason || 'sync:start');
 
         runPromise = (async () => {
             try {
@@ -166,7 +166,8 @@
                     const state = setStatus('pending', {
                         attempt:0,
                         lastError:concurrentLocalChange ? 'Novas alterações locais foram registradas durante a sincronização.' : null,
-                        nextRetryAt:null
+                        nextRetryAt:null,
+                        online:Boolean(navigator.onLine)
                     }, concurrentLocalChange ? 'sync:concurrent-change' : 'sync:pending');
                     if (navigator.onLine) {
                         retryTimer = setTimeout(() => {
@@ -182,7 +183,8 @@
                     lastSyncedAt:new Date().toISOString(),
                     lastError:null,
                     nextRetryAt:null,
-                    conflict:null
+                    conflict:null,
+                    online:Boolean(navigator.onLine)
                 }, 'sync:success');
             } catch (error) {
                 if (isConflictError(error)) {
@@ -190,11 +192,12 @@
                         attempt:attempt + 1,
                         conflict:{ message:String(error.message || 'Conflito de sincronização.'), detectedAt:new Date().toISOString() },
                         lastError:String(error.message || error),
-                        nextRetryAt:null
+                        nextRetryAt:null,
+                        online:Boolean(navigator.onLine)
                     }, 'sync:conflict');
                 }
                 const nextAttempt = attempt + 1;
-                setStatus('error', { attempt:nextAttempt, lastError:String(error?.message || error), nextRetryAt:null }, 'sync:error');
+                setStatus('error', { attempt:nextAttempt, lastError:String(error?.message || error), nextRetryAt:null, online:Boolean(navigator.onLine) }, 'sync:error');
                 scheduleRetry(nextAttempt);
                 throw error;
             } finally {
@@ -227,7 +230,8 @@
         return setStatus('conflict', {
             conflict:{ ...details, detectedAt:details.detectedAt || new Date().toISOString() },
             lastError:details.message || 'Conflito detectado.',
-            nextRetryAt:null
+            nextRetryAt:null,
+            online:Boolean(navigator.onLine)
         }, 'conflict:reported');
     }
 
@@ -235,7 +239,7 @@
         const state = readState();
         if (state.status !== 'conflict') return state;
         if (!['retry','keep-local'].includes(strategy)) throw new Error('Estratégia de conflito não suportada.');
-        writeState({ ...state, status:'pending', conflict:null, lastError:null, attempt:0, nextRetryAt:null }, `conflict:${strategy}`);
+        writeState({ ...state, status:'pending', conflict:null, lastError:null, attempt:0, nextRetryAt:null, online:Boolean(navigator.onLine) }, `conflict:${strategy}`);
         return syncNow({ force:true, reason:`conflict-${strategy}` });
     }
 
@@ -279,20 +283,21 @@
         const pending = pendingCount();
         const state = readState();
         if (state.status === 'syncing' || state.status === 'conflict') {
-            writeState({ ...state, pending }, reason);
+            writeState({ ...state, pending, online:Boolean(navigator.onLine) }, reason);
             return;
         }
         if (pending > 0) markPending(reason);
-        else writeState({ ...state, status:navigator.onLine ? 'synced' : 'idle', pending:0, attempt:0, lastError:null, nextRetryAt:null }, reason);
+        else writeState({ ...state, status:navigator.onLine ? 'synced' : 'idle', pending:0, attempt:0, lastError:null, nextRetryAt:null, online:Boolean(navigator.onLine) }, reason);
     }
 
     global.addEventListener('online', () => {
+        writeState({ ...readState(), online:true, pending:pendingCount() }, 'online:event');
         reconcileQueueState('online');
         if (pendingCount() > 0) syncNow({ reason:'online' }).catch(() => {});
     });
     global.addEventListener('offline', () => {
         clearRetry();
-        setStatus(pendingCount() ? 'pending' : 'idle', { nextRetryAt:null }, 'offline:event');
+        setStatus(pendingCount() ? 'pending' : 'idle', { nextRetryAt:null, online:false }, 'offline:event');
     });
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) reconcileQueueState('visibility');
