@@ -6,7 +6,7 @@ const vm=require('node:vm');
 
 const outboxSource=fs.readFileSync('public/js/core/offline-outbox-store.js','utf8');
 const shadowSource=fs.readFileSync('public/js/core/offline-sync-shadow.js','utf8');
-const pwaSource=fs.readFileSync('public/js/app-pwa.js','utf8');
+const appStateSource=fs.readFileSync('public/js/app-state.js','utf8');
 
 function makeStorage(){
   const map=new Map();
@@ -115,11 +115,12 @@ test('diagnóstico compara ids da fila legada com o espelho sem promover shadow 
   assert.equal(await env.context.OfflineOutboxStore.countPending('user-shadow-test'),0);
 });
 
-test('loader PWA carrega outbox antes do bridge e mantém versão canônica durante experimento',()=>{
-  assert.match(pwaSource,/offline-outbox-store\.js\?v=10\.31\.0/);
-  assert.match(pwaSource,/offline-sync-shadow\.js\?v=10\.31\.0/);
-  assert.match(pwaSource,/dataOfflineOutboxStore|offlineOutboxStore/);
-  assert.match(pwaSource,/dataOfflineSyncShadow|offlineSyncShadow/);
+test('AppState carrega outbox antes do bridge mantendo versão canônica durante experimento',()=>{
+  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.31\.0/);
+  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.31\.0/);
+  assert.match(appStateSource,/loadOfflineShadowFoundation/);
+  assert.match(appStateSource,/OfflineSyncShadow\?\.install/);
+  assert.match(appStateSource,/getOfflineShadowDiagnostics/);
 });
 
 test('bridge shadow não contém caminhos de envio remoto',()=>{
