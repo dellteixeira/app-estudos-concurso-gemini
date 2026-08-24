@@ -1,0 +1,121 @@
+name: Canonical GitHub Release
+
+on:
+  workflow_run:
+    workflows: ["Cloudflare Production Verify"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canonical-github-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout production-verified revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Validate canonical release identity
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          version="$(node -p "require('./package.json').version")"
+          public_version="$(node -p "require('./public/version.json').version")"
+          worker_version="$(node -e "const fs=require('fs');const m=fs.readFileSync('src/index.js','utf8').match(/const APP_VERSION = \"([^\"]+)\"/);process.stdout.write(m?.[1]||'')")"
+          sw_version="$(node -e "const fs=require('fs');const m=fs.readFileSync('public/sw.js','utf8').match(/const APP_VERSION = '([^']+)'/);process.stdout.write(m?.[1]||'')")"
+
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Versão inválida para release canônica: $version"
+            exit 1
+          fi
+
+          if [ "$public_version" != "$version" ] || [ "$worker_version" != "$version" ] || [ "$sw_version" != "$version" ]; then
+            echo "::error::Versões inconsistentes: package=$version public=$public_version worker=$worker_version sw=$sw_version"
+            exit 1
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            expected_sha="${{ github.event.workflow_run.head_sha }}"
+            if [ "$sha" != "$expected_sha" ]; then
+              echo "::error::Checkout não corresponde ao SHA verificado em produção: expected=$expected_sha actual=$sha"
+              exit 1
+            fi
+          fi
+
+          tag="v${version}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Canonical release identity: tag=$tag version=$version sha=$sha"
+
+      - name: Create immutable canonical tag
+        env:
+          RELEASE_TAG: ${{ steps.identity.outputs.tag }}
+          RELEASE_SHA: ${{ steps.identity.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          if git show-ref --tags --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            tag_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [ "$tag_sha" != "$RELEASE_SHA" ]; then
+              echo "::error::A tag $RELEASE_TAG já existe em $tag_sha e não será movida para $RELEASE_SHA. Incremente a versão antes de publicar outra release."
+              exit 1
+            fi
+            echo "Tag $RELEASE_TAG já existe e aponta para o SHA canônico."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RELEASE_TAG" "$RELEASE_SHA" -m "Estudo Adaptativo Inteligente $RELEASE_TAG"
+            git push origin "refs/tags/$RELEASE_TAG"
+            echo "Tag canônica criada: $RELEASE_TAG -> $RELEASE_SHA"
+          fi
+
+      - name: Publish canonical GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.identity.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.identity.outputs.version }}
+          RELEASE_SHA: ${{ steps.identity.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "GitHub Release $RELEASE_TAG já existe; mantendo a release imutável."
+            gh release view "$RELEASE_TAG" --json url,tagName,isDraft,isPrerelease,targetCommitish
+            exit 0
+          fi
+
+          gh release create "$RELEASE_TAG" \
+            --verify-tag \
+            --title "Estudo Adaptativo Inteligente $RELEASE_TAG" \
+            --generate-notes \
+            --latest
+
+          release_url="$(gh release view "$RELEASE_TAG" --json url --jq '.url')"
+          echo "Canonical GitHub Release published: $release_url"
+          echo "  version=$RELEASE_VERSION"
+          echo "  tag=$RELEASE_TAG"
+          echo "  sha=$RELEASE_SHA"
