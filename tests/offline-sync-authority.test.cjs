@@ -238,10 +238,10 @@ test('operação já synced é reaproveitada idempotentemente sem novo write rem
   assert.deepEqual(env.getState().editalUpserts,{});
 });
 
-test('AppState carrega autoridade depois de outbox e shadow e mantém release corrente até promoção',()=>{
-  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.32\.1/);
-  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.32\.1/);
-  assert.match(appStateSource,/offline-sync-authority\.js\?v=10\.32\.1/);
+test('AppState carrega autoridade depois de outbox e shadow na release v10.33.0',()=>{
+  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.33\.0/);
+  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.33\.0/);
+  assert.match(appStateSource,/offline-sync-authority\.js\?v=10\.33\.0/);
   assert.ok(appStateSource.indexOf('offline-sync-authority.js')>appStateSource.indexOf('offline-sync-shadow.js'));
   assert.match(appStateSource,/OfflineSyncAuthority\?\.install/);
   assert.match(appStateSource,/getOfflineSyncAuthorityDiagnostics/);
