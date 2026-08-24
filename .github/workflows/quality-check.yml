@@ -1,4 +1,4 @@
-name: Quality Check
+name: Runtime Style Finalizer
 
 on:
   push:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  migrate-runtime-styles:
+  finalize:
     if: github.ref == 'refs/heads/hardening/runtime-style-debt-batch8'
     runs-on: ubuntu-24.04
     steps:
@@ -17,21 +17,17 @@ jobs:
         with:
           ref: hardening/runtime-style-debt-batch8
           fetch-depth: 0
-
-      - name: Apply migration
-        run: |
-          node scripts/migrate-runtime-style-debt.mjs
-          node scripts/migrate-runtime-style-debt-pass2.mjs
-
-      - name: Validate syntax
+      - name: Finalize migration
+        run: node scripts/finalize-runtime-style-debt-batch8.mjs
+      - name: Validate syntax and tests
         run: |
           node --check public/js/app-core.js
           node --check public/js/app-ui.js
-
-      - name: Commit migration
+          npm test
+      - name: Commit final state
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/js/app-core.js public/js/app-ui.js public/css/base.css security/runtime-style-debt.json tests/runtime-style-debt-batch8.test.cjs
-          git commit -m "Hardening — reduzir dívida de estilos em runtime" || exit 0
+          git add -A
+          git commit -m "Hardening — finalizar dívida de estilos em runtime" || exit 0
           git push origin HEAD:hardening/runtime-style-debt-batch8
