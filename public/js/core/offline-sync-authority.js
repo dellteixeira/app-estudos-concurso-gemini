@@ -253,7 +253,7 @@
   async function prepareOperation(item) {
     const shadow = global.OfflineSyncShadow;
     if (!shadow?.shadowEditalUpsert) throw new Error('Shadow offline indisponível para preflight.');
-    const operation = await shadow.shadowEditalUpsert(item, 'authority-preflight');
+    const operation = await shadow.shadowEditalUpsert(item, 'authority-preflight', { recordParity:false });
     if (!operation?.idempotencyKey) throw new Error(`Outbox não preparou o tópico ${String(item?.id || '')}.`);
     return operation;
   }
@@ -298,6 +298,7 @@
       const boundedBatch = sourceBatch.slice(0, allowedCount);
       const prepared = [];
       for (const item of boundedBatch) prepared.push({ item, operation:await prepareOperation(item) });
+      await global.OfflineSyncShadow?.recordParitySnapshot?.('authority-preflight-batch');
 
       const alreadySynced = prepared.filter(entry => entry.operation.status === 'synced');
       if (alreadySynced.length) reusedSynced += removeLegacyIfUnchanged(alreadySynced.map(entry => entry.item));
