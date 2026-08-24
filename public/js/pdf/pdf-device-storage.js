@@ -121,9 +121,77 @@
     document.head.appendChild(style);
   }
 
-  function extractPdfId(button) {
-    const inline = button?.getAttribute?.('onclick') || '';
-    return inline.match(/openDocument\(['"]([^'"]+)['"]\)/)?.[1] || '';
+  function extractPdfIdFromInline(value) {
+    const inline = String(value || '');
+    const patterns = [
+      /openDocument\(['"]([^'"]+)['"]\)/,
+      /openLinkModal\(['"]([^'"]+)['"]\)/,
+      /unlinkDocument\(['"]([^'"]+)['"]\)/,
+      /deleteDocument\(['"]([^'"]+)['"]\)/,
+      /toggleFavorite\(['"]([^'"]+)['"]\)/
+    ];
+    for (const pattern of patterns) {
+      const match = inline.match(pattern);
+      if (match?.[1]) return match[1];
+    }
+    return '';
+  }
+
+  function extractPdfId(card) {
+    if (!card) return '';
+    const direct = card.dataset?.pdfId || card.getAttribute?.('data-pdf-id') || '';
+    if (direct) return String(direct);
+    for (const node of card.querySelectorAll?.('[onclick]') || []) {
+      const id = extractPdfIdFromInline(node.getAttribute('onclick'));
+      if (id) return id;
+    }
+    return '';
+  }
+
+  function createSaveButton(pdfId) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-secondary btn-sm pdf-library-card-action pdf-device-save-action';
+    button.textContent = 'Salvar no dispositivo';
+    button.setAttribute('aria-label', 'Salvar PDF no dispositivo');
+    button.dataset.pdfId = String(pdfId);
+    button.addEventListener('click', async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const currentPdfId = button.dataset.pdfId || pdfId;
+      const originalText = 'Salvar no dispositivo';
+      button.disabled = true;
+      button.textContent = 'Salvando…';
+      try {
+        const result = await saveToDevice(currentPdfId);
+        const status = document.getElementById('pdfLibraryStatus');
+        if (result.cancelled) {
+          button.textContent = originalText;
+          if (status) {
+            status.textContent = 'Salvamento cancelado. Nenhum arquivo foi criado.';
+            status.dataset.kind = 'info';
+          }
+          return;
+        }
+        button.textContent = 'Salvo';
+        if (status) {
+          status.textContent = `${result.fileName} foi enviado para o armazenamento do dispositivo.`;
+          status.dataset.kind = 'ok';
+        }
+        setTimeout(() => { if (button.isConnected) button.textContent = originalText; }, 1800);
+      } catch (error) {
+        console.error('[PDF Device Storage]', error);
+        button.textContent = originalText;
+        const status = document.getElementById('pdfLibraryStatus');
+        if (status) {
+          status.textContent = error?.message || 'Não foi possível salvar o PDF no dispositivo.';
+          status.dataset.kind = 'error';
+        }
+      } finally {
+        button.disabled = false;
+      }
+    });
+    return button;
   }
 
   function injectSaveButtons(root = document) {
@@ -131,54 +199,21 @@
     const cards = root.querySelectorAll?.('.pdf-library-card') || [];
     for (const card of cards) {
       const actions = card.querySelector('.pdf-card-actions');
-      const openButton = actions?.querySelector('[onclick*="openDocument("]');
-      if (!actions || !openButton) continue;
-      actions.classList.add('pdf-device-storage-actions');
-      if (actions.querySelector('.pdf-device-save-action')) continue;
-      const pdfId = extractPdfId(openButton);
+      if (!actions) continue;
+      const pdfId = extractPdfId(card);
       if (!pdfId) continue;
 
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'btn btn-secondary btn-sm pdf-library-card-action pdf-device-save-action';
-      button.textContent = 'Salvar no dispositivo';
-      button.setAttribute('aria-label', 'Salvar PDF no dispositivo');
-      button.addEventListener('click', async event => {
-        event.preventDefault();
-        event.stopPropagation();
-        const originalText = button.textContent;
-        button.disabled = true;
-        button.textContent = 'Salvando…';
-        try {
-          const result = await saveToDevice(pdfId);
-          const status = document.getElementById('pdfLibraryStatus');
-          if (result.cancelled) {
-            button.textContent = originalText;
-            if (status) {
-              status.textContent = 'Salvamento cancelado. Nenhum arquivo foi criado.';
-              status.dataset.kind = 'info';
-            }
-            return;
-          }
-          button.textContent = 'Salvo';
-          if (status) {
-            status.textContent = `${result.fileName} foi enviado para o armazenamento do dispositivo.`;
-            status.dataset.kind = 'ok';
-          }
-          setTimeout(() => { if (button.isConnected) button.textContent = originalText; }, 1800);
-        } catch (error) {
-          console.error('[PDF Device Storage]', error);
-          button.textContent = originalText;
-          const status = document.getElementById('pdfLibraryStatus');
-          if (status) {
-            status.textContent = error?.message || 'Não foi possível salvar o PDF no dispositivo.';
-            status.dataset.kind = 'error';
-          }
-        } finally {
-          button.disabled = false;
-        }
-      });
-      openButton.insertAdjacentElement('afterend', button);
+      actions.classList.add('pdf-device-storage-actions');
+      const existing = actions.querySelector('.pdf-device-save-action');
+      if (existing) {
+        existing.dataset.pdfId = String(pdfId);
+        continue;
+      }
+
+      const button = createSaveButton(pdfId);
+      const openButton = actions.querySelector('[onclick*="openDocument("]');
+      if (openButton) openButton.insertAdjacentElement('afterend', button);
+      else actions.insertAdjacentElement('afterbegin', button);
     }
   }
 
@@ -186,7 +221,16 @@
     const root = document.getElementById('tab-biblioteca') || document.body;
     if (!root || root.dataset.pdfDeviceStorageObserved === '1') return;
     root.dataset.pdfDeviceStorageObserved = '1';
-    const observer = new MutationObserver(() => requestAnimationFrame(() => injectSaveButtons(root)));
+    let scheduled = false;
+    const scheduleInjection = () => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        injectSaveButtons(root);
+      });
+    };
+    const observer = new MutationObserver(scheduleInjection);
     observer.observe(root, { childList: true, subtree: true });
     injectSaveButtons(root);
   }
