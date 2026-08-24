@@ -28,7 +28,10 @@ async function saveSettings(next){
 }
 function emit(type,detail={}){try{global.dispatchEvent(new CustomEvent('pdf-offline-library',{detail:{type,...detail,state:getStateSync()}}))}catch(_){} }
 function getStateSync(){return{running,paused,cancelled,total:queue.length+completed+failed,remaining:queue.length,completed,failed,currentId:current?.id||'',lastError}}
-async function capabilities(){return global.PdfStudyLibrary?.getOfflineCapabilities?.()||global.OfflinePdfStore?.capabilities?.()||{storage:{usage:0,quota:0,available:0,usageRatio:0},persistence:{supported:false,persisted:false},preferredBackend:'none'}}
+async function capabilities(){
+  if(global.PdfLibraryOfflineAdapter?.capabilities)return global.PdfLibraryOfflineAdapter.capabilities();
+  return global.PdfStudyLibrary?.getOfflineCapabilities?.()||global.OfflinePdfStore?.capabilities?.()||{storage:{usage:0,quota:0,available:0,usageRatio:0},persistence:{supported:false,persisted:false},preferredBackend:'none'};
+}
 async function budget(){
   const [caps,s]=await Promise.all([capabilities(),getSettings()]);
   const quota=Number(caps?.storage?.quota||0),usage=Number(caps?.storage?.usage||0),available=Math.max(0,Number(caps?.storage?.available||quota-usage||0));
@@ -51,11 +54,19 @@ async function listTargets(mode){
   const docs=await global.PdfStudyLibrary.list({scope:'global'});
   return mode==='favorites'?(docs||[]).filter(d=>d.is_favorite):(docs||[]);
 }
+async function hasOfflineCopy(userId,doc){
+  try{
+    if(global.PdfLibraryOfflineAdapter?.has)return !!(await global.PdfLibraryOfflineAdapter.has(userId,doc));
+    if(global.PdfStudyLibrary?.hasOfflineCopy)return !!(await global.PdfStudyLibrary.hasOfflineCopy(doc));
+    if(global.OfflinePdfStore?.has)return !!(await global.OfflinePdfStore.has(userId,doc));
+  }catch(_){}
+  return false;
+}
 async function buildQueue(mode){
   const u=await user();if(!u?.id)throw new Error('Sessão inválida.');
   const docs=await listTargets(mode);const pending=[];let already=0,totalBytes=0;
   for(const doc of docs){
-    const has=await global.PdfStudyLibrary.hasOfflineCopy?.(doc).catch?.(()=>false);
+    const has=await hasOfflineCopy(u.id,doc);
     if(has){already++;continue}
     pending.push(doc);totalBytes+=Math.max(0,Number(doc.file_size)||0);
   }
@@ -77,13 +88,28 @@ async function ensurePersistence(){
   }catch(_){}
   return{supported:false,persisted:false};
 }
+async function persistOfflineBlob(userId,doc,blob){
+  if(global.PdfLibraryOfflineAdapter?.put){
+    const result=await global.PdfLibraryOfflineAdapter.put(userId,doc,blob);
+    if(result?.stored)return result;
+    throw new Error('O navegador não conseguiu reservar armazenamento local para este PDF.');
+  }
+  if(global.OfflinePdfStore?.put){
+    const result=await global.OfflinePdfStore.put(userId,doc,blob);
+    if(result?.stored)return result;
+    throw new Error('O navegador não conseguiu reservar armazenamento local para este PDF.');
+  }
+  return{stored:true,backend:'legacy'};
+}
 async function downloadOne(doc){
   const before=await budget();
   const expected=Math.max(0,Number(doc.file_size)||0);
   if(Number.isFinite(before.appBudget)&&expected>before.appBudget)throw new Error(`Sem espaço seguro para ${doc.title||doc.original_file_name||'este PDF'}.`);
   const blob=await global.PdfStudyLibrary.downloadBlob(doc);
   if(!blob?.size)throw new Error('O PDF baixado está vazio.');
-  return blob;
+  const u=await user();if(!u?.id)throw new Error('Sessão inválida ao salvar o PDF offline.');
+  const stored=await persistOfflineBlob(u.id,doc,blob);
+  return{blob,stored};
 }
 async function worker(){
   while(queue.length&&!cancelled){
@@ -93,7 +119,7 @@ async function worker(){
     if(!global.navigator.onLine){paused=true;lastError='Fila pausada: dispositivo offline.';emit('paused',{reason:lastError});break}
     if(!connectionAllowed(s)){paused=true;lastError='Fila pausada: aguardando Wi-Fi.';emit('paused',{reason:lastError});break}
     current=queue.shift();emit('progress',{document:current});
-    try{await downloadOne(current);completed++;emit('downloaded',{document:current})}
+    try{const saved=await downloadOne(current);completed++;emit('downloaded',{document:current,backend:saved?.stored?.backend||''})}
     catch(error){failed++;lastError=error?.message||'Falha ao preparar PDF offline.';emit('error',{document:current,error:lastError})}
     current=null;
     if(isMobile())await sleep(180);

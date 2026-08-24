@@ -150,8 +150,15 @@
 
   async function forgetDocuments(ids){
     const list=new Set((Array.isArray(ids)?ids:[ids]).filter(Boolean));if(!list.size)return;
-    const user=await core().getAuthenticatedUser();writeCache(user.id,readCache(user.id).filter(d=>!list.has(d.id)));
-    await deletePdfBlobs(user.id,[...list]);
+    const user=await core().getAuthenticatedUser(),pdfIds=[...list];
+    writeCache(user.id,readCache(user.id).filter(d=>!list.has(d.id)));
+    const modernPurge=global.PdfLibraryOfflineAdapter?.removeMany
+      ? global.PdfLibraryOfflineAdapter.removeMany(user.id,pdfIds)
+      : global.OfflinePdfStore?.removeMany
+        ? global.OfflinePdfStore.removeMany(user.id,pdfIds)
+        : Promise.resolve(0);
+    await Promise.allSettled([deletePdfBlobs(user.id,pdfIds),modernPurge]);
+    try{global.dispatchEvent(new CustomEvent('pdf-local-copies-purged',{detail:{userId:String(user.id),pdfIds}}))}catch(_){}
   }
 
   async function persistVisibleOrder(visibleIds){
