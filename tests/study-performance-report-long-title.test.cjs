@@ -9,10 +9,10 @@ function wrap(text,size=10,width=500){const words=String(text||'').replace(/\s+/
 function layout(title,width=507){for(const size of [23,22,21,20,19,18,17,16,15,14,13]){const lines=wrap(title,size,width);if(lines.length<=2)return {lines,size};}return {lines:wrap(title,12,width).slice(0,2),size:12};}
 
 test('report header uses adaptive title layout and dynamic vertical flow',()=>{
-  assert.match(src,/function getHeaderTitleLayout(title,maxWidth=PAGE_W-MX*2)/);
-  assert.match(src,/layout.lines.forEach/);
-  assert.match(src,/const subtitleY=titleBottom-25/);
-  assert.match(src,/p.cursor=dividerY-31/);
+  assert.ok(src.includes('function getHeaderTitleLayout(title,maxWidth=PAGE_W-MX*2){'));
+  assert.ok(src.includes('layout.lines.forEach'));
+  assert.ok(src.includes('const subtitleY=titleBottom-25'));
+  assert.ok(src.includes('p.cursor=dividerY-31'));
 });
 
 test('known long subject names fit inside at most two header lines',()=>{
