@@ -130,50 +130,75 @@ jobs:
           matched=0
           for attempt in $(seq 1 24); do
             cache_buster="${expected_sha}-${GITHUB_RUN_ID}-${attempt}"
+            version_ok=0
+            sw_ok=0
+
             if curl --fail --silent --show-error --header 'Cache-Control: no-cache, no-store' \
               "$APP_URL/version.json?verify=$cache_buster" --output /tmp/cloudflare-version.json; then
               remote_version="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).version||''))}catch{}")"
               remote_commit="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).commit||''))}catch{}")"
               remote_build="$(node -e "const fs=require('fs');try{process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-version.json','utf8')).build||''))}catch{}")"
-              echo "Verification attempt $attempt: version=$remote_version commit=$remote_commit build=$remote_build"
               if [ "$remote_version" = "$expected_version" ] && [ "$remote_commit" = "$expected_sha" ] && [ "$remote_build" = "$expected_build" ]; then
-                matched=1
-                break
+                version_ok=1
               fi
+            else
+              remote_version="(unavailable)"
+              remote_commit="(unavailable)"
+              remote_build="(unavailable)"
+            fi
+
+            if curl --fail --silent --show-error --header 'Cache-Control: no-cache, no-store' \
+              "$APP_URL/sw.js?verify=$cache_buster" --output /tmp/cloudflare-sw.js; then
+              if grep -F "const APP_VERSION = '$expected_version';" /tmp/cloudflare-sw.js >/dev/null && \
+                 grep -F "// DEPLOY_COMMIT_SHA: $expected_sha" /tmp/cloudflare-sw.js >/dev/null; then
+                sw_ok=1
+              fi
+            fi
+
+            echo "Verification attempt $attempt: version=$remote_version commit=$remote_commit build=$remote_build version_ok=$version_ok sw_ok=$sw_ok"
+            if [ "$version_ok" -eq 1 ] && [ "$sw_ok" -eq 1 ]; then
+              matched=1
+              break
             fi
             sleep 5
           done
 
           if [ "$matched" -ne 1 ]; then
-            echo "::error::Produção não expôs o SHA/build exatos do commit validado dentro da janela de verificação"
+            echo "::error::Produção não convergiu version.json e sw.js para o SHA/build exatos dentro da janela de verificação"
             exit 1
           fi
 
-          curl --fail --silent --show-error --header 'Cache-Control: no-cache, no-store' \
-            "$APP_URL/sw.js?verify=${expected_sha}-${GITHUB_RUN_ID}" --output /tmp/cloudflare-sw.js
-          grep -F "const APP_VERSION = '$expected_version';" /tmp/cloudflare-sw.js >/dev/null || {
-            echo "::error::Service Worker não corresponde à versão $expected_version"; exit 1;
-          }
-          grep -F "// DEPLOY_COMMIT_SHA: $expected_sha" /tmp/cloudflare-sw.js >/dev/null || {
-            echo "::error::Service Worker não corresponde ao commit $expected_sha"; exit 1;
-          }
-          echo "Cloudflare production verified with exact source identity."
+          echo "Cloudflare production verified with exact source identity and matching Service Worker."
 
       - name: Stability re-check
         shell: bash
         env:
           APP_URL: https://estudoadaptativo.com
           EXPECTED_SHA: ${{ steps.identity.outputs.sha }}
+          EXPECTED_VERSION: ${{ steps.identity.outputs.version }}
           EXPECTED_BUILD: ${{ steps.identity.outputs.build_id }}
         run: |
           set -euo pipefail
           sleep 20
+          cache_buster="${EXPECTED_SHA}-${GITHUB_RUN_ID}-stability"
+
           curl --fail --silent --show-error --header 'Cache-Control: no-cache, no-store' \
-            "$APP_URL/version.json?stability=${EXPECTED_SHA}-${GITHUB_RUN_ID}" --output /tmp/cloudflare-stability.json
+            "$APP_URL/version.json?stability=$cache_buster" --output /tmp/cloudflare-stability.json
+          remote_version="$(node -e "const fs=require('fs');process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-stability.json','utf8')).version||''))")"
           remote_commit="$(node -e "const fs=require('fs');process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-stability.json','utf8')).commit||''))")"
           remote_build="$(node -e "const fs=require('fs');process.stdout.write(String(JSON.parse(fs.readFileSync('/tmp/cloudflare-stability.json','utf8')).build||''))")"
-          if [ "$remote_commit" != "$EXPECTED_SHA" ] || [ "$remote_build" != "$EXPECTED_BUILD" ]; then
-            echo "::error::Produção mudou após a verificação inicial: commit=$remote_commit build=$remote_build"
+          if [ "$remote_version" != "$EXPECTED_VERSION" ] || [ "$remote_commit" != "$EXPECTED_SHA" ] || [ "$remote_build" != "$EXPECTED_BUILD" ]; then
+            echo "::error::Produção mudou após a verificação inicial: version=$remote_version commit=$remote_commit build=$remote_build"
             exit 1
           fi
-          echo "Stability re-check OK: production remains on commit $EXPECTED_SHA"
+
+          curl --fail --silent --show-error --header 'Cache-Control: no-cache, no-store' \
+            "$APP_URL/sw.js?stability=$cache_buster" --output /tmp/cloudflare-stability-sw.js
+          grep -F "const APP_VERSION = '$EXPECTED_VERSION';" /tmp/cloudflare-stability-sw.js >/dev/null || {
+            echo "::error::Service Worker mudou de versão após a verificação inicial"; exit 1;
+          }
+          grep -F "// DEPLOY_COMMIT_SHA: $EXPECTED_SHA" /tmp/cloudflare-stability-sw.js >/dev/null || {
+            echo "::error::Service Worker mudou de commit após a verificação inicial"; exit 1;
+          }
+
+          echo "Stability re-check OK: version.json and sw.js remain on commit $EXPECTED_SHA"
