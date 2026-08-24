@@ -21,6 +21,9 @@
 /css/features.css
   Cache-Control: no-cache, no-store, must-revalidate
 
+/css/learning-advisor.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/study-domain.js
   Cache-Control: no-cache, no-store, must-revalidate
 
@@ -31,6 +34,9 @@
   Cache-Control: no-cache, no-store, must-revalidate
 
 /js/adaptive-schedule-reconciliation.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/learning-advisor.js
   Cache-Control: no-cache, no-store, must-revalidate
 
 /js/app-state.js

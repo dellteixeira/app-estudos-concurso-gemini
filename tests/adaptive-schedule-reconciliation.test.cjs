@@ -9,6 +9,8 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const reconciliation = read('public/js/adaptive-schedule-reconciliation.js');
 const pwa = read('public/js/app-pwa.js');
 const sw = read('public/sw.js');
+const packageVersion = JSON.parse(read('package.json')).version;
+const escapeRegex = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 test('módulo adaptativo possui sintaxe JavaScript válida', () => {
   const result = spawnSync(process.execPath, ['--check', path.join(root, 'public/js/adaptive-schedule-reconciliation.js')], { encoding:'utf8' });
@@ -50,7 +52,7 @@ test('geradores de cronograma e reorganização passam pela reconciliação adap
 test('reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca PDF', () => {
   assert.match(reconciliation, /typeof renderRetentionDiagnostics!==['"]function['"]/);
   assert.match(pwa, /loadAdaptiveScheduleReconciliation/);
-  assert.match(pwa, /adaptive-schedule-reconciliation\.js\?v=10\.29\.4/);
+  assert.match(pwa, new RegExp(`adaptive-schedule-reconciliation\\.js\\?v=${escapeRegex(packageVersion)}`));
   assert.match(pwa, /data-adaptive-schedule-reconciliation/);
   assert.doesNotMatch(pwa, /pdf-library-ordering/);
 });

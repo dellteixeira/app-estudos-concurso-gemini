@@ -9,7 +9,10 @@ const ok = message => console.log(`OK  ${message}`);
 
 const manifest = JSON.parse(read('config/app-assets.json'));
 const sw = read('public/sw.js');
-const worker = read('src/index.js');
+const wrangler = JSON.parse(read('wrangler.jsonc'));
+const workerEntryPath = String(wrangler.main || './src/index.js').replace(/^\.\//, '');
+const workerEntry = read(workerEntryPath);
+const legacyWorker = workerEntryPath === 'src/index.js' ? '' : read('src/index.js');
 const headers = read('public/_headers');
 const version = JSON.parse(read('public/version.json')).version;
 
@@ -35,16 +38,33 @@ function parseQuotedPaths(block) {
     .map(match => match[1].replace(/^\.\//, '/'));
 }
 
-function getBlock(source, regex, name) {
+function getBlock(source, regex, name, { optional = false } = {}) {
   const block = source.match(regex)?.[1];
-  if (!block) fail(`não foi possível localizar ${name}`);
+  if (!block && !optional) fail(`não foi possível localizar ${name}`);
   return block || '';
 }
 
 const swCritical = parseQuotedPaths(getBlock(sw, /const CRITICAL_APP_SHELL = \[([\s\S]*?)\];/, 'CRITICAL_APP_SHELL'));
 const swOptional = parseQuotedPaths(getBlock(sw, /const OPTIONAL_OFFLINE_ASSETS = \[([\s\S]*?)\];/, 'OPTIONAL_OFFLINE_ASSETS'));
 const swNetworkFirst = parseQuotedPaths(getBlock(sw, /const isCoreAsset[\s\S]*?&& \[([\s\S]*?)\]\.some\(/, 'isCoreAsset'));
-const workerNoStore = parseQuotedPaths(getBlock(worker, /const CORE_NO_STORE_PATHS = new Set\(\[([\s\S]*?)\]\);/, 'CORE_NO_STORE_PATHS'));
+
+// A política efetiva do Worker pode ser composta: o entrypoint configurado no
+// Wrangler pode interceptar rotas e delegar o restante ao Worker legado. A
+// auditoria deve validar exatamente essa cadeia de execução, não um arquivo
+// hardcoded que deixou de ser o entrypoint.
+const legacyNoStore = legacyWorker
+  ? parseQuotedPaths(getBlock(legacyWorker, /const CORE_NO_STORE_PATHS = new Set\(\[([\s\S]*?)\]\);/, 'CORE_NO_STORE_PATHS'))
+  : parseQuotedPaths(getBlock(workerEntry, /const CORE_NO_STORE_PATHS = new Set\(\[([\s\S]*?)\]\);/, 'CORE_NO_STORE_PATHS'));
+const extendedNoStore = parseQuotedPaths(getBlock(workerEntry, /const EXTENDED_NO_STORE_PATHS = new Set\(\[([\s\S]*?)\]\);/, 'EXTENDED_NO_STORE_PATHS', { optional: true }));
+const workerNoStore = [...new Set([...legacyNoStore, ...extendedNoStore])];
+
+if (workerEntryPath !== 'src/index.js') {
+  if (!/from\s+['"]\.\/index\.js['"]/.test(workerEntry)) {
+    fail(`entrypoint ${workerEntryPath} não delega explicitamente ao Worker legado src/index.js`);
+  } else {
+    ok(`entrypoint Cloudflare efetivo auditado: ${workerEntryPath} + src/index.js`);
+  }
+}
 
 function samePaths(name, actual, expected) {
   const a = [...new Set(actual)].sort();
