@@ -118,7 +118,7 @@
     }
 
     function getEdital(options = {}) {
-        return clone(safeEdital());
+        return clone(safeEdital(options));
     }
 
     function findTopic(ref) {
