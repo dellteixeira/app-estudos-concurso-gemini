@@ -30,6 +30,11 @@ test('motor local calcula fricção e limita a triagem antes da IA',()=>{
   assert.match(client,/MIN_FRICTION=35/);
 });
 
+test('rótulo da interface usa dificuldade persistente em vez de fricção',()=>{
+  assert.match(client,/Dificuldade persistente \$\{candidate\.frictionScore\}/);
+  assert.doesNotMatch(client,/>Fricção \$\{candidate\.frictionScore\}</);
+});
+
 test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
   assert.match(server,/advisorRole:'auxiliary'/);
   assert.match(server,/authority:'retention-engine'/);
@@ -46,6 +51,7 @@ test('barra do Advisor ocupa toda a largura e possui contrato de texto resilient
   assert.match(css,/justify-self:stretch!important/);
   assert.match(css,/width:100%!important/);
   assert.match(css,/max-width:100%!important/);
+  assert.match(css,/margin:12px 0 0!important/);
   assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
   assert.match(css,/@container \(max-width:760px\)/);
   assert.match(css,/@media\(max-width:900px\)/);
