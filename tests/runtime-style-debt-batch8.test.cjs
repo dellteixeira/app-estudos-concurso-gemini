@@ -36,3 +36,15 @@ test('pass2 removes remaining display mutation and known generated style attribu
   assert.ok(budget2.remaining.coreTemplateStyle < 15);
   assert.match(css,/RUNTIME_STYLE_DEBT_BATCH8_PASS2/);
 });
+
+test('final budget keeps generated UI style attributes at zero',()=>{
+  const finalBudget=JSON.parse(fs.readFileSync('security/runtime-style-debt.json','utf8'));
+  assert.equal(finalBudget.remaining.coreStyleDisplay,0);
+  assert.equal(finalBudget.remaining.uiStyleDisplay,0);
+  assert.equal(finalBudget.remaining.coreTemplateStyle,0);
+  assert.equal(finalBudget.remaining.uiTemplateStyle,0);
+  assert.equal(finalBudget.remaining.coreSetProperty,0);
+  assert.equal(finalBudget.remaining.uiSetProperty,0);
+  assert.equal(finalBudget.migratedDisplay.core,55);
+  assert.deepEqual(finalBudget.geometryExceptions[0].properties,['width','left','top']);
+});
