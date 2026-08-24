@@ -36,7 +36,7 @@ async function exposeLibrary(page) {
   await expect(page.locator('.pdf-device-save-action')).toHaveCount(1);
 }
 
-for (const width of [320, 390]) {
+for (const width of [320, 390, 560]) {
   test(`mobile ${width}px adiciona Salvar no dispositivo sem ultrapassar a viewport`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -53,13 +53,17 @@ for (const width of [320, 390]) {
       const actionButtons = [...actions.querySelectorAll('.pdf-library-card-action')];
       const buttons = actionButtons.map(button => {
         const rect = button.getBoundingClientRect();
+        const style = getComputedStyle(button);
         return {
           left: rect.left,
           right: rect.right,
           width: rect.width,
           height: rect.height,
           save: button.classList.contains('pdf-device-save-action'),
-          label: button.textContent.trim()
+          label: button.textContent.trim(),
+          whiteSpace: style.whiteSpace,
+          overflow: style.overflow,
+          fontSize: Number.parseFloat(style.fontSize)
         };
       });
       return {
@@ -83,7 +87,10 @@ for (const width of [320, 390]) {
     expect(geometry.bodyScroll).toBeLessThanOrEqual(geometry.viewport + 2);
     expect(geometry.buttons.length).toBeGreaterThanOrEqual(3);
     expect(geometry.buttons.length).toBeLessThanOrEqual(4);
-    expect(geometry.buttons.some(button => button.save && button.label === 'Salvar no dispositivo')).toBe(true);
+    const saveButton = geometry.buttons.find(button => button.save);
+    expect(saveButton?.label).toBe('Salvar no dispositivo');
+    expect(saveButton?.whiteSpace).toBe('normal');
+    expect(saveButton?.fontSize).toBeLessThanOrEqual(14);
     for (const button of geometry.buttons) {
       expect(button.left).toBeGreaterThanOrEqual(geometry.actionLeft - 1);
       expect(button.right).toBeLessThanOrEqual(geometry.actionRight + 1);
