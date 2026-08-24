@@ -80,8 +80,6 @@
 
         window.addEventListener('beforeinstallprompt', (event) => {
             event.preventDefault();
-            // Se o navegador voltou a oferecer instalação, o app não está mais
-            // instalado neste perfil/dispositivo. Remove um marcador antigo.
             try { localStorage.removeItem('pwa_app_installed'); } catch (_) {}
             deferredPwaInstallPrompt = event;
             showPwaInstallBanner('prompt');
@@ -99,8 +97,6 @@
             if (isIOS) {
                 setTimeout(() => showPwaInstallBanner('ios'), 900);
             } else if (isAndroid) {
-                // Chromium dispara beforeinstallprompt quando elegível. Se não
-                // disparar (ex.: Firefox), oferece orientação manual sem bloquear a UI.
                 setTimeout(() => {
                     if (!deferredPwaInstallPrompt) showPwaInstallBanner('android-manual');
                 }, 1800);
@@ -218,3 +214,13 @@
         window.updateStudyFilterAssuntoOptions = updateStudyFilterAssuntoOptions;
         window.startFilteredStudyModal = startFilteredStudyModal;
         window.resetDailyPomodoroHours = resetDailyPomodoroHours;
+
+        // V10.29.4 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
+        (function loadAdaptiveScheduleReconciliation() {
+            if (window.AdaptiveScheduleReconciliation || document.querySelector('script[data-adaptive-schedule-reconciliation]')) return;
+            const script = document.createElement('script');
+            script.src = './js/adaptive-schedule-reconciliation.js?v=10.29.4';
+            script.defer = true;
+            script.dataset.adaptiveScheduleReconciliation = '1';
+            document.head.appendChild(script);
+        })();
