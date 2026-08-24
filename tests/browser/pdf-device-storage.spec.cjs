@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 async function exposeLibrary(page) {
+  await page.waitForFunction(() => !!window.PdfDeviceStorage, null, { timeout: 10000 });
   await page.evaluate(() => {
     for (const id of ['auth-screen', 'offline-banner', 'pwa-update-banner', 'pwa-install-banner']) {
       const el = document.getElementById(id);
@@ -30,9 +31,9 @@ async function exposeLibrary(page) {
         <button class="btn btn-danger btn-sm pdf-library-card-action pdf-library-card-delete">Excluir</button>
       </div>
     </article>`;
+    window.PdfDeviceStorage.injectSaveButtons(grid);
   });
-  await page.waitForFunction(() => !!window.PdfDeviceStorage, null, { timeout: 10000 });
-  await page.evaluate(() => window.PdfDeviceStorage.injectSaveButtons());
+  await expect(page.locator('.pdf-device-save-action')).toHaveCount(1);
 }
 
 for (const width of [320, 390]) {
