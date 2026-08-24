@@ -222,7 +222,7 @@
                     <h3 class="dashboard-panel-title">Relógio Pomodoro</h3>
                     <div class="pomodoro-hero">
                         <div class="pomodoro-ring-shell">
-                            <div class="pomodoro-ring" id="pomodoroRing" style="--timer-progress:0;">
+                            <div class="pomodoro-ring pomodoro-progress-0" id="pomodoroRing" data-mode="focus">
                                 <div class="timer-display" id="timer" aria-live="polite">
                                     <span class="timer-display-number">40</span>
                                     <span class="timer-display-unit">min</span>
@@ -485,7 +485,7 @@
                         <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="exportAllFlashcards" title="Exportar todos os flashcards deste concurso organizados por matéria e assunto">Exportar Flashcards</button>
                         <button class="btn btn-primary btn-sm" type="button" data-inline-click="ih-019" title="Importar flashcards exportados de outro concurso">Importar Flashcards</button>
                         <input id="flashcardsImportFile" type="file" accept="application/json,.json" hidden data-inline-change="ih-020">
-                        <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" data-inline-click="ih-021" style="display: none;">
+                        <button class="btn btn-secondary btn-sm" id="btnResetFcFilter" data-inline-click="ih-021" hidden aria-hidden="true">
                             Fechar Caixa / Ocultar Cartões (Voltar às Pastas)
                         </button>
                     </div>
@@ -702,7 +702,7 @@
             <div class="form-group">
                 <label id="appPromptLabel" for="appPromptInput">Valor</label>
                 <input id="appPromptInput" type="text" autocomplete="off">
-                <div id="appPromptHelp" class="account-helper" style="display:none;"></div>
+                <div id="appPromptHelp" class="account-helper" hidden aria-hidden="true"></div>
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" data-inline-click="ih-036">Cancelar</button>
