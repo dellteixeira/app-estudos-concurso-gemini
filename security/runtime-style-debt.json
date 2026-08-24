@@ -6,13 +6,17 @@
     "ui": 0
   },
   "remaining": {
-    "coreStyleDisplay": 1,
+    "coreStyleDisplay": 0,
     "uiStyleDisplay": 0,
-    "coreTemplateStyle": 42,
+    "coreTemplateStyle": 0,
     "uiTemplateStyle": 1,
-    "coreStyleWidth": 3,
+    "coreStyleWidth": 1,
     "uiStyleWidth": 0,
     "coreSetProperty": 0,
     "uiSetProperty": 0
-  }
+  },
+  "pass2": true,
+  "geometryExceptions": [
+    "materia drag ghost width/left/top"
+  ]
 }

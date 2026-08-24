@@ -27,3 +27,12 @@ test('known static runtime template styles are externalized',()=>{
   assert.match(core,/class=\"backup-slot-reason\"/);
   assert.match(ui,/global-search-empty/);
 });
+
+test('pass2 removes remaining display mutation and known generated style attributes',()=>{
+  const budget2=JSON.parse(fs.readFileSync('security/runtime-style-debt.json','utf8'));
+  assert.equal(budget2.remaining.coreStyleDisplay,0);
+  assert.equal(budget2.remaining.uiStyleDisplay,0);
+  assert.equal(budget2.remaining.uiTemplateStyle,0);
+  assert.ok(budget2.remaining.coreTemplateStyle < 15);
+  assert.match(css,/RUNTIME_STYLE_DEBT_BATCH8_PASS2/);
+});

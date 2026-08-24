@@ -2305,7 +2305,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const lessonMetrics = progress.mode === 'lessons'
                 ? `<span class="topic-plan-study-time" title="Soma das sessões registradas em studySessions para este assunto">Tempo estudado neste assunto: <strong>${escapeHtml(formatStudyMinutes(recordedMinutes))}</strong></span><span class="topic-plan-progress-label">Progresso das aulas: ${progress.pct}%</span>`
                 : `<span class="topic-plan-progress-label">${progress.pct}%</span>`;
-            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Conteúdo planejado concluído' : escapeHtml(label)}</span>${lessonMetrics}<span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
+            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Conteúdo planejado concluído' : escapeHtml(label)}</span>${lessonMetrics}<span class="topic-plan-progress"><span class="${getProgressWidthClass(progress.pct)}"></span></span></div>`;
         }
 
         function getTopicStudyPlanBadgeHtml(item, contestMeta = null) {
@@ -2614,7 +2614,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const topics = dateSchedule[activeSelectedDateKey] || [];
 
             if (topics.length === 0) {
-                container.innerHTML = `<p style="opacity:0.85; padding:1rem;">Nenhum tópico agendado para este dia.</p>`;
+                container.innerHTML = `<p class="runtime-empty-state runtime-empty-state-strong">Nenhum tópico agendado para este dia.</p>`;
                 renderAdaptiveStudySuggestion(container);
                 return;
             }
@@ -2624,15 +2624,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
                 const safeMatchedId = matchedItem ? encodeHandlerValue(matchedItem.id) : '';
                 const advanceHistory = !isRevisionScheduleText(topicoStr) ? getLatestAdvanceHistory(cleanTop, activeSelectedDateKey) : null;
-                const advanceBadge = advanceHistory ? `<span style="display:inline-flex; margin-left:8px; padding:2px 7px; border-radius:999px; font-size:.68rem; color:#7dd3fc; border:1px solid rgba(56,189,248,.3); background:rgba(14,165,233,.08);">Antecipado de ${formatDateKeyShort(advanceHistory.plannedDateKey)}</span>` : '';
-                const futureStudyHint = activeSelectedDateKey > getLocalDateKey() && matchedItem && !isRevisionScheduleText(topicoStr) ? `<span style="display:block; margin-top:3px; font-size:.68rem; opacity:.58;">Estudar agora pode antecipar este tópico com reflow do futuro.</span>` : '';
+                const advanceBadge = advanceHistory ? `<span class="day-topic-badge day-topic-badge-advanced">Antecipado de ${formatDateKeyShort(advanceHistory.plannedDateKey)}</span>` : '';
+                const futureStudyHint = activeSelectedDateKey > getLocalDateKey() && matchedItem && !isRevisionScheduleText(topicoStr) ? `<span class="day-topic-future-hint">Estudar agora pode antecipar este tópico com reflow do futuro.</span>` : '';
                 const studyPlanSummary = matchedItem && !isRevisionScheduleText(topicoStr) ? formatTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {}) : '';
                 const studyPlan = matchedItem ? getTopicStudyPlan(matchedItem, metadata[currentConcurso] || {}) : null;
                 const adaptiveReviewDone = isAdaptiveRetentionReviewText(topicoStr) && getAdaptiveRetentionReviewCompletion(metadata[currentConcurso] || {}, activeSelectedDateKey, cleanTop);
-                const adaptiveReviewBadge = adaptiveReviewDone ? `<span style="display:inline-flex;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:.68rem;color:#86efac;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);">Revisada</span>` : '';
+                const adaptiveReviewBadge = adaptiveReviewDone ? `<span class="day-topic-badge day-topic-badge-reviewed">Revisada</span>` : '';
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(formatScheduledItemForDisplay(topicoStr))}</strong>${adaptiveReviewBadge}${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
+                        <div class="day-topic-main"><strong class="day-topic-title">${escapeHtml(formatScheduledItemForDisplay(topicoStr))}</strong>${adaptiveReviewBadge}${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
                         <div class="day-topic-controls-row">
                             ${matchedItem ? `
                                 <div class="day-topic-status-inline">
@@ -2661,7 +2661,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<div class="day-topic-inline-actions lesson-only-action"><button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})" title="Marca uma aula inteira como concluída. Este botão não adiciona minutos.">✓ Concluir esta aula</button></div>` : ''}
                             ${!matchedItem ? `<div class="day-topic-inline-actions fallback-topic-actions"><button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button></div>` : (adaptiveReviewDone ? `<div class="day-topic-inline-actions fallback-topic-actions"><button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button></div>` : '')}
                         </div>
-                        <div id="editArea_${idx}" style="width:100%; display:none;"></div>
+                        <div id="editArea_${idx}" class="day-topic-edit-area" hidden></div>
                     </div>
                 `;
             });
@@ -2720,12 +2720,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             editArea.innerHTML = `
                 <div class="edit-selector-box">
-                    <label style="font-size:0.82rem; font-weight:700; color:#93c5fd;">Selecione a Matéria e o Assunto do Edital:</label>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">${matOptions}</select>
-                        <select id="editAssSel_${idx}" style="flex:1; min-width:180px;"></select>
+                    <label class="day-topic-form-label day-topic-form-label-edit">Selecione a Matéria e o Assunto do Edital:</label>
+                    <div class="day-topic-form-row">
+                        <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" class="day-topic-select day-topic-select-materia">${matOptions}</select>
+                        <select id="editAssSel_${idx}" class="day-topic-select day-topic-select-assunto"></select>
                     </div>
-                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
+                    <div class="day-topic-form-actions day-topic-form-actions-edit">
                         <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
                         <button class="btn btn-info btn-sm" onclick="addManualTopicToDay(${idx})">Inserir Manualmente</button>
                         <button class="btn btn-success btn-sm" onclick="confirmEditTopicWithSwap(${idx})">Salvar / Trocar Assunto</button>
@@ -2807,12 +2807,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             container.innerHTML = `
                 <div class="edit-selector-box">
-                    <label style="font-size:0.85rem; font-weight:700; color:var(--primary-blue);">Adicionar Tópico a Este Dia (Selecione da Lista do Edital):</label>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <select id="addMatSel" onchange="updateAddAssuntoDropdown()" style="flex:1; min-width:160px;">${matOptions}</select>
-                        <select id="addAssSel" style="flex:1; min-width:180px;"></select>
+                    <label class="day-topic-form-label">Adicionar Tópico a Este Dia (Selecione da Lista do Edital):</label>
+                    <div class="day-topic-form-row">
+                        <select id="addMatSel" onchange="updateAddAssuntoDropdown()" class="day-topic-select day-topic-select-materia">${matOptions}</select>
+                        <select id="addAssSel" class="day-topic-select day-topic-select-assunto"></select>
                     </div>
-                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">
+                    <div class="day-topic-form-actions">
                         <button class="btn btn-secondary btn-sm" onclick="resetAddTopicArea()">Cancelar</button>
                         <button class="btn btn-primary btn-sm" onclick="confirmAddTopicWithSwap()">Adicionar ao Dia</button>
                     </div>
@@ -3170,7 +3170,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const filtered = notesList.filter(n => n.materia === selectedMat);
 
             if (filtered.length === 0) {
-                container.innerHTML = `<p style="opacity:0.8; padding:1rem;">Nenhuma anotação cadastrada para a matéria <strong>${escapeHtml(selectedMat)}</strong>.</p>`;
+                container.innerHTML = `<p class="runtime-empty-state">Nenhuma anotação cadastrada para a matéria <strong>${escapeHtml(selectedMat)}</strong>.</p>`;
                 return;
             }
 
@@ -3475,7 +3475,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             folderContainer.innerHTML = '';
 
             if (flashcardsList.length === 0) {
-                folderContainer.innerHTML = '<p style="opacity: 0.75; font-size:0.9rem;">Nenhum baralho disponível.</p>';
+                folderContainer.innerHTML = '<p class="runtime-empty-inline">Nenhum baralho disponível.</p>';
                 return;
             }
 
@@ -3502,8 +3502,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const safeAssHandler = encodeHandlerValue(assName);
                     subfoldersHtml += `
                         <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), decodeURIComponent('${safeAssHandler}'))">
-                            <span style="font-size:0.9rem; font-weight:600;">${escapeHtml(assName)}</span>
-                            <span style="font-size:0.8rem; opacity:0.8;">${count} cartões</span>
+                            <span class="anki-subfolder-name">${escapeHtml(assName)}</span>
+                            <span class="anki-subfolder-count">${count} cartões</span>
                         </div>
                     `;
                 });
@@ -3513,9 +3513,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         <div class="anki-folder-header" onclick="toggleFcFolder(decodeURIComponent('${safeMatHandler}'))">
                             <div class="anki-folder-title">
                                 <span>${escapeHtml(matName)}</span>
-                                ${isMatActive ? '<span style="color:#34d399; font-size:0.75rem;">(Caixa Aberta)</span>' : ''}
+                                ${isMatActive ? '<span class="anki-folder-open-badge">(Caixa Aberta)</span>' : ''}
                             </div>
-                            <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="anki-folder-actions">
                                 <span class="anki-folder-count">${matData.total} cartões</span>
                                 <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria">Abrir Caixa</button>
                                 <span>${isOpen ? 'Fechar' : 'Abrir'}</span>
@@ -3552,7 +3552,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (activeFcAssuntoFilter) displayList = displayList.filter(fc => (fc.assunto || 'Sem Assunto Específico') === activeFcAssuntoFilter);
 
             if (displayList.length === 0) {
-                container.innerHTML = '<p style="opacity: 0.8; padding:1rem;">Nenhum flashcard encontrado para este filtro.</p>';
+                container.innerHTML = '<p class="runtime-empty-state">Nenhum flashcard encontrado para este filtro.</p>';
                 return;
             }
 
@@ -3574,9 +3574,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                     ${fc.assunto ? `<span class="flashcard-badge-assunto">${escapeHtml(fc.assunto)}</span>` : ''}
                                 </div>
                                 <p><strong>P:</strong> ${escapeHtml(fc.pergunta)}</p>
-                                <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${escapeHtml(fc.resposta)}</p>
+                                <p class="flashcard-answer"><strong>R:</strong> ${escapeHtml(fc.resposta)}</p>
                             </div>
-                            <div style="display:flex; gap:6px; flex-shrink:0;">
+                            <div class="flashcard-card-actions">
                                 <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard" data-mobile-label="Editar">Editar</button>
                                 <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir</button>
                             </div>
@@ -3585,10 +3585,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 });
 
                 container.innerHTML += `
-                    <div style="margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--primary-blue);">
-                        <h4 style="color:var(--header-materia-text); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                    <div class="flashcard-group-card">
+                        <h4 class="flashcard-group-heading">
                             <span>${escapeHtml(mName)}</span>
-                            <span style="font-size:0.8rem; font-weight:normal;">(${grouped[mName].length} cartões)</span>
+                            <span class="flashcard-group-count">(${grouped[mName].length} cartões)</span>
                         </h4>
                         ${cardsHtml}
                     </div>
@@ -4146,7 +4146,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     ? `
                         <div class="day-progress-summary">
                             <span>${completedCount} / ${items.length}</span>
-                            <div class="day-progress-track"><div class="day-progress-fill" style="width:${completionPercent}%"></div></div>
+                            <div class="day-progress-track"><div class="day-progress-fill ${getProgressWidthClass(completionPercent)}"></div></div>
                         </div>
                     `
                     : '<div class="day-empty-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>';
@@ -4792,7 +4792,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             });
 
             if (displayList.length === 0) {
-                container.innerHTML = '<p style="opacity: 0.8; font-size:0.9rem;">Nenhum item agendado para esta aba.</p>';
+                container.innerHTML = '<p class="runtime-empty-inline runtime-empty-inline-strong">Nenhum item agendado para esta aba.</p>';
                 return;
             }
 
@@ -4809,7 +4809,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (isLate) {
                     timingBadge = `<span class="delayed-day-late">${daysLate} ${daysLate === 1 ? 'dia de atraso' : 'dias de atraso'}</span>`;
                 } else if (isToday) {
-                    timingBadge = '<span class="delayed-day-late" style="color:#38bdf8;border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.12);">Hoje</span>';
+                    timingBadge = '<span class="delayed-day-late delayed-day-today">Hoje</span>';
                 } else {
                     timingBadge = `<span class="delayed-day-count">em ${daysAhead} ${daysAhead === 1 ? 'dia' : 'dias'}</span>`;
                 }
@@ -5753,7 +5753,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const activeRevisionOffsets = getActiveRevisionOffsets();
                 const dynamicColspan = 5 + activeRevisionOffsets.length;
                 htmlParts.push(`
-                    <tr class="materia-header-row" data-materia="${safeMateriaHandler}" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))">
+                    <tr class="materia-header-row materia-gradient-${colorIdx % PALETA_CORES_MATERIAS.length}" data-materia="${safeMateriaHandler}" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))">
                         <td onclick="event.stopPropagation()">
                             <input type="number" class="priority-input" value="${clampMateriaPriority(group.prioridade)}" min="1" max="4" step="1" onchange="updateMateriaPriority(decodeURIComponent('${safeMateriaHandler}'), this.value)" title="Prioridade da disciplina (1 a 4)">
                         </td>
@@ -5764,7 +5764,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                     <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${clampMateriaPriority(group.prioridade)}<span class="materia-drag-hint">segure e arraste para mover</span></span>
                                 </span>
                                 <span class="materia-header-right">
-                                    <span class="materia-progress-ring" style="--pct:${materiaPct}"><span>${materiaPct}%</span></span>
+                                    <span class="materia-progress-ring u-ring-pct-${materiaPct}"><span>${materiaPct}%</span></span>
                                     <span class="materia-expand-label">${isOpen ? 'Recolher' : 'Expandir'}</span>
                                 </span>
                             </div>
@@ -5781,11 +5781,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             return `<td data-study-control="true"><span class="revision-model-note">${offset}d</span><input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAdaptiveRevision(decodeURIComponent('${safeId}'), ${offset}, ${checked})"></td>`;
                         }).join('');
                         htmlParts.push(`
-                            <tr class="adaptive-edital-row" style="--control-count:${2 + activeRevisionOffsets.length};">
+                            <tr class="adaptive-edital-row u-control-count-${Math.min(12, 2 + activeRevisionOffsets.length)}">
                                 <td>
                                     <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority(decodeURIComponent('${safeId}'), this.value)" title="Prioridade do Assunto">
                                 </td>
-                                <td style="text-align: left; padding-left: 1.5rem;">${escapeHtml(item.assunto)}${getTopicStudyPlanBadgeHtml(item, getConcursosMetadata()[currentConcurso] || {})}</td>
+                                <td class="adaptive-edital-subject-cell">${escapeHtml(item.assunto)}${getTopicStudyPlanBadgeHtml(item, getConcursosMetadata()[currentConcurso] || {})}</td>
                                 <td data-study-control="true"><span class="revision-model-note">Teoria</span><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'teoria', ${item.teoria})"></td>
                                 <td data-study-control="true"><span class="revision-model-note">Questões</span><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'questoes', ${item.questoes})"></td>
                                 <td data-study-control="true"><span class="revision-model-note">Vídeoaula</span><input type="checkbox" ${item.videoaula ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'videoaula', ${item.videoaula})"></td>
@@ -6202,8 +6202,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 legendGrid.innerHTML = labels.map((mName, idx) => {
                     const pair = gradientPairs[idx];
                     return `
-                        <div class="chart-legend-item" style="--subject-gradient:linear-gradient(135deg, ${pair[0]}, ${pair[1]});">
-                            <span class="chart-legend-color" style="background:var(--subject-gradient);"></span>
+                        <div class="chart-legend-item subject-gradient-${idx % 32}">
+                            <span class="chart-legend-color"></span>
                             <span>${escapeHtml(mName)} (${percentData[idx]}%)</span>
                         </div>
                     `;
@@ -6381,11 +6381,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 return;
             }
             const advanceNote = activeStudyContext.adaptiveAdvance && activeStudyContext.plannedDateKey
-                ? `<span style="margin-left:8px; font-size:.72rem; color:#7dd3fc;">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
+                ? `<span class="study-context-advance">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
                 : '';
             const modeLabel = activeStudyContext.recoveryMethod === 'revisao_curta' ? 'Revisão curta' : (activeStudyContext.recoveryMethod === 'revisao_ativa' ? 'Revisão ativa' : (activeStudyContext.recoveryMethod === 'reestudo' ? 'Reestudo de teoria' : (activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'videoaula' ? 'Vídeoaula' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria'))) ));
             const legalNote = activeStudyContext.activityType === 'lei_seca' && activeStudyContext.norma
-                ? `<span style="margin-left:8px;font-size:.72rem;opacity:.8;">${escapeHtml(activeStudyContext.norma)}${activeStudyContext.articleStart ? ` · arts. ${escapeHtml(activeStudyContext.articleStart)}${activeStudyContext.articleEnd ? `–${escapeHtml(activeStudyContext.articleEnd)}` : ''}` : ''}</span>`
+                ? `<span class="study-context-legal">${escapeHtml(activeStudyContext.norma)}${activeStudyContext.articleStart ? ` · arts. ${escapeHtml(activeStudyContext.articleStart)}${activeStudyContext.articleEnd ? `–${escapeHtml(activeStudyContext.articleEnd)}` : ''}` : ''}</span>`
                 : '';
             title.innerHTML = `<span class="study-mode-badge">${modeLabel}</span>${escapeHtml(activeStudyContext.materia)} — ${escapeHtml(activeStudyContext.assunto)}${legalNote}${advanceNote}`;
             box.classList.add('visible');
@@ -6632,7 +6632,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (total) total.value = '';
             if (correct) correct.value = '';
             if (minutes) minutes.value = '';
-            if (minutesGroup) minutesGroup.style.display = options.sessionId ? 'none' : '';
+            if (minutesGroup) setRuntimeDisplay(minutesGroup, options.sessionId ? 'none' : 'default');
             updateQuestionPerformancePreview();
             const modal = document.getElementById('modalQuestionPerformance');
             if (modal) setRuntimeDisplay(modal, 'flex');
@@ -7192,7 +7192,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     <div class="subject-hours-main">
                         <div class="subject-hours-name"><span title="${escapeHtml(row.materia)}">${escapeHtml(row.materia)}</span></div>
                         <div class="subject-hours-detail">Teoria ${formatStudyMinutes(row.teoria)}${row.videoaula ? ` · Vídeoaula ${formatStudyMinutes(row.videoaula)}` : ''} · Questões ${formatStudyMinutes(row.questoes)}${row.leiSeca ? ` · Lei Seca ${formatStudyMinutes(row.leiSeca)}` : ''}</div>
-                        <div class="subject-hours-track"><div class="subject-hours-fill" style="width:${pct}%"></div></div>
+                        <div class="subject-hours-track"><div class="subject-hours-fill ${getProgressWidthClass(pct)}"></div></div>
                     </div>
                     <div class="subject-hours-time">${formatStudyMinutes(row.minutes)}</div>
                 </div>`;
@@ -7574,7 +7574,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             if (!targetMinutes) {
                 targetEl.textContent = 'Sem meta';
-                progressEl.style.width = '0%';
+                setProgressWidthClass(progressEl, 0);
                 const contest = getConcursosMetadata()[currentConcurso] || {};
                 statusEl.textContent = isFlexibleOpportunityMode(contest)
                     ? 'Modo flexível ativo • estude quando surgir uma oportunidade. Use “Estudar agora”.'
@@ -7584,7 +7584,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             targetEl.textContent = `${targetHours}h`;
             const percent = (studiedMinutes / targetMinutes) * 100;
-            progressEl.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+            setProgressWidthClass(progressEl, percent);
 
             if (studiedMinutes < targetMinutes) {
                 const remaining = targetMinutes - studiedMinutes;
