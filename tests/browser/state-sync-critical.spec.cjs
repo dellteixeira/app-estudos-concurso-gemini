@@ -17,12 +17,17 @@ test.describe('critical state and sync architecture', () => {
   });
 
   test('AppState subscription emits a canonical snapshot', async ({ page }) => {
-    const result = await page.evaluate(() => new Promise(resolve => {
-      const unsubscribe = AppState.subscribe(snapshot => {
-        unsubscribe();
-        resolve({ hasContest:typeof snapshot.currentContest === 'string', edital:Array.isArray(snapshot.edital) });
+    const result = await page.evaluate(() => {
+      let snapshot;
+      const unsubscribe = AppState.subscribe(value => {
+        snapshot = value;
       });
-    }));
+      unsubscribe();
+      return {
+        hasContest: typeof snapshot?.currentContest === 'string',
+        edital: Array.isArray(snapshot?.edital)
+      };
+    });
     expect(result).toEqual({ hasContest:true, edital:true });
   });
 
