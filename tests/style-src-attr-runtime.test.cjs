@@ -46,10 +46,10 @@ test('CSP explicitly blocks style attributes',()=>{
 test('Reader geometry and drag ghost keep direct style-property updates',()=>{
   const reader=fs.readFileSync('public/js/pdf/pdf-reader.js','utf8');
   const core=fs.readFileSync('public/js/app-core.js','utf8');
-  assert.match(reader,/shell\.style\.width=/);
-  assert.match(reader,/host\.style\.transform=/);
-  assert.match(core,/ghost\.style\.width=/);
-  assert.match(core,/state\.ghost\.style\.top=/);
+  assert.match(reader,/shell\.style\.width\s*=\s*/);
+  assert.match(reader,/host\.style\.transform\s*=\s*/);
+  assert.match(core,/ghost\.style\.width\s*=\s*/);
+  assert.match(core,/state\.ghost\.style\.top\s*=\s*/);
   assert.doesNotMatch(reader,/\.style\.cssText\s*=/);
 });
 
