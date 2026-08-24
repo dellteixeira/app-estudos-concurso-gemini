@@ -51,14 +51,18 @@ test('biblioteca offline persiste explicitamente no OPFS ou IndexedDB moderno',(
   assert.match(manager,/O navegador não conseguiu reservar armazenamento local para este PDF/);
 });
 
-test('mobile mantém ações do PDF em duas colunas dentro da viewport',()=>{
-  assert.match(device,/@media \(max-width:700px\)/);
+test('mobile mantém ações do PDF em duas colunas e texto completo em viewports amplas de celular',()=>{
+  assert.match(device,/@media \(max-width:900px\)/);
   assert.match(device,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
   assert.match(device,/width:100%!important/);
   assert.match(device,/min-width:0!important/);
   assert.match(device,/min-height:44px!important/);
+  assert.match(device,/white-space:normal!important/);
+  assert.match(device,/overflow-wrap:break-word!important/);
+  assert.match(device,/\.pdf-device-save-action[\s\S]*font-size:clamp\(\.68rem,2\.25vw,\.82rem\)!important/);
   assert.match(device,/box-sizing:border-box!important/);
   assert.match(device,/:last-child:nth-child\(odd\)[\s\S]*grid-column:1\/-1!important/);
+  assert.match(device,/@media \(max-width:420px\)/);
   assert.match(device,/@media \(max-width:340px\)/);
 });
 
