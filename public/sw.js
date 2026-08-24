@@ -1,4 +1,4 @@
-const APP_VERSION = '10.29.2';
+const APP_VERSION = '10.29.3';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
@@ -21,7 +21,10 @@ const OPTIONAL_OFFLINE_ASSETS = [
   './js/notes-import-export.js', './js/notes-export-rich.js', './js/study-performance-report.js',
   './js/pdf/pdf-core.js', './js/pdf/pdf-workspaces.js', './js/pdf/pdf-links.js', './js/pdf/pdf-library.js',
   './js/pdf/pdf-library-ordering.js', './js/pdf/pdf-upload.js', './js/pdf/pdf-annotations.js',
-  './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js', './js/pdf/pdf-device-storage.js',
+  './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js', './js/pdf/pdf-library-opfs-adapter.js',
+  './js/pdf/pdf-library-layout-fix.js', './js/pdf/pdf-device-storage.js', './js/pdf/offline-pdf-store.js',
+  './js/pdf/pdf-offline-library-manager.js', './js/pdf/pdf-offline-integrity.js', './js/pdf/pdf-offline-library-ui.js',
+  './css/pdf-mobile-card-actions.css',
   './vendor/pdf.min.js', './vendor/pdf_viewer.min.css', './vendor/pdf.worker.min.js'
 ];
 
@@ -154,12 +157,13 @@ self.addEventListener('fetch', event => {
   // auditável dos arquivos centrais que usam estratégia network-first.
   const isCoreAsset = url.origin === self.location.origin && [
     '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json', '/vendor/pdf.min.js', '/vendor/pdf_viewer.min.css', '/vendor/pdf.worker.min.js',
-    '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/responsive-system.css', '/css/canonical-ui.css', '/css/pdf-library.css', '/css/pdf-reader.css',
+    '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/responsive-system.css', '/css/canonical-ui.css', '/css/pdf-library.css', '/css/pdf-reader.css', '/css/pdf-mobile-card-actions.css',
     '/js/study-domain.js', '/js/core/local-backup-store.js', '/js/app-core.js', '/js/app-state.js', '/js/sync-engine.js', '/js/adaptive-schedule-reconciliation.js', '/js/notes-import-export.js', '/js/notes-export-rich.js', '/js/study-performance-report.js',
     '/js/performance-loader.js', '/js/performance-metrics.js',
     '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js',
+    '/js/pdf/pdf-library-opfs-adapter.js', '/js/pdf/pdf-library-layout-fix.js', '/js/pdf/pdf-device-storage.js', '/js/pdf/offline-pdf-store.js', '/js/pdf/pdf-offline-library-manager.js', '/js/pdf/pdf-offline-integrity.js', '/js/pdf/pdf-offline-library-ui.js',
     '/js/app-ai.js', '/js/app-ui.js', '/js/ui/mobile.js', '/js/ui/navigation.js', '/js/ui/search.js',
-    '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/pdf/pdf-device-storage.js', '/js/app-pwa.js'
+    '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
   ].some(path => url.pathname.endsWith(path));
 
   if (isCoreAsset) {
