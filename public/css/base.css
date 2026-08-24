@@ -3650,3 +3650,284 @@
 .pomodoro-progress-98 { --timer-progress: 0.98; }
 .pomodoro-progress-99 { --timer-progress: 0.99; }
 .pomodoro-progress-100 { --timer-progress: 1.00; }
+
+
+/* RUNTIME_STYLE_DEBT_BATCH8 — classes para estado visual sem atributos style */
+.u-runtime-flex{display:flex!important}
+.u-runtime-block{display:block!important}
+.u-runtime-grid{display:grid!important}
+.u-runtime-inline-flex{display:inline-flex!important}
+.u-runtime-inline-block{display:inline-block!important}
+.backup-slot-reason{opacity:.7}
+.opportunity-empty-action{margin-top:10px}
+.edital-priority-col{width:90px}
+.edital-subject-col{text-align:left;padding-left:1rem}
+.adaptive-next-study-box{margin-top:12px;border-color:rgba(56,189,248,.35)}
+.adaptive-next-study-row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.adaptive-next-study-copy{min-width:220px;flex:1}
+.adaptive-next-study-title,.topic-plan-editor-title{color:var(--modern-blue-2)}
+.adaptive-next-study-meta{margin-top:4px;font-size:.88rem;opacity:.88}
+.adaptive-next-study-help{margin-top:3px;font-size:.76rem;opacity:.65}
+.topic-plan-editor-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.u-progress-w-0{width:0%}
+.u-progress-w-1{width:1%}
+.u-progress-w-2{width:2%}
+.u-progress-w-3{width:3%}
+.u-progress-w-4{width:4%}
+.u-progress-w-5{width:5%}
+.u-progress-w-6{width:6%}
+.u-progress-w-7{width:7%}
+.u-progress-w-8{width:8%}
+.u-progress-w-9{width:9%}
+.u-progress-w-10{width:10%}
+.u-progress-w-11{width:11%}
+.u-progress-w-12{width:12%}
+.u-progress-w-13{width:13%}
+.u-progress-w-14{width:14%}
+.u-progress-w-15{width:15%}
+.u-progress-w-16{width:16%}
+.u-progress-w-17{width:17%}
+.u-progress-w-18{width:18%}
+.u-progress-w-19{width:19%}
+.u-progress-w-20{width:20%}
+.u-progress-w-21{width:21%}
+.u-progress-w-22{width:22%}
+.u-progress-w-23{width:23%}
+.u-progress-w-24{width:24%}
+.u-progress-w-25{width:25%}
+.u-progress-w-26{width:26%}
+.u-progress-w-27{width:27%}
+.u-progress-w-28{width:28%}
+.u-progress-w-29{width:29%}
+.u-progress-w-30{width:30%}
+.u-progress-w-31{width:31%}
+.u-progress-w-32{width:32%}
+.u-progress-w-33{width:33%}
+.u-progress-w-34{width:34%}
+.u-progress-w-35{width:35%}
+.u-progress-w-36{width:36%}
+.u-progress-w-37{width:37%}
+.u-progress-w-38{width:38%}
+.u-progress-w-39{width:39%}
+.u-progress-w-40{width:40%}
+.u-progress-w-41{width:41%}
+.u-progress-w-42{width:42%}
+.u-progress-w-43{width:43%}
+.u-progress-w-44{width:44%}
+.u-progress-w-45{width:45%}
+.u-progress-w-46{width:46%}
+.u-progress-w-47{width:47%}
+.u-progress-w-48{width:48%}
+.u-progress-w-49{width:49%}
+.u-progress-w-50{width:50%}
+.u-progress-w-51{width:51%}
+.u-progress-w-52{width:52%}
+.u-progress-w-53{width:53%}
+.u-progress-w-54{width:54%}
+.u-progress-w-55{width:55%}
+.u-progress-w-56{width:56%}
+.u-progress-w-57{width:57%}
+.u-progress-w-58{width:58%}
+.u-progress-w-59{width:59%}
+.u-progress-w-60{width:60%}
+.u-progress-w-61{width:61%}
+.u-progress-w-62{width:62%}
+.u-progress-w-63{width:63%}
+.u-progress-w-64{width:64%}
+.u-progress-w-65{width:65%}
+.u-progress-w-66{width:66%}
+.u-progress-w-67{width:67%}
+.u-progress-w-68{width:68%}
+.u-progress-w-69{width:69%}
+.u-progress-w-70{width:70%}
+.u-progress-w-71{width:71%}
+.u-progress-w-72{width:72%}
+.u-progress-w-73{width:73%}
+.u-progress-w-74{width:74%}
+.u-progress-w-75{width:75%}
+.u-progress-w-76{width:76%}
+.u-progress-w-77{width:77%}
+.u-progress-w-78{width:78%}
+.u-progress-w-79{width:79%}
+.u-progress-w-80{width:80%}
+.u-progress-w-81{width:81%}
+.u-progress-w-82{width:82%}
+.u-progress-w-83{width:83%}
+.u-progress-w-84{width:84%}
+.u-progress-w-85{width:85%}
+.u-progress-w-86{width:86%}
+.u-progress-w-87{width:87%}
+.u-progress-w-88{width:88%}
+.u-progress-w-89{width:89%}
+.u-progress-w-90{width:90%}
+.u-progress-w-91{width:91%}
+.u-progress-w-92{width:92%}
+.u-progress-w-93{width:93%}
+.u-progress-w-94{width:94%}
+.u-progress-w-95{width:95%}
+.u-progress-w-96{width:96%}
+.u-progress-w-97{width:97%}
+.u-progress-w-98{width:98%}
+.u-progress-w-99{width:99%}
+.u-progress-w-100{width:100%}
+/* RUNTIME_STYLE_DEBT_BATCH8_END */
+
+/* RUNTIME_STYLE_DEBT_BATCH8_PASS2 */
+.runtime-empty-state{opacity:.8;padding:1rem}.runtime-empty-state-strong{opacity:.85}.runtime-empty-inline{opacity:.75;font-size:.9rem}.runtime-empty-inline-strong{opacity:.8}
+.day-topic-badge{display:inline-flex;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:.68rem}.day-topic-badge-advanced{color:#7dd3fc;border:1px solid rgba(56,189,248,.3);background:rgba(14,165,233,.08)}.day-topic-badge-reviewed{color:#86efac;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08)}.day-topic-future-hint{display:block;margin-top:3px;font-size:.68rem;opacity:.58}.day-topic-main{flex:1}.day-topic-title{color:var(--primary-blue);font-size:.95rem}.day-topic-edit-area{width:100%}
+.day-topic-form-label{font-size:.85rem;font-weight:700;color:var(--primary-blue)}.day-topic-form-label-edit{font-size:.82rem;color:#93c5fd}.day-topic-form-row{display:flex;gap:8px;flex-wrap:wrap}.day-topic-select{flex:1}.day-topic-select-materia{min-width:160px}.day-topic-select-assunto{min-width:180px}.day-topic-form-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}.day-topic-form-actions-edit{margin-top:4px}
+.anki-subfolder-name{font-size:.9rem;font-weight:600}.anki-subfolder-count{font-size:.8rem;opacity:.8}.anki-folder-open-badge{color:#34d399;font-size:.75rem}.anki-folder-actions{display:flex;align-items:center;gap:10px}.flashcard-answer{margin-top:6px;color:#34d399}.flashcard-card-actions{display:flex;gap:6px;flex-shrink:0}.flashcard-group-card{margin-bottom:1.5rem;background:rgba(0,0,0,.15);padding:1rem;border-radius:8px;border:1px solid var(--primary-blue)}.flashcard-group-heading{color:var(--header-materia-text);margin-bottom:.8rem;border-bottom:1px solid var(--border-color);padding-bottom:4px;display:flex;justify-content:space-between;align-items:center}.flashcard-group-count{font-size:.8rem;font-weight:400}
+.delayed-day-today{color:#38bdf8;border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.12)}.study-context-advance{margin-left:8px;font-size:.72rem;color:#7dd3fc}.study-context-legal{margin-left:8px;font-size:.72rem;opacity:.8}.adaptive-edital-subject-cell{text-align:left;padding-left:1.5rem}
+.materia-gradient-0{background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%)}
+.materia-gradient-1{background:linear-gradient(135deg,#14532d 0%,#22c55e 100%)}
+.materia-gradient-2{background:linear-gradient(135deg,#701a75 0%,#c084fc 100%)}
+.materia-gradient-3{background:linear-gradient(135deg,#7c2d12 0%,#f97316 100%)}
+.materia-gradient-4{background:linear-gradient(135deg,#831843 0%,#ec4899 100%)}
+.u-ring-pct-0{--pct:0}
+.u-ring-pct-1{--pct:1}
+.u-ring-pct-2{--pct:2}
+.u-ring-pct-3{--pct:3}
+.u-ring-pct-4{--pct:4}
+.u-ring-pct-5{--pct:5}
+.u-ring-pct-6{--pct:6}
+.u-ring-pct-7{--pct:7}
+.u-ring-pct-8{--pct:8}
+.u-ring-pct-9{--pct:9}
+.u-ring-pct-10{--pct:10}
+.u-ring-pct-11{--pct:11}
+.u-ring-pct-12{--pct:12}
+.u-ring-pct-13{--pct:13}
+.u-ring-pct-14{--pct:14}
+.u-ring-pct-15{--pct:15}
+.u-ring-pct-16{--pct:16}
+.u-ring-pct-17{--pct:17}
+.u-ring-pct-18{--pct:18}
+.u-ring-pct-19{--pct:19}
+.u-ring-pct-20{--pct:20}
+.u-ring-pct-21{--pct:21}
+.u-ring-pct-22{--pct:22}
+.u-ring-pct-23{--pct:23}
+.u-ring-pct-24{--pct:24}
+.u-ring-pct-25{--pct:25}
+.u-ring-pct-26{--pct:26}
+.u-ring-pct-27{--pct:27}
+.u-ring-pct-28{--pct:28}
+.u-ring-pct-29{--pct:29}
+.u-ring-pct-30{--pct:30}
+.u-ring-pct-31{--pct:31}
+.u-ring-pct-32{--pct:32}
+.u-ring-pct-33{--pct:33}
+.u-ring-pct-34{--pct:34}
+.u-ring-pct-35{--pct:35}
+.u-ring-pct-36{--pct:36}
+.u-ring-pct-37{--pct:37}
+.u-ring-pct-38{--pct:38}
+.u-ring-pct-39{--pct:39}
+.u-ring-pct-40{--pct:40}
+.u-ring-pct-41{--pct:41}
+.u-ring-pct-42{--pct:42}
+.u-ring-pct-43{--pct:43}
+.u-ring-pct-44{--pct:44}
+.u-ring-pct-45{--pct:45}
+.u-ring-pct-46{--pct:46}
+.u-ring-pct-47{--pct:47}
+.u-ring-pct-48{--pct:48}
+.u-ring-pct-49{--pct:49}
+.u-ring-pct-50{--pct:50}
+.u-ring-pct-51{--pct:51}
+.u-ring-pct-52{--pct:52}
+.u-ring-pct-53{--pct:53}
+.u-ring-pct-54{--pct:54}
+.u-ring-pct-55{--pct:55}
+.u-ring-pct-56{--pct:56}
+.u-ring-pct-57{--pct:57}
+.u-ring-pct-58{--pct:58}
+.u-ring-pct-59{--pct:59}
+.u-ring-pct-60{--pct:60}
+.u-ring-pct-61{--pct:61}
+.u-ring-pct-62{--pct:62}
+.u-ring-pct-63{--pct:63}
+.u-ring-pct-64{--pct:64}
+.u-ring-pct-65{--pct:65}
+.u-ring-pct-66{--pct:66}
+.u-ring-pct-67{--pct:67}
+.u-ring-pct-68{--pct:68}
+.u-ring-pct-69{--pct:69}
+.u-ring-pct-70{--pct:70}
+.u-ring-pct-71{--pct:71}
+.u-ring-pct-72{--pct:72}
+.u-ring-pct-73{--pct:73}
+.u-ring-pct-74{--pct:74}
+.u-ring-pct-75{--pct:75}
+.u-ring-pct-76{--pct:76}
+.u-ring-pct-77{--pct:77}
+.u-ring-pct-78{--pct:78}
+.u-ring-pct-79{--pct:79}
+.u-ring-pct-80{--pct:80}
+.u-ring-pct-81{--pct:81}
+.u-ring-pct-82{--pct:82}
+.u-ring-pct-83{--pct:83}
+.u-ring-pct-84{--pct:84}
+.u-ring-pct-85{--pct:85}
+.u-ring-pct-86{--pct:86}
+.u-ring-pct-87{--pct:87}
+.u-ring-pct-88{--pct:88}
+.u-ring-pct-89{--pct:89}
+.u-ring-pct-90{--pct:90}
+.u-ring-pct-91{--pct:91}
+.u-ring-pct-92{--pct:92}
+.u-ring-pct-93{--pct:93}
+.u-ring-pct-94{--pct:94}
+.u-ring-pct-95{--pct:95}
+.u-ring-pct-96{--pct:96}
+.u-ring-pct-97{--pct:97}
+.u-ring-pct-98{--pct:98}
+.u-ring-pct-99{--pct:99}
+.u-ring-pct-100{--pct:100}
+.u-control-count-0{--control-count:0}
+.u-control-count-1{--control-count:1}
+.u-control-count-2{--control-count:2}
+.u-control-count-3{--control-count:3}
+.u-control-count-4{--control-count:4}
+.u-control-count-5{--control-count:5}
+.u-control-count-6{--control-count:6}
+.u-control-count-7{--control-count:7}
+.u-control-count-8{--control-count:8}
+.u-control-count-9{--control-count:9}
+.u-control-count-10{--control-count:10}
+.u-control-count-11{--control-count:11}
+.u-control-count-12{--control-count:12}
+.subject-gradient-0{--subject-gradient:linear-gradient(135deg,hsl(214 92% 57%),hsl(246 88% 51%))}
+.subject-gradient-1{--subject-gradient:linear-gradient(135deg,hsl(261 92% 57%),hsl(302 88% 51%))}
+.subject-gradient-2{--subject-gradient:linear-gradient(135deg,hsl(308 92% 57%),hsl(358 88% 51%))}
+.subject-gradient-3{--subject-gradient:linear-gradient(135deg,hsl(355 92% 57%),hsl(54 88% 51%))}
+.subject-gradient-4{--subject-gradient:linear-gradient(135deg,hsl(42 92% 57%),hsl(74 88% 51%))}
+.subject-gradient-5{--subject-gradient:linear-gradient(135deg,hsl(89 92% 57%),hsl(130 88% 51%))}
+.subject-gradient-6{--subject-gradient:linear-gradient(135deg,hsl(136 92% 57%),hsl(186 88% 51%))}
+.subject-gradient-7{--subject-gradient:linear-gradient(135deg,hsl(183 92% 57%),hsl(242 88% 51%))}
+.subject-gradient-8{--subject-gradient:linear-gradient(135deg,hsl(230 92% 57%),hsl(262 88% 51%))}
+.subject-gradient-9{--subject-gradient:linear-gradient(135deg,hsl(277 92% 57%),hsl(318 88% 51%))}
+.subject-gradient-10{--subject-gradient:linear-gradient(135deg,hsl(324 92% 57%),hsl(14 88% 51%))}
+.subject-gradient-11{--subject-gradient:linear-gradient(135deg,hsl(11 92% 57%),hsl(70 88% 51%))}
+.subject-gradient-12{--subject-gradient:linear-gradient(135deg,hsl(58 92% 57%),hsl(90 88% 51%))}
+.subject-gradient-13{--subject-gradient:linear-gradient(135deg,hsl(105 92% 57%),hsl(146 88% 51%))}
+.subject-gradient-14{--subject-gradient:linear-gradient(135deg,hsl(152 92% 57%),hsl(202 88% 51%))}
+.subject-gradient-15{--subject-gradient:linear-gradient(135deg,hsl(199 92% 57%),hsl(258 88% 51%))}
+.subject-gradient-16{--subject-gradient:linear-gradient(135deg,hsl(246 92% 57%),hsl(278 88% 51%))}
+.subject-gradient-17{--subject-gradient:linear-gradient(135deg,hsl(293 92% 57%),hsl(334 88% 51%))}
+.subject-gradient-18{--subject-gradient:linear-gradient(135deg,hsl(340 92% 57%),hsl(30 88% 51%))}
+.subject-gradient-19{--subject-gradient:linear-gradient(135deg,hsl(27 92% 57%),hsl(86 88% 51%))}
+.subject-gradient-20{--subject-gradient:linear-gradient(135deg,hsl(74 92% 57%),hsl(106 88% 51%))}
+.subject-gradient-21{--subject-gradient:linear-gradient(135deg,hsl(121 92% 57%),hsl(162 88% 51%))}
+.subject-gradient-22{--subject-gradient:linear-gradient(135deg,hsl(168 92% 57%),hsl(218 88% 51%))}
+.subject-gradient-23{--subject-gradient:linear-gradient(135deg,hsl(215 92% 57%),hsl(274 88% 51%))}
+.subject-gradient-24{--subject-gradient:linear-gradient(135deg,hsl(262 92% 57%),hsl(294 88% 51%))}
+.subject-gradient-25{--subject-gradient:linear-gradient(135deg,hsl(309 92% 57%),hsl(350 88% 51%))}
+.subject-gradient-26{--subject-gradient:linear-gradient(135deg,hsl(356 92% 57%),hsl(46 88% 51%))}
+.subject-gradient-27{--subject-gradient:linear-gradient(135deg,hsl(43 92% 57%),hsl(102 88% 51%))}
+.subject-gradient-28{--subject-gradient:linear-gradient(135deg,hsl(90 92% 57%),hsl(122 88% 51%))}
+.subject-gradient-29{--subject-gradient:linear-gradient(135deg,hsl(137 92% 57%),hsl(178 88% 51%))}
+.subject-gradient-30{--subject-gradient:linear-gradient(135deg,hsl(184 92% 57%),hsl(234 88% 51%))}
+.subject-gradient-31{--subject-gradient:linear-gradient(135deg,hsl(231 92% 57%),hsl(290 88% 51%))}
+.chart-legend-color{background:var(--subject-gradient)}
+/* RUNTIME_STYLE_DEBT_BATCH8_PASS2_END */

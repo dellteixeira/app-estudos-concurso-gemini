@@ -1,0 +1,32 @@
+{
+  "batch": 8,
+  "policy": "UI/non-PDF runtime styles migrated to semantic/bounded classes. Remaining direct style geometry is explicitly isolated and must not grow.",
+  "migratedDisplay": {
+    "core": 55,
+    "ui": 0
+  },
+  "remaining": {
+    "coreStyleDisplay": 0,
+    "uiStyleDisplay": 0,
+    "coreTemplateStyle": 0,
+    "uiTemplateStyle": 0,
+    "coreStyleWidth": 1,
+    "uiStyleWidth": 0,
+    "coreStyleLeft": 1,
+    "coreStyleTop": 2,
+    "coreSetProperty": 0,
+    "uiSetProperty": 0
+  },
+  "geometryExceptions": [
+    {
+      "module": "public/js/app-core.js",
+      "feature": "materia drag ghost",
+      "properties": [
+        "width",
+        "left",
+        "top"
+      ],
+      "reason": "pointer-position geometry; isolated from ordinary UI state and presentation"
+    }
+  ]
+}

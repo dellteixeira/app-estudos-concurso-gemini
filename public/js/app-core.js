@@ -15,6 +15,32 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
         ];
         const PALETA_SOLIDAS = ['#3b82f6', '#22c55e', '#c084fc', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
 
+        // RUNTIME_STYLE_DEBT_BATCH8 — estados visuais sem style attributes
+        const RUNTIME_DISPLAY_CLASSES = ['u-runtime-flex','u-runtime-block','u-runtime-grid','u-runtime-inline-flex','u-runtime-inline-block'];
+        const RUNTIME_PROGRESS_CLASSES = Array.from({length:101}, (_,i) => `u-progress-w-${i}`);
+        function setRuntimeDisplay(element, mode = 'default') {
+            if (!element) return;
+            element.classList.remove(...RUNTIME_DISPLAY_CLASSES);
+            if (mode === 'none') {
+                element.hidden = true;
+                element.setAttribute('aria-hidden','true');
+                return;
+            }
+            element.hidden = false;
+            element.setAttribute('aria-hidden','false');
+            const className = { flex:'u-runtime-flex', block:'u-runtime-block', grid:'u-runtime-grid', 'inline-flex':'u-runtime-inline-flex', 'inline-block':'u-runtime-inline-block' }[mode];
+            if (className) element.classList.add(className);
+        }
+        function getProgressWidthClass(value) {
+            const pct=Math.max(0,Math.min(100,Math.round(Number(value)||0)));
+            return `u-progress-w-${pct}`;
+        }
+        function setProgressWidthClass(element, value) {
+            if (!element) return;
+            element.classList.remove(...RUNTIME_PROGRESS_CLASSES);
+            element.classList.add(getProgressWidthClass(value));
+        }
+
         const STRATEGIES_MAP = {
             nenhuma: [],
             retencao_adaptativa: [],
@@ -209,7 +235,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
             const stats = countBackupStats(snapshot);
             const date = new Date(snapshot.createdAt);
             box.className = '';
-            box.innerHTML = `<div class="backup-slot-time">${escapeHtml(date.toLocaleString('pt-BR'))}</div><div class="backup-slot-stats">${stats.concursos} concurso(s) · ${stats.topicos} tópico(s)<br>${stats.flashcards} flashcard(s) · ${stats.sessions} sessão(ões)<br><span style="opacity:.7">${escapeHtml(snapshot.reason || 'backup automático')}</span></div>`;
+            box.innerHTML = `<div class="backup-slot-time">${escapeHtml(date.toLocaleString('pt-BR'))}</div><div class="backup-slot-stats">${stats.concursos} concurso(s) · ${stats.topicos} tópico(s)<br>${stats.flashcards} flashcard(s) · ${stats.sessions} sessão(ões)<br><span class="backup-slot-reason">${escapeHtml(snapshot.reason || 'backup automático')}</span></div>`;
             btn.disabled = false;
         }
 
@@ -228,13 +254,13 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
         function openBackupManager() {
             const modal = document.getElementById('modalBackupManager');
             if (!modal) return;
-            modal.style.display = 'flex';
+            setRuntimeDisplay(modal, 'flex');
             refreshBackupManager();
         }
 
         function closeBackupManager() {
             const modal = document.getElementById('modalBackupManager');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
         }
 
         async function createBackupNow() {
@@ -628,7 +654,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function resolveAppDialog(result) {
             const modal = document.getElementById('modalAppDialog');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
             const resolver = appDialogResolver;
             appDialogResolver = null;
             if (resolver) resolver(!!result);
@@ -650,14 +676,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (title) title.textContent = options.title || 'Confirmar ação';
             if (text) text.textContent = String(message || '');
             if (cancelBtn) {
-                cancelBtn.style.display = '';
+                setRuntimeDisplay(cancelBtn, 'default');
                 cancelBtn.textContent = options.cancelText || 'Cancelar';
             }
             if (confirmBtn) {
                 confirmBtn.textContent = options.confirmText || 'Confirmar';
                 confirmBtn.className = `btn ${options.danger ? 'btn-danger' : (options.confirmClass || 'btn-primary')}`;
             }
-            modal.style.display = 'flex';
+            setRuntimeDisplay(modal, 'flex');
             requestAnimationFrame(() => confirmBtn?.focus());
             return new Promise(resolve => { appDialogResolver = resolve; });
         }
@@ -676,12 +702,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const confirmBtn = document.getElementById('appDialogConfirmBtn');
             if (title) title.textContent = options.title || 'Estudo Adaptativo Inteligente';
             if (text) text.textContent = String(message || '');
-            if (cancelBtn) cancelBtn.style.display = 'none';
+            if (cancelBtn) setRuntimeDisplay(cancelBtn, 'none');
             if (confirmBtn) {
                 confirmBtn.textContent = options.confirmText || 'OK';
                 confirmBtn.className = `btn ${options.confirmClass || 'btn-primary'}`;
             }
-            modal.style.display = 'flex';
+            setRuntimeDisplay(modal, 'flex');
             requestAnimationFrame(() => confirmBtn?.focus());
             return new Promise(resolve => { appDialogResolver = () => resolve(true); });
         }
@@ -691,7 +717,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function resolveAppPrompt(confirmed) {
             const modal = document.getElementById('modalAppPrompt');
             const input = document.getElementById('appPromptInput');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
             const resolver = appPromptResolver;
             appPromptResolver = null;
             if (resolver) resolver(confirmed ? (input ? input.value : '') : null);
@@ -721,7 +747,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 setVisualState(help, Boolean(options.help));
             }
             if (confirmBtn) confirmBtn.textContent = options.confirmText || 'Salvar';
-            modal.style.display = 'flex';
+            setRuntimeDisplay(modal, 'flex');
             requestAnimationFrame(() => { input.focus(); if (input.type === 'text') input.select(); });
             return new Promise(resolve => { appPromptResolver = resolve; });
         }
@@ -772,7 +798,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             // Fallback seguro para futuros modais: prefere botão explícito de cancelar/fechar.
             const closeBtn = [...modal.querySelectorAll('button')].find(btn => /fechar|cancelar|voltar/i.test(btn.textContent || ''));
             if (closeBtn) { closeBtn.click(); return true; }
-            modal.style.display = 'none';
+            setRuntimeDisplay(modal, 'none');
             return true;
         }
 
@@ -832,11 +858,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 banner.textContent = hasPendingSync()
                     ? 'Modo Offline — suas alterações estão protegidas e aguardam sincronização.'
                     : 'Modo Offline — os dados continuam disponíveis neste dispositivo.';
-                banner.style.display = 'block';
+                setRuntimeDisplay(banner, 'block');
                 syncUiMode = 'idle';
                 updateSyncIndicator();
             } else {
-                banner.style.display = 'none';
+                setRuntimeDisplay(banner, 'none');
                 updateSyncIndicator();
                 if (currentUser) syncAllWithSupabase().catch(error => console.warn('Sincronização adiada:', error));
             }
@@ -1131,8 +1157,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function loadLocalMetadata() { metadataCache = getConcursosMetadata(); }
 
-        function openModalSelectCronogramaType() { document.getElementById('modalSelectCronogramaType').style.display = 'flex'; }
-        function closeModalSelectCronogramaType() { document.getElementById('modalSelectCronogramaType').style.display = 'none'; }
+        function openModalSelectCronogramaType() { setRuntimeDisplay(document.getElementById('modalSelectCronogramaType'), 'flex'); }
+        function closeModalSelectCronogramaType() { setRuntimeDisplay(document.getElementById('modalSelectCronogramaType'), 'none'); }
         function chooseCronogramaType(typeNum) {
             closeModalSelectCronogramaType();
             if (typeNum === 1) openModalConfigHorarios();
@@ -1153,12 +1179,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const strategy = document.getElementById('flexRevisionStrategy');
             if (strategy) strategy.value = cfg.method === 3 && cfg.revisionStrategy ? cfg.revisionStrategy : 'retencao_adaptativa';
             renderFlexibleDayModes();
-            document.getElementById('modalFlexibleStudyConfig').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalFlexibleStudyConfig'), 'flex');
         }
 
         function closeFlexibleStudyConfig() {
             const modal = document.getElementById('modalFlexibleStudyConfig');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
         }
 
         function renderFlexibleDayModes() {
@@ -1247,13 +1273,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             opportunitySelectedContext = 'any';
             document.querySelectorAll('.opportunity-time-btn').forEach(btn => btn.classList.toggle('selected', Number(btn.dataset.minutes) === 20));
             document.querySelectorAll('.opportunity-context-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.context === 'any'));
-            document.getElementById('modalOpportunityStudy').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalOpportunityStudy'), 'flex');
             renderOpportunityRecommendations();
         }
 
         function closeOpportunityStudyModal() {
             const modal = document.getElementById('modalOpportunityStudy');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
             opportunityRecommendations = [];
             opportunityIgnoreDayMode = false;
         }
@@ -1499,17 +1525,17 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if(topic) topic.textContent=`${rec.materia} — ${rec.assunto}`;
             if(meta) meta.textContent=`Tente recuperar o conteúdo sem ajuda por ${Math.max(5,Math.round(Number(rec.minutes)||10))} min. Ao concluir, o feedback recalibrará a próxima revisão.`;
             if(prompts) prompts.innerHTML=buildActiveRecallPrompts(rec.materia,rec.assunto).map((text,i)=>`<div class="active-recall-prompt"><strong>${i+1}.</strong> ${escapeHtml(text)}</div>`).join('');
-            document.getElementById('modalActiveRecallGuide').style.display='flex';
+            setRuntimeDisplay(document.getElementById('modalActiveRecallGuide'), 'flex');
         }
 
         function closeActiveRecallGuide() {
-            const modal=document.getElementById('modalActiveRecallGuide'); if(modal) modal.style.display='none';
+            const modal=document.getElementById('modalActiveRecallGuide'); if(modal) setRuntimeDisplay(modal, 'none');
             pendingGuidedActiveRecall=null;
         }
 
         function startGuidedActiveRecallSession() {
             const rec=pendingGuidedActiveRecall; if(!rec) return;
-            const modal=document.getElementById('modalActiveRecallGuide'); if(modal) modal.style.display='none';
+            const modal=document.getElementById('modalActiveRecallGuide'); if(modal) setRuntimeDisplay(modal, 'none');
             pendingGuidedActiveRecall=null;
             launchOpportunityPomodoro({ ...rec, activityType:'teoria', isRevision:true, recoveryMethod:'revisao_ativa', method:'revisao_ativa', methodLabel:'Revisão ativa' });
         }
@@ -1528,7 +1554,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             document.getElementById('legalReadingSaveBlock').checked=true;
             renderLegalReadingBlockOptions(item.materia);
             closeOpportunityStudyModal();
-            document.getElementById('modalLegalReading').style.display='flex';
+            setRuntimeDisplay(document.getElementById('modalLegalReading'), 'flex');
         }
 
         function buildOpportunityRecommendations(minutes = opportunitySelectedMinutes, contextMode = opportunitySelectedContext) {
@@ -1624,7 +1650,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
             if (isFlexibleOpportunityMode(contest) && dayMode==='rest' && !opportunityIgnoreDayMode) {
                 opportunityRecommendations=[];
-                container.innerHTML = `<div class="opportunity-empty">Hoje está marcado como <strong>Descanso</strong>.<br>O Painel respeitou essa escolha.<div style="margin-top:10px;"><button class="btn btn-secondary btn-sm" onclick="ignoreFlexibleRestForOpportunity()">Estudar mesmo assim desta vez</button></div></div>`;
+                container.innerHTML = `<div class="opportunity-empty">Hoje está marcado como <strong>Descanso</strong>.<br>O Painel respeitou essa escolha.<div class="opportunity-empty-action"><button class="btn btn-secondary btn-sm" onclick="ignoreFlexibleRestForOpportunity()">Estudar mesmo assim desta vez</button></div></div>`;
                 return;
             }
             opportunityRecommendations = buildOpportunityRecommendations();
@@ -1716,9 +1742,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 else if (hourCards[1]) hourCards[1].classList.add('selected');
             }
             if (cfg.revisionStrategy && document.getElementById('m2RevisionStrategy')) document.getElementById('m2RevisionStrategy').value = cfg.revisionStrategy;
-            document.getElementById('modalMentorisMethod').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalMentorisMethod'), 'flex');
         }
-        function closeModalMentorisMethod() { document.getElementById('modalMentorisMethod').style.display = 'none'; }
+        function closeModalMentorisMethod() { setRuntimeDisplay(document.getElementById('modalMentorisMethod'), 'none'); }
 
         function toggleWeekdaySelect(elem, dayIdx) {
             elem.classList.toggle('selected');
@@ -1917,10 +1943,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (summary) summary.textContent = `${topics.length} ${topics.length === 1 ? 'item agendado' : 'itens agendados'}${revisions ? ` • ${revisions} ${revisions === 1 ? 'revisão' : 'revisões'}` : ''}`;
             resetAddTopicArea();
             renderDayTopicsList();
-            document.getElementById('modalDayContent').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalDayContent'), 'flex');
         }
 
-        function closeModalDayContent() { document.getElementById('modalDayContent').style.display = 'none'; }
+        function closeModalDayContent() { setRuntimeDisplay(document.getElementById('modalDayContent'), 'none'); }
 
         function formatDateKeyShort(dateKey) {
             if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey || ''))) return String(dateKey || '');
@@ -1984,7 +2010,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!row) return;
             const offsets = getActiveRevisionOffsets();
             const revisionHeaders = offsets.map(offset => `<th>Rev. ${offset}d</th>`).join('');
-            row.innerHTML = `<th style="width:90px;">Prioridade</th><th style="text-align:left;padding-left:1rem;">Assunto</th><th>Teoria</th><th>Questões</th>${revisionHeaders}<th>Ações</th>`;
+            row.innerHTML = `<th class="edital-priority-col">Prioridade</th><th class="edital-subject-col">Assunto</th><th>Teoria</th><th>Questões</th>${revisionHeaders}<th>Ações</th>`;
         }
 
         function removeTopicRevisionsFromSchedule(dateSchedule, topicText) {
@@ -2086,12 +2112,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const allCurrentDone = normalItems.length === 0 || normalItems.every(item => getScheduledItemStudyState(item, editalLookup).done);
             if (!allCurrentDone) return;
             container.insertAdjacentHTML('beforeend', `
-                <div class="edit-selector-box" style="margin-top:12px; border-color:rgba(56,189,248,.35);">
-                    <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
-                        <div style="min-width:220px; flex:1;">
-                            <strong style="color:var(--modern-blue-2);">Próximo estudo sugerido</strong>
-                            <div style="margin-top:4px; font-size:.88rem; opacity:.88;">${escapeHtml(suggestion.topicText)} · planejado para ${formatDateKeyShort(suggestion.dateKey)}</div>
-                            <div style="margin-top:3px; font-size:.76rem; opacity:.65;">Ao concluir, o tópico será antecipado e apenas a fila futura será ajustada. A meta diária permanece inalterada.</div>
+                <div class="edit-selector-box adaptive-next-study-box">
+                    <div class="adaptive-next-study-row">
+                        <div class="adaptive-next-study-copy">
+                            <strong class="adaptive-next-study-title">Próximo estudo sugerido</strong>
+                            <div class="adaptive-next-study-meta">${escapeHtml(suggestion.topicText)} · planejado para ${formatDateKeyShort(suggestion.dateKey)}</div>
+                            <div class="adaptive-next-study-help">Ao concluir, o tópico será antecipado e apenas a fila futura será ajustada. A meta diária permanece inalterada.</div>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="startAdaptiveSuggestedStudy()">Adiantar próximo estudo</button>
                     </div>
@@ -2279,7 +2305,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const lessonMetrics = progress.mode === 'lessons'
                 ? `<span class="topic-plan-study-time" title="Soma das sessões registradas em studySessions para este assunto">Tempo estudado neste assunto: <strong>${escapeHtml(formatStudyMinutes(recordedMinutes))}</strong></span><span class="topic-plan-progress-label">Progresso das aulas: ${progress.pct}%</span>`
                 : `<span class="topic-plan-progress-label">${progress.pct}%</span>`;
-            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Conteúdo planejado concluído' : escapeHtml(label)}</span>${lessonMetrics}<span class="topic-plan-progress"><span style="width:${progress.pct}%"></span></span></div>`;
+            return `<div class="topic-plan-summary"><span class="topic-plan-pill ${progress.complete ? 'done' : ''}">${progress.complete ? 'Conteúdo planejado concluído' : escapeHtml(label)}</span>${lessonMetrics}<span class="topic-plan-progress"><span class="${getProgressWidthClass(progress.pct)}"></span></span></div>`;
         }
 
         function getTopicStudyPlanBadgeHtml(item, contestMeta = null) {
@@ -2417,10 +2443,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const existingPlan = getTopicStudyPlan(item, metadata[currentConcurso] || {});
             const plan = existingPlan || { mode:'none', target:6, sessionMinutes:Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40') || 40), completedLessons:0 };
             const contentMethod = getContentMethod(item);
-            editArea.style.display = 'block';
+            setRuntimeDisplay(editArea, 'block');
             editArea.innerHTML = `
                 <div class="edit-selector-box">
-                    <strong style="color:var(--modern-blue-2);">Planejar assunto longo</strong>
+                    <strong class="topic-plan-editor-title">Planejar assunto longo</strong>
                     <div class="topic-plan-editor-help">O assunto continua sendo uma única linha do edital. O plano controla a carga da etapa de conteúdo. No modo Automático, Teoria ou Vídeoaula podem completar os 50% de aquisição; Questões continuam valendo os outros 50%.</div>
                     <div class="topic-plan-editor-grid">
                         <label>Método de conteúdo
@@ -2447,7 +2473,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         </label>
                     </div>
                     <div id="studyPlanLessonStatus_${idx}" class="topic-plan-editor-help"></div>
-                    <div style="display:flex; justify-content:flex-end; gap:7px; flex-wrap:wrap;">
+                    <div class="topic-plan-editor-actions">
                         ${existingPlan ? `<button class="btn btn-danger btn-sm" onclick="removeTopicStudyPlan(${idx})">Remover plano</button>` : ''}
                         <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
                         <button class="btn btn-success btn-sm" onclick="saveTopicStudyPlan(${idx})">Salvar plano</button>
@@ -2588,7 +2614,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const topics = dateSchedule[activeSelectedDateKey] || [];
 
             if (topics.length === 0) {
-                container.innerHTML = `<p style="opacity:0.85; padding:1rem;">Nenhum tópico agendado para este dia.</p>`;
+                container.innerHTML = `<p class="runtime-empty-state runtime-empty-state-strong">Nenhum tópico agendado para este dia.</p>`;
                 renderAdaptiveStudySuggestion(container);
                 return;
             }
@@ -2598,15 +2624,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
                 const safeMatchedId = matchedItem ? encodeHandlerValue(matchedItem.id) : '';
                 const advanceHistory = !isRevisionScheduleText(topicoStr) ? getLatestAdvanceHistory(cleanTop, activeSelectedDateKey) : null;
-                const advanceBadge = advanceHistory ? `<span style="display:inline-flex; margin-left:8px; padding:2px 7px; border-radius:999px; font-size:.68rem; color:#7dd3fc; border:1px solid rgba(56,189,248,.3); background:rgba(14,165,233,.08);">Antecipado de ${formatDateKeyShort(advanceHistory.plannedDateKey)}</span>` : '';
-                const futureStudyHint = activeSelectedDateKey > getLocalDateKey() && matchedItem && !isRevisionScheduleText(topicoStr) ? `<span style="display:block; margin-top:3px; font-size:.68rem; opacity:.58;">Estudar agora pode antecipar este tópico com reflow do futuro.</span>` : '';
+                const advanceBadge = advanceHistory ? `<span class="day-topic-badge day-topic-badge-advanced">Antecipado de ${formatDateKeyShort(advanceHistory.plannedDateKey)}</span>` : '';
+                const futureStudyHint = activeSelectedDateKey > getLocalDateKey() && matchedItem && !isRevisionScheduleText(topicoStr) ? `<span class="day-topic-future-hint">Estudar agora pode antecipar este tópico com reflow do futuro.</span>` : '';
                 const studyPlanSummary = matchedItem && !isRevisionScheduleText(topicoStr) ? formatTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {}) : '';
                 const studyPlan = matchedItem ? getTopicStudyPlan(matchedItem, metadata[currentConcurso] || {}) : null;
                 const adaptiveReviewDone = isAdaptiveRetentionReviewText(topicoStr) && getAdaptiveRetentionReviewCompletion(metadata[currentConcurso] || {}, activeSelectedDateKey, cleanTop);
-                const adaptiveReviewBadge = adaptiveReviewDone ? `<span style="display:inline-flex;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:.68rem;color:#86efac;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);">Revisada</span>` : '';
+                const adaptiveReviewBadge = adaptiveReviewDone ? `<span class="day-topic-badge day-topic-badge-reviewed">Revisada</span>` : '';
                 container.innerHTML += `
                     <div class="day-topic-row" id="topicRow_${idx}">
-                        <div style="flex:1;"><strong style="color:var(--primary-blue); font-size:0.95rem;">${escapeHtml(formatScheduledItemForDisplay(topicoStr))}</strong>${adaptiveReviewBadge}${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
+                        <div class="day-topic-main"><strong class="day-topic-title">${escapeHtml(formatScheduledItemForDisplay(topicoStr))}</strong>${adaptiveReviewBadge}${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
                         <div class="day-topic-controls-row">
                             ${matchedItem ? `
                                 <div class="day-topic-status-inline">
@@ -2635,7 +2661,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             ${studyPlan?.mode === 'lessons' && !getTopicStudyPlanProgress(matchedItem, metadata[currentConcurso] || {})?.complete ? `<div class="day-topic-inline-actions lesson-only-action"><button class="btn btn-success btn-sm" onclick="completeTopicStudyLesson(${idx})" title="Marca uma aula inteira como concluída. Este botão não adiciona minutos.">✓ Concluir esta aula</button></div>` : ''}
                             ${!matchedItem ? `<div class="day-topic-inline-actions fallback-topic-actions"><button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteTopicFromDay(${idx})">Apagar</button></div>` : (adaptiveReviewDone ? `<div class="day-topic-inline-actions fallback-topic-actions"><button class="btn btn-secondary btn-sm" onclick="showEditTopicDropdown(${idx})" data-mobile-label="Editar">Editar</button></div>` : '')}
                         </div>
-                        <div id="editArea_${idx}" style="width:100%; display:none;"></div>
+                        <div id="editArea_${idx}" class="day-topic-edit-area" hidden></div>
                     </div>
                 `;
             });
@@ -2694,19 +2720,19 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             editArea.innerHTML = `
                 <div class="edit-selector-box">
-                    <label style="font-size:0.82rem; font-weight:700; color:#93c5fd;">Selecione a Matéria e o Assunto do Edital:</label>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" style="flex:1; min-width:160px;">${matOptions}</select>
-                        <select id="editAssSel_${idx}" style="flex:1; min-width:180px;"></select>
+                    <label class="day-topic-form-label day-topic-form-label-edit">Selecione a Matéria e o Assunto do Edital:</label>
+                    <div class="day-topic-form-row">
+                        <select id="editMatSel_${idx}" onchange="updateEditAssuntoDropdown(${idx})" class="day-topic-select day-topic-select-materia">${matOptions}</select>
+                        <select id="editAssSel_${idx}" class="day-topic-select day-topic-select-assunto"></select>
                     </div>
-                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
+                    <div class="day-topic-form-actions day-topic-form-actions-edit">
                         <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
                         <button class="btn btn-info btn-sm" onclick="addManualTopicToDay(${idx})">Inserir Manualmente</button>
                         <button class="btn btn-success btn-sm" onclick="confirmEditTopicWithSwap(${idx})">Salvar / Trocar Assunto</button>
                     </div>
                 </div>
             `;
-            editArea.style.display = 'block';
+            setRuntimeDisplay(editArea, 'block');
             updateEditAssuntoDropdown(idx);
         }
 
@@ -2781,12 +2807,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             container.innerHTML = `
                 <div class="edit-selector-box">
-                    <label style="font-size:0.85rem; font-weight:700; color:var(--primary-blue);">Adicionar Tópico a Este Dia (Selecione da Lista do Edital):</label>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <select id="addMatSel" onchange="updateAddAssuntoDropdown()" style="flex:1; min-width:160px;">${matOptions}</select>
-                        <select id="addAssSel" style="flex:1; min-width:180px;"></select>
+                    <label class="day-topic-form-label">Adicionar Tópico a Este Dia (Selecione da Lista do Edital):</label>
+                    <div class="day-topic-form-row">
+                        <select id="addMatSel" onchange="updateAddAssuntoDropdown()" class="day-topic-select day-topic-select-materia">${matOptions}</select>
+                        <select id="addAssSel" class="day-topic-select day-topic-select-assunto"></select>
                     </div>
-                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">
+                    <div class="day-topic-form-actions">
                         <button class="btn btn-secondary btn-sm" onclick="resetAddTopicArea()">Cancelar</button>
                         <button class="btn btn-primary btn-sm" onclick="confirmAddTopicWithSwap()">Adicionar ao Dia</button>
                     </div>
@@ -3144,7 +3170,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const filtered = notesList.filter(n => n.materia === selectedMat);
 
             if (filtered.length === 0) {
-                container.innerHTML = `<p style="opacity:0.8; padding:1rem;">Nenhuma anotação cadastrada para a matéria <strong>${escapeHtml(selectedMat)}</strong>.</p>`;
+                container.innerHTML = `<p class="runtime-empty-state">Nenhuma anotação cadastrada para a matéria <strong>${escapeHtml(selectedMat)}</strong>.</p>`;
                 return;
             }
 
@@ -3176,10 +3202,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const sizeSelect = document.getElementById('noteFontSizeSelect'); if (sizeSelect) sizeSelect.value = '16';
             updateNoteToolbarState();
             populateNotaAssuntoDropdown();
-            document.getElementById('modalNovaNota').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalNovaNota'), 'flex');
         }
 
-        function closeModalNovaNota() { document.getElementById('modalNovaNota').style.display = 'none'; }
+        function closeModalNovaNota() { setRuntimeDisplay(document.getElementById('modalNovaNota'), 'none'); }
 
         function editNota(globalIndex) {
             const metadata = getConcursosMetadata();
@@ -3204,7 +3230,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             noteEditorSavedRange = null;
             installNoteRichEditorHandlers();
             updateNoteToolbarState();
-            document.getElementById('modalNovaNota').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalNovaNota'), 'flex');
         }
 
         async function salvarNota() {
@@ -3249,9 +3275,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function openModalConfigHorarios() {
             document.getElementById('cfgDataInicio').value = new Date().toISOString().split('T')[0];
-            document.getElementById('modalConfigHorarios').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalConfigHorarios'), 'flex');
         }
-        function closeModalConfigHorarios() { document.getElementById('modalConfigHorarios').style.display = 'none'; }
+        function closeModalConfigHorarios() { setRuntimeDisplay(document.getElementById('modalConfigHorarios'), 'none'); }
 
         /* FLASHCARDS COM SUPABASE */
         function populateFcMateriaDropdown() {
@@ -3449,7 +3475,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             folderContainer.innerHTML = '';
 
             if (flashcardsList.length === 0) {
-                folderContainer.innerHTML = '<p style="opacity: 0.75; font-size:0.9rem;">Nenhum baralho disponível.</p>';
+                folderContainer.innerHTML = '<p class="runtime-empty-inline">Nenhum baralho disponível.</p>';
                 return;
             }
 
@@ -3476,8 +3502,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     const safeAssHandler = encodeHandlerValue(assName);
                     subfoldersHtml += `
                         <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), decodeURIComponent('${safeAssHandler}'))">
-                            <span style="font-size:0.9rem; font-weight:600;">${escapeHtml(assName)}</span>
-                            <span style="font-size:0.8rem; opacity:0.8;">${count} cartões</span>
+                            <span class="anki-subfolder-name">${escapeHtml(assName)}</span>
+                            <span class="anki-subfolder-count">${count} cartões</span>
                         </div>
                     `;
                 });
@@ -3487,9 +3513,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         <div class="anki-folder-header" onclick="toggleFcFolder(decodeURIComponent('${safeMatHandler}'))">
                             <div class="anki-folder-title">
                                 <span>${escapeHtml(matName)}</span>
-                                ${isMatActive ? '<span style="color:#34d399; font-size:0.75rem;">(Caixa Aberta)</span>' : ''}
+                                ${isMatActive ? '<span class="anki-folder-open-badge">(Caixa Aberta)</span>' : ''}
                             </div>
-                            <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="anki-folder-actions">
                                 <span class="anki-folder-count">${matData.total} cartões</span>
                                 <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria">Abrir Caixa</button>
                                 <span>${isOpen ? 'Fechar' : 'Abrir'}</span>
@@ -3526,7 +3552,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (activeFcAssuntoFilter) displayList = displayList.filter(fc => (fc.assunto || 'Sem Assunto Específico') === activeFcAssuntoFilter);
 
             if (displayList.length === 0) {
-                container.innerHTML = '<p style="opacity: 0.8; padding:1rem;">Nenhum flashcard encontrado para este filtro.</p>';
+                container.innerHTML = '<p class="runtime-empty-state">Nenhum flashcard encontrado para este filtro.</p>';
                 return;
             }
 
@@ -3548,9 +3574,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                     ${fc.assunto ? `<span class="flashcard-badge-assunto">${escapeHtml(fc.assunto)}</span>` : ''}
                                 </div>
                                 <p><strong>P:</strong> ${escapeHtml(fc.pergunta)}</p>
-                                <p style="margin-top:6px; color:#34d399;"><strong>R:</strong> ${escapeHtml(fc.resposta)}</p>
+                                <p class="flashcard-answer"><strong>R:</strong> ${escapeHtml(fc.resposta)}</p>
                             </div>
-                            <div style="display:flex; gap:6px; flex-shrink:0;">
+                            <div class="flashcard-card-actions">
                                 <button class="btn btn-secondary btn-sm" onclick="openEditarFlashcardModal(${fc.originalIndex})" title="Editar Flashcard" data-mobile-label="Editar">Editar</button>
                                 <button class="btn btn-danger btn-sm" onclick="removeFlashcard(${fc.originalIndex})" title="Apagar Flashcard Individual">Excluir</button>
                             </div>
@@ -3559,10 +3585,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 });
 
                 container.innerHTML += `
-                    <div style="margin-bottom:1.5rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid var(--primary-blue);">
-                        <h4 style="color:var(--header-materia-text); margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                    <div class="flashcard-group-card">
+                        <h4 class="flashcard-group-heading">
                             <span>${escapeHtml(mName)}</span>
-                            <span style="font-size:0.8rem; font-weight:normal;">(${grouped[mName].length} cartões)</span>
+                            <span class="flashcard-group-count">(${grouped[mName].length} cartões)</span>
                         </h4>
                         ${cardsHtml}
                     </div>
@@ -3578,11 +3604,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             document.getElementById('editFcAssunto').value = fc.assunto || '';
             document.getElementById('editFcPergunta').value = fc.pergunta || '';
             document.getElementById('editFcResposta').value = fc.resposta || '';
-            document.getElementById('modalEditarFlashcard').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalEditarFlashcard'), 'flex');
         }
 
         function closeModalEditarFlashcard() {
-            document.getElementById('modalEditarFlashcard').style.display = 'none';
+            setRuntimeDisplay(document.getElementById('modalEditarFlashcard'), 'none');
             editingFcIndex = null;
         }
 
@@ -3827,10 +3853,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             flashcardsList.forEach(fc => { if (fc.materia) setMaterias.add(fc.materia); });
             setMaterias.forEach(mat => { matSel.innerHTML += `<option value="${escapeHtml(mat)}">${escapeHtml(mat)}</option>`; });
             updateStudyFilterAssuntoOptions();
-            document.getElementById('modalFiltroEstudoFC').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalFiltroEstudoFC'), 'flex');
         }
 
-        function closeModalFiltroEstudoFlashcards() { document.getElementById('modalFiltroEstudoFC').style.display = 'none'; }
+        function closeModalFiltroEstudoFlashcards() { setRuntimeDisplay(document.getElementById('modalFiltroEstudoFC'), 'none'); }
 
         function updateStudyFilterAssuntoOptions() {
             const matVal = document.getElementById('studyFilterMateria').value;
@@ -3957,7 +3983,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             currentStudyIdx = 0;
             showingAnswer = false;
             updateStudyModalCard();
-            document.getElementById('modalStudyFlashcards').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalStudyFlashcards'), 'flex');
         }
 
         function updateStudyModalCard() {
@@ -3990,7 +4016,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         function nextStudyCard() { currentStudyIdx++; updateStudyModalCard(); }
-        function closeStudyModal() { document.getElementById('modalStudyFlashcards').style.display = 'none'; }
+        function closeStudyModal() { setRuntimeDisplay(document.getElementById('modalStudyFlashcards'), 'none'); }
 
         function initMonthYearSelectors() {
             const mSel = document.getElementById('monthSelect');
@@ -4120,7 +4146,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     ? `
                         <div class="day-progress-summary">
                             <span>${completedCount} / ${items.length}</span>
-                            <div class="day-progress-track"><div class="day-progress-fill" style="width:${completionPercent}%"></div></div>
+                            <div class="day-progress-track"><div class="day-progress-fill ${getProgressWidthClass(completionPercent)}"></div></div>
                         </div>
                     `
                     : '<div class="day-empty-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>';
@@ -4766,7 +4792,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             });
 
             if (displayList.length === 0) {
-                container.innerHTML = '<p style="opacity: 0.8; font-size:0.9rem;">Nenhum item agendado para esta aba.</p>';
+                container.innerHTML = '<p class="runtime-empty-inline runtime-empty-inline-strong">Nenhum item agendado para esta aba.</p>';
                 return;
             }
 
@@ -4783,7 +4809,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (isLate) {
                     timingBadge = `<span class="delayed-day-late">${daysLate} ${daysLate === 1 ? 'dia de atraso' : 'dias de atraso'}</span>`;
                 } else if (isToday) {
-                    timingBadge = '<span class="delayed-day-late" style="color:#38bdf8;border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.12);">Hoje</span>';
+                    timingBadge = '<span class="delayed-day-late delayed-day-today">Hoje</span>';
                 } else {
                     timingBadge = `<span class="delayed-day-count">em ${daysAhead} ${daysAhead === 1 ? 'dia' : 'dias'}</span>`;
                 }
@@ -4993,9 +5019,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 banner.textContent = hasPendingSync()
                     ? 'Modo Offline — suas alterações estão protegidas e aguardam sincronização.'
                     : 'Modo Offline — os dados continuam disponíveis neste dispositivo.';
-                banner.style.display = 'block';
+                setRuntimeDisplay(banner, 'block');
             } else {
-                banner.style.display = 'none';
+                setRuntimeDisplay(banner, 'none');
             }
             updateSyncIndicator();
         }
@@ -5194,8 +5220,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderPomodoroDailyCounter();
         }
 
-        function openModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'flex'; }
-        function closeModalNovoConcurso() { document.getElementById('modalNovoConcurso').style.display = 'none'; }
+        function openModalNovoConcurso() { setRuntimeDisplay(document.getElementById('modalNovoConcurso'), 'flex'); }
+        function closeModalNovoConcurso() { setRuntimeDisplay(document.getElementById('modalNovoConcurso'), 'none'); }
 
         async function confirmarNovoConcurso() {
             const nome = document.getElementById('inputNomeConcurso').value.trim();
@@ -5727,7 +5753,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const activeRevisionOffsets = getActiveRevisionOffsets();
                 const dynamicColspan = 5 + activeRevisionOffsets.length;
                 htmlParts.push(`
-                    <tr class="materia-header-row" data-materia="${safeMateriaHandler}" style="background: ${PALETA_CORES_MATERIAS[colorIdx % PALETA_CORES_MATERIAS.length]};" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))">
+                    <tr class="materia-header-row materia-gradient-${colorIdx % PALETA_CORES_MATERIAS.length}" data-materia="${safeMateriaHandler}" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))">
                         <td onclick="event.stopPropagation()">
                             <input type="number" class="priority-input" value="${clampMateriaPriority(group.prioridade)}" min="1" max="4" step="1" onchange="updateMateriaPriority(decodeURIComponent('${safeMateriaHandler}'), this.value)" title="Prioridade da disciplina (1 a 4)">
                         </td>
@@ -5738,7 +5764,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                     <span class="materia-header-meta">${group.items.length} assuntos · Prioridade ${clampMateriaPriority(group.prioridade)}<span class="materia-drag-hint">segure e arraste para mover</span></span>
                                 </span>
                                 <span class="materia-header-right">
-                                    <span class="materia-progress-ring" style="--pct:${materiaPct}"><span>${materiaPct}%</span></span>
+                                    <span class="materia-progress-ring u-ring-pct-${materiaPct}"><span>${materiaPct}%</span></span>
                                     <span class="materia-expand-label">${isOpen ? 'Recolher' : 'Expandir'}</span>
                                 </span>
                             </div>
@@ -5755,11 +5781,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             return `<td data-study-control="true"><span class="revision-model-note">${offset}d</span><input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAdaptiveRevision(decodeURIComponent('${safeId}'), ${offset}, ${checked})"></td>`;
                         }).join('');
                         htmlParts.push(`
-                            <tr class="adaptive-edital-row" style="--control-count:${2 + activeRevisionOffsets.length};">
+                            <tr class="adaptive-edital-row u-control-count-${Math.min(12, 2 + activeRevisionOffsets.length)}">
                                 <td>
                                     <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority(decodeURIComponent('${safeId}'), this.value)" title="Prioridade do Assunto">
                                 </td>
-                                <td style="text-align: left; padding-left: 1.5rem;">${escapeHtml(item.assunto)}${getTopicStudyPlanBadgeHtml(item, getConcursosMetadata()[currentConcurso] || {})}</td>
+                                <td class="adaptive-edital-subject-cell">${escapeHtml(item.assunto)}${getTopicStudyPlanBadgeHtml(item, getConcursosMetadata()[currentConcurso] || {})}</td>
                                 <td data-study-control="true"><span class="revision-model-note">Teoria</span><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'teoria', ${item.teoria})"></td>
                                 <td data-study-control="true"><span class="revision-model-note">Questões</span><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'questoes', ${item.questoes})"></td>
                                 <td data-study-control="true"><span class="revision-model-note">Vídeoaula</span><input type="checkbox" ${item.videoaula ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'videoaula', ${item.videoaula})"></td>
@@ -6176,8 +6202,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 legendGrid.innerHTML = labels.map((mName, idx) => {
                     const pair = gradientPairs[idx];
                     return `
-                        <div class="chart-legend-item" style="--subject-gradient:linear-gradient(135deg, ${pair[0]}, ${pair[1]});">
-                            <span class="chart-legend-color" style="background:var(--subject-gradient);"></span>
+                        <div class="chart-legend-item subject-gradient-${idx % 32}">
+                            <span class="chart-legend-color"></span>
                             <span>${escapeHtml(mName)} (${percentData[idx]}%)</span>
                         </div>
                     `;
@@ -6355,11 +6381,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 return;
             }
             const advanceNote = activeStudyContext.adaptiveAdvance && activeStudyContext.plannedDateKey
-                ? `<span style="margin-left:8px; font-size:.72rem; color:#7dd3fc;">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
+                ? `<span class="study-context-advance">Antecipando de ${formatDateKeyShort(activeStudyContext.plannedDateKey)} para hoje</span>`
                 : '';
             const modeLabel = activeStudyContext.recoveryMethod === 'revisao_curta' ? 'Revisão curta' : (activeStudyContext.recoveryMethod === 'revisao_ativa' ? 'Revisão ativa' : (activeStudyContext.recoveryMethod === 'reestudo' ? 'Reestudo de teoria' : (activeStudyContext.activityType === 'questoes' ? 'Questões' : (activeStudyContext.activityType === 'videoaula' ? 'Vídeoaula' : (activeStudyContext.activityType === 'lei_seca' ? 'Lei Seca' : 'Teoria'))) ));
             const legalNote = activeStudyContext.activityType === 'lei_seca' && activeStudyContext.norma
-                ? `<span style="margin-left:8px;font-size:.72rem;opacity:.8;">${escapeHtml(activeStudyContext.norma)}${activeStudyContext.articleStart ? ` · arts. ${escapeHtml(activeStudyContext.articleStart)}${activeStudyContext.articleEnd ? `–${escapeHtml(activeStudyContext.articleEnd)}` : ''}` : ''}</span>`
+                ? `<span class="study-context-legal">${escapeHtml(activeStudyContext.norma)}${activeStudyContext.articleStart ? ` · arts. ${escapeHtml(activeStudyContext.articleStart)}${activeStudyContext.articleEnd ? `–${escapeHtml(activeStudyContext.articleEnd)}` : ''}` : ''}</span>`
                 : '';
             title.innerHTML = `<span class="study-mode-badge">${modeLabel}</span>${escapeHtml(activeStudyContext.materia)} — ${escapeHtml(activeStudyContext.assunto)}${legalNote}${advanceNote}`;
             box.classList.add('visible');
@@ -6606,10 +6632,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (total) total.value = '';
             if (correct) correct.value = '';
             if (minutes) minutes.value = '';
-            if (minutesGroup) minutesGroup.style.display = options.sessionId ? 'none' : '';
+            if (minutesGroup) setRuntimeDisplay(minutesGroup, options.sessionId ? 'none' : 'default');
             updateQuestionPerformancePreview();
             const modal = document.getElementById('modalQuestionPerformance');
-            if (modal) modal.style.display = 'flex';
+            if (modal) setRuntimeDisplay(modal, 'flex');
             setTimeout(() => total?.focus(), 120);
         }
 
@@ -6617,7 +6643,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const pending = pendingQuestionPerformance;
             pendingQuestionPerformance = null;
             const modal = document.getElementById('modalQuestionPerformance');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
             // Se era uma revisão adaptativa e o usuário deixou o resultado para depois,
             // ainda permitimos a avaliação subjetiva para não quebrar a curva.
             if (pending?.isRevision && pending?.sessionId) {
@@ -6706,7 +6732,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             await saveConcursosMetadata(metadata);
             pendingQuestionPerformance = null;
             const modal = document.getElementById('modalQuestionPerformance');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
             filterDataByConcurso();
             renderMonthCalendar();
             renderDayTopicsList();
@@ -6814,7 +6840,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     : 'Como foi recuperar esse conteúdo?';
             }
             const modal = document.getElementById('modalAdaptiveReviewFeedback');
-            if (modal) modal.style.display = 'flex';
+            if (modal) setRuntimeDisplay(modal, 'flex');
         }
 
         async function submitAdaptiveReviewFeedback(rating) {
@@ -6836,7 +6862,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             await saveConcursosMetadata(metadata);
             pendingAdaptiveReviewFeedback = null;
             const modal = document.getElementById('modalAdaptiveReviewFeedback');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
             renderMonthCalendar();
             renderDayTopicsList();
             updateModernOverview();
@@ -7166,7 +7192,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     <div class="subject-hours-main">
                         <div class="subject-hours-name"><span title="${escapeHtml(row.materia)}">${escapeHtml(row.materia)}</span></div>
                         <div class="subject-hours-detail">Teoria ${formatStudyMinutes(row.teoria)}${row.videoaula ? ` · Vídeoaula ${formatStudyMinutes(row.videoaula)}` : ''} · Questões ${formatStudyMinutes(row.questoes)}${row.leiSeca ? ` · Lei Seca ${formatStudyMinutes(row.leiSeca)}` : ''}</div>
-                        <div class="subject-hours-track"><div class="subject-hours-fill" style="width:${pct}%"></div></div>
+                        <div class="subject-hours-track"><div class="subject-hours-fill ${getProgressWidthClass(pct)}"></div></div>
                     </div>
                     <div class="subject-hours-time">${formatStudyMinutes(row.minutes)}</div>
                 </div>`;
@@ -7514,11 +7540,11 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!list || !panel) return;
             const entries = getDailyStudiedTopicsSummary();
             if (!entries.length) {
-                panel.style.display = 'none';
+                setRuntimeDisplay(panel, 'none');
                 list.innerHTML = '';
                 return;
             }
-            panel.style.display = 'block';
+            setRuntimeDisplay(panel, 'block');
             list.innerHTML = entries.map(entry => {
                 const primaryType = [...entry.activities][0] || '';
                 const badge = primaryType ? `<span class="pomodoro-topic-badge">${escapeHtml(getActivityBadgeLabel(primaryType))}</span>` : '';
@@ -7548,7 +7574,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             if (!targetMinutes) {
                 targetEl.textContent = 'Sem meta';
-                progressEl.style.width = '0%';
+                setProgressWidthClass(progressEl, 0);
                 const contest = getConcursosMetadata()[currentConcurso] || {};
                 statusEl.textContent = isFlexibleOpportunityMode(contest)
                     ? 'Modo flexível ativo • estude quando surgir uma oportunidade. Use “Estudar agora”.'
@@ -7558,7 +7584,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             targetEl.textContent = `${targetHours}h`;
             const percent = (studiedMinutes / targetMinutes) * 100;
-            progressEl.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+            setProgressWidthClass(progressEl, percent);
 
             if (studiedMinutes < targetMinutes) {
                 const remaining = targetMinutes - studiedMinutes;
@@ -7602,7 +7628,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (activitySelect) activitySelect.value = 'teoria';
             updatePomodoroContextAssuntos();
             pomodoroContextSelectionPending = true;
-            modal.style.display = 'flex';
+            setRuntimeDisplay(modal, 'flex');
             requestAnimationFrame(() => materiaSelect.focus());
             return true;
         }
@@ -7619,7 +7645,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function closePomodoroContextModal() {
             const modal = document.getElementById('modalPomodoroContext');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
             pomodoroContextSelectionPending = false;
         }
 
@@ -7863,7 +7889,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
         function closeLegalReadingModal() {
             const modal = document.getElementById('modalLegalReading');
-            if (modal) modal.style.display = 'none';
+            if (modal) setRuntimeDisplay(modal, 'none');
             pendingLegalStudyContext = null;
         }
 
@@ -7898,7 +7924,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             document.getElementById('legalReadingMinutes').value = requestedMinutes;
             document.getElementById('legalReadingSaveBlock').checked = true;
             renderLegalReadingBlockOptions(matched.materia);
-            document.getElementById('modalLegalReading').style.display = 'flex';
+            setRuntimeDisplay(document.getElementById('modalLegalReading'), 'flex');
         }
 
         async function upsertLegalReadingBlock(context) {
@@ -7951,7 +7977,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             }
             activeStudyContext = context;
             pendingLegalStudyContext = null;
-            document.getElementById('modalLegalReading').style.display = 'none';
+            setRuntimeDisplay(document.getElementById('modalLegalReading'), 'none');
             renderActiveStudyContext();
             closeModalDayContent();
 

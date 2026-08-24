@@ -126,7 +126,7 @@
 
             const limited = results.slice(0, 16);
             if (!limited.length) {
-                box.innerHTML = '<div style="padding:12px;color:var(--modern-muted);font-size:.84rem;">Nenhum resultado encontrado.</div>';
+                box.innerHTML = '<div class="global-search-empty">Nenhum resultado encontrado.</div>';
                 box.classList.add('visible');
                 return;
             }
@@ -327,7 +327,7 @@
             const status = row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
             const layerDef = plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
             const layerText = plan ? `Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}` : 'Revisão adaptativa';
-            return `<button class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" type="button" data-dynamic-action="open-layered-review" data-review-index="${index}" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}. Risco ${severityLabel}. Retenção ${retention}%"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span style="width:${retention}%"></span></span></span><span class="retention-risk-value">${retention}%</span></button>`;
+            return `<button class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" type="button" data-dynamic-action="open-layered-review" data-review-index="${index}" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}. Risco ${severityLabel}. Retenção ${retention}%"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span class="${getProgressWidthClass(retention)}"></span></span></span><span class="retention-risk-value">${retention}%</span></button>`;
         }
 
         function getRetentionMetricConfig(kind) {
@@ -377,7 +377,7 @@
             const set = (id,value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
             const setBar = (id,value) => {
                 const el=document.getElementById(id);
-                if(el) el.style.width=`${Math.max(0,Math.min(100,Number(value)||0))}%`;
+                if(el) setProgressWidthClass(el, value);
             };
             const list = document.getElementById('retentionDiagnosticRiskList');
             const moreButton = document.getElementById('retentionMoreButton');
