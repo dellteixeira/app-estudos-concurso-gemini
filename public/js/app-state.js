@@ -3,8 +3,10 @@
 
     if (global.AppState) return;
 
+    const SCHEMA_VERSION = 2;
     const listeners = new Set();
     let revision = 0;
+    let lastChangedAt = new Date().toISOString();
 
     function clone(value) {
         if (value == null) return value;
@@ -44,8 +46,10 @@
         const name = safeCurrentContestName();
         const metadata = safeMetadata();
         return Object.freeze({
+            schemaVersion:SCHEMA_VERSION,
             revision,
             reason,
+            changedAt:lastChangedAt,
             user: user ? { id:user.id || null, email:user.email || null } : null,
             currentContest: name,
             contest: clone(metadata[name] || null),
@@ -56,6 +60,7 @@
 
     function notify(reason = 'change', detail = null) {
         revision += 1;
+        lastChangedAt = new Date().toISOString();
         const snapshot = makeSnapshot(reason);
         listeners.forEach(listener => {
             try { listener(snapshot, detail); }
@@ -90,6 +95,26 @@
 
     function getTopic(ref) {
         return clone(findTopic(ref));
+    }
+
+    function select(selector) {
+        if (typeof selector !== 'function') throw new TypeError('selector must be a function');
+        return clone(selector(makeSnapshot('select')));
+    }
+
+    function getDiagnostics() {
+        const snapshot = makeSnapshot('diagnostics');
+        return Object.freeze({
+            schemaVersion:SCHEMA_VERSION,
+            revision,
+            subscriberCount:listeners.size,
+            changedAt:lastChangedAt,
+            currentContest:snapshot.currentContest,
+            editalCount:Array.isArray(snapshot.edital) ? snapshot.edital.length : 0,
+            authenticated:Boolean(snapshot.user?.id),
+            syncStatus:snapshot.sync?.status || null,
+            syncPending:Math.max(0, Number(snapshot.sync?.pending) || 0)
+        });
     }
 
     async function updateTopic(ref, patch, options = {}) {
@@ -149,11 +174,13 @@
         getCurrentContest,
         getEdital,
         getTopic,
+        select,
+        getDiagnostics,
         updateTopic,
         setCurrentContest,
         subscribe,
         refresh
     });
 
-    global.dispatchEvent(new CustomEvent('appstate:ready', { detail:{ revision } }));
+    global.dispatchEvent(new CustomEvent('appstate:ready', { detail:{ schemaVersion:SCHEMA_VERSION, revision } }));
 })(window);

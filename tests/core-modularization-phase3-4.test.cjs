@@ -48,9 +48,10 @@ test('phase 4 critical e2e covers real app shell, AppState, SyncEngine and offli
   assert.match(browser,/AppLocalBackupStore\.countStats/);
 });
 
-test('v10.28 release identity is synchronized',()=>{
-  assert.equal(pkg.version,'10.28.0');
-  assert.equal(assets.version,'10.28.0');
-  assert.match(sw,/const APP_VERSION = '10\.28\.0'/);
-  assert.match(worker,/const APP_VERSION = "10\.28\.0"/);
+test('release identity is synchronized with canonical package version',()=>{
+  const version=String(pkg.version);
+  const escaped=version.replace(/\./g,'\\.');
+  assert.equal(assets.version,version);
+  assert.match(sw,new RegExp(`const APP_VERSION = '${escaped}'`));
+  assert.match(worker,new RegExp(`const APP_VERSION = "${escaped}"`));
 });
