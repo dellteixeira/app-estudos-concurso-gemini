@@ -81,13 +81,29 @@ function addFooter(p,pageNo,total,contest){
   text(p,PAGE_W-63,20,String(pageNo).padStart(2,'0'),12,true,'#218cff');
   text(p,PAGE_W-39,21,`/${total}`,6.2,false,'#7187a4');
 }
+function getHeaderTitleLayout(title,maxWidth=PAGE_W-MX*2){
+  const value=String(title||'').replace(/\s+/g,' ').trim();
+  const sizes=[23,22,21,20,19,18,17,16,15,14,13];
+  for(const size of sizes){
+    const lines=wrap(value,size,maxWidth);
+    if(lines.length<=2)return {lines,size,leading:Math.max(17,size*1.08)};
+  }
+  const size=12;
+  const lines=wrap(value,size,maxWidth);
+  return {lines:lines.slice(0,2),size,leading:17};
+}
 function addHeader(p,title,subtitle=''){
   text(p,44,805,'DESEMPENHO',7.2,true,'#218cff');
   line(p,118,808,PAGE_W-44,808,'#0b4e97',.7);
-  text(p,44,772,title,23,true,'#f5f8ff');
-  if(subtitle)text(p,44,748,subtitle,9.2,false,'#c4cedd');
-  line(p,44,731,252,731,'#1b78d0',.8);
-  p.cursor=700;
+  const layout=getHeaderTitleLayout(title);
+  const titleY=772;
+  layout.lines.forEach((ln,index)=>text(p,44,titleY-index*layout.leading,ln,layout.size,true,'#f5f8ff'));
+  const titleBottom=titleY-(layout.lines.length-1)*layout.leading;
+  const subtitleY=titleBottom-25;
+  if(subtitle)text(p,44,subtitleY,subtitle,9.2,false,'#c4cedd');
+  const dividerY=(subtitle?subtitleY:titleBottom)-17;
+  line(p,44,dividerY,252,dividerY,'#1b78d0',.8);
+  p.cursor=dividerY-31;
 }
 
 function summaryPage(data){
