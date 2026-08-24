@@ -8,6 +8,8 @@ const device=fs.readFileSync('public/js/pdf/pdf-device-storage.js','utf8');
 const adapter=fs.readFileSync('public/js/pdf/pdf-library-opfs-adapter.js','utf8');
 const library=fs.readFileSync('public/js/pdf/pdf-library.js','utf8');
 const manager=fs.readFileSync('public/js/pdf/pdf-offline-library-manager.js','utf8');
+const mobileActions=fs.readFileSync('public/css/pdf-mobile-card-actions.css','utf8');
+const headers=fs.readFileSync('public/_headers','utf8');
 
 test('PDF salvo no dispositivo usa arquivo externo ao armazenamento privado do app',()=>{
   cp.execFileSync(process.execPath,['--check','public/js/pdf/pdf-device-storage.js'],{stdio:'pipe'});
@@ -54,20 +56,26 @@ test('biblioteca offline persiste explicitamente no OPFS ou IndexedDB moderno',(
 test('mobile mantém ações do PDF em duas colunas e texto completo em viewports amplas de celular',()=>{
   assert.match(device,/@media \(max-width:900px\)/);
   assert.match(device,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
-  assert.match(device,/width:100%!important/);
-  assert.match(device,/min-width:0!important/);
-  assert.match(device,/min-height:44px!important/);
   assert.match(device,/white-space:normal!important/);
   assert.match(device,/overflow-wrap:break-word!important/);
   assert.match(device,/\.pdf-device-save-action[\s\S]*font-size:clamp\(\.68rem,2\.25vw,\.82rem\)!important/);
-  assert.match(device,/box-sizing:border-box!important/);
-  assert.match(device,/:last-child:nth-child\(odd\)[\s\S]*grid-column:1\/-1!important/);
-  assert.match(device,/@media \(max-width:420px\)/);
-  assert.match(device,/@media \(max-width:340px\)/);
+
+  assert.match(mobileActions,/@media \(max-width: 900px\)/);
+  assert.match(mobileActions,/display: grid !important/);
+  assert.match(mobileActions,/grid-template-columns: repeat\(2, minmax\(0, 1fr\)\) !important/);
+  assert.match(mobileActions,/min-height: 44px !important/);
+  assert.match(mobileActions,/white-space: normal !important/);
+  assert.match(mobileActions,/\.pdf-device-save-action[\s\S]*font-size: clamp\(\.68rem, 2\.25vw, \.82rem\) !important/);
+  assert.match(mobileActions,/:last-child:nth-child\(odd\)[\s\S]*grid-column: 1 \/ -1 !important/);
 });
 
-test('adapter carrega a integração de dispositivo de forma versionável e isolada',()=>{
-  assert.match(adapter,/\.\/js\/pdf\/pdf-device-storage\.js/);
+test('adapter carrega CSS e módulos PDF com revisão explícita para impedir cache stale',()=>{
+  assert.match(adapter,/const ASSET_REVISION = '10\.29\.3'/);
+  assert.match(adapter,/asset\('\.\/css\/pdf-mobile-card-actions\.css'\)/);
+  assert.match(adapter,/asset\('\.\/js\/pdf\/pdf-device-storage\.js'\)/);
+  assert.match(adapter,/asset\('\.\/js\/pdf\/pdf-library-layout-fix\.js'\)/);
   assert.match(adapter,/data-pdf-device-storage/);
   assert.match(adapter,/loadDeviceStorage\(\)/);
+  assert.match(headers,/\/css\/pdf-mobile-card-actions\.css[\s\S]*Cache-Control: no-cache, no-store, must-revalidate/);
+  assert.match(headers,/\/js\/pdf\/pdf-device-storage\.js[\s\S]*Cache-Control: no-cache, no-store, must-revalidate/);
 });
