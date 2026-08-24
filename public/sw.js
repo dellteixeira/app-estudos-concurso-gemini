@@ -1,4 +1,4 @@
-const APP_VERSION = '10.33.0';
+const APP_VERSION = '10.33.1';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
@@ -161,7 +161,7 @@ self.addEventListener('fetch', event => {
     '/js/study-domain.js', '/js/core/local-backup-store.js', '/js/core/offline-outbox-store.js', '/js/core/offline-sync-shadow.js', '/js/core/offline-sync-authority.js', '/js/app-core.js', '/js/app-state.js', '/js/sync-engine.js', '/js/adaptive-schedule-reconciliation.js', '/js/learning-advisor.js', '/js/notes-import-export.js', '/js/notes-export-rich.js', '/js/study-performance-report.js',
     '/js/performance-loader.js', '/js/performance-metrics.js',
     '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js',
-    '/js/pdf/pdf-library-opfs-adapter.js', '/js/pdf/pdf-library-layout-fix.js', '/js/pdf/pdf-device-storage.js', '/js/pdf/offline-pdf-store.js', '/js/pdf/pdf-offline-library-manager.js', '/js/pdf/pdf-offline-integrity.js', '/js/pdf/pdf-offline-library-ui.js',
+    '/js/pdf/pdf-library-opfs-adapter.js', '/js/pdf/pdf-library-layout-fix.js', '/js/pdf/pdf-device-storage.js', '/js/pdf/offline-pdf-store.js', '/js/pdf/offline-pdf-library-manager.js', '/js/pdf/pdf-offline-integrity.js', '/js/pdf/pdf-offline-library-ui.js',
     '/js/app-ai.js', '/js/app-ui.js', '/js/ui/mobile.js', '/js/ui/navigation.js', '/js/ui/search.js',
     '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
   ].some(path => url.pathname.endsWith(path));
