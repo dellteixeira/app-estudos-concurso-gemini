@@ -102,37 +102,15 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
         let localBackupWritePromise = null;
 
         function openLocalBackupDatabase() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(LOCAL_BACKUP_DB, 1);
-                request.onupgradeneeded = () => {
-                    const db = request.result;
-                    if (!db.objectStoreNames.contains(LOCAL_BACKUP_STORE)) {
-                        db.createObjectStore(LOCAL_BACKUP_STORE, { keyPath:'key' });
-                    }
-                };
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error || new Error('Não foi possível abrir o armazenamento de backups.'));
-            });
+            return AppLocalBackupStore.openDatabase();
         }
 
         async function readLocalBackup(slot = 'current') {
-            if (!currentUser) return null;
-            const db = await openLocalBackupDatabase();
-            return new Promise((resolve, reject) => {
-                const key = `${currentUser.id}:${slot}`;
-                const request = db.transaction(LOCAL_BACKUP_STORE, 'readonly').objectStore(LOCAL_BACKUP_STORE).get(key);
-                request.onsuccess = () => resolve(request.result || null);
-                request.onerror = () => reject(request.error || new Error('Não foi possível ler o backup.'));
-            });
+            return AppLocalBackupStore.read(currentUser?.id, slot);
         }
 
         async function writeLocalBackup(record) {
-            const db = await openLocalBackupDatabase();
-            return new Promise((resolve, reject) => {
-                const request = db.transaction(LOCAL_BACKUP_STORE, 'readwrite').objectStore(LOCAL_BACKUP_STORE).put(record);
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error || new Error('Não foi possível gravar o backup.'));
-            });
+            return AppLocalBackupStore.write(record);
         }
 
         function collectLegacyPomodoroState(uid) {
@@ -161,13 +139,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
         }
 
         function backupFingerprint(core) {
-            const raw = JSON.stringify(core || {});
-            let hash = 2166136261;
-            for (let i = 0; i < raw.length; i++) {
-                hash ^= raw.charCodeAt(i);
-                hash = Math.imul(hash, 16777619);
-            }
-            return `${raw.length}:${(hash >>> 0).toString(16)}`;
+            return AppLocalBackupStore.fingerprint(core);
         }
 
         async function createLocalBackupSnapshot(reason = 'alteração automática', options = {}) {
@@ -209,17 +181,7 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
         }
 
         function countBackupStats(snapshot) {
-            const core = snapshot?.core || {};
-            const metadata = core.concursosMetadata || {};
-            const realContests = Object.keys(metadata).filter(name => name && name !== 'Concurso Geral');
-            const edital = Array.isArray(core.editalItems) ? core.editalItems : [];
-            let flashcards = 0;
-            let sessions = 0;
-            Object.values(metadata).forEach(contest => {
-                flashcards += Array.isArray(contest?.flashcards) ? contest.flashcards.length : 0;
-                sessions += Array.isArray(contest?.studySessions) ? contest.studySessions.length : 0;
-            });
-            return { concursos:realContests.length, topicos:edital.length, flashcards, sessions };
+            return AppLocalBackupStore.countStats(snapshot);
         }
 
         function renderBackupSlot(elementId, buttonId, snapshot) {
