@@ -29,14 +29,14 @@
 
     async function loadOfflineSyncFoundation() {
         if (!global.OfflineOutboxStore) {
-            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.33.0', 'offline-outbox-store');
+            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.33.1', 'offline-outbox-store');
         }
         if (!global.OfflineSyncShadow) {
-            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.33.0', 'offline-sync-shadow');
+            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.33.1', 'offline-sync-shadow');
         }
         global.OfflineSyncShadow?.install?.();
         if (!global.OfflineSyncAuthority) {
-            await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.33.0', 'offline-sync-authority');
+            await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.33.1', 'offline-sync-authority');
         }
         global.OfflineSyncAuthority?.install?.();
         return {
