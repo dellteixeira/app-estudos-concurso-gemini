@@ -3,7 +3,7 @@
 
   const LEGACY_DB_NAME = 'estudo-adaptativo-pdf-cache';
   const LEGACY_STORE = 'pdf_blobs';
-  const ASSET_REVISION = '10.29.3';
+  const ASSET_REVISION = '10.29.4';
   let storePromise = null;
 
   function asset(path) {

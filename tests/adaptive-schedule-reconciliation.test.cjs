@@ -7,7 +7,7 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const reconciliation = read('public/js/adaptive-schedule-reconciliation.js');
-const loader = read('public/js/pdf/pdf-library-ordering.js');
+const pwa = read('public/js/app-pwa.js');
 const sw = read('public/sw.js');
 
 test('módulo adaptativo possui sintaxe JavaScript válida', () => {
@@ -47,11 +47,12 @@ test('geradores de cronograma e reorganização passam pela reconciliação adap
   assert.match(reconciliation, /adaptiveScheduleAnchor/);
 });
 
-test('reconciliação é instalada somente após o carregamento do aplicativo', () => {
-  assert.match(reconciliation, /document\.readyState==='complete'/);
-  assert.match(reconciliation, /addEventListener\('load'/);
+test('reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca PDF', () => {
   assert.match(reconciliation, /typeof renderRetentionDiagnostics!==['"]function['"]/);
-  assert.match(loader, /adaptive-schedule-reconciliation\.js/);
+  assert.match(pwa, /loadAdaptiveScheduleReconciliation/);
+  assert.match(pwa, /adaptive-schedule-reconciliation\.js\?v=10\.29\.4/);
+  assert.match(pwa, /data-adaptive-schedule-reconciliation/);
+  assert.doesNotMatch(pwa, /pdf-library-ordering/);
 });
 
 test('reconciliação faz parte do app shell offline', () => {

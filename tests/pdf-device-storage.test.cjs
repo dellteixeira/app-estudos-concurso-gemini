@@ -53,24 +53,20 @@ test('biblioteca offline persiste explicitamente no OPFS ou IndexedDB moderno',(
   assert.match(manager,/O navegador não conseguiu reservar armazenamento local para este PDF/);
 });
 
-test('mobile mantém ações do PDF em duas colunas e texto completo em viewports amplas de celular',()=>{
-  assert.match(device,/@media \(max-width:900px\)/);
-  assert.match(device,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
-  assert.match(device,/white-space:normal!important/);
-  assert.match(device,/overflow-wrap:break-word!important/);
-  assert.match(device,/\.pdf-device-save-action[\s\S]*font-size:clamp\(\.68rem,2\.25vw,\.82rem\)!important/);
-
-  assert.match(mobileActions,/@media \(max-width: 900px\)/);
-  assert.match(mobileActions,/display: grid !important/);
-  assert.match(mobileActions,/grid-template-columns: repeat\(2, minmax\(0, 1fr\)\) !important/);
+test('ações dos cards respondem à largura do próprio card, não apenas à viewport',()=>{
+  assert.match(mobileActions,/container-type: inline-size/);
+  assert.match(mobileActions,/container-name: pdf-card/);
+  assert.match(mobileActions,/@container pdf-card \(max-width: 520px\)/);
+  assert.match(mobileActions,/grid-template-columns: minmax\(0,1\.25fr\) minmax\(0,1fr\) minmax\(0,1fr\)/);
+  assert.match(mobileActions,/grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(mobileActions,/min-height: 44px !important/);
   assert.match(mobileActions,/white-space: normal !important/);
-  assert.match(mobileActions,/\.pdf-device-save-action[\s\S]*font-size: clamp\(\.68rem, 2\.25vw, \.82rem\) !important/);
-  assert.match(mobileActions,/:last-child:nth-child\(odd\)[\s\S]*grid-column: 1 \/ -1 !important/);
+  assert.match(mobileActions,/overflow-wrap: anywhere !important/);
+  assert.match(mobileActions,/@supports not \(container-type: inline-size\)/);
 });
 
 test('adapter carrega CSS e módulos PDF com revisão explícita para impedir cache stale',()=>{
-  assert.match(adapter,/const ASSET_REVISION = '10\.29\.3'/);
+  assert.match(adapter,/const ASSET_REVISION = '10\.29\.4'/);
   assert.match(adapter,/asset\('\.\/css\/pdf-mobile-card-actions\.css'\)/);
   assert.match(adapter,/asset\('\.\/js\/pdf\/pdf-device-storage\.js'\)/);
   assert.match(adapter,/asset\('\.\/js\/pdf\/pdf-library-layout-fix\.js'\)/);

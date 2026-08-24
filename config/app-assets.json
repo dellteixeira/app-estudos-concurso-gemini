@@ -1,5 +1,5 @@
 {
-  "version": "10.29.3",
+  "version": "10.29.4",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -153,6 +153,7 @@
     "/js/study-domain.js",
     "/js/core/local-backup-store.js",
     "/js/app-core.js",
+    "/js/adaptive-schedule-reconciliation.js",
     "/js/app-ai.js",
     "/js/app-ui.js",
     "/js/app-pwa.js",
