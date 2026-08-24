@@ -85,13 +85,17 @@ async function matchCurrentCache(request, url = new URL(request.url)) {
 }
 
 self.addEventListener('install', event => {
+  // Não engolir erro aqui: se o núcleo não puder ser preparado, o navegador
+  // mantém o Service Worker anterior em vez de instalar uma versão incompleta.
   event.waitUntil(primeOfflineAssets({ requireCritical: true }));
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
+    // Só removemos caches anteriores depois que esta versão foi instalada.
     await deleteOldAppCaches();
     await self.clients.claim();
+    // Revalidação tolerante para preencher eventuais recursos opcionais.
     await primeOfflineAssets({ requireCritical: false }).catch(() => {});
   })());
 });
@@ -117,7 +121,12 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+
+  // Dados privados e autenticação do Supabase jamais passam pelo cache do SW.
   if (url.hostname === 'supabase.co' || url.hostname.endsWith('.supabase.co')) return;
+
+  // Não interferir em recursos de terceiros. Dependências necessárias ao app são
+  // expostas pelo próprio domínio em /vendor/* e podem ser armazenadas com segurança.
   if (url.origin !== self.location.origin) return;
 
   const isNavigation = request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html');
@@ -144,6 +153,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Mantido de forma explícita porque este bloco também funciona como contrato
+  // auditável dos arquivos centrais que usam estratégia network-first.
   const isCoreAsset = url.origin === self.location.origin && [
     '/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json', '/vendor/pdf.min.js', '/vendor/pdf_viewer.min.css', '/vendor/pdf.worker.min.js',
     '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/responsive-system.css', '/css/canonical-ui.css', '/css/pdf-library.css', '/css/pdf-reader.css', '/css/pdf-mobile-card-actions.css',
@@ -156,6 +167,8 @@ self.addEventListener('fetch', event => {
   ].some(path => url.pathname.endsWith(path));
 
   if (isCoreAsset) {
+    // Network-first para o núcleo: online recebe sempre a versão publicada;
+    // offline utiliza a última cópia íntegra preparada para esta versão.
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache: 'no-store' });
@@ -179,6 +192,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Demais recursos do mesmo domínio: cache-first com atualização em segundo plano.
+  // Se nem rede nem cache estiverem disponíveis, sempre devolvemos uma Response válida.
   event.respondWith((async () => {
     const cached = await matchCurrentCache(request, url);
     if (cached) {
