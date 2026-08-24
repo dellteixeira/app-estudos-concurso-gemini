@@ -2,6 +2,7 @@
 'use strict';
 
 const PAGE_W=595, PAGE_H=842, MX=44, TOP=795, BOTTOM=42;
+// REPORT_MANUAL_VISUAL_THEME — identidade editorial do Manual Estudo Adaptativo Inteligente
 const FALLBACK_COLORS=['#3b82f6','#22c55e','#c084fc','#f97316','#ec4899','#8b5cf6','#06b6d4','#eab308'];
 const $=id=>document.getElementById(id);
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
@@ -59,23 +60,68 @@ function collectReportData(){
   return {contestName:String(currentConcurso||'Concurso'),generatedAt:new Date(),subjects,diag,summary:{progress,totalMinutes,totalQuestions,totalCorrect,accuracy:totalQuestions?totalCorrect/totalQuestions*100:null,retention:diag.avg,risk:(diag.risk||[]).length,overdue:(diag.overdue||[]).length,mastered:(diag.mastered||[]).length,totalTopics}};
 }
 
-function page(){return {cmd:[],cursor:TOP};}
-function text(p,x,y,value,size=10,bold=false,color='#17202b'){p.cmd.push(`BT /${bold?'F2':'F1'} ${size.toFixed(2)} Tf ${rgb(color)} rg ${x.toFixed(1)} ${y.toFixed(1)} Td (${pdfText(value)}) Tj ET`);}
+function page(){
+  const p={cmd:[],cursor:TOP};
+  rect(p,0,0,PAGE_W,PAGE_H,'#010612');
+  rect(p,18,18,PAGE_W-36,PAGE_H-36,'#030b1b');
+  strokeRect(p,18,18,PAGE_W-36,PAGE_H-36,'#0b2c57',.65);
+  line(p,28,814,158,814,'#0b4e97',.65);
+  line(p,PAGE_W-154,814,PAGE_W-28,814,'#0b4e97',.65);
+  return p;
+}
+function text(p,x,y,value,size=10,bold=false,color='#dce8f8'){p.cmd.push(`BT /${bold?'F2':'F1'} ${size.toFixed(2)} Tf ${rgb(color)} rg ${x.toFixed(1)} ${y.toFixed(1)} Td (${pdfText(value)}) Tj ET`);}
 function rect(p,x,y,w,h,color){p.cmd.push(`${rgb(color)} rg ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f`);}
 function strokeRect(p,x,y,w,h,color='#dbe4ea',width=.7){p.cmd.push(`${rgb(color)} RG ${width} w ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S`);}
 function line(p,x1,y1,x2,y2,color='#dbe4ea',width=.7){p.cmd.push(`${rgb(color)} RG ${width} w ${x1.toFixed(1)} ${y1.toFixed(1)} m ${x2.toFixed(1)} ${y2.toFixed(1)} l S`);}
-function addWrapped(p,value,x,size=10,bold=false,color='#17202b',width=PAGE_W-MX*2,leading=null){const lines=wrap(value,size,width);const step=leading||Math.max(12,size*1.35);for(const ln of lines){if(p.cursor-step<BOTTOM) return false;text(p,x,p.cursor,ln,size,bold,color);p.cursor-=step;}return true;}
-function addFooter(p,pageNo,total,contest){line(p,MX,31,PAGE_W-MX,31,'#dce5eb',.5);text(p,MX,19,contest,7.3,false,'#7b8995');text(p,PAGE_W-MX-70,19,`Página ${pageNo}/${total}`,7.3,false,'#7b8995');}
-function addHeader(p,title,subtitle=''){rect(p,0,770,PAGE_W,72,'#0b2233');rect(p,0,770,8,72,'#20c7b7');text(p,MX,807,title,18,true,'#ffffff');if(subtitle)text(p,MX,787,subtitle,8.7,false,'#b9dce6');text(p,PAGE_W-MX-70,807,'DESEMPENHO',7.2,true,'#44d9ca');p.cursor=748;}
+function addWrapped(p,value,x,size=10,bold=false,color='#dce8f8',width=PAGE_W-MX*2,leading=null){const lines=wrap(value,size,width);const step=leading||Math.max(12,size*1.35);for(const ln of lines){if(p.cursor-step<BOTTOM) return false;text(p,x,p.cursor,ln,size,bold,color);p.cursor-=step;}return true;}
+function addFooter(p,pageNo,total,contest){
+  line(p,34,38,PAGE_W-34,38,'#104c8b',.55);
+  text(p,36,22,'ESTUDO ADAPTATIVO INTELIGENTE',6.4,true,'#218cff');
+  text(p,214,22,String(contest||'').slice(0,54),6.2,false,'#7187a4');
+  text(p,PAGE_W-63,20,String(pageNo).padStart(2,'0'),12,true,'#218cff');
+  text(p,PAGE_W-39,21,`/${total}`,6.2,false,'#7187a4');
+}
+function addHeader(p,title,subtitle=''){
+  text(p,44,805,'DESEMPENHO',7.2,true,'#218cff');
+  line(p,118,808,PAGE_W-44,808,'#0b4e97',.7);
+  text(p,44,772,title,23,true,'#f5f8ff');
+  if(subtitle)text(p,44,748,subtitle,9.2,false,'#c4cedd');
+  line(p,44,731,252,731,'#1b78d0',.8);
+  p.cursor=700;
+}
 
 function summaryPage(data){
   const p=page();addHeader(p,'Relatório de Desempenho',data.contestName);
-  text(p,MX,p.cursor,'Resumo executivo',14,true,'#0d2b3d');p.cursor-=25;
-  const cards=[['Progresso',fmtPct(data.summary.progress),'#3b82f6'],['Horas',fmtHours(data.summary.totalMinutes),'#06b6d4'],['Questões',String(round(data.summary.totalQuestions)),'#8b5cf6'],['Acertos',String(round(data.summary.totalCorrect)),'#22c55e'],['Acurácia',data.summary.accuracy==null?'—':fmtPct(data.summary.accuracy),'#14b8a6'],['Retenção',data.summary.retention==null?'—':fmtPct(data.summary.retention),'#0ea5e9'],['Em risco',String(data.summary.risk),'#f97316'],['Vencidas',String(data.summary.overdue),'#ef4444'],['Dominados',String(data.summary.mastered),'#22c55e']];
-  const cw=155,ch=54,g=10;cards.forEach((c,i)=>{const col=i%3,row=Math.floor(i/3);const x=MX+col*(cw+g),y=p.cursor-row*(ch+g)-ch;rect(p,x,y,cw,ch,'#f6f9fb');strokeRect(p,x,y,cw,ch,'#e1e9ee',.55);rect(p,x,y+ch-4,cw,4,c[2]);text(p,x+11,y+34,c[0],8,false,'#647582');text(p,x+11,y+12,c[1],16,true,'#0d2b3d');});p.cursor-=3*(ch+g)+8;
-  text(p,MX,p.cursor,'Como ler este relatório',12,true,'#0d2b3d');p.cursor-=18;
-  addWrapped(p,'O percentual por matéria utiliza o mesmo estado de aquisição de conteúdo do aplicativo. Retenção, assuntos em risco, revisões vencidas e assuntos dominados são calculados a partir do mesmo diagnóstico exibido no painel Retenção e Diagnóstico.',MX,9.5,false,'#40515d');
-  p.cursor-=14;text(p,MX,p.cursor,`Gerado em ${data.generatedAt.toLocaleString('pt-BR')}`,8,false,'#7b8995');
+  text(p,44,p.cursor,'Resumo executivo',14,true,'#f5f8ff');
+  line(p,177,p.cursor+4,PAGE_W-44,p.cursor+4,'#123765',.55);
+  p.cursor-=24;
+  const cards=[
+    ['Progresso',fmtPct(data.summary.progress)],['Horas',fmtHours(data.summary.totalMinutes)],['Questões',String(round(data.summary.totalQuestions))],['Acertos',String(round(data.summary.totalCorrect))],
+    ['Acurácia',data.summary.accuracy==null?'—':fmtPct(data.summary.accuracy)],['Retenção',data.summary.retention==null?'—':fmtPct(data.summary.retention)],['Em risco',String(data.summary.risk)],['Vencidos',String(data.summary.overdue)],['Dominados',String(data.summary.mastered)]
+  ];
+  const drawCard=(x,y,w,label,value,index)=>{
+    rect(p,x,y,w,76,'#061226');strokeRect(p,x,y,w,76,index<4?'#1e78d7':'#145b9e',.8);
+    rect(p,x,y,w,2,index<4?'#168fff':'#0d6fc5');
+    text(p,x+11,y+50,label,7.8,false,'#c3cfdf');
+    text(p,x+11,y+20,value,17,true,index===6||index===7?'#ffb14a':'#3fc6ff');
+    rect(p,x+w-13,y+10,4,4,'#218cff');
+  };
+  const topW=119,topGap=8;cards.slice(0,4).forEach((c,i)=>drawCard(44+i*(topW+topGap),p.cursor-76,topW,c[0],c[1],i));
+  p.cursor-=90;
+  const botW=94,botGap=6.75;cards.slice(4).forEach((c,i)=>drawCard(44+i*(botW+botGap),p.cursor-76,botW,c[0],c[1],i+4));
+  p.cursor-=103;
+  text(p,44,p.cursor,'Como ler este relatório',13,true,'#f5f8ff');
+  line(p,205,p.cursor+4,PAGE_W-44,p.cursor+4,'#123765',.55);p.cursor-=22;
+  rect(p,44,p.cursor-78,PAGE_W-88,78,'#061226');strokeRect(p,44,p.cursor-78,PAGE_W-88,78,'#174d87',.7);
+  p.cursor-=18;
+  addWrapped(p,'O percentual por matéria utiliza o mesmo estado de aquisição de conteúdo do aplicativo. Retenção, assuntos em risco, revisões vencidas e assuntos dominados são calculados a partir do mesmo diagnóstico exibido no painel Retenção e Diagnóstico.',60,9.1,false,'#c0ccdc',PAGE_W-120,12);
+  p.cursor-=18;
+  rect(p,44,p.cursor-86,PAGE_W-88,86,'#07152c');strokeRect(p,44,p.cursor-86,PAGE_W-88,86,'#218cff',1.05);
+  text(p,62,p.cursor-34,'“',31,true,'#1f80ff');
+  text(p,104,p.cursor-27,'Quando o tempo é curto, a organização transforma esforço',11.4,true,'#f5f8ff');
+  text(p,104,p.cursor-48,'em avanço consistente.',12.2,true,'#218cff');
+  p.cursor-=112;
+  text(p,44,p.cursor,`Gerado em ${data.generatedAt.toLocaleString('pt-BR')}`,7.4,false,'#7187a4');
   return p;
 }
 
@@ -85,31 +131,31 @@ function chartPages(data){
   addHeader(p,'Progresso por matéria','Todas as matérias em uma única visão');
   const count=Math.max(1,subjects.length);
   const left=66,right=PAGE_W-38,base=486,h=220;
-  rect(p,left-12,base-24,(right-left)+24,h+50,'#f8fafb');
-  strokeRect(p,left-12,base-24,(right-left)+24,h+50,'#e2e9ed',.55);
-  [0,25,50,75,100].forEach(v=>{const y=base+h*v/100;line(p,left,y,right,y,'#d9e3e9',.5);text(p,43,y-3,`${v}%`,7.2,false,'#71808c');});
+  rect(p,left-12,base-24,(right-left)+24,h+50,'#061226');
+  strokeRect(p,left-12,base-24,(right-left)+24,h+50,'#174d87',.55);
+  [0,25,50,75,100].forEach(v=>{const y=base+h*v/100;line(p,left,y,right,y,'#123765',.5);text(p,43,y-3,`${v}%`,7.2,false,'#8fa4bd');});
   const slot=(right-left)/count;
   const bw=Math.max(9,Math.min(31,slot*.56));
   const valueSize=count>16?5.7:count>12?6.2:count>8?7:8;
   const numberSize=count>16?5.7:count>12?6.3:7.5;
-  subjects.forEach((m,i)=>{const raw=h*clamp(m.progress,0,100)/100;const bh=m.progress>0?Math.max(3,raw):2;const x=left+i*slot+(slot-bw)/2;rect(p,x,base,bw,h,'#e9eff3');rect(p,x,base,bw,bh,m.color);rect(p,x,base+Math.max(0,bh-3),bw,3,m.color);const pct=fmtPct(m.progress);text(p,x+(bw-estimate(pct,valueSize))/2,base+bh+7,pct,valueSize,true,m.color);const idx=String(i+1);text(p,x+(bw-estimate(idx,numberSize))/2,base-15,idx,numberSize,true,'#344550');});
-  p.cursor=447;text(p,MX,p.cursor,'Legenda das matérias',11,true,'#0d2b3d');p.cursor-=17;
+  subjects.forEach((m,i)=>{const raw=h*clamp(m.progress,0,100)/100;const bh=m.progress>0?Math.max(3,raw):2;const x=left+i*slot+(slot-bw)/2;rect(p,x,base,bw,h,'#0a1c34');rect(p,x,base,bw,bh,m.color);rect(p,x,base+Math.max(0,bh-3),bw,3,m.color);const pct=fmtPct(m.progress);text(p,x+(bw-estimate(pct,valueSize))/2,base+bh+7,pct,valueSize,true,m.color);const idx=String(i+1);text(p,x+(bw-estimate(idx,numberSize))/2,base-15,idx,numberSize,true,'#b8c6d8');});
+  p.cursor=447;text(p,MX,p.cursor,'Legenda das matérias',11,true,'#f4f8ff');p.cursor-=17;
   const legendSize=subjects.length>16?6.2:subjects.length>12?6.7:subjects.length>8?7.2:8.1;
   const leading=legendSize+2.4;
   const available=Math.max(150,PAGE_W-MX*2-30);
   subjects.forEach((m,i)=>{const label=`${i+1}. ${m.name} — ${fmtPct(m.progress)} (${m.studiedTopics}/${m.totalTopics} assuntos concluídos)`;let lines=wrap(label,legendSize,available);if(lines.length>2)lines=[lines[0],lines.slice(1).join(' ')];const rowH=Math.max(14,lines.length*leading+5);if(p.cursor-rowH<BOTTOM+8){const compact=`${i+1}. ${m.name} — ${fmtPct(m.progress)}`;lines=wrap(compact,Math.max(5.8,legendSize-.5),available);}
-    rect(p,MX,p.cursor-rowH+5,PAGE_W-MX*2,rowH,(i%2===0)?'#f7fafb':'#ffffff');rect(p,MX+7,p.cursor-1,9,9,m.color);strokeRect(p,MX+7,p.cursor-1,9,9,'#ffffff',.3);lines.forEach(ln=>{text(p,MX+22,p.cursor,ln,legendSize,false,'#263642');p.cursor-=leading;});p.cursor-=4;});
+    rect(p,MX,p.cursor-rowH+5,PAGE_W-MX*2,rowH,(i%2===0)?'#07152a':'#091a31');rect(p,MX+7,p.cursor-1,9,9,m.color);strokeRect(p,MX+7,p.cursor-1,9,9,'#ffffff',.3);lines.forEach(ln=>{text(p,MX+22,p.cursor,ln,legendSize,false,'#c7d3e2');p.cursor-=leading;});p.cursor-=4;});
   return [p];
 }
 
-function metricRow(p,label,value,x,y,w=150){rect(p,x,y-28,w,39,'#f7fafb');strokeRect(p,x,y-28,w,39,'#e2e9ed',.5);rect(p,x,y-28,3,39,'#20b8ae');text(p,x+10,y-2,label,7.5,false,'#6d7c87');text(p,x+10,y-18,value,12,true,'#0d2b3d');}
-function subjectPages(data){const pages=[];for(const m of data.subjects){let p=page();addHeader(p,m.name,`${m.studiedTopics}/${m.totalTopics} assuntos concluídos`);rect(p,MX,p.cursor-11,PAGE_W-MX*2,34,'#f7fafb');strokeRect(p,MX,p.cursor-11,PAGE_W-MX*2,34,'#e2e9ed',.5);rect(p,MX,p.cursor-11,6,34,m.color);text(p,MX+17,p.cursor+3,`${fmtPct(m.progress)} estudado`,11,true,m.color);const trackX=MX+155,trackY=p.cursor+1,trackW=PAGE_W-MX-trackX;rect(p,trackX,trackY,trackW,8,'#e5edf1');rect(p,trackX,trackY,trackW*clamp(m.progress,0,100)/100,8,m.color);p.cursor-=42;
+function metricRow(p,label,value,x,y,w=150){rect(p,x,y-28,w,39,'#07152a');strokeRect(p,x,y-28,w,39,'#174d87',.5);rect(p,x,y-28,3,39,'#20b8ae');text(p,x+10,y-2,label,7.5,false,'#9fb1c8');text(p,x+10,y-18,value,12,true,'#f4f8ff');}
+function subjectPages(data){const pages=[];for(const m of data.subjects){let p=page();addHeader(p,m.name,`${m.studiedTopics}/${m.totalTopics} assuntos concluídos`);rect(p,MX,p.cursor-11,PAGE_W-MX*2,34,'#07152a');strokeRect(p,MX,p.cursor-11,PAGE_W-MX*2,34,'#174d87',.5);rect(p,MX,p.cursor-11,6,34,m.color);text(p,MX+17,p.cursor+3,`${fmtPct(m.progress)} estudado`,11,true,m.color);const trackX=MX+155,trackY=p.cursor+1,trackW=PAGE_W-MX-trackX;rect(p,trackX,trackY,trackW,8,'#e5edf1');rect(p,trackX,trackY,trackW*clamp(m.progress,0,100)/100,8,m.color);p.cursor-=42;
     const metrics=[['Horas totais',fmtHours(m.minutes)],['Questões',String(round(m.questions))],['Acertos',String(round(m.correct))],['Acurácia',m.accuracy==null?'—':fmtPct(m.accuracy)],['Revisões',String(m.revisions)],['Retenção média',m.retention==null?'—':fmtPct(m.retention)],['Assuntos em risco',String(m.riskCount)],['Revisões vencidas',String(m.overdueCount)],['Assuntos dominados',String(m.masteredCount)]];
     metrics.forEach((it,i)=>{const col=i%3,row=Math.floor(i/3);metricRow(p,it[0],it[1],MX+col*165,p.cursor-row*48,145);});p.cursor-=3*48+8;
-    text(p,MX,p.cursor,'Assuntos mais estudados',11,true,'#0d2b3d');p.cursor-=17;if(!m.topTopics.length){text(p,MX,p.cursor,'Nenhuma sessão registrada nesta matéria.',8.5,false,'#75838e');p.cursor-=18;}else m.topTopics.forEach((t,i)=>{text(p,MX,p.cursor,`${i+1}. ${t.name}`,8.5,i===0,'#263642');text(p,PAGE_W-MX-70,p.cursor,fmtHours(t.minutes),8.5,true,m.color);p.cursor-=13;});
-    p.cursor-=7;text(p,MX,p.cursor,'Pontos críticos da matéria',11,true,'#0d2b3d');p.cursor-=17;if(!m.critical.length){text(p,MX,p.cursor,'Nenhum ponto crítico identificado.',8.5,false,'#75838e');}else m.critical.forEach(r=>{const s=r.state||{};const status=r.overdue?`vencida${r.overdueDays?` há ${r.overdueDays}d`:''}`:'revisão no prazo';const acc=Number.isFinite(Number(r.questionAccuracy))?`${round(r.questionAccuracy)}%`:'—';const label=`${s.assunto||'Assunto'} · retenção ${round(r.retention)}% · questões ${acc} · ${status}`;const lines=wrap(label,8.2,PAGE_W-MX*2);if(p.cursor-lines.length*11<BOTTOM+15){pages.push(p);p=page();addHeader(p,`${m.name} — continuação`,'Pontos críticos');}lines.forEach(ln=>{text(p,MX,p.cursor,ln,8.2,false,'#344550');p.cursor-=11;});p.cursor-=3;});pages.push(p);}return pages;}
+    text(p,MX,p.cursor,'Assuntos mais estudados',11,true,'#f4f8ff');p.cursor-=17;if(!m.topTopics.length){text(p,MX,p.cursor,'Nenhuma sessão registrada nesta matéria.',8.5,false,'#8fa4bd');p.cursor-=18;}else m.topTopics.forEach((t,i)=>{text(p,MX,p.cursor,`${i+1}. ${t.name}`,8.5,i===0,'#c7d3e2');text(p,PAGE_W-MX-70,p.cursor,fmtHours(t.minutes),8.5,true,m.color);p.cursor-=13;});
+    p.cursor-=7;text(p,MX,p.cursor,'Pontos críticos da matéria',11,true,'#f4f8ff');p.cursor-=17;if(!m.critical.length){text(p,MX,p.cursor,'Nenhum ponto crítico identificado.',8.5,false,'#8fa4bd');}else m.critical.forEach(r=>{const s=r.state||{};const status=r.overdue?`vencida${r.overdueDays?` há ${r.overdueDays}d`:''}`:'revisão no prazo';const acc=Number.isFinite(Number(r.questionAccuracy))?`${round(r.questionAccuracy)}%`:'—';const label=`${s.assunto||'Assunto'} · retenção ${round(r.retention)}% · questões ${acc} · ${status}`;const lines=wrap(label,8.2,PAGE_W-MX*2);if(p.cursor-lines.length*11<BOTTOM+15){pages.push(p);p=page();addHeader(p,`${m.name} — continuação`,'Pontos críticos');}lines.forEach(ln=>{text(p,MX,p.cursor,ln,8.2,false,'#b8c6d8');p.cursor-=11;});p.cursor-=3;});pages.push(p);}return pages;}
 
-function diagnosticPages(data){const pages=[];const groups=[['Assuntos em risco',data.diag.risk||[]],['Revisões vencidas',data.diag.overdue||[]],['Assuntos dominados',data.diag.mastered||[]]];for(const [title,rows] of groups){let p=page();addHeader(p,`Retenção e Diagnóstico — ${title}`,`${rows.length} registro(s)`);if(!rows.length){text(p,MX,p.cursor,'Nenhum conteúdo nesta categoria.',9,false,'#71808c');pages.push(p);continue;}rows.forEach((r,i)=>{const s=r.state||{};const acc=Number.isFinite(Number(r.questionAccuracy))?`${round(r.questionAccuracy)}%`:'—';const next=r.nextAt instanceof Date&&Number.isFinite(r.nextAt.getTime())?r.nextAt.toLocaleDateString('pt-BR'):'—';const status=r.overdue?`vencida${r.overdueDays?` há ${r.overdueDays}d`:''}`:`próxima ${next}`;const label=`${i+1}. ${s.materia||'Matéria'} — ${s.assunto||'Assunto'} | retenção ${round(r.retention)}% | questões ${acc} | ${status}`;const lines=wrap(label,8.2,PAGE_W-MX*2);if(p.cursor-lines.length*11<BOTTOM+20){pages.push(p);p=page();addHeader(p,`Retenção e Diagnóstico — ${title}`,'continuação');}lines.forEach(ln=>{text(p,MX,p.cursor,ln,8.2,false,'#30404c');p.cursor-=11;});p.cursor-=4;});pages.push(p);}return pages;}
+function diagnosticPages(data){const pages=[];const groups=[['Assuntos em risco',data.diag.risk||[]],['Revisões vencidas',data.diag.overdue||[]],['Assuntos dominados',data.diag.mastered||[]]];for(const [title,rows] of groups){let p=page();addHeader(p,`Retenção e Diagnóstico — ${title}`,`${rows.length} registro(s)`);if(!rows.length){text(p,MX,p.cursor,'Nenhum conteúdo nesta categoria.',9,false,'#8fa4bd');pages.push(p);continue;}rows.forEach((r,i)=>{const s=r.state||{};const acc=Number.isFinite(Number(r.questionAccuracy))?`${round(r.questionAccuracy)}%`:'—';const next=r.nextAt instanceof Date&&Number.isFinite(r.nextAt.getTime())?r.nextAt.toLocaleDateString('pt-BR'):'—';const status=r.overdue?`vencida${r.overdueDays?` há ${r.overdueDays}d`:''}`:`próxima ${next}`;const label=`${i+1}. ${s.materia||'Matéria'} — ${s.assunto||'Assunto'} | retenção ${round(r.retention)}% | questões ${acc} | ${status}`;const lines=wrap(label,8.2,PAGE_W-MX*2);if(p.cursor-lines.length*11<BOTTOM+20){pages.push(p);p=page();addHeader(p,`Retenção e Diagnóstico — ${title}`,'continuação');}lines.forEach(ln=>{text(p,MX,p.cursor,ln,8.2,false,'#c2cede');p.cursor-=11;});p.cursor-=4;});pages.push(p);}return pages;}
 
 function buildPdf(data){const pages=[summaryPage(data),...chartPages(data),...subjectPages(data),...diagnosticPages(data)];pages.forEach((p,i)=>addFooter(p,i+1,pages.length,data.contestName));const objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';const pageIds=[],contentIds=[];for(let i=0;i<pages.length;i++){pageIds.push(5+i*2);contentIds.push(6+i*2);}objects[2]=`<< /Type /Pages /Kids [${pageIds.map(id=>`${id} 0 R`).join(' ')}] /Count ${pages.length} >>`;objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';pages.forEach((p,i)=>{const stream=latin1(p.cmd.join('\n'));objects[pageIds[i]]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentIds[i]} 0 R >>`;objects[contentIds[i]]={stream};});const max=Math.max(...Object.keys(objects).map(Number));const chunks=[];let offset=0;const add=s=>{const b=latin1(s);chunks.push(b);offset+=b.length;};add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');const offsets=new Array(max+1).fill(0);for(let id=1;id<=max;id++){offsets[id]=offset;add(`${id} 0 obj\n`);const o=objects[id];if(o?.stream){add(`<< /Length ${o.stream.length} >>\nstream\n`);chunks.push(o.stream);offset+=o.stream.length;add('\nendstream\n');}else add(String(o||'<<>>')+'\n');add('endobj\n');}const xref=offset;add(`xref\n0 ${max+1}\n0000000000 65535 f \n`);for(let id=1;id<=max;id++)add(`${String(offsets[id]).padStart(10,'0')} 00000 n \n`);add(`trailer\n<< /Size ${max+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);const total=chunks.reduce((s,c)=>s+c.length,0),out=new Uint8Array(total);let pos=0;chunks.forEach(c=>{out.set(c,pos);pos+=c.length;});return new Blob([out],{type:'application/pdf'});}
 
