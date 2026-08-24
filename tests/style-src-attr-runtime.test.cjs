@@ -41,7 +41,8 @@ test('CSP explicitly blocks style attributes',()=>{
   assert.match(csp,/(?:^|;\s*)style-src-attr\s+'none'(?:;|$)/);
 });
 
-
+// CSP3 permits direct CSS declaration-property updates; the forbidden paths above are
+// style attributes, cssText and setAttribute('style', ...). Geometry therefore stays exact.
 test('Reader geometry and drag ghost keep direct style-property updates',()=>{
   const reader=fs.readFileSync('public/js/pdf/pdf-reader.js','utf8');
   const core=fs.readFileSync('public/js/app-core.js','utf8');
