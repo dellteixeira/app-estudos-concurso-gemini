@@ -20,6 +20,17 @@ jobs:
           ref: fix/runtime-geometry-csp
           fetch-depth: 0
 
+      - name: Align patch helper with current audit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/patch-style-src-attr-hardening.py')
+          s=p.read_text(encoding='utf-8')
+          start=s.index("# Structural CSP audit now requires the explicit attr directive.")
+          s=s[:start]+'''# Structural CSP audit now requires the explicit attr directive.\naudit=read('scripts/audit-inline-csp.mjs')\nneedle=\"else ok('handlers legados isolados somente em script-src-attr');\"\nif needle not in audit:\n    raise SystemExit('CSP audit insertion point missing')\naudit=audit.replace(needle, needle+\"\\nconst styleAttr = csp.match(/(?:^|;\\\\s*)style-src-attr\\\\s+([^;]+)/)?.[1] || '';\\nif (!styleAttr.includes(\\\"'none'\\\")) fail(\\\"style-src-attr deve bloquear atributos style com 'none'\\\");\\nelse ok('style-src-attr bloqueado com none');\")\nwrite('scripts/audit-inline-csp.mjs',audit)\n\nprint('style-src-attr hardening patch applied')\n'''
+          p.write_text(s,encoding='utf-8')
+          PY
+
       - name: Apply deterministic patch
         run: python3 scripts/patch-style-src-attr-hardening.py
 
