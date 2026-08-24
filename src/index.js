@@ -111,6 +111,7 @@ async function serveVendorAsset(request, route) {
   });
 }
 
+
 const prioritySchema = {
   type: "object",
   properties: {
@@ -200,7 +201,14 @@ function extractFirstJsonObject(text) {
 
 function parseAIResponse(result) {
   if (!result) return null;
-  const candidates = [result?.response, result?.result?.response, result?.response?.response, result?.output, result?.data, result];
+  const candidates = [
+    result?.response,
+    result?.result?.response,
+    result?.response?.response,
+    result?.output,
+    result?.data,
+    result
+  ];
   for (const candidate of candidates) {
     if (!candidate) continue;
     if (typeof candidate === "object" && !Array.isArray(candidate)) {
@@ -219,7 +227,10 @@ async function authenticateSupabaseUser(request, env) {
   if (!authorization.startsWith("Bearer ")) return null;
 
   const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
-    headers: { authorization, apikey: env.SUPABASE_ANON_KEY }
+    headers: {
+      authorization,
+      apikey: env.SUPABASE_ANON_KEY
+    }
   });
 
   if (!response.ok) return null;
@@ -230,10 +241,12 @@ function sanitizeLockedMaterias(input) {
   const items = Array.isArray(input) ? input : [];
   const clean = [];
   const seen = new Set();
+
   let topicCount = 0;
   for (const item of items.slice(0, MAX_MATERIAS)) {
     const materia = cleanText(item?.materia, MAX_MATERIA_CHARS);
     if (!materia) continue;
+
     const assuntos = [];
     const topicSeen = new Set();
     for (const value of (Array.isArray(item?.assuntos) ? item.assuntos : [])) {
@@ -246,9 +259,11 @@ function sanitizeLockedMaterias(input) {
       topicCount++;
     }
     if (!assuntos.length) continue;
+
     const key = fold(materia);
     if (seen.has(key)) continue;
     seen.add(key);
+
     clean.push({
       materia,
       prioridade: Math.min(4, Math.max(1, Number.parseInt(item?.prioridade, 10) || 2)),
@@ -269,11 +284,14 @@ function mergePriorityOnly(lockedMaterias, aiResult) {
       peso: Number.isFinite(Number(item?.peso)) && Number(item?.peso) > 0 ? Number(item.peso) : null
     });
   }
+
   return lockedMaterias.map(item => {
     const score = scores.get(fold(item.materia));
     return {
       materia: item.materia,
+      // A hierarquia e os assuntos jamais vêm da IA.
       prioridade: score?.prioridade ?? item.prioridade,
+      // Peso detectado do quadro de provas no frontend tem precedência.
       peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),
       assuntos: item.assuntos
     };
@@ -282,31 +300,43 @@ function mergePriorityOnly(lockedMaterias, aiResult) {
 
 async function analyzeEdital(request, env) {
   const contentType = request.headers.get("content-type") || "";
-  if (!contentType.toLowerCase().includes("application/json")) return json({ error: "Content-Type deve ser application/json." }, 415);
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return json({ error: "Content-Type deve ser application/json." }, 415);
+  }
   const declaredLength = Number(request.headers.get("content-length") || 0);
-  if (declaredLength > MAX_REQUEST_BYTES) return json({ error: "Requisição excede o limite de segurança." }, 413);
+  if (declaredLength > MAX_REQUEST_BYTES) {
+    return json({ error: "Requisição excede o limite de segurança." }, 413);
+  }
 
   const user = await authenticateSupabaseUser(request, env);
   if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
 
   if (env.AI_RATE_LIMITER?.limit) {
     const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:analisar-edital` });
-    if (!success) return json({ error: "Muitas análises em sequência. Aguarde um minuto e tente novamente." }, 429, { "retry-after": "60" });
+    if (!success) {
+      return json({ error: "Muitas análises em sequência. Aguarde um minuto e tente novamente." }, 429, { "retry-after": "60" });
+    }
   }
 
   let body;
   try {
     const rawBody = await request.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) return json({ error: "Requisição excede o limite de segurança." }, 413);
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+      return json({ error: "Requisição excede o limite de segurança." }, 413);
+    }
     body = JSON.parse(rawBody);
   } catch {
     return json({ error: "Corpo JSON inválido." }, 400);
   }
 
   const rawLockedMaterias = Array.isArray(body?.lockedMaterias) ? body.lockedMaterias : [];
-  if (rawLockedMaterias.length > MAX_MATERIAS) return json({ error: "Quantidade de matérias excede o limite de segurança." }, 413);
+  if (rawLockedMaterias.length > MAX_MATERIAS) {
+    return json({ error: "Quantidade de matérias excede o limite de segurança." }, 413);
+  }
   const rawTopicCount = rawLockedMaterias.reduce((sum, item) => sum + (Array.isArray(item?.assuntos) ? item.assuntos.length : 0), 0);
-  if (rawTopicCount > MAX_TOPICS_TOTAL) return json({ error: "Quantidade de tópicos excede o limite de segurança." }, 413);
+  if (rawTopicCount > MAX_TOPICS_TOTAL) {
+    return json({ error: "Quantidade de tópicos excede o limite de segurança." }, 413);
+  }
 
   const concurso = cleanText(body?.concurso, 200);
   const banca = cleanText(body?.banca, 120);
@@ -314,11 +344,19 @@ async function analyzeEdital(request, env) {
   const cargoLabel = cleanText(body?.cargo?.label || body?.cargo, 240);
   const rawText = cleanText(body?.text, MAX_TEXT_CHARS + 1);
   const lockedMaterias = sanitizeLockedMaterias(rawLockedMaterias);
-  if (!lockedMaterias.length) return json({ error: "O frontend não enviou matérias/assuntos determinísticos válidos para o cargo selecionado." }, 422);
-  if (rawText.length > MAX_TEXT_CHARS) return json({ error: "Recorte do edital excedeu o limite de segurança." }, 413);
 
+  if (!lockedMaterias.length) {
+    return json({ error: "O frontend não enviou matérias/assuntos determinísticos válidos para o cargo selecionado." }, 422);
+  }
+
+  if (rawText.length > MAX_TEXT_CHARS) {
+    return json({ error: "Recorte do edital excedeu o limite de segurança." }, 413);
+  }
+
+  // Resultado-base seguro: mesmo que a IA falhe, matéria/assunto permanecem corretos.
   let finalMaterias = lockedMaterias;
   let aiUsed = false;
+
   const systemPrompt = `
 Você auxilia na PRIORIZAÇÃO de um edital já extraído deterministicamente.
 
@@ -335,7 +373,13 @@ REGRAS ABSOLUTAS:
 10. Não use histórico da banca; ele não está disponível nesta fase.
 11. Retorne somente JSON no schema solicitado.
 `;
-  const lockedNames = lockedMaterias.map(m => ({ materia: m.materia, peso_detectado: m.peso, prioridade_inicial: m.prioridade }));
+
+  const lockedNames = lockedMaterias.map(m => ({
+    materia: m.materia,
+    peso_detectado: m.peso,
+    prioridade_inicial: m.prioridade
+  }));
+
   const userPrompt = `
 Concurso: ${concurso || "não informado"}
 Cargo/Área/Especialidade: ${cargoLabel || "não informado"}
@@ -348,13 +392,21 @@ ${JSON.stringify(lockedNames)}
 RECORTE DO EDITAL DO CARGO:
 ${rawText.slice(0, MAX_TEXT_CHARS)}
 `;
+
   try {
     const result = await env.AI.run(MODEL, {
-      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
-      response_format: { type: "json_schema", json_schema: prioritySchema },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: prioritySchema
+      },
       temperature: 0,
       max_tokens: 3000
     });
+
     const parsed = parseAIResponse(result);
     if (parsed && Array.isArray(parsed.materias)) {
       finalMaterias = mergePriorityOnly(lockedMaterias, parsed);
@@ -363,8 +415,19 @@ ${rawText.slice(0, MAX_TEXT_CHARS)}
   } catch (error) {
     console.error("Workers AI priority error; using deterministic fallback", error);
   }
-  return json({ parserVersion: "v8-adaptive-universal", analysis: { concurso, materias: finalMaterias }, model: MODEL, aiUsed, extractionLocked: true });
+
+  return json({
+    parserVersion: "v8-adaptive-universal",
+    analysis: {
+      concurso,
+      materias: finalMaterias
+    },
+    model: MODEL,
+    aiUsed,
+    extractionLocked: true
+  });
 }
+
 
 function parseFlashcardAIResponse(result) {
   if (!result) return null;
@@ -410,13 +473,16 @@ function deterministicFlashcardScore(sentence) {
 }
 
 function buildFlashcardEvidenceCatalog(text) {
-  return deterministicFlashcardSentences(text).map((sentence, sourceIndex) => ({
-    id: `E${sourceIndex + 1}`,
-    text: cleanText(sentence, 1800),
-    sourceIndex,
-    knowledgeType: classifyFlashcardKnowledge(sentence),
-    score: deterministicFlashcardScore(sentence)
-  })).filter(item => item.text).sort((a, b) => b.score - a.score || a.sourceIndex - b.sourceIndex);
+  return deterministicFlashcardSentences(text)
+    .map((sentence, sourceIndex) => ({
+      id: `E${sourceIndex + 1}`,
+      text: cleanText(sentence, 1800),
+      sourceIndex,
+      knowledgeType: classifyFlashcardKnowledge(sentence),
+      score: deterministicFlashcardScore(sentence)
+    }))
+    .filter(item => item.text)
+    .sort((a, b) => b.score - a.score || a.sourceIndex - b.sourceIndex);
 }
 
 function selectFlashcardEvidence(catalog, generationIndex) {
@@ -438,7 +504,10 @@ function deterministicFlashcardQuestion(sentence, materia, assunto, variant = 0)
 }
 
 function tokenizeFlashcardValidation(value) {
-  return fold(value).replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(token => token.length >= 3);
+  return fold(value)
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(token => token.length >= 3);
 }
 
 function flashcardQuestionSimilarity(a, b) {
@@ -453,19 +522,30 @@ function flashcardQuestionSimilarity(a, b) {
 function isGenericFlashcardQuestion(question) {
   const normalized = fold(question);
   if (normalized.length < 18) return true;
-  return [/^o que diz o trecho\??$/, /^o que o trecho diz\??$/, /^qual e a informacao principal\??$/, /^explique o trecho\??$/, /^fale sobre\b/, /^o que voce sabe sobre\b/].some(pattern => pattern.test(normalized));
+  return [
+    /^o que diz o trecho\??$/,
+    /^o que o trecho diz\??$/,
+    /^qual e a informacao principal\??$/,
+    /^explique o trecho\??$/,
+    /^fale sobre\b/,
+    /^o que voce sabe sobre\b/
+  ].some(pattern => pattern.test(normalized));
 }
 
 function evidenceSupportsAnswer(evidenceText, answer) {
   const sourceTokens = new Set(tokenizeFlashcardValidation(evidenceText));
   const answerTokens = tokenizeFlashcardValidation(answer);
   if (!sourceTokens.size || !answerTokens.length) return false;
+
   let supported = 0;
   for (const token of answerTokens) if (sourceTokens.has(token)) supported += 1;
   const lexicalCoverage = supported / answerTokens.length;
+
   const sourceNumbers = new Set(String(evidenceText).match(/\d+(?:[.,]\d+)?/g) || []);
   const answerNumbers = String(answer).match(/\d+(?:[.,]\d+)?/g) || [];
-  return lexicalCoverage >= 0.72 && answerNumbers.every(number => sourceNumbers.has(number));
+  const numbersSupported = answerNumbers.every(number => sourceNumbers.has(number));
+
+  return lexicalCoverage >= 0.72 && numbersSupported;
 }
 
 function validateFlashcardCandidate(candidate, { evidence, previousQuestions, existingQuestion }) {
@@ -474,35 +554,54 @@ function validateFlashcardCandidate(candidate, { evidence, previousQuestions, ex
   const evidenceId = cleanText(candidate?.evidenceId || evidence?.id, 40);
   const knowledgeType = cleanText(candidate?.knowledgeType || evidence?.knowledgeType, 40);
   const reasons = [];
+
   if (!question || !answer) reasons.push("missing-fields");
   if (!evidence?.text || evidenceId !== evidence.id) reasons.push("wrong-evidence");
   if (isGenericFlashcardQuestion(question)) reasons.push("generic-question");
   if (fold(question) === fold(answer)) reasons.push("question-equals-answer");
   if (question && answer && !evidenceSupportsAnswer(evidence.text, answer)) reasons.push("answer-not-grounded");
+
   const blocked = [existingQuestion, ...(previousQuestions || [])].filter(Boolean);
-  if (question && blocked.some(previous => fold(previous) === fold(question) || flashcardQuestionSimilarity(previous, question) >= 0.8)) reasons.push("duplicate-question");
-  return { valid: reasons.length === 0, reasons, flashcard: { question, answer, evidenceId, knowledgeType: knowledgeType || evidence?.knowledgeType || "regra" } };
+  if (question && blocked.some(previous => fold(previous) === fold(question) || flashcardQuestionSimilarity(previous, question) >= 0.8)) {
+    reasons.push("duplicate-question");
+  }
+
+  return {
+    valid: reasons.length === 0,
+    reasons,
+    flashcard: { question, answer, evidenceId, knowledgeType: knowledgeType || evidence?.knowledgeType || "regra" }
+  };
 }
 
 function buildDeterministicFlashcard({ evidenceCatalog, materia, assunto, generationIndex, previousQuestions, existingQuestion }) {
   const blocked = new Set([existingQuestion, ...(previousQuestions || [])].map(fold).filter(Boolean));
   const catalog = Array.isArray(evidenceCatalog) ? evidenceCatalog : [];
   const start = catalog.length ? (Math.max(1, generationIndex) - 1) % catalog.length : 0;
+
   for (let offset = 0; offset < Math.max(1, catalog.length); offset++) {
     const evidence = catalog[(start + offset) % catalog.length];
     if (!evidence) break;
     for (let variant = 0; variant < 2; variant++) {
       const question = cleanText(deterministicFlashcardQuestion(evidence.text, materia, assunto, generationIndex + variant), 500);
       if (!question || blocked.has(fold(question))) continue;
-      const candidate = { question, answer: cleanText(evidence.text, 4000), evidenceId: evidence.id, knowledgeType: evidence.knowledgeType };
+      const candidate = {
+        question,
+        answer: cleanText(evidence.text, 4000),
+        evidenceId: evidence.id,
+        knowledgeType: evidence.knowledgeType
+      };
       const checked = validateFlashcardCandidate(candidate, { evidence, previousQuestions, existingQuestion });
       if (checked.valid) return { ...checked.flashcard, evidence };
     }
   }
+
   const evidence = catalog[0];
   return {
     question: assunto || materia ? `Qual regra expressa deve ser lembrada sobre ${cleanText(assunto || materia, 90)}?` : "Qual regra expressa deve ser lembrada do trecho selecionado?",
-    answer: cleanText(evidence?.text || "", 4000), evidenceId: evidence?.id || "E1", knowledgeType: evidence?.knowledgeType || "regra", evidence
+    answer: cleanText(evidence?.text || "", 4000),
+    evidenceId: evidence?.id || "E1",
+    knowledgeType: evidence?.knowledgeType || "regra",
+    evidence
   };
 }
 
@@ -513,12 +612,21 @@ function isValidFlashcardObject(value) {
 function recoverGeminiFlashcardText(value) {
   const source = stripMarkdownJsonFence(value);
   if (!source) return null;
+
   const direct = extractFirstJsonObject(source);
   if (isValidFlashcardObject(direct)) return { flashcard: direct, mode: "json" };
-  let relaxed = source.replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/([{,]\s*)(question|answer|evidenceId|knowledgeType)\s*:/gi, '$1"$2":').replace(/,\s*([}\]])/g, '$1').trim();
+
+  let relaxed = source
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/([{,]\s*)(question|answer|evidenceId|knowledgeType)\s*:/gi, '$1"$2":')
+    .replace(/,\s*([}\]])/g, '$1')
+    .trim();
+
   if (relaxed.startsWith("{") && !relaxed.endsWith("}")) relaxed += "}";
   const normalized = extractFirstJsonObject(relaxed);
   if (isValidFlashcardObject(normalized)) return { flashcard: normalized, mode: "relaxed-json" };
+
   const readField = field => {
     const markers = ['"' + field + '"', "'" + field + "'", field];
     let markerIndex = -1, markerLength = 0;
@@ -544,6 +652,7 @@ function recoverGeminiFlashcardText(value) {
     if (raw.endsWith(",")) raw = raw.slice(0, -1).trim();
     return raw;
   };
+
   const question = cleanText(readField("question"), 500);
   const answer = cleanText(readField("answer"), 4000);
   const evidenceId = cleanText(readField("evidenceId"), 40);
@@ -559,9 +668,20 @@ function summarizeGeminiFlashcardPayload(payload) {
     finishReasons.push(cleanText(candidate?.finishReason || "unknown", 40));
     const candidateParts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
     parts += candidateParts.length;
-    for (const part of candidateParts) if (typeof part?.text === "string") { textParts += 1; textChars += part.text.length; }
+    for (const part of candidateParts) {
+      if (typeof part?.text === "string") {
+        textParts += 1;
+        textChars += part.text.length;
+      }
+    }
   }
-  return { candidates: candidates.length, parts, textParts, textChars, finishReasons: finishReasons.filter(Boolean).join(",") || "none" };
+  return {
+    candidates: candidates.length,
+    parts,
+    textParts,
+    textChars,
+    finishReasons: finishReasons.filter(Boolean).join(",") || "none"
+  };
 }
 
 function parseGeminiFlashcardPayload(payload) {
@@ -589,11 +709,16 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compac
   const requestTimeoutMs = groundingRetry ? GEMINI_GROUNDING_RETRY_TIMEOUT_MS : GEMINI_FLASHCARD_TIMEOUT_MS;
   const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
   const groundingRetryInstruction = `CORREÇÃO OBRIGATÓRIA DE GROUNDING: a tentativa anterior foi rejeitada por se afastar lexicalmente da evidência. Na resposta, copie literalmente ou use o menor recorte possível da EVIDÊNCIA AUTORIZADA. Não use sinônimos, explicações, inferências, conectivos novos ou conhecimento externo. Preserve exatamente sujeitos, verbos jurídicos, números, prazos, requisitos, exceções e consequências. A pergunta pode ser reformulada, mas deve cobrar somente o conteúdo expresso na evidência. Retorne apenas o JSON solicitado.`;
-  const effectiveUserPrompt = groundingRetry ? `${userPrompt}\n\n${groundingRetryInstruction}` : compactRetry ? `${userPrompt}\n\nRETRY COMPACTO: devolva apenas JSON curto, completo e estritamente aderente à evidência indicada.` : userPrompt;
+  const effectiveUserPrompt = groundingRetry
+    ? `${userPrompt}\n\n${groundingRetryInstruction}`
+    : compactRetry
+      ? `${userPrompt}\n\nRETRY COMPACTO: devolva apenas JSON curto, completo e estritamente aderente à evidência indicada.`
+      : userPrompt;
   let response;
   try {
     response = await fetch(endpoint, {
-      method: "POST", signal: controller.signal,
+      method: "POST",
+      signal: controller.signal,
       headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -602,7 +727,16 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compac
           temperature: groundingRetry ? 0 : (compactRetry ? 0.1 : 0.2),
           maxOutputTokens: groundingRetry ? 700 : (compactRetry ? 900 : 1600),
           responseMimeType: "application/json",
-          responseSchema: { type: "OBJECT", properties: { question: { type: "STRING" }, answer: { type: "STRING" }, evidenceId: { type: "STRING" }, knowledgeType: { type: "STRING" } }, required: ["question", "answer", "evidenceId", "knowledgeType"] },
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              question: { type: "STRING" },
+              answer: { type: "STRING" },
+              evidenceId: { type: "STRING" },
+              knowledgeType: { type: "STRING" }
+            },
+            required: ["question", "answer", "evidenceId", "knowledgeType"]
+          },
           thinkingConfig: { thinkingLevel: "LOW" }
         }
       })
@@ -610,23 +744,38 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compac
   } catch (error) {
     if (error?.name === "AbortError") {
       const timeoutError = new Error(`Gemini excedeu o limite de ${requestTimeoutMs} ms`);
-      timeoutError.provider = "gemini"; timeoutError.model = model.id; timeoutError.status = "timeout"; timeoutError.reason = "request timeout"; timeoutError.durationMs = Date.now() - startedAt;
+      timeoutError.provider = "gemini";
+      timeoutError.model = model.id;
+      timeoutError.status = "timeout";
+      timeoutError.reason = "request timeout";
+      timeoutError.durationMs = Date.now() - startedAt;
       throw timeoutError;
     }
-    error.provider = error?.provider || "gemini"; error.model = error?.model || model.id; error.status = error?.status || "network-error"; error.reason = error?.reason || error?.message || "network error"; error.durationMs = error?.durationMs || (Date.now() - startedAt);
+    error.provider = error?.provider || "gemini";
+    error.model = error?.model || model.id;
+    error.status = error?.status || "network-error";
+    error.reason = error?.reason || error?.message || "network error";
+    error.durationMs = error?.durationMs || (Date.now() - startedAt);
     throw error;
-  } finally { clearTimeout(timeout); }
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const detail = cleanText(await response.text(), 500);
     const httpError = new Error(`Gemini HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
-    httpError.provider = "gemini"; httpError.model = model.id; httpError.status = response.status; httpError.reason = detail || response.statusText || "HTTP error"; httpError.durationMs = Date.now() - startedAt;
+    httpError.provider = "gemini";
+    httpError.model = model.id;
+    httpError.status = response.status;
+    httpError.reason = detail || response.statusText || "HTTP error";
+    httpError.durationMs = Date.now() - startedAt;
     throw httpError;
   }
 
   const payload = await response.json();
   const summary = summarizeGeminiFlashcardPayload(payload);
   console.info(`Flashcard Gemini response model=${model.id} status=200 candidates=${summary.candidates} parts=${summary.parts} textParts=${summary.textParts} textChars=${summary.textChars} finishReasons=${summary.finishReasons} compactRetry=${compactRetry} groundingRetry=${groundingRetry}`);
+
   const recovered = parseGeminiFlashcardPayload(payload);
   if (!recovered?.flashcard && !compactRetry && !groundingRetry && summary.finishReasons.split(',').includes('MAX_TOKENS')) {
     console.info(`Flashcard Gemini retry reason=MAX_TOKENS model=${model.id} firstDuration=${Date.now() - startedAt}ms`);
@@ -634,7 +783,11 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compac
   }
   if (!recovered?.flashcard) {
     const parseError = new Error("Resposta incompleta do Gemini");
-    parseError.provider = "gemini"; parseError.model = model.id; parseError.status = 200; parseError.reason = `incomplete JSON response finishReasons=${summary.finishReasons} candidates=${summary.candidates} textParts=${summary.textParts} textChars=${summary.textChars}`; parseError.durationMs = Date.now() - startedAt;
+    parseError.provider = "gemini";
+    parseError.model = model.id;
+    parseError.status = 200;
+    parseError.reason = `incomplete JSON response finishReasons=${summary.finishReasons} candidates=${summary.candidates} textParts=${summary.textParts} textChars=${summary.textChars}`;
+    parseError.durationMs = Date.now() - startedAt;
     throw parseError;
   }
   return recovered.flashcard;
@@ -642,7 +795,9 @@ async function runGeminiFlashcard(env, model, systemPrompt, userPrompt, { compac
 
 function withTimeout(promise, ms, label) {
   let timer;
-  const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} excedeu o limite de ${ms} ms`)), ms); });
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} excedeu o limite de ${ms} ms`)), ms);
+  });
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
@@ -678,10 +833,17 @@ function firstSuccessfulFlashcard(promises) {
   return new Promise((resolve, reject) => {
     const failures = [];
     let remaining = promises.length;
-    for (const promise of promises) Promise.resolve(promise).then(resolve, error => {
-      failures.push(error); remaining -= 1;
-      if (remaining === 0) { const aggregate = new Error("Todos os provedores externos falharam"); aggregate.causes = failures; reject(aggregate); }
-    });
+    for (const promise of promises) {
+      Promise.resolve(promise).then(resolve, error => {
+        failures.push(error);
+        remaining -= 1;
+        if (remaining === 0) {
+          const aggregate = new Error("Todos os provedores externos falharam");
+          aggregate.causes = failures;
+          reject(aggregate);
+        }
+      });
+    }
   });
 }
 
@@ -692,9 +854,11 @@ function isOnlyAnswerNotGrounded(error) {
 
 async function runFlashcardProvidersHedged(env, candidates, systemPrompt, userPrompt, validationContext) {
   if (!candidates.length) throw new Error("Nenhum provedor de IA disponível");
+
   if (candidates.length === 1) {
-    try { return await attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext); }
-    catch (error) {
+    try {
+      return await attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext);
+    } catch (error) {
       if (candidates[0] === "gemini" && isOnlyAnswerNotGrounded(error)) {
         console.info(`Flashcard Gemini retry reason=answer-not-grounded model=${FLASHCARD_AI_MODELS.gemini.id} timeout=${GEMINI_GROUNDING_RETRY_TIMEOUT_MS}ms`);
         return attemptFlashcardModel(env, "gemini", systemPrompt, userPrompt, validationContext, { groundingRetry: true });
@@ -702,6 +866,7 @@ async function runFlashcardProvidersHedged(env, candidates, systemPrompt, userPr
       throw error;
     }
   }
+
   let fallbackStarted = false;
   let timer = null;
   let startFallback;
@@ -714,16 +879,29 @@ async function runFlashcardProvidersHedged(env, candidates, systemPrompt, userPr
     };
     timer = setTimeout(startFallback, FLASHCARD_HEDGE_DELAY_MS);
   });
+
   const primaryPromise = attemptFlashcardModel(env, candidates[0], systemPrompt, userPrompt, validationContext).catch(async error => {
     if (candidates[0] === "gemini" && isOnlyAnswerNotGrounded(error)) {
       console.info(`Flashcard Gemini retry reason=answer-not-grounded model=${FLASHCARD_AI_MODELS.gemini.id} timeout=${GEMINI_GROUNDING_RETRY_TIMEOUT_MS}ms`);
-      try { return await attemptFlashcardModel(env, "gemini", systemPrompt, userPrompt, validationContext, { groundingRetry: true }); }
-      catch (retryError) { startFallback(); throw retryError; }
+      try {
+        return await attemptFlashcardModel(env, "gemini", systemPrompt, userPrompt, validationContext, { groundingRetry: true });
+      } catch (retryError) {
+        // O hedge original continua disponível: caso ainda não tenha iniciado,
+        // a falha do retry o libera imediatamente; caso já esteja em andamento,
+        // firstSuccessfulFlashcard continua aguardando a primeira resposta válida.
+        startFallback();
+        throw retryError;
+      }
     }
-    startFallback(); throw error;
+    startFallback();
+    throw error;
   });
-  try { return await firstSuccessfulFlashcard([primaryPromise, fallbackPromise]); }
-  finally { if (timer) clearTimeout(timer); }
+
+  try {
+    return await firstSuccessfulFlashcard([primaryPromise, fallbackPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 async function generateFlashcard(request, env) {
@@ -785,9 +963,11 @@ DEVOLVA EXATAMENTE:
   return json({ question: local.question, answer: local.answer, model: "Gerador local · sem IA", provider: "local-deterministic", modelKey: "local", fallbackUsed: true, deterministic: true, hedged: false, latencyMs: localDurationMs, evidenceId: local.evidenceId, knowledgeType: local.knowledgeType, sourceValidated: true });
 }
 
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
     if (request.method === "GET" && CORE_NO_STORE_PATHS.has(url.pathname)) {
       const assetResponse = await env.ASSETS.fetch(request);
       const headers = new Headers(assetResponse.headers);
@@ -797,16 +977,25 @@ export default {
       headers.set("x-app-version", APP_VERSION);
       return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
     }
+
     const vendorRoute = VENDOR_ROUTES[url.pathname];
-    if (vendorRoute && request.method === "GET") return serveVendorAsset(request, vendorRoute);
+    if (vendorRoute && request.method === "GET") {
+      return serveVendorAsset(request, vendorRoute);
+    }
+
     if (url.pathname === "/api/ai/analisar-edital") {
-      if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
+      if (request.method !== "POST") {
+        return json({ error: "Método não permitido." }, 405);
+      }
       return analyzeEdital(request, env);
     }
+
     if (url.pathname === "/api/ai/flashcard") {
       if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
       return generateFlashcard(request, env);
     }
+
+
     return env.ASSETS.fetch(request);
   }
 };
