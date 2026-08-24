@@ -21,7 +21,7 @@
   }
 
   async function saveBlobWithPicker(blob, fileName) {
-    if (typeof global.showSaveFilePicker !== 'function') return false;
+    if (typeof global.showSaveFilePicker !== 'function') return { handled: false, saved: false, cancelled: false };
     try {
       const handle = await global.showSaveFilePicker({
         suggestedName: fileName,
@@ -30,10 +30,10 @@
       const writable = await handle.createWritable();
       await writable.write(blob);
       await writable.close();
-      return true;
+      return { handled: true, saved: true, cancelled: false };
     } catch (error) {
-      if (error?.name === 'AbortError') return true;
-      return false;
+      if (error?.name === 'AbortError') return { handled: true, saved: false, cancelled: true };
+      return { handled: false, saved: false, cancelled: false };
     }
   }
 
@@ -58,8 +58,9 @@
     if (!blob?.size) throw new Error('Não foi possível preparar o PDF para salvar no dispositivo.');
 
     const typedBlob = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
-    const pickerHandled = await saveBlobWithPicker(typedBlob, fileName);
-    if (!pickerHandled) saveBlobWithDownload(typedBlob, fileName);
+    const pickerResult = await saveBlobWithPicker(typedBlob, fileName);
+    if (pickerResult.cancelled) return { pdfId: String(doc.id), fileName, size: Number(typedBlob.size || 0), cancelled: true };
+    if (!pickerResult.handled) saveBlobWithDownload(typedBlob, fileName);
 
     try {
       global.dispatchEvent(new CustomEvent('pdf-saved-to-device', {
@@ -67,7 +68,7 @@
       }));
     } catch (_) {}
 
-    return { pdfId: String(doc.id), fileName, size: Number(typedBlob.size || 0) };
+    return { pdfId: String(doc.id), fileName, size: Number(typedBlob.size || 0), cancelled: false };
   }
 
   function ensureStyles() {
@@ -84,21 +85,36 @@
           width:100%!important;
           max-width:100%!important;
           min-width:0!important;
+          align-items:stretch!important;
+          box-sizing:border-box!important;
         }
         .pdf-card-actions.pdf-device-storage-actions > .pdf-library-card-action {
+          display:flex!important;
+          align-items:center!important;
+          justify-content:center!important;
           width:100%!important;
           min-width:0!important;
           max-width:100%!important;
           min-height:44px!important;
           padding:8px 7px!important;
           white-space:normal!important;
+          overflow:hidden!important;
           overflow-wrap:anywhere!important;
+          text-align:center!important;
           line-height:1.12!important;
           font-size:clamp(.69rem,3.2vw,.82rem)!important;
           grid-column:auto!important;
+          box-sizing:border-box!important;
         }
-        .pdf-card-actions.pdf-device-storage-actions > :last-child:nth-child(3) {
+        .pdf-card-actions.pdf-device-storage-actions > .pdf-library-card-action:last-child:nth-child(odd) {
           grid-column:1/-1!important;
+        }
+      }
+      @media (max-width:340px) {
+        .pdf-card-actions.pdf-device-storage-actions { gap:6px!important; }
+        .pdf-card-actions.pdf-device-storage-actions > .pdf-library-card-action {
+          padding:7px 5px!important;
+          font-size:clamp(.66rem,3.45vw,.76rem)!important;
         }
       }
     `;
@@ -135,8 +151,16 @@
         button.textContent = 'Salvando…';
         try {
           const result = await saveToDevice(pdfId);
-          button.textContent = 'Salvo';
           const status = document.getElementById('pdfLibraryStatus');
+          if (result.cancelled) {
+            button.textContent = originalText;
+            if (status) {
+              status.textContent = 'Salvamento cancelado. Nenhum arquivo foi criado.';
+              status.dataset.kind = 'info';
+            }
+            return;
+          }
+          button.textContent = 'Salvo';
           if (status) {
             status.textContent = `${result.fileName} foi enviado para o armazenamento do dispositivo.`;
             status.dataset.kind = 'ok';
