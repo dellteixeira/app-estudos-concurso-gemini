@@ -3,6 +3,8 @@
 
     if (global.SyncEngine) return;
 
+    const SCHEMA_VERSION = 2;
+    const HISTORY_LIMIT = 40;
     const BACKOFF_MS = [2000, 5000, 15000, 30000, 60000];
     const listeners = new Set();
     let runPromise = null;
@@ -16,10 +18,11 @@
     }
 
     function storageKey() { return `sync_engine_state_${userId()}`; }
+    function historyKey() { return `sync_engine_history_${userId()}`; }
 
     function defaultState() {
         return {
-            schemaVersion:1,
+            schemaVersion:SCHEMA_VERSION,
             status:'idle',
             attempt:0,
             pending:0,
@@ -36,6 +39,7 @@
         const state = value && typeof value === 'object' ? { ...base, ...value } : base;
         const allowed = new Set(['idle','pending','syncing','synced','error','conflict']);
         if (!allowed.has(state.status)) state.status = 'idle';
+        state.schemaVersion = SCHEMA_VERSION;
         state.attempt = Math.max(0, Number(state.attempt) || 0);
         state.pending = Math.max(0, Number(state.pending) || 0);
         return state;
@@ -46,9 +50,37 @@
         catch (_) { return defaultState(); }
     }
 
-    function writeState(next) {
+    function readHistory() {
+        try {
+            const value = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+            return Array.isArray(value) ? value.slice(-HISTORY_LIMIT) : [];
+        } catch (_) { return []; }
+    }
+
+    function appendHistory(previous, next, reason = 'state') {
+        const changed = previous.status !== next.status || previous.pending !== next.pending || previous.attempt !== next.attempt || previous.lastError !== next.lastError;
+        if (!changed) return;
+        const entry = Object.freeze({
+            at:next.updatedAt,
+            reason:String(reason || 'state'),
+            from:previous.status,
+            to:next.status,
+            pending:next.pending,
+            attempt:next.attempt,
+            online:Boolean(navigator.onLine),
+            hasError:Boolean(next.lastError),
+            hasConflict:Boolean(next.conflict)
+        });
+        const history = [...readHistory(), entry].slice(-HISTORY_LIMIT);
+        try { localStorage.setItem(historyKey(), JSON.stringify(history)); } catch (_) {}
+        global.dispatchEvent(new CustomEvent('syncengine:transition', { detail:{ ...entry } }));
+    }
+
+    function writeState(next, reason = 'state') {
+        const previous = readState();
         const state = normalizeState({ ...next, updatedAt:new Date().toISOString() });
         try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch (_) {}
+        appendHistory(previous, state, reason);
         listeners.forEach(listener => {
             try { listener({ ...state }); }
             catch (error) { console.warn('SyncEngine subscriber failed:', error); }
@@ -75,8 +107,8 @@
         catch (_) { return String(pendingCount()); }
     }
 
-    function setStatus(status, patch = {}) {
-        return writeState({ ...readState(), ...patch, status, pending:pendingCount() });
+    function setStatus(status, patch = {}, reason = status) {
+        return writeState({ ...readState(), ...patch, status, pending:pendingCount() }, reason);
     }
 
     function clearRetry() {
@@ -99,7 +131,7 @@
         if (!navigator.onLine || userId() === 'guest') return;
         const delay = nextDelay(attempt);
         const nextRetryAt = new Date(Date.now() + delay).toISOString();
-        writeState({ ...readState(), status:'error', nextRetryAt, pending:pendingCount() });
+        writeState({ ...readState(), status:'error', nextRetryAt, pending:pendingCount() }, 'retry:scheduled');
         retryTimer = setTimeout(() => {
             retryTimer = null;
             syncNow({ reason:'automatic-retry' }).catch(() => {});
@@ -108,18 +140,18 @@
 
     async function syncNow(options = {}) {
         if (runPromise) return runPromise;
-        if (userId() === 'guest') return setStatus('idle', { lastError:null, nextRetryAt:null });
+        if (userId() === 'guest') return setStatus('idle', { lastError:null, nextRetryAt:null }, 'guest');
 
         const pendingBefore = pendingCount();
-        if (!navigator.onLine) return setStatus(pendingBefore ? 'pending' : 'synced', { nextRetryAt:null });
-        if (!pendingBefore && !options.force) return setStatus('synced', { attempt:0, lastError:null, nextRetryAt:null });
+        if (!navigator.onLine) return setStatus(pendingBefore ? 'pending' : 'synced', { nextRetryAt:null }, 'offline');
+        if (!pendingBefore && !options.force) return setStatus('synced', { attempt:0, lastError:null, nextRetryAt:null }, options.reason || 'noop');
         if (typeof syncAllWithSupabase !== 'function') throw new Error('Sincronização com Supabase indisponível.');
 
         clearRetry();
         const previous = readState();
         const attempt = Math.max(0, Number(previous.attempt) || 0);
         const revisionBefore = Math.max(0, Number(queueState()?.metadataRevision) || 0);
-        setStatus('syncing', { attempt, lastError:null, nextRetryAt:null, conflict:null });
+        setStatus('syncing', { attempt, lastError:null, nextRetryAt:null, conflict:null }, options.reason || 'sync:start');
 
         runPromise = (async () => {
             try {
@@ -133,7 +165,7 @@
                         attempt:0,
                         lastError:concurrentLocalChange ? 'Novas alterações locais foram registradas durante a sincronização.' : null,
                         nextRetryAt:null
-                    });
+                    }, concurrentLocalChange ? 'sync:concurrent-change' : 'sync:pending');
                     if (navigator.onLine) {
                         retryTimer = setTimeout(() => {
                             retryTimer = null;
@@ -149,7 +181,7 @@
                     lastError:null,
                     nextRetryAt:null,
                     conflict:null
-                });
+                }, 'sync:success');
             } catch (error) {
                 if (isConflictError(error)) {
                     return setStatus('conflict', {
@@ -157,10 +189,10 @@
                         conflict:{ message:String(error.message || 'Conflito de sincronização.'), detectedAt:new Date().toISOString() },
                         lastError:String(error.message || error),
                         nextRetryAt:null
-                    });
+                    }, 'sync:conflict');
                 }
                 const nextAttempt = attempt + 1;
-                setStatus('error', { attempt:nextAttempt, lastError:String(error?.message || error), nextRetryAt:null });
+                setStatus('error', { attempt:nextAttempt, lastError:String(error?.message || error), nextRetryAt:null }, 'sync:error');
                 scheduleRetry(nextAttempt);
                 throw error;
             } finally {
@@ -174,8 +206,8 @@
     function markPending(reason = 'local-change') {
         const pending = pendingCount();
         const state = readState();
-        if (!pending) return writeState({ ...state, pending:0, status:state.status === 'syncing' ? 'syncing' : 'synced' });
-        const next = writeState({ ...state, status:state.status === 'syncing' ? 'syncing' : 'pending', pending, lastError:null, nextRetryAt:null });
+        if (!pending) return writeState({ ...state, pending:0, status:state.status === 'syncing' ? 'syncing' : 'synced' }, reason);
+        const next = writeState({ ...state, status:state.status === 'syncing' ? 'syncing' : 'pending', pending, lastError:null, nextRetryAt:null }, reason);
         global.dispatchEvent(new CustomEvent('syncengine:pending', { detail:{ reason, pending } }));
         if (navigator.onLine && !runPromise) {
             clearRetry();
@@ -194,14 +226,14 @@
             conflict:{ ...details, detectedAt:details.detectedAt || new Date().toISOString() },
             lastError:details.message || 'Conflito detectado.',
             nextRetryAt:null
-        });
+        }, 'conflict:reported');
     }
 
     async function resolveConflict(strategy = 'retry') {
         const state = readState();
         if (state.status !== 'conflict') return state;
         if (!['retry','keep-local'].includes(strategy)) throw new Error('Estratégia de conflito não suportada.');
-        writeState({ ...state, status:'pending', conflict:null, lastError:null, attempt:0, nextRetryAt:null });
+        writeState({ ...state, status:'pending', conflict:null, lastError:null, attempt:0, nextRetryAt:null }, `conflict:${strategy}`);
         return syncNow({ force:true, reason:`conflict-${strategy}` });
     }
 
@@ -212,6 +244,32 @@
         return () => listeners.delete(listener);
     }
 
+    function getHistory(limit = 20) {
+        const normalized = Math.max(1, Math.min(HISTORY_LIMIT, Number(limit) || 20));
+        return readHistory().slice(-normalized).map(entry => ({ ...entry }));
+    }
+
+    function getDiagnostics() {
+        const state = { ...readState(), pending:pendingCount() };
+        const history = readHistory();
+        return Object.freeze({
+            schemaVersion:SCHEMA_VERSION,
+            status:state.status,
+            pending:state.pending,
+            attempt:state.attempt,
+            online:Boolean(navigator.onLine),
+            authenticated:userId() !== 'guest',
+            retryScheduled:Boolean(retryTimer),
+            syncRunning:Boolean(runPromise),
+            lastSyncedAt:state.lastSyncedAt,
+            lastError:state.lastError,
+            nextRetryAt:state.nextRetryAt,
+            hasConflict:Boolean(state.conflict),
+            transitionCount:history.length,
+            updatedAt:state.updatedAt
+        });
+    }
+
     function reconcileQueueState(reason = 'poll') {
         const signature = queueSignature();
         if (signature === lastQueueSignature) return;
@@ -219,11 +277,11 @@
         const pending = pendingCount();
         const state = readState();
         if (state.status === 'syncing' || state.status === 'conflict') {
-            writeState({ ...state, pending });
+            writeState({ ...state, pending }, reason);
             return;
         }
         if (pending > 0) markPending(reason);
-        else writeState({ ...state, status:navigator.onLine ? 'synced' : 'idle', pending:0, attempt:0, lastError:null, nextRetryAt:null });
+        else writeState({ ...state, status:navigator.onLine ? 'synced' : 'idle', pending:0, attempt:0, lastError:null, nextRetryAt:null }, reason);
     }
 
     global.addEventListener('online', () => {
@@ -232,7 +290,7 @@
     });
     global.addEventListener('offline', () => {
         clearRetry();
-        setStatus(pendingCount() ? 'pending' : 'idle', { nextRetryAt:null });
+        setStatus(pendingCount() ? 'pending' : 'idle', { nextRetryAt:null }, 'offline:event');
     });
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) reconcileQueueState('visibility');
@@ -245,6 +303,8 @@
     global.SyncEngine = Object.freeze({
         getState:() => ({ ...readState(), pending:pendingCount() }),
         getPendingCount:pendingCount,
+        getHistory,
+        getDiagnostics,
         syncNow,
         markPending,
         reportConflict,
