@@ -8,6 +8,40 @@
     let revision = 0;
     let lastChangedAt = new Date().toISOString();
 
+    function loadExtensionScript(src, marker) {
+        return new Promise((resolve, reject) => {
+            const existing = document.querySelector(`script[data-appstate-extension="${marker}"]`);
+            if (existing) {
+                if (existing.dataset.loaded === '1') return resolve();
+                existing.addEventListener('load', () => resolve(), { once:true });
+                existing.addEventListener('error', reject, { once:true });
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = false;
+            script.dataset.appstateExtension = marker;
+            script.onload = () => { script.dataset.loaded = '1'; resolve(); };
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    async function loadOfflineShadowFoundation() {
+        if (!global.OfflineOutboxStore) {
+            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.31.0', 'offline-outbox-store');
+        }
+        if (!global.OfflineSyncShadow) {
+            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.31.0', 'offline-sync-shadow');
+        }
+        global.OfflineSyncShadow?.install?.();
+        return global.OfflineSyncShadow?.getDiagnostics?.() || null;
+    }
+
+    loadOfflineShadowFoundation().catch(error => {
+        console.warn('Fundação shadow offline indisponível; sincronização legada preservada.', error);
+    });
+
     function clone(value) {
         if (value == null) return value;
         try { return structuredClone(value); }
@@ -179,7 +213,8 @@
         updateTopic,
         setCurrentContest,
         subscribe,
-        refresh
+        refresh,
+        getOfflineShadowDiagnostics:() => global.OfflineSyncShadow?.getDiagnostics?.() || null
     });
 
     global.dispatchEvent(new CustomEvent('appstate:ready', { detail:{ schemaVersion:SCHEMA_VERSION, revision } }));
