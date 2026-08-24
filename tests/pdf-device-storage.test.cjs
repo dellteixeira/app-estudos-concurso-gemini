@@ -66,7 +66,7 @@ test('ações dos cards respondem à largura do próprio card, não apenas à vi
 });
 
 test('adapter carrega CSS e módulos PDF com revisão explícita para impedir cache stale',()=>{
-  assert.match(adapter,/const ASSET_REVISION = '10\.29\.3'/);
+  assert.match(adapter,/const ASSET_REVISION = '10\.29\.4'/);
   assert.match(adapter,/asset\('\.\/css\/pdf-mobile-card-actions\.css'\)/);
   assert.match(adapter,/asset\('\.\/js\/pdf\/pdf-device-storage\.js'\)/);
   assert.match(adapter,/asset\('\.\/js\/pdf\/pdf-library-layout-fix\.js'\)/);
