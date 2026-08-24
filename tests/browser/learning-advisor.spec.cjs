@@ -7,7 +7,17 @@ const advisorCss=fs.readFileSync(path.join(__dirname,'../../public/css/learning-
 for(const width of [320,390,560,1024,1440]){
   test(`Learning Advisor remains consultive, full-width and text-safe at ${width}px`,async({page})=>{
     await page.setViewportSize({width,height:900});
-    await page.setContent(`<!doctype html><html><head><style>${advisorCss}</style></head><body><section id="retentionDiagnosticPanel" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;box-sizing:border-box"><div id="retentionDiagnosticRiskList" style="grid-column:1"></div><div style="grid-column:2">Diagnóstico</div></section></body></html>`);
+    const desktopGrid=width>=1281?'minmax(190px,.8fr) minmax(320px,1.35fr) minmax(360px,1.8fr)':width>=901?'minmax(200px,.75fr) minmax(430px,1.5fr)':'1fr';
+    await page.setContent(`<!doctype html><html><head><style>
+      #retentionDiagnosticPanel{display:grid;grid-template-columns:${desktopGrid};gap:12px;width:100%;box-sizing:border-box;padding:12px}
+      #retentionDiagnosticPanel>.retention-diagnostic-head{grid-column:1}
+      #retentionDiagnosticPanel>.rd-center-v1077{grid-column:${width>=1281?'2':'2'}}
+      #retentionDiagnosticPanel>.retention-critical-column{grid-column:${width>=1281?'3':'1 / -1'}}
+      /* Simulates legacy/default auto-placement pressure that previously left
+         the dynamically appended advisor occupying only the first track. */
+      #retentionDiagnosticPanel>section{grid-column:auto}
+      ${advisorCss}
+    </style></head><body><section id="retentionDiagnosticPanel"><div class="retention-diagnostic-head">Retenção</div><div class="rd-center-v1077">Métricas</div><div class="retention-critical-column"><div id="retentionDiagnosticRiskList"></div></div></section></body></html>`);
     await page.evaluate(()=>{
       window.currentConcurso='Concurso Teste';
       window.getStudyTopicKey=(m,a)=>`${m}::${a}`.toLowerCase();
@@ -28,8 +38,17 @@ for(const width of [320,390,560,1024,1440]){
 
     const parentBox=await page.locator('#retentionDiagnosticPanel').boundingBox();
     const initialBox=await panel.boundingBox();
-    expect(Math.abs(initialBox.x-parentBox.x)).toBeLessThanOrEqual(1);
-    expect(Math.abs((initialBox.x+initialBox.width)-(parentBox.x+parentBox.width))).toBeLessThanOrEqual(1);
+    const parentStyle=await page.locator('#retentionDiagnosticPanel').evaluate(el=>getComputedStyle(el));
+    const parentLeft=parentBox.x+parseFloat(parentStyle.paddingLeft||'0');
+    const parentRight=parentBox.x+parentBox.width-parseFloat(parentStyle.paddingRight||'0');
+    expect(Math.abs(initialBox.x-parentLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs((initialBox.x+initialBox.width)-parentRight)).toBeLessThanOrEqual(1);
+
+    if(width>=901){
+      const placement=await panel.evaluate(el=>({columnStart:getComputedStyle(el).gridColumnStart,columnEnd:getComputedStyle(el).gridColumnEnd}));
+      expect(placement.columnStart).toBe('1');
+      expect(placement.columnEnd).toBe('-1');
+    }
 
     await panel.locator('#learningAdvisorAnalyze').click();
     await expect(panel.locator('.learning-advisor-card')).toHaveCount(1);
