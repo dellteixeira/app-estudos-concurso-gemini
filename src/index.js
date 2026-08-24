@@ -4,7 +4,7 @@ const FLASHCARD_AI_MODELS = Object.freeze({
   gemini: { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash", provider: "gemini" },
   gemma: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B" },
   nemotron: { id: "@cf/nvidia/nemotron-3-120b-a12b", label: "Nemotron 3 120B" },
-  glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM-4.7 Flash" },
+  glm: { id: "@cf/zai-org/glm-4.7-flash", label: "GLM 4.7 Flash" },
   llama: { id: "@cf/meta/llama-3.1-8b-instruct-fast", label: "Llama 3.1 8B Fast", legacyLabel: "Workers AI · Llama 3.1 8B" }
 });
 const FLASHCARD_AUTO_CHAIN = ["gemini", "llama"];
@@ -23,7 +23,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.33.0";
+const APP_VERSION = "10.33.1";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css", "/css/pdf-mobile-card-actions.css",
@@ -106,6 +106,7 @@ async function serveVendorAsset(request, route) {
     headers: {
       "content-type": "text/plain; charset=utf-8",
       "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
       "x-painel-vendor-last-status": String(lastStatus || 0)
     }
   });
