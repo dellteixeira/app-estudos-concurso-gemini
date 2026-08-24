@@ -3,7 +3,12 @@
 
   const LEGACY_DB_NAME = 'estudo-adaptativo-pdf-cache';
   const LEGACY_STORE = 'pdf_blobs';
+  const ASSET_REVISION = '10.29.3';
   let storePromise = null;
+
+  function asset(path) {
+    return `${path}?v=${ASSET_REVISION}`;
+  }
 
   function key(userId, pdfId) { return `${String(userId)}:${String(pdfId)}`; }
   function hasStore() { return !!global.OfflinePdfStore; }
@@ -21,7 +26,7 @@
         return;
       }
       const script = document.createElement('script');
-      script.src = './js/pdf/offline-pdf-store.js';
+      script.src = asset('./js/pdf/offline-pdf-store.js');
       script.defer = true;
       script.dataset.offlinePdfStore = 'true';
       script.onload = () => resolve(global.OfflinePdfStore || null);
@@ -111,22 +116,33 @@
 
   global.PdfLibraryOfflineAdapter = Object.freeze({ loadStore, get, put, removeMany, has, capabilities });
 
+  function loadCardActionStyles() {
+    if (document.querySelector('link[data-pdf-mobile-card-actions]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = asset('./css/pdf-mobile-card-actions.css');
+    link.dataset.pdfMobileCardActions = '1';
+    document.head.appendChild(link);
+  }
+
   function loadDeviceStorage() {
+    loadCardActionStyles();
     if (document.querySelector('script[data-pdf-device-storage]')) return;
     const script = document.createElement('script');
-    script.src = './js/pdf/pdf-device-storage.js';
+    script.src = asset('./js/pdf/pdf-device-storage.js');
     script.defer = true;
     script.dataset.pdfDeviceStorage = '1';
     document.head.appendChild(script);
   }
 
   function loadLayoutFix() {
+    loadCardActionStyles();
     if (document.querySelector('script[data-pdf-library-layout-fix]')) {
       loadDeviceStorage();
       return;
     }
     const fix = document.createElement('script');
-    fix.src = './js/pdf/pdf-library-layout-fix.js';
+    fix.src = asset('./js/pdf/pdf-library-layout-fix.js');
     fix.defer = true;
     fix.dataset.pdfLibraryLayoutFix = '1';
     fix.onload = loadDeviceStorage;
@@ -134,19 +150,20 @@
   }
 
   function loadManagedOfflineLibrary() {
+    loadCardActionStyles();
     loadDeviceStorage();
     if (document.querySelector('script[data-pdf-offline-manager]')) {
       loadLayoutFix();
       return;
     }
     const manager = document.createElement('script');
-    manager.src = './js/pdf/pdf-offline-library-manager.js';
+    manager.src = asset('./js/pdf/pdf-offline-library-manager.js');
     manager.defer = true;
     manager.dataset.pdfOfflineManager = '1';
     manager.onload = () => {
       if (!document.querySelector('script[data-pdf-offline-integrity]')) {
         const integrity = document.createElement('script');
-        integrity.src = './js/pdf/pdf-offline-integrity.js';
+        integrity.src = asset('./js/pdf/pdf-offline-integrity.js');
         integrity.defer = true;
         integrity.dataset.pdfOfflineIntegrity = '1';
         document.head.appendChild(integrity);
@@ -156,7 +173,7 @@
         return;
       }
       const ui = document.createElement('script');
-      ui.src = './js/pdf/pdf-offline-library-ui.js';
+      ui.src = asset('./js/pdf/pdf-offline-library-ui.js');
       ui.defer = true;
       ui.dataset.pdfOfflineUi = '1';
       ui.onload = loadLayoutFix;
