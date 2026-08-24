@@ -19,7 +19,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply migration
-        run: node scripts/migrate-runtime-style-debt.mjs
+        run: |
+          node scripts/migrate-runtime-style-debt.mjs
+          node scripts/migrate-runtime-style-debt-pass2.mjs
 
       - name: Validate syntax
         run: |
@@ -31,5 +33,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/js/app-core.js public/js/app-ui.js public/css/base.css security/runtime-style-debt.json tests/runtime-style-debt-batch8.test.cjs
-          git commit -m "Hardening — migrar estilos de runtime para classes" || exit 0
+          git commit -m "Hardening — reduzir dívida de estilos em runtime" || exit 0
           git push origin HEAD:hardening/runtime-style-debt-batch8
