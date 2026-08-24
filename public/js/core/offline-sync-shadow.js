@@ -10,6 +10,7 @@
   const DELETE_PARITY_STORAGE_PREFIX = 'offline_sync_shadow_delete_parity_v1_';
   const MAX_PARITY_SAMPLES = 100;
   let installed = false;
+  let deleteInstalled = false;
   let legacyQueueEditalUpsert = null;
   let legacyQueueEditalDelete = null;
 
@@ -174,7 +175,7 @@
       const upsertComparison = compareIds(legacyIds, []);
       const deleteComparison = compareIds(legacyDeleteIdsList, []);
       return Object.freeze({
-        mode:MODE, installed, userId:userId || null,
+        mode:MODE, installed, deleteInstalled, userId:userId || null,
         legacyUpserts:legacyIds.length, shadowUpserts:0, matched:upsertComparison.matchedIds.length,
         matchedIds:upsertComparison.matchedIds, missingShadowIds:upsertComparison.missingShadowIds,
         shadowOnlyIds:upsertComparison.shadowOnlyIds, coverage:upsertComparison.coverage, healthy:upsertComparison.healthy,
@@ -195,6 +196,7 @@
     return Object.freeze({
       mode:MODE,
       installed,
+      deleteInstalled,
       userId,
       deviceId:store.getDeviceId(),
       legacyUpserts:legacyIds.length,
@@ -339,31 +341,34 @@
   }
 
   function install() {
-    if (installed) return true;
     if (!global.OfflineOutboxStore) return false;
-    if (typeof global.queueEditalUpsert !== 'function' || typeof global.queueEditalDelete !== 'function') return false;
 
-    legacyQueueEditalUpsert = global.queueEditalUpsert;
-    legacyQueueEditalDelete = global.queueEditalDelete;
+    if (!installed) {
+      if (typeof global.queueEditalUpsert !== 'function') return false;
+      legacyQueueEditalUpsert = global.queueEditalUpsert;
+      global.queueEditalUpsert = function shadowedQueueEditalUpsert(item) {
+        const result = legacyQueueEditalUpsert.apply(this, arguments);
+        Promise.resolve(shadowEditalUpsert(item)).catch(error => {
+          console.warn('Offline sync shadow de upsert não registrado; fila legada preservada:', error);
+        });
+        return result;
+      };
+      installed = true;
+    }
 
-    global.queueEditalUpsert = function shadowedQueueEditalUpsert(item) {
-      const result = legacyQueueEditalUpsert.apply(this, arguments);
-      Promise.resolve(shadowEditalUpsert(item)).catch(error => {
-        console.warn('Offline sync shadow de upsert não registrado; fila legada preservada:', error);
-      });
-      return result;
-    };
+    if (!deleteInstalled && typeof global.queueEditalDelete === 'function') {
+      legacyQueueEditalDelete = global.queueEditalDelete;
+      global.queueEditalDelete = function shadowedQueueEditalDelete(id) {
+        const result = legacyQueueEditalDelete.apply(this, arguments);
+        Promise.resolve(shadowEditalDelete(id)).catch(error => {
+          console.warn('Offline sync shadow de exclusão não registrado; fila legada preservada:', error);
+        });
+        return result;
+      };
+      deleteInstalled = true;
+    }
 
-    global.queueEditalDelete = function shadowedQueueEditalDelete(id) {
-      const result = legacyQueueEditalDelete.apply(this, arguments);
-      Promise.resolve(shadowEditalDelete(id)).catch(error => {
-        console.warn('Offline sync shadow de exclusão não registrado; fila legada preservada:', error);
-      });
-      return result;
-    };
-
-    installed = true;
-    return true;
+    return installed;
   }
 
   global.OfflineSyncShadow = Object.freeze({
@@ -383,7 +388,8 @@
     getDeleteParityReport,
     clearParityHistory,
     clearDeleteParityHistory,
-    isInstalled:() => installed
+    isInstalled:() => installed,
+    isDeleteInstalled:() => deleteInstalled
   });
 
   install();
