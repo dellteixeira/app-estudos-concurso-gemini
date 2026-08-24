@@ -29,10 +29,10 @@
 
     async function loadOfflineShadowFoundation() {
         if (!global.OfflineOutboxStore) {
-            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.32.0', 'offline-outbox-store');
+            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.32.1', 'offline-outbox-store');
         }
         if (!global.OfflineSyncShadow) {
-            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.32.0', 'offline-sync-shadow');
+            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.32.1', 'offline-sync-shadow');
         }
         global.OfflineSyncShadow?.install?.();
         return global.OfflineSyncShadow?.getDiagnostics?.() || null;

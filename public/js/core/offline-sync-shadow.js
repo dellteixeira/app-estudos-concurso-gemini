@@ -5,6 +5,9 @@
 
   const MODE = 'shadow-v1';
   const ENTITY = 'edital-topic';
+  const PARITY_SCHEMA_VERSION = 1;
+  const PARITY_STORAGE_PREFIX = 'offline_sync_shadow_parity_v1_';
+  const MAX_PARITY_SAMPLES = 100;
   let installed = false;
   let legacyQueueEditalUpsert = null;
 
@@ -41,6 +44,26 @@
     return (hash >>> 0).toString(16).padStart(8, '0');
   }
 
+  function parityStorageKey(userId) {
+    return `${PARITY_STORAGE_PREFIX}${String(userId || '')}`;
+  }
+
+  function readParityHistory(userId) {
+    if (!userId) return [];
+    try {
+      const value = JSON.parse(global.localStorage?.getItem(parityStorageKey(userId)) || '[]');
+      return Array.isArray(value) ? value : [];
+    } catch (_) { return []; }
+  }
+
+  function writeParityHistory(userId, samples) {
+    if (!userId) return;
+    try {
+      const bounded = samples.slice(-MAX_PARITY_SAMPLES);
+      global.localStorage?.setItem(parityStorageKey(userId), JSON.stringify(bounded));
+    } catch (_) {}
+  }
+
   async function shadowEditalUpsert(item, reason = 'queueEditalUpsert') {
     const store = global.OfflineOutboxStore;
     const userId = currentUserId();
@@ -66,6 +89,8 @@
         detail:{ mode:MODE, entity:ENTITY, entityId, idempotencyKey:operation.idempotencyKey, reason }
       }));
     } catch (_) {}
+
+    await recordParitySnapshot(reason).catch(() => null);
     return operation;
   }
 
@@ -82,7 +107,7 @@
     const store = global.OfflineOutboxStore;
     const legacyIds = legacyUpsertIds();
     if (!userId || !store) {
-      return Object.freeze({ mode:MODE, installed, userId:userId || null, legacyUpserts:legacyIds.length, shadowUpserts:0, matched:0, missingShadowIds:legacyIds, shadowOnlyIds:[] });
+      return Object.freeze({ mode:MODE, installed, userId:userId || null, legacyUpserts:legacyIds.length, shadowUpserts:0, matched:0, matchedIds:[], missingShadowIds:legacyIds, shadowOnlyIds:[], coverage:legacyIds.length ? 0 : 1, healthy:legacyIds.length === 0 });
     }
 
     const rows = await store.list(userId, { statuses:['shadow'], limit:500 });
@@ -92,6 +117,7 @@
     const matchedIds = legacyIds.filter(id => shadowSet.has(id));
     const missingShadowIds = legacyIds.filter(id => !shadowSet.has(id));
     const shadowOnlyIds = shadowIds.filter(id => !legacySet.has(id));
+    const coverage = legacyIds.length ? matchedIds.length / legacyIds.length : 1;
 
     return Object.freeze({
       mode:MODE,
@@ -103,8 +129,84 @@
       matched:matchedIds.length,
       matchedIds,
       missingShadowIds,
-      shadowOnlyIds
+      shadowOnlyIds,
+      coverage,
+      healthy:missingShadowIds.length === 0
     });
+  }
+
+  async function recordParitySnapshot(reason = 'manual') {
+    const diagnostics = await getDiagnostics();
+    if (!diagnostics.userId) return null;
+
+    const sample = Object.freeze({
+      schemaVersion:PARITY_SCHEMA_VERSION,
+      capturedAt:new Date().toISOString(),
+      reason:String(reason || 'manual'),
+      mode:MODE,
+      deviceId:diagnostics.deviceId || null,
+      legacyUpserts:diagnostics.legacyUpserts,
+      shadowUpserts:diagnostics.shadowUpserts,
+      matched:diagnostics.matched,
+      coverage:diagnostics.coverage,
+      healthy:diagnostics.healthy,
+      missingShadowIds:[...diagnostics.missingShadowIds],
+      shadowOnlyIds:[...diagnostics.shadowOnlyIds]
+    });
+
+    const history = readParityHistory(diagnostics.userId);
+    history.push(sample);
+    writeParityHistory(diagnostics.userId, history);
+
+    try {
+      global.dispatchEvent(new CustomEvent('offline-sync-shadow:parity', { detail:sample }));
+    } catch (_) {}
+    return sample;
+  }
+
+  function getParityHistory(options = {}) {
+    const userId = currentUserId();
+    if (!userId) return [];
+    const limit = Math.max(1, Math.min(MAX_PARITY_SAMPLES, Number(options.limit) || 50));
+    return readParityHistory(userId).slice(-limit).map(sample => Object.freeze({ ...sample }));
+  }
+
+  function getParityReport(options = {}) {
+    const samples = getParityHistory(options);
+    const missingOccurrences = {};
+    let healthySamples = 0;
+    let lowestCoverage = 1;
+
+    samples.forEach(sample => {
+      if (sample.healthy) healthySamples += 1;
+      lowestCoverage = Math.min(lowestCoverage, Number.isFinite(Number(sample.coverage)) ? Number(sample.coverage) : 0);
+      (sample.missingShadowIds || []).forEach(id => {
+        const key = String(id);
+        missingOccurrences[key] = (missingOccurrences[key] || 0) + 1;
+      });
+    });
+
+    const unhealthySamples = samples.length - healthySamples;
+    return Object.freeze({
+      schemaVersion:PARITY_SCHEMA_VERSION,
+      mode:MODE,
+      sampleCount:samples.length,
+      healthySamples,
+      unhealthySamples,
+      healthyRate:samples.length ? healthySamples / samples.length : 1,
+      lowestCoverage:samples.length ? lowestCoverage : 1,
+      latest:samples.length ? samples[samples.length - 1] : null,
+      missingOccurrences:Object.freeze({ ...missingOccurrences })
+    });
+  }
+
+  function clearParityHistory() {
+    const userId = currentUserId();
+    if (!userId) return false;
+    try {
+      global.localStorage?.removeItem(parityStorageKey(userId));
+      return true;
+    } catch (_) { return false; }
   }
 
   function install() {
@@ -127,9 +229,15 @@
   global.OfflineSyncShadow = Object.freeze({
     MODE,
     ENTITY,
+    PARITY_SCHEMA_VERSION,
+    MAX_PARITY_SAMPLES,
     install,
     shadowEditalUpsert,
     getDiagnostics,
+    recordParitySnapshot,
+    getParityHistory,
+    getParityReport,
+    clearParityHistory,
     isInstalled:() => installed
   });
 
