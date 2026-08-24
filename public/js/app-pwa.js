@@ -215,11 +215,11 @@
         window.startFilteredStudyModal = startFilteredStudyModal;
         window.resetDailyPomodoroHours = resetDailyPomodoroHours;
 
-        // V10.29.4 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
+        // V10.30.0 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
         (function loadAdaptiveScheduleReconciliation() {
             if (window.AdaptiveScheduleReconciliation || document.querySelector('script[data-adaptive-schedule-reconciliation]')) return;
             const script = document.createElement('script');
-            script.src = './js/adaptive-schedule-reconciliation.js?v=10.29.4';
+            script.src = './js/adaptive-schedule-reconciliation.js?v=10.30.0';
             script.defer = true;
             script.dataset.adaptiveScheduleReconciliation = '1';
             document.head.appendChild(script);
