@@ -332,7 +332,7 @@ async function analyzeEdital(request, env) {
   }
   const rawTopicCount = rawLockedMaterias.reduce((sum, item) => sum + (Array.isArray(item?.assuntos) ? item.assuntos.length : 0), 0);
   if (rawTopicCount > MAX_TOPICS_TOTAL) {
-    return json({ error: "Quantidade de tópicos excedeu o limite de segurança." }, 413);
+    return json({ error: "Quantidade de tópicos excede o limite de segurança." }, 413);
   }
 
   const concurso = cleanText(body?.concurso, 200);
