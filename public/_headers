@@ -28,6 +28,12 @@
 /js/app-core.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+/js/app-state.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/sync-engine.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/app-ai.js
   Cache-Control: no-cache, no-store, must-revalidate
 
