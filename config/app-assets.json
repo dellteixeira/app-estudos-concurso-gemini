@@ -45,6 +45,7 @@
     "/js/pdf/pdf-annotations.js",
     "/js/pdf/pdf-reader.js",
     "/js/pdf/pdf-library-ui.js",
+    "/js/pdf/pdf-device-storage.js",
     "/vendor/pdf.min.js",
     "/vendor/pdf_viewer.min.css",
     "/vendor/pdf.worker.min.js"
@@ -88,6 +89,7 @@
     "/js/pdf/pdf-annotations.js",
     "/js/pdf/pdf-reader.js",
     "/js/pdf/pdf-library-ui.js",
+    "/js/pdf/pdf-device-storage.js",
     "/js/app-pwa.js",
     "/js/app-state.js",
     "/js/sync-engine.js"
