@@ -22,17 +22,32 @@ test('advisor e endpoint possuem sintaxe JavaScript válida',()=>{
   }
 });
 
-test('motor local calcula fricção e limita a triagem antes da IA',()=>{
+test('motor local calcula dificuldade persistente e limita triagem antes da IA',()=>{
   assert.match(client,/const MAX_TOPICS=5/);
   assert.match(client,/computeLearningFriction/);
   assert.match(client,/frictionScore/);
   assert.match(client,/slice\(0,Math\.max\(1,Math\.min\(MAX_TOPICS/);
   assert.match(client,/MIN_FRICTION=35/);
-});
-
-test('rótulo da interface usa dificuldade persistente em vez de fricção',()=>{
   assert.match(client,/Dificuldade persistente \$\{candidate\.frictionScore\}/);
   assert.doesNotMatch(client,/>Fricção \$\{candidate\.frictionScore\}</);
+});
+
+test('IA passa a ser contextual de Assuntos em risco, sem faixa permanente no dashboard',()=>{
+  assert.match(client,/\[data-action="retention-details"\]\[data-metric="risk"\]/);
+  assert.match(client,/openRiskView/);
+  assert.match(client,/Assuntos em risco/);
+  assert.match(client,/Intervenções para dificuldades persistentes/);
+  assert.match(client,/document\.getElementById\('learningAdvisorPanel'\)\?\.remove\(\)/);
+  assert.doesNotMatch(client,/parent\.appendChild\(section\)/);
+  assert.match(client,/entryPoint:'risk-details'/);
+});
+
+test('janela de risco diferencia revisão agendada vencida de necessidade cognitiva',()=>{
+  assert.match(client,/row\.scheduledOverdue\|\|row\.overdue/);
+  assert.match(client,/Revisão agendada vencida/);
+  assert.match(client,/row\.retentionDue/);
+  assert.match(client,/não há revisão vencida no cronograma/);
+  assert.match(client,/Retenção baixa — revisão recomendada/);
 });
 
 test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
@@ -46,15 +61,13 @@ test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
   assert.doesNotMatch(client,/gerarCronogramaMetodo2\(/);
 });
 
-test('barra do Advisor ocupa toda a largura e possui contrato de texto resiliente',()=>{
-  assert.match(css,/#retentionDiagnosticPanel>#learningAdvisorPanel\.learning-advisor\{grid-column:1\/-1!important/);
-  assert.match(css,/justify-self:stretch!important/);
-  assert.match(css,/width:100%!important/);
-  assert.match(css,/max-width:100%!important/);
-  assert.match(css,/margin:12px 0 0!important/);
-  assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
-  assert.match(css,/@container \(max-width:760px\)/);
-  assert.match(css,/@media\(max-width:900px\)/);
+test('modal contextual é responsivo e preserva contrato global de texto',()=>{
+  assert.match(css,/\.learning-advisor-overlay/);
+  assert.match(css,/\.learning-advisor-dialog/);
+  assert.match(css,/width:min\(920px,100%\)/);
+  assert.match(css,/max-height:min\(88vh,820px\)/);
+  assert.match(css,/\.learning-risk-card/);
+  assert.match(css,/@media\(max-width:700px\)/);
   assert.match(css,/min-height:44px/);
   assert.match(css,/overflow-wrap:anywhere/);
   assert.match(css,/#app-dashboard :where\(/);
