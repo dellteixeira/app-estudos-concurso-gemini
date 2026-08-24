@@ -41,6 +41,7 @@ function getTopicScheduleContext(contest, state, item, now = new Date()) {
     const lookup = new Map(editalItems.map(entry => [`${entry.materia} - ${entry.assunto}`, entry]));
     let pendingDate = null;
     let pendingText = '';
+
     Object.keys(schedule).sort().some(dateKey => {
         for (const text of (Array.isArray(schedule[dateKey]) ? schedule[dateKey] : [])) {
             if (topicKeyFromText(text) !== key) continue;
@@ -54,19 +55,41 @@ function getTopicScheduleContext(contest, state, item, now = new Date()) {
     });
 
     const next = state?.nextReviewAt ? new Date(state.nextReviewAt) : null;
-    const originalNext = next && Number.isFinite(next.getTime()) ? next : null;
+    const retentionNextAt = next && Number.isFinite(next.getTime()) ? next : null;
     const validPending = pendingDate && Number.isFinite(pendingDate.getTime()) ? pendingDate : null;
-    const pendingFuture = !!(validPending && validPending >= new Date(`${todayKey()}T00:00:00`));
+    const todayStart = new Date(`${todayKey()}T00:00:00`);
+    const pendingFuture = !!(validPending && validPending >= todayStart);
+    const scheduledPending = !!validPending;
+    const scheduledOverdue = !!(validPending && validPending < now);
+    const scheduledOverdueDays = scheduledOverdue ? Math.max(0, Math.floor((now-validPending)/DAY_MS)) : 0;
+    const retentionDue = !!(retentionNextAt && retentionNextAt < now);
+    const retentionDueDays = retentionDue ? Math.max(0, Math.floor((now-retentionNextAt)/DAY_MS)) : 0;
     const cycle = getCycleAnchor(contest);
     const acquired = !!(item && (isContentAcquired(item) || item.questoes || hasAnyAdaptiveRevisionCompletion(item, contest)));
     const pendingBase = !!pendingText && !isRevisionScheduleText(pendingText);
     const dormantPending = pendingFuture && pendingBase && !acquired && !!cycle.startDate && !cycle.firstStudyAt;
-    let effectiveNext = originalNext;
+
+    let effectiveNext = retentionNextAt;
     if (pendingFuture && (!effectiveNext || effectiveNext < validPending)) effectiveNext = validPending;
-    const overdue = !!(effectiveNext && effectiveNext < now);
+
     return {
-        cycle, acquired, pendingBase, pendingDate:validPending, dormantPending, effectiveNext, overdue,
-        overdueDays: overdue ? Math.max(0, Math.floor((now-effectiveNext)/DAY_MS)) : 0
+        cycle,
+        acquired,
+        pendingBase,
+        pendingDate:validPending,
+        pendingText,
+        dormantPending,
+        retentionNextAt,
+        retentionDue,
+        retentionDueDays,
+        scheduledPending,
+        scheduledOverdue,
+        scheduledOverdueDays,
+        effectiveNext,
+        // Compatibility aliases: UI "vencida" must now mean an item that is
+        // actually present and overdue in the active schedule.
+        overdue:scheduledOverdue,
+        overdueDays:scheduledOverdueDays
     };
 }
 
@@ -99,13 +122,31 @@ function buildReconciledRetentionDiagnostics() {
         const questionAccuracy=Number.isFinite(Number(state?.questionStats?.lastAccuracy))?Number(state.questionStats.lastAccuracy):null;
         const schedulerScore=reconciledSchedulerScore(item,{contest,now,state,isRevision:true,activityType:'revisao_ativa',availableMinutes:20,suggestedMinutes:15}).total;
         const prioritySignal=Math.max(0,Math.min(50,schedulerScore/25));
-        const riskScore=(100-retention)+(ctx.overdue?28+Math.min(30,ctx.overdueDays*3):0)+(questionAccuracy!=null&&questionAccuracy<60?(60-questionAccuracy)*.7:0)+prioritySignal;
-        return {state,retention,nextAt:ctx.effectiveNext,overdue:ctx.overdue,overdueDays:ctx.overdueDays,questionAccuracy,riskScore,schedulerScore,scheduleReconciled:true};
+        const cognitiveDueSignal=ctx.retentionDue?16+Math.min(20,ctx.retentionDueDays*2):0;
+        const scheduledDelaySignal=ctx.scheduledOverdue?18+Math.min(24,ctx.scheduledOverdueDays*3):0;
+        const riskScore=(100-retention)+cognitiveDueSignal+scheduledDelaySignal+(questionAccuracy!=null&&questionAccuracy<60?(60-questionAccuracy)*.7:0)+prioritySignal;
+        return {
+            state,
+            retention,
+            nextAt:ctx.scheduledPending?ctx.pendingDate:ctx.effectiveNext,
+            retentionNextAt:ctx.retentionNextAt,
+            retentionDue:ctx.retentionDue,
+            retentionDueDays:ctx.retentionDueDays,
+            scheduledPending:ctx.scheduledPending,
+            scheduledOverdue:ctx.scheduledOverdue,
+            scheduledOverdueDays:ctx.scheduledOverdueDays,
+            overdue:ctx.scheduledOverdue,
+            overdueDays:ctx.scheduledOverdueDays,
+            questionAccuracy,
+            riskScore,
+            schedulerScore,
+            scheduleReconciled:true
+        };
     }).filter(Boolean);
     const avg=rows.length?rows.reduce((sum,row)=>sum+row.retention,0)/rows.length:null;
-    const risk=rows.filter(row=>row.retention<70||row.overdue||(row.questionAccuracy!=null&&row.questionAccuracy<60));
-    const overdue=rows.filter(row=>row.overdue);
-    const mastered=rows.filter(row=>row.retention>=85&&!row.overdue&&hasRetentionMasteryEvidence(row.state));
+    const risk=rows.filter(row=>row.retention<70||row.retentionDue||row.scheduledOverdue||(row.questionAccuracy!=null&&row.questionAccuracy<60));
+    const overdue=rows.filter(row=>row.scheduledOverdue);
+    const mastered=rows.filter(row=>row.retention>=85&&!row.retentionDue&&!row.scheduledOverdue&&hasRetentionMasteryEvidence(row.state));
     risk.sort((a,b)=>b.riskScore-a.riskScore||a.retention-b.retention);
     return {rows,avg,risk,overdue,mastered};
 }
@@ -129,20 +170,40 @@ function compactPastRedistributedPending(contest) {
     return changed;
 }
 
-async function reconcileAfterScheduleGeneration(source) {
-    const metadata=getConcursosMetadata();
-    const contest=metadata[currentConcurso]||(metadata[currentConcurso]={});
-    compactPastRedistributedPending(contest);
-    const cycle=getCycleAnchor(contest);
-    contest.adaptiveScheduleAnchor={version:1,source,plannedStartDate:String(contest?.scheduleConfig?.startDate||todayKey()),generatedAt:new Date().toISOString(),firstStudyAt:cycle.firstStudyAt?.toISOString()||null};
-    await saveConcursosMetadata(metadata);
-    renderMonthCalendar();renderDelayedPanel();renderRetentionDiagnostics();updateModernOverview();
+function hasScheduledItems(contest) {
+    return Object.values(contest?.dateSchedule||{}).some(items=>Array.isArray(items)&&items.length>0);
 }
 
-function wrapScheduleGenerator(name) {
+async function reconcileAfterScheduleMutation(source, options = {}) {
+    const metadata=getConcursosMetadata();
+    const contest=metadata[currentConcurso]||(metadata[currentConcurso]={});
+    if(options.compact!==false)compactPastRedistributedPending(contest);
+    const cycle=getCycleAnchor(contest);
+
+    if(options.generated){
+        contest.adaptiveScheduleAnchor={version:2,source,plannedStartDate:String(contest?.scheduleConfig?.startDate||todayKey()),generatedAt:new Date().toISOString(),firstStudyAt:cycle.firstStudyAt?.toISOString()||null};
+    }else if(options.cleared&&!hasScheduledItems(contest)){
+        delete contest.adaptiveScheduleAnchor;
+    }else if(contest.adaptiveScheduleAnchor){
+        contest.adaptiveScheduleAnchor={...contest.adaptiveScheduleAnchor,source,lastMutationAt:new Date().toISOString(),firstStudyAt:cycle.firstStudyAt?.toISOString()||null};
+    }
+
+    await saveConcursosMetadata(metadata);
+    renderMonthCalendar();
+    renderDelayedPanel();
+    renderRetentionDiagnostics();
+    updateModernOverview();
+    try{global.AppLearningAdvisor?.refresh?.()}catch(_){}
+}
+
+function wrapScheduleMutation(name, options = {}) {
     const original=global[name];
     if(typeof original!=='function'||original.__adaptiveReconciled)return;
-    const wrapped=async function(...args){const result=await original.apply(this,args);await reconcileAfterScheduleGeneration(name);return result;};
+    const wrapped=async function(...args){
+        const result=await original.apply(this,args);
+        await reconcileAfterScheduleMutation(name,options);
+        return result;
+    };
     wrapped.__adaptiveReconciled=true;
     global[name]=wrapped;
 }
@@ -162,8 +223,15 @@ function install(){
     global.computeRetentionSchedulerScore=reconciledSchedulerScore;
     global.buildRetentionDiagnostics=buildReconciledRetentionDiagnostics;
     global.rebuildRetentionEngineForContest=reconciledRebuild;
-    ['gerarCronogramaInteligente','gerarCronogramaMetodo2','reorganizarMateriasCronograma'].forEach(wrapScheduleGenerator);
-    global.AdaptiveScheduleReconciliation=Object.freeze({getCycleAnchor,getTopicScheduleContext,compactPastRedistributedPending,reconcileAfterScheduleGeneration});
+    ['gerarCronogramaInteligente','gerarCronogramaMetodo2','reorganizarMateriasCronograma'].forEach(name=>wrapScheduleMutation(name,{generated:true}));
+    wrapScheduleMutation('limparCronogramaMesAtual',{cleared:true,compact:false});
+    global.AdaptiveScheduleReconciliation=Object.freeze({
+        getCycleAnchor,
+        getTopicScheduleContext,
+        compactPastRedistributedPending,
+        hasScheduledItems,
+        reconcileAfterScheduleMutation
+    });
     try{renderRetentionDiagnostics();}catch(_){}
 }
 
