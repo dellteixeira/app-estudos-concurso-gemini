@@ -6,7 +6,8 @@ const EXTENDED_NO_STORE_PATHS = new Set([
   '/js/adaptive-schedule-reconciliation.js',
   '/js/learning-advisor.js',
   '/js/core/offline-outbox-store.js',
-  '/js/core/offline-sync-shadow.js'
+  '/js/core/offline-sync-shadow.js',
+  '/js/core/offline-sync-authority.js'
 ]);
 
 function withNoStore(response) {

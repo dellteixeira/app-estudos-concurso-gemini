@@ -191,10 +191,10 @@ test('histórico de paridade é bounded e pode ser limpo localmente',async()=>{
   assert.equal(env.context.OfflineSyncShadow.getParityHistory({limit:100}).length,0);
 });
 
-test('AppState carrega outbox antes do bridge na release v10.32.1',()=>{
-  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.32\.1/);
-  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.32\.1/);
-  assert.match(appStateSource,/loadOfflineShadowFoundation/);
+test('AppState carrega outbox antes do bridge na release v10.33.0',()=>{
+  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.33\.0/);
+  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.33\.0/);
+  assert.match(appStateSource,/loadOfflineSyncFoundation/);
   assert.match(appStateSource,/OfflineSyncShadow\?\.install/);
   assert.match(appStateSource,/getOfflineShadowDiagnostics/);
 });
