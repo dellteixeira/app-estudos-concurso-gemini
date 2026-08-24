@@ -23,7 +23,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.32.0";
+const APP_VERSION = "10.32.1";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css", "/css/pdf-mobile-card-actions.css",
@@ -79,9 +79,9 @@ async function serveVendorAsset(request, route) {
   const cache = caches.default;
   const cacheKey = new Request(request.url, { method: "GET" });
   const cached = await cache.match(cacheKey);
-  if (cached) return cached;
 
   let lastStatus = 0;
+  if (cached) return cached;
   for (const upstreamUrl of route.upstreams) {
     try {
       const upstream = await fetch(upstreamUrl, { redirect: "follow" });
@@ -110,7 +110,6 @@ async function serveVendorAsset(request, route) {
     }
   });
 }
-
 
 const prioritySchema = {
   type: "object",
@@ -289,9 +288,7 @@ function mergePriorityOnly(lockedMaterias, aiResult) {
     const score = scores.get(fold(item.materia));
     return {
       materia: item.materia,
-      // A hierarquia e os assuntos jamais vêm da IA.
       prioridade: score?.prioridade ?? item.prioridade,
-      // Peso detectado do quadro de provas no frontend tem precedência.
       peso: item.peso > 1 ? item.peso : (score?.peso ?? item.peso),
       assuntos: item.assuntos
     };
@@ -353,7 +350,6 @@ async function analyzeEdital(request, env) {
     return json({ error: "Recorte do edital excedeu o limite de segurança." }, 413);
   }
 
-  // Resultado-base seguro: mesmo que a IA falhe, matéria/assunto permanecem corretos.
   let finalMaterias = lockedMaterias;
   let aiUsed = false;
 
@@ -427,7 +423,6 @@ ${rawText.slice(0, MAX_TEXT_CHARS)}
     extractionLocked: true
   });
 }
-
 
 function parseFlashcardAIResponse(result) {
   if (!result) return null;
@@ -960,7 +955,6 @@ DEVOLVA EXATAMENTE:
   return json({ question: local.question, answer: local.answer, model: "Gerador local · sem IA", provider: "local-deterministic", modelKey: "local", fallbackUsed: true, deterministic: true, hedged: false, latencyMs: localDurationMs, evidenceId: local.evidenceId, knowledgeType: local.knowledgeType, sourceValidated: true });
 }
 
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -991,7 +985,6 @@ export default {
       if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
       return generateFlashcard(request, env);
     }
-
 
     return env.ASSETS.fetch(request);
   }
