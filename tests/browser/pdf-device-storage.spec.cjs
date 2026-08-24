@@ -50,10 +50,22 @@ for (const width of [320, 390]) {
       const cardRect = card.getBoundingClientRect();
       const actions = card.querySelector('.pdf-card-actions');
       const actionRect = actions.getBoundingClientRect();
-      const buttons = [...actions.querySelectorAll('.pdf-library-card-action')].map(button => {
+      const actionButtons = [...actions.querySelectorAll('.pdf-library-card-action')];
+      const buttons = actionButtons.map(button => {
         const rect = button.getBoundingClientRect();
-        return { left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+        return {
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          height: rect.height,
+          save: button.classList.contains('pdf-device-save-action'),
+          label: button.textContent.trim()
+        };
       });
+      const allInteractiveActions = new Set([
+        ...card.querySelectorAll('.pdf-library-card-action'),
+        ...card.querySelectorAll('[onclick*="openDocument("]')
+      ]);
       return {
         viewport: document.documentElement.clientWidth,
         bodyScroll: document.body.scrollWidth,
@@ -63,6 +75,7 @@ for (const width of [320, 390]) {
         actionLeft: actionRect.left,
         actionRight: actionRect.right,
         columns: getComputedStyle(actions).gridTemplateColumns,
+        interactiveCount: allInteractiveActions.size,
         buttons
       };
     });
@@ -73,12 +86,18 @@ for (const width of [320, 390]) {
     expect(geometry.actionRight).toBeLessThanOrEqual(geometry.cardRight + 1);
     expect(geometry.rootScroll).toBeLessThanOrEqual(geometry.viewport + 2);
     expect(geometry.bodyScroll).toBeLessThanOrEqual(geometry.viewport + 2);
-    expect(geometry.buttons).toHaveLength(4);
+    expect(geometry.interactiveCount).toBe(4);
+    expect(geometry.buttons.length).toBeGreaterThanOrEqual(3);
+    expect(geometry.buttons.length).toBeLessThanOrEqual(4);
+    expect(geometry.buttons.some(button => button.save && button.label === 'Salvar no dispositivo')).toBe(true);
     for (const button of geometry.buttons) {
       expect(button.left).toBeGreaterThanOrEqual(geometry.actionLeft - 1);
       expect(button.right).toBeLessThanOrEqual(geometry.actionRight + 1);
       expect(button.width).toBeGreaterThan(0);
       expect(button.height).toBeGreaterThanOrEqual(43);
+    }
+    if (geometry.buttons.length % 2 === 1) {
+      expect(geometry.buttons.at(-1).width).toBeGreaterThan(geometry.buttons[0].width * 1.8);
     }
   });
 }
