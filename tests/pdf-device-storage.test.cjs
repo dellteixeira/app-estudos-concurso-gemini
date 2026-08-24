@@ -18,6 +18,12 @@ test('PDF salvo no dispositivo usa arquivo externo ao armazenamento privado do a
   assert.match(device,/Salvar no dispositivo/);
 });
 
+test('cancelamento do seletor não é reportado como salvamento concluído',()=>{
+  assert.match(device,/error\?\.name === 'AbortError'/);
+  assert.match(device,/cancelled: true/);
+  assert.match(device,/Salvamento cancelado\. Nenhum arquivo foi criado\./);
+});
+
 test('exclusão global purga armazenamento local pelo caminho canônico da Biblioteca',()=>{
   cp.execFileSync(process.execPath,['--check','public/js/pdf/pdf-library.js'],{stdio:'pipe'});
   assert.match(library,/async function forgetDocuments\(ids\)/);
@@ -51,8 +57,9 @@ test('mobile mantém ações do PDF em duas colunas dentro da viewport',()=>{
   assert.match(device,/width:100%!important/);
   assert.match(device,/min-width:0!important/);
   assert.match(device,/min-height:44px!important/);
-  assert.match(device,/font-size:clamp\(\.69rem,3\.2vw,\.82rem\)!important/);
-  assert.match(device,/> :last-child:nth-child\(3\)[\s\S]*grid-column:1\/-1!important/);
+  assert.match(device,/box-sizing:border-box!important/);
+  assert.match(device,/:last-child:nth-child\(odd\)[\s\S]*grid-column:1\/-1!important/);
+  assert.match(device,/@media \(max-width:340px\)/);
 });
 
 test('adapter carrega a integração de dispositivo de forma versionável e isolada',()=>{
