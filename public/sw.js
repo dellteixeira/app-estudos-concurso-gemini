@@ -21,7 +21,7 @@ const OPTIONAL_OFFLINE_ASSETS = [
   './js/notes-import-export.js', './js/notes-export-rich.js', './js/study-performance-report.js',
   './js/pdf/pdf-core.js', './js/pdf/pdf-workspaces.js', './js/pdf/pdf-links.js', './js/pdf/pdf-library.js',
   './js/pdf/pdf-library-ordering.js', './js/pdf/pdf-upload.js', './js/pdf/pdf-annotations.js',
-  './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js',
+  './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js', './js/pdf/pdf-device-storage.js',
   './vendor/pdf.min.js', './vendor/pdf_viewer.min.css', './vendor/pdf.worker.min.js'
 ];
 
@@ -159,7 +159,7 @@ self.addEventListener('fetch', event => {
     '/js/performance-loader.js', '/js/performance-metrics.js',
     '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js',
     '/js/app-ai.js', '/js/app-ui.js', '/js/ui/mobile.js', '/js/ui/navigation.js', '/js/ui/search.js',
-    '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
+    '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/pdf/pdf-device-storage.js', '/js/app-pwa.js'
   ].some(path => url.pathname.endsWith(path));
 
   if (isCoreAsset) {
