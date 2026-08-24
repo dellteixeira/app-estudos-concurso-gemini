@@ -22,6 +22,9 @@ if (scriptElem.includes("'unsafe-inline'")) fail("script-src-elem ainda permite 
 else ok('script-src-elem sem unsafe-inline');
 if (!scriptAttr.includes("'unsafe-inline'")) fail('script-src-attr foi endurecido antes da migração completa dos handlers legados');
 else ok('handlers legados isolados somente em script-src-attr');
+const styleAttr = csp.match(/(?:^|;\s*)style-src-attr\s+([^;]+)/)?.[1] || '';
+if (!styleAttr.includes("'none'")) fail("style-src-attr deve bloquear atributos style com 'none'");
+else ok('style-src-attr bloqueado com none');
 
 const inlineScriptBlocks = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)]
   .filter(match => match[1].trim().length > 0);

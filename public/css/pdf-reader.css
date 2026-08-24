@@ -102,3 +102,10 @@
   .pdf-reader-canvas-wrap.is-pinching{touch-action:none!important;overscroll-behavior:none!important}
   .pdf-reader-canvas-wrap.is-pinching .pdf-reader-page-host{will-change:transform}
 }
+
+
+/* STYLE_SRC_ATTR_READER */
+.pdf-flashcard-ai-model-wrap{display:grid;gap:6px;margin:10px 0 4px;text-align:left}
+.pdf-flashcard-ai-model-wrap label{color:#8dc8e7;font-weight:700;font-size:.88rem}
+.pdf-flashcard-ai-model-wrap select{width:100%;min-height:44px;border:1px solid #294b64;border-radius:11px;background:#071d2d;color:#e8f3ff;padding:0 12px;font:inherit}
+.pdf-flashcard-ai-model-wrap small{color:#8fa9bc;line-height:1.35}

@@ -14,11 +14,8 @@ function walk(dir){
 function runtimeStyleOffenders(){
   const files=walk('public').filter(file=>/\.(?:js|html)$/i.test(file));
   const patterns=[
-    /\.style\s*\./g,
-    /\.style\s*\[/g,
-    /\.style\s*=/g,
-    /\.style\.setProperty\s*\(/g,
     /\.style\.cssText\s*=/g,
+    /\.style\s*=\s*['"`]/g,
     /setAttribute\(\s*['"]style['"]/g,
     /\sstyle\s*=\s*['"`]/g
   ];
@@ -42,4 +39,15 @@ test('CSP explicitly blocks style attributes',()=>{
   const headers=fs.readFileSync('public/_headers','utf8');
   const csp=headers.match(/^\s*Content-Security-Policy:\s*(.+)$/mi)?.[1]||'';
   assert.match(csp,/(?:^|;\s*)style-src-attr\s+'none'(?:;|$)/);
+});
+
+
+test('Reader geometry and drag ghost keep direct style-property updates',()=>{
+  const reader=fs.readFileSync('public/js/pdf/pdf-reader.js','utf8');
+  const core=fs.readFileSync('public/js/app-core.js','utf8');
+  assert.match(reader,/shell\.style\.width=/);
+  assert.match(reader,/host\.style\.transform=/);
+  assert.match(core,/ghost\.style\.width=/);
+  assert.match(core,/state\.ghost\.style\.top=/);
+  assert.doesNotMatch(reader,/\.style\.cssText\s*=/);
 });

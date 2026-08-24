@@ -200,7 +200,7 @@
             hint = root.document.createElement('div');
             hint.id = 'passwordPolicyHint';
             hint.textContent = POLICY_HELP;
-            hint.style.cssText = 'margin-top:6px;font-size:.74rem;line-height:1.35;color:#9fb2c6;';
+            hint.style.marginTop='6px';hint.style.fontSize='.74rem';hint.style.lineHeight='1.35';hint.style.color='#9fb2c6';
             input.insertAdjacentElement('afterend', hint);
         }
 

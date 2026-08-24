@@ -173,13 +173,13 @@
     const modal = document.createElement('div');
     modal.id = 'modalPerformanceDiagnostics';
     modal.className = 'modal-overlay';
-    modal.style.zIndex = '1460';
+    modal.classList.add('performance-diagnostics-overlay');
     modal.innerHTML = `
-      <div class="modal" style="max-width:860px;">
+      <div class="modal performance-diagnostics-modal">
         <h3>Diagnóstico de performance</h3>
-        <p style="font-size:.85rem;opacity:.8;line-height:1.5;">Métricas medidas neste navegador. Nenhum dado é enviado para servidor externo.</p>
+        <p class="performance-diagnostics-intro">Métricas medidas neste navegador. Nenhum dado é enviado para servidor externo.</p>
         <div id="performanceDiagnosticsSummary" class="perf-diagnostics-grid"></div>
-        <div id="performanceDiagnosticsDetails" style="margin-top:14px;font-size:.82rem;line-height:1.55;"></div>
+        <div id="performanceDiagnosticsDetails" class="performance-diagnostics-details"></div>
         <div class="modal-actions">
           <button class="btn btn-secondary" type="button" onclick="AppPerformanceMetrics.copyDiagnostics()">Copiar diagnóstico</button>
           <button class="btn btn-secondary" type="button" onclick="AppPerformanceMetrics.clearHistory()">Limpar histórico</button>
@@ -191,7 +191,7 @@
     if (!document.getElementById('performanceMetricsStyles')) {
       const style = document.createElement('style');
       style.id = 'performanceMetricsStyles';
-      style.textContent = `.perf-diagnostics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}.perf-metric-card{padding:12px;border:1px solid var(--border-color);border-radius:10px;background:rgba(0,0,0,.14);display:grid;gap:4px}.perf-metric-card span{font-size:.75rem;opacity:.78}.perf-metric-card strong{font-size:1.15rem}.perf-metric-card small{text-transform:uppercase;font-size:.65rem;font-weight:800}.perf-bom small{color:#22c55e}.perf-atenção small{color:#f59e0b}.perf-ruim small{color:#ef4444}.perf-indisponível small{opacity:.6}`;
+      style.textContent = `.performance-diagnostics-overlay{z-index:1460}.performance-diagnostics-modal{max-width:860px}.performance-diagnostics-intro{font-size:.85rem;opacity:.8;line-height:1.5}.performance-diagnostics-details{margin-top:14px;font-size:.82rem;line-height:1.55}.perf-diagnostics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}.perf-metric-card{padding:12px;border:1px solid var(--border-color);border-radius:10px;background:rgba(0,0,0,.14);display:grid;gap:4px}.perf-metric-card span{font-size:.75rem;opacity:.78}.perf-metric-card strong{font-size:1.15rem}.perf-metric-card small{text-transform:uppercase;font-size:.65rem;font-weight:800}.perf-bom small{color:#22c55e}.perf-atenção small{color:#f59e0b}.perf-ruim small{color:#ef4444}.perf-indisponível small{opacity:.6}`;
       document.head.appendChild(style);
     }
   }
