@@ -1,0 +1,261 @@
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+
+const outboxSource=fs.readFileSync('public/js/core/offline-outbox-store.js','utf8');
+const shadowSource=fs.readFileSync('public/js/core/offline-sync-shadow.js','utf8');
+const authoritySource=fs.readFileSync('public/js/core/offline-sync-authority.js','utf8');
+const appStateSource=fs.readFileSync('public/js/app-state.js','utf8');
+const swSource=fs.readFileSync('public/sw.js','utf8');
+const manifestSource=fs.readFileSync('config/app-assets.json','utf8');
+
+function makeStorage(){
+  const map=new Map();
+  return {
+    getItem:key=>map.has(String(key))?map.get(String(key)):null,
+    setItem:(key,value)=>map.set(String(key),String(value)),
+    removeItem:key=>map.delete(String(key)),
+    key:index=>[...map.keys()][index]??null,
+    get length(){return map.size;}
+  };
+}
+
+function clone(value){return JSON.parse(JSON.stringify(value));}
+
+function makeContext(options={}){
+  let syncState={
+    metadataDirty:false,
+    flashcardsDirty:{},
+    editalUpserts:{},
+    editalDeletes:[],
+    flashcardDeletes:[],
+    concursoDeletes:[]
+  };
+  let legacySyncCalls=0;
+  let authorityRemoteCalls=0;
+  const legacySnapshots=[];
+  const remotePayloads=[];
+  const events=[];
+  const localStorage=makeStorage();
+
+  const context={
+    console,
+    setTimeout,
+    clearTimeout,
+    Promise,
+    Date,
+    Math,
+    JSON,
+    Object,
+    Array,
+    String,
+    Number,
+    Boolean,
+    Set,
+    Map,
+    localStorage,
+    indexedDB:undefined,
+    navigator:{onLine:true},
+    crypto:{randomUUID:()=>`device-${Math.random().toString(36).slice(2)}`},
+    CustomEvent:function(type,init){this.type=type;this.detail=init?.detail;},
+    dispatchEvent:event=>{events.push(event);return true;},
+    addEventListener:()=>{},
+    currentUser:{id:'user-authority-test'},
+    currentConcurso:'Concurso Geral',
+    getContentMethod:item=>item.metodo_conteudo||'automatico',
+    getSyncState:()=>clone(syncState),
+    saveSyncState:state=>{syncState=clone(state);},
+    queueEditalUpsert:item=>{
+      const id=String(item.id);
+      syncState.editalUpserts[id]={...item,id};
+      syncState.editalDeletes=syncState.editalDeletes.filter(value=>String(value)!==id);
+    },
+    syncAllWithSupabase:async()=>{
+      legacySyncCalls+=1;
+      legacySnapshots.push(clone(syncState));
+      if(options.legacyClears!==false) syncState.editalUpserts={};
+      return {legacy:true};
+    },
+    runSupabaseRequest:factory=>factory(),
+    supabaseClient:{
+      from:table=>({
+        upsert:async(payload,config)=>{
+          authorityRemoteCalls+=1;
+          remotePayloads.push({table,payload:clone(payload),config:clone(config)});
+          if(typeof options.onRemote==='function') await options.onRemote({payload,syncState,setSyncState:value=>{syncState=clone(value);}});
+          if(options.remoteError) return {error:new Error(options.remoteError)};
+          return {error:null,data:payload};
+        }
+      })
+    }
+  };
+  context.window=context;
+  context.globalThis=context;
+  vm.createContext(context);
+  vm.runInContext(outboxSource,context,{filename:'offline-outbox-store.js'});
+  vm.runInContext(shadowSource,context,{filename:'offline-sync-shadow.js'});
+  vm.runInContext(authoritySource,context,{filename:'offline-sync-authority.js'});
+
+  return {
+    context,
+    events,
+    getState:()=>clone(syncState),
+    setState:value=>{syncState=clone(value);},
+    getLegacySyncCalls:()=>legacySyncCalls,
+    getAuthorityRemoteCalls:()=>authorityRemoteCalls,
+    getLegacySnapshots:()=>clone(legacySnapshots),
+    getRemotePayloads:()=>clone(remotePayloads)
+  };
+}
+
+function baseTopic(overrides={}){
+  return {
+    id:'topic-1',materia:'Direito',assunto:'Constitucional',prioridade:2,assunto_prioridade:3,
+    concurso:'Concurso Geral',teoria:true,questoes:false,videoaula:false,metodo_conteudo:'automatico',
+    rev_24h:false,rev_7d:true,rev_30d:false,...overrides
+  };
+}
+
+function tick(){return new Promise(resolve=>setTimeout(resolve,35));}
+
+test('autoridade nasce opt-in: desligada preserva integralmente o sync legado',async()=>{
+  const env=makeContext();
+  env.context.queueEditalUpsert(baseTopic());
+  await tick();
+
+  assert.equal(env.context.OfflineSyncAuthority.isEnabled(),false);
+  await env.context.syncAllWithSupabase();
+  assert.equal(env.getLegacySyncCalls(),1);
+  assert.equal(env.getAuthorityRemoteCalls(),0);
+
+  const rows=await env.context.OfflineOutboxStore.list('user-authority-test',{limit:20});
+  assert.equal(rows.length,1);
+  assert.equal(rows[0].status,'shadow');
+});
+
+test('canário habilitado envia somente upsert de edital pela outbox e legado recebe o restante',async()=>{
+  const env=makeContext();
+  env.setState({
+    metadataDirty:true,flashcardsDirty:{'Concurso Geral':true},editalUpserts:{},editalDeletes:['delete-1'],flashcardDeletes:[],concursoDeletes:[]
+  });
+  env.context.OfflineSyncAuthority.setEnabled(true);
+  env.context.queueEditalUpsert(baseTopic());
+  await tick();
+
+  await env.context.syncAllWithSupabase();
+
+  assert.equal(env.getAuthorityRemoteCalls(),1);
+  assert.equal(env.getLegacySyncCalls(),1);
+  const payload=env.getRemotePayloads()[0];
+  assert.equal(payload.table,'edital');
+  assert.deepEqual(payload.config,{onConflict:'id'});
+  assert.equal(payload.payload.length,1);
+  assert.deepEqual(payload.payload[0],{
+    id:'topic-1',user_id:'user-authority-test',materia:'Direito',assunto:'Constitucional',prioridade:2,
+    assunto_prioridade:3,concurso:'Concurso Geral',teoria:true,questoes:false,videoaula:false,
+    metodo_conteudo:'automatico',rev_24h:false,rev_7d:true,rev_30d:false
+  });
+
+  const legacySnapshot=env.getLegacySnapshots()[0];
+  assert.deepEqual(legacySnapshot.editalUpserts,{},'upsert confirmado sai do legado antes do flush tradicional');
+  assert.deepEqual(legacySnapshot.editalDeletes,['delete-1'],'delete permanece sob autoridade legada');
+  assert.equal(legacySnapshot.metadataDirty,true);
+  assert.equal(legacySnapshot.flashcardsDirty['Concurso Geral'],true);
+
+  const rows=await env.context.OfflineOutboxStore.list('user-authority-test',{limit:20});
+  assert.equal(rows.length,1);
+  assert.equal(rows[0].status,'synced');
+  assert.equal(env.context.OfflineSyncAuthority.getDiagnostics().enabled,true);
+});
+
+test('falha da autoridade abre circuito e faz fallback imediato sem perder pendência legada',async()=>{
+  const env=makeContext({remoteError:'falha canário'});
+  env.context.OfflineSyncAuthority.setEnabled(true);
+  env.context.queueEditalUpsert(baseTopic());
+  await tick();
+
+  await env.context.syncAllWithSupabase();
+
+  assert.equal(env.getAuthorityRemoteCalls(),1);
+  assert.equal(env.getLegacySyncCalls(),1);
+  assert.equal(Object.keys(env.getLegacySnapshots()[0].editalUpserts).length,1,'legado reassume o item que falhou na outbox');
+  assert.equal(env.context.OfflineSyncAuthority.isEnabled(),false,'circuit breaker impede nova tentativa canário automática');
+  assert.match(env.context.OfflineSyncAuthority.getCircuit().error,/falha canário/);
+  assert.ok(env.events.some(event=>event.type==='offline-sync-authority:fallback'));
+
+  const rows=await env.context.OfflineOutboxStore.list('user-authority-test',{limit:20});
+  assert.equal(rows[0].status,'failed');
+  assert.match(rows[0].lastError,/falha canário/);
+});
+
+test('kill switch força caminho legado mesmo com opt-in ativo',async()=>{
+  const env=makeContext();
+  env.context.OfflineSyncAuthority.setEnabled(true);
+  env.context.OfflineSyncAuthority.setKillSwitch(true);
+  env.context.queueEditalUpsert(baseTopic());
+  await tick();
+
+  assert.equal(env.context.OfflineSyncAuthority.isHardKilled(),true);
+  assert.equal(env.context.OfflineSyncAuthority.isEnabled(),false);
+  await env.context.syncAllWithSupabase();
+  assert.equal(env.getAuthorityRemoteCalls(),0);
+  assert.equal(env.getLegacySyncCalls(),1);
+});
+
+test('mudança concorrente durante envio não é apagada: versão nova permanece para o legado',async()=>{
+  const env=makeContext({
+    onRemote:async({syncState,setSyncState})=>{
+      const next=clone(syncState);
+      next.editalUpserts['topic-1']={...next.editalUpserts['topic-1'],questoes:true};
+      setSyncState(next);
+    }
+  });
+  env.context.OfflineSyncAuthority.setEnabled(true);
+  env.context.queueEditalUpsert(baseTopic({questoes:false}));
+  await tick();
+
+  await env.context.syncAllWithSupabase();
+
+  assert.equal(env.getAuthorityRemoteCalls(),1);
+  assert.equal(env.getLegacySyncCalls(),1);
+  assert.equal(env.getLegacySnapshots()[0].editalUpserts['topic-1'].questoes,true,'nova versão sobrevive ao ACK da versão anterior');
+});
+
+test('operação já synced é reaproveitada idempotentemente sem novo write remoto',async()=>{
+  const env=makeContext({legacyClears:false});
+  env.context.OfflineSyncAuthority.setEnabled(true);
+  env.context.queueEditalUpsert(baseTopic());
+  await tick();
+  await env.context.OfflineSyncAuthority.flushAuthorizedEditalUpserts();
+  assert.equal(env.getAuthorityRemoteCalls(),1);
+
+  env.context.queueEditalUpsert(baseTopic());
+  await tick();
+  await env.context.OfflineSyncAuthority.flushAuthorizedEditalUpserts();
+  assert.equal(env.getAuthorityRemoteCalls(),1,'mesma chave synced não é reenviada');
+  assert.deepEqual(env.getState().editalUpserts,{});
+});
+
+test('AppState carrega autoridade depois de outbox e shadow e mantém release corrente até promoção',()=>{
+  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.32\.1/);
+  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.32\.1/);
+  assert.match(appStateSource,/offline-sync-authority\.js\?v=10\.32\.1/);
+  assert.ok(appStateSource.indexOf('offline-sync-authority.js')>appStateSource.indexOf('offline-sync-shadow.js'));
+  assert.match(appStateSource,/OfflineSyncAuthority\?\.install/);
+  assert.match(appStateSource,/getOfflineSyncAuthorityDiagnostics/);
+});
+
+test('autoridade é parte do app shell offline e o escopo remoto é estritamente edital upsert',()=>{
+  assert.match(swSource,/\.\/js\/core\/offline-sync-authority\.js/);
+  assert.match(manifestSource,/"\/js\/core\/offline-sync-authority\.js"/);
+  assert.match(authoritySource,/scope:Object\.freeze\(\['edital-topic:upsert'\]\)/);
+  assert.match(authoritySource,/from\('edital'\)\.upsert/);
+  assert.doesNotMatch(authoritySource,/\.delete\s*\(/);
+  assert.doesNotMatch(authoritySource,/\.insert\s*\(/);
+  assert.doesNotMatch(authoritySource,/\bfetch\s*\(/);
+  assert.match(authoritySource,/legacySyncAllWithSupabase\.apply/);
+  assert.match(authoritySource,/tripCircuit/);
+  assert.match(authoritySource,/KILL_SWITCH_KEY/);
+});
