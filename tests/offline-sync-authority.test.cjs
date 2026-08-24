@@ -199,10 +199,10 @@ test('orçamento limita canário a 3 batches ou 50 itens e desliga automaticamen
   assert.ok(env.events.some(event=>event.type==='offline-sync-authority:canary-stopped'));
 });
 
-test('AppState carrega autoridade depois de outbox e shadow na release v10.33.1',()=>{
-  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.33\.1/);
-  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.33\.1/);
-  assert.match(appStateSource,/offline-sync-authority\.js\?v=10\.33\.1/);
+test('AppState carrega autoridade depois de outbox e shadow na release v10.33.2',()=>{
+  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.33\.2/);
+  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.33\.2/);
+  assert.match(appStateSource,/offline-sync-authority\.js\?v=10\.33\.2/);
   assert.ok(appStateSource.indexOf('offline-sync-authority.js')>appStateSource.indexOf('offline-sync-shadow.js'));
 });
 
