@@ -42,9 +42,13 @@ test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
 });
 
 test('barra do Advisor ocupa toda a largura e possui contrato de texto resiliente',()=>{
-  assert.match(css,/\.learning-advisor\{grid-column:1\/-1;width:100%;max-width:100%;min-width:0;box-sizing:border-box;container-type:inline-size/);
+  assert.match(css,/#retentionDiagnosticPanel>#learningAdvisorPanel\.learning-advisor\{grid-column:1\/-1!important/);
+  assert.match(css,/justify-self:stretch!important/);
+  assert.match(css,/width:100%!important/);
+  assert.match(css,/max-width:100%!important/);
   assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
-  assert.match(css,/@container \(max-width:640px\)/);
+  assert.match(css,/@container \(max-width:760px\)/);
+  assert.match(css,/@media\(max-width:900px\)/);
   assert.match(css,/min-height:44px/);
   assert.match(css,/overflow-wrap:anywhere/);
   assert.match(css,/#app-dashboard :where\(/);
