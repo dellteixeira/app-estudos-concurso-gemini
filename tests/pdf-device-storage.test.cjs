@@ -6,6 +6,7 @@ const cp=require('node:child_process');
 
 const device=fs.readFileSync('public/js/pdf/pdf-device-storage.js','utf8');
 const adapter=fs.readFileSync('public/js/pdf/pdf-library-opfs-adapter.js','utf8');
+const manager=fs.readFileSync('public/js/pdf/pdf-offline-library-manager.js','utf8');
 
 test('PDF salvo no dispositivo usa arquivo externo ao armazenamento privado do app',()=>{
   cp.execFileSync(process.execPath,['--check','public/js/pdf/pdf-device-storage.js'],{stdio:'pipe'});
@@ -23,6 +24,14 @@ test('exclusão global purga OPFS, IndexedDB moderno e legado após remoção re
   assert.match(device,/await purgeLocalCopies\(user\.id, validDocs\.map\(doc => doc\.id\)\)/);
   assert.match(adapter,/store\.removeMany\(userId, ids\)/);
   assert.match(adapter,/deleteLegacy\(userId, id\)/);
+});
+
+test('biblioteca offline persiste explicitamente no OPFS ou IndexedDB moderno',()=>{
+  cp.execFileSync(process.execPath,['--check','public/js/pdf/pdf-offline-library-manager.js'],{stdio:'pipe'});
+  assert.match(manager,/PdfLibraryOfflineAdapter\?\.put/);
+  assert.match(manager,/persistOfflineBlob\(u\.id,doc,blob\)/);
+  assert.match(manager,/PdfLibraryOfflineAdapter\?\.has/);
+  assert.match(manager,/O navegador não conseguiu reservar armazenamento local para este PDF/);
 });
 
 test('mobile mantém ações do PDF em duas colunas dentro da viewport',()=>{
