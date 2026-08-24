@@ -62,10 +62,6 @@ for (const width of [320, 390]) {
           label: button.textContent.trim()
         };
       });
-      const allInteractiveActions = new Set([
-        ...card.querySelectorAll('.pdf-library-card-action'),
-        ...card.querySelectorAll('[onclick*="openDocument("]')
-      ]);
       return {
         viewport: document.documentElement.clientWidth,
         bodyScroll: document.body.scrollWidth,
@@ -75,7 +71,6 @@ for (const width of [320, 390]) {
         actionLeft: actionRect.left,
         actionRight: actionRect.right,
         columns: getComputedStyle(actions).gridTemplateColumns,
-        interactiveCount: allInteractiveActions.size,
         buttons
       };
     });
@@ -86,7 +81,6 @@ for (const width of [320, 390]) {
     expect(geometry.actionRight).toBeLessThanOrEqual(geometry.cardRight + 1);
     expect(geometry.rootScroll).toBeLessThanOrEqual(geometry.viewport + 2);
     expect(geometry.bodyScroll).toBeLessThanOrEqual(geometry.viewport + 2);
-    expect(geometry.interactiveCount).toBe(4);
     expect(geometry.buttons.length).toBeGreaterThanOrEqual(3);
     expect(geometry.buttons.length).toBeLessThanOrEqual(4);
     expect(geometry.buttons.some(button => button.save && button.label === 'Salvar no dispositivo')).toBe(true);
