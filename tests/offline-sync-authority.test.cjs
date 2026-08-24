@@ -77,10 +77,20 @@ function baseTopic(overrides={}){
     concurso:'Concurso Geral',teoria:true,questoes:false,videoaula:false,metodo_conteudo:'automatico',
     rev_24h:false,rev_7d:true,rev_30d:false,...overrides};
 }
-function tick(){return new Promise(resolve=>setTimeout(resolve,35));}
+function tick(ms=10){return new Promise(resolve=>setTimeout(resolve,ms));}
+async function waitForShadowUpsert(env,id='topic-1'){
+  for(let attempt=0;attempt<30;attempt++){
+    const rows=await env.context.OfflineOutboxStore.list('user-authority-test',{limit:100});
+    const row=rows.find(operation=>operation.entity==='edital-topic'&&operation.action==='upsert'&&String(operation.entityId)===String(id));
+    if(row) return row;
+    await tick();
+  }
+  assert.fail(`shadow upsert ${id} não ficou pronto dentro do timeout do teste`);
+}
 async function qualifyCanary(env){
   env.context.queueEditalUpsert(baseTopic());
-  await tick();
+  const shadow=await waitForShadowUpsert(env);
+  assert.equal(shadow.status,'shadow');
   for(let i=0;i<8;i++) await env.context.OfflineSyncShadow.recordParitySnapshot(`qualify-${i}`);
   assert.equal(env.context.OfflineSyncAuthority.getEligibility().eligible,true);
 }
@@ -89,7 +99,7 @@ async function qualifyCanary(env){
 test('autoridade nasce opt-in e bloqueia ativação sem histórico de paridade suficiente',async()=>{
   const env=makeContext();
   env.context.queueEditalUpsert(baseTopic());
-  await tick();
+  await waitForShadowUpsert(env);
   assert.equal(env.context.OfflineSyncAuthority.getEligibility().eligible,false);
   assert.equal(env.context.OfflineSyncAuthority.setEnabled(true),false);
   assert.equal(env.context.OfflineSyncAuthority.isEnabled(),false);
@@ -171,7 +181,7 @@ test('operação synced é reaproveitada idempotentemente sem segundo write remo
   await env.context.OfflineSyncAuthority.flushAuthorizedEditalUpserts();
   assert.equal(env.getAuthorityRemoteCalls(),1);
   env.context.queueEditalUpsert(baseTopic());
-  await tick();
+  await waitForShadowUpsert(env);
   await env.context.OfflineSyncAuthority.flushAuthorizedEditalUpserts();
   assert.equal(env.getAuthorityRemoteCalls(),1);
   assert.deepEqual(env.getState().editalUpserts,{});
