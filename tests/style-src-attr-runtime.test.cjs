@@ -17,7 +17,7 @@ function runtimeStyleOffenders(){
     /\.style\.cssText\s*=/g,
     /\.style\s*=\s*['"`]/g,
     /setAttribute\(\s*['"]style['"]/g,
-    /\sstyle\s*=\s*['"`]/g
+    /<[^>\n]*\sstyle\s*=\s*['"`]/g
   ];
   const offenders=[];
   for(const file of files){
@@ -51,4 +51,10 @@ test('Reader geometry and drag ghost keep direct style-property updates',()=>{
   assert.match(core,/ghost\.style\.width=/);
   assert.match(core,/state\.ghost\.style\.top=/);
   assert.doesNotMatch(reader,/\.style\.cssText\s*=/);
+});
+
+test('runtime style detector does not confuse local style variables with HTML attributes',()=>{
+  const js=`const style = 'font-weight:700';\nnode.style.width='25%';`;
+  assert.doesNotMatch(js,/<[^>\n]*\sstyle\s*=\s*['"`]/);
+  assert.doesNotMatch(js,/\.style\s*=\s*['"`]/);
 });
