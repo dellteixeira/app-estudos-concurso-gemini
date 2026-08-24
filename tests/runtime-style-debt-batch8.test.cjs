@@ -1,0 +1,29 @@
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const core=fs.readFileSync('public/js/app-core.js','utf8');
+const ui=fs.readFileSync('public/js/app-ui.js','utf8');
+const css=fs.readFileSync('public/css/base.css','utf8');
+const budget=JSON.parse(fs.readFileSync('security/runtime-style-debt.json','utf8'));
+
+test('runtime display mutations are reduced and guarded',()=>{
+  assert.match(core,/RUNTIME_STYLE_DEBT_BATCH8/);
+  assert.match(core,/function setRuntimeDisplay/);
+  assert.ok(budget.migratedDisplay.core + budget.migratedDisplay.ui > 0);
+  assert.equal((core.match(/\.style\.display\b/g)||[]).length,budget.remaining.coreStyleDisplay);
+  assert.equal((ui.match(/\.style\.display\b/g)||[]).length,budget.remaining.uiStyleDisplay);
+});
+
+test('dynamic percentage bars use bounded classes instead of style.width in migrated UI',()=>{
+  assert.match(core,/function setProgressWidthClass/);
+  assert.match(css,/\.u-progress-w-100\{width:100%\}/);
+  assert.doesNotMatch(ui,/retention-risk-progress[^\n]*style=/);
+  assert.doesNotMatch(core,/topic-plan-progress[^\n]*style=/);
+});
+
+test('known static runtime template styles are externalized',()=>{
+  assert.match(css,/\.backup-slot-reason\{opacity:\.7\}/);
+  assert.match(core,/class=\"backup-slot-reason\"/);
+  assert.match(ui,/global-search-empty/);
+});

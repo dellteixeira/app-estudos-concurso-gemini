@@ -1,0 +1,18 @@
+{
+  "batch": 8,
+  "policy": "UI/non-PDF runtime styles are migrated incrementally; PDF reader geometry remains excluded.",
+  "migratedDisplay": {
+    "core": 55,
+    "ui": 0
+  },
+  "remaining": {
+    "coreStyleDisplay": 1,
+    "uiStyleDisplay": 0,
+    "coreTemplateStyle": 42,
+    "uiTemplateStyle": 1,
+    "coreStyleWidth": 3,
+    "uiStyleWidth": 0,
+    "coreSetProperty": 0,
+    "uiSetProperty": 0
+  }
+}

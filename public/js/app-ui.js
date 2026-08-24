@@ -126,7 +126,7 @@
 
             const limited = results.slice(0, 16);
             if (!limited.length) {
-                box.innerHTML = '<div style="padding:12px;color:var(--modern-muted);font-size:.84rem;">Nenhum resultado encontrado.</div>';
+                box.innerHTML = '<div class="global-search-empty">Nenhum resultado encontrado.</div>';
                 box.classList.add('visible');
                 return;
             }
@@ -377,7 +377,7 @@
             const set = (id,value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
             const setBar = (id,value) => {
                 const el=document.getElementById(id);
-                if(el) el.style.width=`${Math.max(0,Math.min(100,Number(value)||0))}%`;
+                if(el) setProgressWidthClass(el, value);
             };
             const list = document.getElementById('retentionDiagnosticRiskList');
             const moreButton = document.getElementById('retentionMoreButton');
