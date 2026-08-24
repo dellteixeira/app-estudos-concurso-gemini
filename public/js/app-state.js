@@ -27,7 +27,7 @@
         });
     }
 
-    async function loadOfflineShadowFoundation() {
+    async function loadOfflineSyncFoundation() {
         if (!global.OfflineOutboxStore) {
             await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.32.1', 'offline-outbox-store');
         }
@@ -35,11 +35,18 @@
             await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.32.1', 'offline-sync-shadow');
         }
         global.OfflineSyncShadow?.install?.();
-        return global.OfflineSyncShadow?.getDiagnostics?.() || null;
+        if (!global.OfflineSyncAuthority) {
+            await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.32.1', 'offline-sync-authority');
+        }
+        global.OfflineSyncAuthority?.install?.();
+        return {
+            shadow:await global.OfflineSyncShadow?.getDiagnostics?.() || null,
+            authority:global.OfflineSyncAuthority?.getDiagnostics?.() || null
+        };
     }
 
-    loadOfflineShadowFoundation().catch(error => {
-        console.warn('Fundação shadow offline indisponível; sincronização legada preservada.', error);
+    loadOfflineSyncFoundation().catch(error => {
+        console.warn('Fundação offline incremental indisponível; sincronização legada preservada.', error);
     });
 
     function clone(value) {
@@ -111,7 +118,7 @@
     }
 
     function getEdital(options = {}) {
-        return clone(safeEdital(options));
+        return clone(safeEdital());
     }
 
     function findTopic(ref) {
@@ -214,7 +221,8 @@
         setCurrentContest,
         subscribe,
         refresh,
-        getOfflineShadowDiagnostics:() => global.OfflineSyncShadow?.getDiagnostics?.() || null
+        getOfflineShadowDiagnostics:() => global.OfflineSyncShadow?.getDiagnostics?.() || null,
+        getOfflineSyncAuthorityDiagnostics:() => global.OfflineSyncAuthority?.getDiagnostics?.() || null
     });
 
     global.dispatchEvent(new CustomEvent('appstate:ready', { detail:{ schemaVersion:SCHEMA_VERSION, revision } }));
