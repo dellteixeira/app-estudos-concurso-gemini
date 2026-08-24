@@ -4,7 +4,9 @@ import { handleLearningDiagnosis } from './learning-diagnosis.js';
 const EXTENDED_NO_STORE_PATHS = new Set([
   '/css/learning-advisor.css',
   '/js/adaptive-schedule-reconciliation.js',
-  '/js/learning-advisor.js'
+  '/js/learning-advisor.js',
+  '/js/core/offline-outbox-store.js',
+  '/js/core/offline-sync-shadow.js'
 ]);
 
 function withNoStore(response) {
