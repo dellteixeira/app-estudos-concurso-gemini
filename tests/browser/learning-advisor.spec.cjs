@@ -67,7 +67,8 @@ for(const width of [320,390,560,1024,1440]){
 
     await panel.locator('#learningAdvisorAnalyze').click();
     await expect(panel.locator('.learning-advisor-card')).toHaveCount(1);
-    await expect(panel).toContainText('Dificuldade persistente');
+    await expect(panel.locator('.learning-friction')).toContainText('Dificuldade persistente');
+    await expect(panel.locator('.learning-friction')).not.toContainText('Fricção');
     await expect(panel).toContainText('Reestudo focalizado');
     const request=await page.evaluate(()=>window.__advisorRequest);
     expect(request.url).toBe('/api/ai/learning-diagnosis');
@@ -78,7 +79,7 @@ for(const width of [320,390,560,1024,1440]){
     expect(await page.evaluate(()=>window.__localInterventionIndex)).toBe(0);
 
     const overflow=await panel.evaluate(root=>{
-      const selectors=['.learning-advisor-head','.learning-advisor-head>div','.learning-advisor-head h4','.learning-advisor-head p','#learningAdvisorAnalyze','#learningAdvisorStatus','.learning-advisor-card','.learning-advisor-card-top','.learning-advisor-card-top strong','.learning-advisor-action','.learning-advisor-action span','.learning-advisor-controls'];
+      const selectors=['.learning-advisor-head','.learning-advisor-head>div','.learning-advisor-head h4','.learning-advisor-head p','#learningAdvisorAnalyze','#learningAdvisorStatus','.learning-advisor-card','.learning-advisor-card-top','.learning-advisor-card-top strong','.learning-friction','.learning-advisor-action','.learning-advisor-action span','.learning-advisor-controls'];
       return selectors.flatMap(selector=>[...root.querySelectorAll(selector)].map(el=>({selector,text:(el.textContent||'').trim().slice(0,100),clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}))).filter(item=>item.scrollWidth>item.clientWidth+1);
     });
     expect(overflow).toEqual([]);
