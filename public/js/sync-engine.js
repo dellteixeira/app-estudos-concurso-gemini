@@ -26,6 +26,7 @@
             status:'idle',
             attempt:0,
             pending:0,
+            online:Boolean(navigator.onLine),
             lastSyncedAt:null,
             lastError:null,
             nextRetryAt:null,
@@ -42,6 +43,7 @@
         state.schemaVersion = SCHEMA_VERSION;
         state.attempt = Math.max(0, Number(state.attempt) || 0);
         state.pending = Math.max(0, Number(state.pending) || 0);
+        state.online = Boolean(state.online);
         return state;
     }
 
@@ -58,7 +60,7 @@
     }
 
     function appendHistory(previous, next, reason = 'state') {
-        const changed = previous.status !== next.status || previous.pending !== next.pending || previous.attempt !== next.attempt || previous.lastError !== next.lastError;
+        const changed = previous.status !== next.status || previous.pending !== next.pending || previous.attempt !== next.attempt || previous.lastError !== next.lastError || previous.online !== next.online;
         if (!changed) return;
         const entry = Object.freeze({
             at:next.updatedAt,
@@ -67,7 +69,7 @@
             to:next.status,
             pending:next.pending,
             attempt:next.attempt,
-            online:Boolean(navigator.onLine),
+            online:next.online,
             hasError:Boolean(next.lastError),
             hasConflict:Boolean(next.conflict)
         });
@@ -78,7 +80,7 @@
 
     function writeState(next, reason = 'state') {
         const previous = readState();
-        const state = normalizeState({ ...next, updatedAt:new Date().toISOString() });
+        const state = normalizeState({ ...next, online:Boolean(navigator.onLine), updatedAt:new Date().toISOString() });
         try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch (_) {}
         appendHistory(previous, state, reason);
         listeners.forEach(listener => {
@@ -103,8 +105,8 @@
     }
 
     function queueSignature() {
-        try { return JSON.stringify(queueState() || {}); }
-        catch (_) { return String(pendingCount()); }
+        try { return JSON.stringify({ queue:queueState() || {}, online:Boolean(navigator.onLine) }); }
+        catch (_) { return JSON.stringify({ pending:pendingCount(), online:Boolean(navigator.onLine) }); }
     }
 
     function setStatus(status, patch = {}, reason = status) {
@@ -257,7 +259,7 @@
             status:state.status,
             pending:state.pending,
             attempt:state.attempt,
-            online:Boolean(navigator.onLine),
+            online:state.online,
             authenticated:userId() !== 'guest',
             retryScheduled:Boolean(retryTimer),
             syncRunning:Boolean(runPromise),
