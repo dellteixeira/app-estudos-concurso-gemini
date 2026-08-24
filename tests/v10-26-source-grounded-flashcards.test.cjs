@@ -6,7 +6,7 @@ const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
 const version=JSON.parse(fs.readFileSync('public/version.json','utf8'));
 const sw=fs.readFileSync('public/sw.js','utf8');
 
-test('v10.26.0 builds deterministic evidence before asking AI',()=>{
+test('v10.26 builds deterministic evidence before asking AI',()=>{
   const buildPos=worker.indexOf('const evidenceCatalog = buildFlashcardEvidenceCatalog(text)');
   const promptPos=worker.indexOf('const systemPrompt =', buildPos);
   assert.ok(buildPos>0);
@@ -15,14 +15,14 @@ test('v10.26.0 builds deterministic evidence before asking AI',()=>{
   assert.match(worker,/knowledgeType: classifyFlashcardKnowledge\(sentence\)/);
 });
 
-test('v10.26.0 uses structured output and low thinking',()=>{
+test('v10.26 uses structured output and low thinking',()=>{
   assert.match(worker,/responseMimeType: "application\/json"/);
   assert.match(worker,/evidenceId: \{ type: "STRING" \}/);
   assert.match(worker,/knowledgeType: \{ type: "STRING" \}/);
   assert.match(worker,/thinkingConfig: \{ thinkingLevel: "LOW" \}/);
 });
 
-test('v10.26.0 validates source grounding and rejects weak questions',()=>{
+test('v10.26 validates source grounding and rejects weak questions',()=>{
   assert.match(worker,/function evidenceSupportsAnswer\(/);
   assert.match(worker,/lexicalCoverage >= 0\.72/);
   assert.match(worker,/function isGenericFlashcardQuestion\(/);
@@ -32,16 +32,17 @@ test('v10.26.0 validates source grounding and rejects weak questions',()=>{
   assert.match(worker,/sourceValidated: true/);
 });
 
-test('v10.26.0 preserves hedge and deterministic fallback',()=>{
+test('v10.26 preserves hedge and deterministic fallback',()=>{
   assert.match(worker,/const FLASHCARD_HEDGE_DELAY_MS = 4500/);
   assert.match(worker,/runFlashcardProvidersHedged/);
   assert.match(worker,/buildDeterministicFlashcard/);
   assert.match(worker,/provider: "local-deterministic"/);
 });
 
-test('v10.26.0 version is synchronized',()=>{
-  assert.equal(pkg.version,'10.26.0');
-  assert.equal(version.version,'10.26.0');
-  assert.match(worker,/const APP_VERSION = "10\.26\.0"/);
-  assert.match(sw,/const APP_VERSION = '10\.26\.0'/);
+test('canonical version is synchronized across package, manifest, Worker and Service Worker',()=>{
+  const expected=String(pkg.version||'').trim();
+  assert.match(expected,/^\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?$/);
+  assert.equal(version.version,expected);
+  assert.equal(worker.match(/const APP_VERSION = "([^"]+)"/)?.[1],expected);
+  assert.equal(sw.match(/const APP_VERSION = '([^']+)'/)?.[1],expected);
 });
