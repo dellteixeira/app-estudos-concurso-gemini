@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppLearningAdvisor)return;
 
-const VERSION='1.0.0';
+const VERSION='1.1.0';
 const MAX_TOPICS=5;
 const MIN_FRICTION=35;
 const CACHE_TTL_MS=30*60*1000;
@@ -106,6 +106,19 @@ function collectCandidates(limit=MAX_TOPICS){
   return candidates;
 }
 
+function getRiskRows(){
+  return getRows().map((row,index)=>{
+    const item=findItem(row);
+    if(!item)return null;
+    const retention=clamp(numberOr(row?.retention,numberOr(row?.state?.retention,100)),0,100);
+    const accuracy=numberOr(row?.questionAccuracy,numberOr(row?.state?.questionStats?.lastAccuracy,null));
+    const risk=retention<70||Boolean(row?.retentionDue)||Boolean(row?.scheduledOverdue||row?.overdue)||(accuracy!=null&&accuracy<60);
+    if(!risk)return null;
+    const persistent=computeLearningFriction(row,item).score;
+    return {row,index,item,retention,accuracy,persistent,riskScore:numberOr(row?.riskScore,100-retention)};
+  }).filter(Boolean).sort((a,b)=>b.riskScore-a.riskScore||a.retention-b.retention);
+}
+
 function cacheKey(candidates){
   const compact=candidates.map(c=>[c.topicId,c.frictionScore,Math.round(c.metrics.retention),c.metrics.accuracy==null?null:Math.round(c.metrics.accuracy),c.metrics.reviewCount,c.metrics.lapseCount]);
   let hash=2166136261;
@@ -120,32 +133,82 @@ function writeCache(candidates,payload){
   try{localStorage.setItem(cacheKey(candidates),JSON.stringify({savedAt:Date.now(),payload}))}catch(_){}
 }
 
-function ensurePanel(){
-  const parent=document.getElementById('retentionDiagnosticPanel');
-  if(!parent)return null;
-  let section=document.getElementById('learningAdvisorPanel');
-  if(section)return section;
-  section=document.createElement('section');
-  section.id='learningAdvisorPanel';
-  section.className='learning-advisor';
-  section.setAttribute('aria-label','Assistente de aprendizagem por IA');
-  section.innerHTML=`<div class="learning-advisor-head"><div><span class="learning-advisor-kicker">IA auxiliar</span><h4>Intervenções para dificuldades persistentes</h4><p>A Retenção continua sendo a autoridade. A IA apenas interpreta os sinais e sugere uma estratégia pedagógica.</p></div><button id="learningAdvisorAnalyze" class="btn btn-secondary btn-sm" type="button">Analisar dificuldades com IA</button></div><div id="learningAdvisorStatus" class="learning-advisor-status" role="status" aria-live="polite"></div><div id="learningAdvisorResults" class="learning-advisor-results"></div>`;
-  parent.appendChild(section);
-  section.querySelector('#learningAdvisorAnalyze')?.addEventListener('click',()=>analyze().catch(()=>{}));
-  return section;
+function ensureDialog(){
+  let overlay=document.getElementById('learningAdvisorOverlay');
+  if(overlay)return overlay;
+  overlay=document.createElement('div');
+  overlay.id='learningAdvisorOverlay';
+  overlay.className='learning-advisor-overlay';
+  overlay.setAttribute('aria-hidden','true');
+  overlay.innerHTML=`<section id="learningAdvisorDialog" class="learning-advisor-dialog" role="dialog" aria-modal="true" aria-labelledby="learningAdvisorTitle"><div class="learning-advisor-dialog-head"><div><span class="learning-advisor-kicker">Retenção e Diagnóstico</span><h3 id="learningAdvisorTitle">Assuntos em risco</h3><p id="learningAdvisorSubtitle">O risco é calculado pelo motor de Retenção a partir da memória, revisões e desempenho.</p></div><button id="learningAdvisorClose" class="learning-advisor-close" type="button" aria-label="Fechar">×</button></div><div id="learningAdvisorBody" class="learning-advisor-body"></div><div id="learningAdvisorFooter" class="learning-advisor-footer"></div></section>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',event=>{if(event.target===overlay)closeDialog()});
+  overlay.querySelector('#learningAdvisorClose')?.addEventListener('click',closeDialog);
+  return overlay;
 }
 
-function renderIdle(){
-  const section=ensurePanel();if(!section)return;
+function openDialog(){
+  const overlay=ensureDialog();
+  overlay.classList.add('is-open');
+  overlay.setAttribute('aria-hidden','false');
+  document.body.classList.add('learning-advisor-modal-open');
+  setTimeout(()=>overlay.querySelector('#learningAdvisorClose')?.focus(),0);
+}
+function closeDialog(){
+  const overlay=document.getElementById('learningAdvisorOverlay');
+  if(!overlay)return;
+  overlay.classList.remove('is-open');
+  overlay.setAttribute('aria-hidden','true');
+  document.body.classList.remove('learning-advisor-modal-open');
+}
+
+function riskStateText(entry){
+  const row=entry.row||{};
+  if(row.scheduledOverdue||row.overdue){
+    const days=Math.max(0,Number(row.scheduledOverdueDays??row.overdueDays)||0);
+    return `Revisão agendada vencida${days?` há ${days}d`:''}.`;
+  }
+  if(row.retentionDue)return 'Retenção pede revisão; não há revisão vencida no cronograma.';
+  if(entry.retention<70)return 'Retenção baixa — revisão recomendada.';
+  if(entry.accuracy!=null&&entry.accuracy<60)return 'Desempenho em questões abaixo do esperado.';
+  return 'Sinal de risco identificado pelo motor de Retenção.';
+}
+
+function openRiskView(){
+  const overlay=ensureDialog();
+  const title=overlay.querySelector('#learningAdvisorTitle');
+  const subtitle=overlay.querySelector('#learningAdvisorSubtitle');
+  const body=overlay.querySelector('#learningAdvisorBody');
+  const footer=overlay.querySelector('#learningAdvisorFooter');
+  const risks=getRiskRows();
   const candidates=collectCandidates();
-  const status=section.querySelector('#learningAdvisorStatus');
-  if(status)status.textContent=candidates.length?`${candidates.length} ponto${candidates.length===1?'':'s'} crítico${candidates.length===1?'':'s'} elegível${candidates.length===1?'':'is'} para análise. A IA não altera o cronograma automaticamente.`:'Ainda não há dificuldade persistente suficiente para uma análise por IA.';
+  if(title)title.textContent='Assuntos em risco';
+  if(subtitle)subtitle.textContent='O risco é calculado pelo motor de Retenção. Limpar o cronograma não apaga sinais reais de memória e desempenho.';
+  if(body)body.innerHTML=risks.length?`<div class="learning-risk-list">${risks.map(entry=>`<article class="learning-risk-card"><div class="learning-risk-copy"><span class="learning-advisor-subject">${esc(entry.item.materia)}</span><strong>${esc(entry.item.assunto)}</strong><p>${esc(riskStateText(entry))}</p></div><div class="learning-risk-metrics"><span>Retenção <strong>${Math.round(entry.retention)}%</strong></span>${entry.accuracy!=null?`<span>Questões <strong>${Math.round(entry.accuracy)}%</strong></span>`:''}${entry.persistent>=MIN_FRICTION?`<span class="learning-friction learning-friction-${entry.persistent>=70?'high':entry.persistent>=50?'medium':'low'}">Dificuldade persistente ${entry.persistent}</span>`:''}</div></article>`).join('')}</div>`:'<div class="learning-advisor-empty">Nenhum assunto está em risco neste momento.</div>';
+  if(footer)footer.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>A IA interpreta somente os sinais críticos; a Retenção continua sendo a autoridade.</span></div><button id="learningAdvisorAnalyze" class="btn btn-secondary" type="button" ${candidates.length?'':'disabled'}>Analisar dificuldades com IA</button>`;
+  footer?.querySelector('#learningAdvisorAnalyze')?.addEventListener('click',()=>analyze().catch(()=>{}));
+  openDialog();
+}
+
+function renderInterventionShell(){
+  const overlay=ensureDialog();
+  const title=overlay.querySelector('#learningAdvisorTitle');
+  const subtitle=overlay.querySelector('#learningAdvisorSubtitle');
+  const body=overlay.querySelector('#learningAdvisorBody');
+  const footer=overlay.querySelector('#learningAdvisorFooter');
+  if(title)title.textContent='Intervenções para dificuldades persistentes';
+  if(subtitle)subtitle.textContent='A Retenção continua sendo a autoridade. A IA apenas interpreta os sinais e sugere estratégias pedagógicas.';
+  if(body)body.innerHTML='<div id="learningAdvisorStatus" class="learning-advisor-status" role="status" aria-live="polite"></div><div id="learningAdvisorResults" class="learning-advisor-results"></div>';
+  if(footer)footer.innerHTML='<button id="learningAdvisorBack" class="btn btn-secondary" type="button">Voltar aos assuntos em risco</button>';
+  footer?.querySelector('#learningAdvisorBack')?.addEventListener('click',openRiskView);
+  openDialog();
+  return overlay;
 }
 
 function renderResults(payload,candidates){
-  const section=ensurePanel();if(!section)return;
-  const box=section.querySelector('#learningAdvisorResults');
-  const status=section.querySelector('#learningAdvisorStatus');
+  const overlay=ensureDialog();
+  const box=overlay.querySelector('#learningAdvisorResults');
+  const status=overlay.querySelector('#learningAdvisorStatus');
   const interventions=Array.isArray(payload?.interventions)?payload.interventions:[];
   if(status)status.textContent=payload?.aiUsed?'Gemini analisou somente os pontos críticos selecionados pelo motor de Retenção.':'A recomendação abaixo foi produzida pelo fallback local porque a IA não estava disponível.';
   if(!box)return;
@@ -164,6 +227,7 @@ function openLocalIntervention(rowIndex){
   if(!Number.isInteger(rowIndex)||rowIndex<0)return;
   try{
     if(typeof openLayeredReviewModal==='function'){
+      closeDialog();
       openLayeredReviewModal(rowIndex);
       return;
     }
@@ -186,37 +250,56 @@ async function requestAdvice(candidates){
 
 async function analyze(options={}){
   if(busy)return lastResult;
-  const section=ensurePanel();
-  const button=section?.querySelector('#learningAdvisorAnalyze');
-  const status=section?.querySelector('#learningAdvisorStatus');
+  const overlay=renderInterventionShell();
+  const status=overlay?.querySelector('#learningAdvisorStatus');
   const candidates=collectCandidates(options.limit||MAX_TOPICS);
-  if(!candidates.length){renderIdle();return null}
+  if(!candidates.length){if(status)status.textContent='Ainda não há dificuldade persistente suficiente para uma análise por IA.';return null}
   const cached=!options.force&&readCache(candidates);
   if(cached){lastResult=cached;renderResults(cached,candidates);return cached}
-  busy=true;if(button)button.disabled=true;if(status)status.textContent='Analisando padrões de dificuldade sem alterar seu cronograma…';
+  busy=true;if(status)status.textContent='Analisando padrões de dificuldade sem alterar seu cronograma…';
   try{
     const payload=await requestAdvice(candidates);
     lastResult=payload;writeCache(candidates,payload);renderResults(payload,candidates);return payload;
   }catch(error){
     if(status)status.textContent=error?.message||'Não foi possível consultar a IA agora.';
     throw error;
-  }finally{busy=false;if(button)button.disabled=false}
+  }finally{busy=false}
 }
 
-function refresh(){ensurePanel();renderIdle()}
-function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',candidateCount:collectCandidates().length,busy,hasResult:!!lastResult})}
+function onRiskMetricClick(event){
+  const target=event.target?.closest?.('[data-action="retention-details"][data-metric="risk"]');
+  if(!target)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  openRiskView();
+}
+
+function onKeydown(event){
+  if(event.key==='Escape'&&document.getElementById('learningAdvisorOverlay')?.classList.contains('is-open'))closeDialog();
+}
+
+function refresh(){
+  const stale=document.getElementById('learningAdvisorPanel');
+  if(stale)stale.remove();
+  const overlay=document.getElementById('learningAdvisorOverlay');
+  if(overlay?.classList.contains('is-open')){
+    const title=overlay.querySelector('#learningAdvisorTitle')?.textContent||'';
+    if(title==='Assuntos em risco')openRiskView();
+  }
+}
+function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'risk-details',candidateCount:collectCandidates().length,busy,hasResult:!!lastResult})}
 
 function boot(){
-  ensurePanel();renderIdle();
-  const panel=document.getElementById('retentionDiagnosticPanel');
-  if(panel&&!panel.dataset.learningAdvisorObserved){
-    panel.dataset.learningAdvisorObserved='1';
-    let timer=0;
-    new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(()=>{if(!busy)renderIdle()},120)}).observe(panel,{childList:true,subtree:true,characterData:true});
+  document.getElementById('learningAdvisorPanel')?.remove();
+  ensureDialog();
+  if(!document.documentElement.dataset.learningAdvisorRiskBound){
+    document.documentElement.dataset.learningAdvisorRiskBound='1';
+    document.addEventListener('click',onRiskMetricClick,true);
+    document.addEventListener('keydown',onKeydown);
   }
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
 global.addEventListener('pageshow',()=>setTimeout(boot,80));
 
-global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,analyze,refresh,getDiagnostics:diagnostics});
+global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,getDiagnostics:diagnostics});
 })(window);
