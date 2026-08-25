@@ -10,6 +10,7 @@ const manifest=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const swSource=fs.readFileSync('public/sw.js','utf8');
 const workerSource=fs.readFileSync('src/worker.js','utf8');
 const headersSource=fs.readFileSync('public/_headers','utf8');
+const promotionSource=fs.readFileSync('public/js/core/offline-sync-metadata-expanded-promotion.js','utf8');
 
 function makeStorage(){
   const map=new Map();
@@ -66,17 +67,19 @@ function findUserForTier(tier){
   throw new Error(`cohort tier not found: ${tier}`);
 }
 
-test('coorte é determinística com base 25% e piloto preservado em 10%',()=>{
+test('coorte é determinística com base 35%, fronteira anterior 25% e piloto preservado em 10%',()=>{
   const env=makeContext();
   const rollout=env.context.OfflineSyncMetadataRollout;
   const first=rollout.getCohortAssignment('stable-user');
   const second=rollout.getCohortAssignment('stable-user');
   assert.deepEqual({...first},{...second});
-  assert.equal(first.percent,25);
+  assert.equal(first.percent,35);
+  assert.equal(first.previousPercent,25);
   assert.equal(first.pilotPercent,10);
   assert.equal(first.bucket>=0&&first.bucket<100,true);
   assert.equal(rollout.PILOT_COHORT_PERCENT,10);
-  assert.equal(rollout.COHORT_PERCENT,25);
+  assert.equal(rollout.PREVIOUS_COHORT_PERCENT,25);
+  assert.equal(rollout.COHORT_PERCENT,35);
 });
 
 test('faixa 10-24 entra apenas no rollout-base e não no piloto',()=>{
@@ -94,7 +97,22 @@ test('faixa 10-24 entra apenas no rollout-base e não no piloto',()=>{
   assert.equal(rollout.setEnabled(true),true);
 });
 
-test('usuário fora dos 25% não pode ativar graduação',()=>{
+test('faixa 25-34 entra somente na expansão populacional 4N e não herda profundidade 4L',()=>{
+  const userId=findUserForTier('population-expanded-base');
+  const env=makeContext({userId});
+  const rollout=env.context.OfflineSyncMetadataRollout;
+  const cohort=rollout.getCohortAssignment();
+  assert.equal(cohort.included,true);
+  assert.equal(cohort.previousIncluded,false);
+  assert.equal(cohort.pilotIncluded,false);
+  assert.equal(cohort.tier,'population-expanded-base');
+  assert.equal(cohort.bucket>=25&&cohort.bucket<35,true);
+  assert.equal(rollout.getEligibility().eligible,true);
+  assert.equal(rollout.setEnabled(true),true);
+  assert.match(promotionSource,/cohort\?\.tier !== 'expanded-base'/);
+});
+
+test('usuário fora dos 35% não pode ativar graduação',()=>{
   const userId=findUserForTier('excluded');
   const env=makeContext({userId});
   const rollout=env.context.OfflineSyncMetadataRollout;
