@@ -1,0 +1,40 @@
+name: Promote v10.38.0
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-rollout-v10.38.0
+    paths:
+      - .github/workflows/promote-v10-38-0.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/offline-metadata-rollout-v10.38.0
+          fetch-depth: 0
+      - name: Promote coordinated identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git grep -l '10\.37\.0' -- package.json public src config tests || true)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo 'No v10.37.0 identity references found.' >&2
+            exit 1
+          fi
+          perl -pi -e 's/10\.37\.0/10.38.0/g' "${files[@]}"
+          test "$(node -p "require('./package.json').version")" = '10.38.0'
+          test "$(node -p "require('./public/version.json').version")" = '10.38.0'
+          git grep -n '10\.37\.0' -- package.json public src config tests && exit 1 || true
+          git rm .github/workflows/promote-v10-38-0.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json public src config tests .github/workflows/promote-v10-38-0.yml
+          git commit -m 'chore(release): promote v10.38.0'
+          git push origin HEAD:feat/offline-metadata-rollout-v10.38.0
