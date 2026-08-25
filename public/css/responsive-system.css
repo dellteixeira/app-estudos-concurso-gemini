@@ -209,10 +209,10 @@ header.modern-header {
     width: 100%;
     min-width: 0;
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
-        "brand sync"
-        "controls controls";
+        "brand sync tools"
+        "controls controls controls";
     align-items: center;
     column-gap: var(--header-gap);
     row-gap: var(--space-3);
@@ -282,20 +282,9 @@ header.modern-header .concurso-selector-bar > .btn {
 header.modern-header .header-utility-cluster {
     min-width: 0;
     width: 100%;
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--space-2);
-    align-items: center;
+    display: block !important;
 }
 
-header.modern-header .header-account-actions {
-    min-width: 0;
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-2);
-}
-
-header.modern-header .header-account-actions .btn,
 header.modern-header .btn-search-header {
     min-width: 0;
     width: 100%;
@@ -323,29 +312,9 @@ header.modern-header .header-nav-tabs .tab-btn {
     text-overflow: ellipsis;
 }
 
-/* Generic action bar: equal distribution when room exists, graceful wrap
-   when it does not. The mobile open/closed state remains controlled by
-   the existing application CSS/JS. */
-.action-bar {
-    width: 100%;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--toolbar-item-min)), 1fr));
-    gap: var(--space-2) !important;
-    align-items: stretch;
-}
-
-.action-bar .btn-action {
-    min-width: 0 !important;
-    width: 100%;
-    min-height: var(--control-sm);
-    justify-content: center;
-    text-align: center;
-}
-
-.mobile-tools-toggle {
-    min-height: var(--control-md);
-    min-width: var(--touch-target);
+header.modern-header .compact-actions-menu {
+    grid-area: tools;
+    justify-self: end;
 }
 
 /* ================================================================
@@ -399,14 +368,6 @@ header.modern-header .header-nav-tabs .tab-btn {
         padding: var(--space-3) !important;
     }
 
-    header.modern-header .mobile-tools-toggle {
-        grid-area: tools;
-        justify-self: end;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
     header.modern-header .header-sync-status {
         grid-area: sync;
         justify-self: stretch;
@@ -428,15 +389,6 @@ header.modern-header .header-nav-tabs .tab-btn {
         grid-column: 1 / -1;
     }
 
-    header.modern-header .header-utility-cluster {
-        grid-template-columns: 1fr;
-    }
-
-    header.modern-header .header-account-actions {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    header.modern-header .header-account-actions .btn,
     header.modern-header .btn-search-header,
     header.modern-header .concurso-selector-bar > .btn {
         min-height: var(--control-md);
@@ -469,13 +421,6 @@ header.modern-header .header-nav-tabs .tab-btn {
         text-overflow: clip;
     }
 
-    .action-bar.mobile-open {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .action-bar.mobile-open .btn-action {
-        min-height: var(--control-md);
-    }
 }
 
 /* TABLET 601px–900px */
