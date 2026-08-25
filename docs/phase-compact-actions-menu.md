@@ -18,4 +18,4 @@ A antiga `.action-bar` foi aposentada integralmente. O runtime mobile não pode 
 
 ## Validação
 
-O pré-gate v10.50.0 concluiu com sucesso no Quality Check #1355 após a atualização dos testes Playwright e remoção do runtime legado. A release candidate foi promovida para v10.50.1 e deve passar novamente pelo gate integral antes do merge.
+O pré-gate v10.50.0 concluiu com sucesso no Quality Check #1355 após a atualização dos testes Playwright e remoção do runtime legado. A identidade pública foi promovida para v10.50.1. O release candidate v10.50.1 deve passar novamente pelo gate integral antes do merge.
