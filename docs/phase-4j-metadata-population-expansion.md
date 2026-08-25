@@ -41,3 +41,7 @@ A expansão de orçamento não usa mais a simples participação no rollout-base
 ## Critério para fase seguinte
 
 Uma expansão posterior do piloto de dois writes só deve ser considerada depois que a faixa 10–24 acumular evidência longitudinal suficiente sem regressões, mantendo separados os eixos população e orçamento remoto.
+
+## Release candidate
+
+A identidade coordenada desta fase é **v10.41.0**. A versão somente se torna canônica após Quality Check do PR, squash merge pinado ao SHA aprovado, Quality Check da `main`, Cloudflare Production Verify, Canonical GitHub Release e comparação final da tag com `main` sem divergência.
