@@ -1,0 +1,76 @@
+name: Promote v10.50.1
+
+on:
+  push:
+    branches:
+      - feat/compact-actions-menu-v10.50.1
+    paths:
+      - '.github/workflows/promote-v10.50.1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/compact-actions-menu-v10.50.1
+          fetch-depth: 0
+
+      - name: Promote release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          roots = [Path('package.json'), Path('public'), Path('src'), Path('config'), Path('tests'), Path('docs')]
+          allowed_suffixes = {'.json', '.js', '.cjs', '.mjs', '.html', '.css', '.toml', '.md', '.txt'}
+          changed = []
+
+          files = []
+          for root in roots:
+              if not root.exists():
+                  continue
+              if root.is_file():
+                  files.append(root)
+              else:
+                  files.extend(p for p in root.rglob('*') if p.is_file() and p.suffix.lower() in allowed_suffixes)
+
+          for path in files:
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              updated = text.replace('10.50.0', '10.50.1').replace(r'10\.50\.0', r'10\.50\.1')
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+                  changed.append(str(path))
+
+          if not changed:
+              raise SystemExit('Nenhuma identidade 10.50.0 encontrada para promoção.')
+          print('Arquivos promovidos:')
+          print('\n'.join(changed))
+          PY
+
+          if grep -RIl --exclude-dir=.git --include='*.json' --include='*.js' --include='*.cjs' --include='*.mjs' --include='*.html' --include='*.css' --include='*.toml' --include='*.md' --include='*.txt' -e '10\.50\.0' package.json public src config tests docs 2>/dev/null | grep -q .; then
+            echo 'Ainda existem referências literais 10.50.0 em caminhos governados.' >&2
+            grep -RIn --exclude-dir=.git --include='*.json' --include='*.js' --include='*.cjs' --include='*.mjs' --include='*.html' --include='*.css' --include='*.toml' --include='*.md' --include='*.txt' -e '10\.50\.0' package.json public src config tests docs 2>/dev/null || true
+            exit 1
+          fi
+
+          rm -f .github/workflows/promote-v10.50.1.yml
+
+      - name: Commit promoted release candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'chore(release): promote compact actions menu to v10.50.1'
+          git push origin HEAD:feat/compact-actions-menu-v10.50.1
