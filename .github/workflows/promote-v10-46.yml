@@ -77,10 +77,11 @@ jobs:
           grep -q "10.46.0" public/sw.js
           ! grep -RIl --include='*.js' --include='*.json' --include='*.cjs' '10\.45\.0\|10-45-0\|v10\.45\.0' package.json config public src tests
 
-      - name: Automated tests and structural audit
-        run: |
-          npm test
-          npm run audit
+      - name: Automated tests
+        run: npm test
+
+      - name: Structural audit
+        run: npm run audit
 
       - name: Commit promoted release candidate
         run: |
