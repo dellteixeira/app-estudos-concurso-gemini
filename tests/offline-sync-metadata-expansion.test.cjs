@@ -167,9 +167,9 @@ test('autoridade preserva um write por padrão e aceita apenas teto limitado a d
 });
 
 test('AppState carrega expansion depois de stability e antes das autoridades do edital',()=>{
-  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-stability.js?v=10.39.0');
-  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.39.0');
-  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.39.0');
+  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-stability.js?v=10.40.0');
+  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.40.0');
+  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.40.0');
   assert.ok(stabilityIndex>=0);
   assert.ok(expansionIndex>stabilityIndex);
   assert.ok(editalAuthorityIndex>expansionIndex);

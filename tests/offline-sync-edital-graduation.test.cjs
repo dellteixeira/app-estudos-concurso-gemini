@@ -150,9 +150,9 @@ test('coordenador não possui caminho remoto próprio',()=>{
 });
 
 test('AppState carrega graduação depois das duas autoridades e expõe diagnóstico',()=>{
-  const upsertIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.39.0');
-  const deleteIndex=appStateSource.indexOf('offline-sync-delete-authority.js?v=10.39.0');
-  const graduationIndex=appStateSource.indexOf('offline-sync-edital-graduation.js?v=10.39.0');
+  const upsertIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.40.0');
+  const deleteIndex=appStateSource.indexOf('offline-sync-delete-authority.js?v=10.40.0');
+  const graduationIndex=appStateSource.indexOf('offline-sync-edital-graduation.js?v=10.40.0');
   assert.ok(upsertIndex>=0);
   assert.ok(deleteIndex>upsertIndex);
   assert.ok(graduationIndex>deleteIndex);
