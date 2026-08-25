@@ -1,42 +1,144 @@
-name: Mirror GitHub to GitLab
+name: Integrate Phase 4P
 
 on:
   push:
-  delete:
+    branches:
+      - feat/offline-metadata-population-promotion-v10.48.0
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: mirror-gitlab
+  group: integrate-phase-4p
   cancel-in-progress: true
 
 jobs:
-  mirror:
-    name: Sync repository to GitLab
+  integrate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-
     steps:
-      - name: Create bare clone from GitHub
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          git clone --bare \
-            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            mirror.git
+      - name: Checkout branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/offline-metadata-population-promotion-v10.48.0
+          fetch-depth: 0
 
-      - name: Mirror branches and tags to GitLab
-        env:
-          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.23.2
+
+      - name: Integrate 4P runtime
+        shell: bash
         run: |
           set -euo pipefail
-          AUTH="$(printf '%s:%s' "$GITLAB_USERNAME" "$GITLAB_TOKEN" | base64 -w0)"
-          git -C mirror.git \
-            -c http.extraHeader="Authorization: Basic ${AUTH}" \
-            push --mirror \
-            "https://gitlab.com/dellteixeira-group/app-estudos-concurso-gemini.git"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p=Path(path); text=p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Pattern missing in {path}: {old[:100]!r}')
+              p.write_text(text.replace(old,new,1),encoding='utf-8')
+
+          p=Path('public/js/core/offline-sync-metadata-expansion.js')
+          text=p.read_text(encoding='utf-8')
+          text=text.replace(
+              "  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }\n",
+              "  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }\n  function populationPromotion() { return global.OfflineSyncMetadataPopulationPromotion || null; }\n"
+          )
+          text=text.replace(
+              "    const promoted = Boolean(promotion()?.isPromoted?.(userId));\n    const originalPilot = Boolean(pilotCohort?.included);",
+              "    const promoted = Boolean(promotion()?.isPromoted?.(userId));\n    const populationPromoted = Boolean(populationPromotion()?.isPromoted?.(userId));\n    const originalPilot = Boolean(pilotCohort?.included);"
+          )
+          text=text.replace(
+              "    if (!originalPilot && !promoted) reasons.push('outside-expansion-pilot-cohort');",
+              "    if (!originalPilot && !promoted && !populationPromoted) reasons.push('outside-expansion-depth-cohort');"
+          )
+          text=text.replace(
+              "      promoted,\n      promotion:promotion()?.getDiagnostics?.() || null,",
+              "      promoted,\n      populationPromoted,\n      promotion:promotion()?.getDiagnostics?.() || null,\n      populationPromotion:populationPromotion()?.getDiagnostics?.() || null,"
+          )
+          text=text.replace(
+              "    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId)));",
+              "    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId)));"
+          )
+          p.write_text(text,encoding='utf-8')
+
+          p=Path('public/js/app-state.js'); text=p.read_text(encoding='utf-8')
+          old="        if (!global.OfflineSyncMetadataPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-promoted-stability.js?v=10.47.0', 'offline-sync-metadata-promoted-stability');\n        global.OfflineSyncMetadataPromotedStability?.install?.();\n        if (!global.OfflineSyncMetadataExpansion)"
+          new="        if (!global.OfflineSyncMetadataPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-promoted-stability.js?v=10.47.0', 'offline-sync-metadata-promoted-stability');\n        global.OfflineSyncMetadataPromotedStability?.install?.();\n        if (!global.OfflineSyncMetadataPopulationPromotion) await loadExtensionScript('./js/core/offline-sync-metadata-population-promotion.js?v=10.47.0', 'offline-sync-metadata-population-promotion');\n        global.OfflineSyncMetadataPopulationPromotion?.install?.();\n        if (!global.OfflineSyncMetadataExpansion)"
+          if old not in text: raise SystemExit('AppState load marker missing')
+          text=text.replace(old,new,1)
+          text=text.replace(
+              "            metadataPromotedStability:global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n            metadataExpansion:",
+              "            metadataPromotedStability:global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n            metadataPopulationPromotion:global.OfflineSyncMetadataPopulationPromotion?.getDiagnostics?.() || null,\n            metadataExpansion:",1)
+          text=text.replace(
+              "        getOfflineSyncMetadataPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:",
+              "        getOfflineSyncMetadataPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataPopulationPromotionDiagnostics:() => global.OfflineSyncMetadataPopulationPromotion?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:",1)
+          p.write_text(text,encoding='utf-8')
+
+          asset='/js/core/offline-sync-metadata-population-promotion.js'
+          p=Path('config/app-assets.json'); text=p.read_text(encoding='utf-8')
+          marker='"/js/core/offline-sync-metadata-promoted-stability.js", "/js/core/offline-sync-metadata-expansion.js"'
+          if text.count(marker)!=4: raise SystemExit(f'Expected 4 asset markers, got {text.count(marker)}')
+          text=text.replace(marker,f'"/js/core/offline-sync-metadata-promoted-stability.js", "{asset}", "/js/core/offline-sync-metadata-expansion.js"')
+          p.write_text(text,encoding='utf-8')
+
+          p=Path('public/sw.js'); text=p.read_text(encoding='utf-8')
+          marker="'./js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-expansion.js'"
+          if marker not in text: raise SystemExit('SW shell marker missing')
+          text=text.replace(marker,"'./js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-population-promotion.js', './js/core/offline-sync-metadata-expansion.js'",1)
+          marker="'/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-expansion.js'"
+          if marker not in text: raise SystemExit('SW core marker missing')
+          text=text.replace(marker,"'/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-population-promotion.js', '/js/core/offline-sync-metadata-expansion.js'",1)
+          p.write_text(text,encoding='utf-8')
+
+          p=Path('src/worker.js'); text=p.read_text(encoding='utf-8')
+          marker='  "/js/core/offline-sync-metadata-promoted-stability.js",\n  "/js/core/offline-sync-metadata-expansion.js",'
+          if marker not in text: raise SystemExit('Worker no-store marker missing')
+          text=text.replace(marker,'  "/js/core/offline-sync-metadata-promoted-stability.js",\n  "/js/core/offline-sync-metadata-population-promotion.js",\n  "/js/core/offline-sync-metadata-expansion.js",',1)
+          p.write_text(text,encoding='utf-8')
+
+          p=Path('public/_headers'); text=p.read_text(encoding='utf-8')
+          marker='/js/core/offline-sync-metadata-promoted-stability.js\n  Cache-Control: no-cache, no-store, must-revalidate\n\n'
+          if marker not in text: raise SystemExit('Headers marker missing')
+          text=text.replace(marker,marker+'/js/core/offline-sync-metadata-population-promotion.js\n  Cache-Control: no-cache, no-store, must-revalidate\n\n',1)
+          p.write_text(text,encoding='utf-8')
+          PY
+
+      - name: Verify integration contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'OfflineSyncMetadataPopulationPromotion' public/js/core/offline-sync-metadata-expansion.js
+          grep -q 'offline-sync-metadata-population-promotion.js?v=10.47.0' public/js/app-state.js
+          grep -q '/js/core/offline-sync-metadata-population-promotion.js' config/app-assets.json
+          grep -q '/js/core/offline-sync-metadata-population-promotion.js' src/worker.js
+          grep -q '/js/core/offline-sync-metadata-population-promotion.js' public/_headers
+
+      - name: Automated tests
+        run: npm test
+
+      - name: Structural audit
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: npm run audit
+
+      - name: Restore canonical mirror workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show origin/main:.github/workflows/mirror-gitlab.yml > .github/workflows/mirror-gitlab.yml
+
+      - name: Commit integrated candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/js/core/offline-sync-metadata-expansion.js public/js/app-state.js config/app-assets.json public/sw.js src/worker.js public/_headers .github/workflows/mirror-gitlab.yml
+          git diff --cached --check
+          git commit -m "feat(sync): integrar política 4P ao runtime"
+          git push origin HEAD:feat/offline-metadata-population-promotion-v10.48.0
