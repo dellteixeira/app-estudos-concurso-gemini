@@ -17,6 +17,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - name: Prepare promoted v10.34.0 workspace
+        if: github.event_name == 'pull_request' && github.head_ref == 'feat/offline-edital-graduation-v10.34.0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git grep -l '10\.33\.3' -- public src config tests package.json || true)
+          if ((${#files[@]})); then
+            sed -i 's/10\.33\.3/10.34.0/g' "${files[@]}"
+          fi
+          if git grep -n '10\.33\.3' -- public src config tests package.json; then
+            echo 'Residual 10.33.3 release literal found.' >&2
+            exit 1
+          fi
+
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -53,7 +67,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: One-shot v10.34.0 promotion
+      - name: Commit promoted v10.34.0
         if: success() && github.event_name == 'pull_request' && github.head_ref == 'feat/offline-edital-graduation-v10.34.0'
         shell: bash
         run: |
