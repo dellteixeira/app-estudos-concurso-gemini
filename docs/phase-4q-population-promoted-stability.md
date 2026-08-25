@@ -24,4 +24,4 @@ A 4Q é deliberadamente separada da 4O. A 4O mede segurança antes do aumento de
 
 ## Release
 
-Release candidate promovida para `v10.49.0` somente após o pré-gate integral — sintaxe, testes automatizados, auditoria estrutural e Browser Responsive Audit — permanecer verde.
+Release candidate `v10.49.0` promovida após pré-gate integralmente verde em sintaxe, testes automatizados, auditoria estrutural e Browser Responsive Audit. O SHA de release deve repetir os mesmos gates antes do merge em `main`.
