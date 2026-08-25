@@ -99,7 +99,28 @@
                 <span id="syncStatusText">Verificando…</span>
                 <span id="syncStatusLast" class="sync-last"></span>
             </div>
-            <button class="mobile-tools-toggle" type="button" data-action="toggle-modern-tools" aria-label="Abrir ferramentas">Menu</button>
+            <div class="compact-actions-menu" data-compact-actions-root>
+                <button class="compact-actions-toggle" type="button" data-action="toggle-modern-tools" aria-label="Abrir menu de ações" aria-expanded="false" aria-controls="compactActionsDropdown">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </button>
+                <div id="compactActionsDropdown" class="compact-actions-dropdown" role="menu" hidden aria-hidden="true">
+                    <button class="compact-menu-item" type="button" data-inline-click="ih-001" role="menuitem">Sincronizar Agora</button>
+                    <button class="compact-menu-item" type="button" data-inline-click="ih-002" role="menuitem">Ver / Anexar Edital PDF</button>
+                    <label class="compact-menu-item compact-menu-file" role="menuitem">
+                        Importar JSON
+                        <input type="file" id="jsonInput" accept=".json" hidden data-inline-change="ih-003">
+                    </label>
+                    <button class="compact-menu-item" type="button" data-inline-click="ih-004" role="menuitem">Analisar Edital com IA</button>
+                    <button class="compact-menu-item" type="button" data-inline-click="ih-005" role="menuitem">Como Gerar JSON com IA</button>
+                    <button class="compact-menu-item" type="button" data-action="call" data-call="clearData" role="menuitem">Limpar Edital Atual</button>
+                    <div class="compact-menu-divider" aria-hidden="true"></div>
+                    <button class="compact-menu-item" type="button" data-action="open-account" role="menuitem" title="Abrir dados e segurança da conta">Conta</button>
+                    <button class="compact-menu-item" type="button" data-action="toggle-theme" role="menuitem" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
+                    <button class="compact-menu-item compact-menu-danger" type="button" data-action="logout" role="menuitem" title="Sair da conta">Sair</button>
+                </div>
+            </div>
             
             <div class="header-control-stack">
                 <div class="concurso-selector-bar">
@@ -109,11 +130,6 @@
                     <button id="btnExcluirConcurso" class="btn btn-danger btn-sm" data-action="delete-concurso">Excluir</button>
                     
                     <div class="header-utility-cluster" aria-label="Conta, aparência e pesquisa">
-                        <div class="header-account-actions">
-                            <button class="btn btn-secondary btn-sm btn-account-header" type="button" data-action="open-account" title="Abrir dados e segurança da conta">Conta</button>
-                            <button class="btn btn-secondary btn-sm btn-theme-header" type="button" data-action="toggle-theme" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
-                            <button class="btn btn-secondary btn-sm btn-logout-header" type="button" data-action="logout" title="Sair da conta">Sair</button>
-                        </div>
                         <button class="btn btn-secondary btn-sm btn-search-header" type="button" data-action="global-search" title="Pesquisar matéria, assunto, flashcard ou anotação">
                             <span class="btn-search-header-icon" aria-hidden="true">⌕</span>
                             <span>Pesquisar</span>
@@ -201,19 +217,6 @@
                 <button id="retentionMoreButton" class="retention-more-button" type="button" data-action="retention-more" aria-label="Ver mais pontos críticos" title="Ver mais pontos críticos" hidden>+</button>
             </div>
         </section>
-
-        <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
-        <div class="action-bar">
-            <button class="btn-action" data-inline-click="ih-001">Sincronizar Agora</button>
-            <button class="btn-action" data-inline-click="ih-002">Ver / Anexar Edital PDF</button>
-            <label class="btn-action u-static-003">
-                Importar JSON
-                <input type="file" id="jsonInput" accept=".json" hidden data-inline-change="ih-003">
-            </label>
-            <button class="btn-action" data-inline-click="ih-004">Analisar Edital com IA</button>
-            <button class="btn-action" data-inline-click="ih-005">Como Gerar JSON com IA</button>
-            <button class="btn-action" type="button" data-action="call" data-call="clearData">Limpar Edital Atual</button>
-                    </div>
 
         <!-- TAB 1: EDITAL VERTICALIZADO -->
         <div id="tab-edital" class="tab-content active">
