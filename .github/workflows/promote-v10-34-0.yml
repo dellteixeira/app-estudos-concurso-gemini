@@ -13,7 +13,7 @@ jobs:
     if: github.event.head_commit.message == 'chore(release): add one-shot v10.34.0 promotion helper'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: feat/offline-edital-graduation-v10.34.0
           fetch-depth: 0
