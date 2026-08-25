@@ -170,10 +170,10 @@ test('coordenador não possui caminho remoto próprio',()=>{
 });
 
 test('AppState carrega graduação entre autoridade de metadados e autoridade do edital',()=>{
-  const shadowIndex=appStateSource.indexOf('offline-sync-metadata-shadow.js?v=10.44.0');
-  const authorityIndex=appStateSource.indexOf('offline-sync-metadata-authority.js?v=10.44.0');
-  const graduationIndex=appStateSource.indexOf('offline-sync-metadata-graduation.js?v=10.44.0');
-  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.44.0');
+  const shadowIndex=appStateSource.indexOf('offline-sync-metadata-shadow.js?v=10.45.0');
+  const authorityIndex=appStateSource.indexOf('offline-sync-metadata-authority.js?v=10.45.0');
+  const graduationIndex=appStateSource.indexOf('offline-sync-metadata-graduation.js?v=10.45.0');
+  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.45.0');
   assert.ok(shadowIndex>=0);
   assert.ok(authorityIndex>shadowIndex);
   assert.ok(graduationIndex>authorityIndex);

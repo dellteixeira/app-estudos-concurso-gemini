@@ -38,4 +38,4 @@ A 4N altera apenas população. As fases 4K, 4L e 4M continuam restritas aos buc
 
 ## Release
 
-Durante implementação e pré-gate, a identidade permanece em `v10.44.0`. Somente após Syntax Check, testes automatizados, Structural Audit e Browser Responsive Audit integralmente verdes a candidata poderá ser promovida para `v10.45.0`.
+Durante implementação e pré-gate, a identidade permanece em `v10.45.0`. Somente após Syntax Check, testes automatizados, Structural Audit e Browser Responsive Audit integralmente verdes a candidata poderá ser promovida para `v10.45.0`.
