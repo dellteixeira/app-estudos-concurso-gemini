@@ -42,6 +42,9 @@
 /js/core/offline-sync-delete-authority.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+/js/core/offline-sync-edital-graduation.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/app-core.js
   Cache-Control: no-cache, no-store, must-revalidate
 
