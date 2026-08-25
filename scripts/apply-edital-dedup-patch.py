@@ -26,17 +26,25 @@ if '"/js/core/edital-integrity.js"' not in text:
     text = text.replace(anchor, '"/js/core/edital-integrity.js", "/js/core/local-backup-store.js"')
 p.write_text(text)
 
-for path in ['public/sw.js', 'src/worker.js']:
-    p = Path(path)
-    text = p.read_text()
-    if '/js/core/edital-integrity.js' not in text:
-        if "'/js/core/local-backup-store.js'" in text:
-            text = text.replace("'/js/core/local-backup-store.js'", "'/js/core/edital-integrity.js', '/js/core/local-backup-store.js'")
-        elif '"/js/core/local-backup-store.js"' in text:
-            text = text.replace('"/js/core/local-backup-store.js"', '"/js/core/edital-integrity.js", "/js/core/local-backup-store.js"')
-        else:
-            raise SystemExit(f'{path}: local-backup anchor missing')
-    p.write_text(text)
+p = Path('public/sw.js')
+text = p.read_text()
+if '/js/core/edital-integrity.js' not in text:
+    if "'/js/core/local-backup-store.js'" in text:
+        text = text.replace("'/js/core/local-backup-store.js'", "'/js/core/edital-integrity.js', '/js/core/local-backup-store.js'")
+    elif '"/js/core/local-backup-store.js"' in text:
+        text = text.replace('"/js/core/local-backup-store.js"', '"/js/core/edital-integrity.js", "/js/core/local-backup-store.js"')
+    else:
+        raise SystemExit('public/sw.js: local-backup anchor missing')
+p.write_text(text)
+
+p = Path('src/worker.js')
+text = p.read_text()
+if '/js/core/edital-integrity.js' not in text:
+    anchor = "  '/js/core/offline-outbox-store.js',"
+    if anchor not in text:
+        raise SystemExit('src/worker.js: offline-outbox anchor missing')
+    text = text.replace(anchor, "  '/js/core/edital-integrity.js',\n" + anchor, 1)
+p.write_text(text)
 
 p = Path('public/_headers')
 text = p.read_text()
