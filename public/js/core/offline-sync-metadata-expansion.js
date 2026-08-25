@@ -41,6 +41,7 @@
   function authority() { return global.OfflineSyncMetadataAuthority || null; }
   function graduation() { return global.OfflineSyncMetadataGraduation || null; }
   function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }
+  function populationPromotion() { return global.OfflineSyncMetadataPopulationPromotion || null; }
 
   function isOptedIn(userId = currentUserId()) {
     return Boolean(userId) && storageGet(enableKey(userId)) === '1';
@@ -76,12 +77,13 @@
     const circuit = authority()?.getCircuit?.(userId) || null;
     const hardKill = Boolean(graduation()?.isHardKilled?.() || authority()?.isHardKilled?.());
     const promoted = Boolean(promotion()?.isPromoted?.(userId));
+    const populationPromoted = Boolean(populationPromotion()?.isPromoted?.(userId));
     const originalPilot = Boolean(pilotCohort?.included);
     const reasons = [];
 
     if (!userId) reasons.push('missing-user');
     if (!cohort?.included) reasons.push('outside-rollout-cohort');
-    if (!originalPilot && !promoted) reasons.push('outside-expansion-pilot-cohort');
+    if (!originalPilot && !promoted && !populationPromoted) reasons.push('outside-expansion-pilot-cohort');
     if (originalPilot && !report?.readyForExpansion) reasons.push('metadata-stability-not-ready');
     if (!rolloutEligibility?.eligible) reasons.push('metadata-rollout-not-eligible');
     if (circuit) reasons.push('metadata-authority-circuit-open');
@@ -94,7 +96,9 @@
       pilotCohort,
       originalPilot,
       promoted,
+      populationPromoted,
       promotion:promotion()?.getDiagnostics?.() || null,
+      populationPromotion:populationPromotion()?.getDiagnostics?.() || null,
       rollout:rolloutEligibility,
       circuit,
       hardKill,
@@ -103,7 +107,7 @@
   }
 
   function hasDepthGrant(userId = currentUserId()) {
-    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId)));
+    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId)));
   }
 
   function isEnabled(userId = currentUserId()) {
