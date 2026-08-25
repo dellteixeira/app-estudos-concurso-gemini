@@ -8,6 +8,7 @@ const EXTENDED_NO_STORE_PATHS = new Set([
   '/js/core/offline-outbox-store.js',
   '/js/core/offline-sync-shadow.js',
   '/js/core/offline-sync-metadata-shadow.js',
+  '/js/core/offline-sync-metadata-authority.js',
   '/js/core/offline-sync-authority.js',
   '/js/core/offline-sync-delete-authority.js',
   '/js/core/offline-sync-edital-graduation.js'
