@@ -3,7 +3,7 @@
   "private": true,
   "version": "10.35.0",
   "scripts": {
-    "test": "node --test --test-reporter=spec tests/*.test.cjs",
+    "test": "node --test tests/*.test.cjs",
     "test:browser": "playwright test -c playwright.config.cjs",
     "audit": "node scripts/audit-release.mjs && node scripts/audit-css-ownership.cjs && node scripts/audit-asset-manifest.mjs && node scripts/audit-inline-csp.mjs && node scripts/audit-toolchain-pins.mjs",
     "check": "npm run test && npm run audit"
