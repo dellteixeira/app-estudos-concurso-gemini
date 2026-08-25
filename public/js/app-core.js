@@ -5015,25 +5015,68 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return `edital_offline_data_${uid}`;
         }
 
+        function reconcileEditalTopicIntegrity(options = {}) {
+            const integrity = window.EditalIntegrity;
+            if (!integrity?.dedupe) return { items: allEditalItems, removedIds: [], changed: false };
+            const result = integrity.dedupe(allEditalItems);
+            if (!result.changed) return result;
+
+            allEditalItems = result.items;
+            if (options.queue !== false && currentUser) {
+                const state = getSyncState();
+                const removed = new Set(result.removedIds.map(String));
+                result.removedIds.forEach(id => {
+                    const normalizedId = String(id);
+                    delete state.editalUpserts[normalizedId];
+                    if (!state.editalDeletes.includes(normalizedId)) state.editalDeletes.push(normalizedId);
+                });
+                result.items.forEach(item => {
+                    if (item?.id == null || removed.has(String(item.id))) return;
+                    const id = String(item.id);
+                    state.editalUpserts[id] = { ...item, id };
+                    state.editalDeletes = state.editalDeletes.filter(savedId => String(savedId) !== id);
+                });
+                saveSyncState(state);
+            }
+            return result;
+        }
+
         function loadLocalEditalData() {
             const local = localStorage.getItem(getEditalLocalStorageKey());
             if (local) {
                 try {
                     allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral', videoaula: !!item.videoaula, metodo_conteudo: normalizeContentMethod(item.metodo_conteudo) }));
+                    const reconciliation = reconcileEditalTopicIntegrity();
+                    if (reconciliation.changed) {
+                        localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
+                    }
                 } catch(e) { allEditalItems = []; }
             }
         }
 
         function saveEditalToLocalStorage() {
+            reconcileEditalTopicIntegrity();
             localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
             scheduleLocalBackup('alteração no edital verticalizado');
         }
 
         async function saveEditalItemToCloud(item) {
             // Delta sync: grava imediatamente no aparelho e agrupa alterações rápidas.
+            const integrity = window.EditalIntegrity;
+            const duplicate = integrity?.findDuplicate?.(allEditalItems, item, { ignoreId: item?.id });
+            if (duplicate && String(duplicate.id) !== String(item?.id)) {
+                Object.assign(duplicate, integrity.mergePair(duplicate, item));
+                allEditalItems = allEditalItems.filter(saved => String(saved.id) !== String(item.id));
+                saveEditalToLocalStorage();
+                queueEditalUpsert(duplicate);
+                queueEditalDelete(item.id);
+                if (navigator.onLine && currentUser) scheduleEditalSync();
+                return duplicate;
+            }
             saveEditalToLocalStorage();
             queueEditalUpsert(item);
             if (navigator.onLine && currentUser) scheduleEditalSync();
+            return item;
         }
 
         async function deleteEditalItemFromCloud(id) {
@@ -5824,6 +5867,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const assunto = document.getElementById('assunto').value.trim();
             const prioridade = parseInt(document.getElementById('prioridade').value) || 1;
 
+            const duplicate = window.EditalIntegrity?.findDuplicate?.(allEditalItems, { concurso: currentConcurso, materia, assunto });
+            if (duplicate) {
+                await appNotice('Este assunto já está cadastrado nesta matéria. O edital não permite assuntos duplicados no mesmo concurso e matéria.', { title:'Assunto já cadastrado' });
+                return;
+            }
+
             const newItem = {
                 id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
                 materia, assunto, prioridade: clampMateriaPriority(prioridade), assunto_prioridade: 1, peso: 5 - clampMateriaPriority(prioridade), concurso: currentConcurso,
@@ -5985,6 +6034,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                         teoria: false, questoes: false, videoaula: false, metodo_conteudo: (typeof assuntoItem === 'object' && assuntoItem ? normalizeContentMethod(assuntoItem.metodo_conteudo || assuntoItem.metodoConteudo || 'automatico') : 'automatico'), rev_24h: false, rev_7d: false, rev_30d: false
                                     };
 
+                                    const duplicateImport = window.EditalIntegrity?.findDuplicate?.(allEditalItems, itemObj, { ignoreId: itemObj.id });
+                                    if (duplicateImport) return;
                                     formattedData.push(itemObj);
                                     allEditalItems.push(itemObj);
                                     openMaterias[mName] = true;
