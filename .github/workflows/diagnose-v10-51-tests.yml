@@ -1,0 +1,40 @@
+name: Diagnose v10.51.0 tests
+
+on:
+  pull_request:
+    types: [reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.event.pull_request.head.ref == 'feat/offline-metadata-ring2-stability-v10.51.0'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: feat/offline-metadata-ring2-stability-v10.51.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Capture npm test output
+        shell: bash
+        run: |
+          set +e
+          npm test > npm-test-output.txt 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Upload diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: v10-51-test-diagnostics
+          path: npm-test-output.txt
+          if-no-files-found: error
