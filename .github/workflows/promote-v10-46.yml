@@ -41,7 +41,6 @@ jobs:
           required = {'package.json','config/app-assets.json','public/version.json','src/index.js','public/js/app-pwa.js','public/js/app-state.js','public/sw.js'}
           missing = sorted(required - set(touched))
           if missing: raise SystemExit(f'required release identity files were not updated: {missing}')
-          print('\n'.join(touched))
           PY
 
       - name: Verify release identity
@@ -52,40 +51,49 @@ jobs:
           grep -q '"version": "10.46.0"' public/version.json
           ! grep -RIl --include='*.js' --include='*.json' --include='*.cjs' '10\.45\.0\|10-45-0\|v10\.45\.0' package.json config public src tests
 
-      - name: Tests A-D
+      - name: Tests E
         run: |
-          shopt -s nullglob
-          files=(tests/[a-dA-D]*.test.cjs)
-          ((${#files[@]} == 0)) || node --test "${files[@]}"
-
-      - name: Tests E-L
+          shopt -s nullglob; files=(tests/[eE]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests F
         if: always()
         run: |
-          shopt -s nullglob
-          files=(tests/[e-lE-L]*.test.cjs)
-          ((${#files[@]} == 0)) || node --test "${files[@]}"
-
-      - name: Tests M-O
+          shopt -s nullglob; files=(tests/[fF]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests G
         if: always()
         run: |
-          shopt -s nullglob
-          files=(tests/[m-oM-O]*.test.cjs)
-          ((${#files[@]} == 0)) || node --test "${files[@]}"
-
-      - name: Tests P-S
+          shopt -s nullglob; files=(tests/[gG]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests H
         if: always()
         run: |
-          shopt -s nullglob
-          files=(tests/[p-sP-S]*.test.cjs)
-          ((${#files[@]} == 0)) || node --test "${files[@]}"
-
-      - name: Tests T-Z
+          shopt -s nullglob; files=(tests/[hH]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests I
         if: always()
         run: |
-          shopt -s nullglob
-          files=(tests/[t-zT-Z]*.test.cjs)
-          ((${#files[@]} == 0)) || node --test "${files[@]}"
-
+          shopt -s nullglob; files=(tests/[iI]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests J
+        if: always()
+        run: |
+          shopt -s nullglob; files=(tests/[jJ]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests K
+        if: always()
+        run: |
+          shopt -s nullglob; files=(tests/[kK]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests L
+        if: always()
+        run: |
+          shopt -s nullglob; files=(tests/[lL]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests M
+        if: always()
+        run: |
+          shopt -s nullglob; files=(tests/[mM]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests N
+        if: always()
+        run: |
+          shopt -s nullglob; files=(tests/[nN]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
+      - name: Tests O
+        if: always()
+        run: |
+          shopt -s nullglob; files=(tests/[oO]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
       - name: Stop after diagnostic grouping
         if: always()
         run: exit 0
