@@ -95,7 +95,6 @@ async function qualifyCanary(env){
   assert.equal(env.context.OfflineSyncAuthority.getEligibility().eligible,true);
 }
 
-
 test('autoridade nasce opt-in e bloqueia ativação sem histórico de paridade suficiente',async()=>{
   const env=makeContext();
   env.context.queueEditalUpsert(baseTopic());
@@ -210,9 +209,9 @@ test('orçamento limita canário a 3 batches ou 50 itens e desliga automaticamen
 });
 
 test('AppState carrega autoridade depois de outbox e shadow na release v10.38.0',()=>{
-  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.37\.0/);
-  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.37\.0/);
-  assert.match(appStateSource,/offline-sync-authority\.js\?v=10\.37\.0/);
+  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.38\.0/);
+  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.38\.0/);
+  assert.match(appStateSource,/offline-sync-authority\.js\?v=10\.38\.0/);
   assert.ok(appStateSource.indexOf('offline-sync-authority.js')>appStateSource.indexOf('offline-sync-shadow.js'));
 });
 
