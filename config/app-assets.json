@@ -1,5 +1,5 @@
 {
-  "version": "10.33.2",
+  "version": "10.33.3",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -19,6 +19,7 @@
     "/js/core/offline-outbox-store.js",
     "/js/core/offline-sync-shadow.js",
     "/js/core/offline-sync-authority.js",
+    "/js/core/offline-sync-delete-authority.js",
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
     "/js/learning-advisor.js",
@@ -85,6 +86,7 @@
     "/js/core/offline-outbox-store.js",
     "/js/core/offline-sync-shadow.js",
     "/js/core/offline-sync-authority.js",
+    "/js/core/offline-sync-delete-authority.js",
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
     "/js/learning-advisor.js",
@@ -136,6 +138,7 @@
     "/js/core/offline-outbox-store.js",
     "/js/core/offline-sync-shadow.js",
     "/js/core/offline-sync-authority.js",
+    "/js/core/offline-sync-delete-authority.js",
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
     "/js/learning-advisor.js",
@@ -172,6 +175,7 @@
     "/js/core/offline-outbox-store.js",
     "/js/core/offline-sync-shadow.js",
     "/js/core/offline-sync-authority.js",
+    "/js/core/offline-sync-delete-authority.js",
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
     "/js/learning-advisor.js",

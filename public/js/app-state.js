@@ -29,19 +29,24 @@
 
     async function loadOfflineSyncFoundation() {
         if (!global.OfflineOutboxStore) {
-            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.33.2', 'offline-outbox-store');
+            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.33.3', 'offline-outbox-store');
         }
         if (!global.OfflineSyncShadow) {
-            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.33.2', 'offline-sync-shadow');
+            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.33.3', 'offline-sync-shadow');
         }
         global.OfflineSyncShadow?.install?.();
         if (!global.OfflineSyncAuthority) {
-            await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.33.2', 'offline-sync-authority');
+            await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.33.3', 'offline-sync-authority');
         }
         global.OfflineSyncAuthority?.install?.();
+        if (!global.OfflineSyncDeleteAuthority) {
+            await loadExtensionScript('./js/core/offline-sync-delete-authority.js?v=10.33.3', 'offline-sync-delete-authority');
+        }
+        global.OfflineSyncDeleteAuthority?.install?.();
         return {
             shadow:await global.OfflineSyncShadow?.getDiagnostics?.() || null,
-            authority:global.OfflineSyncAuthority?.getDiagnostics?.() || null
+            authority:global.OfflineSyncAuthority?.getDiagnostics?.() || null,
+            deleteAuthority:global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null
         };
     }
 
@@ -222,7 +227,8 @@
         subscribe,
         refresh,
         getOfflineShadowDiagnostics:() => global.OfflineSyncShadow?.getDiagnostics?.() || null,
-        getOfflineSyncAuthorityDiagnostics:() => global.OfflineSyncAuthority?.getDiagnostics?.() || null
+        getOfflineSyncAuthorityDiagnostics:() => global.OfflineSyncAuthority?.getDiagnostics?.() || null,
+        getOfflineSyncDeleteAuthorityDiagnostics:() => global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null
     });
 
     global.dispatchEvent(new CustomEvent('appstate:ready', { detail:{ schemaVersion:SCHEMA_VERSION, revision } }));
