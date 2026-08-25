@@ -1,42 +1,104 @@
-name: Mirror GitHub to GitLab
+name: Promote v10.48.0
 
 on:
   push:
-  delete:
+    branches:
+      - feat/offline-metadata-population-promotion-v10.48.0
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: mirror-gitlab
+  group: promote-v10-48
   cancel-in-progress: true
 
 jobs:
-  mirror:
-    name: Sync repository to GitLab
+  promote:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-
     steps:
-      - name: Create bare clone from GitHub
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          git clone --bare \
-            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            mirror.git
+      - name: Checkout branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/offline-metadata-population-promotion-v10.48.0
+          fetch-depth: 0
 
-      - name: Mirror branches and tags to GitLab
-        env:
-          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.23.2
+
+      - name: Promote release identity
+        shell: bash
         run: |
           set -euo pipefail
-          AUTH="$(printf '%s:%s' "$GITLAB_USERNAME" "$GITLAB_TOKEN" | base64 -w0)"
-          git -C mirror.git \
-            -c http.extraHeader="Authorization: Basic ${AUTH}" \
-            push --mirror \
-            "https://gitlab.com/dellteixeira-group/app-estudos-concurso-gemini.git"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          targets = [
+              Path('package.json'),
+              Path('config/app-assets.json'),
+              Path('public/version.json'),
+              Path('src/index.js'),
+              Path('src/worker.js'),
+              Path('public/js/app-pwa.js'),
+              Path('public/js/app-state.js'),
+              Path('public/sw.js'),
+          ]
+          targets.extend(sorted(Path('tests').glob('*.test.cjs')))
+
+          changed=[]
+          for path in targets:
+              if not path.exists():
+                  continue
+              text=path.read_text(encoding='utf-8')
+              updated=text.replace('10\\.47\\.0','10\\.48\\.0')
+              updated=updated.replace('10.47.0','10.48.0')
+              updated=updated.replace('10-47-0','10-48-0')
+              if updated != text:
+                  path.write_text(updated,encoding='utf-8')
+                  changed.append(str(path))
+          if not changed:
+              raise SystemExit('Nenhum identificador de release foi promovido.')
+          print('\n'.join(changed))
+          PY
+
+      - name: Verify promoted identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const p=require('./package.json'); if(p.version!=='10.48.0') process.exit(1)"
+          node -e "const v=require('./public/version.json'); if(v.version!=='10.48.0') process.exit(1)"
+          grep -q "10.48.0" public/sw.js
+          grep -q "10.48.0" config/app-assets.json
+          grep -q "offline-sync-metadata-population-promotion.js?v=10.48.0" public/js/app-state.js
+          if grep -R -n --include='*.test.cjs' '10\\.47\\.0\|10\.47\.0' tests; then
+            echo 'Stale v10.47.0 test assertion found.' >&2
+            exit 1
+          fi
+
+      - name: Automated tests
+        run: npm test
+
+      - name: Structural audit
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: npm run audit
+
+      - name: Restore canonical mirror workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show origin/main:.github/workflows/mirror-gitlab.yml > .github/workflows/mirror-gitlab.yml
+
+      - name: Commit promoted candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json config/app-assets.json public/version.json src/index.js src/worker.js public/js/app-pwa.js public/js/app-state.js public/sw.js tests .github/workflows/mirror-gitlab.yml
+          git diff --cached --check
+          git commit -m "chore(release): promote v10.48.0"
+          git push origin HEAD:feat/offline-metadata-population-promotion-v10.48.0
