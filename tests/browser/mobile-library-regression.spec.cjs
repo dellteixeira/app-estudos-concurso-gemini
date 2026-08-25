@@ -110,17 +110,27 @@ test('mobile Biblioteca mantém cards na viewport e trilhos alcançáveis', asyn
   await assertScrollableRail(page, '#pdfOfflineManager .pdf-offline-controls');
 });
 
-test('mobile Mais realmente abre e fecha a barra extra', async ({ page }) => {
+test('mobile menu compacto de ações abre e fecha pelo controle vigente', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await exposeDashboard(page);
 
-  const bar = page.locator('.action-bar');
-  await expect(bar).toHaveCSS('display', 'none');
-  await page.evaluate(() => window.toggleModernTools());
-  await expect(bar).toHaveCSS('display', 'grid');
-  await expect(page.locator('[data-action="toggle-modern-tools"]').first()).toHaveAttribute('aria-expanded', 'true');
-  await page.evaluate(() => window.toggleModernTools());
-  await expect(bar).toHaveCSS('display', 'none');
-  await expect(page.locator('[data-action="toggle-modern-tools"]').first()).toHaveAttribute('aria-expanded', 'false');
+  const toggle = page.locator('.compact-actions-toggle');
+  const menu = page.locator('#compactActionsDropdown');
+
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(menu).toHaveAttribute('aria-hidden', 'true');
+  await expect(menu).toBeHidden();
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(menu).toHaveAttribute('aria-hidden', 'false');
+  await expect(menu).toHaveClass(/is-open/);
+  await expect(menu).toBeVisible();
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(menu).toHaveAttribute('aria-hidden', 'true');
+  await expect(menu).not.toHaveClass(/is-open/);
+  await expect(menu).toBeHidden();
 });
