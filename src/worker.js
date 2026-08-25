@@ -11,6 +11,7 @@ const EXTENDED_NO_STORE_PATHS = new Set([
   '/js/core/offline-sync-metadata-authority.js',
   '/js/core/offline-sync-metadata-graduation.js',
   '/js/core/offline-sync-metadata-rollout.js',
+  '/js/core/offline-sync-metadata-stability.js',
   '/js/core/offline-sync-authority.js',
   '/js/core/offline-sync-delete-authority.js',
   '/js/core/offline-sync-edital-graduation.js'
