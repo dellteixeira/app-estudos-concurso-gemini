@@ -46,6 +46,19 @@ if old_tablet_utility not in css:
     raise SystemExit('tablet utility legacy grid block not found')
 css = css.replace(old_tablet_utility, new_tablet_utility, 1)
 
+old_notebook_utility = '''    header.modern-header .header-utility-cluster {
+        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 1fr) minmax(130px, .32fr);
+    }
+'''
+new_notebook_utility = '''    header.modern-header .header-utility-cluster {
+        grid-column: 1 / -1;
+    }
+'''
+if old_notebook_utility not in css:
+    raise SystemExit('notebook utility legacy grid block not found')
+css = css.replace(old_notebook_utility, new_notebook_utility, 1)
+
 old_action_bar = '''
     .action-bar {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -54,6 +67,15 @@ old_action_bar = '''
 if old_action_bar not in css:
     raise SystemExit('residual tablet action-bar block not found')
 css = css.replace(old_action_bar, '', 1)
+
+old_desktop_toggle = '''
+    header.modern-header .mobile-tools-toggle {
+        display: none !important;
+    }
+'''
+if old_desktop_toggle not in css:
+    raise SystemExit('residual desktop mobile-tools-toggle block not found')
+css = css.replace(old_desktop_toggle, '', 1)
 
 for residue in ('.action-bar {', '.action-bar.mobile-open', '.mobile-tools-toggle', '.header-account-actions'):
     if residue in css:
