@@ -39,4 +39,4 @@ A 4R altera apenas população. As fases 4K–4M continuam restritas aos buckets
 
 ## Release
 
-Durante implementação e pré-gate, a identidade pública permanece `v10.49.0`. A promoção para `v10.50.0` deve ocorrer somente após Syntax Check, testes automatizados, Structural Audit e Browser Responsive Audit integralmente verdes.
+Release candidate promovida para `v10.50.0` após pré-gate integralmente verde em sintaxe, testes automatizados, auditoria estrutural e Browser Responsive Audit. O SHA final deve repetir os mesmos gates antes do merge em `main`.
