@@ -23,18 +23,24 @@ jobs:
         with:
           node-version: '22.23.2'
 
-      - name: Capture npm test output
+      - name: Capture diagnostics
         shell: bash
         run: |
           set +e
           npm test > npm-test-output.txt 2>&1
           code=$?
-          echo "exit_code=$code" >> "$GITHUB_STEP_SUMMARY"
+          printf 'npm_test_exit_code=%s\n' "$code" > stale-version-inventory.txt
+          printf '\nFiles containing 10.50.1:\n' >> stale-version-inventory.txt
+          grep -RIl --exclude-dir=.git --exclude='npm-test-output.txt' '10\.50\.1' . | sort >> stale-version-inventory.txt || true
+          printf '\nOccurrences:\n' >> stale-version-inventory.txt
+          grep -RIn --exclude-dir=.git --exclude='npm-test-output.txt' '10\.50\.1' . | sort >> stale-version-inventory.txt || true
           exit 0
 
       - name: Upload diagnostics
         uses: actions/upload-artifact@v4
         with:
           name: v10-51-test-diagnostics
-          path: npm-test-output.txt
+          path: |
+            npm-test-output.txt
+            stale-version-inventory.txt
           if-no-files-found: error
