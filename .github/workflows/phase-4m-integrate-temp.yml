@@ -65,32 +65,14 @@ jobs:
           patch(manifest,oldAsset,newAsset,4);
 
           const sw='public/sw.js';
-          const oldSw="'./js/core/offline-sync-metadata-expanded-promotion.js', './js/core/offline-sync-metadata-expansion.js'";
-          const newSw="'./js/core/offline-sync-metadata-expanded-promotion.js', './js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-expansion.js'";
-          patch(sw,oldSw,newSw,1);
-          const oldSwPath="'/js/core/offline-sync-metadata-expanded-promotion.js', '/js/core/offline-sync-metadata-expansion.js'";
-          const newSwPath="'/js/core/offline-sync-metadata-expanded-promotion.js', '/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-expansion.js'";
-          patch(sw,oldSwPath,newSwPath,1);
-
-          patch('src/worker.js',
-`  '/js/core/offline-sync-metadata-expanded-promotion.js',
-  '/js/core/offline-sync-metadata-expansion.js',`,
-`  '/js/core/offline-sync-metadata-expanded-promotion.js',
-  '/js/core/offline-sync-metadata-promoted-stability.js',
-  '/js/core/offline-sync-metadata-expansion.js',`);
-
-          patch('public/_headers',
-`/js/core/offline-sync-metadata-expanded-promotion.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/js/core/offline-sync-metadata-expansion.js`,
-`/js/core/offline-sync-metadata-expanded-promotion.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/js/core/offline-sync-metadata-promoted-stability.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/js/core/offline-sync-metadata-expansion.js`);
+          patch(sw,
+            "'./js/core/offline-sync-metadata-expanded-promotion.js', './js/core/offline-sync-metadata-expansion.js'",
+            "'./js/core/offline-sync-metadata-expanded-promotion.js', './js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-expansion.js'",
+            1);
+          patch(sw,
+            "'/js/core/offline-sync-metadata-expanded-promotion.js', '/js/core/offline-sync-metadata-expansion.js'",
+            "'/js/core/offline-sync-metadata-expanded-promotion.js', '/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-expansion.js'",
+            1);
           NODE
 
       - name: Syntax checks
@@ -108,11 +90,12 @@ jobs:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: npm run audit
 
-      - name: Commit integration
+      - name: Commit integration and remove temporary workflow
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/js/app-state.js config/app-assets.json public/sw.js src/worker.js public/_headers
+          git add public/js/app-state.js config/app-assets.json public/sw.js
+          git rm .github/workflows/phase-4m-integrate-temp.yml
           git commit -m 'feat(sync): integrate phase 4M diagnostics'
           git push origin HEAD:feat/offline-metadata-promoted-stability-v10.44.0
