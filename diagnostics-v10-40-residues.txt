@@ -1,0 +1,144 @@
+FILE tests/learning-advisor.test.cjs
+98: assert.match(pwa,/learning-advisor\.css\?v=10\.39\.0/);
+99: assert.match(pwa,/learning-advisor\.js\?v=10\.39\.0/);
+
+npm_test_status=1
+=== FAILURES ===
+  type: 'test'
+  ...
+# Subtest: advisor faz parte do núcleo PWA e usa política anti-cache
+not ok 70 - advisor faz parte do núcleo PWA e usa política anti-cache
+  ---
+  duration_ms: 4.816959
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/learning-advisor.test.cjs:97:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /learning-advisor\.css\?v=10\.39\.0/. Input:
+    
+    '        // =========================================================\n' +
+      '        // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS\n' +
+      '        // =========================================================\n' +
+      '        let deferredPwaInstallPrompt = null;\n' +
+      '\n' +
+      '        function isPwaStandalone() {\n' +
+      "            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;\n" +
+      '        }\n' +
+      '\n' +
+      '        function markPwaInstalled() {\n' +
+      "            try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}\n" +
+      '        }\n' +
+      '\n' +
+      '        function isPwaKnownInstalled() {\n' +
+      '            if (isPwaStandalone()) {\n' +
+      '                markPwaInstalled();\n' +
+      '                return true;\n' +
+--
+      '        window.startOpportunityRecommendation = startOpportunityRecommendation;\n' +
+      '        window.startRetentionDiagnosticTopic = startR'... 2501 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+            // =========================================================
+            // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS
+            // =========================================================
+            let deferredPwaInstallPrompt = null;
+    
+            function isPwaStandalone() {
+                return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            }
+    
+            function markPwaInstalled() {
+                try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}
+            }
+    
+            function isPwaKnownInstalled() {
+                if (isPwaStandalone()) {
+                    markPwaInstalled();
+                    return true;
+                }
+--
+  duration_ms: 1.156093
+  type: 'test'
+  ...
+# Autoridade da outbox falhou; sincronização legada reassumirá o restante: Error: falha canário
+#     at Object.upsert (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-authority.test.cjs:59:45)
+#     at factory (offline-sync-authority.js:232:49)
+#     at runSupabaseRequest (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-authority.test.cjs:54:33)
+#     at runRemoteUpsert (offline-sync-authority.js:233:69)
+#     at flushAuthorizedEditalUpserts (offline-sync-authority.js:314:19)
+#     at async offline-sync-authority.js:354:15
+#     at async TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-authority.test.cjs:142:3)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Subtest: autoridade nasce opt-in e bloqueia ativação sem histórico de paridade suficiente
+ok 134 - autoridade nasce opt-in e bloqueia ativação sem histórico de paridade suficiente
+  ---
+  duration_ms: 5.948759
+  type: 'test'
+  ...
+# Subtest: canário habilita somente após 8 amostras saudáveis e envia apenas edital upsert
+ok 135 - canário habilita somente após 8 amostras saudáveis e envia apenas edital upsert
+  ---
+  duration_ms: 9.82613
+  type: 'test'
+--
+  duration_ms: 0.684739
+  type: 'test'
+  ...
+# Autoridade de exclusão da outbox falhou; sincronização legada reassumirá o restante: Error: falha delete canário
+#     at Object.eq (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-delete-authority.test.cjs:67:53)
+#     at factory (offline-sync-delete-authority.js:211:72)
+#     at runSupabaseRequest (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-delete-authority.test.cjs:58:33)
+#     at runRemoteDelete (offline-sync-delete-authority.js:212:69)
+#     at flushAuthorizedEditalDeletes (offline-sync-delete-authority.js:289:19)
+#     at async offline-sync-delete-authority.js:339:15
+#     at async TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-delete-authority.test.cjs:141:3)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Subtest: delete authority nasce desligada e exige 8 amostras próprias de paridade
+ok 143 - delete authority nasce desligada e exige 8 amostras próprias de paridade
+  ---
+  duration_ms: 6.685638
+  type: 'test'
+  ...
+# Subtest: canário de delete usa filtro id + user_id e remove somente deletes confirmados antes do legado
+ok 144 - canário de delete usa filtro id + user_id e remove somente deletes confirmados antes do legado
+  ---
+  duration_ms: 5.880121
+  type: 'test'
+--
+  duration_ms: 0.33322
+  type: 'test'
+  ...
+# Autoridade de metadados falhou; sincronização legada reassumirá a pendência: Error: remote read failed
+#     at TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-metadata-authority.test.cjs:144:36)
+#     at Test.runInAsyncScope (node:async_hooks:214:14)
+#     at Test.run (node:internal/test_runner/test:1047:25)
+#     at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+#     at Test.postRun (node:internal/test_runner/test:1173:19)
+#     at Test.run (node:internal/test_runner/test:1101:12)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Autoridade de metadados falhou; sincronização legada reassumirá a pendência: Error: remote write failed
+#     at TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-metadata-authority.test.cjs:156:37)
+#     at Test.runInAsyncScope (node:async_hooks:214:14)
+#     at Test.run (node:internal/test_runner/test:1047:25)
+#     at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+#     at Test.postRun (node:internal/test_runner/test:1173:19)
+#     at Test.run (node:internal/test_runner/test:1101:12)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Subtest: autoridade de metadata nasce opt-in e exige 8 amostras shadow saudáveis
+ok 160 - autoridade de metadata nasce opt-in e exige 8 amostras shadow saudáveis
+  ---
+  duration_ms: 3.447648
+  type: 'test'
+  ...
+# Subtest: canário lê remoto, preserva histórico e grava somente concursos_metadata
+ok 161 - canário lê remoto, preserva histórico e grava somente concursos_metadata
+  ---
+  duration_ms: 5.214578
+  type: 'test'
+  ...
+# Subtest: falha na leitura remota abre circuito e entrega pendência intacta ao legado
