@@ -1,0 +1,93 @@
+name: Promote v10.46.0
+
+on:
+  push:
+    paths:
+      - '.github/workflows/promote-v10-46.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.23.2'
+
+      - name: Promote release identity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          explicit = [
+              Path('package.json'),
+              Path('config/app-assets.json'),
+              Path('public/version.json'),
+              Path('src/index.js'),
+              Path('public/js/app-pwa.js'),
+              Path('public/js/app-state.js'),
+              Path('public/sw.js'),
+          ]
+          targets = explicit + sorted(Path('tests').glob('*.test.cjs'))
+          touched = []
+          for path in targets:
+              if not path.exists():
+                  raise SystemExit(f'missing release target: {path}')
+              text = path.read_text()
+              new = (text
+                     .replace('v10.45.0', 'v10.46.0')
+                     .replace('10.45.0', '10.46.0')
+                     .replace('10-45-0', '10-46-0'))
+              if new != text:
+                  path.write_text(new)
+                  touched.append(str(path))
+
+          required = {
+              'package.json', 'config/app-assets.json', 'public/version.json',
+              'src/index.js', 'public/js/app-pwa.js', 'public/js/app-state.js', 'public/sw.js'
+          }
+          missing = sorted(required - set(touched))
+          if missing:
+              raise SystemExit(f'required release identity files were not updated: {missing}')
+
+          print('Promoted files:')
+          print('\n'.join(touched))
+          PY
+
+      - name: Verify release identity
+        run: |
+          set -euo pipefail
+          grep -q '"version": "10.46.0"' package.json
+          grep -q '"version": "10.46.0"' config/app-assets.json
+          grep -q '"version": "10.46.0"' public/version.json
+          grep -q "10.46.0" src/index.js
+          grep -q "10.46.0" public/js/app-pwa.js
+          grep -q "10.46.0" public/js/app-state.js
+          grep -q "10.46.0" public/sw.js
+          ! grep -RIl --include='*.js' --include='*.json' --include='*.cjs' '10\.45\.0\|10-45-0\|v10\.45\.0' package.json config public src tests
+
+      - name: Automated tests and structural audit
+        run: |
+          npm test
+          npm run audit
+
+      - name: Commit promoted release candidate
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/promote-v10-46.yml
+          git add package.json config public src tests
+          git commit -m "chore(release): promote v10.46.0"
+          git push origin HEAD:${GITHUB_REF_NAME}
