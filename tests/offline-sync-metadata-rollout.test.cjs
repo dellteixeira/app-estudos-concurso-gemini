@@ -56,28 +56,46 @@ function makeContext(options={}){
   return {context,graduation,events};
 }
 
-function findUser(included){
+function findUserForTier(tier){
   const env=makeContext();
   const rollout=env.context.OfflineSyncMetadataRollout;
   for(let i=0;i<10000;i+=1){
     const id=`rollout-user-${i}`;
-    if(rollout.getCohortAssignment(id).included===included) return id;
+    if(rollout.getCohortAssignment(id).tier===tier) return id;
   }
-  throw new Error('cohort user not found');
+  throw new Error(`cohort tier not found: ${tier}`);
 }
 
-test('coorte é determinística e limitada inicialmente a 10%',()=>{
+test('coorte é determinística com base 25% e piloto preservado em 10%',()=>{
   const env=makeContext();
   const rollout=env.context.OfflineSyncMetadataRollout;
   const first=rollout.getCohortAssignment('stable-user');
   const second=rollout.getCohortAssignment('stable-user');
   assert.deepEqual({...first},{...second});
-  assert.equal(first.percent,10);
+  assert.equal(first.percent,25);
+  assert.equal(first.pilotPercent,10);
   assert.equal(first.bucket>=0&&first.bucket<100,true);
+  assert.equal(rollout.PILOT_COHORT_PERCENT,10);
+  assert.equal(rollout.COHORT_PERCENT,25);
 });
 
-test('usuário fora da coorte não pode ativar graduação',()=>{
-  const userId=findUser(false);
+test('faixa 10-24 entra apenas no rollout-base e não no piloto',()=>{
+  const userId=findUserForTier('expanded-base');
+  const env=makeContext({userId});
+  const rollout=env.context.OfflineSyncMetadataRollout;
+  const cohort=rollout.getCohortAssignment();
+  const pilot=rollout.getPilotCohortAssignment();
+  assert.equal(cohort.included,true);
+  assert.equal(cohort.tier,'expanded-base');
+  assert.equal(cohort.bucket>=10&&cohort.bucket<25,true);
+  assert.equal(pilot.included,false);
+  assert.equal(pilot.percent,10);
+  assert.equal(rollout.getEligibility().eligible,true);
+  assert.equal(rollout.setEnabled(true),true);
+});
+
+test('usuário fora dos 25% não pode ativar graduação',()=>{
+  const userId=findUserForTier('excluded');
   const env=makeContext({userId});
   const rollout=env.context.OfflineSyncMetadataRollout;
   assert.equal(rollout.getEligibility().eligible,false);
@@ -88,7 +106,7 @@ test('usuário fora da coorte não pode ativar graduação',()=>{
 });
 
 test('usuário da coorte ainda depende da elegibilidade da graduação 4F',()=>{
-  const userId=findUser(true);
+  const userId=findUserForTier('pilot');
   const env=makeContext({userId,graduation:{eligible:false}});
   const rollout=env.context.OfflineSyncMetadataRollout;
   assert.equal(rollout.getCohortAssignment().included,true);
@@ -98,7 +116,7 @@ test('usuário da coorte ainda depende da elegibilidade da graduação 4F',()=>{
 });
 
 test('ativação elegível delega somente à graduação 4F',()=>{
-  const userId=findUser(true);
+  const userId=findUserForTier('pilot');
   const env=makeContext({userId});
   const rollout=env.context.OfflineSyncMetadataRollout;
   assert.equal(rollout.setEnabled(true),true);
@@ -106,10 +124,11 @@ test('ativação elegível delega somente à graduação 4F',()=>{
   assert.equal(env.graduation._stats().enableCalls,1);
   assert.deepEqual([...rollout.getDiagnostics().scope],['user_settings:concursos_metadata:upsert']);
   assert.equal(rollout.getDiagnostics().remoteAuthority,false);
+  assert.equal(rollout.getDiagnostics().pilotCohort.included,true);
 });
 
 test('falha de ativação da graduação faz rollback local',()=>{
-  const userId=findUser(true);
+  const userId=findUserForTier('pilot');
   const env=makeContext({userId,graduation:{enableFails:true}});
   const rollout=env.context.OfflineSyncMetadataRollout;
   assert.equal(rollout.setEnabled(true),false);
@@ -119,7 +138,7 @@ test('falha de ativação da graduação faz rollback local',()=>{
 });
 
 test('encerramento da graduação encerra rollout',()=>{
-  const userId=findUser(true);
+  const userId=findUserForTier('pilot');
   const env=makeContext({userId});
   const rollout=env.context.OfflineSyncMetadataRollout;
   assert.equal(rollout.setEnabled(true),true);
@@ -130,7 +149,7 @@ test('encerramento da graduação encerra rollout',()=>{
 });
 
 test('kill switch compartilhado encerra rollout e graduação',()=>{
-  const userId=findUser(true);
+  const userId=findUserForTier('pilot');
   const env=makeContext({userId});
   const rollout=env.context.OfflineSyncMetadataRollout;
   assert.equal(rollout.setEnabled(true),true);
