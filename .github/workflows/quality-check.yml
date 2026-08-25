@@ -22,14 +22,32 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < <(git grep -l '10\.33\.3' -- public src config tests package.json || true)
-          if ((${#files[@]})); then
-            sed -i 's/10\.33\.3/10.34.0/g' "${files[@]}"
-          fi
-          if git grep -n '10\.33\.3' -- public src config tests package.json; then
-            echo 'Residual 10.33.3 release literal found.' >&2
-            exit 1
-          fi
+          python3 - <<'PY'
+          import pathlib
+          import subprocess
+          import sys
+
+          files = subprocess.check_output(
+              ['git', 'ls-files', 'public', 'src', 'config', 'tests', 'package.json'],
+              text=True,
+          ).splitlines()
+          residual = []
+          for name in files:
+              path = pathlib.Path(name)
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              promoted = text.replace('10.33.3', '10.34.0').replace(r'10\.33\.3', r'10\.34\.0')
+              if promoted != text:
+                  path.write_text(promoted, encoding='utf-8')
+              check = path.read_text(encoding='utf-8')
+              if '10.33.3' in check or r'10\.33\.3' in check:
+                  residual.append(name)
+          if residual:
+              print('Residual v10.33.3 release literals:', *residual, sep='\n', file=sys.stderr)
+              raise SystemExit(1)
+          PY
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -74,14 +92,32 @@ jobs:
           set -euo pipefail
           git fetch origin main feat/offline-edital-graduation-v10.34.0
           git checkout -B feat/offline-edital-graduation-v10.34.0 origin/feat/offline-edital-graduation-v10.34.0
-          mapfile -t files < <(git grep -l '10\.33\.3' -- public src config tests package.json || true)
-          if ((${#files[@]})); then
-            sed -i 's/10\.33\.3/10.34.0/g' "${files[@]}"
-          fi
-          if git grep -n '10\.33\.3' -- public src config tests package.json; then
-            echo 'Residual 10.33.3 release literal found.' >&2
-            exit 1
-          fi
+          python3 - <<'PY'
+          import pathlib
+          import subprocess
+          import sys
+
+          files = subprocess.check_output(
+              ['git', 'ls-files', 'public', 'src', 'config', 'tests', 'package.json'],
+              text=True,
+          ).splitlines()
+          residual = []
+          for name in files:
+              path = pathlib.Path(name)
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              promoted = text.replace('10.33.3', '10.34.0').replace(r'10\.33\.3', r'10\.34\.0')
+              if promoted != text:
+                  path.write_text(promoted, encoding='utf-8')
+              check = path.read_text(encoding='utf-8')
+              if '10.33.3' in check or r'10\.33\.3' in check:
+                  residual.append(name)
+          if residual:
+              print('Residual v10.33.3 release literals:', *residual, sep='\n', file=sys.stderr)
+              raise SystemExit(1)
+          PY
           git checkout origin/main -- .github/workflows/quality-check.yml
           git rm -f .github/workflows/promote-v10-34-0.yml
           git config user.name 'github-actions[bot]'
