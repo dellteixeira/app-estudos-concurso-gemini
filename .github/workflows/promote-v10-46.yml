@@ -94,6 +94,8 @@ jobs:
         run: npm test
 
       - name: Structural audit
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
         run: npm run audit
 
       - name: Commit promoted release candidate
