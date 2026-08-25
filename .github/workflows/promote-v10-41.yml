@@ -1,0 +1,75 @@
+name: Promote v10.41.0
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-population-v10.41.0
+    paths:
+      - .github/workflows/promote-v10-41.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Promote every version representation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('.')
+          skip_dirs = {'.git', 'node_modules', 'playwright-report', 'test-results'}
+          changed = []
+          for path in root.rglob('*'):
+              if not path.is_file() or any(part in skip_dirs for part in path.parts):
+                  continue
+              if path.as_posix() == '.github/workflows/promote-v10-41.yml':
+                  continue
+              try:
+                  data = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              updated = data.replace(r'10\.40\.0', r'10\.41\.0')
+              updated = updated.replace('10.40.0', '10.41.0')
+              updated = updated.replace('10-40-0', '10-41-0')
+              if updated != data:
+                  path.write_text(updated, encoding='utf-8')
+                  changed.append(path.as_posix())
+          print('Changed files:')
+          print('\n'.join(changed))
+          PY
+          rm .github/workflows/promote-v10-41.yml
+      - name: Verify old identity is absent from tracked text
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          old = ['10.40.0', r'10\.40\.0', '10-40-0']
+          hits = []
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts or 'node_modules' in path.parts:
+                  continue
+              try:
+                  data = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              for token in old:
+                  if token in data:
+                      hits.append(f'{path}: {token}')
+          if hits:
+              raise SystemExit('Stale version references:\n' + '\n'.join(hits))
+          PY
+      - name: Commit promotion
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore(release): promote v10.41.0'
+          git push
