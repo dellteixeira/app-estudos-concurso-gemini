@@ -9,13 +9,51 @@
             element.setAttribute('aria-hidden', visible ? 'false' : 'true');
         }
 
+        let compactActionsMenuBound = false;
+
+        function closeCompactActionsMenu() {
+            const menu = document.getElementById('compactActionsDropdown');
+            const toggle = document.querySelector('.compact-actions-toggle');
+            if (!menu || !toggle) return;
+            menu.hidden = true;
+            menu.classList.remove('is-open');
+            menu.setAttribute('aria-hidden', 'true');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+
+        function bindCompactActionsMenu() {
+            if (compactActionsMenuBound) return;
+            compactActionsMenuBound = true;
+            document.addEventListener('click', event => {
+                const root = document.querySelector('[data-compact-actions-root]');
+                if (!root) return;
+                if (!root.contains(event.target)) {
+                    closeCompactActionsMenu();
+                    return;
+                }
+                const selected = event.target.closest('.compact-actions-dropdown button, .compact-actions-dropdown label');
+                if (selected) setTimeout(closeCompactActionsMenu, 0);
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key !== 'Escape') return;
+                const menu = document.getElementById('compactActionsDropdown');
+                if (!menu || menu.hidden) return;
+                closeCompactActionsMenu();
+                document.querySelector('.compact-actions-toggle')?.focus();
+            });
+        }
+
         function toggleModernTools() {
-            const bar = document.querySelector('.action-bar');
-            if (!bar) return;
-            bar.classList.toggle('mobile-open');
-            if (bar.classList.contains('mobile-open') && window.innerWidth <= 900) {
-                setTimeout(() => bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 30);
-            }
+            bindCompactActionsMenu();
+            const menu = document.getElementById('compactActionsDropdown');
+            const toggle = document.querySelector('.compact-actions-toggle');
+            if (!menu || !toggle) return;
+            const opening = menu.hidden;
+            if (!opening) return closeCompactActionsMenu();
+            menu.hidden = false;
+            menu.classList.add('is-open');
+            menu.setAttribute('aria-hidden', 'false');
+            toggle.setAttribute('aria-expanded', 'true');
         }
 
         function getStructuredNotesForCurrentConcurso() {
