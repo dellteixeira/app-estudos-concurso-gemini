@@ -10,6 +10,7 @@ const EXTENDED_NO_STORE_PATHS = new Set([
   '/js/core/offline-sync-metadata-shadow.js',
   '/js/core/offline-sync-metadata-authority.js',
   '/js/core/offline-sync-metadata-graduation.js',
+  '/js/core/offline-sync-metadata-rollout.js',
   '/js/core/offline-sync-authority.js',
   '/js/core/offline-sync-delete-authority.js',
   '/js/core/offline-sync-edital-graduation.js'
@@ -20,22 +21,14 @@ function withNoStore(response) {
   headers.set('cache-control', 'no-cache, no-store, must-revalidate');
   headers.set('pragma', 'no-cache');
   headers.set('expires', '0');
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
+  return new Response(response.body, { status:response.status, statusText:response.statusText, headers });
 }
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname === '/api/ai/learning-diagnosis') {
-      return handleLearningDiagnosis(request, env);
-    }
-    if (request.method === 'GET' && EXTENDED_NO_STORE_PATHS.has(url.pathname)) {
-      return withNoStore(await env.ASSETS.fetch(request));
-    }
+    if (url.pathname === '/api/ai/learning-diagnosis') return handleLearningDiagnosis(request, env);
+    if (request.method === 'GET' && EXTENDED_NO_STORE_PATHS.has(url.pathname)) return withNoStore(await env.ASSETS.fetch(request));
     return app.fetch(request, env, ctx);
   }
 };
