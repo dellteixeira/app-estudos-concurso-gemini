@@ -1,6 +1,7 @@
 (function offlineSyncEditalGraduationFactory(global) {
   'use strict';
 
+  // Fase 4C: coordena atomicamente as autoridades canário de upsert e delete do edital.
   if (!global || global.OfflineSyncEditalGraduation) return;
 
   const MODE = 'edital-authority-graduation-v1';
