@@ -39,6 +39,8 @@
         global.OfflineSyncMetadataGraduation?.install?.();
         if (!global.OfflineSyncMetadataRollout) await loadExtensionScript('./js/core/offline-sync-metadata-rollout.js?v=10.38.0', 'offline-sync-metadata-rollout');
         global.OfflineSyncMetadataRollout?.install?.();
+        if (!global.OfflineSyncMetadataStability) await loadExtensionScript('./js/core/offline-sync-metadata-stability.js?v=10.38.0', 'offline-sync-metadata-stability');
+        global.OfflineSyncMetadataStability?.install?.();
         if (!global.OfflineSyncAuthority) await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.38.0', 'offline-sync-authority');
         global.OfflineSyncAuthority?.install?.();
         if (!global.OfflineSyncDeleteAuthority) await loadExtensionScript('./js/core/offline-sync-delete-authority.js?v=10.38.0', 'offline-sync-delete-authority');
@@ -51,6 +53,7 @@
             metadataAuthority:global.OfflineSyncMetadataAuthority?.getDiagnostics?.() || null,
             metadataGraduation:global.OfflineSyncMetadataGraduation?.getDiagnostics?.() || null,
             metadataRollout:global.OfflineSyncMetadataRollout?.getDiagnostics?.() || null,
+            metadataStability:global.OfflineSyncMetadataStability?.getDiagnostics?.() || null,
             authority:global.OfflineSyncAuthority?.getDiagnostics?.() || null,
             deleteAuthority:global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
             editalGraduation:global.OfflineSyncEditalGraduation?.getDiagnostics?.() || null
@@ -110,6 +113,7 @@
         getOfflineSyncMetadataAuthorityDiagnostics:() => global.OfflineSyncMetadataAuthority?.getDiagnostics?.() || null,
         getOfflineSyncMetadataGraduationDiagnostics:() => global.OfflineSyncMetadataGraduation?.getDiagnostics?.() || null,
         getOfflineSyncMetadataRolloutDiagnostics:() => global.OfflineSyncMetadataRollout?.getDiagnostics?.() || null,
+        getOfflineSyncMetadataStabilityDiagnostics:() => global.OfflineSyncMetadataStability?.getDiagnostics?.() || null,
         getOfflineSyncAuthorityDiagnostics:() => global.OfflineSyncAuthority?.getDiagnostics?.() || null,
         getOfflineSyncDeleteAuthorityDiagnostics:() => global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
         getOfflineSyncEditalGraduationDiagnostics:() => global.OfflineSyncEditalGraduation?.getDiagnostics?.() || null
