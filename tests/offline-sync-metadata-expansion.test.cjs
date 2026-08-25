@@ -22,6 +22,7 @@ function makeContext(options={}){
   const events=[];
   let stable=options.stable===true;
   let cohort=options.inCohort!==false;
+  let pilot=options.inPilot!==false;
   let rolloutEligible=options.rolloutEligible!==false;
   let hardKill=options.hardKill===true;
   let circuit=options.circuit||null;
@@ -35,7 +36,8 @@ function makeContext(options={}){
       getReport:userId=>({userId:userId||null,readyForExpansion:stable,stable,reasons:stable?[]:['insufficient-successful-canaries']})
     },
     OfflineSyncMetadataRollout:{
-      getCohortAssignment:userId=>({userId:userId||null,bucket:1,percent:10,included:cohort}),
+      getCohortAssignment:userId=>({userId:userId||null,bucket:pilot?1:12,percent:25,included:cohort,pilotPercent:10,pilotIncluded:pilot,tier:pilot?'pilot':(cohort?'expanded-base':'excluded')}),
+      getPilotCohortAssignment:userId=>({userId:userId||null,bucket:pilot?1:12,percent:10,included:pilot}),
       getEligibility:()=>({eligible:rolloutEligible,reasons:rolloutEligible?[]:['metadata-graduation-not-eligible']}),
       isEnabled:()=>rolloutEnabled,
       setEnabled:value=>{rolloutCalls.push(Boolean(value));rolloutEnabled=Boolean(value);return true;},
@@ -58,6 +60,7 @@ function makeContext(options={}){
     context,events,rolloutCalls,
     setStable:value=>{stable=Boolean(value);},
     setCohort:value=>{cohort=Boolean(value);},
+    setPilot:value=>{pilot=Boolean(value);},
     setRolloutEligible:value=>{rolloutEligible=Boolean(value);},
     setHardKill:value=>{hardKill=Boolean(value);},
     setCircuit:value=>{circuit=value;}
@@ -89,18 +92,32 @@ test('estabilidade 4H é obrigatória antes da expansão',()=>{
   assert.equal(env.rolloutCalls.length,0);
 });
 
-test('usuário estável pode optar por teto máximo de dois writes',()=>{
-  const env=makeContext({stable:true});
+test('usuário estável do piloto pode optar por teto máximo de dois writes',()=>{
+  const env=makeContext({stable:true,inPilot:true});
   const expansion=env.context.OfflineSyncMetadataExpansion;
   assert.equal(expansion.setEnabled(true),true);
   assert.equal(expansion.isOptedIn(),true);
   assert.equal(expansion.isEnabled(),true);
   assert.equal(expansion.getMaxRemoteWrites(),2);
   assert.deepEqual(env.rolloutCalls,[true]);
+  assert.equal(expansion.getEligibility().pilotCohort.included,true);
 });
 
-test('coorte 4G e elegibilidade do rollout continuam obrigatórias',()=>{
-  const outside=makeContext({stable:true,inCohort:false});
+test('faixa expandida 10-24 permanece rigidamente em um write',()=>{
+  const env=makeContext({stable:true,inCohort:true,inPilot:false,rolloutEligible:true});
+  const expansion=env.context.OfflineSyncMetadataExpansion;
+  const eligibility=expansion.getEligibility();
+  assert.equal(eligibility.cohort.included,true);
+  assert.equal(eligibility.pilotCohort.included,false);
+  assert.equal(eligibility.eligible,false);
+  assert.ok([...eligibility.reasons].includes('outside-expansion-pilot-cohort'));
+  assert.equal(expansion.setEnabled(true),false);
+  assert.equal(expansion.getMaxRemoteWrites(),1);
+  assert.equal(env.rolloutCalls.length,0);
+});
+
+test('coorte base e elegibilidade do rollout continuam obrigatórias',()=>{
+  const outside=makeContext({stable:true,inCohort:false,inPilot:false});
   assert.equal(outside.context.OfflineSyncMetadataExpansion.setEnabled(true),false);
   assert.ok([...outside.context.OfflineSyncMetadataExpansion.getEligibility().reasons].includes('outside-rollout-cohort'));
 
@@ -155,6 +172,8 @@ test('controlador é política local e não implementa acesso remoto',()=>{
   assert.doesNotMatch(source,/\.delete\s*\(/);
   assert.doesNotMatch(source,/\bfetch\s*\(/);
   assert.match(source,/EXPANDED_REMOTE_WRITES = 2/);
+  assert.match(source,/getPilotCohortAssignment/);
+  assert.match(source,/outside-expansion-pilot-cohort/);
 });
 
 test('autoridade preserva um write por padrão e aceita apenas teto limitado a dois',()=>{
@@ -163,7 +182,7 @@ test('autoridade preserva um write por padrão e aceita apenas teto limitado a d
   assert.match(authoritySource,/Math\.min\(2, Math\.floor\(proposed\)\)/);
   assert.match(authoritySource,/const maxRemoteWrites = getMaxRemoteWrites\(userId\)/);
   assert.match(authoritySource,/if \(getBudget\(userId\)\.exhausted\) stopCanary\('budget-exhausted'\)/);
-  assert.doesNotMatch(authoritySource,/stopCanary\(getBudget\(userId\)\.exhausted \? 'budget-exhausted' : 'completed'\)/);
+  assert.doesNotMatch(authoritySource,/Math\.min\([3-9]/);
 });
 
 test('AppState carrega expansion depois de stability e antes das autoridades do edital',()=>{
