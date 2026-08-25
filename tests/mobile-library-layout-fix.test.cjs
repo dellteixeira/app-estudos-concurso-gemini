@@ -27,11 +27,11 @@ test('mobile edital keeps delete actions side by side and sync compact',()=>{
   assert.match(mobile,/header\.modern-header \.header-sync-status[\s\S]*height:44px!important/);
 });
 
-test('Mais owns the mobile action-bar visibility',()=>{
-  assert.match(mobile,/\.action-bar:not\(\.mobile-open\)[\s\S]*display:none!important/);
-  assert.match(mobile,/\.action-bar\.mobile-open[\s\S]*display:grid!important/);
-  assert.match(mobile,/function setMobileToolsState\(open\)/);
-  assert.match(mobile,/bar\.classList\.toggle\('mobile-open', shouldOpen\)/);
-  assert.match(mobile,/setAttribute\('aria-expanded', shouldOpen \? 'true' : 'false'\)/);
-  assert.match(mobile,/if \(window\.innerWidth <= 900\) setMobileToolsState\(false\)/);
+test('mobile helper não reintroduz a action-bar aposentada nem sobrescreve o menu compacto',()=>{
+  assert.doesNotMatch(mobile,/\.action-bar\b/);
+  assert.doesNotMatch(mobile,/\.mobile-tools-toggle\b/);
+  assert.doesNotMatch(mobile,/function\s+setMobileToolsState\s*\(/);
+  assert.doesNotMatch(mobile,/function\s+toggleModernTools\s*\(/);
+  assert.doesNotMatch(mobile,/global\.toggleModernTools\s*=/);
+  assert.doesNotMatch(mobile,/mobile-open/);
 });
