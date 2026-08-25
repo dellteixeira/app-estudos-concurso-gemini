@@ -1,0 +1,451 @@
+from pathlib import Path
+
+
+def replace_once(text, old, new, label):
+    if old not in text:
+        raise SystemExit(f'Expected block not found: {label}')
+    return text.replace(old, new, 1)
+
+
+index_path = Path('public/index.html')
+index = index_path.read_text(encoding='utf-8')
+
+old_toggle = '''            <button class="mobile-tools-toggle" type="button" data-action="toggle-modern-tools" aria-label="Abrir ferramentas">Menu</button>
+'''
+new_toggle = '''            <div class="compact-actions-menu" data-compact-actions-root>
+                <button class="compact-actions-toggle" type="button" data-action="toggle-modern-tools" aria-label="Abrir menu de ações" aria-expanded="false" aria-controls="compactActionsDropdown">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </button>
+                <div id="compactActionsDropdown" class="compact-actions-dropdown" role="menu" hidden aria-hidden="true">
+                    <button class="compact-menu-item" type="button" data-inline-click="ih-001" role="menuitem">Sincronizar Agora</button>
+                    <button class="compact-menu-item" type="button" data-inline-click="ih-002" role="menuitem">Ver / Anexar Edital PDF</button>
+                    <label class="compact-menu-item compact-menu-file" role="menuitem">
+                        Importar JSON
+                        <input type="file" id="jsonInput" accept=".json" hidden data-inline-change="ih-003">
+                    </label>
+                    <button class="compact-menu-item" type="button" data-inline-click="ih-004" role="menuitem">Analisar Edital com IA</button>
+                    <button class="compact-menu-item" type="button" data-inline-click="ih-005" role="menuitem">Como Gerar JSON com IA</button>
+                    <button class="compact-menu-item" type="button" data-action="call" data-call="clearData" role="menuitem">Limpar Edital Atual</button>
+                    <div class="compact-menu-divider" aria-hidden="true"></div>
+                    <button class="compact-menu-item" type="button" data-action="open-account" role="menuitem" title="Abrir dados e segurança da conta">Conta</button>
+                    <button class="compact-menu-item" type="button" data-action="toggle-theme" role="menuitem" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
+                    <button class="compact-menu-item compact-menu-danger" type="button" data-action="logout" role="menuitem" title="Sair da conta">Sair</button>
+                </div>
+            </div>
+'''
+index = replace_once(index, old_toggle, new_toggle, 'header tools toggle')
+
+old_account = '''                        <div class="header-account-actions">
+                            <button class="btn btn-secondary btn-sm btn-account-header" type="button" data-action="open-account" title="Abrir dados e segurança da conta">Conta</button>
+                            <button class="btn btn-secondary btn-sm btn-theme-header" type="button" data-action="toggle-theme" title="Alternar modo claro/escuro">Modo Claro/Escuro</button>
+                            <button class="btn btn-secondary btn-sm btn-logout-header" type="button" data-action="logout" title="Sair da conta">Sair</button>
+                        </div>
+'''
+index = replace_once(index, old_account, '', 'legacy header account actions')
+
+old_bar = '''        <!-- BARRA DE AÇÕES — V9.52: Backup/Restaurar centralizado em Conta -->
+        <div class="action-bar">
+            <button class="btn-action" data-inline-click="ih-001">Sincronizar Agora</button>
+            <button class="btn-action" data-inline-click="ih-002">Ver / Anexar Edital PDF</button>
+            <label class="btn-action u-static-003">
+                Importar JSON
+                <input type="file" id="jsonInput" accept=".json" hidden data-inline-change="ih-003">
+            </label>
+            <button class="btn-action" data-inline-click="ih-004">Analisar Edital com IA</button>
+            <button class="btn-action" data-inline-click="ih-005">Como Gerar JSON com IA</button>
+            <button class="btn-action" type="button" data-action="call" data-call="clearData">Limpar Edital Atual</button>
+                    </div>
+
+'''
+index = replace_once(index, old_bar, '', 'legacy horizontal action bar')
+
+for legacy in ('mobile-tools-toggle', 'header-account-actions', 'btn-account-header', 'btn-theme-header', 'btn-logout-header', '<div class="action-bar">'):
+    if legacy in index:
+        raise SystemExit(f'Legacy markup still present: {legacy}')
+for handler in ('ih-001', 'ih-002', 'ih-003', 'ih-004', 'ih-005'):
+    if index.count(handler) != 1:
+        raise SystemExit(f'Handler {handler} must remain exactly once')
+index_path.write_text(index, encoding='utf-8')
+
+ui_path = Path('public/js/app-ui.js')
+ui = ui_path.read_text(encoding='utf-8')
+old_ui = '''        function toggleModernTools() {
+            const bar = document.querySelector('.action-bar');
+            if (!bar) return;
+            bar.classList.toggle('mobile-open');
+            if (bar.classList.contains('mobile-open') && window.innerWidth <= 900) {
+                setTimeout(() => bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 30);
+            }
+        }
+'''
+new_ui = '''        let compactActionsMenuBound = false;
+
+        function closeCompactActionsMenu() {
+            const menu = document.getElementById('compactActionsDropdown');
+            const toggle = document.querySelector('.compact-actions-toggle');
+            if (!menu || !toggle) return;
+            menu.hidden = true;
+            menu.classList.remove('is-open');
+            menu.setAttribute('aria-hidden', 'true');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+
+        function bindCompactActionsMenu() {
+            if (compactActionsMenuBound) return;
+            compactActionsMenuBound = true;
+            document.addEventListener('click', event => {
+                const root = document.querySelector('[data-compact-actions-root]');
+                if (!root) return;
+                if (!root.contains(event.target)) {
+                    closeCompactActionsMenu();
+                    return;
+                }
+                const selected = event.target.closest('.compact-actions-dropdown button, .compact-actions-dropdown label');
+                if (selected) setTimeout(closeCompactActionsMenu, 0);
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key !== 'Escape') return;
+                const menu = document.getElementById('compactActionsDropdown');
+                if (!menu || menu.hidden) return;
+                closeCompactActionsMenu();
+                document.querySelector('.compact-actions-toggle')?.focus();
+            });
+        }
+
+        function toggleModernTools() {
+            bindCompactActionsMenu();
+            const menu = document.getElementById('compactActionsDropdown');
+            const toggle = document.querySelector('.compact-actions-toggle');
+            if (!menu || !toggle) return;
+            const opening = menu.hidden;
+            if (!opening) return closeCompactActionsMenu();
+            menu.hidden = false;
+            menu.classList.add('is-open');
+            menu.setAttribute('aria-hidden', 'false');
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+'''
+ui = replace_once(ui, old_ui, new_ui, 'toggleModernTools implementation')
+if "querySelector('.action-bar')" in ui or 'mobile-open' in ui:
+    raise SystemExit('Legacy action-bar toggle behavior remains in app-ui.js')
+ui_path.write_text(ui, encoding='utf-8')
+
+base_path = Path('public/css/base.css')
+base = base_path.read_text(encoding='utf-8')
+old_base_bar = '''        .action-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; width: 100%; }
+        .action-bar .btn-action { 
+            background-color: #475569; color: #ffffff; padding: 0.6rem 0.9rem; font-size: 0.88rem; font-weight: 600; 
+            border: 1px solid var(--border-color); border-radius: 8px; flex: 1 1 auto; justify-content: center; 
+            text-align: center; min-width: 130px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .action-bar .btn-action:hover { background-color: #64748b; }
+        .action-bar .btn-action.active-blue { 
+            background-color: var(--primary-blue) !important; border-color: #60a5fa !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); 
+        }
+
+'''
+base = replace_once(base, old_base_bar, '', 'legacy base action-bar CSS')
+base_path.write_text(base, encoding='utf-8')
+
+dashboard_path = Path('public/css/dashboard.css')
+dashboard = dashboard_path.read_text(encoding='utf-8')
+dashboard = dashboard.replace('\n.action-bar,\n', '\n')
+dashboard = dashboard.replace('''
+.btn-secondary,
+.btn-account-header,
+.btn-theme-header,
+.btn-logout-header {''', '''
+.btn-secondary {''')
+dashboard = dashboard.replace('''
+.btn-secondary:hover,
+.btn-account-header:hover,
+.btn-theme-header:hover,
+.btn-logout-header:hover {''', '''
+.btn-secondary:hover {''')
+old_dashboard_bar = '''/* Barra de ações */
+.action-bar {
+    background: #091928;
+    border-color: #22374b;
+    padding: 6px;
+    box-shadow: none;
+}
+.action-bar .btn-action {
+    background: transparent;
+    border-color: transparent;
+    color: #8299ad;
+    min-height: 38px;
+}
+.action-bar .btn-action:hover {
+    background: #102438;
+    border-color: #2a4157;
+    color: #e3eef3;
+    box-shadow: none;
+}
+
+'''
+dashboard = replace_once(dashboard, old_dashboard_bar, '', 'legacy dashboard action-bar CSS')
+compact_css = '''/* Menu compacto de ações — substitui a antiga barra horizontal */
+.compact-actions-menu {
+    position: relative;
+    justify-self: end;
+    z-index: 1200;
+}
+.compact-actions-toggle {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid #294056;
+    border-radius: 11px;
+    background: #0b1d2e;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    color: #d8e6ed;
+    transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.compact-actions-toggle:hover,
+.compact-actions-toggle[aria-expanded="true"] {
+    background: #10283b;
+    border-color: #3b586f;
+}
+.compact-actions-toggle:active { transform: translateY(1px); }
+.compact-actions-toggle span {
+    width: 19px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    display: block;
+}
+.compact-actions-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(320px, calc(100vw - 24px));
+    padding: 8px;
+    border: 1px solid #2a4056;
+    border-radius: 13px;
+    background: #091928;
+    box-shadow: 0 18px 48px rgba(0,0,0,.42);
+    z-index: 1300;
+}
+.compact-actions-dropdown[hidden] { display: none !important; }
+.compact-actions-dropdown.is-open { display: grid; gap: 3px; }
+.compact-menu-item {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: #d8e6ed;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    font: inherit;
+    font-size: .86rem;
+    font-weight: 700;
+    line-height: 1.25;
+    cursor: pointer;
+    white-space: normal;
+}
+.compact-menu-item:hover,
+.compact-menu-item:focus-visible {
+    background: #102438;
+    border-color: #2a4157;
+    color: #f3fafc;
+    outline: none;
+}
+.compact-menu-file { position: relative; }
+.compact-menu-divider {
+    height: 1px;
+    margin: 5px 4px;
+    background: #24384d;
+}
+.compact-menu-danger { color: #ff9aa3; }
+.compact-menu-danger:hover,
+.compact-menu-danger:focus-visible {
+    color: #ffc1c6;
+    background: rgba(242,109,120,.10);
+    border-color: rgba(242,109,120,.28);
+}
+body.light-mode .compact-actions-toggle,
+body.light-mode .compact-actions-dropdown {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+body.light-mode .compact-actions-dropdown { box-shadow: 0 18px 42px rgba(15,23,42,.18); }
+body.light-mode .compact-menu-item { color: #334155; }
+body.light-mode .compact-menu-item:hover,
+body.light-mode .compact-menu-item:focus-visible { background: #f1f5f9; border-color: #dbe3ec; color: #0f172a; }
+body.light-mode .compact-menu-divider { background: #e2e8f0; }
+body.light-mode .compact-menu-danger { color: #b91c1c; }
+
+'''
+anchor = '/* Pomodoro */\n'
+if anchor not in dashboard:
+    raise SystemExit('Dashboard CSS insertion anchor not found')
+dashboard = dashboard.replace(anchor, compact_css + anchor, 1)
+dashboard_path.write_text(dashboard, encoding='utf-8')
+
+responsive_path = Path('public/css/responsive-system.css')
+responsive = responsive_path.read_text(encoding='utf-8')
+responsive = replace_once(responsive,
+'''    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "brand sync"
+        "controls controls";
+''',
+'''    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+        "brand sync tools"
+        "controls controls controls";
+''', 'desktop header grid areas')
+responsive = replace_once(responsive,
+'''header.modern-header .header-utility-cluster {
+    min-width: 0;
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+header.modern-header .header-account-actions {
+    min-width: 0;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+}
+
+header.modern-header .header-account-actions .btn,
+header.modern-header .btn-search-header {
+    min-width: 0;
+    width: 100%;
+    justify-content: center;
+}
+''',
+'''header.modern-header .header-utility-cluster {
+    min-width: 0;
+    width: 100%;
+    display: block !important;
+}
+
+header.modern-header .btn-search-header {
+    min-width: 0;
+    width: 100%;
+    justify-content: center;
+}
+''', 'header utility cluster cleanup')
+old_generic_action = '''/* Generic action bar: equal distribution when room exists, graceful wrap
+   when it does not. The mobile open/closed state remains controlled by
+   the existing application CSS/JS. */
+.action-bar {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--toolbar-item-min)), 1fr));
+    gap: var(--space-2) !important;
+    align-items: stretch;
+}
+
+.action-bar .btn-action {
+    min-width: 0 !important;
+    width: 100%;
+    min-height: var(--control-sm);
+    justify-content: center;
+    text-align: center;
+}
+
+.mobile-tools-toggle {
+    min-height: var(--control-md);
+    min-width: var(--touch-target);
+}
+
+'''
+responsive = replace_once(responsive, old_generic_action, '''header.modern-header .compact-actions-menu {
+    grid-area: tools;
+    justify-self: end;
+}
+
+''', 'legacy responsive action bar')
+responsive = responsive.replace('''    header.modern-header .mobile-tools-toggle {
+        grid-area: tools;
+        justify-self: end;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+''', '')
+responsive = responsive.replace('''    header.modern-header .header-utility-cluster {
+        grid-template-columns: 1fr;
+    }
+
+    header.modern-header .header-account-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    header.modern-header .header-account-actions .btn,
+    header.modern-header .btn-search-header,
+''', '''    header.modern-header .btn-search-header,
+''')
+responsive = responsive.replace('''    .action-bar.mobile-open {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .action-bar.mobile-open .btn-action {
+        min-height: var(--control-md);
+    }
+''', '')
+responsive_path.write_text(responsive, encoding='utf-8')
+
+test_path = Path('tests/compact-actions-menu.test.cjs')
+test_path.write_text("""'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const html=fs.readFileSync('public/index.html','utf8');
+const ui=fs.readFileSync('public/js/app-ui.js','utf8');
+const dashboard=fs.readFileSync('public/css/dashboard.css','utf8');
+
+test('menu compacto substitui a barra horizontal sem duplicar handlers',()=>{
+  assert.match(html,/class=\"compact-actions-toggle\"/);
+  assert.match(html,/aria-controls=\"compactActionsDropdown\"/);
+  assert.match(html,/id=\"compactActionsDropdown\"/);
+  assert.doesNotMatch(html,/class=\"action-bar\"/);
+  assert.doesNotMatch(html,/mobile-tools-toggle|header-account-actions|btn-account-header|btn-theme-header|btn-logout-header/);
+  for(const id of ['ih-001','ih-002','ih-003','ih-004','ih-005']) assert.equal((html.match(new RegExp(id,'g'))||[]).length,1);
+});
+
+test('ordem do menu termina com Conta, tema e Sair',()=>{
+  const menu=html.slice(html.indexOf('id=\"compactActionsDropdown\"'),html.indexOf('id=\"compactActionsDropdown\"')+5000);
+  const labels=['Sincronizar Agora','Ver / Anexar Edital PDF','Importar JSON','Analisar Edital com IA','Como Gerar JSON com IA','Limpar Edital Atual','Conta','Modo Claro/Escuro','Sair'];
+  let last=-1;
+  for(const label of labels){const pos=menu.indexOf(label);assert.ok(pos>last,`ordem inválida: ${label}`);last=pos;}
+  assert.match(menu,/data-action=\"logout\"[\s\S]*>Sair<\\/button>/);
+});
+
+test('menu fecha por clique externo, seleção e Escape com aria sincronizado',()=>{
+  assert.match(ui,/function closeCompactActionsMenu\\(\\)/);
+  assert.match(ui,/if \\(!root\\.contains\\(event\\.target\\)\\)/);
+  assert.match(ui,/event\\.key !== 'Escape'/);
+  assert.match(ui,/setAttribute\\('aria-expanded', 'true'\\)/);
+  assert.match(ui,/setAttribute\\('aria-expanded', 'false'\\)/);
+  assert.doesNotMatch(ui,/querySelector\\('\\.action-bar'\\)|mobile-open/);
+});
+
+test('dropdown é ancorado ao hambúrguer, responsivo e suporta tema claro',()=>{
+  assert.match(dashboard,/\\.compact-actions-dropdown\\s*\\{[\\s\\S]*position:\\s*absolute/);
+  assert.match(dashboard,/width:\\s*min\\(320px, calc\\(100vw - 24px\\)\\)/);
+  assert.match(dashboard,/\\.compact-actions-toggle span/);
+  assert.match(dashboard,/body\\.light-mode \\.compact-actions-toggle/);
+  assert.match(dashboard,/\\.compact-menu-danger/);
+});
+""", encoding='utf-8')
