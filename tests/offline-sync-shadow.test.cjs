@@ -247,8 +247,8 @@ test('históricos de paridade são bounded e podem ser limpos independentemente'
 });
 
 test('AppState carrega outbox antes do bridge na release v10.38.0',()=>{
-  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.37\.0/);
-  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.37\.0/);
+  assert.match(appStateSource,/offline-outbox-store\.js\?v=10\.38\.0/);
+  assert.match(appStateSource,/offline-sync-shadow\.js\?v=10\.38\.0/);
   assert.match(appStateSource,/loadOfflineSyncFoundation/);
   assert.match(appStateSource,/OfflineSyncShadow\?\.install/);
   assert.match(appStateSource,/getOfflineShadowDiagnostics/);
