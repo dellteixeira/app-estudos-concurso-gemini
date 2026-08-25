@@ -94,9 +94,9 @@ test('4Q não amplia o orçamento remoto acima de dois writes',()=>{
 });
 
 test('AppState carrega 4Q após 4P e expõe diagnóstico',()=>{
-  const promotionIndex=appStateSource.indexOf('offline-sync-metadata-population-promotion.js?v=10.50.1');
-  const observerIndex=appStateSource.indexOf('offline-sync-metadata-population-promoted-stability.js?v=10.50.1');
-  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.50.1');
+  const promotionIndex=appStateSource.indexOf('offline-sync-metadata-population-promotion.js?v=10.51.0');
+  const observerIndex=appStateSource.indexOf('offline-sync-metadata-population-promoted-stability.js?v=10.51.0');
+  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.51.0');
   assert.ok(promotionIndex>=0);
   assert.ok(observerIndex>promotionIndex);
   assert.ok(expansionIndex>observerIndex);
@@ -106,7 +106,7 @@ test('AppState carrega 4Q após 4P e expõe diagnóstico',()=>{
 
 test('asset 4Q integra manifesto sem alterar identidade durante implementação',()=>{
   const asset='/js/core/offline-sync-metadata-population-promoted-stability.js';
-  assert.equal(manifest.version,'10.50.1');
+  assert.equal(manifest.version,'10.51.0');
   assert.ok(manifest.criticalAppShell.includes(asset));
   assert.ok(manifest.networkFirstPaths.includes(asset));
   assert.ok(manifest.workerNoStorePaths.includes(asset));
