@@ -215,9 +215,9 @@ test('módulo remoto é limitado a user_settings concursos_metadata e não toca 
 });
 
 test('AppState carrega metadata authority entre shadow e autoridades do edital',()=>{
-  const shadowIndex=appStateSource.indexOf('offline-sync-metadata-shadow.js?v=10.41.0');
-  const metadataAuthorityIndex=appStateSource.indexOf('offline-sync-metadata-authority.js?v=10.41.0');
-  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.41.0');
+  const shadowIndex=appStateSource.indexOf('offline-sync-metadata-shadow.js?v=10.42.0');
+  const metadataAuthorityIndex=appStateSource.indexOf('offline-sync-metadata-authority.js?v=10.42.0');
+  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.42.0');
   assert.ok(shadowIndex>=0);
   assert.ok(metadataAuthorityIndex>shadowIndex);
   assert.ok(editalAuthorityIndex>metadataAuthorityIndex);
