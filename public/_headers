@@ -39,6 +39,9 @@
 /js/core/offline-sync-metadata-shadow.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+/js/core/offline-sync-metadata-authority.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/core/offline-sync-authority.js
   Cache-Control: no-cache, no-store, must-revalidate
 
