@@ -7,9 +7,12 @@
   const ENTITY = 'edital-topic';
   const PARITY_SCHEMA_VERSION = 1;
   const PARITY_STORAGE_PREFIX = 'offline_sync_shadow_parity_v1_';
+  const DELETE_PARITY_STORAGE_PREFIX = 'offline_sync_shadow_delete_parity_v1_';
   const MAX_PARITY_SAMPLES = 100;
   let installed = false;
+  let deleteInstalled = false;
   let legacyQueueEditalUpsert = null;
+  let legacyQueueEditalDelete = null;
 
   function currentUserId() {
     try {
@@ -45,19 +48,38 @@
   }
 
   function parityStorageKey(userId) { return `${PARITY_STORAGE_PREFIX}${String(userId || '')}`; }
+  function deleteParityStorageKey(userId) { return `${DELETE_PARITY_STORAGE_PREFIX}${String(userId || '')}`; }
 
-  function readParityHistory(userId) {
-    if (!userId) return [];
+  function readHistory(key) {
     try {
-      const value = JSON.parse(global.localStorage?.getItem(parityStorageKey(userId)) || '[]');
+      const value = JSON.parse(global.localStorage?.getItem(key) || '[]');
       return Array.isArray(value) ? value : [];
     } catch (_) { return []; }
   }
 
+  function writeHistory(key, samples) {
+    try { global.localStorage?.setItem(key, JSON.stringify(samples.slice(-MAX_PARITY_SAMPLES))); }
+    catch (_) {}
+  }
+
+  function readParityHistory(userId) {
+    if (!userId) return [];
+    return readHistory(parityStorageKey(userId));
+  }
+
   function writeParityHistory(userId, samples) {
     if (!userId) return;
-    try { global.localStorage?.setItem(parityStorageKey(userId), JSON.stringify(samples.slice(-MAX_PARITY_SAMPLES))); }
-    catch (_) {}
+    writeHistory(parityStorageKey(userId), samples);
+  }
+
+  function readDeleteParityHistory(userId) {
+    if (!userId) return [];
+    return readHistory(deleteParityStorageKey(userId));
+  }
+
+  function writeDeleteParityHistory(userId, samples) {
+    if (!userId) return;
+    writeHistory(deleteParityStorageKey(userId), samples);
   }
 
   async function shadowEditalUpsert(item, reason = 'queueEditalUpsert', options = {}) {
@@ -82,11 +104,39 @@
 
     try {
       global.dispatchEvent(new CustomEvent('offline-sync-shadow:queued', {
-        detail:{ mode:MODE, entity:ENTITY, entityId, idempotencyKey:operation.idempotencyKey, reason }
+        detail:{ mode:MODE, entity:ENTITY, entityId, action:'upsert', idempotencyKey:operation.idempotencyKey, reason }
       }));
     } catch (_) {}
 
     if (options.recordParity !== false) await recordParitySnapshot(reason).catch(() => null);
+    return operation;
+  }
+
+  async function shadowEditalDelete(id, reason = 'queueEditalDelete', options = {}) {
+    const store = global.OfflineOutboxStore;
+    const userId = currentUserId();
+    if (!store || !userId || id == null) return null;
+
+    const entityId = String(id);
+    const idempotencyKey = `${userId}:${ENTITY}:${entityId}:delete`;
+    const operation = await store.enqueue({
+      userId,
+      entity:ENTITY,
+      entityId,
+      action:'delete',
+      payload:{ source:'pending_sync', mode:MODE, deleted:true },
+      idempotencyKey,
+      clientUpdatedAt:new Date().toISOString(),
+      status:'shadow'
+    });
+
+    try {
+      global.dispatchEvent(new CustomEvent('offline-sync-shadow:queued', {
+        detail:{ mode:MODE, entity:ENTITY, entityId, action:'delete', idempotencyKey:operation.idempotencyKey, reason }
+      }));
+    } catch (_) {}
+
+    if (options.recordParity !== false) await recordDeleteParitySnapshot(reason).catch(() => null);
     return operation;
   }
 
@@ -98,39 +148,73 @@
     } catch (_) { return []; }
   }
 
-  async function getDiagnostics() {
-    const userId = currentUserId();
-    const store = global.OfflineOutboxStore;
-    const legacyIds = legacyUpsertIds();
-    if (!userId || !store) {
-      return Object.freeze({ mode:MODE, installed, userId:userId || null, legacyUpserts:legacyIds.length, shadowUpserts:0, matched:0, matchedIds:[], missingShadowIds:legacyIds, shadowOnlyIds:[], coverage:legacyIds.length ? 0 : 1, healthy:legacyIds.length === 0 });
-    }
+  function legacyDeleteIds() {
+    try {
+      if (typeof getSyncState !== 'function') return [];
+      const state = getSyncState() || {};
+      return [...new Set((Array.isArray(state.editalDeletes) ? state.editalDeletes : []).map(String))].sort();
+    } catch (_) { return []; }
+  }
 
-    // A operação continua sendo evidência do espelho após avançar de shadow para
-    // sending/failed/synced. Filtrar apenas status=shadow geraria falso negativo
-    // de paridade justamente depois de uma sincronização bem-sucedida.
-    const rows = await store.list(userId, { limit:500 });
-    const shadowIds = [...new Set(rows.filter(row => row.entity === ENTITY && row.action === 'upsert').map(row => String(row.entityId)))].sort();
+  function compareIds(legacyIds, shadowIds) {
     const legacySet = new Set(legacyIds);
     const shadowSet = new Set(shadowIds);
     const matchedIds = legacyIds.filter(id => shadowSet.has(id));
     const missingShadowIds = legacyIds.filter(id => !shadowSet.has(id));
     const shadowOnlyIds = shadowIds.filter(id => !legacySet.has(id));
     const coverage = legacyIds.length ? matchedIds.length / legacyIds.length : 1;
+    return { matchedIds, missingShadowIds, shadowOnlyIds, coverage, healthy:missingShadowIds.length === 0 };
+  }
+
+  async function getDiagnostics() {
+    const userId = currentUserId();
+    const store = global.OfflineOutboxStore;
+    const legacyIds = legacyUpsertIds();
+    const legacyDeleteIdsList = legacyDeleteIds();
+    if (!userId || !store) {
+      const upsertComparison = compareIds(legacyIds, []);
+      const deleteComparison = compareIds(legacyDeleteIdsList, []);
+      return Object.freeze({
+        mode:MODE, installed, deleteInstalled, userId:userId || null,
+        legacyUpserts:legacyIds.length, shadowUpserts:0, matched:upsertComparison.matchedIds.length,
+        matchedIds:upsertComparison.matchedIds, missingShadowIds:upsertComparison.missingShadowIds,
+        shadowOnlyIds:upsertComparison.shadowOnlyIds, coverage:upsertComparison.coverage, healthy:upsertComparison.healthy,
+        legacyDeletes:legacyDeleteIdsList.length, shadowDeletes:0, deleteMatched:deleteComparison.matchedIds.length,
+        deleteMatchedIds:deleteComparison.matchedIds, missingDeleteShadowIds:deleteComparison.missingShadowIds,
+        deleteShadowOnlyIds:deleteComparison.shadowOnlyIds, deleteCoverage:deleteComparison.coverage, deleteHealthy:deleteComparison.healthy
+      });
+    }
+
+    // Operações continuam sendo evidência do espelho ao longo de todo o ciclo
+    // shadow/sending/failed/synced. Isso evita falso negativo após o sync.
+    const rows = await store.list(userId, { limit:500 });
+    const shadowIds = [...new Set(rows.filter(row => row.entity === ENTITY && row.action === 'upsert').map(row => String(row.entityId)))].sort();
+    const shadowDeleteIds = [...new Set(rows.filter(row => row.entity === ENTITY && row.action === 'delete').map(row => String(row.entityId)))].sort();
+    const upsertComparison = compareIds(legacyIds, shadowIds);
+    const deleteComparison = compareIds(legacyDeleteIdsList, shadowDeleteIds);
 
     return Object.freeze({
       mode:MODE,
       installed,
+      deleteInstalled,
       userId,
       deviceId:store.getDeviceId(),
       legacyUpserts:legacyIds.length,
       shadowUpserts:shadowIds.length,
-      matched:matchedIds.length,
-      matchedIds,
-      missingShadowIds,
-      shadowOnlyIds,
-      coverage,
-      healthy:missingShadowIds.length === 0
+      matched:upsertComparison.matchedIds.length,
+      matchedIds:upsertComparison.matchedIds,
+      missingShadowIds:upsertComparison.missingShadowIds,
+      shadowOnlyIds:upsertComparison.shadowOnlyIds,
+      coverage:upsertComparison.coverage,
+      healthy:upsertComparison.healthy,
+      legacyDeletes:legacyDeleteIdsList.length,
+      shadowDeletes:shadowDeleteIds.length,
+      deleteMatched:deleteComparison.matchedIds.length,
+      deleteMatchedIds:deleteComparison.matchedIds,
+      missingDeleteShadowIds:deleteComparison.missingShadowIds,
+      deleteShadowOnlyIds:deleteComparison.shadowOnlyIds,
+      deleteCoverage:deleteComparison.coverage,
+      deleteHealthy:deleteComparison.healthy
     });
   }
 
@@ -143,6 +227,7 @@
       capturedAt:new Date().toISOString(),
       reason:String(reason || 'manual'),
       mode:MODE,
+      action:'upsert',
       deviceId:diagnostics.deviceId || null,
       legacyUpserts:diagnostics.legacyUpserts,
       shadowUpserts:diagnostics.shadowUpserts,
@@ -162,6 +247,35 @@
     return sample;
   }
 
+  async function recordDeleteParitySnapshot(reason = 'manual') {
+    const diagnostics = await getDiagnostics();
+    if (!diagnostics.userId) return null;
+
+    const sample = Object.freeze({
+      schemaVersion:PARITY_SCHEMA_VERSION,
+      capturedAt:new Date().toISOString(),
+      reason:String(reason || 'manual'),
+      mode:MODE,
+      action:'delete',
+      deviceId:diagnostics.deviceId || null,
+      legacyDeletes:diagnostics.legacyDeletes,
+      shadowDeletes:diagnostics.shadowDeletes,
+      matched:diagnostics.deleteMatched,
+      coverage:diagnostics.deleteCoverage,
+      healthy:diagnostics.deleteHealthy,
+      missingShadowIds:[...diagnostics.missingDeleteShadowIds],
+      shadowOnlyIds:[...diagnostics.deleteShadowOnlyIds]
+    });
+
+    const history = readDeleteParityHistory(diagnostics.userId);
+    history.push(sample);
+    writeDeleteParityHistory(diagnostics.userId, history);
+
+    try { global.dispatchEvent(new CustomEvent('offline-sync-shadow:delete-parity', { detail:sample })); }
+    catch (_) {}
+    return sample;
+  }
+
   function getParityHistory(options = {}) {
     const userId = currentUserId();
     if (!userId) return [];
@@ -169,8 +283,14 @@
     return readParityHistory(userId).slice(-limit).map(sample => Object.freeze({ ...sample }));
   }
 
-  function getParityReport(options = {}) {
-    const samples = getParityHistory(options);
+  function getDeleteParityHistory(options = {}) {
+    const userId = currentUserId();
+    if (!userId) return [];
+    const limit = Math.max(1, Math.min(MAX_PARITY_SAMPLES, Number(options.limit) || 50));
+    return readDeleteParityHistory(userId).slice(-limit).map(sample => Object.freeze({ ...sample }));
+  }
+
+  function buildParityReport(samples) {
     const missingOccurrences = {};
     let healthySamples = 0;
     let lowestCoverage = 1;
@@ -185,7 +305,7 @@
     });
 
     const unhealthySamples = samples.length - healthySamples;
-    return Object.freeze({
+    return {
       schemaVersion:PARITY_SCHEMA_VERSION,
       mode:MODE,
       sampleCount:samples.length,
@@ -195,7 +315,15 @@
       lowestCoverage:samples.length ? lowestCoverage : 1,
       latest:samples.length ? samples[samples.length - 1] : null,
       missingOccurrences:Object.freeze({ ...missingOccurrences })
-    });
+    };
+  }
+
+  function getParityReport(options = {}) {
+    return Object.freeze({ ...buildParityReport(getParityHistory(options)), action:'upsert' });
+  }
+
+  function getDeleteParityReport(options = {}) {
+    return Object.freeze({ ...buildParityReport(getDeleteParityHistory(options)), action:'delete' });
   }
 
   function clearParityHistory() {
@@ -205,21 +333,42 @@
     catch (_) { return false; }
   }
 
-  function install() {
-    if (installed) return true;
-    if (!global.OfflineOutboxStore) return false;
-    if (typeof global.queueEditalUpsert !== 'function') return false;
+  function clearDeleteParityHistory() {
+    const userId = currentUserId();
+    if (!userId) return false;
+    try { global.localStorage?.removeItem(deleteParityStorageKey(userId)); return true; }
+    catch (_) { return false; }
+  }
 
-    legacyQueueEditalUpsert = global.queueEditalUpsert;
-    global.queueEditalUpsert = function shadowedQueueEditalUpsert(item) {
-      const result = legacyQueueEditalUpsert.apply(this, arguments);
-      Promise.resolve(shadowEditalUpsert(item)).catch(error => {
-        console.warn('Offline sync shadow não registrado; fila legada preservada:', error);
-      });
-      return result;
-    };
-    installed = true;
-    return true;
+  function install() {
+    if (!global.OfflineOutboxStore) return false;
+
+    if (!installed) {
+      if (typeof global.queueEditalUpsert !== 'function') return false;
+      legacyQueueEditalUpsert = global.queueEditalUpsert;
+      global.queueEditalUpsert = function shadowedQueueEditalUpsert(item) {
+        const result = legacyQueueEditalUpsert.apply(this, arguments);
+        Promise.resolve(shadowEditalUpsert(item)).catch(error => {
+          console.warn('Offline sync shadow de upsert não registrado; fila legada preservada:', error);
+        });
+        return result;
+      };
+      installed = true;
+    }
+
+    if (!deleteInstalled && typeof global.queueEditalDelete === 'function') {
+      legacyQueueEditalDelete = global.queueEditalDelete;
+      global.queueEditalDelete = function shadowedQueueEditalDelete(id) {
+        const result = legacyQueueEditalDelete.apply(this, arguments);
+        Promise.resolve(shadowEditalDelete(id)).catch(error => {
+          console.warn('Offline sync shadow de exclusão não registrado; fila legada preservada:', error);
+        });
+        return result;
+      };
+      deleteInstalled = true;
+    }
+
+    return installed;
   }
 
   global.OfflineSyncShadow = Object.freeze({
@@ -229,12 +378,18 @@
     MAX_PARITY_SAMPLES,
     install,
     shadowEditalUpsert,
+    shadowEditalDelete,
     getDiagnostics,
     recordParitySnapshot,
+    recordDeleteParitySnapshot,
     getParityHistory,
+    getDeleteParityHistory,
     getParityReport,
+    getDeleteParityReport,
     clearParityHistory,
-    isInstalled:() => installed
+    clearDeleteParityHistory,
+    isInstalled:() => installed,
+    isDeleteInstalled:() => deleteInstalled
   });
 
   install();
