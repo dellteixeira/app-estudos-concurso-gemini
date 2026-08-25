@@ -4,10 +4,12 @@
   if (!global || global.OfflineSyncMetadataExpandedStability) return;
 
   const MODE = 'metadata-expanded-stability-v1';
+  const POPULATION_MODE = 'metadata-population-expanded-stability-v1';
   const REQUIRED_CLEAN_SUCCESSES = 5;
 
   let installed = false;
   let lastEvaluation = null;
+  let lastPopulationEvaluation = null;
 
   function nowIso() { return new Date().toISOString(); }
 
@@ -22,21 +24,30 @@
   function stability() { return global.OfflineSyncMetadataStability || null; }
   function rollout() { return global.OfflineSyncMetadataRollout || null; }
 
-  function getReport(userId = currentUserId()) {
-    const cohort = rollout()?.getCohortAssignment?.(userId) || null;
+  function readEvidence(userId) {
     const baseReport = stability()?.getReport?.(userId) || null;
     const history = stability()?.readHistory?.(userId) || baseReport?.history || Object.freeze([]);
-    const successes = [...history].filter(row => row?.outcome === 'success').length;
-    const failures = [...history].filter(row => row?.outcome === 'failure').length;
-    const aborted = [...history].filter(row => row?.outcome === 'aborted').length;
+    const rows = [...history];
+    return Object.freeze({
+      baseReport,
+      history:Object.freeze(rows),
+      successes:rows.filter(row => row?.outcome === 'success').length,
+      failures:rows.filter(row => row?.outcome === 'failure').length,
+      aborted:rows.filter(row => row?.outcome === 'aborted').length
+    });
+  }
+
+  function getReport(userId = currentUserId()) {
+    const cohort = rollout()?.getCohortAssignment?.(userId) || null;
+    const evidence = readEvidence(userId);
     const reasons = [];
 
     if (!userId) reasons.push('missing-user');
     if (cohort?.tier !== 'expanded-base') reasons.push('outside-expanded-base-tier');
-    if (successes < REQUIRED_CLEAN_SUCCESSES) reasons.push('insufficient-clean-expanded-canaries');
-    if (failures > 0) reasons.push('recent-expanded-canary-failure');
-    if (aborted > 0) reasons.push('recent-expanded-canary-abort');
-    if (!baseReport?.parity?.eligible) reasons.push('metadata-parity-not-eligible');
+    if (evidence.successes < REQUIRED_CLEAN_SUCCESSES) reasons.push('insufficient-clean-expanded-canaries');
+    if (evidence.failures > 0) reasons.push('recent-expanded-canary-failure');
+    if (evidence.aborted > 0) reasons.push('recent-expanded-canary-abort');
+    if (!evidence.baseReport?.parity?.eligible) reasons.push('metadata-parity-not-eligible');
 
     const ready = reasons.length === 0;
     return Object.freeze({
@@ -44,17 +55,51 @@
       userId:userId || null,
       cohort,
       tier:cohort?.tier || 'excluded',
-      window:Number(baseReport?.window || stability()?.WINDOW_SIZE || 10),
+      window:Number(evidence.baseReport?.window || stability()?.WINDOW_SIZE || 10),
       requiredCleanSuccesses:REQUIRED_CLEAN_SUCCESSES,
-      sampleCount:history.length,
-      successes,
-      failures,
-      aborted,
+      sampleCount:evidence.history.length,
+      successes:evidence.successes,
+      failures:evidence.failures,
+      aborted:evidence.aborted,
       stable:ready,
       readyForPilotReview:ready,
       reasons:Object.freeze(reasons),
-      baseStability:baseReport,
-      history:Object.freeze([...history])
+      baseStability:evidence.baseReport,
+      history:evidence.history
+    });
+  }
+
+  function getPopulationReport(userId = currentUserId()) {
+    const cohort = rollout()?.getCohortAssignment?.(userId) || null;
+    const evidence = readEvidence(userId);
+    const reasons = [];
+
+    if (!userId) reasons.push('missing-user');
+    if (cohort?.tier !== 'population-expanded-base') reasons.push('outside-population-expanded-base-tier');
+    if (evidence.successes < REQUIRED_CLEAN_SUCCESSES) reasons.push('insufficient-clean-population-canaries');
+    if (evidence.failures > 0) reasons.push('recent-population-canary-failure');
+    if (evidence.aborted > 0) reasons.push('recent-population-canary-abort');
+    if (!evidence.baseReport?.parity?.eligible) reasons.push('metadata-parity-not-eligible');
+
+    const ready = reasons.length === 0;
+    return Object.freeze({
+      mode:POPULATION_MODE,
+      userId:userId || null,
+      cohort,
+      tier:cohort?.tier || 'excluded',
+      window:Number(evidence.baseReport?.window || stability()?.WINDOW_SIZE || 10),
+      requiredCleanSuccesses:REQUIRED_CLEAN_SUCCESSES,
+      sampleCount:evidence.history.length,
+      successes:evidence.successes,
+      failures:evidence.failures,
+      aborted:evidence.aborted,
+      stable:ready,
+      readyForDepthReview:ready,
+      reasons:Object.freeze(reasons),
+      baseStability:evidence.baseReport,
+      history:evidence.history,
+      remoteWriteBudget:1,
+      populationPercent:Number(cohort?.percent || 35)
     });
   }
 
@@ -76,22 +121,49 @@
     return report;
   }
 
+  function evaluatePopulation(detail = null) {
+    const userId = currentUserId();
+    const report = getPopulationReport(userId);
+    lastPopulationEvaluation = Object.freeze({
+      mode:POPULATION_MODE,
+      evaluatedAt:nowIso(),
+      userId:userId || null,
+      tier:report.tier,
+      readyForDepthReview:report.readyForDepthReview,
+      reasons:report.reasons,
+      sourceDetail:detail || null
+    });
+    try {
+      global.dispatchEvent?.(new CustomEvent('offline-sync-metadata-population-stability:evaluated', { detail:lastPopulationEvaluation }));
+    } catch (_) {}
+    return report;
+  }
+
   function getDiagnostics() {
     return Object.freeze({
       mode:MODE,
+      populationMode:POPULATION_MODE,
       installed,
       userId:currentUserId(),
       report:getReport(),
+      populationReport:getPopulationReport(),
       lastEvaluation,
+      lastPopulationEvaluation,
       remoteAuthority:false,
-      scope:Object.freeze(['local-diagnostic:expanded-base:concursos_metadata'])
+      scope:Object.freeze([
+        'local-diagnostic:expanded-base:concursos_metadata',
+        'local-diagnostic:population-expanded-base:concursos_metadata'
+      ])
     });
   }
 
   function onStabilityObserved(event) {
     const cohort = rollout()?.getCohortAssignment?.() || null;
-    if (cohort?.tier !== 'expanded-base') return;
-    evaluate(event?.detail || null);
+    if (cohort?.tier === 'expanded-base') {
+      evaluate(event?.detail || null);
+      return;
+    }
+    if (cohort?.tier === 'population-expanded-base') evaluatePopulation(event?.detail || null);
   }
 
   function install() {
@@ -104,10 +176,13 @@
 
   global.OfflineSyncMetadataExpandedStability = Object.freeze({
     MODE,
+    POPULATION_MODE,
     REQUIRED_CLEAN_SUCCESSES,
     install,
     evaluate,
+    evaluatePopulation,
     getReport,
+    getPopulationReport,
     getDiagnostics
   });
 })(window);
