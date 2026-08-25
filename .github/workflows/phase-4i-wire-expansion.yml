@@ -1,0 +1,132 @@
+name: Wire Phase 4I Expansion
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-expansion-v10.40.0
+    paths:
+      - .github/workflows/phase-4i-wire-expansion.yml
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/offline-metadata-expansion-v10.40.0
+          fetch-depth: 0
+
+      - name: Wire bounded expansion
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if new in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f'pattern not found in {path}: {old[:80]!r}')
+              p.write_text(text.replace(old, new, 1))
+
+          authority = Path('public/js/core/offline-sync-metadata-authority.js')
+          text = authority.read_text()
+          old = """  function getBudget(userId = currentUserId()) {\n    const session = getCanarySession(userId);\n    const remoteWrites = Math.max(0, Number(session?.remoteWrites) || 0);\n    return Object.freeze({\n      remoteWrites,\n      maxRemoteWrites:MAX_REMOTE_WRITES,\n      remainingRemoteWrites:Math.max(0, MAX_REMOTE_WRITES - remoteWrites),\n      exhausted:remoteWrites >= MAX_REMOTE_WRITES\n    });\n  }\n"""
+          new = """  function getMaxRemoteWrites(userId = currentUserId()) {\n    try {\n      const proposed = Number(global.OfflineSyncMetadataExpansion?.getMaxRemoteWrites?.(userId));\n      if (Number.isFinite(proposed)) return Math.max(MAX_REMOTE_WRITES, Math.min(2, Math.floor(proposed)));\n    } catch (_) {}\n    return MAX_REMOTE_WRITES;\n  }\n\n  function getBudget(userId = currentUserId()) {\n    const session = getCanarySession(userId);\n    const remoteWrites = Math.max(0, Number(session?.remoteWrites) || 0);\n    const maxRemoteWrites = getMaxRemoteWrites(userId);\n    return Object.freeze({\n      remoteWrites,\n      maxRemoteWrites,\n      remainingRemoteWrites:Math.max(0, maxRemoteWrites - remoteWrites),\n      exhausted:remoteWrites >= maxRemoteWrites\n    });\n  }\n"""
+          if new not in text:
+              if old not in text:
+                  raise SystemExit('authority budget pattern not found')
+              text = text.replace(old, new, 1)
+          old_stop = "    stopCanary(getBudget(userId).exhausted ? 'budget-exhausted' : 'completed');"
+          new_stop = "    if (getBudget(userId).exhausted) stopCanary('budget-exhausted');"
+          if new_stop not in text:
+              if old_stop not in text:
+                  raise SystemExit('authority stop pattern not found')
+              text = text.replace(old_stop, new_stop, 1)
+          old_export = "    getEligibility,\n    getBudget,"
+          new_export = "    getEligibility,\n    getMaxRemoteWrites,\n    getBudget,"
+          if new_export not in text:
+              if old_export not in text:
+                  raise SystemExit('authority export pattern not found')
+              text = text.replace(old_export, new_export, 1)
+          authority.write_text(text)
+
+          app = Path('public/js/app-state.js')
+          text = app.read_text()
+          stability_load = """        if (!global.OfflineSyncMetadataStability) await loadExtensionScript('./js/core/offline-sync-metadata-stability.js?v=10.39.0', 'offline-sync-metadata-stability');\n        global.OfflineSyncMetadataStability?.install?.();\n"""
+          expansion_load = stability_load + """        if (!global.OfflineSyncMetadataExpansion) await loadExtensionScript('./js/core/offline-sync-metadata-expansion.js?v=10.39.0', 'offline-sync-metadata-expansion');\n        global.OfflineSyncMetadataExpansion?.install?.();\n"""
+          if 'offline-sync-metadata-expansion.js' not in text:
+              if stability_load not in text:
+                  raise SystemExit('app-state load pattern not found')
+              text = text.replace(stability_load, expansion_load, 1)
+          old_diag = "            metadataStability:global.OfflineSyncMetadataStability?.getDiagnostics?.() || null,\n            authority:"
+          new_diag = "            metadataStability:global.OfflineSyncMetadataStability?.getDiagnostics?.() || null,\n            metadataExpansion:global.OfflineSyncMetadataExpansion?.getDiagnostics?.() || null,\n            authority:"
+          if 'metadataExpansion:global.OfflineSyncMetadataExpansion' not in text:
+              if old_diag not in text:
+                  raise SystemExit('app-state diagnostics pattern not found')
+              text = text.replace(old_diag, new_diag, 1)
+          old_getter = "        getOfflineSyncMetadataStabilityDiagnostics:() => global.OfflineSyncMetadataStability?.getDiagnostics?.() || null,\n        getOfflineSyncAuthorityDiagnostics:"
+          new_getter = "        getOfflineSyncMetadataStabilityDiagnostics:() => global.OfflineSyncMetadataStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:() => global.OfflineSyncMetadataExpansion?.getDiagnostics?.() || null,\n        getOfflineSyncAuthorityDiagnostics:"
+          if 'getOfflineSyncMetadataExpansionDiagnostics' not in text:
+              if old_getter not in text:
+                  raise SystemExit('app-state getter pattern not found')
+              text = text.replace(old_getter, new_getter, 1)
+          app.write_text(text)
+
+          assets = Path('config/app-assets.json')
+          text = assets.read_text()
+          needle = '"/js/core/offline-sync-metadata-stability.js", "/js/core/offline-sync-authority.js"'
+          repl = '"/js/core/offline-sync-metadata-stability.js", "/js/core/offline-sync-metadata-expansion.js", "/js/core/offline-sync-authority.js"'
+          if 'offline-sync-metadata-expansion.js' not in text:
+              if needle not in text:
+                  raise SystemExit('asset manifest pattern not found')
+              text = text.replace(needle, repl)
+          assets.write_text(text)
+
+          sw = Path('public/sw.js')
+          text = sw.read_text()
+          if 'offline-sync-metadata-expansion.js' not in text:
+              text = text.replace("'./js/core/offline-sync-metadata-stability.js', './js/core/offline-sync-authority.js'", "'./js/core/offline-sync-metadata-stability.js', './js/core/offline-sync-metadata-expansion.js', './js/core/offline-sync-authority.js'")
+              text = text.replace("'/js/core/offline-sync-metadata-stability.js', '/js/core/offline-sync-authority.js'", "'/js/core/offline-sync-metadata-stability.js', '/js/core/offline-sync-metadata-expansion.js', '/js/core/offline-sync-authority.js'")
+              if 'offline-sync-metadata-expansion.js' not in text:
+                  raise SystemExit('service worker patterns not found')
+          sw.write_text(text)
+
+          worker = Path('src/worker.js')
+          text = worker.read_text()
+          line = "  '/js/core/offline-sync-metadata-stability.js',\n"
+          insertion = line + "  '/js/core/offline-sync-metadata-expansion.js',\n"
+          if 'offline-sync-metadata-expansion.js' not in text:
+              if line not in text:
+                  raise SystemExit('worker pattern not found')
+              text = text.replace(line, insertion, 1)
+          worker.write_text(text)
+
+          headers = Path('public/_headers')
+          text = headers.read_text()
+          block = "/js/core/offline-sync-metadata-stability.js\n  Cache-Control: no-cache, no-store, must-revalidate\n"
+          insertion = block + "\n/js/core/offline-sync-metadata-expansion.js\n  Cache-Control: no-cache, no-store, must-revalidate\n"
+          if '/js/core/offline-sync-metadata-expansion.js' not in text:
+              if block not in text:
+                  raise SystemExit('headers pattern not found')
+              text = text.replace(block, insertion, 1)
+          headers.write_text(text)
+          PY
+
+      - name: Remove transient workflow
+        run: rm .github/workflows/phase-4i-wire-expansion.yml
+
+      - name: Commit wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "feat(sync): wire bounded metadata expansion"
+          git push origin HEAD:feat/offline-metadata-expansion-v10.40.0
