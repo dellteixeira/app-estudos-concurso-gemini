@@ -1,0 +1,106 @@
+name: Integrate phase 4T
+
+on:
+  push:
+    branches: [feat/offline-metadata-ring2-promotion-v10.52.0]
+    paths: [.github/workflows/integrate-4t.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: feat/offline-metadata-ring2-promotion-v10.52.0
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Integrate ring-2 promotion
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=None):
+              p=Path(path); text=p.read_text(encoding='utf-8')
+              if old not in text: raise SystemExit(f'missing integration anchor in {path}: {old[:80]}')
+              text=text.replace(old,new) if count is None else text.replace(old,new,count)
+              p.write_text(text,encoding='utf-8')
+
+          app='public/js/app-state.js'
+          replace(app,
+            "        if (!global.OfflineSyncMetadataPopulationPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-population-promoted-stability.js?v=10.51.0', 'offline-sync-metadata-population-promoted-stability');\n        global.OfflineSyncMetadataPopulationPromotedStability?.install?.();\n        if (!global.OfflineSyncMetadataExpansion)",
+            "        if (!global.OfflineSyncMetadataPopulationPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-population-promoted-stability.js?v=10.51.0', 'offline-sync-metadata-population-promoted-stability');\n        global.OfflineSyncMetadataPopulationPromotedStability?.install?.();\n        if (!global.OfflineSyncMetadataRing2Promotion) await loadExtensionScript('./js/core/offline-sync-metadata-ring2-promotion.js?v=10.51.0', 'offline-sync-metadata-ring2-promotion');\n        global.OfflineSyncMetadataRing2Promotion?.install?.();\n        if (!global.OfflineSyncMetadataExpansion)")
+          replace(app,
+            "            metadataPopulationPromotedStability:global.OfflineSyncMetadataPopulationPromotedStability?.getDiagnostics?.() || null,\n            metadataExpansion:",
+            "            metadataPopulationPromotedStability:global.OfflineSyncMetadataPopulationPromotedStability?.getDiagnostics?.() || null,\n            metadataRing2Promotion:global.OfflineSyncMetadataRing2Promotion?.getDiagnostics?.() || null,\n            metadataExpansion:")
+          replace(app,
+            "        getOfflineSyncMetadataPopulationPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPopulationPromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:",
+            "        getOfflineSyncMetadataPopulationPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPopulationPromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataRing2PromotionDiagnostics:() => global.OfflineSyncMetadataRing2Promotion?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:")
+
+          exp='public/js/core/offline-sync-metadata-expansion.js'
+          replace(exp,
+            "  function populationPromotion() { return global.OfflineSyncMetadataPopulationPromotion || null; }",
+            "  function populationPromotion() { return global.OfflineSyncMetadataPopulationPromotion || null; }\n  function ring2Promotion() { return global.OfflineSyncMetadataRing2Promotion || null; }")
+          replace(exp,
+            "    const populationPromoted = Boolean(populationPromotion()?.isPromoted?.(userId));\n    const originalPilot",
+            "    const populationPromoted = Boolean(populationPromotion()?.isPromoted?.(userId));\n    const ring2Promoted = Boolean(ring2Promotion()?.isPromoted?.(userId));\n    const originalPilot")
+          replace(exp,
+            "    if (!originalPilot && !promoted && !populationPromoted) reasons.push('outside-expansion-pilot-cohort');",
+            "    if (!originalPilot && !promoted && !populationPromoted && !ring2Promoted) reasons.push('outside-expansion-pilot-cohort');")
+          replace(exp,
+            "      populationPromoted,\n      promotion:",
+            "      populationPromoted,\n      ring2Promoted,\n      promotion:")
+          replace(exp,
+            "      populationPromotion:populationPromotion()?.getDiagnostics?.() || null,\n      rollout:",
+            "      populationPromotion:populationPromotion()?.getDiagnostics?.() || null,\n      ring2Promotion:ring2Promotion()?.getDiagnostics?.() || null,\n      rollout:")
+          replace(exp,
+            "    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId)));",
+            "    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId) || ring2Promotion()?.isPromoted?.(userId)));")
+
+          asset='config/app-assets.json'
+          replace(asset,
+            '"/js/core/offline-sync-metadata-population-promoted-stability.js", "/js/core/offline-sync-metadata-expansion.js"',
+            '"/js/core/offline-sync-metadata-population-promoted-stability.js", "/js/core/offline-sync-metadata-ring2-promotion.js", "/js/core/offline-sync-metadata-expansion.js"')
+
+          sw='public/sw.js'
+          replace(sw,
+            "'./js/core/offline-sync-metadata-population-promoted-stability.js', './js/core/offline-sync-metadata-expansion.js'",
+            "'./js/core/offline-sync-metadata-population-promoted-stability.js', './js/core/offline-sync-metadata-ring2-promotion.js', './js/core/offline-sync-metadata-expansion.js'")
+          replace(sw,
+            "'/js/core/offline-sync-metadata-population-promoted-stability.js', '/js/core/offline-sync-metadata-expansion.js'",
+            "'/js/core/offline-sync-metadata-population-promoted-stability.js', '/js/core/offline-sync-metadata-ring2-promotion.js', '/js/core/offline-sync-metadata-expansion.js'")
+
+          worker='src/worker.js'
+          replace(worker,
+            "  '/js/core/offline-sync-metadata-population-promoted-stability.js',\n  '/js/core/offline-sync-metadata-expansion.js',",
+            "  '/js/core/offline-sync-metadata-population-promoted-stability.js',\n  '/js/core/offline-sync-metadata-ring2-promotion.js',\n  '/js/core/offline-sync-metadata-expansion.js',")
+
+          headers='public/_headers'
+          replace(headers,
+            "/js/core/offline-sync-metadata-population-promoted-stability.js\n  Cache-Control: no-cache, no-store, must-revalidate\n\n/js/core/offline-sync-metadata-expansion.js",
+            "/js/core/offline-sync-metadata-population-promoted-stability.js\n  Cache-Control: no-cache, no-store, must-revalidate\n\n/js/core/offline-sync-metadata-ring2-promotion.js\n  Cache-Control: no-cache, no-store, must-revalidate\n\n/js/core/offline-sync-metadata-expansion.js")
+          PY
+
+      - name: Validate 4T integration
+        run: |
+          node --check public/js/core/offline-sync-metadata-ring2-promotion.js
+          node --check public/js/core/offline-sync-metadata-expansion.js
+          node --check public/js/app-state.js
+          node --test tests/offline-sync-metadata-population-promotion.test.cjs tests/offline-sync-metadata-ring2-promotion.test.cjs
+
+      - name: Commit integration and self-clean
+        run: |
+          rm .github/workflows/integrate-4t.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat(sync): integrate phase 4T ring-2 promotion'
+          git push origin HEAD:feat/offline-metadata-ring2-promotion-v10.52.0
