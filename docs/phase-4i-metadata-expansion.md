@@ -77,3 +77,7 @@ O asset integra app shell crítico, network-first e políticas no-store do PWA/W
 ## Próxima decisão
 
 Uma fase posterior poderá avaliar expansão de população somente depois de evidência suficiente do comportamento com teto 2. A 4I, isoladamente, mantém a coorte em 10% e não concede autoridade ampla.
+
+## Release candidate
+
+Após o pré-gate funcional integralmente verde, a identidade coordenada foi promovida para **v10.40.0**. Este registro documental não altera a lógica da Fase 4I e existe para produzir o SHA final auditável do candidato de release.
