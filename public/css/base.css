@@ -617,7 +617,6 @@
         .month-day-mobile-meta { display: none; }
 
 
-
         /* =========================================================
            ANALISADOR DE EDITAL COM IA — FASE 1
            ========================================================= */
@@ -923,31 +922,6 @@
             .countdown-badge { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; }
 
             /* Barra de ações: duas colunas simétricas */
-            .action-bar {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 10px;
-                width: 100%;
-                align-items: stretch;
-            }
-            .action-bar .btn-action {
-                width: 100%;
-                min-width: 0;
-                height: 60px;
-                min-height: 60px;
-                max-height: 60px;
-                padding: 10px 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                line-height: 1.25;
-                font-size: 0.88rem;
-                white-space: normal;
-                word-break: normal;
-                flex: none;
-            }
-            .action-bar > .btn-action:last-child { grid-column: 1 / -1; }
 
             /* Navegação principal em grade 2x2 */
             .nav-tabs {
@@ -1163,8 +1137,6 @@
 
         @media (max-width: 390px) {
             #app-dashboard { padding: 0.75rem; }
-            .action-bar { gap: 8px; }
-            .action-bar .btn-action { font-size: 0.82rem; height: 58px; min-height: 58px; max-height: 58px; }
             .month-grid, .month-calendar-header { gap: 3px; }
             .month-day-cell { height: 58px; min-height: 58px; }
         }
@@ -1294,15 +1266,6 @@
         .overview-card.success .overview-value { color:var(--modern-green); }
         .overview-card.warning .overview-value { color:var(--modern-warning); }
 
-        .action-bar {
-            background:var(--card-bg); border:1px solid var(--modern-border); border-radius:15px;
-            padding:8px; box-shadow:none;
-        }
-        .action-bar .btn-action { background:transparent; border-color:transparent; color:var(--modern-muted); min-height:42px; }
-        .action-bar .btn-action:hover { background:linear-gradient(135deg, rgba(59,130,246,.88), rgba(19,168,255,.92)); color:#fff; border-color:rgba(96,165,250,.8); box-shadow:0 7px 16px rgba(19,168,255,.14); }
-        .action-bar .btn-action:active { transform:translateY(1px); }
-        .action-bar .btn-action.active-blue { background:transparent !important; border-color:transparent !important; box-shadow:none !important; }
-        .action-bar .btn-action.action-running { opacity:.78; }
         .btn-account-header, .btn-theme-header, .btn-logout-header {
             min-height:38px; padding:.5rem .8rem; background:transparent; color:var(--modern-muted);
             border:1px solid var(--modern-border); box-shadow:none; white-space:nowrap;
@@ -1528,9 +1491,6 @@
             .study-overview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
             .overview-card { min-height:82px; padding:12px; }
 
-            .action-bar { display:none; grid-template-columns:repeat(2,minmax(0,1fr)); }
-            .action-bar.mobile-open { display:grid; }
-            .action-bar .btn-action { background:rgba(255,255,255,.03); border:1px solid var(--modern-border); height:auto; min-height:52px; max-height:none; }
             .nav-tabs { display:none; }
 
             .grid-top { gap:.8rem; }
@@ -1940,7 +1900,6 @@
         }
 
 
-
         /* ==========================================================
            V9.22 — GRADE EQUILIBRADA / REFINO VISUAL DESKTOP
            Mantém a identidade do painel, reduz vazios e uniformiza
@@ -1964,8 +1923,7 @@
             .card,
             .delayed-panel,
             .concurso-selector-bar,
-            .modern-header,
-            .action-bar {
+            .modern-header {
                 border-radius: var(--ui-radius-card);
             }
 
@@ -2435,7 +2393,6 @@
         }
 
 
-
         /* =====================================================
            V9.25 — HARMONIZAÇÃO DE TEMAS / POMODORO
            Dark: elimina preto puro do anel e integra à paleta azul.
@@ -2502,7 +2459,6 @@
         body.light-mode .auth-card,
         body.light-mode .overview-card,
         body.light-mode .modern-search-shell,
-        body.light-mode .action-bar,
         body.light-mode .concurso-selector-bar {
             background: #ffffff;
             border-color: #dce6ef;
@@ -2552,9 +2508,6 @@
         body.light-mode .tab-btn.active {
             color: #ffffff;
             box-shadow: 0 7px 16px rgba(37,99,235,.16);
-        }
-        body.light-mode .action-bar .btn-action {
-            color: #71849a;
         }
         body.light-mode .btn-logout-header {
             color: #71849a;

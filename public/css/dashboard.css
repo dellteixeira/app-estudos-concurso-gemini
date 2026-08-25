@@ -540,7 +540,6 @@ body.light-mode .card,
 body.light-mode .delayed-panel,
 body.light-mode .retention-diagnostic-panel,
 body.light-mode .overview-card,
-body.light-mode .action-bar,
 body.light-mode .concurso-selector-bar,
 body.light-mode .auth-card,
 body.light-mode .modal,
@@ -746,19 +745,6 @@ header.modern-header { margin-bottom: 10px; }
 }
 
 /* Barra de utilidades mais baixa e alinhada ao mesmo ritmo dos demais painéis. */
-.action-bar {
-    margin-bottom: 10px;
-    min-height: 46px;
-    padding: 5px;
-    gap: 4px;
-}
-.action-bar .btn-action {
-    min-width: 0;
-    min-height: 34px;
-    padding: 0 10px;
-    font-size: .72rem;
-    border-radius: 9px;
-}
 
 /* Área principal: Pomodoro compacto à esquerda e análise mais larga à direita. */
 .grid-top {
@@ -944,7 +930,6 @@ header.modern-header { margin-bottom: 10px; }
     }
     .retention-metric-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
     .retention-risk-list { max-height: 140px; }
-    .action-bar .btn-action { min-height: 48px; font-size: .75rem; }
     .grid-top { grid-template-columns: 1fr !important; gap: 10px; }
     .grid-top > .card { padding: 13px; }
     .pomodoro-card {
@@ -1402,8 +1387,6 @@ body.light-mode .global-search-modal-results.global-search-results { background:
 
     /* Auditoria geral mobile */
     .card { overflow:hidden; }
-    .action-bar { gap:6px !important; padding:7px !important; }
-    .action-bar .btn-action { min-width:0 !important; font-size:.68rem !important; line-height:1.15 !important; }
     .context-fab {
         min-width:54px !important;
         height:40px !important;
