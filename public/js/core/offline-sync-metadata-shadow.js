@@ -6,7 +6,7 @@
   const MODE = 'shadow-v1';
   const ENTITY = 'concursos-metadata';
   const ENTITY_ID = 'concursos_metadata';
-  const HISTORY_KEY = 'offline_sync_metadata_shadow_parity_v1';
+  const HISTORY_PREFIX = 'offline_sync_metadata_shadow_parity_v1_';
   const MAX_HISTORY = 100;
   let installed = false;
   let originalSetMetadataDirty = null;
@@ -69,31 +69,37 @@
     return (hash >>> 0).toString(16).padStart(8, '0');
   }
 
-  function readHistory() {
+  function historyKey(userId = safeUserId()) {
+    return `${HISTORY_PREFIX}${String(userId || 'anonymous')}`;
+  }
+
+  function readHistory(userId = safeUserId()) {
     try {
-      const parsed = JSON.parse(global.localStorage?.getItem(HISTORY_KEY) || '[]');
+      const parsed = JSON.parse(global.localStorage?.getItem(historyKey(userId)) || '[]');
       return Array.isArray(parsed) ? parsed.slice(-MAX_HISTORY) : [];
     } catch (_) {
       return [];
     }
   }
 
-  function writeHistory(history) {
+  function writeHistory(history, userId = safeUserId()) {
     try {
-      global.localStorage?.setItem(HISTORY_KEY, JSON.stringify(history.slice(-MAX_HISTORY)));
+      global.localStorage?.setItem(historyKey(userId), JSON.stringify(history.slice(-MAX_HISTORY)));
     } catch (_) {}
   }
 
   function recordParity(sample) {
-    const history = readHistory();
+    const userId = safeUserId();
+    const history = readHistory(userId);
     history.push(Object.freeze({ at:nowIso(), ...sample }));
-    writeHistory(history);
+    writeHistory(history, userId);
     return history[history.length - 1];
   }
 
   function getParityHistory(options = {}) {
     const requested = Math.max(1, Math.min(MAX_HISTORY, Number(options.limit) || MAX_HISTORY));
-    return Object.freeze(readHistory().slice(-requested).map(sample => Object.freeze({ ...sample })));
+    const userId = options.userId == null ? safeUserId() : String(options.userId);
+    return Object.freeze(readHistory(userId).slice(-requested).map(sample => Object.freeze({ ...sample })));
   }
 
   function getParityReport(options = {}) {
@@ -109,8 +115,8 @@
     });
   }
 
-  function clearParityHistory() {
-    writeHistory([]);
+  function clearParityHistory(userId = safeUserId()) {
+    writeHistory([], userId);
     return true;
   }
 
@@ -210,7 +216,7 @@
   async function getDiagnostics() {
     const userId = safeUserId();
     const state = safeSyncState();
-    const report = getParityReport({ limit:MAX_HISTORY });
+    const report = getParityReport({ limit:MAX_HISTORY, userId });
     let shadowRows = [];
     if (userId && global.OfflineOutboxStore?.list) {
       try {
