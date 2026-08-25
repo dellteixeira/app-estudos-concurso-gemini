@@ -139,9 +139,9 @@ test('módulo shadow não contém caminho remoto Supabase próprio',()=>{
 });
 
 test('AppState carrega metadata shadow após outbox e antes das autoridades remotas',()=>{
-  const outboxIndex=appStateSource.indexOf('offline-outbox-store.js?v=10.42.0');
-  const metadataIndex=appStateSource.indexOf('offline-sync-metadata-shadow.js?v=10.42.0');
-  const authorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.42.0');
+  const outboxIndex=appStateSource.indexOf('offline-outbox-store.js?v=10.43.0');
+  const metadataIndex=appStateSource.indexOf('offline-sync-metadata-shadow.js?v=10.43.0');
+  const authorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.43.0');
   assert.ok(outboxIndex>=0);
   assert.ok(metadataIndex>outboxIndex);
   assert.ok(authorityIndex>metadataIndex);

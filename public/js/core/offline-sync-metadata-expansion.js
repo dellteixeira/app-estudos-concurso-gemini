@@ -3,7 +3,7 @@
 
   if (!global || global.OfflineSyncMetadataExpansion) return;
 
-  const MODE = 'metadata-stability-expansion-v2';
+  const MODE = 'metadata-stability-expansion-v3';
   const ENABLE_PREFIX = 'offline_sync_metadata_expansion_v1_';
   const STATE_PREFIX = 'offline_sync_metadata_expansion_state_v1_';
   const BASE_REMOTE_WRITES = 1;
@@ -40,6 +40,7 @@
   function rollout() { return global.OfflineSyncMetadataRollout || null; }
   function authority() { return global.OfflineSyncMetadataAuthority || null; }
   function graduation() { return global.OfflineSyncMetadataGraduation || null; }
+  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }
 
   function isOptedIn(userId = currentUserId()) {
     return Boolean(userId) && storageGet(enableKey(userId)) === '1';
@@ -74,19 +75,26 @@
     const rolloutEligibility = rollout()?.getEligibility?.(userId) || null;
     const circuit = authority()?.getCircuit?.(userId) || null;
     const hardKill = Boolean(graduation()?.isHardKilled?.() || authority()?.isHardKilled?.());
+    const promoted = Boolean(promotion()?.isPromoted?.(userId));
+    const originalPilot = Boolean(pilotCohort?.included);
     const reasons = [];
+
     if (!userId) reasons.push('missing-user');
-    if (!report?.readyForExpansion) reasons.push('metadata-stability-not-ready');
     if (!cohort?.included) reasons.push('outside-rollout-cohort');
-    if (!pilotCohort?.included) reasons.push('outside-expansion-pilot-cohort');
+    if (!originalPilot && !promoted) reasons.push('outside-expansion-pilot-cohort');
+    if (originalPilot && !report?.readyForExpansion) reasons.push('metadata-stability-not-ready');
     if (!rolloutEligibility?.eligible) reasons.push('metadata-rollout-not-eligible');
     if (circuit) reasons.push('metadata-authority-circuit-open');
     if (hardKill) reasons.push('kill-switch-active');
+
     return Object.freeze({
       eligible:reasons.length === 0,
       stability:report,
       cohort,
       pilotCohort,
+      originalPilot,
+      promoted,
+      promotion:promotion()?.getDiagnostics?.() || null,
       rollout:rolloutEligibility,
       circuit,
       hardKill,
@@ -94,12 +102,16 @@
     });
   }
 
+  function hasDepthGrant(userId = currentUserId()) {
+    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId)));
+  }
+
   function isEnabled(userId = currentUserId()) {
-    return Boolean(userId) && isOptedIn(userId) && getEligibility(userId).eligible && Boolean(rollout()?.isEnabled?.(userId));
+    return Boolean(userId && hasDepthGrant(userId) && getEligibility(userId).eligible && rollout()?.isEnabled?.(userId));
   }
 
   function getMaxRemoteWrites(userId = currentUserId()) {
-    if (!userId || !isOptedIn(userId)) return BASE_REMOTE_WRITES;
+    if (!userId || !hasDepthGrant(userId)) return BASE_REMOTE_WRITES;
     const eligibility = getEligibility(userId);
     if (!eligibility.eligible) return BASE_REMOTE_WRITES;
     return EXPANDED_REMOTE_WRITES;
@@ -137,13 +149,13 @@
     if (!enabled) return stop('manual-disable');
 
     const eligibility = getEligibility(userId);
-    if (!eligibility.eligible) {
+    if (!eligibility.originalPilot || !eligibility.eligible) {
       storageSet(enableKey(userId), '0');
       lastTransition = writeState(userId, {
         enabled:false,
         refusedAt:nowIso(),
         stopReason:'ineligible',
-        detail:{ reasons:eligibility.reasons }
+        detail:{ reasons:eligibility.originalPilot ? eligibility.reasons : ['outside-expansion-pilot-cohort'] }
       });
       return false;
     }
@@ -190,6 +202,7 @@
       installed,
       userId,
       optedIn:isOptedIn(userId),
+      depthGrant:hasDepthGrant(userId),
       enabled:isEnabled(userId),
       baseRemoteWrites:BASE_REMOTE_WRITES,
       expandedRemoteWrites:EXPANDED_REMOTE_WRITES,
@@ -247,6 +260,7 @@
     install,
     getEligibility,
     isOptedIn,
+    hasDepthGrant,
     isEnabled,
     getMaxRemoteWrites,
     setEnabled,
