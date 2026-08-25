@@ -1,5 +1,5 @@
 {
-  "version": "10.51.0",
+  "version": "10.52.0",
   "criticalAppShell": [
     "/", "/index.html", "/manifest.json", "/version.json", "/pwa-update.js",
     "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/responsive-system.css", "/css/canonical-ui.css", "/css/pdf-library.css", "/css/pdf-reader.css", "/css/learning-advisor.css",
