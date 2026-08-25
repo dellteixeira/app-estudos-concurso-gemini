@@ -5,11 +5,13 @@
 
   const MODE = 'metadata-expanded-stability-v1';
   const POPULATION_MODE = 'metadata-population-expanded-stability-v1';
+  const RING2_MODE = 'metadata-population-ring2-stability-v1';
   const REQUIRED_CLEAN_SUCCESSES = 5;
 
   let installed = false;
   let lastEvaluation = null;
   let lastPopulationEvaluation = null;
+  let lastRing2Evaluation = null;
 
   function nowIso() { return new Date().toISOString(); }
 
@@ -103,6 +105,40 @@
     });
   }
 
+  function getRing2Report(userId = currentUserId()) {
+    const cohort = rollout()?.getCohortAssignment?.(userId) || null;
+    const evidence = readEvidence(userId);
+    const reasons = [];
+
+    if (!userId) reasons.push('missing-user');
+    if (cohort?.tier !== 'population-expanded-ring-2') reasons.push('outside-population-expanded-ring-2-tier');
+    if (evidence.successes < REQUIRED_CLEAN_SUCCESSES) reasons.push('insufficient-clean-ring2-canaries');
+    if (evidence.failures > 0) reasons.push('recent-ring2-canary-failure');
+    if (evidence.aborted > 0) reasons.push('recent-ring2-canary-abort');
+    if (!evidence.baseReport?.parity?.eligible) reasons.push('metadata-parity-not-eligible');
+
+    const ready = reasons.length === 0;
+    return Object.freeze({
+      mode:RING2_MODE,
+      userId:userId || null,
+      cohort,
+      tier:cohort?.tier || 'excluded',
+      window:Number(evidence.baseReport?.window || stability()?.WINDOW_SIZE || 10),
+      requiredCleanSuccesses:REQUIRED_CLEAN_SUCCESSES,
+      sampleCount:evidence.history.length,
+      successes:evidence.successes,
+      failures:evidence.failures,
+      aborted:evidence.aborted,
+      stable:ready,
+      readyForDepthReview:ready,
+      reasons:Object.freeze(reasons),
+      baseStability:evidence.baseReport,
+      history:evidence.history,
+      remoteWriteBudget:1,
+      populationPercent:Number(cohort?.percent || 45)
+    });
+  }
+
   function evaluate(detail = null) {
     const userId = currentUserId();
     const report = getReport(userId);
@@ -139,20 +175,42 @@
     return report;
   }
 
+  function evaluateRing2(detail = null) {
+    const userId = currentUserId();
+    const report = getRing2Report(userId);
+    lastRing2Evaluation = Object.freeze({
+      mode:RING2_MODE,
+      evaluatedAt:nowIso(),
+      userId:userId || null,
+      tier:report.tier,
+      readyForDepthReview:report.readyForDepthReview,
+      reasons:report.reasons,
+      sourceDetail:detail || null
+    });
+    try {
+      global.dispatchEvent?.(new CustomEvent('offline-sync-metadata-ring2-stability:evaluated', { detail:lastRing2Evaluation }));
+    } catch (_) {}
+    return report;
+  }
+
   function getDiagnostics() {
     return Object.freeze({
       mode:MODE,
       populationMode:POPULATION_MODE,
+      ring2Mode:RING2_MODE,
       installed,
       userId:currentUserId(),
       report:getReport(),
       populationReport:getPopulationReport(),
+      ring2Report:getRing2Report(),
       lastEvaluation,
       lastPopulationEvaluation,
+      lastRing2Evaluation,
       remoteAuthority:false,
       scope:Object.freeze([
         'local-diagnostic:expanded-base:concursos_metadata',
-        'local-diagnostic:population-expanded-base:concursos_metadata'
+        'local-diagnostic:population-expanded-base:concursos_metadata',
+        'local-diagnostic:population-expanded-ring-2:concursos_metadata'
       ])
     });
   }
@@ -163,7 +221,11 @@
       evaluate(event?.detail || null);
       return;
     }
-    if (cohort?.tier === 'population-expanded-base') evaluatePopulation(event?.detail || null);
+    if (cohort?.tier === 'population-expanded-base') {
+      evaluatePopulation(event?.detail || null);
+      return;
+    }
+    if (cohort?.tier === 'population-expanded-ring-2') evaluateRing2(event?.detail || null);
   }
 
   function install() {
@@ -177,12 +239,15 @@
   global.OfflineSyncMetadataExpandedStability = Object.freeze({
     MODE,
     POPULATION_MODE,
+    RING2_MODE,
     REQUIRED_CLEAN_SUCCESSES,
     install,
     evaluate,
     evaluatePopulation,
+    evaluateRing2,
     getReport,
     getPopulationReport,
+    getRing2Report,
     getDiagnostics
   });
 })(window);
