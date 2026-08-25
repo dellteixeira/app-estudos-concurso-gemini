@@ -9,28 +9,42 @@ TARGETS = [
 
 
 def retire_action_bar(source: str) -> str:
-    # Remove standalone rules whose selector belongs only to the retired action bar.
+    # Remove retired selector entries when they participate in shared comma lists.
     source = re.sub(
-        r'(?m)^[ \t]*\.action-bar[^\n{]*\{[^{}]*\}\s*',
+        r'(?m)^[ \t]*(?:body\.light-mode\s+)?\.action-bar[^,{\n]*,\s*\n',
         '',
         source,
     )
 
-    # Remove retired selector entries from comma-separated selector lists.
+    # Handle the retired selector when it is the last entry before a shared rule body.
     source = re.sub(
-        r'(?m)^[ \t]*(?:body\.light-mode\s+)?\.action-bar,\s*\n',
-        '',
-        source,
-    )
-
-    # Handle the retired selector when it is the last entry before a rule body.
-    source = re.sub(
-        r',\s*\n[ \t]*(?:body\.light-mode\s+)?\.action-bar\s*\{',
+        r',\s*\n[ \t]*(?:body\.light-mode\s+)?\.action-bar[^,{\n]*\s*\{',
         ' {',
         source,
     )
 
-    # Collapse excessive blank lines created by deleted rules without reformatting files.
+    # Remove one-line rules owned exclusively by the retired component.
+    source = re.sub(
+        r'(?m)^[ \t]*(?:body\.light-mode\s+)?\.action-bar[^\n{]*\{[^{}\n]*\}[ \t]*\n?',
+        '',
+        source,
+    )
+
+    # Remove multi-line rules owned exclusively by the retired component.
+    source = re.sub(
+        r'(?ms)^[ \t]*(?:body\.light-mode\s+)?\.action-bar[^\n{]*\{\s*\n.*?^[ \t]*\}[ \t]*\n?',
+        '',
+        source,
+    )
+
+    # A second one-line pass catches rules exposed after removal of adjacent blocks.
+    source = re.sub(
+        r'(?m)^[ \t]*(?:body\.light-mode\s+)?\.action-bar[^\n{]*\{[^{}\n]*\}[ \t]*\n?',
+        '',
+        source,
+    )
+
+    # Collapse only excessive blank lines created by deleted rules.
     source = re.sub(r'\n{4,}', '\n\n\n', source)
     return source
 
