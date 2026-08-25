@@ -12,6 +12,9 @@ test('menu compacto substitui a barra horizontal sem duplicar handlers',()=>{
   assert.match(html,/id="compactActionsDropdown"/);
   assert.doesNotMatch(html,/class="action-bar"/);
   assert.doesNotMatch(html,/mobile-tools-toggle|header-account-actions|btn-account-header|btn-theme-header|btn-logout-header/);
+  assert.equal((html.match(/data-action=\"toggle-modern-tools\"/g)||[]).length,1);
+  assert.doesNotMatch(html,/>Mais<\/span>/);
+  assert.match(html,/header-utility-cluster\" aria-label=\"Pesquisa\"/);
   for(const id of ['ih-001','ih-002','ih-003','ih-004','ih-005']) assert.equal((html.match(new RegExp(id,'g'))||[]).length,1);
 });
 
