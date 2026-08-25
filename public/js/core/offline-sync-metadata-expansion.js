@@ -103,11 +103,11 @@
   }
 
   function hasDepthGrant(userId = currentUserId()) {
-    return Boolean(userId) && (isOptedIn(userId) || promotion()?.isPromoted?.(userId));
+    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId)));
   }
 
   function isEnabled(userId = currentUserId()) {
-    return Boolean(userId) && hasDepthGrant(userId) && getEligibility(userId).eligible && Boolean(rollout()?.isEnabled?.(userId));
+    return Boolean(userId && hasDepthGrant(userId) && getEligibility(userId).eligible && rollout()?.isEnabled?.(userId));
   }
 
   function getMaxRemoteWrites(userId = currentUserId()) {
