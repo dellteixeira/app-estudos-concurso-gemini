@@ -17,6 +17,7 @@ const EXTENDED_NO_STORE_PATHS = new Set([
   '/js/core/offline-sync-metadata-expanded-promotion.js',
   '/js/core/offline-sync-metadata-promoted-stability.js',
   '/js/core/offline-sync-metadata-population-promotion.js',
+  '/js/core/offline-sync-metadata-population-promoted-stability.js',
   '/js/core/offline-sync-metadata-expansion.js',
   '/js/core/offline-sync-authority.js',
   '/js/core/offline-sync-delete-authority.js',
