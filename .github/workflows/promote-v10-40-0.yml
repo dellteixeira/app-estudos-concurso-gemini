@@ -1,0 +1,75 @@
+name: Promote v10.40.0
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-expansion-v10.40.0
+    paths:
+      - .github/workflows/promote-v10-40-0.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/offline-metadata-expansion-v10.40.0
+          fetch-depth: 0
+
+      - name: Promote coordinated identity
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          old='10.39.0'
+          new='10.40.0'
+          roots=[Path('public'),Path('src'),Path('config'),Path('tests')]
+          files=[]
+          for root in roots:
+              if root.exists():
+                  files.extend(p for p in root.rglob('*') if p.is_file())
+          for name in ['package.json','package-lock.json']:
+              p=Path(name)
+              if p.exists(): files.append(p)
+
+          changed=[]
+          for p in files:
+              try:
+                  text=p.read_text()
+              except UnicodeDecodeError:
+                  continue
+              if old in text:
+                  p.write_text(text.replace(old,new))
+                  changed.append(str(p))
+
+          if not changed:
+              raise SystemExit('Nenhum identificador 10.39.0 encontrado para promoção.')
+
+          remaining=[]
+          for p in files:
+              try: text=p.read_text()
+              except UnicodeDecodeError: continue
+              if old in text: remaining.append(str(p))
+          if remaining:
+              raise SystemExit('Identidade antiga ainda presente: '+', '.join(remaining))
+
+          print('Promovidos:')
+          for p in changed: print(p)
+          PY
+
+      - name: Remove transient promotion workflow
+        run: rm .github/workflows/promote-v10-40-0.yml
+
+      - name: Commit promotion
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 1
+          fi
+          git commit -m "chore(release): promote v10.40.0"
+          git push origin HEAD:feat/offline-metadata-expansion-v10.40.0
