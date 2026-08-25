@@ -68,4 +68,4 @@ O AppState expõe `getOfflineSyncMetadataExpandedPromotionDiagnostics()`.
 
 ## Release
 
-A implementação permanece sob identidade `v10.42.0` até aprovação do pré-gate integral. Somente após todos os gates verdes a versão deve ser promovida para `v10.43.0`.
+A implementação permanece sob identidade `v10.43.0` até aprovação do pré-gate integral. Somente após todos os gates verdes a versão deve ser promovida para `v10.43.0`.
