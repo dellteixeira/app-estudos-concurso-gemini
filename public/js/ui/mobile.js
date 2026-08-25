@@ -10,27 +10,6 @@
         style.id = MOBILE_LAYOUT_STYLE_ID;
         style.textContent = `
 @media (max-width:900px) {
-    /* A barra extra pertence ao botão Mais: fechada por padrão e visível somente quando acionada. */
-    .action-bar:not(.mobile-open) {
-        display:none!important;
-    }
-    .action-bar.mobile-open {
-        display:grid!important;
-        grid-template-columns:repeat(2,minmax(0,1fr))!important;
-        width:100%!important;
-        max-width:100%!important;
-        min-width:0!important;
-        box-sizing:border-box!important;
-        gap:8px!important;
-    }
-    .action-bar.mobile-open .btn-action {
-        width:100%!important;
-        min-width:0!important;
-        min-height:44px!important;
-        white-space:normal!important;
-        line-height:1.2!important;
-    }
-
     /* Sincronização usa a mesma escala vertical dos controles principais do mobile. */
     header.modern-header .header-sync-status {
         min-height:44px!important;
@@ -79,35 +58,8 @@
         font-size:clamp(.68rem,3.15vw,.82rem)!important;
     }
 }
-
-@media (max-width:390px) {
-    .action-bar.mobile-open {
-        grid-template-columns:1fr!important;
-    }
-}
 `;
         document.head.appendChild(style);
-    }
-
-    function setMobileToolsState(open) {
-        const bar = document.querySelector('.action-bar');
-        if (!bar) return;
-        const shouldOpen = Boolean(open);
-        bar.classList.toggle('mobile-open', shouldOpen);
-        document.querySelectorAll('[data-action="toggle-modern-tools"]').forEach(button => {
-            button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-        });
-    }
-
-    function toggleModernTools() {
-        ensureMobileLayoutStyles();
-        const bar = document.querySelector('.action-bar');
-        if (!bar) return;
-        const open = !bar.classList.contains('mobile-open');
-        setMobileToolsState(open);
-        if (open && window.innerWidth <= 900) {
-            setTimeout(() => bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 30);
-        }
     }
 
     function openMobileEditalFieldEditor(fieldId, sourceInput) {
@@ -198,13 +150,9 @@
 
     function initializeMobileLayout() {
         ensureMobileLayoutStyles();
-        if (window.innerWidth <= 900) setMobileToolsState(false);
-        else document.querySelectorAll('[data-action="toggle-modern-tools"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
     }
 
     global.AppMobileUI = Object.freeze({
-        toggleModernTools,
-        setModernToolsState: setMobileToolsState,
         openEditalFieldEditor: openMobileEditalFieldEditor,
         closeEditalFieldEditor: closeMobileEditalFieldEditor,
         handleEditalFieldKeydown: handleMobileEditalFieldKeydown,
@@ -212,7 +160,6 @@
         handleContextFab
     });
 
-    global.toggleModernTools = toggleModernTools;
     global.openMobileEditalFieldEditor = openMobileEditalFieldEditor;
     global.closeMobileEditalFieldEditor = closeMobileEditalFieldEditor;
     global.handleMobileEditalFieldKeydown = handleMobileEditalFieldKeydown;
