@@ -23,7 +23,19 @@ jobs:
           node-version: '22.23.2'
 
       - name: Apply integration patch
-        run: python3 scripts/apply-edital-dedup-patch.py
+        run: |
+          python3 scripts/apply-edital-dedup-patch.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('config/app-assets.json')
+          text = p.read_text()
+          old = '"/js/study-domain.js", "/js/core/local-backup-store.js"'
+          new = '"/js/study-domain.js", "/js/core/edital-integrity.js", "/js/core/local-backup-store.js"'
+          count = text.count(old)
+          if count != 3:
+              raise SystemExit(f'expected 3 remaining manifest policy anchors, found {count}')
+          p.write_text(text.replace(old, new))
+          PY
 
       - name: Syntax check
         run: |
