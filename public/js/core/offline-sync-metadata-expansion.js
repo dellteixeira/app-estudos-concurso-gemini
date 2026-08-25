@@ -3,7 +3,7 @@
 
   if (!global || global.OfflineSyncMetadataExpansion) return;
 
-  const MODE = 'metadata-stability-expansion-v1';
+  const MODE = 'metadata-stability-expansion-v2';
   const ENABLE_PREFIX = 'offline_sync_metadata_expansion_v1_';
   const STATE_PREFIX = 'offline_sync_metadata_expansion_state_v1_';
   const BASE_REMOTE_WRITES = 1;
@@ -70,6 +70,7 @@
   function getEligibility(userId = currentUserId()) {
     const report = stability()?.getReport?.(userId) || null;
     const cohort = rollout()?.getCohortAssignment?.(userId) || null;
+    const pilotCohort = rollout()?.getPilotCohortAssignment?.(userId) || null;
     const rolloutEligibility = rollout()?.getEligibility?.(userId) || null;
     const circuit = authority()?.getCircuit?.(userId) || null;
     const hardKill = Boolean(graduation()?.isHardKilled?.() || authority()?.isHardKilled?.());
@@ -77,6 +78,7 @@
     if (!userId) reasons.push('missing-user');
     if (!report?.readyForExpansion) reasons.push('metadata-stability-not-ready');
     if (!cohort?.included) reasons.push('outside-rollout-cohort');
+    if (!pilotCohort?.included) reasons.push('outside-expansion-pilot-cohort');
     if (!rolloutEligibility?.eligible) reasons.push('metadata-rollout-not-eligible');
     if (circuit) reasons.push('metadata-authority-circuit-open');
     if (hardKill) reasons.push('kill-switch-active');
@@ -84,6 +86,7 @@
       eligible:reasons.length === 0,
       stability:report,
       cohort,
+      pilotCohort,
       rollout:rolloutEligibility,
       circuit,
       hardKill,

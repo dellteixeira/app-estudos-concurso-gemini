@@ -80,6 +80,6 @@ Uma fase posterior poderá avaliar expansão de população somente depois de ev
 
 ## Release candidate
 
-Após o pré-gate funcional integralmente verde, a identidade coordenada foi promovida para **v10.40.0**. Este registro documental não altera a lógica da Fase 4I e existe para produzir o SHA final auditável do candidato de release.
+Após o pré-gate funcional integralmente verde, a identidade coordenada foi promovida para **v10.41.0**. Este registro documental não altera a lógica da Fase 4I e existe para produzir o SHA final auditável do candidato de release.
 
 O primeiro Quality Check agregado após a promoção registrou uma falha não reproduzida. Um diagnóstico subsequente executou individualmente todos os testes de offline sync afetados pela promoção e, em separado, o restante da suíte; todos concluíram com sucesso. O workflow diagnóstico foi removido do branch após a execução. Este commit apenas registra o rerun diagnóstico e força uma nova validação agregada pelo Quality Check normal.
