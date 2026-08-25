@@ -6,37 +6,104 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: mirror-gitlab
   cancel-in-progress: true
 
 jobs:
-  mirror:
-    name: Sync repository to GitLab
+  phase-4n-integrate:
+    if: github.ref == 'refs/heads/feat/offline-metadata-population-expansion-v10.45.0' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-
+    timeout-minutes: 30
     steps:
-      - name: Create bare clone from GitHub
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          git clone --bare \
-            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            mirror.git
+      - name: Checkout candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: feat/offline-metadata-population-expansion-v10.45.0
+          fetch-depth: 0
 
-      - name: Mirror branches and tags to GitLab
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Integrate Phase 4N
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          function patch(file, before, after, expected = 1) {
+            const source = fs.readFileSync(file, 'utf8');
+            const count = source.split(before).length - 1;
+            if (count !== expected) throw new Error(`${file}: expected ${expected} occurrence(s), found ${count}`);
+            fs.writeFileSync(file, source.replace(before, after));
+          }
+
+          const rollout = 'public/js/core/offline-sync-metadata-rollout.js';
+          patch(rollout,
+            "const MODE = 'metadata-rollout-cohort-v2';\n  const PILOT_COHORT_PERCENT = 10;\n  const COHORT_PERCENT = 25;",
+            "const MODE = 'metadata-rollout-cohort-v3';\n  const PILOT_COHORT_PERCENT = 10;\n  const PREVIOUS_COHORT_PERCENT = 25;\n  const COHORT_PERCENT = 35;");
+          patch(rollout,
+            "      pilotPercent:PILOT_COHORT_PERCENT,\n      pilotIncluded:false,\n      tier:'excluded'",
+            "      pilotPercent:PILOT_COHORT_PERCENT,\n      pilotIncluded:false,\n      previousPercent:PREVIOUS_COHORT_PERCENT,\n      previousIncluded:false,\n      tier:'excluded'");
+          patch(rollout,
+            "    const included = bucket < COHORT_PERCENT;\n    const pilotIncluded = bucket < PILOT_COHORT_PERCENT;\n    return Object.freeze({",
+            "    const included = bucket < COHORT_PERCENT;\n    const pilotIncluded = bucket < PILOT_COHORT_PERCENT;\n    const previousIncluded = bucket < PREVIOUS_COHORT_PERCENT;\n    return Object.freeze({");
+          patch(rollout,
+            "      pilotPercent:PILOT_COHORT_PERCENT,\n      pilotIncluded,\n      tier:pilotIncluded ? 'pilot' : (included ? 'expanded-base' : 'excluded')",
+            "      pilotPercent:PILOT_COHORT_PERCENT,\n      pilotIncluded,\n      previousPercent:PREVIOUS_COHORT_PERCENT,\n      previousIncluded,\n      tier:pilotIncluded ? 'pilot' : (previousIncluded ? 'expanded-base' : (included ? 'population-expanded-base' : 'excluded'))");
+          patch(rollout,
+            "    PILOT_COHORT_PERCENT,\n    COHORT_PERCENT,",
+            "    PILOT_COHORT_PERCENT,\n    PREVIOUS_COHORT_PERCENT,\n    COHORT_PERCENT,");
+
+          const test = 'tests/offline-sync-metadata-rollout.test.cjs';
+          patch(test,
+            "const headersSource=fs.readFileSync('public/_headers','utf8');",
+            "const headersSource=fs.readFileSync('public/_headers','utf8');\nconst promotionSource=fs.readFileSync('public/js/core/offline-sync-metadata-expanded-promotion.js','utf8');");
+          patch(test,
+            "test('coorte é determinística com base 25% e piloto preservado em 10%',()=>{",
+            "test('coorte é determinística com base 35%, fronteira anterior 25% e piloto preservado em 10%',()=>{");
+          patch(test,
+            "  assert.equal(first.percent,25);\n  assert.equal(first.pilotPercent,10);\n  assert.equal(first.bucket>=0&&first.bucket<100,true);\n  assert.equal(rollout.PILOT_COHORT_PERCENT,10);\n  assert.equal(rollout.COHORT_PERCENT,25);",
+            "  assert.equal(first.percent,35);\n  assert.equal(first.previousPercent,25);\n  assert.equal(first.pilotPercent,10);\n  assert.equal(first.bucket>=0&&first.bucket<100,true);\n  assert.equal(rollout.PILOT_COHORT_PERCENT,10);\n  assert.equal(rollout.PREVIOUS_COHORT_PERCENT,25);\n  assert.equal(rollout.COHORT_PERCENT,35);");
+          const anchor = "test('usuário fora dos 25% não pode ativar graduação',()=>{";
+          const newTest = `test('faixa 25-34 entra somente na expansão populacional 4N e não herda profundidade 4L',()=>{\n  const userId=findUserForTier('population-expanded-base');\n  const env=makeContext({userId});\n  const rollout=env.context.OfflineSyncMetadataRollout;\n  const cohort=rollout.getCohortAssignment();\n  assert.equal(cohort.included,true);\n  assert.equal(cohort.previousIncluded,false);\n  assert.equal(cohort.pilotIncluded,false);\n  assert.equal(cohort.tier,'population-expanded-base');\n  assert.equal(cohort.bucket>=25&&cohort.bucket<35,true);\n  assert.equal(rollout.getEligibility().eligible,true);\n  assert.equal(rollout.setEnabled(true),true);\n  assert.match(promotionSource,/cohort\\?\\.tier !== 'expanded-base'/);\n});\n\n`;
+          patch(test, anchor, newTest + "test('usuário fora dos 35% não pode ativar graduação',()=>{");
+
+          const doc = `# Fase 4N — expansão populacional controlada após estabilidade 4M\n\n## Objetivo\n\nRetomar o eixo população após a Fase 4M confirmar estabilidade longitudinal pós-promoção, sem ampliar simultaneamente a profundidade de escrita remota.\n\nMode do rollout: \`metadata-rollout-cohort-v3\`.\n\n## Política populacional\n\n- piloto original: buckets 0–9;\n- faixa \`expanded-base\` já validada: buckets 10–24;\n- nova faixa \`population-expanded-base\`: buckets 25–34;\n- excluídos: buckets 35–99.\n\nA população-base cresce de 25% para 35%, em um anel adicional de 10 pontos percentuais.\n\n## Orçamento remoto\n\nA nova faixa 25–34 permanece no orçamento-base de 1 write remoto por sessão canário. Ela não pode herdar promoção 4L, porque a promoção continua exigindo explicitamente \`tier === expanded-base\`.\n\nO teto global permanece em 2 writes apenas para usuários já elegíveis pelas políticas anteriores.\n\n## Guardrails preservados\n\n- graduação 4F obrigatória;\n- paridade da autoridade de metadata;\n- circuit breaker e kill switch;\n- fallback legado;\n- hash determinístico de bucket;\n- isolamento por usuário;\n- nenhum novo schema, endpoint, tabela ou domínio;\n- nenhuma alteração em edital, flashcards ou exclusões.\n\n## Separação de eixos\n\nA 4N altera apenas população. As fases 4K, 4L e 4M continuam restritas aos buckets 10–24 por meio do tier \`expanded-base\`. A nova faixa 25–34 recebe somente rollout-base e deverá acumular evidência longitudinal antes de qualquer revisão futura de profundidade.\n\n## Release\n\nDurante implementação e pré-gate, a identidade permanece em \`v10.44.0\`. Somente após Syntax Check, testes automatizados, Structural Audit e Browser Responsive Audit integralmente verdes a candidata poderá ser promovida para \`v10.45.0\`.\n`;
+          fs.writeFileSync('docs/phase-4n-metadata-population-expansion.md', doc);
+          NODE
+
+      - name: Syntax check
+        run: node --check public/js/core/offline-sync-metadata-rollout.js
+
+      - name: Automated tests
+        run: npm test
+
+      - name: Structural audit
         env:
-          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: npm run audit
+
+      - name: Install Playwright test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Browser responsive audit
+        run: npm run test:browser
+
+      - name: Restore canonical mirror workflow and commit Phase 4N
+        shell: bash
         run: |
           set -euo pipefail
-          AUTH="$(printf '%s:%s' "$GITLAB_USERNAME" "$GITLAB_TOKEN" | base64 -w0)"
-          git -C mirror.git \
-            -c http.extraHeader="Authorization: Basic ${AUTH}" \
-            push --mirror \
-            "https://gitlab.com/dellteixeira-group/app-estudos-concurso-gemini.git"
+          git fetch origin main --depth=1
+          git checkout origin/main -- .github/workflows/mirror-gitlab.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/js/core/offline-sync-metadata-rollout.js tests/offline-sync-metadata-rollout.test.cjs docs/phase-4n-metadata-population-expansion.md .github/workflows/mirror-gitlab.yml
+          git commit -m 'feat(sync): implement phase 4N population expansion'
+          git push origin HEAD:feat/offline-metadata-population-expansion-v10.45.0
