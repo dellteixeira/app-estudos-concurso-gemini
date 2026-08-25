@@ -1,0 +1,96 @@
+name: Promote v10.43.0 Temp
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-expanded-pilot-v10.43.0
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: feat/offline-metadata-expanded-pilot-v10.43.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Promote release identity
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const files = [
+            'package.json',
+            'config/app-assets.json',
+            'public/version.json',
+            'src/index.js',
+            'public/js/app-pwa.js',
+            'public/js/app-state.js',
+            'public/sw.js',
+            'tests/learning-advisor.test.cjs',
+            'tests/offline-sync-authority.test.cjs',
+            'tests/offline-sync-edital-graduation.test.cjs',
+            'tests/offline-sync-metadata-authority.test.cjs',
+            'tests/offline-sync-metadata-expanded-stability.test.cjs',
+            'tests/offline-sync-metadata-expansion.test.cjs',
+            'tests/offline-sync-metadata-expanded-promotion.test.cjs',
+            'tests/offline-sync-metadata-graduation.test.cjs',
+            'tests/offline-sync-metadata-rollout.test.cjs',
+            'tests/offline-sync-metadata-shadow.test.cjs',
+            'tests/offline-sync-metadata-stability.test.cjs',
+            'tests/offline-sync-shadow.test.cjs',
+            'docs/phase-4l-expanded-metadata-promotion.md'
+          ];
+          for (const file of files) {
+            if (!fs.existsSync(file)) continue;
+            const before = fs.readFileSync(file, 'utf8');
+            const after = before
+              .replaceAll('10.42.0', '10.43.0')
+              .replaceAll('10-42-0', '10-43-0')
+              .replaceAll('v10.42.0', 'v10.43.0');
+            if (after !== before) fs.writeFileSync(file, after);
+          }
+          NODE
+
+      - name: Syntax check
+        run: node --check src/index.js
+
+      - name: Automated tests
+        run: npm test
+
+      - name: Structural audit
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: npm run audit
+
+      - name: Install Playwright test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Browser responsive audit
+        run: npm run test:browser
+
+      - name: Commit promoted identity
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo 'No promotion changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json config/app-assets.json public/version.json src/index.js public/js/app-pwa.js public/js/app-state.js public/sw.js tests docs/phase-4l-expanded-metadata-promotion.md
+          git commit -m 'chore(release): promote v10.43.0'
+          git push origin HEAD:feat/offline-metadata-expanded-pilot-v10.43.0
