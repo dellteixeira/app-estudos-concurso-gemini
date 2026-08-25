@@ -49,8 +49,6 @@ jobs:
           for name in files:
               path = Path(name)
               text = path.read_text(encoding='utf-8')
-              if '10.50.1' not in text:
-                  continue
               path.write_text(text.replace('10.50.1', '10.51.0'), encoding='utf-8')
           PY
 
@@ -61,12 +59,33 @@ jobs:
             exit 1
           fi
 
-      - name: Run complete automated test suite
-        run: npm test
+      - name: Capture complete automated test suite
+        id: tests
+        shell: bash
+        run: |
+          set +e
+          npm test > post-cleanup-npm-test-output.txt 2>&1
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload post-cleanup diagnostics
+        if: steps.tests.outputs.code != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: v10-51-post-cleanup-diagnostics
+          path: post-cleanup-npm-test-output.txt
+          if-no-files-found: error
+
+      - name: Require complete test success
+        if: steps.tests.outputs.code != '0'
+        run: exit 1
 
       - name: Commit cleanup and remove temporary workflow
+        if: steps.tests.outputs.code == '0'
         run: |
           rm .github/workflows/diagnose-v10-51-tests.yml
+          rm -f post-cleanup-npm-test-output.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
