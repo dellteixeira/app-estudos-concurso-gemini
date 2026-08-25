@@ -3,9 +3,10 @@
 
   if (!global || global.OfflineSyncMetadataRollout) return;
 
-  const MODE = 'metadata-rollout-cohort-v2';
+  const MODE = 'metadata-rollout-cohort-v3';
   const PILOT_COHORT_PERCENT = 10;
-  const COHORT_PERCENT = 25;
+  const PREVIOUS_COHORT_PERCENT = 25;
+  const COHORT_PERCENT = 35;
   const ENABLE_PREFIX = 'offline_sync_metadata_rollout_v1_';
   const STATE_PREFIX = 'offline_sync_metadata_rollout_state_v1_';
 
@@ -62,11 +63,14 @@
       included:false,
       pilotPercent:PILOT_COHORT_PERCENT,
       pilotIncluded:false,
+      previousPercent:PREVIOUS_COHORT_PERCENT,
+      previousIncluded:false,
       tier:'excluded'
     });
     const bucket = cohortBucket(userId);
     const included = bucket < COHORT_PERCENT;
     const pilotIncluded = bucket < PILOT_COHORT_PERCENT;
+    const previousIncluded = bucket < PREVIOUS_COHORT_PERCENT;
     return Object.freeze({
       userId:String(userId),
       bucket,
@@ -74,7 +78,9 @@
       included,
       pilotPercent:PILOT_COHORT_PERCENT,
       pilotIncluded,
-      tier:pilotIncluded ? 'pilot' : (included ? 'expanded-base' : 'excluded')
+      previousPercent:PREVIOUS_COHORT_PERCENT,
+      previousIncluded,
+      tier:pilotIncluded ? 'pilot' : (previousIncluded ? 'expanded-base' : (included ? 'population-expanded-base' : 'excluded'))
     });
   }
 
@@ -243,6 +249,7 @@
   global.OfflineSyncMetadataRollout = Object.freeze({
     MODE,
     PILOT_COHORT_PERCENT,
+    PREVIOUS_COHORT_PERCENT,
     COHORT_PERCENT,
     install,
     cohortBucket,

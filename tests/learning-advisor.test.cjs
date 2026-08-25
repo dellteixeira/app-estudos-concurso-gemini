@@ -95,8 +95,8 @@ test('wrapper isola nova rota e preserva Worker existente',()=>{
 });
 
 test('advisor faz parte do núcleo PWA e usa política anti-cache',()=>{
-  assert.match(pwa,/learning-advisor\.css\?v=10\.44\.0/);
-  assert.match(pwa,/learning-advisor\.js\?v=10\.44\.0/);
+  assert.match(pwa,/learning-advisor\.css\?v=10\.45\.0/);
+  assert.match(pwa,/learning-advisor\.js\?v=10\.45\.0/);
   assert.match(sw,/\.\/css\/learning-advisor\.css/);
   assert.match(sw,/\.\/js\/learning-advisor\.js/);
   assert.match(manifest,/"\/css\/learning-advisor\.css"/);
