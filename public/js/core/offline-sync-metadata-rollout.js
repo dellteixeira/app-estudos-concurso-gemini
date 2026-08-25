@@ -3,10 +3,11 @@
 
   if (!global || global.OfflineSyncMetadataRollout) return;
 
-  const MODE = 'metadata-rollout-cohort-v3';
+  const MODE = 'metadata-rollout-cohort-v4';
   const PILOT_COHORT_PERCENT = 10;
-  const PREVIOUS_COHORT_PERCENT = 25;
-  const COHORT_PERCENT = 35;
+  const FIRST_EXPANDED_COHORT_PERCENT = 25;
+  const PREVIOUS_COHORT_PERCENT = 35;
+  const COHORT_PERCENT = 45;
   const ENABLE_PREFIX = 'offline_sync_metadata_rollout_v1_';
   const STATE_PREFIX = 'offline_sync_metadata_rollout_state_v1_';
 
@@ -63,6 +64,8 @@
       included:false,
       pilotPercent:PILOT_COHORT_PERCENT,
       pilotIncluded:false,
+      firstExpandedPercent:FIRST_EXPANDED_COHORT_PERCENT,
+      firstExpandedIncluded:false,
       previousPercent:PREVIOUS_COHORT_PERCENT,
       previousIncluded:false,
       tier:'excluded'
@@ -70,7 +73,13 @@
     const bucket = cohortBucket(userId);
     const included = bucket < COHORT_PERCENT;
     const pilotIncluded = bucket < PILOT_COHORT_PERCENT;
+    const firstExpandedIncluded = bucket < FIRST_EXPANDED_COHORT_PERCENT;
     const previousIncluded = bucket < PREVIOUS_COHORT_PERCENT;
+    let tier = 'excluded';
+    if (pilotIncluded) tier = 'pilot';
+    else if (firstExpandedIncluded) tier = 'expanded-base';
+    else if (previousIncluded) tier = 'population-expanded-base';
+    else if (included) tier = 'population-expanded-ring-2';
     return Object.freeze({
       userId:String(userId),
       bucket,
@@ -78,9 +87,11 @@
       included,
       pilotPercent:PILOT_COHORT_PERCENT,
       pilotIncluded,
+      firstExpandedPercent:FIRST_EXPANDED_COHORT_PERCENT,
+      firstExpandedIncluded,
       previousPercent:PREVIOUS_COHORT_PERCENT,
       previousIncluded,
-      tier:pilotIncluded ? 'pilot' : (previousIncluded ? 'expanded-base' : (included ? 'population-expanded-base' : 'excluded'))
+      tier
     });
   }
 
@@ -249,6 +260,7 @@
   global.OfflineSyncMetadataRollout = Object.freeze({
     MODE,
     PILOT_COHORT_PERCENT,
+    FIRST_EXPANDED_COHORT_PERCENT,
     PREVIOUS_COHORT_PERCENT,
     COHORT_PERCENT,
     install,
