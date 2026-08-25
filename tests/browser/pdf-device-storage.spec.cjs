@@ -36,6 +36,14 @@ async function exposeLibrary(page) {
   await expect(page.locator('.pdf-device-save-action')).toHaveCount(1);
 }
 
+async function waitForOfflineIntegrityDecorator(page) {
+  await page.waitForFunction(
+    () => window.PdfStudyLibrary?.__offlineIntegrityIntegrated === true,
+    null,
+    { timeout: 10000 }
+  );
+}
+
 for (const width of [320, 390, 560]) {
   test(`mobile ${width}px adiciona Salvar no dispositivo sem ultrapassar a viewport`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
@@ -107,6 +115,7 @@ test('Salvar no dispositivo gera arquivo PDF externo ao armazenamento privado', 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await exposeLibrary(page);
+  await waitForOfflineIntegrityDecorator(page);
 
   await page.evaluate(() => {
     window.showSaveFilePicker = undefined;
@@ -131,6 +140,7 @@ test('cancelar o seletor não dispara download nem confirma salvamento', async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await exposeLibrary(page);
+  await waitForOfflineIntegrityDecorator(page);
 
   await page.evaluate(() => {
     window.PdfStudyLibrary = {
