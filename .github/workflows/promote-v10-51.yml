@@ -1,0 +1,70 @@
+name: Promote v10.51.0
+
+on:
+  pull_request:
+    types: [reopened]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    if: github.event.pull_request.head.ref == 'feat/offline-metadata-ring2-stability-v10.51.0'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: feat/offline-metadata-ring2-stability-v10.51.0
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Promote canonical version
+        run: |
+          node scripts/release-version.mjs 10.51.0
+          node <<'NODE'
+          const fs = require('node:fs');
+          const appState = 'public/js/app-state.js';
+          let text = fs.readFileSync(appState, 'utf8');
+          text = text.replaceAll('?v=10.50.1', '?v=10.51.0');
+          fs.writeFileSync(appState, text);
+          for (const file of [
+            'tests/offline-sync-metadata-population-stability.test.cjs',
+            'tests/offline-sync-metadata-ring2-stability.test.cjs'
+          ]) {
+            let test = fs.readFileSync(file, 'utf8');
+            test = test.replaceAll('10\\.50\\.1', '10\\.51\\.0');
+            fs.writeFileSync(file, test);
+          }
+          NODE
+
+      - name: Verify promoted identity
+        run: |
+          node --check src/index.js
+          node --test tests/offline-sync-metadata-population-stability.test.cjs tests/offline-sync-metadata-ring2-stability.test.cjs
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+          const version = JSON.parse(fs.readFileSync('public/version.json','utf8'));
+          const sw = fs.readFileSync('public/sw.js','utf8');
+          const worker = fs.readFileSync('src/index.js','utf8');
+          const appState = fs.readFileSync('public/js/app-state.js','utf8');
+          if (pkg.version !== '10.51.0' || version.version !== '10.51.0') process.exit(1);
+          if (!sw.includes("const APP_VERSION = '10.51.0';")) process.exit(1);
+          if (!worker.includes('const APP_VERSION = "10.51.0";')) process.exit(1);
+          if (appState.includes('?v=10.50.1') || !appState.includes('?v=10.51.0')) process.exit(1);
+          NODE
+
+      - name: Commit promotion and self-clean
+        run: |
+          rm .github/workflows/promote-v10-51.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore(release): promote v10.51.0'
+          git push origin HEAD:feat/offline-metadata-ring2-stability-v10.51.0
