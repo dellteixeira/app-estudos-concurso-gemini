@@ -150,9 +150,9 @@ test('rollout não possui caminho remoto próprio',()=>{
 });
 
 test('AppState carrega rollout depois da graduação e antes das autoridades do edital',()=>{
-  const graduationIndex=appStateSource.indexOf('offline-sync-metadata-graduation.js?v=10.37.0');
-  const rolloutIndex=appStateSource.indexOf('offline-sync-metadata-rollout.js?v=10.37.0');
-  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.37.0');
+  const graduationIndex=appStateSource.indexOf('offline-sync-metadata-graduation.js?v=10.38.0');
+  const rolloutIndex=appStateSource.indexOf('offline-sync-metadata-rollout.js?v=10.38.0');
+  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.38.0');
   assert.ok(graduationIndex>=0);
   assert.ok(rolloutIndex>graduationIndex);
   assert.ok(editalAuthorityIndex>rolloutIndex);
