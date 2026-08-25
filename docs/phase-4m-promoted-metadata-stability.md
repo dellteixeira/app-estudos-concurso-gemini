@@ -73,6 +73,6 @@ O asset integra app shell, network-first e contratos no-store do Service Worker,
 
 ## Release
 
-Durante a implementação e o pré-gate da Fase 4M, toda a identidade do aplicativo permanece em `v10.43.0`.
+Durante a implementação e o pré-gate da Fase 4M, toda a identidade do aplicativo permanece em `v10.44.0`.
 
 Somente após Syntax Check, testes automatizados, Structural Audit e Browser Responsive Audit integralmente verdes a release candidate poderá ser promovida para `v10.44.0`.
