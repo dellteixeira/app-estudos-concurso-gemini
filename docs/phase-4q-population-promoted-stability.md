@@ -24,4 +24,4 @@ A 4Q é deliberadamente separada da 4O. A 4O mede segurança antes do aumento de
 
 ## Release
 
-Durante implementação e pré-gate, a identidade pública permanece `v10.48.0`. A promoção para `v10.49.0` deve ocorrer somente após os gates integrais de qualidade e responsividade ficarem verdes.
+Release candidate promovida para `v10.49.0` somente após o pré-gate integral — sintaxe, testes automatizados, auditoria estrutural e Browser Responsive Audit — permanecer verde.
