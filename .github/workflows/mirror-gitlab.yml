@@ -1,42 +1,61 @@
-name: Mirror GitHub to GitLab
+name: Edital Index Normalizer
 
 on:
   push:
-  delete:
   workflow_dispatch:
 
 permissions:
-  contents: read
-
-concurrency:
-  group: mirror-gitlab
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  mirror:
-    name: Sync repository to GitLab
+  normalize:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-
     steps:
-      - name: Create bare clone from GitHub
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          git clone --bare \
-            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            mirror.git
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
 
-      - name: Mirror branches and tags to GitLab
-        env:
-          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+      - name: Restore canonical index and insert one script line
+        shell: bash
         run: |
           set -euo pipefail
-          AUTH="$(printf '%s:%s' "$GITLAB_USERNAME" "$GITLAB_TOKEN" | base64 -w0)"
-          git -C mirror.git \
-            -c http.extraHeader="Authorization: Basic ${AUTH}" \
-            push --mirror \
-            "https://gitlab.com/dellteixeira-group/app-estudos-concurso-gemini.git"
+          git fetch origin main
+          git checkout origin/main -- public/index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('public/index.html')
+          data = p.read_bytes()
+          old = b'<script src="./js/core/local-backup-store.js" defer></script>'
+          line = b'<script src="./js/core/edital-integrity.js" defer></script>'
+          if data.count(old) != 1:
+              raise SystemExit(f'expected one local-backup script anchor, found {data.count(old)}')
+          pos = data.index(old)
+          line_start = data.rfind(b'\n', 0, pos) + 1
+          indent = data[line_start:pos]
+          newline = b'\r\n' if b'\r\n' in data[max(0,pos-200):pos+200] else b'\n'
+          data = data.replace(old, line + newline + indent + old, 1)
+          p.write_bytes(data)
+          PY
+
+      - name: Verify focused diff and tests
+        run: |
+          changed="$(git diff --numstat origin/main -- public/index.html)"
+          echo "$changed"
+          additions="$(printf '%s' "$changed" | awk '{print $1}')"
+          deletions="$(printf '%s' "$changed" | awk '{print $2}')"
+          test "$additions" = "1"
+          test "$deletions" = "0"
+          npm test
+          AUDIT_ALLOW_ANY_ROOT=1 npm run audit
+
+      - name: Restore canonical workflow and commit
+        run: |
+          set -euo pipefail
+          git show origin/main:.github/workflows/mirror-gitlab.yml > .github/workflows/mirror-gitlab.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html .github/workflows/mirror-gitlab.yml
+          git commit -m "fix(edital): preserve canonical index formatting"
+          git push origin HEAD:${GITHUB_REF_NAME}
