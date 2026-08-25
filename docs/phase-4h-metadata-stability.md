@@ -61,3 +61,7 @@ O asset integra app shell crítico, network-first e políticas no-store do PWA/W
 ## Próxima decisão
 
 Uma fase posterior só deve ampliar orçamento ou população quando o indicador de estabilidade puder ser usado sem violar o princípio de evidência. A Fase 4H, isoladamente, não concede essa expansão.
+
+## Release candidate
+
+A identidade coordenada foi promovida para **v10.39.0** após o pré-gate funcional integralmente verde da Fase 4H. Este documento não altera os guardrails nem o comportamento remoto do ledger.
