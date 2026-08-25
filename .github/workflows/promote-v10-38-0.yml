@@ -35,6 +35,6 @@ jobs:
           git rm .github/workflows/promote-v10-38-0.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package.json public src config tests .github/workflows/promote-v10-38-0.yml
+          git add -A
           git commit -m 'chore(release): promote v10.38.0'
           git push origin HEAD:feat/offline-metadata-rollout-v10.38.0
