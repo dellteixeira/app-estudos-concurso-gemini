@@ -41,7 +41,7 @@ jobs:
           pairs=[
             ("  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }\n", "  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }\n  function populationPromotion() { return global.OfflineSyncMetadataPopulationPromotion || null; }\n"),
             ("    const promoted = Boolean(promotion()?.isPromoted?.(userId));\n    const originalPilot = Boolean(pilotCohort?.included);", "    const promoted = Boolean(promotion()?.isPromoted?.(userId));\n    const populationPromoted = Boolean(populationPromotion()?.isPromoted?.(userId));\n    const originalPilot = Boolean(pilotCohort?.included);"),
-            ("    if (!originalPilot && !promoted) reasons.push('outside-expansion-pilot-cohort');", "    if (!originalPilot && !promoted && !populationPromoted) reasons.push('outside-expansion-depth-cohort');"),
+            ("    if (!originalPilot && !promoted) reasons.push('outside-expansion-pilot-cohort');", "    if (!originalPilot && !promoted && !populationPromoted) reasons.push('outside-expansion-pilot-cohort');"),
             ("      promoted,\n      promotion:promotion()?.getDiagnostics?.() || null,", "      promoted,\n      populationPromoted,\n      promotion:promotion()?.getDiagnostics?.() || null,\n      populationPromotion:populationPromotion()?.getDiagnostics?.() || null,"),
             ("    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId)));", "    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId)));")
           ]
