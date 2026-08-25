@@ -29,30 +29,30 @@
 
     async function loadOfflineSyncFoundation() {
         if (!global.OfflineOutboxStore) {
-            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.35.0', 'offline-outbox-store');
+            await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.36.0', 'offline-outbox-store');
         }
         if (!global.OfflineSyncShadow) {
-            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.35.0', 'offline-sync-shadow');
+            await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.36.0', 'offline-sync-shadow');
         }
         global.OfflineSyncShadow?.install?.();
         if (!global.OfflineSyncMetadataShadow) {
-            await loadExtensionScript('./js/core/offline-sync-metadata-shadow.js?v=10.35.0', 'offline-sync-metadata-shadow');
+            await loadExtensionScript('./js/core/offline-sync-metadata-shadow.js?v=10.36.0', 'offline-sync-metadata-shadow');
         }
         global.OfflineSyncMetadataShadow?.install?.();
         if (!global.OfflineSyncMetadataAuthority) {
-            await loadExtensionScript('./js/core/offline-sync-metadata-authority.js?v=10.35.0', 'offline-sync-metadata-authority');
+            await loadExtensionScript('./js/core/offline-sync-metadata-authority.js?v=10.36.0', 'offline-sync-metadata-authority');
         }
         global.OfflineSyncMetadataAuthority?.install?.();
         if (!global.OfflineSyncAuthority) {
-            await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.35.0', 'offline-sync-authority');
+            await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.36.0', 'offline-sync-authority');
         }
         global.OfflineSyncAuthority?.install?.();
         if (!global.OfflineSyncDeleteAuthority) {
-            await loadExtensionScript('./js/core/offline-sync-delete-authority.js?v=10.35.0', 'offline-sync-delete-authority');
+            await loadExtensionScript('./js/core/offline-sync-delete-authority.js?v=10.36.0', 'offline-sync-delete-authority');
         }
         global.OfflineSyncDeleteAuthority?.install?.();
         if (!global.OfflineSyncEditalGraduation) {
-            await loadExtensionScript('./js/core/offline-sync-edital-graduation.js?v=10.35.0', 'offline-sync-edital-graduation');
+            await loadExtensionScript('./js/core/offline-sync-edital-graduation.js?v=10.36.0', 'offline-sync-edital-graduation');
         }
         global.OfflineSyncEditalGraduation?.install?.();
         return {
