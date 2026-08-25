@@ -23,18 +23,29 @@ anchor = '"/js/core/local-backup-store.js"'
 if '"/js/core/edital-integrity.js"' not in text:
     if anchor not in text:
         raise SystemExit('app-assets local-backup anchor missing')
-    text = text.replace(anchor, '"/js/core/edital-integrity.js", "/js/core/local-backup-store.js"')
+    text = text.replace(anchor, '"/js/core/edital-integrity.js", "/js/core/local-backup-store.js"', 1)
 p.write_text(text)
 
 p = Path('public/sw.js')
 text = p.read_text()
-if '/js/core/edital-integrity.js' not in text:
-    if "'/js/core/local-backup-store.js'" in text:
-        text = text.replace("'/js/core/local-backup-store.js'", "'/js/core/edital-integrity.js', '/js/core/local-backup-store.js'")
-    elif '"/js/core/local-backup-store.js"' in text:
-        text = text.replace('"/js/core/local-backup-store.js"', '"/js/core/edital-integrity.js", "/js/core/local-backup-store.js"')
-    else:
-        raise SystemExit('public/sw.js: local-backup anchor missing')
+critical_anchor = "'./js/study-domain.js', './js/core/local-backup-store.js'"
+if "'./js/core/edital-integrity.js'" not in text:
+    if critical_anchor not in text:
+        raise SystemExit('public/sw.js: critical app shell anchor missing')
+    text = text.replace(
+        critical_anchor,
+        "'./js/study-domain.js', './js/core/edital-integrity.js', './js/core/local-backup-store.js'",
+        1
+    )
+core_anchor = "'/js/study-domain.js', '/js/core/local-backup-store.js'"
+if "'/js/core/edital-integrity.js'" not in text:
+    if core_anchor not in text:
+        raise SystemExit('public/sw.js: network-first core anchor missing')
+    text = text.replace(
+        core_anchor,
+        "'/js/study-domain.js', '/js/core/edital-integrity.js', '/js/core/local-backup-store.js'",
+        1
+    )
 p.write_text(text)
 
 p = Path('src/worker.js')
