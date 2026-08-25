@@ -129,9 +129,9 @@ test('4I consome promoção externa sem ampliar setEnabled manual para expanded-
 });
 
 test('AppState carrega 4L entre 4K e 4I e expõe diagnóstico',()=>{
-  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-expanded-stability.js?v=10.51.0');
-  const promotionIndex=appStateSource.indexOf('offline-sync-metadata-expanded-promotion.js?v=10.51.0');
-  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.51.0');
+  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-expanded-stability.js?v=10.52.0');
+  const promotionIndex=appStateSource.indexOf('offline-sync-metadata-expanded-promotion.js?v=10.52.0');
+  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.52.0');
   assert.ok(stabilityIndex>=0);
   assert.ok(promotionIndex>stabilityIndex);
   assert.ok(expansionIndex>promotionIndex);
@@ -141,7 +141,7 @@ test('AppState carrega 4L entre 4K e 4I e expõe diagnóstico',()=>{
 
 test('4L integra contratos PWA e no-store sem promover versão durante implementação',()=>{
   const asset='/js/core/offline-sync-metadata-expanded-promotion.js';
-  assert.equal(manifest.version,'10.51.0');
+  assert.equal(manifest.version,'10.52.0');
   assert.ok(manifest.criticalAppShell.includes(asset));
   assert.ok(manifest.networkFirstPaths.includes(asset));
   assert.ok(manifest.workerNoStorePaths.includes(asset));
