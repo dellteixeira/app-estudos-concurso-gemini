@@ -3,8 +3,9 @@
 
   if (!global || global.OfflineSyncMetadataRollout) return;
 
-  const MODE = 'metadata-rollout-cohort-v1';
-  const COHORT_PERCENT = 10;
+  const MODE = 'metadata-rollout-cohort-v2';
+  const PILOT_COHORT_PERCENT = 10;
+  const COHORT_PERCENT = 25;
   const ENABLE_PREFIX = 'offline_sync_metadata_rollout_v1_';
   const STATE_PREFIX = 'offline_sync_metadata_rollout_state_v1_';
 
@@ -47,10 +48,34 @@
     return hash % 100;
   }
 
-  function getCohortAssignment(userId = currentUserId()) {
-    if (!userId) return Object.freeze({ userId:null, bucket:null, percent:COHORT_PERCENT, included:false });
+  function getPilotCohortAssignment(userId = currentUserId()) {
+    if (!userId) return Object.freeze({ userId:null, bucket:null, percent:PILOT_COHORT_PERCENT, included:false });
     const bucket = cohortBucket(userId);
-    return Object.freeze({ userId:String(userId), bucket, percent:COHORT_PERCENT, included:bucket < COHORT_PERCENT });
+    return Object.freeze({ userId:String(userId), bucket, percent:PILOT_COHORT_PERCENT, included:bucket < PILOT_COHORT_PERCENT });
+  }
+
+  function getCohortAssignment(userId = currentUserId()) {
+    if (!userId) return Object.freeze({
+      userId:null,
+      bucket:null,
+      percent:COHORT_PERCENT,
+      included:false,
+      pilotPercent:PILOT_COHORT_PERCENT,
+      pilotIncluded:false,
+      tier:'excluded'
+    });
+    const bucket = cohortBucket(userId);
+    const included = bucket < COHORT_PERCENT;
+    const pilotIncluded = bucket < PILOT_COHORT_PERCENT;
+    return Object.freeze({
+      userId:String(userId),
+      bucket,
+      percent:COHORT_PERCENT,
+      included,
+      pilotPercent:PILOT_COHORT_PERCENT,
+      pilotIncluded,
+      tier:pilotIncluded ? 'pilot' : (included ? 'expanded-base' : 'excluded')
+    });
   }
 
   function readState(userId = currentUserId()) {
@@ -91,6 +116,7 @@
     return Object.freeze({
       eligible:reasons.length === 0,
       cohort,
+      pilotCohort:getPilotCohortAssignment(userId),
       metadataGraduation:child,
       reasons:Object.freeze(reasons)
     });
@@ -188,6 +214,7 @@
       optedIn:isOptedIn(userId),
       enabled:isEnabled(userId),
       cohort:getCohortAssignment(userId),
+      pilotCohort:getPilotCohortAssignment(userId),
       eligibility:getEligibility(userId),
       scope:Object.freeze(['user_settings:concursos_metadata:upsert']),
       graduation:graduation()?.getDiagnostics?.() || null,
@@ -215,9 +242,11 @@
 
   global.OfflineSyncMetadataRollout = Object.freeze({
     MODE,
+    PILOT_COHORT_PERCENT,
     COHORT_PERCENT,
     install,
     cohortBucket,
+    getPilotCohortAssignment,
     getCohortAssignment,
     getEligibility,
     isOptedIn,
