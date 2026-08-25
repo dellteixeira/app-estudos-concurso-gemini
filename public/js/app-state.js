@@ -43,6 +43,10 @@
             await loadExtensionScript('./js/core/offline-sync-metadata-authority.js?v=10.36.0', 'offline-sync-metadata-authority');
         }
         global.OfflineSyncMetadataAuthority?.install?.();
+        if (!global.OfflineSyncMetadataGraduation) {
+            await loadExtensionScript('./js/core/offline-sync-metadata-graduation.js?v=10.36.0', 'offline-sync-metadata-graduation');
+        }
+        global.OfflineSyncMetadataGraduation?.install?.();
         if (!global.OfflineSyncAuthority) {
             await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.36.0', 'offline-sync-authority');
         }
@@ -59,6 +63,7 @@
             shadow:await global.OfflineSyncShadow?.getDiagnostics?.() || null,
             metadataShadow:await global.OfflineSyncMetadataShadow?.getDiagnostics?.() || null,
             metadataAuthority:global.OfflineSyncMetadataAuthority?.getDiagnostics?.() || null,
+            metadataGraduation:global.OfflineSyncMetadataGraduation?.getDiagnostics?.() || null,
             authority:global.OfflineSyncAuthority?.getDiagnostics?.() || null,
             deleteAuthority:global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
             editalGraduation:global.OfflineSyncEditalGraduation?.getDiagnostics?.() || null
@@ -244,6 +249,7 @@
         getOfflineShadowDiagnostics:() => global.OfflineSyncShadow?.getDiagnostics?.() || null,
         getOfflineSyncMetadataShadowDiagnostics:() => global.OfflineSyncMetadataShadow?.getDiagnostics?.() || null,
         getOfflineSyncMetadataAuthorityDiagnostics:() => global.OfflineSyncMetadataAuthority?.getDiagnostics?.() || null,
+        getOfflineSyncMetadataGraduationDiagnostics:() => global.OfflineSyncMetadataGraduation?.getDiagnostics?.() || null,
         getOfflineSyncAuthorityDiagnostics:() => global.OfflineSyncAuthority?.getDiagnostics?.() || null,
         getOfflineSyncDeleteAuthorityDiagnostics:() => global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
         getOfflineSyncEditalGraduationDiagnostics:() => global.OfflineSyncEditalGraduation?.getDiagnostics?.() || null
