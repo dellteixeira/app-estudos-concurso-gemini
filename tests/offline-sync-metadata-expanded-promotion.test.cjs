@@ -123,7 +123,7 @@ test('kill switch, circuito, rollout ou graduation inativos impedem profundidade
 
 test('4I consome promoção externa sem ampliar setEnabled manual para expanded-base',()=>{
   assert.match(expansionSource,/OfflineSyncMetadataExpandedPromotion/);
-  assert.match(expansionSource,/outside-depth-expansion-eligibility/);
+  assert.match(expansionSource,/outside-expansion-pilot-cohort/);
   assert.match(expansionSource,/if \(!eligibility\.originalPilot \|\| !eligibility\.eligible\)/);
   assert.match(expansionSource,/hasDepthGrant/);
 });
