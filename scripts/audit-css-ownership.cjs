@@ -17,9 +17,9 @@ const canonicalSelectors = [
   '.study-overview-grid',
   '.grid-top',
   'header.modern-header',
-  '.header-nav-tabs',
-  '.action-bar'
+  '.header-nav-tabs'
 ];
+const retiredSelectors = ['.action-bar'];
 
 const errors = [];
 const warnings = [];
@@ -27,6 +27,12 @@ const warnings = [];
 for (const selector of canonicalSelectors) {
   if (!canonical.includes(selector)) {
     errors.push(`responsive-system.css perdeu o seletor canônico ${selector}`);
+  }
+}
+
+for (const selector of retiredSelectors) {
+  if (canonical.includes(selector)) {
+    errors.push(`responsive-system.css reintroduziu seletor aposentado ${selector}`);
   }
 }
 
@@ -89,6 +95,11 @@ for (const file of legacyFiles) {
   if (overlaps.length) {
     warnings.push(`${file}: dívida legada congelada em ${overlaps.join(', ')}`);
   }
+  for (const selector of retiredSelectors) {
+    if (source.includes(selector)) {
+      errors.push(`${file}: seletor aposentado ainda presente ${selector}`);
+    }
+  }
 }
 
 for (const file of specializedFiles) {
@@ -107,4 +118,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('CSS ownership audit OK: camada transversal canônica preservada e CSS especializado permanece autoritativo.');
+console.log('CSS ownership audit OK: camada transversal canônica preservada, seletores aposentados ausentes e CSS especializado permanece autoritativo.');
