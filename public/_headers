@@ -27,6 +27,9 @@
 /js/study-domain.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+/js/core/edital-integrity.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/core/local-backup-store.js
   Cache-Control: no-cache, no-store, must-revalidate
 
