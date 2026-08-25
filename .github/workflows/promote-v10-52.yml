@@ -1,0 +1,72 @@
+name: Promote v10.52.0
+
+on:
+  push:
+    branches: [feat/offline-metadata-ring2-promotion-v10.52.0]
+    paths: [.github/workflows/promote-v10-52.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: feat/offline-metadata-ring2-promotion-v10.52.0
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Promote canonical identity
+        run: |
+          node scripts/release-version.mjs 10.52.0
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          roots=[Path('public'),Path('config'),Path('tests'),Path('src')]
+          allowed={'.js','.cjs','.mjs','.json','.html','.css','.txt'}
+          files=[]
+          for root in roots:
+              for p in root.rglob('*'):
+                  if p.is_file() and p.suffix.lower() in allowed:
+                      files.append(p)
+          for p in [Path('package.json'),Path('package-lock.json')]:
+              if p.exists(): files.append(p)
+
+          for p in files:
+              try: text=p.read_text(encoding='utf-8')
+              except UnicodeDecodeError: continue
+              updated=text.replace('10.51.0','10.52.0').replace(r'10\.51\.0',r'10\.52\.0')
+              if updated != text: p.write_text(updated,encoding='utf-8')
+
+          Path('public/version.json').write_text(json.dumps({
+              'version':'10.52.0',
+              'build':'source',
+              'commit':'source'
+          },indent=2)+'\n',encoding='utf-8')
+          PY
+
+      - name: Verify promoted identity
+        run: |
+          if grep -RIn --exclude-dir=.git --include='*.js' --include='*.cjs' --include='*.mjs' --include='*.json' --include='*.html' --include='*.css' '10\.51\.0' public config tests src package.json package-lock.json; then
+            echo 'Stale v10.51.0 runtime/test identity remains.' >&2
+            exit 1
+          fi
+          node tests/deploy-identity.test.cjs
+          npm test
+
+      - name: Commit promotion and self-clean
+        run: |
+          rm .github/workflows/promote-v10-52.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore(release): promote v10.52.0'
+          git push origin HEAD:feat/offline-metadata-ring2-promotion-v10.52.0
