@@ -48,6 +48,9 @@
 /js/core/offline-sync-metadata-rollout.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+/js/core/offline-sync-metadata-stability.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/core/offline-sync-authority.js
   Cache-Control: no-cache, no-store, must-revalidate
 
