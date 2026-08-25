@@ -36,47 +36,29 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          def replace_once(path, old, new):
-              p=Path(path); text=p.read_text(encoding='utf-8')
-              if old not in text:
-                  raise SystemExit(f'Pattern missing in {path}: {old[:100]!r}')
-              p.write_text(text.replace(old,new,1),encoding='utf-8')
-
           p=Path('public/js/core/offline-sync-metadata-expansion.js')
           text=p.read_text(encoding='utf-8')
-          text=text.replace(
-              "  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }\n",
-              "  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }\n  function populationPromotion() { return global.OfflineSyncMetadataPopulationPromotion || null; }\n"
-          )
-          text=text.replace(
-              "    const promoted = Boolean(promotion()?.isPromoted?.(userId));\n    const originalPilot = Boolean(pilotCohort?.included);",
-              "    const promoted = Boolean(promotion()?.isPromoted?.(userId));\n    const populationPromoted = Boolean(populationPromotion()?.isPromoted?.(userId));\n    const originalPilot = Boolean(pilotCohort?.included);"
-          )
-          text=text.replace(
-              "    if (!originalPilot && !promoted) reasons.push('outside-expansion-pilot-cohort');",
-              "    if (!originalPilot && !promoted && !populationPromoted) reasons.push('outside-expansion-depth-cohort');"
-          )
-          text=text.replace(
-              "      promoted,\n      promotion:promotion()?.getDiagnostics?.() || null,",
-              "      promoted,\n      populationPromoted,\n      promotion:promotion()?.getDiagnostics?.() || null,\n      populationPromotion:populationPromotion()?.getDiagnostics?.() || null,"
-          )
-          text=text.replace(
-              "    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId)));",
-              "    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId)));"
-          )
+          pairs=[
+            ("  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }\n", "  function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }\n  function populationPromotion() { return global.OfflineSyncMetadataPopulationPromotion || null; }\n"),
+            ("    const promoted = Boolean(promotion()?.isPromoted?.(userId));\n    const originalPilot = Boolean(pilotCohort?.included);", "    const promoted = Boolean(promotion()?.isPromoted?.(userId));\n    const populationPromoted = Boolean(populationPromotion()?.isPromoted?.(userId));\n    const originalPilot = Boolean(pilotCohort?.included);"),
+            ("    if (!originalPilot && !promoted) reasons.push('outside-expansion-pilot-cohort');", "    if (!originalPilot && !promoted && !populationPromoted) reasons.push('outside-expansion-depth-cohort');"),
+            ("      promoted,\n      promotion:promotion()?.getDiagnostics?.() || null,", "      promoted,\n      populationPromoted,\n      promotion:promotion()?.getDiagnostics?.() || null,\n      populationPromotion:populationPromotion()?.getDiagnostics?.() || null,"),
+            ("    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId)));", "    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId)));")
+          ]
+          for old,new in pairs:
+              if old not in text: raise SystemExit(f'Expansion marker missing: {old[:80]}')
+              text=text.replace(old,new,1)
           p.write_text(text,encoding='utf-8')
 
           p=Path('public/js/app-state.js'); text=p.read_text(encoding='utf-8')
-          old="        if (!global.OfflineSyncMetadataPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-promoted-stability.js?v=10.47.0', 'offline-sync-metadata-promoted-stability');\n        global.OfflineSyncMetadataPromotedStability?.install?.();\n        if (!global.OfflineSyncMetadataExpansion)"
-          new="        if (!global.OfflineSyncMetadataPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-promoted-stability.js?v=10.47.0', 'offline-sync-metadata-promoted-stability');\n        global.OfflineSyncMetadataPromotedStability?.install?.();\n        if (!global.OfflineSyncMetadataPopulationPromotion) await loadExtensionScript('./js/core/offline-sync-metadata-population-promotion.js?v=10.47.0', 'offline-sync-metadata-population-promotion');\n        global.OfflineSyncMetadataPopulationPromotion?.install?.();\n        if (!global.OfflineSyncMetadataExpansion)"
-          if old not in text: raise SystemExit('AppState load marker missing')
-          text=text.replace(old,new,1)
-          text=text.replace(
-              "            metadataPromotedStability:global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n            metadataExpansion:",
-              "            metadataPromotedStability:global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n            metadataPopulationPromotion:global.OfflineSyncMetadataPopulationPromotion?.getDiagnostics?.() || null,\n            metadataExpansion:",1)
-          text=text.replace(
-              "        getOfflineSyncMetadataPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:",
-              "        getOfflineSyncMetadataPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataPopulationPromotionDiagnostics:() => global.OfflineSyncMetadataPopulationPromotion?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:",1)
+          pairs=[
+            ("        if (!global.OfflineSyncMetadataPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-promoted-stability.js?v=10.47.0', 'offline-sync-metadata-promoted-stability');\n        global.OfflineSyncMetadataPromotedStability?.install?.();\n        if (!global.OfflineSyncMetadataExpansion)", "        if (!global.OfflineSyncMetadataPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-promoted-stability.js?v=10.47.0', 'offline-sync-metadata-promoted-stability');\n        global.OfflineSyncMetadataPromotedStability?.install?.();\n        if (!global.OfflineSyncMetadataPopulationPromotion) await loadExtensionScript('./js/core/offline-sync-metadata-population-promotion.js?v=10.47.0', 'offline-sync-metadata-population-promotion');\n        global.OfflineSyncMetadataPopulationPromotion?.install?.();\n        if (!global.OfflineSyncMetadataExpansion)"),
+            ("            metadataPromotedStability:global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n            metadataExpansion:", "            metadataPromotedStability:global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n            metadataPopulationPromotion:global.OfflineSyncMetadataPopulationPromotion?.getDiagnostics?.() || null,\n            metadataExpansion:"),
+            ("        getOfflineSyncMetadataPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:", "        getOfflineSyncMetadataPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataPopulationPromotionDiagnostics:() => global.OfflineSyncMetadataPopulationPromotion?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataExpansionDiagnostics:")
+          ]
+          for old,new in pairs:
+              if old not in text: raise SystemExit(f'AppState marker missing: {old[:80]}')
+              text=text.replace(old,new,1)
           p.write_text(text,encoding='utf-8')
 
           asset='/js/core/offline-sync-metadata-population-promotion.js'
@@ -87,18 +69,19 @@ jobs:
           p.write_text(text,encoding='utf-8')
 
           p=Path('public/sw.js'); text=p.read_text(encoding='utf-8')
-          marker="'./js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-expansion.js'"
-          if marker not in text: raise SystemExit('SW shell marker missing')
-          text=text.replace(marker,"'./js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-population-promotion.js', './js/core/offline-sync-metadata-expansion.js'",1)
-          marker="'/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-expansion.js'"
-          if marker not in text: raise SystemExit('SW core marker missing')
-          text=text.replace(marker,"'/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-population-promotion.js', '/js/core/offline-sync-metadata-expansion.js'",1)
+          pairs=[
+            ("'./js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-expansion.js'", "'./js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-population-promotion.js', './js/core/offline-sync-metadata-expansion.js'"),
+            ("'/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-expansion.js'", "'/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-population-promotion.js', '/js/core/offline-sync-metadata-expansion.js'")
+          ]
+          for old,new in pairs:
+              if old not in text: raise SystemExit(f'SW marker missing: {old}')
+              text=text.replace(old,new,1)
           p.write_text(text,encoding='utf-8')
 
           p=Path('src/worker.js'); text=p.read_text(encoding='utf-8')
-          marker='  "/js/core/offline-sync-metadata-promoted-stability.js",\n  "/js/core/offline-sync-metadata-expansion.js",'
+          marker="  '/js/core/offline-sync-metadata-promoted-stability.js',\n  '/js/core/offline-sync-metadata-expansion.js',"
           if marker not in text: raise SystemExit('Worker no-store marker missing')
-          text=text.replace(marker,'  "/js/core/offline-sync-metadata-promoted-stability.js",\n  "/js/core/offline-sync-metadata-population-promotion.js",\n  "/js/core/offline-sync-metadata-expansion.js",',1)
+          text=text.replace(marker,"  '/js/core/offline-sync-metadata-promoted-stability.js',\n  '/js/core/offline-sync-metadata-population-promotion.js',\n  '/js/core/offline-sync-metadata-expansion.js',",1)
           p.write_text(text,encoding='utf-8')
 
           p=Path('public/_headers'); text=p.read_text(encoding='utf-8')
