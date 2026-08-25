@@ -60,6 +60,16 @@
     return rollout()?.getCohortAssignment?.(userId)?.tier === 'expanded-base';
   }
 
+  function promotionSnapshot(userId = currentUserId()) {
+    const state = promotion()?.readState?.(userId) || null;
+    const eligibility = promotion()?.getEligibility?.(userId) || null;
+    return Object.freeze({
+      state,
+      eligibility,
+      active:Boolean(state?.promoted && eligibility?.eligible)
+    });
+  }
+
   function observe(outcome, detail = {}, userId = currentUserId()) {
     if (!userId || !isExpandedBase(userId)) return null;
     const normalized = String(outcome || '').trim();
@@ -92,15 +102,15 @@
     const failures = history.filter(row => row.outcome === 'failure').length;
     const aborted = history.filter(row => row.outcome === 'aborted').length;
     const cohort = rollout()?.getCohortAssignment?.(userId) || null;
-    const promotionState = promotion()?.readState?.(userId) || null;
-    const currentlyPromoted = Boolean(promotion()?.isPromoted?.(userId));
+    const promotionStatus = promotionSnapshot(userId);
+    const promotionState = promotionStatus.state;
     const parity = authority()?.getEligibility?.() || null;
     const reasons = [];
 
     if (!userId) reasons.push('missing-user');
     if (cohort?.tier !== 'expanded-base') reasons.push('outside-expanded-base-tier');
     if (!promotionState?.promotedAt) reasons.push('never-promoted-by-4l');
-    if (!currentlyPromoted) reasons.push('promotion-not-currently-active');
+    if (!promotionStatus.active) reasons.push('promotion-not-currently-active');
     if (successes < REQUIRED_CLEAN_SUCCESSES) reasons.push('insufficient-clean-promoted-canaries');
     if (failures > 0) reasons.push('recent-promoted-canary-failure');
     if (aborted > 0) reasons.push('recent-promoted-canary-abort');
@@ -118,8 +128,9 @@
       successes,
       failures,
       aborted,
-      promoted:currentlyPromoted,
+      promoted:promotionStatus.active,
       promotionState,
+      promotionEligibility:promotionStatus.eligibility,
       stable:ready,
       readyForPopulationReview:ready,
       reasons:Object.freeze(reasons),
@@ -149,7 +160,7 @@
     const detail = event?.detail || {};
     if (detail?.outcome !== 'success') return;
     const userId = currentUserId();
-    if (!promotion()?.isPromoted?.(userId)) return;
+    if (!promotionSnapshot(userId).active) return;
     observe('success', detail, userId);
   }
 
@@ -158,8 +169,9 @@
     const userId = detail?.userId ? String(detail.userId) : currentUserId();
     const reason = String(detail?.revokeReason || 'promotion-revoked');
     const eligibilityReasons = Array.isArray(detail?.detail?.reasons) ? detail.detail.reasons : [];
+    const sourceOutcome = String(detail?.detail?.sourceDetail?.outcome || '');
     const sourceType = String(detail?.detail?.sourceDetail?.type || detail?.detail?.sourceDetail?.source || reason);
-    const failure = reason.includes('fallback') || reason.includes('circuit-open') ||
+    const failure = sourceOutcome === 'failure' || reason.includes('fallback') || reason.includes('circuit-open') ||
       eligibilityReasons.some(item => /failure|parity|circuit/.test(String(item)));
     const outcome = failure ? 'failure' : 'aborted';
     observe(outcome, {
