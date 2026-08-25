@@ -19,6 +19,9 @@
 
   function safeUserId() {
     try {
+      if (typeof currentUser !== 'undefined' && currentUser?.id) return String(currentUser.id).trim();
+    } catch (_) {}
+    try {
       return String(global.currentUser?.id || '').trim();
     } catch (_) {
       return '';
@@ -86,6 +89,29 @@
     history.push(Object.freeze({ at:nowIso(), ...sample }));
     writeHistory(history);
     return history[history.length - 1];
+  }
+
+  function getParityHistory(options = {}) {
+    const requested = Math.max(1, Math.min(MAX_HISTORY, Number(options.limit) || MAX_HISTORY));
+    return Object.freeze(readHistory().slice(-requested).map(sample => Object.freeze({ ...sample })));
+  }
+
+  function getParityReport(options = {}) {
+    const history = getParityHistory(options);
+    const healthySamples = history.filter(sample => sample?.ok === true).length;
+    const unhealthySamples = history.length - healthySamples;
+    return Object.freeze({
+      sampleCount:history.length,
+      healthySamples,
+      unhealthySamples,
+      healthy:history.length > 0 && unhealthySamples === 0,
+      latest:history.length ? history[history.length - 1] : null
+    });
+  }
+
+  function clearParityHistory() {
+    writeHistory([]);
+    return true;
   }
 
   function buildOperation(userId) {
@@ -184,7 +210,7 @@
   async function getDiagnostics() {
     const userId = safeUserId();
     const state = safeSyncState();
-    const history = readHistory();
+    const report = getParityReport({ limit:MAX_HISTORY });
     let shadowRows = [];
     if (userId && global.OfflineOutboxStore?.list) {
       try {
@@ -192,7 +218,6 @@
         shadowRows = rows.filter(row => row.entity === ENTITY && row.entityId === ENTITY_ID);
       } catch (_) {}
     }
-    const healthySamples = history.filter(sample => sample?.ok === true).length;
     return Object.freeze({
       mode:MODE,
       entity:ENTITY,
@@ -205,12 +230,7 @@
         metadataRevision:Math.max(0, Number(state.metadataRevision) || 0)
       },
       shadowCount:shadowRows.length,
-      parity:{
-        sampleCount:history.length,
-        healthySamples,
-        healthy:history.length > 0 && healthySamples === history.length,
-        latest:history.length ? history[history.length - 1] : null
-      },
+      parity:report,
       lastMirror,
       lastError
     });
@@ -223,6 +243,10 @@
     install,
     uninstall,
     mirrorDirtyMetadata,
+    getParityHistory,
+    getParityReport,
+    clearParityHistory,
+    fingerprint,
     getDiagnostics
   });
 })(typeof window !== 'undefined' ? window : globalThis);
