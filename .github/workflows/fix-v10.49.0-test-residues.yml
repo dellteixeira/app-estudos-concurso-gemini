@@ -1,0 +1,50 @@
+name: Fix v10.49.0 Escaped Test Residues
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-population-promoted-stability-v10.49.0
+    paths:
+      - .github/workflows/fix-v10.49.0-test-residues.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/offline-metadata-population-promoted-stability-v10.49.0
+          fetch-depth: 0
+      - name: Align escaped release expectations and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const dir = 'tests';
+          const from = String.raw`10\.48\.0`;
+          const to = String.raw`10\.49\.0`;
+          let changed = 0;
+          for (const name of fs.readdirSync(dir)) {
+            if (!name.endsWith('.test.cjs')) continue;
+            const file = path.join(dir, name);
+            const before = fs.readFileSync(file, 'utf8');
+            const after = before.replaceAll(from, to);
+            if (after !== before) {
+              fs.writeFileSync(file, after);
+              changed += 1;
+            }
+          }
+          if (!changed) throw new Error('Nenhum resíduo escapado v10.48.0 encontrado nos testes.');
+          console.log(`Arquivos de teste alinhados: ${changed}`);
+          NODE
+          rm .github/workflows/fix-v10.49.0-test-residues.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "test(release): align escaped v10.49.0 expectations"
+          git push origin HEAD:feat/offline-metadata-population-promoted-stability-v10.49.0
