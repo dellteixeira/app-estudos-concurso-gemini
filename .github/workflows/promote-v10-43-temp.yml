@@ -55,9 +55,11 @@ jobs:
             if (!fs.existsSync(file)) continue;
             const before = fs.readFileSync(file, 'utf8');
             const after = before
+              .replaceAll('v10\\.42\\.0', 'v10\\.43\\.0')
+              .replaceAll('10\\.42\\.0', '10\\.43\\.0')
+              .replaceAll('v10.42.0', 'v10.43.0')
               .replaceAll('10.42.0', '10.43.0')
-              .replaceAll('10-42-0', '10-43-0')
-              .replaceAll('v10.42.0', 'v10.43.0');
+              .replaceAll('10-42-0', '10-43-0');
             if (after !== before) fs.writeFileSync(file, after);
           }
           NODE
