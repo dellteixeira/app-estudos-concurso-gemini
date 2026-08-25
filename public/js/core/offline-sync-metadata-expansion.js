@@ -81,7 +81,7 @@
 
     if (!userId) reasons.push('missing-user');
     if (!cohort?.included) reasons.push('outside-rollout-cohort');
-    if (!originalPilot && !promoted) reasons.push('outside-depth-expansion-eligibility');
+    if (!originalPilot && !promoted) reasons.push('outside-expansion-pilot-cohort');
     if (originalPilot && !report?.readyForExpansion) reasons.push('metadata-stability-not-ready');
     if (!rolloutEligibility?.eligible) reasons.push('metadata-rollout-not-eligible');
     if (circuit) reasons.push('metadata-authority-circuit-open');
