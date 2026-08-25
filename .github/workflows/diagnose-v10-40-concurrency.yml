@@ -22,20 +22,34 @@ jobs:
         with:
           node-version: '22.23.2'
 
-      - name: Current aggregate command
-        continue-on-error: true
-        run: node --test tests/*.test.cjs
-
-      - name: Serial aggregate command
-        run: node --test --test-concurrency=1 tests/*.test.cjs
-
-      - name: Remove diagnostic workflow
-        run: rm .github/workflows/diagnose-v10-40-concurrency.yml
-
-      - name: Commit cleanup
+      - name: Capture aggregate diagnostics
+        shell: bash
         run: |
+          set +e
+          node --test tests/*.test.cjs > /tmp/parallel.log 2>&1
+          parallel_status=$?
+          node --test --test-concurrency=1 tests/*.test.cjs > /tmp/serial.log 2>&1
+          serial_status=$?
+          set -e
+          {
+            echo "parallel_status=${parallel_status}"
+            echo "serial_status=${serial_status}"
+            echo
+            echo "=== PARALLEL FAILURES ==="
+            grep -E -B 3 -A 18 'not ok|failureType:|AssertionError|ERR_ASSERTION|Error:' /tmp/parallel.log | tail -n 160 || true
+            echo
+            echo "=== SERIAL FAILURES ==="
+            grep -E -B 3 -A 18 'not ok|failureType:|AssertionError|ERR_ASSERTION|Error:' /tmp/serial.log | tail -n 160 || true
+            echo
+            echo "=== SERIAL TAIL ==="
+            tail -n 100 /tmp/serial.log
+          } > diagnostics-v10-40-test-failure.txt
+
+      - name: Remove diagnostic workflow and commit result
+        run: |
+          rm .github/workflows/diagnose-v10-40-concurrency.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "chore(ci): remove concurrency diagnostic workflow"
+          git commit -m "chore(ci): capture v10.40.0 test failure"
           git push origin HEAD:feat/offline-metadata-expansion-v10.40.0
