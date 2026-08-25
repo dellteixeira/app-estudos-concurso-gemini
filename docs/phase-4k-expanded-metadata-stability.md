@@ -37,3 +37,7 @@ Isso mantém uma única fonte longitudinal de verdade e evita divergência entre
 ## Fase seguinte
 
 Uma eventual expansão do piloto de 2 writes deve ser considerada somente após evidência suficiente da faixa 10–24 e deverá continuar separando os eixos população e profundidade de escrita.
+
+## Candidato de release
+
+Após o pré-gate funcional integralmente verde, a identidade release-bound foi promovida para `v10.42.0`. Este registro não altera o comportamento da Fase 4K e existe apenas para produzir um candidato final em commit normal, separado do commit automatizado de promoção.
