@@ -45,7 +45,7 @@ function makeContext(options={}){
         userId:userId||null,
         window:10,
         parity:{eligible:parityEligible},
-        history:Object.freeze(history.map(row=>Object.freeze({...row}))
+        history:Object.freeze(history.map(row=>Object.freeze({...row})))
       })
     },
     CustomEvent:function(type,init){this.type=type;this.detail=init?.detail;},
