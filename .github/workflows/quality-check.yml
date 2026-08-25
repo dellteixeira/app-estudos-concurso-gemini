@@ -26,7 +26,12 @@ jobs:
         run: node --check src/index.js
 
       - name: Automated tests
-        run: npm test
+        shell: bash
+        run: |
+          set +e
+          npm test 2>&1 | tee npm-test-output.txt
+          status=${PIPESTATUS[0]}
+          exit "$status"
 
       - name: Structural audit
         env:
@@ -50,5 +55,6 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            npm-test-output.txt
           if-no-files-found: ignore
           retention-days: 14
