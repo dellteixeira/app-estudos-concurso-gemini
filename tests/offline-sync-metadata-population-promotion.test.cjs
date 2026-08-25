@@ -103,8 +103,8 @@ test('budget 4P permanece rigidamente limitado a dois writes',()=>{
 });
 
 test('AppState carrega 4P antes da política final de expansão e expõe diagnóstico',()=>{
-  const populationIndex=appStateSource.indexOf('offline-sync-metadata-population-promotion.js?v=10.47.0');
-  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.47.0');
+  const populationIndex=appStateSource.indexOf('offline-sync-metadata-population-promotion.js?v=10.48.0');
+  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.48.0');
   assert.ok(populationIndex>=0);
   assert.ok(expansionIndex>populationIndex);
   assert.match(appStateSource,/metadataPopulationPromotion/);
@@ -113,7 +113,7 @@ test('AppState carrega 4P antes da política final de expansão e expõe diagnó
 
 test('asset 4P integra shell, network-first e contratos no-store',()=>{
   const path='/js/core/offline-sync-metadata-population-promotion.js';
-  assert.equal(assets.version,'10.47.0');
+  assert.equal(assets.version,'10.48.0');
   for(const key of ['criticalAppShell','networkFirstPaths','workerNoStorePaths','headersNoStorePaths']) assert.ok(assets[key].includes(path),key);
   assert.ok(swSource.includes(`'./js/core/offline-sync-metadata-population-promotion.js'`));
   assert.ok(swSource.includes(`'/js/core/offline-sync-metadata-population-promotion.js'`));
