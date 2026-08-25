@@ -28,9 +28,11 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import json
           files = [
               'config/app-assets.json',
               'public/js/app-pwa.js',
+              'tests/learning-advisor.test.cjs',
               'tests/offline-sync-authority.test.cjs',
               'tests/offline-sync-edital-graduation.test.cjs',
               'tests/offline-sync-metadata-authority.test.cjs',
@@ -49,15 +51,23 @@ jobs:
           for name in files:
               path = Path(name)
               text = path.read_text(encoding='utf-8')
-              path.write_text(text.replace('10.50.1', '10.51.0'), encoding='utf-8')
+              text = text.replace('10.50.1', '10.51.0')
+              text = text.replace(r'10\.50\.1', r'10\.51\.0')
+              path.write_text(text, encoding='utf-8')
+          Path('public/version.json').write_text(json.dumps({
+              'version':'10.51.0',
+              'build':'source',
+              'commit':'source'
+          }, indent=2) + '\n', encoding='utf-8')
           PY
 
-      - name: Verify stale runtime/test identity removed
+      - name: Verify release identity contracts
         run: |
           if grep -RIn --exclude-dir=.git --include='*.js' --include='*.cjs' --include='*.json' '10\.50\.1' public config tests; then
             echo 'Stale v10.50.1 reference remains in runtime/test contract.' >&2
             exit 1
           fi
+          node tests/deploy-identity.test.cjs
 
       - name: Capture complete automated test suite
         id: tests
