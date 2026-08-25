@@ -35,6 +35,10 @@
             await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.34.0', 'offline-sync-shadow');
         }
         global.OfflineSyncShadow?.install?.();
+        if (!global.OfflineSyncMetadataShadow) {
+            await loadExtensionScript('./js/core/offline-sync-metadata-shadow.js?v=10.34.0', 'offline-sync-metadata-shadow');
+        }
+        global.OfflineSyncMetadataShadow?.install?.();
         if (!global.OfflineSyncAuthority) {
             await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.34.0', 'offline-sync-authority');
         }
@@ -49,6 +53,7 @@
         global.OfflineSyncEditalGraduation?.install?.();
         return {
             shadow:await global.OfflineSyncShadow?.getDiagnostics?.() || null,
+            metadataShadow:await global.OfflineSyncMetadataShadow?.getDiagnostics?.() || null,
             authority:global.OfflineSyncAuthority?.getDiagnostics?.() || null,
             deleteAuthority:global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
             editalGraduation:global.OfflineSyncEditalGraduation?.getDiagnostics?.() || null
@@ -232,6 +237,7 @@
         subscribe,
         refresh,
         getOfflineShadowDiagnostics:() => global.OfflineSyncShadow?.getDiagnostics?.() || null,
+        getOfflineSyncMetadataShadowDiagnostics:() => global.OfflineSyncMetadataShadow?.getDiagnostics?.() || null,
         getOfflineSyncAuthorityDiagnostics:() => global.OfflineSyncAuthority?.getDiagnostics?.() || null,
         getOfflineSyncDeleteAuthorityDiagnostics:() => global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
         getOfflineSyncEditalGraduationDiagnostics:() => global.OfflineSyncEditalGraduation?.getDiagnostics?.() || null
