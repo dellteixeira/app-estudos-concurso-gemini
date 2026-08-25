@@ -1,0 +1,67 @@
+name: Promote v10.39.0
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-stability-v10.39.0
+    paths:
+      - .github/workflows/promote-v10-39-0.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: feat/offline-metadata-stability-v10.39.0
+          fetch-depth: 0
+      - name: Promote coordinated release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          roots = [Path('public'), Path('src'), Path('config'), Path('tests')]
+          files = [Path('package.json')]
+          for root in roots:
+              files.extend(p for p in root.rglob('*') if p.is_file())
+
+          changed = []
+          for path in files:
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              updated = text.replace('10\\.38\\.0', '10\\.39\\.0').replace('10.38.0', '10.39.0')
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+                  changed.append(str(path))
+
+          print(f'updated {len(changed)} files')
+          for path in changed:
+              print(path)
+          PY
+
+          node -e "const p=require('./package.json'); if(p.version!=='10.39.0') process.exit(1)"
+          node -e "const v=require('./public/version.json'); if(v.version!=='10.39.0') process.exit(1)"
+          node -e "const a=require('./config/app-assets.json'); if(a.version!=='10.39.0') process.exit(1)"
+          grep -q "APP_VERSION = '10.39.0'" public/sw.js
+
+          if grep -R -n --binary-files=without-match -E '10\\\\\.38\\\\\.0|10\.38\.0' public src config tests package.json; then
+            echo 'Residual v10.38.0 identity found in release-bound files.' >&2
+            exit 1
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/promote-v10-39-0.yml
+          git add -A
+          git diff --cached --quiet && { echo 'Nothing to promote.'; exit 1; }
+          git commit -m 'chore(release): promote v10.39.0'
+          git push origin HEAD:feat/offline-metadata-stability-v10.39.0
