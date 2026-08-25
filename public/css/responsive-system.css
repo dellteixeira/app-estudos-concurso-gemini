@@ -12,8 +12,8 @@
    feature-specific layouts (PDF Library, Reader and Calendar) until
    their dedicated migration phases.
 
-   Phase 3 normalizes the application header, navigation and generic
-   action toolbars across the canonical viewport bands without changing
+   Phase 3 normalizes the application header, navigation and compact
+   action menu across the canonical viewport bands without changing
    navigation/authentication business logic.
    ================================================================ */
 
@@ -437,10 +437,10 @@ header.modern-header .compact-actions-menu {
     }
 
     header.modern-header {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto auto;
         grid-template-areas:
-            "brand sync"
-            "controls controls";
+            "brand sync tools"
+            "controls controls controls";
     }
 
     header.modern-header .concurso-selector-bar {
@@ -451,7 +451,6 @@ header.modern-header .compact-actions-menu {
 
     header.modern-header .header-utility-cluster {
         grid-column: 1 / -1;
-        grid-template-columns: minmax(0, 1fr) minmax(120px, .36fr);
     }
 
     header.modern-header .header-nav-tabs {
@@ -463,10 +462,6 @@ header.modern-header .compact-actions-menu {
 
     header.modern-header .header-nav-tabs .tab-btn {
         flex: 1 0 150px;
-    }
-
-    .action-bar {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
 }
 
@@ -491,7 +486,6 @@ header.modern-header .compact-actions-menu {
 
     header.modern-header .header-utility-cluster {
         grid-column: 1 / -1;
-        grid-template-columns: minmax(0, 1fr) minmax(130px, .32fr);
     }
 
     header.modern-header .header-nav-tabs .tab-btn {
@@ -510,10 +504,6 @@ header.modern-header .compact-actions-menu {
         --grid-card-min-wide: 320px;
         --grid-metric-min: 160px;
         --header-control-min: 106px;
-    }
-
-    header.modern-header .mobile-tools-toggle {
-        display: none !important;
     }
 }
 
