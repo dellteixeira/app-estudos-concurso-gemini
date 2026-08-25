@@ -52,8 +52,6 @@ jobs:
                   path.write_text(new)
                   touched.append(str(path))
 
-          # Current-release assertions below encode dots inside RegExp literals,
-          # so the ordinary literal replacement above intentionally cannot see them.
           for name in [
               'tests/learning-advisor.test.cjs',
               'tests/offline-sync-authority.test.cjs',
@@ -89,8 +87,8 @@ jobs:
           grep -q "10.46.0" src/index.js
           grep -q "10.46.0" public/js/app-pwa.js
           grep -q "10.46.0" public/js/app-state.js
-          grep -q "10.46.0" public/sw.js
-          grep -q "estudo-adaptativo-v10-46-0" public/sw.js
+          grep -q "const APP_VERSION = '10.46.0'" public/sw.js
+          grep -Fq 'const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '\''-'\'')}`;' public/sw.js
 
       - name: Automated tests
         run: npm test
