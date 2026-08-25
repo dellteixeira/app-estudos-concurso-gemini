@@ -39,4 +39,4 @@ A 4R altera apenas população. As fases 4K–4M continuam restritas aos buckets
 
 ## Release
 
-Release candidate promovida para `v10.50.0` após pré-gate integralmente verde em sintaxe, testes automatizados, auditoria estrutural e Browser Responsive Audit. O conteúdo promovido deve repetir os mesmos gates no SHA final antes do merge em `main`; este commit documental apenas dispara essa validação e não altera o comportamento da 4R.
+Release candidate promovida para `v10.50.1` após pré-gate integralmente verde em sintaxe, testes automatizados, auditoria estrutural e Browser Responsive Audit. O conteúdo promovido deve repetir os mesmos gates no SHA final antes do merge em `main`; este commit documental apenas dispara essa validação e não altera o comportamento da 4R.
