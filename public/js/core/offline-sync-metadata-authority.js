@@ -143,14 +143,23 @@
     });
   }
 
+  function getMaxRemoteWrites(userId = currentUserId()) {
+    try {
+      const proposed = Number(global.OfflineSyncMetadataExpansion?.getMaxRemoteWrites?.(userId));
+      if (Number.isFinite(proposed)) return Math.max(MAX_REMOTE_WRITES, Math.min(2, Math.floor(proposed)));
+    } catch (_) {}
+    return MAX_REMOTE_WRITES;
+  }
+
   function getBudget(userId = currentUserId()) {
     const session = getCanarySession(userId);
     const remoteWrites = Math.max(0, Number(session?.remoteWrites) || 0);
+    const maxRemoteWrites = getMaxRemoteWrites(userId);
     return Object.freeze({
       remoteWrites,
-      maxRemoteWrites:MAX_REMOTE_WRITES,
-      remainingRemoteWrites:Math.max(0, MAX_REMOTE_WRITES - remoteWrites),
-      exhausted:remoteWrites >= MAX_REMOTE_WRITES
+      maxRemoteWrites,
+      remainingRemoteWrites:Math.max(0, maxRemoteWrites - remoteWrites),
+      exhausted:remoteWrites >= maxRemoteWrites
     });
   }
 
@@ -324,7 +333,7 @@
       } catch (_) {}
     }
 
-    stopCanary(getBudget(userId).exhausted ? 'budget-exhausted' : 'completed');
+    if (getBudget(userId).exhausted) stopCanary('budget-exhausted');
     const result = Object.freeze({
       handled:true,
       mode:MODE,
@@ -410,6 +419,7 @@
     resetCircuit,
     getCircuit,
     getEligibility,
+    getMaxRemoteWrites,
     getBudget,
     getCanarySession,
     clearCanarySession,

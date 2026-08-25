@@ -28,24 +28,26 @@
     }
 
     async function loadOfflineSyncFoundation() {
-        if (!global.OfflineOutboxStore) await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.39.0', 'offline-outbox-store');
-        if (!global.OfflineSyncShadow) await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.39.0', 'offline-sync-shadow');
+        if (!global.OfflineOutboxStore) await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.40.0', 'offline-outbox-store');
+        if (!global.OfflineSyncShadow) await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.40.0', 'offline-sync-shadow');
         global.OfflineSyncShadow?.install?.();
-        if (!global.OfflineSyncMetadataShadow) await loadExtensionScript('./js/core/offline-sync-metadata-shadow.js?v=10.39.0', 'offline-sync-metadata-shadow');
+        if (!global.OfflineSyncMetadataShadow) await loadExtensionScript('./js/core/offline-sync-metadata-shadow.js?v=10.40.0', 'offline-sync-metadata-shadow');
         global.OfflineSyncMetadataShadow?.install?.();
-        if (!global.OfflineSyncMetadataAuthority) await loadExtensionScript('./js/core/offline-sync-metadata-authority.js?v=10.39.0', 'offline-sync-metadata-authority');
+        if (!global.OfflineSyncMetadataAuthority) await loadExtensionScript('./js/core/offline-sync-metadata-authority.js?v=10.40.0', 'offline-sync-metadata-authority');
         global.OfflineSyncMetadataAuthority?.install?.();
-        if (!global.OfflineSyncMetadataGraduation) await loadExtensionScript('./js/core/offline-sync-metadata-graduation.js?v=10.39.0', 'offline-sync-metadata-graduation');
+        if (!global.OfflineSyncMetadataGraduation) await loadExtensionScript('./js/core/offline-sync-metadata-graduation.js?v=10.40.0', 'offline-sync-metadata-graduation');
         global.OfflineSyncMetadataGraduation?.install?.();
-        if (!global.OfflineSyncMetadataRollout) await loadExtensionScript('./js/core/offline-sync-metadata-rollout.js?v=10.39.0', 'offline-sync-metadata-rollout');
+        if (!global.OfflineSyncMetadataRollout) await loadExtensionScript('./js/core/offline-sync-metadata-rollout.js?v=10.40.0', 'offline-sync-metadata-rollout');
         global.OfflineSyncMetadataRollout?.install?.();
-        if (!global.OfflineSyncMetadataStability) await loadExtensionScript('./js/core/offline-sync-metadata-stability.js?v=10.39.0', 'offline-sync-metadata-stability');
+        if (!global.OfflineSyncMetadataStability) await loadExtensionScript('./js/core/offline-sync-metadata-stability.js?v=10.40.0', 'offline-sync-metadata-stability');
         global.OfflineSyncMetadataStability?.install?.();
-        if (!global.OfflineSyncAuthority) await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.39.0', 'offline-sync-authority');
+        if (!global.OfflineSyncMetadataExpansion) await loadExtensionScript('./js/core/offline-sync-metadata-expansion.js?v=10.40.0', 'offline-sync-metadata-expansion');
+        global.OfflineSyncMetadataExpansion?.install?.();
+        if (!global.OfflineSyncAuthority) await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.40.0', 'offline-sync-authority');
         global.OfflineSyncAuthority?.install?.();
-        if (!global.OfflineSyncDeleteAuthority) await loadExtensionScript('./js/core/offline-sync-delete-authority.js?v=10.39.0', 'offline-sync-delete-authority');
+        if (!global.OfflineSyncDeleteAuthority) await loadExtensionScript('./js/core/offline-sync-delete-authority.js?v=10.40.0', 'offline-sync-delete-authority');
         global.OfflineSyncDeleteAuthority?.install?.();
-        if (!global.OfflineSyncEditalGraduation) await loadExtensionScript('./js/core/offline-sync-edital-graduation.js?v=10.39.0', 'offline-sync-edital-graduation');
+        if (!global.OfflineSyncEditalGraduation) await loadExtensionScript('./js/core/offline-sync-edital-graduation.js?v=10.40.0', 'offline-sync-edital-graduation');
         global.OfflineSyncEditalGraduation?.install?.();
         return {
             shadow:await global.OfflineSyncShadow?.getDiagnostics?.() || null,
@@ -54,6 +56,7 @@
             metadataGraduation:global.OfflineSyncMetadataGraduation?.getDiagnostics?.() || null,
             metadataRollout:global.OfflineSyncMetadataRollout?.getDiagnostics?.() || null,
             metadataStability:global.OfflineSyncMetadataStability?.getDiagnostics?.() || null,
+            metadataExpansion:global.OfflineSyncMetadataExpansion?.getDiagnostics?.() || null,
             authority:global.OfflineSyncAuthority?.getDiagnostics?.() || null,
             deleteAuthority:global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
             editalGraduation:global.OfflineSyncEditalGraduation?.getDiagnostics?.() || null
@@ -114,6 +117,7 @@
         getOfflineSyncMetadataGraduationDiagnostics:() => global.OfflineSyncMetadataGraduation?.getDiagnostics?.() || null,
         getOfflineSyncMetadataRolloutDiagnostics:() => global.OfflineSyncMetadataRollout?.getDiagnostics?.() || null,
         getOfflineSyncMetadataStabilityDiagnostics:() => global.OfflineSyncMetadataStability?.getDiagnostics?.() || null,
+        getOfflineSyncMetadataExpansionDiagnostics:() => global.OfflineSyncMetadataExpansion?.getDiagnostics?.() || null,
         getOfflineSyncAuthorityDiagnostics:() => global.OfflineSyncAuthority?.getDiagnostics?.() || null,
         getOfflineSyncDeleteAuthorityDiagnostics:() => global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
         getOfflineSyncEditalGraduationDiagnostics:() => global.OfflineSyncEditalGraduation?.getDiagnostics?.() || null
