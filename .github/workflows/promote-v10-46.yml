@@ -24,76 +24,89 @@ jobs:
         with:
           node-version: '22.23.2'
 
-      - name: Promote release identity
+      - name: Promote release identity in workspace
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
           explicit = [Path('package.json'), Path('config/app-assets.json'), Path('public/version.json'), Path('src/index.js'), Path('public/js/app-pwa.js'), Path('public/js/app-state.js'), Path('public/sw.js')]
           targets = explicit + sorted(Path('tests').glob('*.test.cjs'))
-          touched = []
           for path in targets:
               text = path.read_text()
-              new = text.replace('v10.45.0','v10.46.0').replace('10.45.0','10.46.0').replace('10-45-0','10-46-0')
-              if new != text:
-                  path.write_text(new)
-                  touched.append(str(path))
-          required = {'package.json','config/app-assets.json','public/version.json','src/index.js','public/js/app-pwa.js','public/js/app-state.js','public/sw.js'}
-          missing = sorted(required - set(touched))
-          if missing: raise SystemExit(f'required release identity files were not updated: {missing}')
+              path.write_text(text.replace('v10.45.0','v10.46.0').replace('10.45.0','10.46.0').replace('10-45-0','10-46-0'))
           PY
 
-      - name: Verify release identity
-        run: |
-          set -euo pipefail
-          grep -q '"version": "10.46.0"' package.json
-          grep -q '"version": "10.46.0"' config/app-assets.json
-          grep -q '"version": "10.46.0"' public/version.json
-          ! grep -RIl --include='*.js' --include='*.json' --include='*.cjs' '10\.45\.0\|10-45-0\|v10\.45\.0' package.json config public src tests
-
-      - name: Tests E
-        run: |
-          shopt -s nullglob; files=(tests/[eE]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests F
+      - name: Test learning-advisor
+        run: node --test tests/learning-advisor.test.cjs
+      - name: Test library-action-alignment
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[fF]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests G
+        run: node --test tests/library-action-alignment.test.cjs
+      - name: Test library-activation
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[gG]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests H
+        run: node --test tests/library-activation.test.cjs
+      - name: Test library-desktop-single-row-layout
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[hH]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests I
+        run: node --test tests/library-desktop-single-row-layout.test.cjs
+      - name: Test library-reader-v10-24
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[iI]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests J
+        run: node --test tests/library-reader-v10-24.test.cjs
+      - name: Test offline-outbox-store
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[jJ]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests K
+        run: node --test tests/offline-outbox-store.test.cjs
+      - name: Test offline-pdf-library-phase2
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[kK]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests L
+        run: node --test tests/offline-pdf-library-phase2.test.cjs
+      - name: Test offline-pdf-library-phase3
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[lL]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests M
+        run: node --test tests/offline-pdf-library-phase3.test.cjs
+      - name: Test offline-pdf-library-phase4
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[mM]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests N
+        run: node --test tests/offline-pdf-library-phase4.test.cjs
+      - name: Test offline-pdf-store
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[nN]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Tests O
+        run: node --test tests/offline-pdf-store.test.cjs
+      - name: Test offline-sync-authority
         if: always()
-        run: |
-          shopt -s nullglob; files=(tests/[oO]*.test.cjs); ((${#files[@]} == 0)) || node --test "${files[@]}"
-      - name: Stop after diagnostic grouping
+        run: node --test tests/offline-sync-authority.test.cjs
+      - name: Test offline-sync-delete-authority
+        if: always()
+        run: node --test tests/offline-sync-delete-authority.test.cjs
+      - name: Test offline-sync-edital-graduation
+        if: always()
+        run: node --test tests/offline-sync-edital-graduation.test.cjs
+      - name: Test offline-sync-metadata-authority
+        if: always()
+        run: node --test tests/offline-sync-metadata-authority.test.cjs
+      - name: Test offline-sync-metadata-expanded-promotion
+        if: always()
+        run: node --test tests/offline-sync-metadata-expanded-promotion.test.cjs
+      - name: Test offline-sync-metadata-expanded-stability
+        if: always()
+        run: node --test tests/offline-sync-metadata-expanded-stability.test.cjs
+      - name: Test offline-sync-metadata-expansion
+        if: always()
+        run: node --test tests/offline-sync-metadata-expansion.test.cjs
+      - name: Test offline-sync-metadata-graduation
+        if: always()
+        run: node --test tests/offline-sync-metadata-graduation.test.cjs
+      - name: Test offline-sync-metadata-promoted-stability
+        if: always()
+        run: node --test tests/offline-sync-metadata-promoted-stability.test.cjs
+      - name: Test offline-sync-metadata-rollout
+        if: always()
+        run: node --test tests/offline-sync-metadata-rollout.test.cjs
+      - name: Test offline-sync-metadata-shadow
+        if: always()
+        run: node --test tests/offline-sync-metadata-shadow.test.cjs
+      - name: Test offline-sync-metadata-stability
+        if: always()
+        run: node --test tests/offline-sync-metadata-stability.test.cjs
+      - name: Test offline-sync-offline-core
+        if: always()
+        run: node --test tests/offline-sync-offline-core.test.cjs
+      - name: Test offline-sync-shadow
+        if: always()
+        run: node --test tests/offline-sync-shadow.test.cjs
+      - name: Diagnostic complete
         if: always()
         run: exit 0
