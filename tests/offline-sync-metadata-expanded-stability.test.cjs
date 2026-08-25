@@ -108,9 +108,9 @@ test('evento 4H reavalia somente a faixa expanded-base',()=>{
 });
 
 test('AppState carrega 4K depois da estabilidade e antes da expansão 4I',()=>{
-  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-stability.js?v=10.41.0');
-  const expandedIndex=appStateSource.indexOf('offline-sync-metadata-expanded-stability.js?v=10.41.0');
-  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.41.0');
+  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-stability.js?v=10.42.0');
+  const expandedIndex=appStateSource.indexOf('offline-sync-metadata-expanded-stability.js?v=10.42.0');
+  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.42.0');
   assert.ok(stabilityIndex>=0);
   assert.ok(expandedIndex>stabilityIndex);
   assert.ok(expansionIndex>expandedIndex);
