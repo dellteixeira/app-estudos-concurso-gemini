@@ -28,8 +28,8 @@ test('motor local calcula dificuldade persistente e limita triagem antes da IA',
   assert.match(client,/frictionScore/);
   assert.match(client,/slice\(0,Math\.max\(1,Math\.min\(MAX_TOPICS/);
   assert.match(client,/MIN_FRICTION=35/);
-  assert.match(client,/Dificuldade persistente \$\{candidate\.frictionScore\}/);
-  assert.doesNotMatch(client,/>Fricção \$\{candidate\.frictionScore\}</);
+  assert.match(client,/Dificuldade \$\{c\.frictionScore\}/);
+  assert.doesNotMatch(client,/>Fricção \$\{c\.frictionScore\}</);
 });
 
 test('IA integra Retenção e Diagnóstico sem substituir sua autoridade',()=>{
