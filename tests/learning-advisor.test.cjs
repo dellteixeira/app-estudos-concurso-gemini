@@ -22,6 +22,13 @@ test('advisor e endpoint possuem sintaxe JavaScript válida',()=>{
   }
 });
 
+test('arquivo do advisor mantém integridade textual sem linhas corrompidas',()=>{
+  assert.equal(client.endsWith('\n'),true,'learning-advisor.js deve terminar com quebra de linha');
+  assert.doesNotMatch(client,/\u0000|\uFFFD/,'arquivo não pode conter NUL ou caractere de substituição');
+  const longest=Math.max(...client.split('\n').map(line=>line.length));
+  assert.ok(longest<10000,`linha excessivamente longa ou concatenada: ${longest} caracteres`);
+});
+
 test('motor local calcula dificuldade persistente e limita triagem antes da IA',()=>{
   assert.match(client,/const MAX_TOPICS=5/);
   assert.match(client,/computeLearningFriction/);
@@ -58,6 +65,18 @@ test('revisões vencidas preservam acesso à revisão e dominados permanecem mon
   assert.match(client,/row\.retentionDue/);
   assert.match(client,/não há revisão vencida no cronograma/);
   assert.match(client,/Retenção baixa — revisão recomendada/);
+});
+
+test('IA em revisões vencidas é contextual e nunca deixa botão aparentemente quebrado',()=>{
+  assert.match(client,/function getAnalysisCandidates/);
+  assert.match(client,/kind===\'overdue\'\)return collectCandidatesFromEntries\(getMetricRows\('overdue'\),limit\)/);
+  assert.match(client,/kind===\'mastered\'/);
+  assert.match(client,/Sem dificuldade adicional/);
+  assert.match(client,/revisões estão vencidas por prazo/);
+  assert.match(client,/não detectou sinal cognitivo adicional/);
+  assert.match(client,/somente revisões vencidas que também apresentam dificuldade cognitiva relevante/);
+  assert.match(client,/analyze\(\{metric:kind\}\)/);
+  assert.doesNotMatch(client,/id="learningAdvisorAnalyze"[^>]*disabled/);
 });
 
 test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
