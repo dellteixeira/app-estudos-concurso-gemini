@@ -28,7 +28,7 @@ test('motor local calcula dificuldade persistente e limita triagem antes da IA',
   assert.match(client,/frictionScore/);
   assert.match(client,/slice\(0,Math\.max\(1,Math\.min\(MAX_TOPICS/);
   assert.match(client,/MIN_FRICTION=35/);
-  // A UI atual exibe o rótulo compacto "Dificuldade <score>" nos cartões de triagem.
+  // Contrato atual da UI: o card exibe a dificuldade calculada sem o rótulo legado "persistente".
   assert.match(client,/Dificuldade \$\{c\.frictionScore\}/);
   assert.doesNotMatch(client,/>Fricção \$\{c\.frictionScore\}</);
 });
