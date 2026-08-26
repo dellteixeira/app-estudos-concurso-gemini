@@ -39,8 +39,8 @@ jobs:
           s=s.replace(needle,replacement,1)
           p.write_text(s)
           PY
-      - name: Validate structural audit
-        run: npm run audit
+      - name: Validate asset manifest audit
+        run: node scripts/audit-asset-manifest.mjs
       - name: Validate 4Y dedicated test
         run: node --test tests/offline-sync-metadata-ring3-promoted-stability.test.cjs
       - name: Commit fix and self-clean
