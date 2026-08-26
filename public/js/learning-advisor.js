@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppLearningAdvisor)return;
 
-const VERSION='1.1.0';
+const VERSION='1.2.0';
 const MAX_TOPICS=5;
 const MIN_FRICTION=35;
 const CACHE_TTL_MS=30*60*1000;
@@ -23,9 +23,27 @@ const TYPE_LABELS={
   false_mastery:'Falsa sensação de domínio',
   mixed:'Dificuldade mista'
 };
+const METRIC_CONFIG={
+  risk:{
+    title:'Assuntos em risco',
+    subtitle:'O risco é calculado pelo motor de Retenção. Limpar o cronograma não apaga sinais reais de memória e desempenho.',
+    empty:'Nenhum assunto está em risco neste momento.'
+  },
+  overdue:{
+    title:'Revisões vencidas',
+    subtitle:'Conteúdos cuja próxima revisão prevista já ultrapassou a data recomendada pelo motor de Retenção.',
+    empty:'Nenhuma revisão está vencida neste momento.'
+  },
+  mastered:{
+    title:'Assuntos dominados',
+    subtitle:'Conteúdos com retenção alta, sem revisão vencida e evidência suficiente de domínio.',
+    empty:'Nenhum conteúdo apresenta evidência suficiente de domínio neste momento.'
+  }
+};
 let currentCandidates=[];
 let lastResult=null;
 let busy=false;
+let activeMetric='risk';
 
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
 const esc=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
@@ -119,6 +137,26 @@ function getRiskRows(){
   }).filter(Boolean).sort((a,b)=>b.riskScore-a.riskScore||a.retention-b.retention);
 }
 
+function getDiagnosticsSnapshot(){
+  try{if(typeof buildRetentionDiagnostics==='function')return buildRetentionDiagnostics()||{}}catch(_){}
+  return {};
+}
+
+function getMetricRows(kind){
+  if(kind==='risk')return getRiskRows();
+  const diag=getDiagnosticsSnapshot();
+  const rows=Array.isArray(diag?.[kind])?diag[kind]:[];
+  return rows.map(row=>{
+    const item=findItem(row);
+    if(!item)return null;
+    const retention=clamp(numberOr(row?.retention,numberOr(row?.state?.retention,100)),0,100);
+    const accuracy=numberOr(row?.questionAccuracy,numberOr(row?.state?.questionStats?.lastAccuracy,null));
+    const index=getRows().findIndex(candidate=>candidate?.state?.key===row?.state?.key);
+    const persistent=computeLearningFriction(row,item).score;
+    return {row,index,item,retention,accuracy,persistent,riskScore:numberOr(row?.riskScore,100-retention)};
+  }).filter(Boolean);
+}
+
 function cacheKey(candidates){
   const compact=candidates.map(c=>[c.topicId,c.frictionScore,Math.round(c.metrics.retention),c.metrics.accuracy==null?null:Math.round(c.metrics.accuracy),c.metrics.reviewCount,c.metrics.lapseCount]);
   let hash=2166136261;
@@ -174,21 +212,56 @@ function riskStateText(entry){
   return 'Sinal de risco identificado pelo motor de Retenção.';
 }
 
-function openRiskView(){
+function metricStateText(entry,kind){
+  if(kind==='risk')return riskStateText(entry);
+  if(kind==='overdue'){
+    const row=entry.row||{};
+    const days=Math.max(0,Number(row.scheduledOverdueDays??row.overdueDays)||0);
+    return `Revisão agendada vencida${days?` há ${days}d`:''}.`;
+  }
+  return 'Domínio validado pelo motor de Retenção; o assunto permanece monitorado.';
+}
+
+function renderMetricCard(entry,kind){
+  const actionable=kind!=='mastered'&&entry.index>=0;
+  const tag=actionable?'button':'article';
+  const action=actionable?` type="button" data-learning-action="metric-review" data-row-index="${entry.index}"`:'';
+  const persistent=entry.persistent>=MIN_FRICTION&&kind!=='mastered'
+    ?`<span class="learning-friction learning-friction-${entry.persistent>=70?'high':entry.persistent>=50?'medium':'low'}">Dificuldade persistente ${entry.persistent}</span>`
+    :kind==='mastered'?'<span class="learning-friction learning-friction-low">Domínio validado</span>':'';
+  return `<${tag} class="learning-risk-card${actionable?' is-clickable':''}"${action}><div class="learning-risk-copy"><span class="learning-advisor-subject">${esc(entry.item.materia)}</span><strong>${esc(entry.item.assunto)}</strong><p>${esc(metricStateText(entry,kind))}</p></div><div class="learning-risk-metrics"><span>Retenção <strong>${Math.round(entry.retention)}%</strong></span>${entry.accuracy!=null?`<span>Questões <strong>${Math.round(entry.accuracy)}%</strong></span>`:''}${persistent}</div></${tag}>`;
+}
+
+function bindMetricActions(root){
+  root?.querySelectorAll('[data-learning-action="metric-review"]').forEach(button=>button.addEventListener('click',()=>openLocalIntervention(Number(button.dataset.rowIndex))));
+}
+
+function openMetricView(kind='risk'){
+  const config=METRIC_CONFIG[kind]||METRIC_CONFIG.risk;
+  activeMetric=METRIC_CONFIG[kind]?kind:'risk';
   const overlay=ensureDialog();
   const title=overlay.querySelector('#learningAdvisorTitle');
   const subtitle=overlay.querySelector('#learningAdvisorSubtitle');
   const body=overlay.querySelector('#learningAdvisorBody');
   const footer=overlay.querySelector('#learningAdvisorFooter');
-  const risks=getRiskRows();
+  const rows=getMetricRows(activeMetric);
   const candidates=collectCandidates();
-  if(title)title.textContent='Assuntos em risco';
-  if(subtitle)subtitle.textContent='O risco é calculado pelo motor de Retenção. Limpar o cronograma não apaga sinais reais de memória e desempenho.';
-  if(body)body.innerHTML=risks.length?`<div class="learning-risk-list">${risks.map(entry=>`<article class="learning-risk-card"><div class="learning-risk-copy"><span class="learning-advisor-subject">${esc(entry.item.materia)}</span><strong>${esc(entry.item.assunto)}</strong><p>${esc(riskStateText(entry))}</p></div><div class="learning-risk-metrics"><span>Retenção <strong>${Math.round(entry.retention)}%</strong></span>${entry.accuracy!=null?`<span>Questões <strong>${Math.round(entry.accuracy)}%</strong></span>`:''}${entry.persistent>=MIN_FRICTION?`<span class="learning-friction learning-friction-${entry.persistent>=70?'high':entry.persistent>=50?'medium':'low'}">Dificuldade persistente ${entry.persistent}</span>`:''}</div></article>`).join('')}</div>`:'<div class="learning-advisor-empty">Nenhum assunto está em risco neste momento.</div>';
-  if(footer)footer.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>A IA interpreta somente os sinais críticos; a Retenção continua sendo a autoridade.</span></div><button id="learningAdvisorAnalyze" class="btn btn-secondary" type="button" ${candidates.length?'':'disabled'}>Analisar dificuldades com IA</button>`;
-  footer?.querySelector('#learningAdvisorAnalyze')?.addEventListener('click',()=>analyze().catch(()=>{}));
+  if(title)title.textContent=config.title;
+  if(subtitle)subtitle.textContent=config.subtitle;
+  if(body)body.innerHTML=rows.length?`<div class="learning-risk-list">${rows.map(entry=>renderMetricCard(entry,activeMetric)).join('')}</div>`:`<div class="learning-advisor-empty">${esc(config.empty)}</div>`;
+  bindMetricActions(body);
+  if(footer){
+    if(activeMetric==='mastered'){
+      footer.innerHTML='<div class="learning-advisor-footer-copy"><strong>Monitoramento contínuo</strong><span>Assuntos dominados voltam automaticamente à fila se retenção ou desempenho caírem.</span></div>';
+    }else{
+      footer.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>A IA interpreta somente os sinais críticos; a Retenção continua sendo a autoridade.</span></div><button id="learningAdvisorAnalyze" class="btn btn-secondary" type="button" ${candidates.length?'':'disabled'}>Analisar dificuldades com IA</button>`;
+      footer.querySelector('#learningAdvisorAnalyze')?.addEventListener('click',()=>analyze().catch(()=>{}));
+    }
+  }
   openDialog();
 }
+
+function openRiskView(){openMetricView('risk')}
 
 function renderInterventionShell(){
   const overlay=ensureDialog();
@@ -199,8 +272,8 @@ function renderInterventionShell(){
   if(title)title.textContent='Intervenções para dificuldades persistentes';
   if(subtitle)subtitle.textContent='A Retenção continua sendo a autoridade. A IA apenas interpreta os sinais e sugere estratégias pedagógicas.';
   if(body)body.innerHTML='<div id="learningAdvisorStatus" class="learning-advisor-status" role="status" aria-live="polite"></div><div id="learningAdvisorResults" class="learning-advisor-results"></div>';
-  if(footer)footer.innerHTML='<button id="learningAdvisorBack" class="btn btn-secondary" type="button">Voltar aos assuntos em risco</button>';
-  footer?.querySelector('#learningAdvisorBack')?.addEventListener('click',openRiskView);
+  if(footer)footer.innerHTML=`<button id="learningAdvisorBack" class="btn btn-secondary" type="button">Voltar para ${esc((METRIC_CONFIG[activeMetric]||METRIC_CONFIG.risk).title.toLowerCase())}</button>`;
+  footer?.querySelector('#learningAdvisorBack')?.addEventListener('click',()=>openMetricView(activeMetric));
   openDialog();
   return overlay;
 }
@@ -266,12 +339,15 @@ async function analyze(options={}){
   }finally{busy=false}
 }
 
-function onRiskMetricClick(event){
-  const target=event.target?.closest?.('[data-action="retention-details"][data-metric="risk"]');
+function onMetricClick(event){
+  const target=event.target?.closest?.('[data-action="retention-details"][data-metric]');
   if(!target)return;
+  const kind=target.dataset.metric;
+  if(!METRIC_CONFIG[kind])return;
   event.preventDefault();
   event.stopImmediatePropagation();
-  openRiskView();
+  try{if(typeof closeRetentionMetricDetails==='function')closeRetentionMetricDetails()}catch(_){}
+  openMetricView(kind);
 }
 
 function onKeydown(event){
@@ -284,22 +360,23 @@ function refresh(){
   const overlay=document.getElementById('learningAdvisorOverlay');
   if(overlay?.classList.contains('is-open')){
     const title=overlay.querySelector('#learningAdvisorTitle')?.textContent||'';
-    if(title==='Assuntos em risco')openRiskView();
+    const kind=Object.keys(METRIC_CONFIG).find(key=>METRIC_CONFIG[key].title===title);
+    if(kind)openMetricView(kind);
   }
 }
-function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'risk-details',candidateCount:collectCandidates().length,busy,hasResult:!!lastResult})}
+function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoints:['risk-details','overdue-details','mastered-details'],candidateCount:collectCandidates().length,busy,hasResult:!!lastResult})}
 
 function boot(){
   document.getElementById('learningAdvisorPanel')?.remove();
   ensureDialog();
-  if(!document.documentElement.dataset.learningAdvisorRiskBound){
-    document.documentElement.dataset.learningAdvisorRiskBound='1';
-    document.addEventListener('click',onRiskMetricClick,true);
+  if(!document.documentElement.dataset.learningAdvisorMetricsBound){
+    document.documentElement.dataset.learningAdvisorMetricsBound='1';
+    document.addEventListener('click',onMetricClick,true);
     document.addEventListener('keydown',onKeydown);
   }
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
 global.addEventListener('pageshow',()=>setTimeout(boot,80));
 
-global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,getDiagnostics:diagnostics});
+global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,getMetricRows,openRiskView,openMetricView,analyze,refresh,close:closeDialog,getDiagnostics:diagnostics});
 })(window);
