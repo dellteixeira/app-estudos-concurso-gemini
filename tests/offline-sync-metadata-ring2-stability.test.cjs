@@ -136,11 +136,12 @@ test('diagnóstico AppState incorpora 4S no asset existente sem novo loader',()=
   assert.equal(diagnostics.ring2Report.readyForDepthReview,true);
   assert.ok([...diagnostics.scope].includes('local-diagnostic:population-expanded-ring-2:concursos_metadata'));
   assert.match(appStateSource,/getOfflineSyncMetadataExpandedStabilityDiagnostics/);
-  assert.match(appStateSource,/offline-sync-metadata-expanded-stability\.js\?v=10\.53\.0/);
+  assert.match(appStateSource,/offline-sync-metadata-expanded-stability\.js\?v=10\.54\.0/);
 });
 
-test('4S preserva rollout 45% e orçamento-base de um write',()=>{
-  assert.match(rolloutSource,/const COHORT_PERCENT = 45/);
+test('4S preserva a fronteira ring-2 em 45% enquanto 4V amplia o rollout global para 55%',()=>{
+  assert.match(rolloutSource,/const RING2_COHORT_PERCENT = 45/);
+  assert.match(rolloutSource,/const COHORT_PERCENT = 55/);
   assert.match(rolloutSource,/population-expanded-ring-2/);
   assert.doesNotMatch(source,/remoteWriteBudget\s*:\s*2/);
   const report=makeContext({history:rows(5)}).context.OfflineSyncMetadataExpandedStability.getRing2Report();

@@ -12,6 +12,7 @@ const workerSource=fs.readFileSync('src/worker.js','utf8');
 const headersSource=fs.readFileSync('public/_headers','utf8');
 const expandedPromotionSource=fs.readFileSync('public/js/core/offline-sync-metadata-expanded-promotion.js','utf8');
 const populationPromotionSource=fs.readFileSync('public/js/core/offline-sync-metadata-population-promotion.js','utf8');
+const ring2PromotionSource=fs.readFileSync('public/js/core/offline-sync-metadata-ring2-promotion.js','utf8');
 const expansionSource=fs.readFileSync('public/js/core/offline-sync-metadata-expansion.js','utf8');
 
 function makeStorage(){
@@ -69,13 +70,14 @@ function findUserForTier(tier){
   throw new Error(`cohort tier not found: ${tier}`);
 }
 
-test('coorte é determinística com base 45%, fronteiras históricas 35/25% e piloto preservado em 10%',()=>{
+test('coorte é determinística com base 55%, fronteiras históricas 45/35/25% e piloto preservado em 10%',()=>{
   const env=makeContext();
   const rollout=env.context.OfflineSyncMetadataRollout;
   const first=rollout.getCohortAssignment('stable-user');
   const second=rollout.getCohortAssignment('stable-user');
   assert.deepEqual({...first},{...second});
-  assert.equal(first.percent,45);
+  assert.equal(first.percent,55);
+  assert.equal(first.ring2Percent,45);
   assert.equal(first.previousPercent,35);
   assert.equal(first.firstExpandedPercent,25);
   assert.equal(first.pilotPercent,10);
@@ -83,7 +85,8 @@ test('coorte é determinística com base 45%, fronteiras históricas 35/25% e pi
   assert.equal(rollout.PILOT_COHORT_PERCENT,10);
   assert.equal(rollout.FIRST_EXPANDED_COHORT_PERCENT,25);
   assert.equal(rollout.PREVIOUS_COHORT_PERCENT,35);
-  assert.equal(rollout.COHORT_PERCENT,45);
+  assert.equal(rollout.RING2_COHORT_PERCENT,45);
+  assert.equal(rollout.COHORT_PERCENT,55);
 });
 
 test('faixa 10-24 preserva tier expanded-base',()=>{
@@ -108,23 +111,38 @@ test('faixa 25-34 preserva tier population-expanded-base e promoção 4P isolada
   assert.match(populationPromotionSource,/cohort\?\.tier !== 'population-expanded-base'/);
 });
 
-test('faixa 35-44 entra na 4R como tier novo e permanece em um write',()=>{
+test('faixa 35-44 preserva tier population-expanded-ring-2 e grant 4T isolado',()=>{
   const userId=findUserForTier('population-expanded-ring-2');
   const env=makeContext({userId});
   const rollout=env.context.OfflineSyncMetadataRollout;
   const cohort=rollout.getCohortAssignment();
   assert.equal(cohort.included,true);
   assert.equal(cohort.previousIncluded,false);
+  assert.equal(cohort.ring2Included,true);
   assert.equal(cohort.tier,'population-expanded-ring-2');
   assert.equal(cohort.bucket>=35&&cohort.bucket<45,true);
+  assert.equal(rollout.getEligibility().eligible,true);
+  assert.match(ring2PromotionSource,/cohort\?\.tier !== 'population-expanded-ring-2'/);
+});
+
+test('faixa 45-54 entra na 4V como population-expanded-ring-3 com budget base de um write',()=>{
+  const userId=findUserForTier('population-expanded-ring-3');
+  const env=makeContext({userId});
+  const rollout=env.context.OfflineSyncMetadataRollout;
+  const cohort=rollout.getCohortAssignment();
+  assert.equal(cohort.included,true);
+  assert.equal(cohort.ring2Included,false);
+  assert.equal(cohort.tier,'population-expanded-ring-3');
+  assert.equal(cohort.bucket>=45&&cohort.bucket<55,true);
   assert.equal(rollout.getEligibility().eligible,true);
   assert.equal(rollout.setEnabled(true),true);
   assert.match(expandedPromotionSource,/cohort\?\.tier !== 'expanded-base'/);
   assert.match(populationPromotionSource,/cohort\?\.tier !== 'population-expanded-base'/);
+  assert.match(ring2PromotionSource,/cohort\?\.tier !== 'population-expanded-ring-2'/);
   assert.match(expansionSource,/const BASE_REMOTE_WRITES = 1/);
 });
 
-test('usuário fora dos 45% não pode ativar graduação',()=>{
+test('usuário fora dos 55% não pode ativar graduação',()=>{
   const userId=findUserForTier('excluded');
   const env=makeContext({userId});
   const rollout=env.context.OfflineSyncMetadataRollout;
@@ -199,9 +217,9 @@ test('rollout não possui caminho remoto próprio',()=>{
 });
 
 test('AppState carrega rollout depois da graduação e antes das autoridades do edital',()=>{
-  const graduationIndex=appStateSource.indexOf('offline-sync-metadata-graduation.js?v=10.53.0');
-  const rolloutIndex=appStateSource.indexOf('offline-sync-metadata-rollout.js?v=10.53.0');
-  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.53.0');
+  const graduationIndex=appStateSource.indexOf('offline-sync-metadata-graduation.js?v=10.54.0');
+  const rolloutIndex=appStateSource.indexOf('offline-sync-metadata-rollout.js?v=10.54.0');
+  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.54.0');
   assert.ok(graduationIndex>=0);
   assert.ok(rolloutIndex>graduationIndex);
   assert.ok(editalAuthorityIndex>rolloutIndex);
