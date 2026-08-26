@@ -12,8 +12,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function ensurePdfFeature(page) {
-  await page.waitForFunction(() => !!window.AppPerformanceLoader?.ensurePdfFeature, null, { timeout: 10000 });
-  await page.evaluate(() => window.AppPerformanceLoader.ensurePdfFeature());
+  // O hotfix restaura o bootstrap eager funcional anterior ao PR #259.
+  // A auditoria deve aceitar os módulos já carregados, sem depender do loader experimental.
+  await page.waitForFunction(
+    () => !!window.PdfStudyLibraryUI && !!window.PdfStudyReader && !!window.PdfStudyLibrary,
+    null,
+    { timeout: 10000 }
+  );
 }
 
 async function exposeLibrary(page) {
