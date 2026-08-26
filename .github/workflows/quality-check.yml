@@ -52,3 +52,5 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+# Rollback v10.56.0: revalidação controlada.
