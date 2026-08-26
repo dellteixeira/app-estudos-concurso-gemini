@@ -16,7 +16,9 @@
     './js/pdf/pdf-annotations.js',
     './vendor/pdf.min.js',
     './js/pdf/pdf-reader.js',
-    './js/pdf/pdf-library-ui.js'
+    './js/pdf/pdf-library-ui.js',
+    './js/pdf/pdf-offline-integrity.js',
+    './js/pdf/pdf-device-storage.js'
   ];
 
   function connectionProfile() {
@@ -137,14 +139,22 @@
     });
   }
 
+  function pdfFeatureReady() {
+    return Boolean(
+      global.PdfStudyLibraryUI &&
+      global.PdfStudyReader &&
+      global.PdfStudyLibrary &&
+      global.PdfOfflineIntegrity &&
+      global.PdfDeviceStorage
+    );
+  }
+
   function ensurePdfFeature() {
-    if (global.PdfStudyLibraryUI && global.PdfStudyReader && global.PdfStudyLibrary) {
-      return Promise.resolve(global.PdfStudyLibraryUI);
-    }
+    if (pdfFeatureReady()) return Promise.resolve(global.PdfStudyLibraryUI);
     if (pdfFeaturePromise) return pdfFeaturePromise;
     pdfFeaturePromise = (async () => {
       for (const src of PDF_FEATURE_SCRIPTS) await loadScript(src);
-      if (!global.PdfStudyLibraryUI || !global.PdfStudyReader || !global.PdfStudyLibrary) {
+      if (!pdfFeatureReady()) {
         throw new Error('A Biblioteca PDF não terminou de inicializar.');
       }
       return global.PdfStudyLibraryUI;
