@@ -1,0 +1,55 @@
+name: Fix Phase 4Y no-store
+on:
+  push:
+    branches:
+      - feat/offline-metadata-ring3-promoted-stability-v10.57.0
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+      - name: Patch no-store contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('src/index.js')
+          s=p.read_text()
+          needle='  "/js/study-domain.js", "/js/core/local-backup-store.js",'
+          replacement='  "/js/study-domain.js", "/js/core/offline-sync-metadata-ring3-promoted-stability.js", "/js/core/local-backup-store.js",'
+          if needle not in s: raise SystemExit('src/index.js no-store anchor missing')
+          s=s.replace(needle,replacement,1)
+          p.write_text(s)
+
+          p=Path('public/_headers')
+          s=p.read_text()
+          needle='/js/core/offline-sync-metadata-ring3-promotion.js\n  Cache-Control: no-cache, no-store, must-revalidate\n\n'
+          replacement=needle+'/js/core/offline-sync-metadata-ring3-promoted-stability.js\n  Cache-Control: no-cache, no-store, must-revalidate\n\n'
+          if needle not in s: raise SystemExit('public/_headers no-store anchor missing')
+          s=s.replace(needle,replacement,1)
+          p.write_text(s)
+          PY
+      - name: Validate structural audit
+        run: npm run audit
+      - name: Validate 4Y dedicated test
+        run: node --test tests/offline-sync-metadata-ring3-promoted-stability.test.cjs
+      - name: Commit fix and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/fix-4y-nostore.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/index.js public/_headers
+          git commit -m "fix(sync): integrar no-store da Fase 4Y"
+          git push origin HEAD:feat/offline-metadata-ring3-promoted-stability-v10.57.0
