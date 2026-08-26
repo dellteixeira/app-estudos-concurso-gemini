@@ -141,9 +141,9 @@ test('coorte e paridade saudável continuam obrigatórias',()=>{
 });
 
 test('AppState carrega stability depois do rollout e antes das autoridades do edital',()=>{
-  const rolloutIndex=appStateSource.indexOf('offline-sync-metadata-rollout.js?v=10.53.0');
-  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-stability.js?v=10.53.0');
-  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.53.0');
+  const rolloutIndex=appStateSource.indexOf('offline-sync-metadata-rollout.js?v=10.54.0');
+  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-stability.js?v=10.54.0');
+  const editalAuthorityIndex=appStateSource.indexOf('offline-sync-authority.js?v=10.54.0');
   assert.ok(rolloutIndex>=0);
   assert.ok(stabilityIndex>rolloutIndex);
   assert.ok(editalAuthorityIndex>stabilityIndex);
