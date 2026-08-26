@@ -1,3 +1,4 @@
+import { handleLearningDiagnosis } from './learning-diagnosis.js';
 // Universal Parser V8.4: o backend recebe matéria/assunto já bloqueados pelo frontend.
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const FLASHCARD_AI_MODELS = Object.freeze({
@@ -26,8 +27,8 @@ const MAX_ASSUNTO_CHARS = 1200;
 const APP_VERSION = "10.57.0";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
-  "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css", "/css/pdf-mobile-card-actions.css",
-  "/js/study-domain.js", "/js/core/offline-sync-metadata-ring3-promoted-stability.js", "/js/core/local-backup-store.js", "/js/app-core.js", "/js/app-state.js", "/js/sync-engine.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/pdf/pdf-library-opfs-adapter.js", "/js/pdf/pdf-library-layout-fix.js", "/js/pdf/pdf-device-storage.js", "/js/pdf/offline-pdf-store.js", "/js/pdf/pdf-offline-library-manager.js", "/js/pdf/pdf-offline-integrity.js", "/js/pdf/pdf-offline-library-ui.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"
+  "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/learning-advisor.css", "/css/pdf-library.css", "/css/pdf-reader.css", "/css/pdf-mobile-card-actions.css",
+  "/js/study-domain.js", "/js/core/offline-sync-metadata-ring3-promoted-stability.js", "/js/core/local-backup-store.js", "/js/app-core.js", "/js/app-state.js", "/js/sync-engine.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/pdf/pdf-library-opfs-adapter.js", "/js/pdf/pdf-library-layout-fix.js", "/js/pdf/pdf-device-storage.js", "/js/pdf/offline-pdf-store.js", "/js/pdf/pdf-offline-library-manager.js", "/js/pdf/pdf-offline-integrity.js", "/js/pdf/pdf-offline-library-ui.js", "/js/app-ai.js", "/js/app-ui.js", "/js/learning-advisor.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/app-pwa.js"
 ]);
 
 const VENDOR_ROUTES = {
@@ -984,6 +985,10 @@ export default {
     if (url.pathname === "/api/ai/flashcard") {
       if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
       return generateFlashcard(request, env);
+    }
+
+    if (url.pathname === "/api/ai/learning-diagnosis") {
+      return handleLearningDiagnosis(request, env);
     }
 
     return env.ASSETS.fetch(request);

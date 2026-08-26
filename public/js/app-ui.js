@@ -346,11 +346,102 @@
                 return { state, retention, nextAt, overdue, overdueDays, questionAccuracy, riskScore, schedulerScore };
             });
             const avg = rows.length ? rows.reduce((sum,row)=>sum+row.retention,0)/rows.length : null;
-            const risk = rows.filter(row => row.retention < 70 || row.overdue || (row.questionAccuracy!=null && row.questionAccuracy<60));
-            const overdue = rows.filter(row => row.overdue);
-            const mastered = rows.filter(row => row.retention >= 85 && !row.overdue && hasRetentionMasteryEvidence(row.state));
+            const activeRows = rows.filter(row => {
+                const disposition = getRetentionManualDisposition(row.state, now);
+                return !disposition.completed && !disposition.snoozed;
+            });
+            const risk = activeRows.filter(row => row.retention < 70 || row.overdue || (row.questionAccuracy!=null && row.questionAccuracy<60));
+            const overdue = activeRows.filter(row => row.overdue);
+            const mastered = rows.filter(row => getRetentionManualDisposition(row.state, now).completed || (row.retention >= 85 && !row.overdue && hasRetentionMasteryEvidence(row.state)));
             risk.sort((a,b)=>b.riskScore-a.riskScore || a.retention-b.retention);
             return { rows, avg, risk, overdue, mastered };
+        }
+
+        function getRetentionManualDisposition(state, now = new Date()) {
+            const completedAt = state?.manualCompletedAt ? new Date(state.manualCompletedAt) : null;
+            const snoozedUntil = state?.manualReviewSnoozedUntil ? new Date(state.manualReviewSnoozedUntil) : null;
+            const completed = !!(completedAt && Number.isFinite(completedAt.getTime()));
+            const snoozed = !completed && !!(snoozedUntil && Number.isFinite(snoozedUntil.getTime()) && snoozedUntil > now);
+            return { completed, completedAt, snoozed, snoozedUntil };
+        }
+
+        function removeTopicFromFutureSchedule(contest, item) {
+            const schedule = contest?.dateSchedule;
+            if (!schedule || !item) return;
+            const materia = String(item.materia || '').trim();
+            const assunto = String(item.assunto || '').trim();
+            const exactLabels = new Set([
+                `${materia} - ${assunto}`,
+                `${materia} — ${assunto}`,
+                `${materia}: ${assunto}`
+            ]);
+            const today = getLocalDateKey();
+            Object.keys(schedule).forEach(dateKey => {
+                if (dateKey < today || !Array.isArray(schedule[dateKey])) return;
+                schedule[dateKey] = schedule[dateKey].filter(raw => !exactLabels.has(normalizeScheduledTopicForStudy(raw)));
+            });
+        }
+
+        async function deferRetentionTopic(index) {
+            const row = retentionDiagnosticRows[index];
+            const state = row?.state;
+            if (!state) return;
+            const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === state.key);
+            if (!item) return appNotice('Este assunto não está mais disponível no edital atual.', { title:'Revisar depois' });
+            const base = new Date();
+            base.setDate(base.getDate() + 3);
+            const defaultDate = `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`;
+            const chosen = await appPrompt('', {
+                title:'Revisar depois',
+                label:'Nova data de revisão',
+                type:'date',
+                value:defaultDate,
+                help:'O histórico de retenção será preservado. Até essa data o assunto sai dos pontos críticos e volta automaticamente depois.',
+                confirmText:'Adiar revisão'
+            });
+            if (chosen === null) return;
+            const parsed = new Date(`${String(chosen).trim()}T23:59:59`);
+            if (!String(chosen).trim() || !Number.isFinite(parsed.getTime()) || parsed <= new Date()) {
+                return appNotice('Escolha uma data futura para adiar a revisão.', { title:'Revisar depois' });
+            }
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || (metadata[currentConcurso] = {});
+            const liveState = getRetentionTopicState(contest,item.materia,item.assunto,true);
+            liveState.manualReviewSnoozedUntil = parsed.toISOString();
+            liveState.manualCompletedAt = null;
+            liveState.manualDispositionUpdatedAt = new Date().toISOString();
+            await saveConcursosMetadata(metadata);
+            if (typeof scheduleLocalBackup === 'function') scheduleLocalBackup('revisão adiada');
+            renderRetentionDiagnostics();
+            window.AppLearningAdvisor?.refresh?.();
+            await appNotice(`Revisão de “${item.assunto}” adiada para ${parsed.toLocaleDateString('pt-BR')}.`, { title:'Revisão adiada' });
+        }
+
+        async function completeRetentionTopic(index) {
+            const row = retentionDiagnosticRows[index];
+            const state = row?.state;
+            if (!state) return;
+            const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === state.key);
+            if (!item) return appNotice('Este assunto não está mais disponível no edital atual.', { title:'Concluir assunto' });
+            const ok = await appConfirm(
+                `Concluir totalmente “${item.materia} — ${item.assunto}”?\n\nO assunto sairá das revisões e dos pontos críticos e contará como concluído no progresso geral. O histórico real de estudo, retenção e questões será preservado.`,
+                { title:'Concluir assunto', confirmText:'Concluir assunto', danger:false }
+            );
+            if (!ok) return;
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || (metadata[currentConcurso] = {});
+            const liveState = getRetentionTopicState(contest,item.materia,item.assunto,true);
+            liveState.manualCompletedAt = new Date().toISOString();
+            liveState.manualReviewSnoozedUntil = null;
+            liveState.manualDispositionUpdatedAt = liveState.manualCompletedAt;
+            removeTopicFromFutureSchedule(contest,item);
+            await saveConcursosMetadata(metadata);
+            if (typeof scheduleLocalBackup === 'function') scheduleLocalBackup('assunto concluído manualmente');
+            renderRetentionDiagnostics();
+            if (typeof updateModernOverview === 'function') updateModernOverview();
+            if (typeof renderMonthCalendar === 'function') renderMonthCalendar();
+            window.AppLearningAdvisor?.refresh?.();
+            await appNotice('Assunto concluído. O histórico foi preservado e ele não será mais cobrado pela fila de revisão.', { title:'Assunto concluído' });
         }
 
         function renderRetentionRiskCard(row, index) {
@@ -365,7 +456,21 @@
             const status = row.overdue ? `Revisão vencida${row.overdueDays?` há ${row.overdueDays}d`:''}` : (row.questionAccuracy!=null && row.questionAccuracy<60 ? `Questões ${Math.round(row.questionAccuracy)}%` : 'Retenção abaixo do alvo');
             const layerDef = plan?.layers?.find(x=>x.layer===plan.recommendedLayer);
             const layerText = plan ? `Camada ${plan.recommendedLayer}: ${layerDef?.label||'Revisão'}` : 'Revisão adaptativa';
-            return `<button class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" type="button" data-dynamic-action="open-layered-review" data-review-index="${index}" aria-label="Abrir revisão de ${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}. Risco ${severityLabel}. Retenção ${retention}%"><span class="critical-rank">${index+1}</span><span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(state.materia)} — ${escapeHtml(state.assunto)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span class="${getProgressWidthClass(retention)}"></span></span></span><span class="retention-risk-value">${retention}%</span></button>`;
+            const title = `${state.materia} — ${state.assunto}`;
+            return `<article class="retention-risk-row v965 retention-risk-card-v1071 risk-${severity}" data-review-index="${index}">
+                <button class="retention-risk-main" type="button" data-dynamic-action="open-layered-review" data-review-index="${index}" aria-label="Abrir revisão de ${escapeHtml(title)}. Risco ${severityLabel}. Retenção ${retention}%">
+                    <span class="critical-rank">${index+1}</span>
+                    <span class="retention-risk-copy"><span class="retention-risk-topline"><span class="retention-risk-title">${escapeHtml(title)}</span><span class="retention-risk-badge ${severity}">${severityLabel}</span></span><span class="retention-risk-meta">${escapeHtml(status)}</span><span class="critical-layer-label">${escapeHtml(layerText)}</span><span class="retention-risk-progress" aria-hidden="true"><span class="${getProgressWidthClass(retention)}"></span></span></span>
+                    <span class="retention-risk-value">${retention}%</span>
+                </button>
+                <details class="retention-risk-actions">
+                    <summary aria-label="Ações para ${escapeHtml(title)}" title="Ações do assunto">•••</summary>
+                    <div class="retention-risk-actions-menu">
+                        <button type="button" data-dynamic-action="defer-retention-topic" data-review-index="${index}">Revisar depois</button>
+                        <button type="button" data-dynamic-action="complete-retention-topic" data-review-index="${index}">Concluir assunto</button>
+                    </div>
+                </details>
+            </article>`;
         }
 
         function getRetentionMetricConfig(kind) {
@@ -481,12 +586,33 @@
             const rows=retentionDiagnosticRows.slice(2);
             list.innerHTML=rows.length ? rows.map((row,offset)=>renderRetentionRiskCard(row,offset+2)).join('') : '<div class="retention-empty">Não há outros pontos críticos.</div>';
             setVisualState(modal, true);
+            document.body.classList.add('retention-more-modal-open');
+            setTimeout(() => list.querySelector('.retention-risk-main')?.focus() || modal.querySelector('.retention-more-close')?.focus(), 30);
         }
 
         function closeRetentionMoreModal() {
             const modal=document.getElementById('modalRetentionMore');
             setVisualState(modal, false);
+            document.body.classList.remove('retention-more-modal-open');
+            document.getElementById('retentionMoreButton')?.focus();
         }
+
+        function handleRetentionMoreKeyboard(event) {
+            const modal=document.getElementById('modalRetentionMore');
+            if(!modal || modal.hidden || !modal.classList.contains('is-open')) return;
+            if(event.key === 'Escape') {
+                event.preventDefault();
+                closeRetentionMoreModal();
+                return;
+            }
+            if(event.key === 'Enter') {
+                const active=document.activeElement;
+                if(active?.matches?.('button,summary,a,input,select,textarea')) return;
+                const first=modal.querySelector('.retention-risk-main');
+                if(first) { event.preventDefault(); first.click(); }
+            }
+        }
+        document.addEventListener('keydown', handleRetentionMoreKeyboard);
 
         function startRetentionDiagnosticTopic(index) {
             return openLayeredReviewModal(index);
@@ -524,6 +650,14 @@
                 }
                 if (action === 'open-layered-review') {
                     openLayeredReviewModal(Number(actionTarget.dataset.reviewIndex));
+                    return;
+                }
+                if (action === 'defer-retention-topic') {
+                    deferRetentionTopic(Number(actionTarget.dataset.reviewIndex));
+                    return;
+                }
+                if (action === 'complete-retention-topic') {
+                    completeRetentionTopic(Number(actionTarget.dataset.reviewIndex));
                     return;
                 }
                 if (action === 'open-layered-review-from-metric') {

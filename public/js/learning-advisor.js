@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppLearningAdvisor)return;
 
-const VERSION='1.1.0';
+const VERSION='1.2.0';
 const MAX_TOPICS=5;
 const MIN_FRICTION=35;
 const CACHE_TTL_MS=30*60*1000;
@@ -186,7 +186,19 @@ function openRiskView(){
   if(subtitle)subtitle.textContent='O risco é calculado pelo motor de Retenção. Limpar o cronograma não apaga sinais reais de memória e desempenho.';
   if(body)body.innerHTML=risks.length?`<div class="learning-risk-list">${risks.map(entry=>`<article class="learning-risk-card"><div class="learning-risk-copy"><span class="learning-advisor-subject">${esc(entry.item.materia)}</span><strong>${esc(entry.item.assunto)}</strong><p>${esc(riskStateText(entry))}</p></div><div class="learning-risk-metrics"><span>Retenção <strong>${Math.round(entry.retention)}%</strong></span>${entry.accuracy!=null?`<span>Questões <strong>${Math.round(entry.accuracy)}%</strong></span>`:''}${entry.persistent>=MIN_FRICTION?`<span class="learning-friction learning-friction-${entry.persistent>=70?'high':entry.persistent>=50?'medium':'low'}">Dificuldade persistente ${entry.persistent}</span>`:''}</div></article>`).join('')}</div>`:'<div class="learning-advisor-empty">Nenhum assunto está em risco neste momento.</div>';
   if(footer)footer.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>A IA interpreta somente os sinais críticos; a Retenção continua sendo a autoridade.</span></div><button id="learningAdvisorAnalyze" class="btn btn-secondary" type="button" ${candidates.length?'':'disabled'}>Analisar dificuldades com IA</button>`;
-  footer?.querySelector('#learningAdvisorAnalyze')?.addEventListener('click',()=>analyze().catch(()=>{}));
+  footer?.querySelector('#learningAdvisorAnalyze')?.addEventListener('click',async event=>{
+    const button=event.currentTarget;
+    if(button?.disabled)return;
+    const original=button.textContent;
+    button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='Analisando…';
+    try{await analyze({force:true})}
+    catch(error){
+      const message=error?.message||'Não foi possível consultar a IA agora.';
+      global.appNotice?.(message,{title:'IA auxiliar'});
+    }finally{
+      if(button?.isConnected){button.disabled=false;button.removeAttribute('aria-busy');button.textContent=original}
+    }
+  });
   openDialog();
 }
 
@@ -275,7 +287,15 @@ function onRiskMetricClick(event){
 }
 
 function onKeydown(event){
-  if(event.key==='Escape'&&document.getElementById('learningAdvisorOverlay')?.classList.contains('is-open'))closeDialog();
+  const overlay=document.getElementById('learningAdvisorOverlay');
+  if(!overlay?.classList.contains('is-open'))return;
+  if(event.key==='Escape'){event.preventDefault();closeDialog();return}
+  if(event.key==='Enter'&&!event.defaultPrevented){
+    const active=document.activeElement;
+    if(active?.matches?.('button,a,input,select,textarea'))return;
+    const primary=overlay.querySelector('#learningAdvisorAnalyze:not(:disabled), [data-learning-action="local-intervention"], #learningAdvisorBack');
+    if(primary){event.preventDefault();primary.click()}
+  }
 }
 
 function refresh(){

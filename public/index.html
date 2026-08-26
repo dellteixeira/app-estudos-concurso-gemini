@@ -1088,14 +1088,21 @@
         </div>
     </div>
 
-    <div class="modal-overlay u-layout-b6-016" id="modalRetentionMore">
-        <div class="modal-content retention-more-modal-content">
-            <div class="modal-header">
-                <h3>Outros pontos críticos</h3>
-                <button class="modal-close" type="button" data-action="call" data-call="closeRetentionMoreModal" aria-label="Fechar">×</button>
+    <div class="modal-overlay retention-more-overlay" id="modalRetentionMore" hidden aria-hidden="true">
+        <section class="modal retention-more-modal" role="dialog" aria-modal="true" aria-labelledby="retentionMoreTitle" aria-describedby="retentionMoreHelp">
+            <div class="modal-header retention-more-modal-head">
+                <div>
+                    <span class="retention-more-kicker">Retenção e diagnóstico</span>
+                    <h3 id="retentionMoreTitle">Outros pontos críticos</h3>
+                    <p id="retentionMoreHelp">Escolha um assunto para revisar agora ou use as ações do cartão para adiar ou concluir.</p>
+                </div>
+                <button class="modal-close retention-more-close" type="button" data-action="call" data-call="closeRetentionMoreModal" aria-label="Fechar outros pontos críticos">×</button>
             </div>
-            <div id="retentionMoreList" class="retention-more-list"></div>
-        </div>
+            <div id="retentionMoreList" class="retention-more-list-modern"></div>
+            <div class="modal-actions retention-more-modal-actions">
+                <button class="btn btn-secondary" type="button" data-action="call" data-call="closeRetentionMoreModal">Fechar</button>
+            </div>
+        </section>
     </div>
 
     <div class="modal-overlay u-layout-b6-017" id="modalLayeredReview">

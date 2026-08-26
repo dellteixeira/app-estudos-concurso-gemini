@@ -6146,8 +6146,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function getStudyProgressBreakdown(items = editalItems) {
             const topics = Array.isArray(items) ? items : [];
             const contest = getConcursosMetadata()[currentConcurso] || {};
-            const acquisitionUnits = topics.reduce((sum,item) => sum + getContentAcquisitionState(item).fraction, 0);
-            const questionUnits = topics.reduce((sum,item) => sum + getQuestionProgressFraction(item, contest), 0);
+            const isManualComplete = item => {
+                const state = getRetentionTopicState(contest,item?.materia,item?.assunto,false);
+                return !!state?.manualCompletedAt;
+            };
+            const acquisitionUnits = topics.reduce((sum,item) => sum + (isManualComplete(item) ? 1 : getContentAcquisitionState(item).fraction), 0);
+            const questionUnits = topics.reduce((sum,item) => sum + (isManualComplete(item) ? 1 : getQuestionProgressFraction(item, contest)), 0);
             const count = topics.length;
             const theoryContribution = count ? (acquisitionUnits / count) * 50 : 0;
             const questionsContribution = count ? (questionUnits / count) * 50 : 0;
