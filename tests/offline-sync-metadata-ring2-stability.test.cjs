@@ -136,7 +136,7 @@ test('diagnóstico AppState incorpora 4S no asset existente sem novo loader',()=
   assert.equal(diagnostics.ring2Report.readyForDepthReview,true);
   assert.ok([...diagnostics.scope].includes('local-diagnostic:population-expanded-ring-2:concursos_metadata'));
   assert.match(appStateSource,/getOfflineSyncMetadataExpandedStabilityDiagnostics/);
-  assert.match(appStateSource,/offline-sync-metadata-expanded-stability\.js\?v=10\.52\.0/);
+  assert.match(appStateSource,/offline-sync-metadata-expanded-stability\.js\?v=10\.53\.0/);
 });
 
 test('4S preserva rollout 45% e orçamento-base de um write',()=>{
