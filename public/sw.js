@@ -114,6 +114,32 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Lista explícita preserva os contratos de shell/offline; o runtime abaixo usa SWR.
+  const isCoreAsset = [
+    '/css/base.css', '/css/dashboard.css', '/css/features.css', '/css/responsive-system.css', '/css/canonical-ui.css', '/css/pdf-library.css', '/css/pdf-reader.css', '/css/pdf-mobile-card-actions.css', '/css/learning-advisor.css',
+    '/js/study-domain.js', '/js/core/edital-integrity.js', '/js/core/local-backup-store.js', '/js/core/offline-outbox-store.js', '/js/core/offline-sync-shadow.js', '/js/core/offline-sync-metadata-shadow.js', '/js/core/offline-sync-metadata-authority.js', '/js/core/offline-sync-metadata-graduation.js', '/js/core/offline-sync-metadata-rollout.js', '/js/core/offline-sync-metadata-stability.js', '/js/core/offline-sync-metadata-expanded-stability.js', '/js/core/offline-sync-metadata-expanded-promotion.js', '/js/core/offline-sync-metadata-promoted-stability.js', '/js/core/offline-sync-metadata-population-promotion.js', '/js/core/offline-sync-metadata-population-promoted-stability.js', '/js/core/offline-sync-metadata-ring2-promotion.js', '/js/core/offline-sync-metadata-ring2-promoted-stability.js', '/js/core/offline-sync-metadata-ring3-promotion.js', '/js/core/offline-sync-metadata-expansion.js', '/js/core/offline-sync-authority.js', '/js/core/offline-sync-delete-authority.js', '/js/core/offline-sync-edital-graduation.js',
+    '/js/app-core.js', '/js/app-state.js', '/js/sync-engine.js', '/js/adaptive-schedule-reconciliation.js', '/js/learning-advisor.js', '/js/notes-import-export.js', '/js/notes-export-rich.js', '/js/study-performance-report.js', '/js/performance-loader.js', '/js/performance-metrics.js', '/js/app-ai.js', '/js/app-ui.js', '/js/ui/mobile.js', '/js/ui/navigation.js', '/js/ui/search.js', '/js/app-pwa.js',
+    '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/pdf/pdf-library-opfs-adapter.js', '/js/pdf/pdf-library-layout-fix.js', '/js/pdf/pdf-device-storage.js', '/js/pdf/offline-pdf-store.js', '/js/pdf/pdf-offline-library-manager.js', '/js/pdf/pdf-offline-integrity.js', '/js/pdf/pdf-offline-library-ui.js',
+    '/vendor/pdf.min.js', '/vendor/pdf_viewer.min.css', '/vendor/pdf.worker.min.js'
+  ].some(path => url.pathname.endsWith(path));
+
+  if (isCoreAsset) {
+    event.respondWith((async () => {
+      const cached = await matchCurrentCache(request, url);
+      if (cached) {
+        event.waitUntil(updateCacheFromNetwork(request, url, 'no-cache').catch(() => null));
+        return cached;
+      }
+      try {
+        return (await updateCacheFromNetwork(request, url, 'default')) || offlineResponse();
+      } catch {
+        const contentType = url.pathname.endsWith('.js') ? 'application/javascript; charset=utf-8' : url.pathname.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/plain; charset=utf-8';
+        return offlineResponse('', contentType);
+      }
+    })());
+    return;
+  }
+
   event.respondWith((async () => {
     const cached = await matchCurrentCache(request, url);
     if (cached) {
@@ -124,8 +150,7 @@ self.addEventListener('fetch', event => {
       const response = await updateCacheFromNetwork(request, url, 'default');
       return response || offlineResponse();
     } catch {
-      const contentType = url.pathname.endsWith('.js') ? 'application/javascript; charset=utf-8' : url.pathname.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/plain; charset=utf-8';
-      return offlineResponse('', contentType);
+      return offlineResponse();
     }
   })());
 });
