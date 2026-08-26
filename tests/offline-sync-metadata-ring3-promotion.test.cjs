@@ -103,9 +103,9 @@ test('budget 4X permanece rigidamente limitado a dois writes e integra política
 });
 
 test('AppState carrega 4X depois da 4W e antes da política final de expansão',()=>{
-  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-expanded-stability.js?v=10.55.0');
-  const ring3Index=appStateSource.indexOf('offline-sync-metadata-ring3-promotion.js?v=10.55.0');
-  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.55.0');
+  const stabilityIndex=appStateSource.indexOf('offline-sync-metadata-expanded-stability.js?v=10.56.0');
+  const ring3Index=appStateSource.indexOf('offline-sync-metadata-ring3-promotion.js?v=10.56.0');
+  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.56.0');
   assert.ok(stabilityIndex>=0);
   assert.ok(ring3Index>stabilityIndex);
   assert.ok(expansionIndex>ring3Index);
@@ -115,7 +115,7 @@ test('AppState carrega 4X depois da 4W e antes da política final de expansão',
 
 test('asset 4X integra shell, network-first e contratos no-store',()=>{
   const path='/js/core/offline-sync-metadata-ring3-promotion.js';
-  assert.equal(assets.version,'10.55.0');
+  assert.equal(assets.version,'10.56.0');
   for(const key of ['criticalAppShell','networkFirstPaths','workerNoStorePaths','headersNoStorePaths']) assert.ok(assets[key].includes(path),key);
   assert.ok(swSource.includes(`'./js/core/offline-sync-metadata-ring3-promotion.js'`));
   assert.ok(swSource.includes(`'/js/core/offline-sync-metadata-ring3-promotion.js'`));
