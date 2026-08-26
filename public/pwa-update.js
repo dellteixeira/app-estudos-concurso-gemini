@@ -36,8 +36,8 @@
     const copy = banner.querySelector('.pwa-update-copy span');
     if (copy) {
       copy.textContent = message || (remoteVersion
-        ? `Versão ${remoteVersion} disponível. Atualize para usar a versão canônica do aplicativo.`
-        : 'Atualize para usar a versão canônica do aplicativo.');
+        ? `Versão ${remoteVersion} disponível. Atualize para usar a versão mais recente do aplicativo.`
+        : 'Atualize para usar a versão mais recente do aplicativo.');
     }
     const button = banner.querySelector('[onclick="applyPwaUpdate()"]');
     if (button) {
@@ -94,7 +94,7 @@
     const remote = await fetchRemoteVersion();
     const running = await resolveRunningVersion();
     if (!running && remote) syncRuntimeVersionUi(remote);
-    if (remote && running && compareVersions(remote, running) !== 0) setPwaUpdateBannerVisible(true, remote);
+    if (remote && running && compareVersions(remote, running) > 0) setPwaUpdateBannerVisible(true, remote);
     else setPwaUpdateBannerVisible(false);
     return { remote, running };
   }
@@ -178,7 +178,7 @@
       console.warn('Falha ao verificar Service Worker:', error);
     }
     const running = await resolveRunningVersion(reg);
-    if (remote && running && compareVersions(remote, running) !== 0) setPwaUpdateBannerVisible(true, remote);
+    if (remote && running && compareVersions(remote, running) > 0) setPwaUpdateBannerVisible(true, remote);
     else setPwaUpdateBannerVisible(false);
     return { remote, running };
   }
@@ -186,7 +186,7 @@
   async function applyPwaUpdate() {
     if (!navigator.onLine || window.__pwaUpdateInProgress) return;
     window.__pwaUpdateInProgress = true;
-    setPwaUpdateBannerVisible(true, window.__remoteVersionAvailable, 'Preparando a versão canônica…');
+    setPwaUpdateBannerVisible(true, window.__remoteVersionAvailable, 'Preparando a versão mais recente…');
     try {
       const remoteVersion = (await fetchRemoteVersion()) || window.__remoteVersionAvailable;
       if (!remoteVersion) throw new Error('Não foi possível confirmar a versão publicada.');

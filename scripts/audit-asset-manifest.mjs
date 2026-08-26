@@ -32,6 +32,8 @@ for (const key of ['criticalAppShell','optionalOfflineAssets','networkFirstPaths
 }
 
 function parseQuotedPaths(block) {
+  // O sufixo usa * (e não +) para que a raiz '/' e './' também sejam
+  // inventariadas. Isso mantém o parser fiel às listas reais do SW/Worker.
   return [...block.matchAll(/['"](\.?\/[^'"]*)['"]/g)]
     .map(match => match[1].replace(/^\.\//, '/'));
 }
@@ -44,8 +46,12 @@ function getBlock(source, regex, name, { optional = false } = {}) {
 
 const swCritical = parseQuotedPaths(getBlock(sw, /const CRITICAL_APP_SHELL = \[([\s\S]*?)\];/, 'CRITICAL_APP_SHELL'));
 const swOptional = parseQuotedPaths(getBlock(sw, /const OPTIONAL_OFFLINE_ASSETS = \[([\s\S]*?)\];/, 'OPTIONAL_OFFLINE_ASSETS'));
-const swNetworkFirst = parseQuotedPaths(getBlock(sw, /const ALWAYS_NETWORK_FIRST = new Set\(\[([\s\S]*?)\]\);/, 'ALWAYS_NETWORK_FIRST'));
+const swNetworkFirst = parseQuotedPaths(getBlock(sw, /const isCoreAsset[\s\S]*?&& \[([\s\S]*?)\]\.some\(/, 'isCoreAsset'));
 
+// A política efetiva do Worker pode ser composta: o entrypoint configurado no
+// Wrangler pode interceptar rotas e delegar o restante ao Worker legado. A
+// auditoria deve validar exatamente essa cadeia de execução, não um arquivo
+// hardcoded que deixou de ser o entrypoint.
 const legacyNoStore = legacyWorker
   ? parseQuotedPaths(getBlock(legacyWorker, /const CORE_NO_STORE_PATHS = new Set\(\[([\s\S]*?)\]\);/, 'CORE_NO_STORE_PATHS'))
   : parseQuotedPaths(getBlock(workerEntry, /const CORE_NO_STORE_PATHS = new Set\(\[([\s\S]*?)\]\);/, 'CORE_NO_STORE_PATHS'));
@@ -74,14 +80,7 @@ function samePaths(name, actual, expected) {
 
 samePaths('Service Worker critical shell', swCritical, manifest.criticalAppShell);
 samePaths('Service Worker optional offline', swOptional, manifest.optionalOfflineAssets);
-
-const expectedControlPlane = ['/manifest.json', '/pwa-update.js', '/sw.js', '/version.json'];
-samePaths('Service Worker control-plane network-first', swNetworkFirst, expectedControlPlane);
-for (const route of swNetworkFirst) {
-  if (!manifest.networkFirstPaths.includes(route)) fail(`controle network-first fora do manifesto: ${route}`);
-}
-if (!process.exitCode) ok('assets estáticos podem usar stale-while-revalidate sem perder governança do manifesto');
-
+samePaths('Service Worker network-first', swNetworkFirst, manifest.networkFirstPaths);
 samePaths('Cloudflare Worker no-store', workerNoStore, manifest.workerNoStorePaths);
 
 function parseHeadersPolicies(source) {

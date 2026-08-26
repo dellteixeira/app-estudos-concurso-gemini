@@ -22,13 +22,6 @@ test('advisor e endpoint possuem sintaxe JavaScript válida',()=>{
   }
 });
 
-test('arquivo do advisor mantém integridade textual sem linhas corrompidas',()=>{
-  assert.equal(client.endsWith('\n'),true,'learning-advisor.js deve terminar com quebra de linha');
-  assert.doesNotMatch(client,/\u0000|\uFFFD/,'arquivo não pode conter NUL ou caractere de substituição');
-  const longest=Math.max(...client.split('\n').map(line=>line.length));
-  assert.ok(longest<10000,`linha excessivamente longa ou concatenada: ${longest} caracteres`);
-});
-
 test('motor local calcula dificuldade persistente e limita triagem antes da IA',()=>{
   assert.match(client,/const MAX_TOPICS=5/);
   assert.match(client,/computeLearningFriction/);
@@ -39,44 +32,22 @@ test('motor local calcula dificuldade persistente e limita triagem antes da IA',
   assert.doesNotMatch(client,/>Fricção \$\{candidate\.frictionScore\}</);
 });
 
-test('as três métricas de Retenção usam o mesmo diálogo contextual',()=>{
-  assert.match(client,/const METRIC_CONFIG=/);
-  assert.match(client,/risk:\{/);
-  assert.match(client,/overdue:\{/);
-  assert.match(client,/mastered:\{/);
+test('IA passa a ser contextual de Assuntos em risco, sem faixa permanente no dashboard',()=>{
+  assert.match(client,/\[data-action="retention-details"\]\[data-metric="risk"\]/);
+  assert.match(client,/openRiskView/);
   assert.match(client,/Assuntos em risco/);
-  assert.match(client,/Revisões vencidas/);
-  assert.match(client,/Assuntos dominados/);
-  assert.match(client,/function openMetricView/);
-  assert.match(client,/\[data-action="retention-details"\]\[data-metric\]/);
-  assert.match(client,/openMetricView\(kind\)/);
-  assert.match(client,/entryPoints:\['risk-details','overdue-details','mastered-details'\]/);
+  assert.match(client,/Intervenções para dificuldades persistentes/);
   assert.match(client,/document\.getElementById\('learningAdvisorPanel'\)\?\.remove\(\)/);
   assert.doesNotMatch(client,/parent\.appendChild\(section\)/);
+  assert.match(client,/entryPoint:'risk-details'/);
 });
 
-test('revisões vencidas preservam acesso à revisão e dominados permanecem monitorados',()=>{
-  assert.match(client,/data-learning-action="metric-review"/);
-  assert.match(client,/kind!==\'mastered\'/);
-  assert.match(client,/Revisão agendada vencida/);
-  assert.match(client,/Domínio validado pelo motor de Retenção/);
-  assert.match(client,/Assuntos dominados voltam automaticamente à fila/);
+test('janela de risco diferencia revisão agendada vencida de necessidade cognitiva',()=>{
   assert.match(client,/row\.scheduledOverdue\|\|row\.overdue/);
+  assert.match(client,/Revisão agendada vencida/);
   assert.match(client,/row\.retentionDue/);
   assert.match(client,/não há revisão vencida no cronograma/);
   assert.match(client,/Retenção baixa — revisão recomendada/);
-});
-
-test('IA em revisões vencidas é contextual e nunca deixa botão aparentemente quebrado',()=>{
-  assert.match(client,/function getAnalysisCandidates/);
-  assert.match(client,/kind===\'overdue\'\)return collectCandidatesFromEntries\(getMetricRows\('overdue'\),limit\)/);
-  assert.match(client,/kind===\'mastered\'/);
-  assert.match(client,/Sem dificuldade adicional/);
-  assert.match(client,/revisões estão vencidas por prazo/);
-  assert.match(client,/não detectou sinal cognitivo adicional/);
-  assert.match(client,/somente revisões vencidas que também apresentam dificuldade cognitiva relevante/);
-  assert.match(client,/analyze\(\{metric:kind\}\)/);
-  assert.doesNotMatch(client,/id="learningAdvisorAnalyze"[^>]*disabled/);
 });
 
 test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{

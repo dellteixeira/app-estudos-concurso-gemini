@@ -5,21 +5,6 @@
 
   const loadedScripts = new Map();
   const loadedStyles = new Map();
-  let pdfFeaturePromise = null;
-
-  const PDF_FEATURE_SCRIPTS = [
-    './js/pdf/pdf-core.js',
-    './js/pdf/pdf-workspaces.js',
-    './js/pdf/pdf-links.js',
-    './js/pdf/pdf-library.js',
-    './js/pdf/pdf-upload.js',
-    './js/pdf/pdf-annotations.js',
-    './vendor/pdf.min.js',
-    './js/pdf/pdf-reader.js',
-    './js/pdf/pdf-library-ui.js',
-    './js/pdf/pdf-offline-integrity.js',
-    './js/pdf/pdf-device-storage.js'
-  ];
 
   function connectionProfile() {
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
@@ -44,29 +29,17 @@
 
     const existing = document.querySelector(`script[src="${src}"]`);
     if (existing) {
-      if (existing.dataset.loaded === '1' || existing.readyState === 'complete') {
-        const ready = Promise.resolve(existing);
-        loadedScripts.set(src, ready);
-        return ready;
-      }
-      const pending = new Promise((resolve, reject) => {
-        existing.addEventListener('load', () => resolve(existing), { once:true });
-        existing.addEventListener('error', () => reject(new Error(`Falha ao carregar ${src}`)), { once:true });
-      });
-      loadedScripts.set(src, pending);
-      return pending;
+      const ready = Promise.resolve(existing);
+      loadedScripts.set(src, ready);
+      return ready;
     }
 
     const promise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = src;
-      script.async = options.async === true;
       script.defer = options.defer !== false;
       if (options.dataset) Object.assign(script.dataset, options.dataset);
-      script.onload = () => {
-        script.dataset.loaded = '1';
-        resolve(script);
-      };
+      script.onload = () => resolve(script);
       script.onerror = () => {
         loadedScripts.delete(src);
         reject(new Error(`Falha ao carregar ${src}`));
@@ -127,81 +100,27 @@
       });
   }
 
-  function warmPdfAssets() {
-    const profile = connectionProfile();
-    if (!navigator.onLine || profile.constrained) return Promise.resolve(null);
-    return Promise.all([
-      loadScript('./vendor/pdf.min.js'),
-      loadStyle('./vendor/pdf_viewer.min.css')
-    ]).catch(error => {
-      console.warn('[performance] pré-carga de PDF indisponível:', error);
-      return null;
-    });
-  }
-
-  function pdfFeatureReady() {
-    return Boolean(
-      global.PdfStudyLibraryUI &&
-      global.PdfStudyReader &&
-      global.PdfStudyLibrary &&
-      global.PdfOfflineIntegrity &&
-      global.PdfDeviceStorage
-    );
-  }
-
-  function ensurePdfFeature() {
-    if (pdfFeatureReady()) return Promise.resolve(global.PdfStudyLibraryUI);
-    if (pdfFeaturePromise) return pdfFeaturePromise;
-    pdfFeaturePromise = (async () => {
-      for (const src of PDF_FEATURE_SCRIPTS) await loadScript(src);
-      if (!pdfFeatureReady()) {
-        throw new Error('A Biblioteca PDF não terminou de inicializar.');
-      }
-      return global.PdfStudyLibraryUI;
-    })().catch(error => {
-      pdfFeaturePromise = null;
-      throw error;
-    });
-    return pdfFeaturePromise;
-  }
-
   function warmOptionalFeatures() {
     const profile = connectionProfile();
     if (!navigator.onLine || profile.constrained) return;
-    scheduleIdleTask(() => loadScript('./js/notes-import-export.js', { dataset: { notesImportExport: '1' } }), 5000);
-    scheduleIdleTask(() => loadScript('./js/study-performance-report.js', { dataset: { studyPerformanceReport: '1' } }), 6500);
-  }
-
-  function openLibraryAfterLoad(target) {
-    return ensurePdfFeature().then(async libraryUi => {
-      if (typeof global.switchTab === 'function') global.switchTab('tab-biblioteca', target || null);
-      await libraryUi?.activateLibrary?.();
-      return libraryUi;
-    }).catch(error => {
-      console.error('[performance] Biblioteca PDF indisponível:', error);
-      global.appNotice?.('Não foi possível carregar a Biblioteca agora. Tente novamente.', { title:'Biblioteca' });
-      return null;
-    });
+    scheduleIdleTask(() => loadScript('./js/notes-import-export.js', { dataset: { notesImportExport: '1' } }), 2400);
+    scheduleIdleTask(() => loadScript('./js/study-performance-report.js', { dataset: { studyPerformanceReport: '1' } }), 3600);
   }
 
   function bindIntentPreload() {
-    const warmPdf = () => scheduleIdleTask(warmPdfAssets, 600);
+    const warmPdf = () => {
+      if (!navigator.onLine && !global.pdfjsLib) return;
+      scheduleIdleTask(() => Promise.all([
+        loadScript('./vendor/pdf.min.js'),
+        loadStyle('./vendor/pdf_viewer.min.css')
+      ]), 1200);
+    };
 
-    document.querySelectorAll('[data-tab="tab-biblioteca"], [onclick*="tab-biblioteca"], [onclick*="openModalViewEdital"]').forEach(el => {
+    document.querySelectorAll('[onclick*="tab-biblioteca"], [data-tab="tab-biblioteca"], [onclick*="openModalViewEdital"]').forEach(el => {
       el.addEventListener('pointerenter', warmPdf, { once: true, passive: true });
       el.addEventListener('touchstart', warmPdf, { once: true, passive: true });
       el.addEventListener('focus', warmPdf, { once: true });
     });
-
-    document.addEventListener('click', event => {
-      const target = event.target?.closest?.('[data-tab="tab-biblioteca"]');
-      if (!target || target.dataset.pdfFeatureReady === '1') return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      openLibraryAfterLoad(target).then(libraryUi => {
-        if (libraryUi) target.dataset.pdfFeatureReady = '1';
-      });
-    }, true);
   }
 
   function markHeavyRegions() {
@@ -212,10 +131,10 @@
   }
 
   function bootstrap() {
+    ensurePerformanceMetrics();
     markHeavyRegions();
     bindIntentPreload();
-    scheduleIdleTask(ensurePerformanceMetrics, 2600);
-    global.setTimeout(warmOptionalFeatures, 3600);
+    global.setTimeout(warmOptionalFeatures, 1100);
   }
 
   global.AppPerformanceLoader = Object.freeze({
@@ -225,9 +144,6 @@
     loadStyle,
     scheduleIdleTask,
     ensurePerformanceMetrics,
-    warmPdfAssets,
-    ensurePdfFeature,
-    openLibraryAfterLoad,
     warmOptionalFeatures,
     markHeavyRegions
   });
