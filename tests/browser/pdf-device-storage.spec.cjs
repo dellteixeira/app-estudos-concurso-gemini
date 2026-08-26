@@ -1,6 +1,23 @@
 const { test, expect } = require('@playwright/test');
 
+test.beforeEach(async ({ page }) => {
+  // Em produção, /vendor/pdf.min.js é servido pelo Cloudflare Worker via VENDOR_ROUTES.
+  // O servidor estático local do Playwright não executa o Worker, então simulamos
+  // apenas o contrato mínimo necessário para carregar os módulos da Biblioteca.
+  await page.route('**/vendor/pdf.min.js', route => route.fulfill({
+    status: 200,
+    contentType: 'application/javascript; charset=utf-8',
+    body: 'window.pdfjsLib={GlobalWorkerOptions:{},renderTextLayer:function(){return Promise.resolve();}};'
+  }));
+});
+
+async function ensurePdfFeature(page) {
+  await page.waitForFunction(() => !!window.AppPerformanceLoader?.ensurePdfFeature, null, { timeout: 10000 });
+  await page.evaluate(() => window.AppPerformanceLoader.ensurePdfFeature());
+}
+
 async function exposeLibrary(page) {
+  await ensurePdfFeature(page);
   await page.waitForFunction(() => !!window.PdfDeviceStorage, null, { timeout: 10000 });
   await page.evaluate(() => {
     for (const id of ['auth-screen', 'offline-banner', 'pwa-update-banner', 'pwa-install-banner']) {
@@ -164,6 +181,7 @@ test('cancelar o seletor não dispara download nem confirma salvamento', async (
 
 test('forgetDocuments solicita limpeza local moderna pelo caminho canônico', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await ensurePdfFeature(page);
   await page.waitForFunction(() => !!window.PdfStudyLibrary?.forgetDocuments, null, { timeout: 10000 });
 
   const result = await page.evaluate(async () => {
