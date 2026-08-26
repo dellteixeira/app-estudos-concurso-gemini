@@ -1,5 +1,16 @@
 const { test, expect } = require('@playwright/test');
 
+test.beforeEach(async ({ page }) => {
+  // Em produção, /vendor/pdf.min.js é servido pelo Cloudflare Worker via VENDOR_ROUTES.
+  // O servidor estático local do Playwright não executa o Worker, então simulamos
+  // apenas o contrato mínimo necessário para carregar os módulos da Biblioteca.
+  await page.route('**/vendor/pdf.min.js', route => route.fulfill({
+    status: 200,
+    contentType: 'application/javascript; charset=utf-8',
+    body: 'window.pdfjsLib={GlobalWorkerOptions:{},renderTextLayer:function(){return Promise.resolve();}};'
+  }));
+});
+
 async function ensurePdfFeature(page) {
   await page.waitForFunction(() => !!window.AppPerformanceLoader?.ensurePdfFeature, null, { timeout: 10000 });
   await page.evaluate(() => window.AppPerformanceLoader.ensurePdfFeature());
