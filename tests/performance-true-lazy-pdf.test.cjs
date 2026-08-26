@@ -6,6 +6,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
 
+// Contrato temporário de segurança enquanto o lazy-load do PR #259 permanece desativado.
 const requiredPdfScripts = [
   './js/pdf/pdf-core.js',
   './js/pdf/pdf-workspaces.js',
