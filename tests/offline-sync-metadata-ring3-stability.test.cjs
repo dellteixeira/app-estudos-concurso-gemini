@@ -138,7 +138,7 @@ test('diagnóstico AppState incorpora 4W no asset existente sem novo loader',()=
   assert.equal(diagnostics.ring3Report.readyForDepthReview,true);
   assert.ok([...diagnostics.scope].includes('local-diagnostic:population-expanded-ring-3:concursos_metadata'));
   assert.match(appStateSource,/getOfflineSyncMetadataExpandedStabilityDiagnostics/);
-  assert.match(appStateSource,/offline-sync-metadata-expanded-stability\.js\?v=10\.57\.0/);
+  assert.match(appStateSource,/offline-sync-metadata-expanded-stability\.js\?v=10\.56\.0/);
 });
 
 test('4W preserva rollout global 55% e orçamento-base de um write',()=>{
