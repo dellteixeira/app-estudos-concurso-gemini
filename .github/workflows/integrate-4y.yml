@@ -1,0 +1,88 @@
+name: Integrate Phase 4Y
+on:
+  push:
+    branches:
+      - feat/offline-metadata-ring3-promoted-stability-v10.57.0
+permissions:
+  contents: write
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Implement 4Y
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp public/js/core/offline-sync-metadata-ring2-promoted-stability.js public/js/core/offline-sync-metadata-ring3-promoted-stability.js
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('public/js/core/offline-sync-metadata-ring3-promoted-stability.js')
+          s=p.read_text()
+          s=s.replace('Ring2PromotedStability','Ring3PromotedStability')
+          s=s.replace('Ring2Promotion','Ring3Promotion')
+          s=s.replace('ring2','ring3')
+          s=s.replace('population-expanded-ring-2','population-expanded-ring-3')
+          s=s.replace('never-promoted-by-4t','never-promoted-by-4x')
+          s=s.replace('populationPercent:45','populationPercent:55')
+          p.write_text(s)
+
+          src=Path('tests/offline-sync-metadata-ring2-promoted-stability.test.cjs').read_text()
+          src=src.replace('ring2','ring3').replace('Ring2','Ring3')
+          src=src.replace('4U','4Y').replace('4T','4X').replace('4t','4x')
+          src=src.replace('35–44','45–54').replace('?38:70','?48:70')
+          src=src.replace('populationPercent:45','populationPercent:55')
+          Path('tests/offline-sync-metadata-ring3-promoted-stability.test.cjs').write_text(src)
+
+          p=Path('public/js/app-state.js'); s=p.read_text()
+          anchor="""        if (!global.OfflineSyncMetadataRing3Promotion) await loadExtensionScript('./js/core/offline-sync-metadata-ring3-promotion.js?v=10.56.0', 'offline-sync-metadata-ring3-promotion');\n        global.OfflineSyncMetadataRing3Promotion?.install?.();\n"""
+          insert=anchor+"""        if (!global.OfflineSyncMetadataRing3PromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-ring3-promoted-stability.js?v=10.56.0', 'offline-sync-metadata-ring3-promoted-stability');\n        global.OfflineSyncMetadataRing3PromotedStability?.install?.();\n"""
+          if anchor not in s: raise SystemExit('app-state loader anchor missing')
+          s=s.replace(anchor,insert,1)
+          anchor="            metadataRing3Promotion:global.OfflineSyncMetadataRing3Promotion?.getDiagnostics?.() || null,\n"
+          if anchor not in s: raise SystemExit('app-state diagnostics anchor missing')
+          s=s.replace(anchor,anchor+"            metadataRing3PromotedStability:global.OfflineSyncMetadataRing3PromotedStability?.getDiagnostics?.() || null,\n",1)
+          anchor="        getOfflineSyncMetadataRing3PromotionDiagnostics:() => global.OfflineSyncMetadataRing3Promotion?.getDiagnostics?.() || null,\n"
+          if anchor not in s: raise SystemExit('app-state getter anchor missing')
+          s=s.replace(anchor,anchor+"        getOfflineSyncMetadataRing3PromotedStabilityDiagnostics:() => global.OfflineSyncMetadataRing3PromotedStability?.getDiagnostics?.() || null,\n",1)
+          p.write_text(s)
+
+          p=Path('config/app-assets.json'); s=p.read_text()
+          anchor='    "/js/core/offline-sync-metadata-ring3-promotion.js",\n'
+          count=s.count(anchor)
+          if count != 4: raise SystemExit(f'expected 4 app-assets anchors, got {count}')
+          s=s.replace(anchor,anchor+'    "/js/core/offline-sync-metadata-ring3-promoted-stability.js",\n')
+          p.write_text(s)
+
+          p=Path('public/sw.js'); s=p.read_text()
+          anchor="'./js/core/offline-sync-metadata-ring3-promotion.js',"
+          if anchor not in s: raise SystemExit('sw critical anchor missing')
+          s=s.replace(anchor,anchor+" './js/core/offline-sync-metadata-ring3-promoted-stability.js',")
+          anchor="'/js/core/offline-sync-metadata-ring3-promotion.js',"
+          if anchor not in s: raise SystemExit('sw core anchor missing')
+          s=s.replace(anchor,anchor+" '/js/core/offline-sync-metadata-ring3-promoted-stability.js',")
+          p.write_text(s)
+
+          Path('docs/phase-4y-ring3-promoted-stability.md').write_text('''# Fase 4Y — estabilidade pós-promoção da ring-3\n\n## Objetivo\n\nValidar longitudinalmente usuários `population-expanded-ring-3` (buckets 45–54) que foram promovidos pela Fase 4X para profundidade máxima de 2 writes remotos de metadata.\n\n## Contrato\n\n- rollout global permanece em 55%;\n- somente usuários efetivamente promovidos e ainda elegíveis pela 4X acumulam sucessos;\n- janela local de 10 observações;\n- mínimo de 5 sucessos limpos;\n- qualquer failure ou aborted na janela impede prontidão;\n- paridade de metadata precisa permanecer elegível;\n- revogação da 4X é convertida em failure ou aborted conforme a causa;\n- saída diagnóstica: `readyForPopulationReview`;\n- nenhuma nova autoridade remota, endpoint, tabela, schema ou domínio;\n- budget máximo permanece 2 writes;\n- `remoteAuthority:false`.\n\n## Resultado arquitetural\n\nA 4Y fecha o ciclo da ring-3 após promoção individual e fornece um gate observacional para futura decisão de expansão populacional. Ela não promove usuários e não altera o rollout por si só.\n''')
+          PY
+      - name: Validate dedicated test
+        run: node --test tests/offline-sync-metadata-ring3-promoted-stability.test.cjs
+      - name: Validate full suite
+        run: npm test
+      - name: Commit implementation and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/integrate-4y.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/js/core/offline-sync-metadata-ring3-promoted-stability.js tests/offline-sync-metadata-ring3-promoted-stability.test.cjs docs/phase-4y-ring3-promoted-stability.md public/js/app-state.js config/app-assets.json public/sw.js
+          git commit -m "feat(sync): Fase 4Y — estabilidade pós-promoção da ring-3"
+          git push origin HEAD:feat/offline-metadata-ring3-promoted-stability-v10.57.0
