@@ -43,6 +43,7 @@
   function promotion() { return global.OfflineSyncMetadataExpandedPromotion || null; }
   function populationPromotion() { return global.OfflineSyncMetadataPopulationPromotion || null; }
   function ring2Promotion() { return global.OfflineSyncMetadataRing2Promotion || null; }
+  function ring3Promotion() { return global.OfflineSyncMetadataRing3Promotion || null; }
 
   function isOptedIn(userId = currentUserId()) {
     return Boolean(userId) && storageGet(enableKey(userId)) === '1';
@@ -80,12 +81,13 @@
     const promoted = Boolean(promotion()?.isPromoted?.(userId));
     const populationPromoted = Boolean(populationPromotion()?.isPromoted?.(userId));
     const ring2Promoted = Boolean(ring2Promotion()?.isPromoted?.(userId));
+    const ring3Promoted = Boolean(ring3Promotion()?.isPromoted?.(userId));
     const originalPilot = Boolean(pilotCohort?.included);
     const reasons = [];
 
     if (!userId) reasons.push('missing-user');
     if (!cohort?.included) reasons.push('outside-rollout-cohort');
-    if (!originalPilot && !promoted && !populationPromoted && !ring2Promoted) reasons.push('outside-expansion-pilot-cohort');
+    if (!originalPilot && !promoted && !populationPromoted && !ring2Promoted && !ring3Promoted) reasons.push('outside-expansion-pilot-cohort');
     if (originalPilot && !report?.readyForExpansion) reasons.push('metadata-stability-not-ready');
     if (!rolloutEligibility?.eligible) reasons.push('metadata-rollout-not-eligible');
     if (circuit) reasons.push('metadata-authority-circuit-open');
@@ -100,9 +102,11 @@
       promoted,
       populationPromoted,
       ring2Promoted,
+      ring3Promoted,
       promotion:promotion()?.getDiagnostics?.() || null,
       populationPromotion:populationPromotion()?.getDiagnostics?.() || null,
       ring2Promotion:ring2Promotion()?.getDiagnostics?.() || null,
+      ring3Promotion:ring3Promotion()?.getDiagnostics?.() || null,
       rollout:rolloutEligibility,
       circuit,
       hardKill,
@@ -111,7 +115,7 @@
   }
 
   function hasDepthGrant(userId = currentUserId()) {
-    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId) || ring2Promotion()?.isPromoted?.(userId)));
+    return Boolean(userId && (isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId) || ring2Promotion()?.isPromoted?.(userId) || ring3Promotion()?.isPromoted?.(userId)));
   }
 
   function isEnabled(userId = currentUserId()) {

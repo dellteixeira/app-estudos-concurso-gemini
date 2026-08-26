@@ -20,6 +20,7 @@ const EXTENDED_NO_STORE_PATHS = new Set([
   '/js/core/offline-sync-metadata-population-promoted-stability.js',
   '/js/core/offline-sync-metadata-ring2-promotion.js',
   '/js/core/offline-sync-metadata-ring2-promoted-stability.js',
+  '/js/core/offline-sync-metadata-ring3-promotion.js',
   '/js/core/offline-sync-metadata-expansion.js',
   '/js/core/offline-sync-authority.js',
   '/js/core/offline-sync-delete-authority.js',
