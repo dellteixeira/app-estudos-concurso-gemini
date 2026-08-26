@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const js=fs.readFileSync(path.join(root,'public/js/learning-advisor.js'),'utf8');
+// Normalize escaped selector quotes emitted by the compact production source.
 const normalizedJs=js.replace(/\\"/g,'"');
 const css=fs.readFileSync(path.join(root,'public/css/learning-advisor.css'),'utf8');
 
