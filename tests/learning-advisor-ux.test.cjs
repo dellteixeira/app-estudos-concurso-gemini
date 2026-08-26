@@ -16,6 +16,17 @@ test('critical points use the unified advisor dialog with keyboard contract',()=
   assert.doesNotMatch(js,/document\.getElementById\('learningAdvisorPanel'\)\?\.remove\(\)/);
 });
 
+test('retention metric cards share the unified details experience',()=>{
+  assert.match(js,/METRIC_CONFIG/);
+  assert.match(js,/risk:\{title:'Assuntos em risco'/);
+  assert.match(js,/overdue:\{title:'Revisões vencidas'/);
+  assert.match(js,/mastered:\{title:'Assuntos dominados'/);
+  assert.match(js,/openMetricView/);
+  assert.match(js,/\[data-action=\\?"retention-details\\?"\]\[data-metric\]/);
+  assert.match(js,/Revisar primeira vencida/);
+  assert.match(js,/Domínio validado/);
+});
+
 test('AI advisor has a stable full-width entry point and keeps retention authority',()=>{
   assert.match(js,/learningAdvisorPanelButton/);
   assert.match(js,/\/api\/ai\/learning-diagnosis/);
