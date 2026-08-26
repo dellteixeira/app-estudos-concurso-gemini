@@ -32,19 +32,29 @@ test('motor local calcula dificuldade persistente e limita triagem antes da IA',
   assert.doesNotMatch(client,/>Fricção \$\{candidate\.frictionScore\}</);
 });
 
-test('IA passa a ser contextual de Assuntos em risco, sem faixa permanente no dashboard',()=>{
-  assert.match(client,/\[data-action="retention-details"\]\[data-metric="risk"\]/);
-  assert.match(client,/openRiskView/);
+test('as três métricas de Retenção usam o mesmo diálogo contextual',()=>{
+  assert.match(client,/const METRIC_CONFIG=/);
+  assert.match(client,/risk:\{/);
+  assert.match(client,/overdue:\{/);
+  assert.match(client,/mastered:\{/);
   assert.match(client,/Assuntos em risco/);
-  assert.match(client,/Intervenções para dificuldades persistentes/);
+  assert.match(client,/Revisões vencidas/);
+  assert.match(client,/Assuntos dominados/);
+  assert.match(client,/function openMetricView/);
+  assert.match(client,/\[data-action="retention-details"\]\[data-metric\]/);
+  assert.match(client,/openMetricView\(kind\)/);
+  assert.match(client,/entryPoints:\['risk-details','overdue-details','mastered-details'\]/);
   assert.match(client,/document\.getElementById\('learningAdvisorPanel'\)\?\.remove\(\)/);
   assert.doesNotMatch(client,/parent\.appendChild\(section\)/);
-  assert.match(client,/entryPoint:'risk-details'/);
 });
 
-test('janela de risco diferencia revisão agendada vencida de necessidade cognitiva',()=>{
-  assert.match(client,/row\.scheduledOverdue\|\|row\.overdue/);
+test('revisões vencidas preservam acesso à revisão e dominados permanecem monitorados',()=>{
+  assert.match(client,/data-learning-action="metric-review"/);
+  assert.match(client,/kind!==\'mastered\'/);
   assert.match(client,/Revisão agendada vencida/);
+  assert.match(client,/Domínio validado pelo motor de Retenção/);
+  assert.match(client,/Assuntos dominados voltam automaticamente à fila/);
+  assert.match(client,/row\.scheduledOverdue\|\|row\.overdue/);
   assert.match(client,/row\.retentionDue/);
   assert.match(client,/não há revisão vencida no cronograma/);
   assert.match(client,/Retenção baixa — revisão recomendada/);
