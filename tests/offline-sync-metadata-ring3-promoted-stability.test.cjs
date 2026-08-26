@@ -94,9 +94,9 @@ test('4Y não amplia o orçamento remoto acima de dois writes',()=>{
 });
 
 test('AppState carrega 4Y após 4X e expõe diagnóstico',()=>{
-  const promotionIndex=appStateSource.indexOf('offline-sync-metadata-ring3-promotion.js?v=10.56.0');
-  const observerIndex=appStateSource.indexOf('offline-sync-metadata-ring3-promoted-stability.js?v=10.56.0');
-  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.56.0');
+  const promotionIndex=appStateSource.indexOf('offline-sync-metadata-ring3-promotion.js?v=10.57.0');
+  const observerIndex=appStateSource.indexOf('offline-sync-metadata-ring3-promoted-stability.js?v=10.57.0');
+  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.57.0');
   assert.ok(promotionIndex>=0);
   assert.ok(observerIndex>promotionIndex);
   assert.ok(expansionIndex>observerIndex);
@@ -106,7 +106,7 @@ test('AppState carrega 4Y após 4X e expõe diagnóstico',()=>{
 
 test('asset 4Y integra manifesto sem alterar identidade durante implementação',()=>{
   const asset='/js/core/offline-sync-metadata-ring3-promoted-stability.js';
-  assert.equal(manifest.version,'10.56.0');
+  assert.equal(manifest.version,'10.57.0');
   assert.ok(manifest.criticalAppShell.includes(asset));
   assert.ok(manifest.networkFirstPaths.includes(asset));
   assert.ok(manifest.workerNoStorePaths.includes(asset));

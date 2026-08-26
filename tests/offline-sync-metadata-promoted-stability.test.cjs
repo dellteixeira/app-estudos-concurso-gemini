@@ -178,9 +178,9 @@ test('4M não amplia budget remoto da 4L acima de dois writes',()=>{
 });
 
 test('AppState carrega 4M após 4L e antes da 4I e expõe diagnóstico',()=>{
-  const promotionIndex=appStateSource.indexOf('offline-sync-metadata-expanded-promotion.js?v=10.56.0');
-  const promotedStabilityIndex=appStateSource.indexOf('offline-sync-metadata-promoted-stability.js?v=10.56.0');
-  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.56.0');
+  const promotionIndex=appStateSource.indexOf('offline-sync-metadata-expanded-promotion.js?v=10.57.0');
+  const promotedStabilityIndex=appStateSource.indexOf('offline-sync-metadata-promoted-stability.js?v=10.57.0');
+  const expansionIndex=appStateSource.indexOf('offline-sync-metadata-expansion.js?v=10.57.0');
   assert.ok(promotionIndex>=0);
   assert.ok(promotedStabilityIndex>promotionIndex);
   assert.ok(expansionIndex>promotedStabilityIndex);
@@ -188,9 +188,9 @@ test('AppState carrega 4M após 4L e antes da 4I e expõe diagnóstico',()=>{
   assert.match(appStateSource,/getOfflineSyncMetadataPromotedStabilityDiagnostics/);
 });
 
-test('4M integra PWA/no-store e preserva identidade 10.56.0 durante implementação',()=>{
+test('4M integra PWA/no-store e preserva identidade 10.57.0 durante implementação',()=>{
   const asset='/js/core/offline-sync-metadata-promoted-stability.js';
-  assert.equal(manifest.version,'10.56.0');
+  assert.equal(manifest.version,'10.57.0');
   assert.ok(manifest.criticalAppShell.includes(asset));
   assert.ok(manifest.networkFirstPaths.includes(asset));
   assert.ok(manifest.workerNoStorePaths.includes(asset));
