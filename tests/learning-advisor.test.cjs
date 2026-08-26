@@ -46,7 +46,7 @@ test('IA integra Retenção e Diagnóstico sem substituir sua autoridade',()=>{
 });
 
 test('diagnóstico diferencia revisão vencida, retenção baixa e domínio',()=>{
-  assert.match(client,/r\.scheduledOverdue\|\|r\?\.overdue|r\.scheduledOverdue\|\|r\.overdue/);
+  assert.match(client,/r\?\.scheduledOverdue\|\|r\?\.overdue/);
   assert.match(client,/Revisão agendada vencida/);
   assert.match(client,/retentionDue/);
   assert.match(client,/não há revisão vencida no cronograma/);
