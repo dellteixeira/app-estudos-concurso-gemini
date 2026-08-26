@@ -100,21 +100,27 @@
       });
   }
 
+  function warmPdfAssets() {
+    const profile = connectionProfile();
+    if (!navigator.onLine || profile.constrained) return Promise.resolve(null);
+    return Promise.all([
+      loadScript('./vendor/pdf.min.js'),
+      loadStyle('./vendor/pdf_viewer.min.css')
+    ]).catch(error => {
+      console.warn('[performance] pré-carga de PDF indisponível:', error);
+      return null;
+    });
+  }
+
   function warmOptionalFeatures() {
     const profile = connectionProfile();
     if (!navigator.onLine || profile.constrained) return;
-    scheduleIdleTask(() => loadScript('./js/notes-import-export.js', { dataset: { notesImportExport: '1' } }), 2400);
-    scheduleIdleTask(() => loadScript('./js/study-performance-report.js', { dataset: { studyPerformanceReport: '1' } }), 3600);
+    scheduleIdleTask(() => loadScript('./js/notes-import-export.js', { dataset: { notesImportExport: '1' } }), 5000);
+    scheduleIdleTask(() => loadScript('./js/study-performance-report.js', { dataset: { studyPerformanceReport: '1' } }), 6500);
   }
 
   function bindIntentPreload() {
-    const warmPdf = () => {
-      if (!navigator.onLine && !global.pdfjsLib) return;
-      scheduleIdleTask(() => Promise.all([
-        loadScript('./vendor/pdf.min.js'),
-        loadStyle('./vendor/pdf_viewer.min.css')
-      ]), 1200);
-    };
+    const warmPdf = () => scheduleIdleTask(warmPdfAssets, 600);
 
     document.querySelectorAll('[onclick*="tab-biblioteca"], [data-tab="tab-biblioteca"], [onclick*="openModalViewEdital"]').forEach(el => {
       el.addEventListener('pointerenter', warmPdf, { once: true, passive: true });
@@ -131,10 +137,10 @@
   }
 
   function bootstrap() {
-    ensurePerformanceMetrics();
     markHeavyRegions();
     bindIntentPreload();
-    global.setTimeout(warmOptionalFeatures, 1100);
+    scheduleIdleTask(ensurePerformanceMetrics, 2600);
+    global.setTimeout(warmOptionalFeatures, 3600);
   }
 
   global.AppPerformanceLoader = Object.freeze({
@@ -144,6 +150,7 @@
     loadStyle,
     scheduleIdleTask,
     ensurePerformanceMetrics,
+    warmPdfAssets,
     warmOptionalFeatures,
     markHeavyRegions
   });
