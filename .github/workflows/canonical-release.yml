@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: '22.23.2'
 
-      - name: Validate canonical release identity
+      - name: Validate release candidate identity
         id: identity
         shell: bash
         run: |
@@ -66,9 +66,10 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "Canonical release identity: tag=$tag version=$version sha=$sha"
+          echo "Production release candidate: tag=$tag version=$version deployed_sha=$sha"
 
-      - name: Create immutable canonical tag
+      - name: Resolve immutable canonical tag
+        id: canonical_tag
         env:
           RELEASE_TAG: ${{ steps.identity.outputs.tag }}
           RELEASE_SHA: ${{ steps.identity.outputs.sha }}
@@ -79,18 +80,35 @@ jobs:
 
           if git show-ref --tags --verify --quiet "refs/tags/$RELEASE_TAG"; then
             tag_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
-            if [ "$tag_sha" != "$RELEASE_SHA" ]; then
-              echo "::error::A tag $RELEASE_TAG já existe em $tag_sha e não será movida para $RELEASE_SHA. Incremente a versão antes de publicar outra release."
-              exit 1
+            echo "tag_sha=$tag_sha" >> "$GITHUB_OUTPUT"
+
+            if [ "$tag_sha" = "$RELEASE_SHA" ]; then
+              echo "mode=canonical" >> "$GITHUB_OUTPUT"
+              echo "Tag $RELEASE_TAG já existe e aponta para o SHA canônico."
+              exit 0
             fi
-            echo "Tag $RELEASE_TAG já existe e aponta para o SHA canônico."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git tag -a "$RELEASE_TAG" "$RELEASE_SHA" -m "Estudo Adaptativo Inteligente $RELEASE_TAG"
-            git push origin "refs/tags/$RELEASE_TAG"
-            echo "Tag canônica criada: $RELEASE_TAG -> $RELEASE_SHA"
+
+            # Rollbacks operacionais podem gerar um novo SHA de main com o mesmo
+            # conteúdo de runtime da release histórica. Nesse caso, a tag antiga
+            # deve permanecer imutável e o workflow deve terminar com sucesso.
+            runtime_paths=(package.json public src wrangler.jsonc config)
+            if git diff --quiet "$RELEASE_TAG" "$RELEASE_SHA" -- "${runtime_paths[@]}"; then
+              echo "mode=operational-rollback" >> "$GITHUB_OUTPUT"
+              echo "::notice::Rollback operacional detectado. $RELEASE_TAG permanece imutável em $tag_sha; o SHA implantado $RELEASE_SHA possui o mesmo conteúdo de runtime da release canônica."
+              exit 0
+            fi
+
+            echo "::error::A tag $RELEASE_TAG já existe em $tag_sha e o runtime do SHA $RELEASE_SHA é diferente. A tag não será movida. Incremente a versão antes de publicar outra release."
+            exit 1
           fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" "$RELEASE_SHA" -m "Estudo Adaptativo Inteligente $RELEASE_TAG"
+          git push origin "refs/tags/$RELEASE_TAG"
+          echo "mode=created" >> "$GITHUB_OUTPUT"
+          echo "tag_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "Tag canônica criada: $RELEASE_TAG -> $RELEASE_SHA"
 
       - name: Publish canonical GitHub Release
         env:
@@ -98,14 +116,24 @@ jobs:
           RELEASE_TAG: ${{ steps.identity.outputs.tag }}
           RELEASE_VERSION: ${{ steps.identity.outputs.version }}
           RELEASE_SHA: ${{ steps.identity.outputs.sha }}
+          CANONICAL_TAG_SHA: ${{ steps.canonical_tag.outputs.tag_sha }}
+          RELEASE_MODE: ${{ steps.canonical_tag.outputs.mode }}
         shell: bash
         run: |
           set -euo pipefail
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "GitHub Release $RELEASE_TAG já existe; mantendo a release imutável."
+            echo "GitHub Release $RELEASE_TAG já existe; mantendo a release histórica imutável."
+            echo "  mode=$RELEASE_MODE"
+            echo "  canonical_tag_sha=$CANONICAL_TAG_SHA"
+            echo "  deployed_sha=$RELEASE_SHA"
             gh release view "$RELEASE_TAG" --json url,tagName,isDraft,isPrerelease,targetCommitish
             exit 0
+          fi
+
+          if [ "$RELEASE_MODE" = "operational-rollback" ]; then
+            echo "::error::Tag histórica existente sem GitHub Release associada. A criação automática foi bloqueada para preservar a identidade canônica."
+            exit 1
           fi
 
           gh release create "$RELEASE_TAG" \
