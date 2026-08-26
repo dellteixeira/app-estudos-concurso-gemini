@@ -17,7 +17,9 @@ const eagerPdfScripts = [
   './js/pdf/pdf-annotations.js',
   './vendor/pdf.min.js',
   './js/pdf/pdf-reader.js',
-  './js/pdf/pdf-library-ui.js'
+  './js/pdf/pdf-library-ui.js',
+  './js/pdf/pdf-offline-integrity.js',
+  './js/pdf/pdf-device-storage.js'
 ];
 
 test('performance loader is part of bootstrap exactly once', () => {
@@ -35,6 +37,9 @@ test('PDF feature is loaded sequentially on library intent', () => {
   assert.doesNotThrow(() => new vm.Script(loader));
   for (const src of eagerPdfScripts) assert.match(loader, new RegExp(src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), src);
   assert.match(loader, /function ensurePdfFeature\(\)/);
+  assert.match(loader, /function pdfFeatureReady\(\)/);
+  assert.match(loader, /global\.PdfOfflineIntegrity/);
+  assert.match(loader, /global\.PdfDeviceStorage/);
   assert.match(loader, /pdfFeaturePromise\s*=\s*\(async \(\) => \{/);
   assert.match(loader, /for \(const src of PDF_FEATURE_SCRIPTS\) await loadScript\(src\)/);
   assert.match(loader, /\[data-tab="tab-biblioteca"\]/);
