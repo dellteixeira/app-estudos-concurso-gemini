@@ -72,6 +72,9 @@
 /js/core/offline-sync-metadata-ring2-promotion.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+/js/core/offline-sync-metadata-ring2-promoted-stability.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/core/offline-sync-metadata-expansion.js
   Cache-Control: no-cache, no-store, must-revalidate
 

@@ -53,6 +53,8 @@
         global.OfflineSyncMetadataPopulationPromotedStability?.install?.();
         if (!global.OfflineSyncMetadataRing2Promotion) await loadExtensionScript('./js/core/offline-sync-metadata-ring2-promotion.js?v=10.52.0', 'offline-sync-metadata-ring2-promotion');
         global.OfflineSyncMetadataRing2Promotion?.install?.();
+        if (!global.OfflineSyncMetadataRing2PromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-ring2-promoted-stability.js?v=10.52.0', 'offline-sync-metadata-ring2-promoted-stability');
+        global.OfflineSyncMetadataRing2PromotedStability?.install?.();
         if (!global.OfflineSyncMetadataExpansion) await loadExtensionScript('./js/core/offline-sync-metadata-expansion.js?v=10.52.0', 'offline-sync-metadata-expansion');
         global.OfflineSyncMetadataExpansion?.install?.();
         if (!global.OfflineSyncAuthority) await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.52.0', 'offline-sync-authority');
@@ -74,6 +76,7 @@
             metadataPopulationPromotion:global.OfflineSyncMetadataPopulationPromotion?.getDiagnostics?.() || null,
             metadataPopulationPromotedStability:global.OfflineSyncMetadataPopulationPromotedStability?.getDiagnostics?.() || null,
             metadataRing2Promotion:global.OfflineSyncMetadataRing2Promotion?.getDiagnostics?.() || null,
+            metadataRing2PromotedStability:global.OfflineSyncMetadataRing2PromotedStability?.getDiagnostics?.() || null,
             metadataExpansion:global.OfflineSyncMetadataExpansion?.getDiagnostics?.() || null,
             authority:global.OfflineSyncAuthority?.getDiagnostics?.() || null,
             deleteAuthority:global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
@@ -141,6 +144,7 @@
         getOfflineSyncMetadataPopulationPromotionDiagnostics:() => global.OfflineSyncMetadataPopulationPromotion?.getDiagnostics?.() || null,
         getOfflineSyncMetadataPopulationPromotedStabilityDiagnostics:() => global.OfflineSyncMetadataPopulationPromotedStability?.getDiagnostics?.() || null,
         getOfflineSyncMetadataRing2PromotionDiagnostics:() => global.OfflineSyncMetadataRing2Promotion?.getDiagnostics?.() || null,
+        getOfflineSyncMetadataRing2PromotedStabilityDiagnostics:() => global.OfflineSyncMetadataRing2PromotedStability?.getDiagnostics?.() || null,
         getOfflineSyncMetadataExpansionDiagnostics:() => global.OfflineSyncMetadataExpansion?.getDiagnostics?.() || null,
         getOfflineSyncAuthorityDiagnostics:() => global.OfflineSyncAuthority?.getDiagnostics?.() || null,
         getOfflineSyncDeleteAuthorityDiagnostics:() => global.OfflineSyncDeleteAuthority?.getDiagnostics?.() || null,
