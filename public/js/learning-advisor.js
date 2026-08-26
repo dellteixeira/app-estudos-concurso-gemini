@@ -1,305 +1,58 @@
 (function installLearningAdvisor(global){
 'use strict';
 if(global.AppLearningAdvisor)return;
-
-const VERSION='1.1.0';
-const MAX_TOPICS=5;
-const MIN_FRICTION=35;
-const CACHE_TTL_MS=30*60*1000;
-const ACTION_LABELS={
-  active_recall:'Recuperação ativa',
-  short_review:'Revisão curta',
-  questions:'Questões comentadas',
-  focused_restudy:'Reestudo focalizado',
-  flashcards:'Flashcards',
-  compare_map:'Mapa comparativo',
-  law_reading:'Lei seca guiada'
-};
-const TYPE_LABELS={
-  acquisition:'Aquisição inicial',
-  retention:'Retenção',
-  application:'Aplicação em questões',
-  persistent:'Dificuldade persistente',
-  false_mastery:'Falsa sensação de domínio',
-  mixed:'Dificuldade mista'
-};
-let currentCandidates=[];
-let lastResult=null;
-let busy=false;
-
+const VERSION='2.0.0',MAX_TOPICS=5,MIN_FRICTION=35,CACHE_TTL_MS=1800000;
+const ACTION_LABELS={active_recall:'Recuperação ativa',short_review:'Revisão curta',questions:'Questões comentadas',focused_restudy:'Reestudo focalizado',flashcards:'Flashcards',compare_map:'Mapa comparativo',law_reading:'Lei seca guiada'};
+const TYPE_LABELS={acquisition:'Aquisição inicial',retention:'Retenção',application:'Aplicação em questões',persistent:'Dificuldade persistente',false_mastery:'Falsa sensação de domínio',mixed:'Dificuldade mista'};
+let lastResult=null,busy=false,tbodyObserver=null,previousFocus=null;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
-const esc=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
-const safeText=(value,max=500)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
-
-function getRows(){
-  try{return typeof retentionDiagnosticRows!=='undefined'&&Array.isArray(retentionDiagnosticRows)?retentionDiagnosticRows:[]}catch(_){return[]}
-}
-function getItems(){
-  try{return typeof editalItems!=='undefined'&&Array.isArray(editalItems)?editalItems:[]}catch(_){return[]}
-}
-function getContestName(){
-  try{return typeof currentConcurso!=='undefined'?String(currentConcurso||'Concurso Geral'):'Concurso Geral'}catch(_){return'Concurso Geral'}
-}
-function topicKey(materia,assunto){
-  try{if(typeof getStudyTopicKey==='function')return getStudyTopicKey(materia,assunto)}catch(_){}
-  return `${safeText(materia,180)}::${safeText(assunto,300)}`.toLowerCase();
-}
-function findItem(row){
-  const key=row?.state?.key;
-  const items=getItems();
-  if(key)return items.find(item=>topicKey(item?.materia,item?.assunto)===key)||null;
-  return items.find(item=>item?.materia===row?.materia&&item?.assunto===row?.assunto)||null;
-}
-function numberOr(value,fallback=null){const n=Number(value);return Number.isFinite(n)?n:fallback}
-
-function computeLearningFriction(row,item){
-  const state=row?.state||{};
-  const qs=state.questionStats||{};
-  const retention=clamp(numberOr(row?.retention,numberOr(state.retention,100)),0,100);
-  const accuracyRaw=numberOr(row?.questionAccuracy,numberOr(qs.lastAccuracy,numberOr(qs.averageAccuracy,null)));
-  const accuracy=accuracyRaw==null?null:clamp(accuracyRaw,0,100);
-  const confidence=clamp(numberOr(qs.confidence,0),0,1);
-  const lapseCount=clamp(numberOr(state.lapseCount,0),0,30);
-  const reviewCount=clamp(numberOr(state.reviewCount,0),0,60);
-  const sessionCount=clamp(numberOr(state.sessionCount,0),0,120);
-  const totalMinutes=clamp(numberOr(state.totalMinutes,0),0,20000);
-  const difficulty=clamp(numberOr(state.difficulty,5),1,10);
-  const forgot=state.lastRating==='forgot';
-  const hardCount=clamp(numberOr(state.ratingCounts?.hard,0),0,50);
-  const acquired=Boolean(item&&(item.teoria||item.videoaula||item.questoes||item.lei_seca));
-
-  const retentionRisk=(100-retention)*0.34;
-  const questionRisk=accuracy==null?0:(100-accuracy)*(0.18+0.17*confidence);
-  const lapseRisk=Math.min(14,lapseCount*3.5);
-  const difficultyRisk=(difficulty-1)/9*8;
-  const effortRisk=Math.min(10,reviewCount*0.8+sessionCount*0.22+totalMinutes/180);
-  const persistenceRisk=(reviewCount>=2&&retention<65?8:0)+(hardCount>=2?4:0)+(forgot?6:0);
-  const falseMasteryRisk=acquired&&accuracy!=null&&accuracy<55&&confidence>=0.2?8:0;
-  const score=clamp(Math.round(retentionRisk+questionRisk+lapseRisk+difficultyRisk+effortRisk+persistenceRisk+falseMasteryRisk),0,100);
-  return {
-    score,
-    components:{retentionRisk,questionRisk,lapseRisk,difficultyRisk,effortRisk,persistenceRisk,falseMasteryRisk},
-    metrics:{retention,accuracy,confidence,lapseCount,reviewCount,sessionCount,totalMinutes,difficulty,forgot,acquired}
-  };
-}
-
-function collectCandidates(limit=MAX_TOPICS){
-  const rows=getRows();
-  const candidates=rows.map((row,index)=>{
-    const item=findItem(row);
-    if(!item)return null;
-    const friction=computeLearningFriction(row,item);
-    return {
-      topicId:topicKey(item.materia,item.assunto),
-      rowIndex:index,
-      materia:safeText(item.materia,180),
-      assunto:safeText(item.assunto,300),
-      prioridade:clamp(numberOr(item.prioridade,2),1,4),
-      assuntoPrioridade:clamp(numberOr(item.assunto_prioridade,1),1,20),
-      frictionScore:friction.score,
-      metrics:friction.metrics
-    };
-  }).filter(Boolean).filter(item=>item.frictionScore>=MIN_FRICTION)
-    .sort((a,b)=>b.frictionScore-a.frictionScore||a.prioridade-b.prioridade)
-    .slice(0,Math.max(1,Math.min(MAX_TOPICS,Number(limit)||MAX_TOPICS)));
-  currentCandidates=candidates;
-  return candidates;
-}
-
-function getRiskRows(){
-  return getRows().map((row,index)=>{
-    const item=findItem(row);
-    if(!item)return null;
-    const retention=clamp(numberOr(row?.retention,numberOr(row?.state?.retention,100)),0,100);
-    const accuracy=numberOr(row?.questionAccuracy,numberOr(row?.state?.questionStats?.lastAccuracy,null));
-    const risk=retention<70||Boolean(row?.retentionDue)||Boolean(row?.scheduledOverdue||row?.overdue)||(accuracy!=null&&accuracy<60);
-    if(!risk)return null;
-    const persistent=computeLearningFriction(row,item).score;
-    return {row,index,item,retention,accuracy,persistent,riskScore:numberOr(row?.riskScore,100-retention)};
-  }).filter(Boolean).sort((a,b)=>b.riskScore-a.riskScore||a.retention-b.retention);
-}
-
-function cacheKey(candidates){
-  const compact=candidates.map(c=>[c.topicId,c.frictionScore,Math.round(c.metrics.retention),c.metrics.accuracy==null?null:Math.round(c.metrics.accuracy),c.metrics.reviewCount,c.metrics.lapseCount]);
-  let hash=2166136261;
-  const text=JSON.stringify(compact);
-  for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619)}
-  return `learning_advisor_${safeText(getContestName(),80)}_${(hash>>>0).toString(16)}`;
-}
-function readCache(candidates){
-  try{const raw=localStorage.getItem(cacheKey(candidates));if(!raw)return null;const parsed=JSON.parse(raw);if(Date.now()-Number(parsed?.savedAt||0)>CACHE_TTL_MS)return null;return parsed?.payload||null}catch(_){return null}
-}
-function writeCache(candidates,payload){
-  try{localStorage.setItem(cacheKey(candidates),JSON.stringify({savedAt:Date.now(),payload}))}catch(_){}
-}
-
-function ensureDialog(){
-  let overlay=document.getElementById('learningAdvisorOverlay');
-  if(overlay)return overlay;
-  overlay=document.createElement('div');
-  overlay.id='learningAdvisorOverlay';
-  overlay.className='learning-advisor-overlay';
-  overlay.setAttribute('aria-hidden','true');
-  overlay.innerHTML=`<section id="learningAdvisorDialog" class="learning-advisor-dialog" role="dialog" aria-modal="true" aria-labelledby="learningAdvisorTitle"><div class="learning-advisor-dialog-head"><div><span class="learning-advisor-kicker">Retenção e Diagnóstico</span><h3 id="learningAdvisorTitle">Assuntos em risco</h3><p id="learningAdvisorSubtitle">O risco é calculado pelo motor de Retenção a partir da memória, revisões e desempenho.</p></div><button id="learningAdvisorClose" class="learning-advisor-close" type="button" aria-label="Fechar">×</button></div><div id="learningAdvisorBody" class="learning-advisor-body"></div><div id="learningAdvisorFooter" class="learning-advisor-footer"></div></section>`;
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click',event=>{if(event.target===overlay)closeDialog()});
-  overlay.querySelector('#learningAdvisorClose')?.addEventListener('click',closeDialog);
-  return overlay;
-}
-
-function openDialog(){
-  const overlay=ensureDialog();
-  overlay.classList.add('is-open');
-  overlay.setAttribute('aria-hidden','false');
-  document.body.classList.add('learning-advisor-modal-open');
-  setTimeout(()=>overlay.querySelector('#learningAdvisorClose')?.focus(),0);
-}
-function closeDialog(){
-  const overlay=document.getElementById('learningAdvisorOverlay');
-  if(!overlay)return;
-  overlay.classList.remove('is-open');
-  overlay.setAttribute('aria-hidden','true');
-  document.body.classList.remove('learning-advisor-modal-open');
-}
-
-function riskStateText(entry){
-  const row=entry.row||{};
-  if(row.scheduledOverdue||row.overdue){
-    const days=Math.max(0,Number(row.scheduledOverdueDays??row.overdueDays)||0);
-    return `Revisão agendada vencida${days?` há ${days}d`:''}.`;
-  }
-  if(row.retentionDue)return 'Retenção pede revisão; não há revisão vencida no cronograma.';
-  if(entry.retention<70)return 'Retenção baixa — revisão recomendada.';
-  if(entry.accuracy!=null&&entry.accuracy<60)return 'Desempenho em questões abaixo do esperado.';
-  return 'Sinal de risco identificado pelo motor de Retenção.';
-}
-
-function openRiskView(){
-  const overlay=ensureDialog();
-  const title=overlay.querySelector('#learningAdvisorTitle');
-  const subtitle=overlay.querySelector('#learningAdvisorSubtitle');
-  const body=overlay.querySelector('#learningAdvisorBody');
-  const footer=overlay.querySelector('#learningAdvisorFooter');
-  const risks=getRiskRows();
-  const candidates=collectCandidates();
-  if(title)title.textContent='Assuntos em risco';
-  if(subtitle)subtitle.textContent='O risco é calculado pelo motor de Retenção. Limpar o cronograma não apaga sinais reais de memória e desempenho.';
-  if(body)body.innerHTML=risks.length?`<div class="learning-risk-list">${risks.map(entry=>`<article class="learning-risk-card"><div class="learning-risk-copy"><span class="learning-advisor-subject">${esc(entry.item.materia)}</span><strong>${esc(entry.item.assunto)}</strong><p>${esc(riskStateText(entry))}</p></div><div class="learning-risk-metrics"><span>Retenção <strong>${Math.round(entry.retention)}%</strong></span>${entry.accuracy!=null?`<span>Questões <strong>${Math.round(entry.accuracy)}%</strong></span>`:''}${entry.persistent>=MIN_FRICTION?`<span class="learning-friction learning-friction-${entry.persistent>=70?'high':entry.persistent>=50?'medium':'low'}">Dificuldade persistente ${entry.persistent}</span>`:''}</div></article>`).join('')}</div>`:'<div class="learning-advisor-empty">Nenhum assunto está em risco neste momento.</div>';
-  if(footer)footer.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>A IA interpreta somente os sinais críticos; a Retenção continua sendo a autoridade.</span></div><button id="learningAdvisorAnalyze" class="btn btn-secondary" type="button" ${candidates.length?'':'disabled'}>Analisar dificuldades com IA</button>`;
-  footer?.querySelector('#learningAdvisorAnalyze')?.addEventListener('click',()=>analyze().catch(()=>{}));
-  openDialog();
-}
-
-function renderInterventionShell(){
-  const overlay=ensureDialog();
-  const title=overlay.querySelector('#learningAdvisorTitle');
-  const subtitle=overlay.querySelector('#learningAdvisorSubtitle');
-  const body=overlay.querySelector('#learningAdvisorBody');
-  const footer=overlay.querySelector('#learningAdvisorFooter');
-  if(title)title.textContent='Intervenções para dificuldades persistentes';
-  if(subtitle)subtitle.textContent='A Retenção continua sendo a autoridade. A IA apenas interpreta os sinais e sugere estratégias pedagógicas.';
-  if(body)body.innerHTML='<div id="learningAdvisorStatus" class="learning-advisor-status" role="status" aria-live="polite"></div><div id="learningAdvisorResults" class="learning-advisor-results"></div>';
-  if(footer)footer.innerHTML='<button id="learningAdvisorBack" class="btn btn-secondary" type="button">Voltar aos assuntos em risco</button>';
-  footer?.querySelector('#learningAdvisorBack')?.addEventListener('click',openRiskView);
-  openDialog();
-  return overlay;
-}
-
-function renderResults(payload,candidates){
-  const overlay=ensureDialog();
-  const box=overlay.querySelector('#learningAdvisorResults');
-  const status=overlay.querySelector('#learningAdvisorStatus');
-  const interventions=Array.isArray(payload?.interventions)?payload.interventions:[];
-  if(status)status.textContent=payload?.aiUsed?'Gemini analisou somente os pontos críticos selecionados pelo motor de Retenção.':'A recomendação abaixo foi produzida pelo fallback local porque a IA não estava disponível.';
-  if(!box)return;
-  box.innerHTML=interventions.map(intervention=>{
-    const candidate=candidates.find(c=>c.topicId===intervention.topicId);
-    if(!candidate)return'';
-    const action=ACTION_LABELS[intervention.recommendedAction]||'Intervenção focalizada';
-    const type=TYPE_LABELS[intervention.diagnosisType]||'Dificuldade mista';
-    const sev=intervention.severity==='high'?'Alto':intervention.severity==='medium'?'Médio':'Baixo';
-    return `<article class="learning-advisor-card" data-topic-id="${esc(candidate.topicId)}"><div class="learning-advisor-card-top"><div><span class="learning-advisor-subject">${esc(candidate.materia)}</span><strong>${esc(candidate.assunto)}</strong></div><span class="learning-friction learning-friction-${candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low'}">Dificuldade persistente ${candidate.frictionScore}</span></div><div class="learning-advisor-meta"><span>${esc(type)}</span><span>Risco ${sev}</span><span>${Math.round(Number(intervention.suggestedMinutes)||20)} min</span></div><p>${esc(intervention.rationale||'Recomendação baseada nos sinais de retenção e desempenho.')}</p><div class="learning-advisor-action"><strong>${esc(action)}</strong><span>${esc(intervention.method||'Aplique a intervenção e meça novamente o desempenho.')}</span></div><div class="learning-advisor-controls"><button class="btn btn-secondary btn-sm" type="button" data-learning-action="local-intervention" data-row-index="${candidate.rowIndex}">Abrir intervenção local</button><span>O motor local valida a execução.</span></div></article>`;
-  }).join('')||'<div class="learning-advisor-empty">Nenhuma intervenção foi necessária neste momento.</div>';
-  box.querySelectorAll('[data-learning-action="local-intervention"]').forEach(button=>button.addEventListener('click',()=>openLocalIntervention(Number(button.dataset.rowIndex))));
-}
-
-function openLocalIntervention(rowIndex){
-  if(!Number.isInteger(rowIndex)||rowIndex<0)return;
-  try{
-    if(typeof openLayeredReviewModal==='function'){
-      closeDialog();
-      openLayeredReviewModal(rowIndex);
-      return;
-    }
-  }catch(_){}
-  global.appNotice?.('A recomendação da IA foi preservada, mas o fluxo local de intervenção ainda não está disponível.',{title:'IA auxiliar'});
-}
-
-async function authToken(){
-  try{const result=await supabaseClient?.auth?.getSession?.();return result?.data?.session?.access_token||''}catch(_){return''}
-}
-
-async function requestAdvice(candidates){
-  const token=await authToken();
-  if(!token)throw new Error('Sessão expirada. Entre novamente para usar a análise por IA.');
-  const response=await fetch('/api/ai/learning-diagnosis',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({contest:getContestName(),topics:candidates.map(({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics})=>({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics}))})});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw new Error(data?.error||`Falha na análise (${response.status}).`);
-  return data;
-}
-
-async function analyze(options={}){
-  if(busy)return lastResult;
-  const overlay=renderInterventionShell();
-  const status=overlay?.querySelector('#learningAdvisorStatus');
-  const candidates=collectCandidates(options.limit||MAX_TOPICS);
-  if(!candidates.length){if(status)status.textContent='Ainda não há dificuldade persistente suficiente para uma análise por IA.';return null}
-  const cached=!options.force&&readCache(candidates);
-  if(cached){lastResult=cached;renderResults(cached,candidates);return cached}
-  busy=true;if(status)status.textContent='Analisando padrões de dificuldade sem alterar seu cronograma…';
-  try{
-    const payload=await requestAdvice(candidates);
-    lastResult=payload;writeCache(candidates,payload);renderResults(payload,candidates);return payload;
-  }catch(error){
-    if(status)status.textContent=error?.message||'Não foi possível consultar a IA agora.';
-    throw error;
-  }finally{busy=false}
-}
-
-function onRiskMetricClick(event){
-  const target=event.target?.closest?.('[data-action="retention-details"][data-metric="risk"]');
-  if(!target)return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  openRiskView();
-}
-
-function onKeydown(event){
-  if(event.key==='Escape'&&document.getElementById('learningAdvisorOverlay')?.classList.contains('is-open'))closeDialog();
-}
-
-function refresh(){
-  const stale=document.getElementById('learningAdvisorPanel');
-  if(stale)stale.remove();
-  const overlay=document.getElementById('learningAdvisorOverlay');
-  if(overlay?.classList.contains('is-open')){
-    const title=overlay.querySelector('#learningAdvisorTitle')?.textContent||'';
-    if(title==='Assuntos em risco')openRiskView();
-  }
-}
-function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'risk-details',candidateCount:collectCandidates().length,busy,hasResult:!!lastResult})}
-
-function boot(){
-  document.getElementById('learningAdvisorPanel')?.remove();
-  ensureDialog();
-  if(!document.documentElement.dataset.learningAdvisorRiskBound){
-    document.documentElement.dataset.learningAdvisorRiskBound='1';
-    document.addEventListener('click',onRiskMetricClick,true);
-    document.addEventListener('keydown',onKeydown);
-  }
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
-global.addEventListener('pageshow',()=>setTimeout(boot,80));
-
-global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,getDiagnostics:diagnostics});
+const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const safe=(v,max=500)=>String(v??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+const num=(v,f=null)=>Number.isFinite(Number(v))?Number(v):f;
+function ensureStyles(){const found=document.getElementById('learningAdvisorStylesheet')||[...document.querySelectorAll('link[rel="stylesheet"]')].find(l=>String(l.getAttribute('href')||'').includes('css/learning-advisor.css'));if(found){if(!found.id)found.id='learningAdvisorStylesheet';return}const l=document.createElement('link');l.id='learningAdvisorStylesheet';l.rel='stylesheet';l.href='./css/learning-advisor.css';document.head.appendChild(l)}
+function rows(){try{return Array.isArray(retentionDiagnosticRows)?retentionDiagnosticRows:[]}catch(_){return[]}}
+function items(){try{return Array.isArray(editalItems)?editalItems:[]}catch(_){return[]}}
+function contestName(){try{return String(currentConcurso||'Concurso Geral')}catch(_){return'Concurso Geral'}}
+function metadata(){try{return typeof getConcursosMetadata==='function'?getConcursosMetadata():{}}catch(_){return{}}}
+function contest(create=false){const m=metadata(),n=contestName();if(create&&!m[n])m[n]={};return{all:m,value:m[n]||{},name:n}}
+function key(m,a){try{if(typeof getStudyTopicKey==='function')return getStudyTopicKey(m,a)}catch(_){}return`${safe(m,180)}::${safe(a,300)}`.toLowerCase()}
+function lifecycle(m){return contest().value?.subjectLifecycle?.[m]||null}
+function findItem(r){const k=r?.state?.key,x=k?items().find(i=>key(i?.materia,i?.assunto)===k):items().find(i=>i?.materia===r?.materia&&i?.assunto===r?.assunto);return !x||lifecycle(x.materia)?.status==='completed'?null:x}
+function friction(r,item){const s=r?.state||{},q=s.questionStats||{},ret=clamp(num(r?.retention,num(s.retention,100)),0,100),ar=num(r?.questionAccuracy,num(q.lastAccuracy,num(q.averageAccuracy,null))),acc=ar==null?null:clamp(ar,0,100),conf=clamp(num(q.confidence,0),0,1),lapses=clamp(num(s.lapseCount,0),0,30),reviews=clamp(num(s.reviewCount,0),0,60),sessions=clamp(num(s.sessionCount,0),0,120),mins=clamp(num(s.totalMinutes,0),0,20000),difficulty=clamp(num(s.difficulty,5),1,10),forgot=s.lastRating==='forgot',hard=clamp(num(s.ratingCounts?.hard,0),0,50),acquired=!!(item&&(item.teoria||item.videoaula||item.questoes||item.lei_seca));const score=(100-ret)*.34+(acc==null?0:(100-acc)*(.18+.17*conf))+Math.min(14,lapses*3.5)+(difficulty-1)/9*8+Math.min(10,reviews*.8+sessions*.22+mins/180)+(reviews>=2&&ret<65?8:0)+(hard>=2?4:0)+(forgot?6:0)+(acquired&&acc!=null&&acc<55&&conf>=.2?8:0);return{score:clamp(Math.round(score),0,100),metrics:{retention:ret,accuracy:acc,confidence:conf,lapseCount:lapses,reviewCount:reviews,sessionCount:sessions,totalMinutes:mins,difficulty,forgot,acquired}}}
+function candidates(limit=MAX_TOPICS){return rows().map((r,index)=>{const i=findItem(r);if(!i)return null;const f=friction(r,i);return{topicId:key(i.materia,i.assunto),rowIndex:index,materia:safe(i.materia,180),assunto:safe(i.assunto,300),prioridade:clamp(num(i.prioridade,2),1,4),assuntoPrioridade:clamp(num(i.assunto_prioridade,1),1,20),frictionScore:f.score,metrics:f.metrics}}).filter(Boolean).filter(x=>x.frictionScore>=MIN_FRICTION).sort((a,b)=>b.frictionScore-a.frictionScore||a.prioridade-b.prioridade).slice(0,Math.max(1,Math.min(MAX_TOPICS,Number(limit)||MAX_TOPICS)))}
+function risks(){return rows().map((r,index)=>{const i=findItem(r);if(!i)return null;const ret=clamp(num(r?.retention,num(r?.state?.retention,100)),0,100),acc=num(r?.questionAccuracy,num(r?.state?.questionStats?.lastAccuracy,null));if(!(ret<70||r?.retentionDue||r?.scheduledOverdue||r?.overdue||(acc!=null&&acc<60)))return null;return{row:r,index,item:i,retention:ret,accuracy:acc,persistent:friction(r,i).score,riskScore:num(r?.riskScore,100-ret)}}).filter(Boolean).sort((a,b)=>b.riskScore-a.riskScore||a.retention-b.retention)}
+function cacheKey(cs){let h=2166136261,t=JSON.stringify(cs.map(c=>[c.topicId,c.frictionScore,Math.round(c.metrics.retention),c.metrics.accuracy==null?null:Math.round(c.metrics.accuracy),c.metrics.reviewCount,c.metrics.lapseCount]));for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return`learning_advisor_${safe(contestName(),80)}_${(h>>>0).toString(16)}`}
+function readCache(cs){try{const p=JSON.parse(localStorage.getItem(cacheKey(cs))||'null');return p&&Date.now()-Number(p.savedAt||0)<=CACHE_TTL_MS?p.payload:null}catch(_){return null}}
+function writeCache(cs,payload){try{localStorage.setItem(cacheKey(cs),JSON.stringify({savedAt:Date.now(),payload}))}catch(_){}}
+function dialog(){let o=document.getElementById('learningAdvisorOverlay');if(o)return o;o=document.createElement('div');o.id='learningAdvisorOverlay';o.className='learning-advisor-overlay';o.setAttribute('aria-hidden','true');o.innerHTML='<section id="learningAdvisorDialog" class="learning-advisor-dialog" role="dialog" aria-modal="true" aria-labelledby="learningAdvisorTitle"><div class="learning-advisor-dialog-head"><div><span class="learning-advisor-kicker">Estudo Adaptativo Inteligente</span><h3 id="learningAdvisorTitle">Retenção e Diagnóstico</h3><p id="learningAdvisorSubtitle"></p></div><button id="learningAdvisorClose" class="learning-advisor-close" type="button" aria-label="Fechar">×</button></div><div id="learningAdvisorBody" class="learning-advisor-body"></div><div id="learningAdvisorFooter" class="learning-advisor-footer"></div></section>';document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)close()});o.querySelector('#learningAdvisorClose').addEventListener('click',close);return o}
+function open(){const o=dialog();previousFocus=document.activeElement;o.classList.add('is-open');o.setAttribute('aria-hidden','false');document.body.classList.add('learning-advisor-modal-open');setTimeout(()=>o.querySelector('[data-enter-default="true"]:not(:disabled),button:not(:disabled)')?.focus(),0)}
+function close(){const o=document.getElementById('learningAdvisorOverlay');if(!o)return;o.classList.remove('is-open');o.setAttribute('aria-hidden','true');document.body.classList.remove('learning-advisor-modal-open');if(previousFocus?.focus)setTimeout(()=>previousFocus.focus(),0);previousFocus=null}
+function copy(title,subtitle){const o=dialog();o.querySelector('#learningAdvisorTitle').textContent=title;o.querySelector('#learningAdvisorSubtitle').textContent=subtitle;return o}
+function riskText(e){const r=e.row||{};if(r.scheduledOverdue||r.overdue){const d=Math.max(0,Number(r.scheduledOverdueDays??r.overdueDays)||0);return`Revisão agendada vencida${d?` há ${d}d`:''}.`}if(r.retentionDue)return'Retenção pede revisão; não há revisão vencida no cronograma.';if(e.retention<70)return'Retenção baixa — revisão recomendada.';if(e.accuracy!=null&&e.accuracy<60)return'Desempenho em questões abaixo do esperado.';return'Sinal de risco identificado pelo motor de Retenção.'}
+function card(e){return`<article class="learning-risk-card"><div class="learning-risk-copy"><span class="learning-advisor-subject">${esc(e.item.materia)}</span><strong>${esc(e.item.assunto)}</strong><p>${esc(riskText(e))}</p></div><div class="learning-risk-metrics"><span>Retenção <strong>${Math.round(e.retention)}%</strong></span>${e.accuracy!=null?`<span>Questões <strong>${Math.round(e.accuracy)}%</strong></span>`:''}${e.persistent>=MIN_FRICTION?`<span class="learning-friction learning-friction-${e.persistent>=70?'high':e.persistent>=50?'medium':'low'}">Dificuldade ${e.persistent}</span>`:''}<button class="btn btn-secondary btn-sm" type="button" data-learning-action="local" data-row-index="${e.index}">Abrir revisão</button></div></article>`}
+function bindLocal(root){root?.querySelectorAll('[data-learning-action="local"]').forEach(b=>b.addEventListener('click',()=>openLocal(Number(b.dataset.rowIndex))))}
+function openRiskView(){const o=copy('Assuntos em risco','O motor de Retenção identifica o risco. A IA interpreta dificuldades persistentes e sugere uma intervenção; ela não altera o cronograma automaticamente.'),b=o.querySelector('#learningAdvisorBody'),f=o.querySelector('#learningAdvisorFooter'),rs=risks(),cs=candidates();b.innerHTML=rs.length?`<div class="learning-risk-list">${rs.map(card).join('')}</div>`:'<div class="learning-advisor-empty">Nenhum assunto está em risco neste momento.</div>';f.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>Transforma sinais críticos em ações pedagógicas objetivas, mantendo o motor de Retenção como autoridade.</span></div><div class="learning-advisor-footer-actions"><button class="btn btn-secondary" type="button" data-learning-action="close">Fechar</button><button id="learningAdvisorAnalyze" class="btn btn-primary" type="button" data-enter-default="true" ${cs.length?'':'disabled'}>Analisar dificuldades com IA</button></div>`;f.querySelector('[data-learning-action="close"]').addEventListener('click',close);f.querySelector('#learningAdvisorAnalyze').addEventListener('click',()=>analyze().catch(()=>{}));bindLocal(b);open()}
+function openCriticalView(){const all=rows().map((r,index)=>{const i=findItem(r);if(!i)return null;const ret=clamp(num(r?.retention,100),0,100),acc=num(r?.questionAccuracy,null);return{row:r,index,item:i,retention:ret,accuracy:acc,persistent:friction(r,i).score,riskScore:num(r?.riskScore,100-ret)}}).filter(Boolean).sort((a,b)=>b.riskScore-a.riskScore||a.retention-b.retention),rs=all.slice(2),o=copy('Pontos críticos — visão completa','A mesma linguagem visual do painel principal, com ações diretas de revisão. ESC fecha esta tela; ENTER executa a ação principal.'),b=o.querySelector('#learningAdvisorBody'),f=o.querySelector('#learningAdvisorFooter');b.innerHTML=rs.length?`<div class="learning-risk-list">${rs.map(card).join('')}</div>`:'<div class="learning-advisor-empty">Não há outros pontos críticos além dos já exibidos no painel.</div>';f.innerHTML=`<div class="learning-advisor-footer-copy"><strong>${rs.length} ponto${rs.length===1?'':'s'} adicional${rs.length===1?'':'is'}</strong><span>Prioridade calculada por risco, retenção, desempenho e urgência.</span></div><div class="learning-advisor-footer-actions"><button class="btn btn-secondary" type="button" data-learning-action="close">Fechar</button>${rs[0]?`<button class="btn btn-primary" type="button" data-learning-action="primary" data-row-index="${rs[0].index}" data-enter-default="true">Revisar primeiro ponto</button>`:''}</div>`;f.querySelector('[data-learning-action="close"]').addEventListener('click',close);f.querySelector('[data-learning-action="primary"]')?.addEventListener('click',e=>openLocal(Number(e.currentTarget.dataset.rowIndex)));bindLocal(b);open()}
+function shell(){const o=copy('Intervenções para dificuldades persistentes','A Retenção continua sendo a autoridade. A IA interpreta apenas os sinais selecionados e sugere estratégias pedagógicas.'),b=o.querySelector('#learningAdvisorBody'),f=o.querySelector('#learningAdvisorFooter');b.innerHTML='<div id="learningAdvisorStatus" class="learning-advisor-status" role="status" aria-live="polite"></div><div id="learningAdvisorResults" class="learning-advisor-results"></div>';f.innerHTML='<div class="learning-advisor-footer-actions"><button id="learningAdvisorBack" class="btn btn-secondary" type="button">Voltar aos assuntos em risco</button><button class="btn btn-primary" type="button" data-learning-action="close" data-enter-default="true">Concluir</button></div>';f.querySelector('#learningAdvisorBack').addEventListener('click',openRiskView);f.querySelector('[data-learning-action="close"]').addEventListener('click',close);open();return o}
+function renderResults(payload,cs){const o=dialog(),box=o.querySelector('#learningAdvisorResults'),status=o.querySelector('#learningAdvisorStatus'),list=Array.isArray(payload?.interventions)?payload.interventions:[];status.textContent=payload?.aiUsed?'Gemini analisou somente os pontos críticos selecionados pelo motor de Retenção.':'A recomendação foi produzida pelo fallback local porque a IA não estava disponível.';box.innerHTML=list.map(x=>{const c=cs.find(k=>k.topicId===x.topicId);if(!c)return'';return`<article class="learning-advisor-card"><div class="learning-advisor-card-top"><div><span class="learning-advisor-subject">${esc(c.materia)}</span><strong>${esc(c.assunto)}</strong></div><span class="learning-friction learning-friction-${c.frictionScore>=70?'high':c.frictionScore>=50?'medium':'low'}">Dificuldade ${c.frictionScore}</span></div><div class="learning-advisor-meta"><span>${esc(TYPE_LABELS[x.diagnosisType]||'Dificuldade mista')}</span><span>Risco ${x.severity==='high'?'Alto':x.severity==='medium'?'Médio':'Baixo'}</span><span>${Math.round(Number(x.suggestedMinutes)||20)} min</span></div><p>${esc(x.rationale||'Recomendação baseada nos sinais de retenção e desempenho.')}</p><div class="learning-advisor-action"><strong>${esc(ACTION_LABELS[x.recommendedAction]||'Intervenção focalizada')}</strong><span>${esc(x.method||'Aplique a intervenção e meça novamente o desempenho.')}</span></div><div class="learning-advisor-controls"><button class="btn btn-secondary btn-sm" type="button" data-learning-action="local" data-row-index="${c.rowIndex}">Abrir intervenção local</button><span>O motor local valida a execução.</span></div></article>`}).join('')||'<div class="learning-advisor-empty">Nenhuma intervenção foi necessária neste momento.</div>';bindLocal(box)}
+function openLocal(index){if(!Number.isInteger(index)||index<0)return;try{if(typeof openLayeredReviewModal==='function'){close();openLayeredReviewModal(index);return}}catch(_){}global.appNotice?.('A recomendação foi preservada, mas o fluxo local de intervenção não está disponível.',{title:'IA auxiliar'})}
+async function token(){try{return(await supabaseClient?.auth?.getSession?.())?.data?.session?.access_token||''}catch(_){return''}}
+async function advice(cs){const t=await token();if(!t)throw new Error('Sessão expirada. Entre novamente para usar a análise por IA.');const r=await fetch('/api/ai/learning-diagnosis',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${t}`},body:JSON.stringify({contest:contestName(),topics:cs.map(({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics})=>({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics}))})}),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d?.error||`Falha na análise (${r.status}).`);return d}
+async function analyze(options={}){if(busy)return lastResult;const o=shell(),status=o.querySelector('#learningAdvisorStatus'),cs=candidates(options.limit||MAX_TOPICS);if(!cs.length){status.textContent='A IA auxiliar só entra quando existem sinais persistentes suficientes. Sua função é interpretar retenção baixa, lapsos e desempenho e sugerir uma intervenção — nunca substituir o motor de Retenção nem mudar o cronograma sozinha.';return null}const cached=!options.force&&readCache(cs);if(cached){lastResult=cached;renderResults(cached,cs);return cached}busy=true;status.textContent='Analisando padrões de dificuldade sem alterar seu cronograma…';try{const p=await advice(cs);lastResult=p;writeCache(cs,p);renderResults(p,cs);return p}catch(e){status.textContent=e?.message||'Não foi possível consultar a IA agora.';throw e}finally{busy=false;refreshBar()}}
+function topicText(raw){try{if(typeof normalizeScheduledTopicForStudy==='function')return normalizeScheduledTopicForStudy(raw)}catch(_){}return String(raw||'').replace(/^🔄\s*Rev\s*\([^)]*\):\s*/i,'').trim()}
+function revision(raw){try{if(typeof isRevisionScheduleText==='function')return isRevisionScheduleText(raw)}catch(_){}return String(raw||'').startsWith('🔄 Rev')}
+function filterSchedule(ds,materia,mode){Object.keys(ds||{}).forEach(d=>{if(!Array.isArray(ds[d]))return;ds[d]=ds[d].filter(raw=>{const t=topicText(raw);if(!t.startsWith(`${materia} - `))return true;return mode==='review_later'?revision(raw):false});if(!ds[d].length)delete ds[d]})}
+async function ask(message,options){try{if(typeof appConfirm==='function')return await appConfirm(message,options)}catch(_){}return global.confirm(message)}
+async function applySubjectWorkflow(materia,mode){const group=items().filter(i=>i.materia===materia);if(!group.length)return;const later=mode==='review_later',ok=await ask(later?`Fechar a matéria “${materia}” como conteúdo concluído e manter apenas as revisões para depois?`:`Finalizar totalmente a matéria “${materia}”? Conteúdo, questões e revisões ativas serão marcados como concluídos e os agendamentos restantes serão removidos.`,{title:later?'Concluir conteúdo da matéria':'Finalizar matéria',confirmText:later?'Deixar só revisões':'Finalizar totalmente',danger:!later});if(!ok)return;const c=contest(true),m=c.all,ct=c.value;ct.subjectLifecycle=ct.subjectLifecycle||{};ct.adaptiveRevisionProgress=ct.adaptiveRevisionProgress||{};let offsets=[1,7,30];try{const a=getActiveRevisionOffsets();if(Array.isArray(a)&&a.length)offsets=a}catch(_){}group.forEach(i=>{i.teoria=true;i.questoes=true;if(!later){i.rev_24h=i.rev_7d=i.rev_30d=true;const k=String(i.id);ct.adaptiveRevisionProgress[k]=ct.adaptiveRevisionProgress[k]||{};offsets.forEach(o=>ct.adaptiveRevisionProgress[k][String(o)]=true)}});filterSchedule(ct.dateSchedule||{},materia,mode);ct.subjectLifecycle[materia]={status:later?'review_later':'completed',updatedAt:new Date().toISOString()};try{await Promise.all(group.map(i=>typeof saveEditalItemToCloud==='function'?saveEditalItemToCloud(i):Promise.resolve()));if(typeof saveConcursosMetadata==='function')await saveConcursosMetadata(m)}catch(e){console.error(e);global.appNotice?.('A alteração não pôde ser salva completamente.',{title:'Falha ao concluir matéria'});return}try{filterDataByConcurso?.();renderMonthCalendar?.();updateModernOverview?.();renderRetentionDiagnostics?.()}catch(_){}refresh();global.appNotice?.(later?`“${materia}” foi fechada para conteúdo. As revisões permanecem ativas para depois.`:`“${materia}” foi finalizada totalmente. Os agendamentos restantes dessa matéria foram encerrados.`,{title:later?'Matéria em revisão':'Matéria finalizada'})}
+function enhanceHeaders(){document.querySelectorAll('#edital-list .materia-header-row').forEach(row=>{if(row.querySelector('[data-learning-subject-controls]'))return;let materia='';try{materia=decodeURIComponent(row.getAttribute('data-materia')||'')}catch(_){materia=row.getAttribute('data-materia')||''}const target=row.querySelector('.materia-header-right');if(!target||!materia)return;const l=lifecycle(materia),x=document.createElement('span');x.className='materia-completion-controls';x.dataset.learningSubjectControls='true';x.innerHTML=`${l?`<span class="materia-lifecycle-badge ${l.status==='completed'?'is-complete':'is-review'}">${l.status==='completed'?'Finalizada':'Só revisões'}</span>`:''}<button class="materia-completion-btn" type="button" data-subject-action="review_later" data-materia="${esc(materia)}" title="Concluir conteúdo e deixar revisões para depois">Revisar depois</button><button class="materia-completion-btn is-final" type="button" data-subject-action="completed" data-materia="${esc(materia)}" title="Finalizar conteúdo, questões e revisões">Finalizar</button>`;target.prepend(x)})}
+function bindHeaders(){const body=document.getElementById('edital-list');if(!body)return;tbodyObserver?.disconnect();tbodyObserver=new MutationObserver(enhanceHeaders);tbodyObserver.observe(body,{childList:true,subtree:true});enhanceHeaders()}
+function ensureBar(){const p=document.getElementById('retentionDiagnosticPanel');if(!p)return null;let b=document.getElementById('learningAdvisorPanel');if(!b){b=document.createElement('section');b.id='learningAdvisorPanel';b.className='learning-advisor-bar';b.setAttribute('aria-label','IA auxiliar para dificuldades persistentes');b.innerHTML='<div class="learning-advisor-bar-icon" aria-hidden="true">AI</div><div class="learning-advisor-bar-copy"><span class="learning-advisor-bar-kicker">IA AUXILIAR</span><strong>Intervenções para dificuldades persistentes</strong><span>A Retenção detecta o problema; a IA explica o padrão e sugere a próxima ação pedagógica sem alterar o cronograma sozinha.</span></div><div class="learning-advisor-bar-status"><strong id="learningAdvisorCandidateCount">0</strong><span>candidatos</span></div><button id="learningAdvisorPanelButton" class="btn btn-primary" type="button">Analisar com IA</button>';p.appendChild(b)}return b}
+function refreshBar(){const b=ensureBar();if(!b)return;const n=candidates().length;b.querySelector('#learningAdvisorCandidateCount').textContent=String(n);b.querySelector('#learningAdvisorPanelButton').textContent=n?`Analisar ${n} com IA`:'Entender função da IA'}
+function removeLegacy(){document.getElementById('modalRetentionMore')?.remove()}
+function click(e){const plus=e.target?.closest?.('[data-action="retention-more"],#retentionMoreButton');if(plus){e.preventDefault();e.stopImmediatePropagation();openCriticalView();return}const risk=e.target?.closest?.('[data-action="retention-details"][data-metric="risk"]');if(risk){e.preventDefault();e.stopImmediatePropagation();openRiskView();return}if(e.target?.closest?.('#learningAdvisorPanelButton')){e.preventDefault();analyze().catch(()=>{});return}const sb=e.target?.closest?.('[data-subject-action][data-materia]');if(sb){e.preventDefault();e.stopPropagation();applySubjectWorkflow(sb.dataset.materia,sb.dataset.subjectAction==='completed'?'completed':'review_later').catch(console.error)}}
+function keydown(e){const o=document.getElementById('learningAdvisorOverlay');if(!o?.classList.contains('is-open'))return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();close();return}if(e.key==='Enter'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){const a=document.activeElement,t=a?.tagName?.toUpperCase();if(t==='TEXTAREA'||a?.isContentEditable||t==='BUTTON'||t==='A')return;const p=o.querySelector('[data-enter-default="true"]:not(:disabled)');if(p){e.preventDefault();e.stopImmediatePropagation();p.click()}return}if(e.key==='Tab'){const fs=[...o.querySelectorAll('button:not(:disabled),[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])')].filter(x=>x.offsetParent!==null);if(!fs.length)return;const f=fs[0],l=fs[fs.length-1];if(e.shiftKey&&document.activeElement===f){e.preventDefault();l.focus()}else if(!e.shiftKey&&document.activeElement===l){e.preventDefault();f.focus()}}}
+function refresh(){removeLegacy();bindHeaders();refreshBar();const o=document.getElementById('learningAdvisorOverlay');if(o?.classList.contains('is-open')&&o.querySelector('#learningAdvisorTitle')?.textContent==='Assuntos em risco')openRiskView()}
+function boot(){ensureStyles();removeLegacy();dialog();ensureBar();bindHeaders();refreshBar();if(!document.documentElement.dataset.learningAdvisorV2Bound){document.documentElement.dataset.learningAdvisorV2Bound='1';document.addEventListener('click',click,true);document.addEventListener('keydown',keydown,true)}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);global.addEventListener('pageshow',()=>setTimeout(boot,80));
+global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction:friction,collectCandidates:candidates,getRiskRows:risks,openRiskView,openCriticalView,analyze,refresh,close,applySubjectWorkflow,getDiagnostics:()=>Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoints:['ai-bar','risk-details','critical-more'],candidateCount:candidates().length,busy,hasResult:!!lastResult})});
 })(window);
