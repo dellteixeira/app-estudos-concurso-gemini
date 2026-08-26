@@ -1,0 +1,64 @@
+name: Promote v10.53.0
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-ring2-promoted-stability-v10.53.0
+    paths:
+      - .github/workflows/promote-v10-53.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/offline-metadata-ring2-promoted-stability-v10.53.0
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+      - name: Promote release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release-version.mjs 10.53.0
+          python3 - <<'PY'
+          from pathlib import Path
+          roots = [Path('public'), Path('config'), Path('tests')]
+          for root in roots:
+              for path in root.rglob('*'):
+                  if not path.is_file():
+                      continue
+                  try:
+                      text = path.read_text()
+                  except UnicodeDecodeError:
+                      continue
+                  new = text.replace('10.52.0','10.53.0').replace(r'10\.52\.0',r'10\.53\.0')
+                  if new != text:
+                      path.write_text(new)
+          Path('public/version.json').write_text('{\n  "version": "10.53.0",\n  "build": "source",\n  "commit": "source"\n}\n')
+          PY
+          test "$(node -p "require('./package.json').version")" = "10.53.0"
+          test "$(node -p "require('./config/app-assets.json').version")" = "10.53.0"
+          node -e "const v=require('./public/version.json'); if(v.version!=='10.53.0'||v.build!=='source'||v.commit!=='source') process.exit(1)"
+          grep -q "const APP_VERSION = '10.53.0';" public/sw.js
+          grep -q 'const APP_VERSION = "10.53.0";' src/index.js
+          ! grep -R -n --include='*.js' --include='*.cjs' --include='*.json' --include='*.html' '10\.52\.0' public config tests
+          node tests/deploy-identity.test.cjs
+          npm test
+      - name: Commit promotion and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/promote-v10-53.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "chore(release): promote v10.53.0"
+          git push origin HEAD:feat/offline-metadata-ring2-promoted-stability-v10.53.0
