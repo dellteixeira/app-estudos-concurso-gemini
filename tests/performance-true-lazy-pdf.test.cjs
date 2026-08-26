@@ -34,7 +34,8 @@ test('PDF library scripts are absent from eager index bootstrap', () => {
 test('PDF feature is loaded sequentially on library intent', () => {
   assert.doesNotThrow(() => new vm.Script(loader));
   for (const src of eagerPdfScripts) assert.match(loader, new RegExp(src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), src);
-  assert.match(loader, /async function ensurePdfFeature\(\)/);
+  assert.match(loader, /function ensurePdfFeature\(\)/);
+  assert.match(loader, /pdfFeaturePromise\s*=\s*\(async \(\) => \{/);
   assert.match(loader, /for \(const src of PDF_FEATURE_SCRIPTS\) await loadScript\(src\)/);
   assert.match(loader, /\[data-tab="tab-biblioteca"\]/);
   assert.match(loader, /event\.stopImmediatePropagation\(\)/);
