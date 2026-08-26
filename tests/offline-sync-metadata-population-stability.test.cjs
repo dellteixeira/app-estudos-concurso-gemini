@@ -132,7 +132,7 @@ test('diagnóstico já exposto pelo AppState incorpora o relatório 4O sem novo 
   assert.equal(diagnostics.populationReport.readyForDepthReview,true);
   assert.ok([...diagnostics.scope].includes('local-diagnostic:population-expanded-base:concursos_metadata'));
   assert.match(appStateSource,/getOfflineSyncMetadataExpandedStabilityDiagnostics/);
-  assert.match(appStateSource,/offline-sync-metadata-expanded-stability\.js\?v=10\.54\.0/);
+  assert.match(appStateSource,/offline-sync-metadata-expanded-stability\.js\?v=10\.55\.0/);
 });
 
 test('4O não altera população nem orçamento remoto',()=>{

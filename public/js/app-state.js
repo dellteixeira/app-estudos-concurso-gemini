@@ -28,40 +28,40 @@
     }
 
     async function loadOfflineSyncFoundation() {
-        if (!global.OfflineOutboxStore) await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.54.0', 'offline-outbox-store');
-        if (!global.OfflineSyncShadow) await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.54.0', 'offline-sync-shadow');
+        if (!global.OfflineOutboxStore) await loadExtensionScript('./js/core/offline-outbox-store.js?v=10.55.0', 'offline-outbox-store');
+        if (!global.OfflineSyncShadow) await loadExtensionScript('./js/core/offline-sync-shadow.js?v=10.55.0', 'offline-sync-shadow');
         global.OfflineSyncShadow?.install?.();
-        if (!global.OfflineSyncMetadataShadow) await loadExtensionScript('./js/core/offline-sync-metadata-shadow.js?v=10.54.0', 'offline-sync-metadata-shadow');
+        if (!global.OfflineSyncMetadataShadow) await loadExtensionScript('./js/core/offline-sync-metadata-shadow.js?v=10.55.0', 'offline-sync-metadata-shadow');
         global.OfflineSyncMetadataShadow?.install?.();
-        if (!global.OfflineSyncMetadataAuthority) await loadExtensionScript('./js/core/offline-sync-metadata-authority.js?v=10.54.0', 'offline-sync-metadata-authority');
+        if (!global.OfflineSyncMetadataAuthority) await loadExtensionScript('./js/core/offline-sync-metadata-authority.js?v=10.55.0', 'offline-sync-metadata-authority');
         global.OfflineSyncMetadataAuthority?.install?.();
-        if (!global.OfflineSyncMetadataGraduation) await loadExtensionScript('./js/core/offline-sync-metadata-graduation.js?v=10.54.0', 'offline-sync-metadata-graduation');
+        if (!global.OfflineSyncMetadataGraduation) await loadExtensionScript('./js/core/offline-sync-metadata-graduation.js?v=10.55.0', 'offline-sync-metadata-graduation');
         global.OfflineSyncMetadataGraduation?.install?.();
-        if (!global.OfflineSyncMetadataRollout) await loadExtensionScript('./js/core/offline-sync-metadata-rollout.js?v=10.54.0', 'offline-sync-metadata-rollout');
+        if (!global.OfflineSyncMetadataRollout) await loadExtensionScript('./js/core/offline-sync-metadata-rollout.js?v=10.55.0', 'offline-sync-metadata-rollout');
         global.OfflineSyncMetadataRollout?.install?.();
-        if (!global.OfflineSyncMetadataStability) await loadExtensionScript('./js/core/offline-sync-metadata-stability.js?v=10.54.0', 'offline-sync-metadata-stability');
+        if (!global.OfflineSyncMetadataStability) await loadExtensionScript('./js/core/offline-sync-metadata-stability.js?v=10.55.0', 'offline-sync-metadata-stability');
         global.OfflineSyncMetadataStability?.install?.();
-        if (!global.OfflineSyncMetadataExpandedStability) await loadExtensionScript('./js/core/offline-sync-metadata-expanded-stability.js?v=10.54.0', 'offline-sync-metadata-expanded-stability');
+        if (!global.OfflineSyncMetadataExpandedStability) await loadExtensionScript('./js/core/offline-sync-metadata-expanded-stability.js?v=10.55.0', 'offline-sync-metadata-expanded-stability');
         global.OfflineSyncMetadataExpandedStability?.install?.();
-        if (!global.OfflineSyncMetadataExpandedPromotion) await loadExtensionScript('./js/core/offline-sync-metadata-expanded-promotion.js?v=10.54.0', 'offline-sync-metadata-expanded-promotion');
+        if (!global.OfflineSyncMetadataExpandedPromotion) await loadExtensionScript('./js/core/offline-sync-metadata-expanded-promotion.js?v=10.55.0', 'offline-sync-metadata-expanded-promotion');
         global.OfflineSyncMetadataExpandedPromotion?.install?.();
-        if (!global.OfflineSyncMetadataPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-promoted-stability.js?v=10.54.0', 'offline-sync-metadata-promoted-stability');
+        if (!global.OfflineSyncMetadataPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-promoted-stability.js?v=10.55.0', 'offline-sync-metadata-promoted-stability');
         global.OfflineSyncMetadataPromotedStability?.install?.();
-        if (!global.OfflineSyncMetadataPopulationPromotion) await loadExtensionScript('./js/core/offline-sync-metadata-population-promotion.js?v=10.54.0', 'offline-sync-metadata-population-promotion');
+        if (!global.OfflineSyncMetadataPopulationPromotion) await loadExtensionScript('./js/core/offline-sync-metadata-population-promotion.js?v=10.55.0', 'offline-sync-metadata-population-promotion');
         global.OfflineSyncMetadataPopulationPromotion?.install?.();
-        if (!global.OfflineSyncMetadataPopulationPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-population-promoted-stability.js?v=10.54.0', 'offline-sync-metadata-population-promoted-stability');
+        if (!global.OfflineSyncMetadataPopulationPromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-population-promoted-stability.js?v=10.55.0', 'offline-sync-metadata-population-promoted-stability');
         global.OfflineSyncMetadataPopulationPromotedStability?.install?.();
-        if (!global.OfflineSyncMetadataRing2Promotion) await loadExtensionScript('./js/core/offline-sync-metadata-ring2-promotion.js?v=10.54.0', 'offline-sync-metadata-ring2-promotion');
+        if (!global.OfflineSyncMetadataRing2Promotion) await loadExtensionScript('./js/core/offline-sync-metadata-ring2-promotion.js?v=10.55.0', 'offline-sync-metadata-ring2-promotion');
         global.OfflineSyncMetadataRing2Promotion?.install?.();
-        if (!global.OfflineSyncMetadataRing2PromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-ring2-promoted-stability.js?v=10.54.0', 'offline-sync-metadata-ring2-promoted-stability');
+        if (!global.OfflineSyncMetadataRing2PromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-ring2-promoted-stability.js?v=10.55.0', 'offline-sync-metadata-ring2-promoted-stability');
         global.OfflineSyncMetadataRing2PromotedStability?.install?.();
-        if (!global.OfflineSyncMetadataExpansion) await loadExtensionScript('./js/core/offline-sync-metadata-expansion.js?v=10.54.0', 'offline-sync-metadata-expansion');
+        if (!global.OfflineSyncMetadataExpansion) await loadExtensionScript('./js/core/offline-sync-metadata-expansion.js?v=10.55.0', 'offline-sync-metadata-expansion');
         global.OfflineSyncMetadataExpansion?.install?.();
-        if (!global.OfflineSyncAuthority) await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.54.0', 'offline-sync-authority');
+        if (!global.OfflineSyncAuthority) await loadExtensionScript('./js/core/offline-sync-authority.js?v=10.55.0', 'offline-sync-authority');
         global.OfflineSyncAuthority?.install?.();
-        if (!global.OfflineSyncDeleteAuthority) await loadExtensionScript('./js/core/offline-sync-delete-authority.js?v=10.54.0', 'offline-sync-delete-authority');
+        if (!global.OfflineSyncDeleteAuthority) await loadExtensionScript('./js/core/offline-sync-delete-authority.js?v=10.55.0', 'offline-sync-delete-authority');
         global.OfflineSyncDeleteAuthority?.install?.();
-        if (!global.OfflineSyncEditalGraduation) await loadExtensionScript('./js/core/offline-sync-edital-graduation.js?v=10.54.0', 'offline-sync-edital-graduation');
+        if (!global.OfflineSyncEditalGraduation) await loadExtensionScript('./js/core/offline-sync-edital-graduation.js?v=10.55.0', 'offline-sync-edital-graduation');
         global.OfflineSyncEditalGraduation?.install?.();
         return {
             shadow:await global.OfflineSyncShadow?.getDiagnostics?.() || null,
