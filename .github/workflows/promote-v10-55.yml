@@ -42,7 +42,9 @@ jobs:
               if (ent.isDirectory()) walk(p);
               else if (allowed.has(path.extname(ent.name))) {
                 const old = fs.readFileSync(p,'utf8');
-                const next = old.replaceAll('10.54.0','10.55.0');
+                const next = old
+                  .replaceAll('10.54.0','10.55.0')
+                  .replaceAll('10\\.54\\.0','10\\.55\\.0');
                 if (next !== old) fs.writeFileSync(p,next);
               }
             }
