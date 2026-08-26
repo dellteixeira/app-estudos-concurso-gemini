@@ -333,9 +333,8 @@ function enhanceSubjectHeaders(){
     let materia='';try{materia=decodeURIComponent(row.getAttribute('data-materia')||'')}catch(_){materia=row.getAttribute('data-materia')||''}
     const target=row.querySelector('.materia-header-right');if(!target||!materia)return;
     const lifecycle=getSubjectLifecycle(materia);
-    const controls=document.createElement('span');controls.dataset.learningSubjectControls='true';
-    controls.style.cssText='display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;margin-right:6px';
-    const badge=lifecycle?`<span style="display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:.72rem;font-weight:800;background:${lifecycle.status==='completed'?'rgba(34,197,94,.16)':'rgba(59,130,246,.16)'};color:${lifecycle.status==='completed'?'#79f2a0':'#85bfff'}">${lifecycle.status==='completed'?'Finalizada':'Só revisões'}</span>`:'';
+    const controls=document.createElement('span');controls.dataset.learningSubjectControls='true';controls.className='learning-advisor-controls';
+    const badge=lifecycle?`<span class="learning-friction learning-friction-${lifecycle.status==='completed'?'low':'medium'}">${lifecycle.status==='completed'?'Finalizada':'Só revisões'}</span>`:'';
     controls.innerHTML=`${badge}<button class="btn btn-secondary btn-sm" type="button" data-subject-action="review_later" data-materia="${esc(materia)}" title="Concluir conteúdo e deixar revisões para depois">Revisar depois</button><button class="btn btn-secondary btn-sm" type="button" data-subject-action="completed" data-materia="${esc(materia)}" title="Finalizar conteúdo, questões e revisões">Finalizar</button>`;
     target.prepend(controls);
   });
