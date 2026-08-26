@@ -19,7 +19,7 @@ test('Learning Advisor sincroniza ciclo de vida com Retenção e Diagnóstico',(
 
 test('review_later preserva revisões e completed remove toda a matéria do cronograma',()=>{
   const js=read('public/js/learning-advisor.js');
-  assert.match(js,/mode==='review_later'\?isRevisionScheduleText\(raw\):false/);
+  assert.match(js,/mode==='review_later'\?isRevisionScheduleTextSafe\(raw\):false/);
   assert.match(js,/if\(!later\)\{[\s\S]*item\.rev_24h=true;item\.rev_7d=true;item\.rev_30d=true;/);
   assert.match(js,/filterSchedule\(contest\.dateSchedule\|\|\{\},materia,mode\)/);
 });
