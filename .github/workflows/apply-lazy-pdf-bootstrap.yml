@@ -49,16 +49,28 @@ jobs:
 
           if any(tag in text for tag in eager_pdf):
               raise SystemExit('eager PDF tag remained')
-          if loader not in text:
-              raise SystemExit('performance loader was not inserted')
+          if text.count(loader) != 1:
+              raise SystemExit('performance loader must appear exactly once')
           path.write_bytes(text.encode('utf-8'))
 
           Path('.github/workflows/apply-lazy-pdf-bootstrap.yml').unlink()
+      - name: Validate exact patch
+        shell: python
+        run: |
+          from pathlib import Path
+          text = Path('public/index.html').read_text(encoding='utf-8')
+          assert text.count('<script src="./js/performance-loader.js" defer></script>') == 1
+          for src in [
+              './js/pdf/pdf-core.js', './js/pdf/pdf-workspaces.js', './js/pdf/pdf-links.js',
+              './js/pdf/pdf-library.js', './js/pdf/pdf-upload.js', './js/pdf/pdf-annotations.js',
+              './vendor/pdf.min.js', './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js'
+          ]:
+              assert f'<script src="{src}" defer></script>' not in text, src
+          assert not Path('.github/workflows/apply-lazy-pdf-bootstrap.yml').exists()
       - name: Commit exact patch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html .github/workflows/apply-lazy-pdf-bootstrap.yml
-          git diff --cached --check
           git commit -m "perf(pdf): remove eager library scripts from bootstrap"
           git push origin HEAD:perf/true-lazy-pdf-bootstrap
