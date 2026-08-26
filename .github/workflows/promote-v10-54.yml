@@ -1,0 +1,72 @@
+name: Promote v10.54.0
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-population-expansion-v10.54.0
+    paths:
+      - .github/workflows/promote-v10-54.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/offline-metadata-population-expansion-v10.54.0
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Promote release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release-version.mjs 10.54.0
+          python3 - <<'PY'
+          from pathlib import Path
+
+          roots = [Path('public'), Path('config'), Path('tests'), Path('src')]
+          allowed = {'.js', '.cjs', '.mjs', '.json', '.html', '.css'}
+          for root in roots:
+              if not root.exists():
+                  continue
+              for path in root.rglob('*'):
+                  if not path.is_file() or path.suffix not in allowed:
+                      continue
+                  text = path.read_text(encoding='utf-8')
+                  updated = text.replace('10\\.53\\.0', '10\\.54\\.0').replace('10.53.0', '10.54.0')
+                  if updated != text:
+                      path.write_text(updated, encoding='utf-8')
+          PY
+          cat > public/version.json <<'EOF'
+          {
+            "version": "10.54.0",
+            "build": "source",
+            "commit": "source"
+          }
+          EOF
+          node --test tests/deploy-identity.test.cjs
+          npm test
+
+      - name: Commit promotion and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/promote-v10-54.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No promotion changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(release): promote v10.54.0"
+          git push origin HEAD:feat/offline-metadata-population-expansion-v10.54.0
