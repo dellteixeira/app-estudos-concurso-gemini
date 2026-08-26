@@ -1,0 +1,135 @@
+name: Integrate Phase 4X
+
+on:
+  push:
+    branches:
+      - feat/offline-metadata-ring3-promotion-v10.56.0
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/offline-metadata-ring3-promotion-v10.56.0
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.23.2'
+
+      - name: Integrate 4X contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          function edit(path, fn){
+            const old=fs.readFileSync(path,'utf8');
+            const next=fn(old);
+            if(next===old) throw new Error(`No change produced for ${path}`);
+            fs.writeFileSync(path,next);
+          }
+          function once(text, from, to, label){
+            if(!text.includes(from)) throw new Error(`Missing anchor ${label}`);
+            if(text.includes(to)) return text;
+            return text.replace(from,to);
+          }
+
+          edit('public/js/core/offline-sync-metadata-expansion.js', text=>{
+            text=once(text,
+              "  function ring2Promotion() { return global.OfflineSyncMetadataRing2Promotion || null; }",
+              "  function ring2Promotion() { return global.OfflineSyncMetadataRing2Promotion || null; }\n  function ring3Promotion() { return global.OfflineSyncMetadataRing3Promotion || null; }",
+              'expansion ring3 function');
+            text=once(text,
+              "    const ring2Promoted = Boolean(ring2Promotion()?.isPromoted?.(userId));",
+              "    const ring2Promoted = Boolean(ring2Promotion()?.isPromoted?.(userId));\n    const ring3Promoted = Boolean(ring3Promotion()?.isPromoted?.(userId));",
+              'expansion ring3 promoted');
+            text=text.replace(
+              "if (!originalPilot && !promoted && !populationPromoted && !ring2Promoted) reasons.push('outside-expansion-pilot-cohort');",
+              "if (!originalPilot && !promoted && !populationPromoted && !ring2Promoted && !ring3Promoted) reasons.push('outside-expansion-pilot-cohort');");
+            text=once(text,
+              "      ring2Promoted,\n      promotion:promotion()?.getDiagnostics?.() || null,",
+              "      ring2Promoted,\n      ring3Promoted,\n      promotion:promotion()?.getDiagnostics?.() || null,",
+              'expansion ring3 return flag');
+            text=once(text,
+              "      ring2Promotion:ring2Promotion()?.getDiagnostics?.() || null,",
+              "      ring2Promotion:ring2Promotion()?.getDiagnostics?.() || null,\n      ring3Promotion:ring3Promotion()?.getDiagnostics?.() || null,",
+              'expansion ring3 diagnostics');
+            text=text.replace(
+              "isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId) || ring2Promotion()?.isPromoted?.(userId)",
+              "isOptedIn(userId) || promotion()?.isPromoted?.(userId) || populationPromotion()?.isPromoted?.(userId) || ring2Promotion()?.isPromoted?.(userId) || ring3Promotion()?.isPromoted?.(userId)");
+            if(!text.includes('OfflineSyncMetadataRing3Promotion') || !text.includes('ring3Promoted')) throw new Error('4X expansion integration incomplete');
+            return text;
+          });
+
+          edit('public/js/app-state.js', text=>{
+            const loaderAnchor="        if (!global.OfflineSyncMetadataRing2PromotedStability) await loadExtensionScript('./js/core/offline-sync-metadata-ring2-promoted-stability.js?v=10.55.0', 'offline-sync-metadata-ring2-promoted-stability');\n        global.OfflineSyncMetadataRing2PromotedStability?.install?.();";
+            const loaderNext=loaderAnchor+"\n        if (!global.OfflineSyncMetadataRing3Promotion) await loadExtensionScript('./js/core/offline-sync-metadata-ring3-promotion.js?v=10.55.0', 'offline-sync-metadata-ring3-promotion');\n        global.OfflineSyncMetadataRing3Promotion?.install?.();";
+            text=once(text,loaderAnchor,loaderNext,'app-state 4X loader');
+            text=once(text,
+              "            metadataRing2PromotedStability:global.OfflineSyncMetadataRing2PromotedStability?.getDiagnostics?.() || null,",
+              "            metadataRing2PromotedStability:global.OfflineSyncMetadataRing2PromotedStability?.getDiagnostics?.() || null,\n            metadataRing3Promotion:global.OfflineSyncMetadataRing3Promotion?.getDiagnostics?.() || null,",
+              'app-state 4X diagnostics payload');
+            text=once(text,
+              "        getOfflineSyncMetadataRing2PromotedStabilityDiagnostics:() => global.OfflineSyncMetadataRing2PromotedStability?.getDiagnostics?.() || null,",
+              "        getOfflineSyncMetadataRing2PromotedStabilityDiagnostics:() => global.OfflineSyncMetadataRing2PromotedStability?.getDiagnostics?.() || null,\n        getOfflineSyncMetadataRing3PromotionDiagnostics:() => global.OfflineSyncMetadataRing3Promotion?.getDiagnostics?.() || null,",
+              'app-state 4X diagnostics getter');
+            return text;
+          });
+
+          const manifest=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
+          const asset='/js/core/offline-sync-metadata-ring3-promotion.js';
+          for(const key of ['criticalAppShell','networkFirstPaths','workerNoStorePaths','headersNoStorePaths']){
+            if(!Array.isArray(manifest[key])) throw new Error(`Missing manifest array ${key}`);
+            if(!manifest[key].includes(asset)){
+              const anchor='/js/core/offline-sync-metadata-ring2-promoted-stability.js';
+              const idx=manifest[key].indexOf(anchor);
+              if(idx>=0) manifest[key].splice(idx+1,0,asset); else manifest[key].push(asset);
+            }
+          }
+          fs.writeFileSync('config/app-assets.json',JSON.stringify(manifest,null,2)+'\n');
+
+          edit('public/sw.js', text=>{
+            if(text.includes("'./js/core/offline-sync-metadata-ring3-promotion.js'")) return text;
+            text=text.replace("'./js/core/offline-sync-metadata-ring2-promoted-stability.js',","'./js/core/offline-sync-metadata-ring2-promoted-stability.js',\n  './js/core/offline-sync-metadata-ring3-promotion.js',");
+            text=text.replace("'/js/core/offline-sync-metadata-ring2-promoted-stability.js',","'/js/core/offline-sync-metadata-ring2-promoted-stability.js',\n  '/js/core/offline-sync-metadata-ring3-promotion.js',");
+            if(!text.includes("'./js/core/offline-sync-metadata-ring3-promotion.js'") || !text.includes("'/js/core/offline-sync-metadata-ring3-promotion.js'")) throw new Error('sw integration incomplete');
+            return text;
+          });
+
+          edit('src/worker.js', text=>{
+            if(text.includes("'/js/core/offline-sync-metadata-ring3-promotion.js'")) return text;
+            text=text.replace("'/js/core/offline-sync-metadata-ring2-promoted-stability.js',","'/js/core/offline-sync-metadata-ring2-promoted-stability.js',\n  '/js/core/offline-sync-metadata-ring3-promotion.js',");
+            if(!text.includes("'/js/core/offline-sync-metadata-ring3-promotion.js'")) throw new Error('worker integration incomplete');
+            return text;
+          });
+
+          edit('public/_headers', text=>{
+            if(text.includes('/js/core/offline-sync-metadata-ring3-promotion.js')) return text;
+            const anchor="/js/core/offline-sync-metadata-ring2-promoted-stability.js\n  Cache-Control: no-cache, no-store, must-revalidate";
+            const next=anchor+"\n\n/js/core/offline-sync-metadata-ring3-promotion.js\n  Cache-Control: no-cache, no-store, must-revalidate";
+            if(!text.includes(anchor)) throw new Error('headers anchor missing');
+            return text.replace(anchor,next);
+          });
+          NODE
+          node --test tests/offline-sync-metadata-ring3-promotion.test.cjs
+          npm test
+
+      - name: Commit integration and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'dellteixeira'
+          git config user.email '111660903+dellteixeira@users.noreply.github.com'
+          git rm .github/workflows/integrate-phase-4x.yml
+          git add -A
+          git commit -m 'feat(sync): integrate phase 4X ring3 promotion'
+          git push origin HEAD:feat/offline-metadata-ring3-promotion-v10.56.0
