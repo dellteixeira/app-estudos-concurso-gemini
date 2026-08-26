@@ -1,6 +1,6 @@
 const APP_VERSION = '10.57.0';
 const CACHE_PREFIX = 'estudo-adaptativo-';
-const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
+const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}-recovery-1`;
 
 const CRITICAL_APP_SHELL = [
   './', './index.html', './manifest.json', './version.json', './pwa-update.js',
@@ -45,7 +45,10 @@ async function matchCurrentCache(request, url = new URL(request.url)) {
   return (await cache.match(request, { ignoreSearch:true })) || (await cache.match(new Request(`${url.origin}${url.pathname}`), { ignoreSearch:true })) || null;
 }
 
-self.addEventListener('install', event => event.waitUntil(primeOfflineAssets({ requireCritical:true })));
+self.addEventListener('install', event => event.waitUntil((async () => {
+  await primeOfflineAssets({ requireCritical:true });
+  await self.skipWaiting();
+})()));
 self.addEventListener('activate', event => event.waitUntil((async () => { await deleteOldAppCaches(); await self.clients.claim(); await primeOfflineAssets({ requireCritical:false }).catch(() => {}); })()));
 
 self.addEventListener('message', event => {
