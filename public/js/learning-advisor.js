@@ -254,7 +254,8 @@ function openLocalIntervention(rowIndex){
 async function authToken(){try{if(typeof supabaseClient==='undefined')return'';const result=await supabaseClient?.auth?.getSession?.();return result?.data?.session?.access_token||''}catch(_){return''}}
 async function requestAdvice(candidates){
   const token=await authToken();if(!token)throw new Error('Sessão expirada. Entre novamente para usar a análise por IA.');
-  const response=await fetch('/api/ai/learning-diagnosis',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({contest:getContestName(),topics:candidates.map(({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics})=>({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics}))})});
+  const topics=candidates.map(({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics})=>({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics}));
+  const response=await fetch('/api/ai/learning-diagnosis',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({contest:getContestName(),topics})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data?.error||`Falha na análise (${response.status}).`);return data;
 }
 async function analyze(options={}){
@@ -282,7 +283,7 @@ function filterSchedule(schedule,materia,mode){
     schedule[date]=schedule[date].filter(raw=>{
       const text=normalizeScheduledTopic(raw);
       if(!text.startsWith(`${materia} - `))return true;
-      return mode==='review_later'?isRevisionScheduleText(raw):false;
+      return mode==='review_later'?isRevisionScheduleTextSafe(raw):false;
     });
     if(!schedule[date].length)delete schedule[date];
   });
