@@ -1,6 +1,12 @@
 const { test, expect } = require('@playwright/test');
 
+async function ensurePdfFeature(page) {
+  await page.waitForFunction(() => !!window.AppPerformanceLoader?.ensurePdfFeature, null, { timeout: 10000 });
+  await page.evaluate(() => window.AppPerformanceLoader.ensurePdfFeature());
+}
+
 async function exposeLibrary(page) {
+  await ensurePdfFeature(page);
   await page.waitForFunction(() => !!window.PdfDeviceStorage, null, { timeout: 10000 });
   await page.evaluate(() => {
     for (const id of ['auth-screen', 'offline-banner', 'pwa-update-banner', 'pwa-install-banner']) {
@@ -164,6 +170,7 @@ test('cancelar o seletor não dispara download nem confirma salvamento', async (
 
 test('forgetDocuments solicita limpeza local moderna pelo caminho canônico', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await ensurePdfFeature(page);
   await page.waitForFunction(() => !!window.PdfStudyLibrary?.forgetDocuments, null, { timeout: 10000 });
 
   const result = await page.evaluate(async () => {
