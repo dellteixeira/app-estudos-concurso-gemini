@@ -66,7 +66,7 @@ test('Somente Wi-Fi distingue detecção suportada de navegador sem Network Info
 });
 """
 if "Somente Wi-Fi distingue detecção suportada" not in text:
-    tests.write_text(text.rstrip()+addition+'\n')
+    tests.write_text(text.rstrip() + addition.rstrip() + '\n')
 
 for rel in ['package.json','public/version.json','config/app-assets.json','public/js/app-pwa.js','public/sw.js','src/index.js']:
     p=Path(rel); s=p.read_text()
