@@ -1,0 +1,613 @@
+ok 6 - itens antigos pendentes redistribuídos são removidos do passado sem apagar concluídos
+  ---
+  duration_ms: 0.162495
+  type: 'test'
+  ...
+# Subtest: geração, reorganização e limpeza passam pela mesma reconciliação de mutação
+ok 7 - geração, reorganização e limpeza passam pela mesma reconciliação de mutação
+  ---
+  duration_ms: 0.183837
+  type: 'test'
+  ...
+# Subtest: reconciliação atualiza calendário, diagnóstico, overview e IA contextual
+ok 8 - reconciliação atualiza calendário, diagnóstico, overview e IA contextual
+  ---
+  duration_ms: 0.149265
+  type: 'test'
+  ...
+# Subtest: reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca PDF
+not ok 9 - reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca PDF
+  ---
+  duration_ms: 4.328501
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/adaptive-schedule-reconciliation.test.cjs:81:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /adaptive-schedule-reconciliation\.js\?v=10\.64\.3/. Input:
+    
+    '        // =========================================================\n' +
+      '        // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS\n' +
+      '        // =========================================================\n' +
+      '        let deferredPwaInstallPrompt = null;\n' +
+      '\n' +
+      '        function isPwaStandalone() {\n' +
+      "            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;\n" +
+      '        }\n' +
+      '\n' +
+      '        function markPwaInstalled() {\n' +
+      "            try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}\n" +
+      '        }\n' +
+      '\n' +
+      '        function isPwaKnownInstalled() {\n' +
+      '            if (isPwaStandalone()) {\n' +
+      '                markPwaInstalled();\n' +
+      '                return true;\n' +
+      '            }\n' +
+      "            try { return localStorage.getItem('pwa_app_installed') === '1'; } catch (_) { return false; }\n" +
+      '        }\n' +
+      '\n' +
+      '        function getPwaPlatform() {\n' +
+      "            const ua = navigator.userAgent || '';\n" +
+      "            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);\n" +
+      '            const isAndroid = /Android/i.test(ua);\n' +
+      '            return { isIOS, isAndroid };\n' +
+      '        }\n' +
+      '\n' +
+      "        function showPwaInstallBanner(mode = 'generic') {\n" +
+      "            if (isPwaKnownInstalled() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;\n" +
+      '\n' +
+      "            const banner = document.getElementById('pwa-install-banner');\n" +
+      "            const title = document.getElementById('pwaInstallTitle');\n" +
+      "            const message = document.getElementById('pwaInstallText');\n" +
+      "            const installBtn = document.getElementById('pwaInstallButton');\n" +
+      '            if (!banner || !title || !message || !installBtn) return;\n' +
+
+--- FAILURE BLOCK ---
+
+# Subtest: geração, reorganização e limpeza passam pela mesma reconciliação de mutação
+ok 7 - geração, reorganização e limpeza passam pela mesma reconciliação de mutação
+  ---
+  duration_ms: 0.183837
+  type: 'test'
+  ...
+# Subtest: reconciliação atualiza calendário, diagnóstico, overview e IA contextual
+ok 8 - reconciliação atualiza calendário, diagnóstico, overview e IA contextual
+  ---
+  duration_ms: 0.149265
+  type: 'test'
+  ...
+# Subtest: reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca PDF
+not ok 9 - reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca PDF
+  ---
+  duration_ms: 4.328501
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/adaptive-schedule-reconciliation.test.cjs:81:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /adaptive-schedule-reconciliation\.js\?v=10\.64\.3/. Input:
+    
+    '        // =========================================================\n' +
+      '        // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS\n' +
+      '        // =========================================================\n' +
+      '        let deferredPwaInstallPrompt = null;\n' +
+      '\n' +
+      '        function isPwaStandalone() {\n' +
+      "            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;\n" +
+      '        }\n' +
+      '\n' +
+      '        function markPwaInstalled() {\n' +
+      "            try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}\n" +
+      '        }\n' +
+      '\n' +
+      '        function isPwaKnownInstalled() {\n' +
+      '            if (isPwaStandalone()) {\n' +
+      '                markPwaInstalled();\n' +
+      '                return true;\n' +
+      '            }\n' +
+      "            try { return localStorage.getItem('pwa_app_installed') === '1'; } catch (_) { return false; }\n" +
+      '        }\n' +
+      '\n' +
+      '        function getPwaPlatform() {\n' +
+      "            const ua = navigator.userAgent || '';\n" +
+      "            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);\n" +
+      '            const isAndroid = /Android/i.test(ua);\n' +
+      '            return { isIOS, isAndroid };\n' +
+      '        }\n' +
+      '\n' +
+      "        function showPwaInstallBanner(mode = 'generic') {\n" +
+      "            if (isPwaKnownInstalled() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;\n" +
+      '\n' +
+      "            const banner = document.getElementById('pwa-install-banner');\n" +
+      "            const title = document.getElementById('pwaInstallTitle');\n" +
+      "            const message = document.getElementById('pwaInstallText');\n" +
+      "            const installBtn = document.getElementById('pwaInstallButton');\n" +
+      '            if (!banner || !title || !message || !installBtn) return;\n' +
+      '\n' +
+      "            if (mode === 'ios') {\n" +
+      "                title.textContent = 'Instalar no iPhone / iPad';\n" +
+      "                message.textContent = 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.';\n" +
+      "                installBtn.style.display = 'none';\n" +
+
+--- FAILURE BLOCK ---
+
+      '        window.selectHoursOption = selectHoursOption;\n' +
+      '        window.selectCustomDailyHoursOption = selectCustomDailyHoursOption;\n' +
+      '        window.setCustomDailyHours = setCustomDailyHours;\n' +
+      '        window.toggleAdaptiveRevision = toggleAdaptiveRevision;\n' +
+      '        window.gerarCronogramaMetodo2 = gerarCronogramaMetodo2;\n' +
+      '        window.openFlexibleStudyConfig = openFlexibleStudyConfig;\n' +
+      '        window.closeFlexibleStudyConfig = closeFlexibleStudyConfig;\n' +
+      '        window.setFlexibleDayMode = setFlexibleDayMode;\n' +
+      '        window.activateFlexibleStudyMode = activateFlexibleStudyMode;\n' +
+      '        window.openOpportunityStudyModal = openOpportunityStudyModal;\n' +
+      '        window.closeOpportunityStudyModal = closeOpportunityStudyModal;\n' +
+      '        window.selectOpportunityMinutes = selectOpportunityMinutes;\n' +
+      '        window.selectOpportunityContext = selectOpportunityContext;\n' +
+      '        window.ignoreFlexibleRestForOpportunity = ignoreFlexibleRestForOpportunity;\n' +
+      '        window.startOpportunityRecommendation = startOpportunityRecommendation;\n' +
+      '        window.startRetentionDiagnosticTopic = startRetentionDiagnosticTopic;\n' +
+      '        window.showEditTopicD'... 2447 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+            // =========================================================
+            // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS
+            // =========================================================
+            let deferredPwaInstallPrompt = null;
+    
+            function isPwaStandalone() {
+                return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            }
+    
+            function markPwaInstalled() {
+                try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}
+            }
+    
+            function isPwaKnownInstalled() {
+                if (isPwaStandalone()) {
+                    markPwaInstalled();
+                    return true;
+                }
+                try { return localStorage.getItem('pwa_app_installed') === '1'; } catch (_) { return false; }
+            }
+    
+            function getPwaPlatform() {
+                const ua = navigator.userAgent || '';
+                const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                const isAndroid = /Android/i.test(ua);
+                return { isIOS, isAndroid };
+            }
+    
+            function showPwaInstallBanner(mode = 'generic') {
+                if (isPwaKnownInstalled() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;
+    
+                const banner = document.getElementById('pwa-install-banner');
+                const title = document.getElementById('pwaInstallTitle');
+                const message = document.getElementById('pwaInstallText');
+                const installBtn = document.getElementById('pwaInstallButton');
+                if (!banner || !title || !message || !installBtn) return;
+    
+                if (mode === 'ios') {
+                    title.textContent = 'Instalar no iPhone / iPad';
+                    message.textContent = 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.';
+                    installBtn.style.display = 'none';
+
+--- FAILURE BLOCK ---
+
+      '        window.selectCustomDailyHoursOption = selectCustomDailyHoursOption;\n' +
+      '        window.setCustomDailyHours = setCustomDailyHours;\n' +
+      '        window.toggleAdaptiveRevision = toggleAdaptiveRevision;\n' +
+      '        window.gerarCronogramaMetodo2 = gerarCronogramaMetodo2;\n' +
+      '        window.openFlexibleStudyConfig = openFlexibleStudyConfig;\n' +
+      '        window.closeFlexibleStudyConfig = closeFlexibleStudyConfig;\n' +
+      '        window.setFlexibleDayMode = setFlexibleDayMode;\n' +
+      '        window.activateFlexibleStudyMode = activateFlexibleStudyMode;\n' +
+      '        window.openOpportunityStudyModal = openOpportunityStudyModal;\n' +
+      '        window.closeOpportunityStudyModal = closeOpportunityStudyModal;\n' +
+      '        window.selectOpportunityMinutes = selectOpportunityMinutes;\n' +
+      '        window.selectOpportunityContext = selectOpportunityContext;\n' +
+      '        window.ignoreFlexibleRestForOpportunity = ignoreFlexibleRestForOpportunity;\n' +
+      '        window.startOpportunityRecommendation = startOpportunityRecommendation;\n' +
+      '        window.startRetentionDiagnosticTopic = startRetentionDiagnosticTopic;\n' +
+      '        window.showEditTopicD'... 2447 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+            // =========================================================
+            // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS
+            // =========================================================
+            let deferredPwaInstallPrompt = null;
+    
+            function isPwaStandalone() {
+                return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            }
+    
+            function markPwaInstalled() {
+                try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}
+            }
+    
+            function isPwaKnownInstalled() {
+                if (isPwaStandalone()) {
+                    markPwaInstalled();
+                    return true;
+                }
+                try { return localStorage.getItem('pwa_app_installed') === '1'; } catch (_) { return false; }
+            }
+    
+            function getPwaPlatform() {
+                const ua = navigator.userAgent || '';
+                const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                const isAndroid = /Android/i.test(ua);
+                return { isIOS, isAndroid };
+            }
+    
+            function showPwaInstallBanner(mode = 'generic') {
+                if (isPwaKnownInstalled() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;
+    
+                const banner = document.getElementById('pwa-install-banner');
+                const title = document.getElementById('pwaInstallTitle');
+                const message = document.getElementById('pwaInstallText');
+                const installBtn = document.getElementById('pwaInstallButton');
+                if (!banner || !title || !message || !installBtn) return;
+    
+                if (mode === 'ios') {
+                    title.textContent = 'Instalar no iPhone / iPad';
+                    message.textContent = 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.';
+                    installBtn.style.display = 'none';
+                } else if (mode === 'android-manual') {
+
+--- FAILURE BLOCK ---
+
+ok 80 - modal contextual é responsivo e preserva contrato global de texto
+  ---
+  duration_ms: 0.107272
+  type: 'test'
+  ...
+# Subtest: endpoint usa Gemini com autenticação, rate limit, schema fechado e fallback local
+ok 81 - endpoint usa Gemini com autenticação, rate limit, schema fechado e fallback local
+  ---
+  duration_ms: 0.1592
+  type: 'test'
+  ...
+# Subtest: wrapper isola nova rota e preserva Worker existente
+ok 82 - wrapper isola nova rota e preserva Worker existente
+  ---
+  duration_ms: 0.118028
+  type: 'test'
+  ...
+# Subtest: advisor faz parte do núcleo PWA e usa política anti-cache
+not ok 83 - advisor faz parte do núcleo PWA e usa política anti-cache
+  ---
+  duration_ms: 1.961665
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/learning-advisor.test.cjs:99:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /learning-advisor\.css\?v=10\.64\.3/. Input:
+    
+    '        // =========================================================\n' +
+      '        // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS\n' +
+      '        // =========================================================\n' +
+      '        let deferredPwaInstallPrompt = null;\n' +
+      '\n' +
+      '        function isPwaStandalone() {\n' +
+      "            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;\n" +
+      '        }\n' +
+      '\n' +
+      '        function markPwaInstalled() {\n' +
+      "            try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}\n" +
+      '        }\n' +
+      '\n' +
+      '        function isPwaKnownInstalled() {\n' +
+      '            if (isPwaStandalone()) {\n' +
+      '                markPwaInstalled();\n' +
+      '                return true;\n' +
+      '            }\n' +
+      "            try { return localStorage.getItem('pwa_app_installed') === '1'; } catch (_) { return false; }\n" +
+      '        }\n' +
+      '\n' +
+      '        function getPwaPlatform() {\n' +
+      "            const ua = navigator.userAgent || '';\n" +
+      "            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);\n" +
+      '            const isAndroid = /Android/i.test(ua);\n' +
+      '            return { isIOS, isAndroid };\n' +
+      '        }\n' +
+      '\n' +
+      "        function showPwaInstallBanner(mode = 'generic') {\n" +
+      "            if (isPwaKnownInstalled() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;\n" +
+      '\n' +
+      "            const banner = document.getElementById('pwa-install-banner');\n" +
+      "            const title = document.getElementById('pwaInstallTitle');\n" +
+      "            const message = document.getElementById('pwaInstallText');\n" +
+      "            const installBtn = document.getElementById('pwaInstallButton');\n" +
+      '            if (!banner || !title || !message || !installBtn) return;\n' +
+
+--- FAILURE BLOCK ---
+
+# Subtest: endpoint usa Gemini com autenticação, rate limit, schema fechado e fallback local
+ok 81 - endpoint usa Gemini com autenticação, rate limit, schema fechado e fallback local
+  ---
+  duration_ms: 0.1592
+  type: 'test'
+  ...
+# Subtest: wrapper isola nova rota e preserva Worker existente
+ok 82 - wrapper isola nova rota e preserva Worker existente
+  ---
+  duration_ms: 0.118028
+  type: 'test'
+  ...
+# Subtest: advisor faz parte do núcleo PWA e usa política anti-cache
+not ok 83 - advisor faz parte do núcleo PWA e usa política anti-cache
+  ---
+  duration_ms: 1.961665
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/learning-advisor.test.cjs:99:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /learning-advisor\.css\?v=10\.64\.3/. Input:
+    
+    '        // =========================================================\n' +
+      '        // PWA MULTIPLATAFORMA: INSTALAÇÃO ANDROID / iOS\n' +
+      '        // =========================================================\n' +
+      '        let deferredPwaInstallPrompt = null;\n' +
+      '\n' +
+      '        function isPwaStandalone() {\n' +
+      "            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;\n" +
+      '        }\n' +
+      '\n' +
+      '        function markPwaInstalled() {\n' +
+      "            try { localStorage.setItem('pwa_app_installed', '1'); } catch (_) {}\n" +
+      '        }\n' +
+      '\n' +
+      '        function isPwaKnownInstalled() {\n' +
+      '            if (isPwaStandalone()) {\n' +
+      '                markPwaInstalled();\n' +
+      '                return true;\n' +
+      '            }\n' +
+      "            try { return localStorage.getItem('pwa_app_installed') === '1'; } catch (_) { return false; }\n" +
+      '        }\n' +
+      '\n' +
+      '        function getPwaPlatform() {\n' +
+      "            const ua = navigator.userAgent || '';\n" +
+      "            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);\n" +
+      '            const isAndroid = /Android/i.test(ua);\n' +
+      '            return { isIOS, isAndroid };\n' +
+      '        }\n' +
+      '\n' +
+      "        function showPwaInstallBanner(mode = 'generic') {\n" +
+      "            if (isPwaKnownInstalled() || sessionStorage.getItem('pwa_install_banner_dismissed') === '1') return;\n" +
+      '\n' +
+      "            const banner = document.getElementById('pwa-install-banner');\n" +
+      "            const title = document.getElementById('pwaInstallTitle');\n" +
+      "            const message = document.getElementById('pwaInstallText');\n" +
+      "            const installBtn = document.getElementById('pwaInstallButton');\n" +
+      '            if (!banner || !title || !message || !installBtn) return;\n' +
+      '\n' +
+      "            if (mode === 'ios') {\n" +
+      "                title.textContent = 'Instalar no iPhone / iPad';\n" +
+      "                message.textContent = 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.';\n" +
+      "                installBtn.style.display = 'none';\n" +
+
+--- FAILURE BLOCK ---
+
+ok 601 - UI exposes semantic visual-state helper
+  ---
+  duration_ms: 1.517767
+  type: 'test'
+  ...
+# Subtest: modal overlay has semantic open state
+ok 602 - modal overlay has semantic open state
+  ---
+  duration_ms: 1.195591
+  type: 'test'
+  ...
+# Subtest: migrated app-ui modals do not mutate style.display
+ok 603 - migrated app-ui modals do not mutate style.display
+  ---
+  duration_ms: 1.481122
+  type: 'test'
+  ...
+# Subtest: repository has no temporary workflows committed
+not ok 604 - repository has no temporary workflows committed
+  ---
+  duration_ms: 2.065371
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/workflow-hygiene.test.cjs:9:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + [
+    +   'temp-phase4-test-debug.yml'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'temp-phase4-test-debug.yml'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/workflow-hygiene.test.cjs:11:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: Cloudflare workflow deploys the validated SHA and verifies exact production identity
+ok 605 - Cloudflare workflow deploys the validated SHA and verifies exact production identity
+  ---
+  duration_ms: 0.371389
+  type: 'test'
+  ...
+1..605
+# tests 605
+# suites 0
+# pass 602
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2735.99129
+
+--- FAILURE BLOCK ---
+
+# Subtest: modal overlay has semantic open state
+ok 602 - modal overlay has semantic open state
+  ---
+  duration_ms: 1.195591
+  type: 'test'
+  ...
+# Subtest: migrated app-ui modals do not mutate style.display
+ok 603 - migrated app-ui modals do not mutate style.display
+  ---
+  duration_ms: 1.481122
+  type: 'test'
+  ...
+# Subtest: repository has no temporary workflows committed
+not ok 604 - repository has no temporary workflows committed
+  ---
+  duration_ms: 2.065371
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/workflow-hygiene.test.cjs:9:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + [
+    +   'temp-phase4-test-debug.yml'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'temp-phase4-test-debug.yml'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/workflow-hygiene.test.cjs:11:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: Cloudflare workflow deploys the validated SHA and verifies exact production identity
+ok 605 - Cloudflare workflow deploys the validated SHA and verifies exact production identity
+  ---
+  duration_ms: 0.371389
+  type: 'test'
+  ...
+1..605
+# tests 605
+# suites 0
+# pass 602
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2735.99129
+
+--- FAILURE BLOCK ---
+
+  type: 'test'
+  ...
+# Subtest: repository has no temporary workflows committed
+not ok 604 - repository has no temporary workflows committed
+  ---
+  duration_ms: 2.065371
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/workflow-hygiene.test.cjs:9:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + [
+    +   'temp-phase4-test-debug.yml'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'temp-phase4-test-debug.yml'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/workflow-hygiene.test.cjs:11:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: Cloudflare workflow deploys the validated SHA and verifies exact production identity
+ok 605 - Cloudflare workflow deploys the validated SHA and verifies exact production identity
+  ---
+  duration_ms: 0.371389
+  type: 'test'
+  ...
+1..605
+# tests 605
+# suites 0
+# pass 602
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2735.99129
+
+--- FAILURE BLOCK ---
+
+  ...
+# Subtest: repository has no temporary workflows committed
+not ok 604 - repository has no temporary workflows committed
+  ---
+  duration_ms: 2.065371
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/workflow-hygiene.test.cjs:9:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + [
+    +   'temp-phase4-test-debug.yml'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'temp-phase4-test-debug.yml'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/workflow-hygiene.test.cjs:11:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: Cloudflare workflow deploys the validated SHA and verifies exact production identity
+ok 605 - Cloudflare workflow deploys the validated SHA and verifies exact production identity
+  ---
+  duration_ms: 0.371389
+  type: 'test'
+  ...
+1..605
+# tests 605
+# suites 0
+# pass 602
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2735.99129test_status=1
