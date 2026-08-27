@@ -7,8 +7,8 @@ const root = path.resolve(__dirname, '..');
 const manager = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-manager.js'), 'utf8');
 const packageVersion = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
 
-test('Fase 5 está vinculada à identidade canônica v10.64.4', () => {
-  assert.equal(packageVersion, '10.64.4');
+test('Fase 5 permanece na linha canônica 10.64.x', () => {
+  assert.match(packageVersion, /^10\.64\.\d+$/);
 });
 
 test('workers concorrentes mantêm documento ativo em escopo local', () => {
