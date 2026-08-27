@@ -44,11 +44,17 @@ test('adapter carrega manager e interface somente depois da integração OPFS',(
   assert.match(adapter,/manager\.onload/);
 });
 
-test('toolbar offline mantém modo, Wi-Fi, armazenamento e ações na mesma linha',()=>{
-  assert.match(ui,/\.pdf-offline-controls\{display:flex;flex-wrap:nowrap/);
+test('toolbar offline mantém todos os controles em uma única linha horizontal',()=>{
+  assert.match(ui,/\.pdf-offline-controls\{display:grid!important;grid-template-columns:/);
+  assert.match(ui,/grid-auto-flow:column!important/);
   assert.match(ui,/id="pdfOfflineModeBtn"[\s\S]*id="pdfOfflineWifiOnly"[\s\S]*id="pdfOfflineStorage"[\s\S]*id="btnPdfSelectionMode"[\s\S]*id="pdfOfflineSyncBtn"[\s\S]*id="pdfOfflineCancelBtn"/);
-  assert.match(ui,/@media\(max-width:700px\)/);
+  assert.match(ui,/@media\(max-width:1200px\)/);
   assert.match(ui,/overflow-x:auto/);
+  assert.match(ui,/white-space:nowrap!important/);
   assert.match(ui,/min-height:44px/);
+  assert.match(ui,/max-width:100%;box-sizing:border-box;overflow-x:auto/);
+  assert.doesNotMatch(ui,/min-width:1128px/);
+  assert.doesNotMatch(ui,/min-width:1054px/);
   assert.doesNotMatch(ui,/pdf-offline-actions/);
+  assert.doesNotMatch(ui,/flex-wrap:wrap/);
 });
