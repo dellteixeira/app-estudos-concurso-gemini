@@ -1,0 +1,37 @@
+name: Temporary Phase 4 Init Diagnostics
+
+on:
+  push:
+    branches:
+      - fix/offline-init-diagnostics-v10.64.3
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/offline-init-diagnostics-v10.64.3
+          fetch-depth: 0
+
+      - name: Apply verified patch
+        run: python3 scripts/apply-phase4-init-diagnostics.py
+
+      - name: Validate patch
+        run: |
+          node --check public/js/pdf/pdf-offline-library-ui.js
+          node --check public/js/pdf/pdf-offline-library-manager.js
+          node --test tests/offline-pdf-library-init-diagnostics-v10.64.test.cjs
+          git diff --check
+
+      - name: Commit functional change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(offline): limitar inicialização e diagnosticar falhas"
+          git push origin HEAD:fix/offline-init-diagnostics-v10.64.3
