@@ -5,7 +5,8 @@ const MODES=new Set(['opened','favorites','all']);
 const MIN_FREE_RESERVE_BYTES=256*1024*1024;
 const FREE_RESERVE_RATIO=0.20;
 const SETTINGS_PREFIX='pdfOfflineLibrarySettings:';
-let running=false,paused=false,cancelled=false,queue=[],completed=0,failed=0,current=null,lastError='';
+let running=false,paused=false,cancelled=false,queue=[],completed=0,failed=0,lastError='',runGeneration=0;
+const activeDownloads=new Map();
 
 function diagnostic(scope,error,level='warn'){
   const message=error?.message||String(error||'Falha desconhecida.');
@@ -17,6 +18,9 @@ function diagnostic(scope,error,level='warn'){
 const isMobile=()=>{try{return global.matchMedia?.('(max-width: 700px)')?.matches||/Android|iPhone|iPad|iPod/i.test(global.navigator?.userAgent||'')}catch(_){return false}};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const bytesLabel=n=>{n=Math.max(0,Number(n)||0);if(n<1024*1024)return `${Math.round(n/1024)} KB`;if(n<1024*1024*1024)return `${(n/1024/1024).toFixed(n>=100*1024*1024?0:1)} MB`;return `${(n/1024/1024/1024).toFixed(1)} GB`};
+function cancelledError(){const error=new Error('Download cancelado pelo usuário.');error.name='AbortError';error.code='PDF_OFFLINE_CANCELLED';return error}
+function isCancelledError(error){return error?.code==='PDF_OFFLINE_CANCELLED'||error?.name==='AbortError'}
+function assertRunActive(runId){if(cancelled||runId!==runGeneration)throw cancelledError()}
 
 async function user(){return global.PdfStudyCore?.getAuthenticatedUser?.()||null}
 function settingsKey(userId){return `${SETTINGS_PREFIX}${userId}`}
@@ -32,7 +36,7 @@ async function saveSettings(next){
   emit('settings',value);return value;
 }
 function emit(type,detail={}){try{global.dispatchEvent(new CustomEvent('pdf-offline-library',{detail:{type,...detail,state:getStateSync()}}))}catch(error){diagnostic(`Falha ao publicar evento ${type}`,error)} }
-function getStateSync(){return{running,paused,cancelled,total:queue.length+completed+failed,remaining:queue.length,completed,failed,currentId:current?.id||'',lastError}}
+function getStateSync(){const activeIds=[...activeDownloads.keys()];return{running,paused,cancelled,total:queue.length+activeIds.length+completed+failed,remaining:queue.length,completed,failed,currentId:activeIds[0]||'',activeIds,activeCount:activeIds.length,lastError}}
 async function capabilities(){
   if(global.PdfLibraryOfflineAdapter?.capabilities)return global.PdfLibraryOfflineAdapter.capabilities();
   return global.PdfStudyLibrary?.getOfflineCapabilities?.()||global.OfflinePdfStore?.capabilities?.()||{storage:{usage:0,quota:0,available:0,usageRatio:0},persistence:{supported:false,persisted:false},preferredBackend:'none'};
@@ -109,29 +113,56 @@ async function persistOfflineBlob(userId,doc,blob){
   }
   return{stored:true,backend:'legacy'};
 }
-async function downloadOne(doc){
+async function fetchManagedBlob(doc,signal){
+  if(global.PdfStudyLibrary?.createSignedUrl&&typeof global.fetch==='function'){
+    const signedUrl=await global.PdfStudyLibrary.createSignedUrl(doc,180);
+    if(signal?.aborted)throw cancelledError();
+    const response=await global.fetch(signedUrl,{cache:'no-store',credentials:'omit',signal});
+    if(!response.ok)throw new Error(`Falha temporária ao baixar o PDF (HTTP ${response.status}).`);
+    return response.blob();
+  }
+  return global.PdfStudyLibrary.downloadBlob(doc);
+}
+async function downloadOne(doc,runId){
   const before=await budget();
   const expected=Math.max(0,Number(doc.file_size)||0);
   if(Number.isFinite(before.appBudget)&&expected>before.appBudget)throw new Error(`Sem espaço seguro para ${doc.title||doc.original_file_name||'este PDF'}.`);
-  const blob=await global.PdfStudyLibrary.downloadBlob(doc);
-  if(!blob?.size)throw new Error('O PDF baixado está vazio.');
-  const u=await user();if(!u?.id)throw new Error('Sessão inválida ao salvar o PDF offline.');
-  const stored=await persistOfflineBlob(u.id,doc,blob);
-  return{blob,stored};
+  assertRunActive(runId);
+  const controller=typeof global.AbortController==='function'?new global.AbortController():null;
+  const key=String(doc.id);
+  activeDownloads.set(key,{doc,controller,runId});
+  try{
+    const blob=await fetchManagedBlob(doc,controller?.signal);
+    assertRunActive(runId);
+    if(!blob?.size)throw new Error('O PDF baixado está vazio.');
+    const u=await user();if(!u?.id)throw new Error('Sessão inválida ao salvar o PDF offline.');
+    assertRunActive(runId);
+    const stored=await persistOfflineBlob(u.id,doc,blob);
+    assertRunActive(runId);
+    return{blob,stored};
+  }finally{
+    activeDownloads.delete(key);
+  }
 }
-async function worker(){
-  while(queue.length&&!cancelled){
-    while(paused&&!cancelled)await sleep(250);
-    if(cancelled)break;
+async function worker(runId){
+  while(queue.length&&!cancelled&&runId===runGeneration){
+    while(paused&&!cancelled&&runId===runGeneration)await sleep(250);
+    if(cancelled||runId!==runGeneration)break;
     const s=await getSettings();
     if(!global.navigator.onLine){paused=true;lastError='Fila pausada: dispositivo offline.';emit('paused',{reason:lastError});break}
     const network=connectionStatus(s);
     if(!network.allowed){paused=true;lastError=network.reason||'Fila pausada: aguardando Wi-Fi.';emit('paused',{reason:lastError});break}
     if(s.wifiOnly&&!network.supported)emit('wifi-detection-unavailable',{reason:network.reason});
-    current=queue.shift();emit('progress',{document:current});
-    try{const saved=await downloadOne(current);completed++;emit('downloaded',{document:current,backend:saved?.stored?.backend||''})}
-    catch(error){failed++;lastError=error?.message||'Falha ao preparar PDF offline.';emit('error',{document:current,error:lastError})}
-    current=null;
+    const doc=queue.shift();if(!doc)break;
+    emit('progress',{document:doc});
+    try{
+      const saved=await downloadOne(doc,runId);
+      if(cancelled||runId!==runGeneration){emit('cancelled-item',{document:doc});continue}
+      completed++;emit('downloaded',{document:doc,backend:saved?.stored?.backend||''});
+    }catch(error){
+      if(isCancelledError(error)||cancelled||runId!==runGeneration){emit('cancelled-item',{document:doc});continue}
+      failed++;lastError=error?.message||'Falha ao preparar PDF offline.';emit('error',{document:doc,error:lastError});
+    }
     if(isMobile())await sleep(180);
   }
 }
@@ -143,19 +174,25 @@ async function start(mode){
   const check=await preflight(mode);
   if(!check.ok){lastError=check.reason;emit('blocked',{reason:check.reason,plan:check.plan});return{...check,mode}}
   await ensurePersistence();
-  queue=[...check.plan.pending];completed=0;failed=0;cancelled=false;paused=false;lastError='';
+  queue=[...check.plan.pending];completed=0;failed=0;cancelled=false;paused=false;lastError='';activeDownloads.clear();
   if(!queue.length){emit('complete',{message:'Todos os PDFs desta política já estão disponíveis offline.'});return{mode,queued:0,already:check.plan.already}}
+  const runId=++runGeneration;
   running=true;emit('start',{mode,queued:queue.length,totalBytes:check.plan.totalBytes,already:check.plan.already});
   try{
     const concurrency=isMobile()?1:2;
-    await Promise.all(Array.from({length:Math.min(concurrency,queue.length)},()=>worker()));
+    await Promise.all(Array.from({length:Math.min(concurrency,queue.length)},()=>worker(runId)));
   }finally{
-    running=false;current=null;
-    if(!paused&&!cancelled)emit('complete',{mode,completed,failed});
+    running=false;activeDownloads.clear();
+    if(!paused&&!cancelled&&runId===runGeneration)emit('complete',{mode,completed,failed});
   }
   return getStateSync();
 }
-function cancel(){cancelled=true;paused=false;queue=[];emit('cancelled',{});return true}
+function cancel(){
+  cancelled=true;paused=false;queue=[];
+  const activeIds=[...activeDownloads.keys()];
+  for(const entry of activeDownloads.values()){try{entry.controller?.abort()}catch(error){diagnostic('Falha ao abortar download em andamento',error)}}
+  emit('cancelled',{activeIds});return true;
+}
 async function syncCurrentPolicy(){const s=await getSettings();return start(s.mode)}
 async function setMode(mode){if(!MODES.has(mode))throw new Error('Modo offline inválido.');return start(mode)}
 async function setWifiOnly(value){return saveSettings({wifiOnly:!!value})}
