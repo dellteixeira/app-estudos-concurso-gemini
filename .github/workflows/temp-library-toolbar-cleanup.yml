@@ -1,0 +1,173 @@
+name: Temporary Library Toolbar Cleanup
+on:
+  push:
+    branches:
+      - fix/library-toolbar-remove-workspaces
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: fix/library-toolbar-remove-workspaces
+      - name: Apply surgical cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          function read(p){return fs.readFileSync(p,'utf8')}
+          function write(p,s){fs.writeFileSync(p,s)}
+          function mustReplace(source, before, after, label){
+            if(!source.includes(before)) throw new Error(`Trecho não encontrado: ${label}`);
+            return source.replace(before,after);
+          }
+
+          // 1) Markup: remove concurso badge, Workspace action and Workspace filter.
+          {
+            const p='public/index.html'; let s=read(p);
+            s=s.replace(/^\s*<span class="pdf-library-contest">Concurso: <strong id="pdfLibraryContestName">—<\/strong><\/span>\r?\n/m,'');
+            s=s.replace(/^\s*<button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI\.openWorkspaceModal">\+ Workspace<\/button>\r?\n/m,'');
+            s=s.replace(/^\s*<select id="pdfWorkspaceFilter" data-inline-change="ih-016"><option value="">Todos os Workspaces<\/option><\/select>\r?\n/m,'');
+            if(s.includes('id="pdfLibraryContestName"')||s.includes('id="pdfWorkspaceFilter"')||s.includes('data-call="PdfStudyLibraryUI.openWorkspaceModal"')) throw new Error('Controles removidos ainda presentes no markup');
+            write(p,s);
+          }
+
+          // 2) UI: filter de Workspace deixa de existir, mantendo Workspaces apenas onde ainda são necessários para upload/vínculo.
+          {
+            const p='public/js/pdf/pdf-library-ui.js'; let s=read(p);
+            s=mustReplace(s,
+`function renderWs(preferredId=''){
+  for(const id of ['pdfWorkspaceFilter','pdfUploadWorkspace','pdfLinkWorkspace']){
+    const e=$(id);if(!e)continue;
+    const previous=preferredId||e.value||'';
+    const prefix=id==='pdfWorkspaceFilter'?'<option value="">Todos os Workspaces</option>':'';
+    e.innerHTML=prefix+state.workspaces.map(w=>\`<option value="\${esc(w.id)}">\${esc(w.name)}</option>\`).join('');
+    if(id==='pdfWorkspaceFilter') e.value=state.activeWorkspace||'';
+    else if(previous&&state.workspaces.some(w=>String(w.id)===String(previous))) e.value=previous;
+    else {const def=state.workspaces.find(w=>w.is_default)||state.workspaces[0];if(def)e.value=def.id;}
+  }
+}`,
+`function renderWs(preferredId=''){
+  for(const id of ['pdfUploadWorkspace','pdfLinkWorkspace']){
+    const e=$(id);if(!e)continue;
+    const previous=preferredId||e.value||'';
+    e.innerHTML=state.workspaces.map(w=>\`<option value="\${esc(w.id)}">\${esc(w.name)}</option>\`).join('');
+    if(previous&&state.workspaces.some(w=>String(w.id)===String(previous))) e.value=previous;
+    else {const def=state.workspaces.find(w=>w.is_default)||state.workspaces[0];if(def)e.value=def.id;}
+  }
+}`,'renderWs sem filtro de Workspace');
+            s=s.replace("function onWorkspaceFilterChange(v){state.activeWorkspace=v||'';load().catch(handle)}\n",'');
+            s=s.replace("if($('pdfWorkspaceFilter'))$('pdfWorkspaceFilter').value='';",'');
+            s=s.replace('onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange','onScopeChange,onMateriaFilterChange');
+            s=s.replace("const ids=['pdfLibraryScope','pdfWorkspaceFilter','pdfMateriaFilter','pdfAssuntoFilter'];","const ids=['pdfLibraryScope','pdfMateriaFilter','pdfAssuntoFilter'];");
+            if(s.includes('onWorkspaceFilterChange')||s.includes("'pdfWorkspaceFilter'")) throw new Error('Lógica do filtro Workspace ainda presente em pdf-library-ui.js');
+            write(p,s);
+          }
+
+          // 3) Remove dispatch do antigo filtro.
+          {
+            const p='public/js/app-ui.js'; let s=read(p);
+            s=s.replace(/^\s*'ih-016': function\(event\) \{ PdfStudyLibraryUI\.onWorkspaceFilterChange\(this\.value\) \},\r?\n/m,'');
+            if(s.includes("'ih-016': function(event) { PdfStudyLibraryUI.onWorkspaceFilterChange")) throw new Error('Handler ih-016 ainda presente');
+            write(p,s);
+          }
+
+          // 4) Grade de ações: quatro controles — Atualizar, Adicionar, Ordenar, Selecionar.
+          {
+            const p='public/js/pdf/pdf-library-ordering.js'; let s=read(p);
+            s=s.replace('grid-template-columns:repeat(5,minmax(0,1fr))!important','grid-template-columns:repeat(4,minmax(0,1fr))!important');
+            if(!s.includes('grid-template-columns:repeat(4,minmax(0,1fr))!important')) throw new Error('Grade de quatro ações não aplicada');
+            write(p,s);
+          }
+
+          // 5) Layout definitivo desktop/mobile: quatro ações e quatro filtros, sem seletor Workspace.
+          {
+            const p='public/js/pdf/pdf-library-layout-fix.js'; let s=read(p);
+            s=s.replace('grid-template-columns:repeat(5,minmax(0,1fr))!important;','grid-template-columns:repeat(4,minmax(0,1fr))!important;');
+            s=s.replace('/* Hoje a barra possui exatamente cinco filtros. Eles dividem 100% da linha. */','/* A barra possui quatro filtros. Eles dividem 100% da linha. */');
+            s=s.replace('  .pdf-library-filters #pdfLibraryScope,\n  .pdf-library-filters #pdfWorkspaceFilter,\n  .pdf-library-filters #pdfMateriaFilter,','  .pdf-library-filters #pdfLibraryScope,\n  .pdf-library-filters #pdfMateriaFilter,');
+            s=s.replace('  .pdf-library-filters #pdfWorkspaceFilter{width:210px!important;min-width:210px!important;}\n','');
+            if(s.includes('#pdfWorkspaceFilter')) throw new Error('CSS do filtro Workspace ainda presente em layout-fix');
+            write(p,s);
+          }
+
+          // 6) CSS do painel offline também deixa de conhecer o filtro removido.
+          {
+            const p='public/js/pdf/pdf-offline-library-ui.js'; let s=read(p);
+            s=s.replace('/* Desktop: cinco filtros ocupam igualmente toda a largura útil da Biblioteca.','/* Desktop: quatro filtros ocupam igualmente toda a largura útil da Biblioteca.');
+            s=s.replace('.pdf-library-filters #pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfWorkspaceFilter,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter','.pdf-library-filters #pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter');
+            s=s.replace('.pdf-library-filters #pdfWorkspaceFilter{width:210px!important;min-width:210px!important}','');
+            if(s.includes('#pdfWorkspaceFilter')) throw new Error('CSS do filtro Workspace ainda presente em offline UI');
+            write(p,s);
+          }
+
+          // 7) Atualiza contratos existentes para a nova composição.
+          {
+            const p='tests/library-action-alignment.test.cjs'; let s=read(p);
+            s=s.replace('ações da Biblioteca usam cinco colunas iguais e terminam em Selecionar','ações da Biblioteca usam quatro colunas iguais e terminam em Selecionar');
+            s=s.replace(/repeat\\\(5,minmax/g,'repeat\\(4,minmax');
+            write(p,s);
+          }
+          {
+            const p='tests/library-desktop-single-row-layout.test.cjs'; let s=read(p);
+            s=s.replace('desktop usa cabeçalho em largura total e ações em cinco colunas harmônicas','desktop usa cabeçalho em largura total e ações em quatro colunas harmônicas');
+            s=s.replace('desktop distribui exatamente os cinco filtros por toda a linha','desktop distribui exatamente os quatro filtros por toda a linha');
+            s=s.replace(/repeat\\\(5,minmax/g,'repeat\\(4,minmax');
+            write(p,s);
+          }
+          {
+            const p='tests/pdf-library-single-row-layout.test.cjs'; let s=read(p);
+            s=s.replace('#pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfWorkspaceFilter,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter','#pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter');
+            write(p,s);
+          }
+
+          // 8) Contrato anti-regressão específico desta alteração.
+          write('tests/library-toolbar-cleanup.test.cjs',`const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'public/index.html'),'utf8');
+const ui=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-ui.js'),'utf8');
+const appUi=fs.readFileSync(path.join(root,'public/js/app-ui.js'),'utf8');
+const ordering=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-ordering.js'),'utf8');
+const layout=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-layout-fix.js'),'utf8');
+
+test('Biblioteca não exibe nome do concurso nem controles de Workspace no cabeçalho',()=>{
+  assert.doesNotMatch(index,/id="pdfLibraryContestName"/);
+  assert.doesNotMatch(index,/id="pdfWorkspaceFilter"/);
+  assert.doesNotMatch(index,/data-call="PdfStudyLibraryUI\\.openWorkspaceModal"/);
+  assert.doesNotMatch(index,/>\\+ Workspace</);
+  assert.doesNotMatch(index,/>Todos os Workspaces</);
+});
+
+test('handler e estado visual do filtro Workspace foram removidos',()=>{
+  assert.doesNotMatch(ui,/onWorkspaceFilterChange/);
+  assert.doesNotMatch(ui,/'pdfWorkspaceFilter'/);
+  assert.doesNotMatch(appUi,/onWorkspaceFilterChange/);
+});
+
+test('barra de ações e filtros usam quatro posições',()=>{
+  assert.match(ordering,/grid-template-columns:repeat\\(4,minmax\\(0,1fr\\)\\)!important/);
+  assert.match(layout,/grid-template-columns:repeat\\(4,minmax\\(0,1fr\\)\\)!important/);
+});
+
+test('ordem funcional permanece Atualizar, Adicionar, Ordenar, Selecionar',()=>{
+  const update=index.indexOf('PdfStudyLibraryUI.refresh');
+  const add=index.indexOf('PdfStudyLibraryUI.openUploadModal');
+  const select=index.indexOf('id="btnPdfSelectionMode"');
+  assert.ok(update>=0&&add>update&&select>add);
+  assert.match(ordering,/actions\\.insertBefore\\(wrap,selectBtn\\)/);
+});
+`);
+          NODE
+
+          rm .github/workflows/temp-library-toolbar-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(library): simplificar barra e remover controles de workspace"
+          git push origin HEAD:fix/library-toolbar-remove-workspaces
