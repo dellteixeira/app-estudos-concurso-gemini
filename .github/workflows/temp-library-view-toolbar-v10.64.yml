@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.23.2
-      - name: Apply UI layout
+      - name: Apply UI layout and release identity
         shell: python
         run: |
           from pathlib import Path
@@ -40,12 +40,19 @@ jobs:
           s=s.replace(old,new,1)
           p.write_text(s)
 
+          for f in ['package.json','public/version.json','src/index.js','public/sw.js']:
+            p=Path(f)
+            s=p.read_text()
+            if '10.63.0' not in s: raise SystemExit(f'version 10.63.0 not found in {f}')
+            p.write_text(s.replace('10.63.0','10.64.0'))
+
           Path('tests/pdf-library-view-toolbar-v10.64.test.cjs').write_text("""const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst ui=fs.readFileSync('public/js/pdf/pdf-library-ui.js','utf8');\nconst ordering=fs.readFileSync('public/js/pdf/pdf-library-ordering.js','utf8');\nconst layout=fs.readFileSync('public/js/pdf/pdf-library-layout-fix.js','utf8');\ntest('Cards/Lista ficam ao lado de Ordenar',()=>{assert.match(ui,/const actions=document\\.querySelector\\('\\.pdf-library-actions'\\)/);assert.match(ui,/actions\\.appendChild\\(wrap\\)/);assert.doesNotMatch(ui,/materia\\.insertAdjacentElement\\('afterend',wrap\\)/);assert.match(ordering,/actions\\.insertBefore\\(wrap,viewToggle\\)/)});\ntest('desktop preserva três colunas de ações',()=>assert.match(layout,/grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\)/));\ntest('mobile preserva trilho horizontal',()=>{assert.match(layout,/overflow-x:auto!important/);assert.match(layout,/\\.pdf-library-actions>\\*\\s*\\{[\\s\\S]*?flex:0 0 150px!important/)})\n""")
+      - name: Remove temporary workflow before tests
+        run: rm .github/workflows/temp-library-view-toolbar-v10.64.yml
       - name: Unit tests
         run: npm test
       - name: Commit source change
         run: |
-          rm .github/workflows/temp-library-view-toolbar-v10.64.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
