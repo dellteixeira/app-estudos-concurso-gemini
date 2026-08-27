@@ -8,6 +8,7 @@ const ui = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-ui
 const manager = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-manager.js'), 'utf8');
 
 test('Biblioteca Offline encerra bootstrap quando o manager não chega', () => {
+  assert.match(ui, /const BOOT_RETRY_MS=100;/);
   assert.match(ui, /const BOOT_MAX_ATTEMPTS=50;/);
   assert.match(ui, /bootAttempts>=BOOT_MAX_ATTEMPTS/);
   assert.match(ui, /clearBootTimer\(\)/);
