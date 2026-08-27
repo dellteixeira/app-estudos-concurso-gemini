@@ -1,0 +1,47 @@
+name: Temporary Phase 7 Version Promote
+
+on:
+  push:
+    branches:
+      - fix/offline-pause-worker-exit-v10.64.6
+    paths:
+      - '.github/workflows/temp-phase7-version-promote.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/offline-pause-worker-exit-v10.64.6
+          fetch-depth: 0
+      - name: Promote canonical identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(package.json config/app-assets.json public/version.json public/sw.js src/index.js public/js/app-pwa.js)
+          total=$(grep -ho '10\.64\.5' "${files[@]}" | wc -l)
+          test "$total" -ge 6
+          perl -pi -e 's/10\.64\.5/10.64.6/g' "${files[@]}"
+          test "$(node -p "require('./package.json').version")" = "10.64.6"
+          grep -q '10.64.6' config/app-assets.json
+          grep -q '10.64.6' public/version.json
+          grep -q '10.64.6' public/sw.js
+          grep -q '10.64.6' src/index.js
+          grep -q '10.64.6' public/js/app-pwa.js
+          rm .github/workflows/temp-phase7-version-promote.yml
+          git diff --check
+      - name: Validate automated suite
+        run: npm test
+      - name: Commit clean release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json config/app-assets.json public/version.json public/sw.js src/index.js public/js/app-pwa.js .github/workflows/temp-phase7-version-promote.yml
+          git commit -m 'chore(release): promover Fase 7 para v10.64.6'
+          git push origin HEAD:fix/offline-pause-worker-exit-v10.64.6
