@@ -1,3 +1,4 @@
+// Final regression contract for Biblioteca controls v10.60.0.
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
