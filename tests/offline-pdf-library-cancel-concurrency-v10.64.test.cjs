@@ -16,7 +16,8 @@ test('workers concorrentes mantêm documento ativo em escopo local', () => {
 
 test('Cancelar fila aborta downloads em voo e não os contabiliza como falha', () => {
   assert.match(manager, /new global\.AbortController\(\)/);
-  assert.match(manager, /signal:controller\?\.signal/);
+  assert.match(manager, /fetchManagedBlob\(doc,controller\?\.signal\)/);
+  assert.match(manager, /global\.fetch\(signedUrl,\{cache:'no-store',credentials:'omit',signal\}\)/);
   assert.match(manager, /entry\.controller\?\.abort\(\)/);
   assert.match(manager, /error\.code='PDF_OFFLINE_CANCELLED'/);
   assert.match(manager, /isCancelledError\(error\)\|\|cancelled\|\|runId!==runGeneration/);
