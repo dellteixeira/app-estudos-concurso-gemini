@@ -7,6 +7,7 @@ const vm=require('node:vm');
 const source=fs.readFileSync('public/js/core/offline-sync-metadata-ring3-promotion.js','utf8');
 const expansionSource=fs.readFileSync('public/js/core/offline-sync-metadata-expansion.js','utf8');
 const appStateSource=fs.readFileSync('public/js/app-state.js','utf8');
+const packageVersion=JSON.parse(fs.readFileSync('package.json','utf8')).version;
 const assets=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const swSource=fs.readFileSync('public/sw.js','utf8');
 const workerSource=fs.readFileSync('src/worker.js','utf8');
@@ -115,7 +116,7 @@ test('AppState carrega 4X depois da 4W e antes da política final de expansão',
 
 test('asset 4X integra shell, network-first e contratos no-store',()=>{
   const path='/js/core/offline-sync-metadata-ring3-promotion.js';
-  assert.equal(assets.version,'10.56.0');
+  assert.equal(assets.version,packageVersion);
   for(const key of ['criticalAppShell','networkFirstPaths','workerNoStorePaths','headersNoStorePaths']) assert.ok(assets[key].includes(path),key);
   assert.ok(swSource.includes(`'./js/core/offline-sync-metadata-ring3-promotion.js'`));
   assert.ok(swSource.includes(`'/js/core/offline-sync-metadata-ring3-promotion.js'`));
