@@ -342,17 +342,10 @@
         <div id="tab-calendario" class="tab-content">
             <div class="delayed-panel">
                 <div class="delayed-header">
-                    <span class="delayed-title">Revisões / Matérias Agendadas</span>
+                    <span class="delayed-title">Matérias Atrasadas</span>
                     <span class="badge-delayed" id="delayedBadgeCount">0 pendentes</span>
                 </div>
-
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-inline-click="ih-011" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Hoje</button>
-                    <button class="filter-tab" data-inline-click="ih-012" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Atrasadas</button>
-                    <button class="filter-tab" data-inline-click="ih-013" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Próximas</button>
-                </div>
-
-                <div id="delayedItemsContainer"></div>
+<div id="delayedItemsContainer"></div>
             </div>
 
             <div class="card calendar-shell-card tab-workspace-anchor" id="calendarWorkspace">
@@ -419,10 +412,7 @@
                         <select id="pdfMateriaFilter" data-inline-change="ih-017"><option value="">Todas as matérias</option></select>
                     </div>
                     <div id="pdfLibraryStatus" class="pdf-library-status" aria-live="polite"></div>
-                    <div class="pdf-library-selection-row">
-                        <button class="btn btn-secondary" id="btnPdfSelectionMode" type="button" data-action="call" data-call="PdfStudyLibraryUI.toggleSelectionMode">Selecionar</button>
-                    </div>
-                    <div id="pdfBulkToolbar" class="pdf-bulk-toolbar" hidden>
+<div id="pdfBulkToolbar" class="pdf-bulk-toolbar" hidden>
                         <div class="pdf-bulk-count"><strong id="pdfBulkSelectedCount">0</strong> PDF(s) selecionado(s)</div>
                         <div class="pdf-bulk-actions">
                             <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.selectAllVisible">Selecionar todos os visíveis</button>

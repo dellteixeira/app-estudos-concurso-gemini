@@ -77,19 +77,6 @@
     grid-column:auto!important;
   }
 
-
-  .pdf-library-selection-row {
-    display:flex!important;
-    justify-content:flex-end!important;
-    align-items:center!important;
-    width:100%!important;
-    margin:2px 0 8px!important;
-  }
-  .pdf-library-selection-row #btnPdfSelectionMode {
-    min-width:138px!important;
-    min-height:44px!important;
-  }
-
   #pdfOfflineManager {
     grid-column:1/-1!important;
     width:100%!important;
@@ -151,9 +138,6 @@
   .pdf-library-filters #pdfLibrarySearch{width:220px!important;min-width:220px!important;}
   .pdf-library-filters #pdfLibraryScope{width:190px!important;min-width:190px!important;}
   .pdf-library-filters #pdfMateriaFilter{width:200px!important;min-width:200px!important;}
-
-  .pdf-library-selection-row{display:flex!important;justify-content:flex-end!important;width:100%!important;margin:2px 0 8px!important;}
-  .pdf-library-selection-row #btnPdfSelectionMode{min-width:132px!important;min-height:44px!important;}
   #pdfOfflineManager{width:100%!important;max-width:none!important;}
   #pdfOfflineManager .pdf-offline-controls{
     display:flex!important;
