@@ -167,7 +167,7 @@ async function downloadOne(doc,runId){
 }
 async function worker(runId){
   while(queue.length&&!cancelled&&runId===runGeneration){
-    while(paused&&!cancelled&&runId===runGeneration)await sleep(250);
+    if(paused)break;
     if(cancelled||runId!==runGeneration)break;
     const s=await getSettings();
     if(!global.navigator.onLine){paused=true;lastError='Fila pausada: dispositivo offline.';emit('paused',{reason:lastError});break}
