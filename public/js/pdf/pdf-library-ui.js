@@ -170,7 +170,6 @@ async function deleteDocument(id){const d=state.docs.find(x=>x.id===id);if(!d||!
 async function openDocument(id){try{const d=state.docs.find(x=>x.id===id);if(!d)throw new Error('PDF não encontrado na Biblioteca.');if(!global.PdfStudyReader)throw new Error('Reader PDF interno não carregado.');await global.PdfStudyReader.open(d)}catch(e){handle(e)}}
 function closeViewerNoticeModal(){const m=$('modalPdfViewerNotice');if(m)m.style.display='none';pendingOpenDocumentId=null}
 async function confirmOpenTemporaryView(){return openDocument(pendingOpenDocumentId)}
-async function refreshLibrary(){state.initializedFor='';await initialize(true)}
 function toggleSelectionMode(){selectionMode=!selectionMode;if(!selectionMode)selectedPdfIds.clear();updateBulkToolbar();render()}
 function toggleDocumentSelection(id,checked){if(checked)selectedPdfIds.add(id);else selectedPdfIds.delete(id);updateBulkToolbar();const card=document.querySelector(`.pdf-library-card input[type="checkbox"][onchange*="${id}"]`)?.closest('.pdf-library-card');card?.classList.toggle('selected',!!checked)}
 function selectAllVisible(){state.docs.forEach(d=>selectedPdfIds.add(d.id));updateBulkToolbar();render()}
@@ -186,11 +185,11 @@ function handleDragLeave(){$('pdfDropZone')?.classList.remove('drag-over')}
 function handle(e){
   console.error('[PDF Library]',e);
   const network=global.PdfStudyCore?.isNetworkError?.(e);
-  if(network){status('Falha temporária de conexão. Seus PDFs salvos não foram apagados. Tente atualizar a Biblioteca em alguns segundos.','warn');return;}
+  if(network){status('Falha temporária de conexão. Seus PDFs salvos não foram apagados. A Biblioteca será atualizada novamente ao ser aberta.','warn');return;}
   status(e?.message||'Erro.','error');alert(e?.message||'Erro.');
 }
 
-global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:activateLibrary,setViewMode:applyLibraryViewMode,onScopeChange,onMateriaFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,removeUploadFile,onUploadMateriaChange,submitUpload,retryFailedUploads,removeFailedUploads,copyUploadReport,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,toggleSelectionMode,toggleDocumentSelection,selectAllVisible,clearSelection,deleteSelected,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
+global.PdfStudyLibraryUI=Object.freeze({initialize,getCurrentContest:contest,onTabActivated:activateLibrary,setViewMode:applyLibraryViewMode,onScopeChange,onMateriaFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,removeUploadFile,onUploadMateriaChange,submitUpload,retryFailedUploads,removeFailedUploads,copyUploadReport,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,toggleSelectionMode,toggleDocumentSelection,selectAllVisible,clearSelection,deleteSelected,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
 })(window);
 
 // V10.24 — acabamento responsivo da Biblioteca e posicionamento da guia.
