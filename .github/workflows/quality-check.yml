@@ -19,38 +19,147 @@ jobs:
         with:
           ref: fix/library-toolbar-remove-workspaces
           fetch-depth: 0
-      - name: Apply surgical cleanup
+      - name: Apply library cleanup and restore quality gate
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('.github/workflows/temp-library-toolbar-cleanup.yml')
-          lines=p.read_text().splitlines()
-          start=next(i for i,l in enumerate(lines) if l.strip()=='run: |')+1
-          body=[]
-          for line in lines[start:]:
-              if line and len(line)-len(line.lstrip()) < 10:
-                  break
-              body.append(line[10:] if len(line)>=10 else '')
-          Path('/tmp/apply-library-cleanup.sh').write_text('\n'.join(body)+'\n')
+          import re
+
+          def read(path): return Path(path).read_text()
+          def write(path, text): Path(path).write_text(text)
+          def replace_required(text, old, new, label):
+              if old not in text:
+                  raise RuntimeError(f'Expected fragment not found: {label}')
+              return text.replace(old, new)
+
+          # Static Biblioteca markup: remove contest badge, Workspace action and Workspace filter.
+          p='public/index.html'; s=read(p)
+          patterns=[
+              r'^\s*<span class="pdf-library-contest">Concurso: <strong id="pdfLibraryContestName">—</strong></span>\r?\n',
+              r'^\s*<button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI\.openWorkspaceModal">\+ Workspace</button>\r?\n',
+              r'^\s*<select id="pdfWorkspaceFilter" data-inline-change="ih-016"><option value="">Todos os Workspaces</option></select>\r?\n',
+          ]
+          for pattern in patterns:
+              s,n=re.subn(pattern,'',s,count=1,flags=re.M)
+              if n!=1: raise RuntimeError(f'Markup removal failed: {pattern}')
+          write(p,s)
+
+          # Preserve workspace data model for upload/link, but remove the top-level workspace filter.
+          p='public/js/pdf/pdf-library-ui.js'; s=read(p)
+          s=replace_required(s,"for(const id of ['pdfWorkspaceFilter','pdfUploadWorkspace','pdfLinkWorkspace']){","for(const id of ['pdfUploadWorkspace','pdfLinkWorkspace']){",'workspace select loop')
+          s=replace_required(s,"    const prefix=id==='pdfWorkspaceFilter'?'<option value=\"\">Todos os Workspaces</option>':'';\n",'', 'workspace filter prefix')
+          s=replace_required(s,'    e.innerHTML=prefix+state.workspaces.map(w=>`<option value="${esc(w.id)}">${esc(w.name)}</option>`).join(\'\');','    e.innerHTML=state.workspaces.map(w=>`<option value="${esc(w.id)}">${esc(w.name)}</option>`).join(\'\');','workspace option render')
+          s=replace_required(s,"    if(id==='pdfWorkspaceFilter') e.value=state.activeWorkspace||'';\n    else if(previous&&state.workspaces.some(w=>String(w.id)===String(previous))) e.value=previous;","    if(previous&&state.workspaces.some(w=>String(w.id)===String(previous))) e.value=previous;",'workspace filter selection')
+          s=s.replace("function onWorkspaceFilterChange(v){state.activeWorkspace=v||'';load().catch(handle)}\n",'')
+          s=s.replace("if($('pdfWorkspaceFilter'))$('pdfWorkspaceFilter').value='';",'')
+          s=s.replace('onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange','onScopeChange,onMateriaFilterChange')
+          s=s.replace("const ids=['pdfLibraryScope','pdfWorkspaceFilter','pdfMateriaFilter','pdfAssuntoFilter'];","const ids=['pdfLibraryScope','pdfMateriaFilter','pdfAssuntoFilter'];")
+          write(p,s)
+
+          # Remove the now-dead inline event binding.
+          p='public/js/app-ui.js'; s=read(p)
+          s,n=re.subn(r"^\s*'ih-016': function\(event\) \{ PdfStudyLibraryUI\.onWorkspaceFilterChange\(this\.value\) \},\r?\n",'',s,count=1,flags=re.M)
+          if n!=1: raise RuntimeError('ih-016 binding not found')
+          write(p,s)
+
+          # Four action controls: Atualizar, Adicionar PDFs, Ordenar, Selecionar.
+          p='public/js/pdf/pdf-library-ordering.js'; s=read(p)
+          s=replace_required(s,'grid-template-columns:repeat(5,minmax(0,1fr))!important','grid-template-columns:repeat(4,minmax(0,1fr))!important','ordering four columns')
+          write(p,s)
+
+          # Desktop/mobile layout now has four actions and four filters.
+          p='public/js/pdf/pdf-library-layout-fix.js'; s=read(p)
+          s=s.replace('grid-template-columns:repeat(5,minmax(0,1fr))!important;','grid-template-columns:repeat(4,minmax(0,1fr))!important;')
+          s=s.replace('/* Hoje a barra possui exatamente cinco filtros. Eles dividem 100% da linha. */','/* A barra possui quatro filtros. Eles dividem 100% da linha. */')
+          s=s.replace('  .pdf-library-filters #pdfLibraryScope,\n  .pdf-library-filters #pdfWorkspaceFilter,\n  .pdf-library-filters #pdfMateriaFilter,','  .pdf-library-filters #pdfLibraryScope,\n  .pdf-library-filters #pdfMateriaFilter,')
+          s=s.replace('  .pdf-library-filters #pdfWorkspaceFilter{width:210px!important;min-width:210px!important;}\n','')
+          write(p,s)
+
+          # Offline UI shares the filter-row CSS and must no longer reference the removed filter.
+          p='public/js/pdf/pdf-offline-library-ui.js'; s=read(p)
+          s=s.replace('/* Desktop: cinco filtros ocupam igualmente toda a largura útil da Biblioteca.','/* Desktop: quatro filtros ocupam igualmente toda a largura útil da Biblioteca.')
+          s=s.replace('.pdf-library-filters #pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfWorkspaceFilter,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter','.pdf-library-filters #pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter')
+          s=s.replace('.pdf-library-filters #pdfWorkspaceFilter{width:210px!important;min-width:210px!important}','')
+          write(p,s)
+
+          # Existing layout contracts follow the new four-control composition.
+          for p in ['tests/library-action-alignment.test.cjs','tests/library-desktop-single-row-layout.test.cjs']:
+              s=read(p).replace('cinco colunas','quatro colunas').replace('cinco filtros','quatro filtros').replace('repeat\\(5','repeat\\(4')
+              write(p,s)
+          p='tests/pdf-library-single-row-layout.test.cjs'; s=read(p)
+          s=s.replace(',.pdf-library-filters #pdfWorkspaceFilter','')
+          write(p,s)
+
+          # Explicit anti-regression contract for this toolbar cleanup.
+          write('tests/library-toolbar-cleanup.test.cjs', '''const test=require('node:test');
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const path=require('node:path');
+          const root=path.resolve(__dirname,'..');
+          const index=fs.readFileSync(path.join(root,'public/index.html'),'utf8');
+          const ui=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-ui.js'),'utf8');
+          const appUi=fs.readFileSync(path.join(root,'public/js/app-ui.js'),'utf8');
+          const ordering=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-ordering.js'),'utf8');
+          const layout=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-layout-fix.js'),'utf8');
+
+          test('Biblioteca não exibe nome do concurso nem controles de Workspace no cabeçalho',()=>{
+            assert.doesNotMatch(index,/id="pdfLibraryContestName"/);
+            assert.doesNotMatch(index,/id="pdfWorkspaceFilter"/);
+            assert.doesNotMatch(index,/data-call="PdfStudyLibraryUI\\.openWorkspaceModal"/);
+            assert.doesNotMatch(index,/>\\+ Workspace</);
+            assert.doesNotMatch(index,/>Todos os Workspaces</);
+          });
+
+          test('handler visual do filtro Workspace foi removido',()=>{
+            assert.doesNotMatch(ui,/onWorkspaceFilterChange/);
+            assert.doesNotMatch(ui,/'pdfWorkspaceFilter'/);
+            assert.doesNotMatch(appUi,/onWorkspaceFilterChange/);
+          });
+
+          test('barra de ações e filtros usam quatro posições',()=>{
+            assert.match(ordering,/grid-template-columns:repeat\\(4,minmax\\(0,1fr\\)\\)!important/);
+            assert.match(layout,/grid-template-columns:repeat\\(4,minmax\\(0,1fr\\)\\)!important/);
+          });
+
+          test('ordem funcional permanece Atualizar, Adicionar, Ordenar, Selecionar',()=>{
+            const update=index.indexOf('PdfStudyLibraryUI.refresh');
+            const add=index.indexOf('PdfStudyLibraryUI.openUploadModal');
+            const select=index.indexOf('id="btnPdfSelectionMode"');
+            assert.ok(update>=0&&add>update&&select>add);
+            assert.match(ordering,/actions\\.insertBefore\\(wrap,selectBtn\\)/);
+          });
+          ''')
+
+          # This is a real runtime change; v10.58.0 is immutable, so publish under the next free semantic version.
+          for p in ['package.json','public/version.json','config/app-assets.json','src/index.js','public/sw.js','public/js/app-pwa.js']:
+              s=read(p)
+              if '10.58.0' not in s: raise RuntimeError(f'10.58.0 not found in {p}')
+              write(p,s.replace('10.58.0','10.59.0'))
+
+          # Final invariants before committing.
+          checks={
+              'public/index.html':['pdfLibraryContestName','pdfWorkspaceFilter','PdfStudyLibraryUI.openWorkspaceModal','Todos os Workspaces'],
+              'public/js/pdf/pdf-library-ui.js':['onWorkspaceFilterChange',"'pdfWorkspaceFilter'"],
+              'public/js/app-ui.js':['onWorkspaceFilterChange'],
+              'public/js/pdf/pdf-library-layout-fix.js':['#pdfWorkspaceFilter'],
+              'public/js/pdf/pdf-offline-library-ui.js':['#pdfWorkspaceFilter'],
+          }
+          for p,forbidden in checks.items():
+              text=read(p)
+              for token in forbidden:
+                  if token in text: raise RuntimeError(f'Forbidden token remains in {p}: {token}')
           PY
-          bash /tmp/apply-library-cleanup.sh
-      - name: Restore canonical Quality Check and remove temporary runner
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main fix/library-toolbar-remove-workspaces
-          git checkout -B fix/library-toolbar-remove-workspaces origin/fix/library-toolbar-remove-workspaces
+
+          git fetch origin main
           git checkout origin/main -- .github/workflows/quality-check.yml
           rm -f .github/workflows/temp-library-toolbar-pr-runner.yml .github/workflows/temp-library-toolbar-cleanup.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: restaurar quality gate após limpeza da Biblioteca"
-            git push origin HEAD:fix/library-toolbar-remove-workspaces
-          fi
+          git commit -m "fix(library): simplificar barra e remover controles de workspace"
+          git push origin HEAD:fix/library-toolbar-remove-workspaces
 
   test-and-audit:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.ref != 'fix/library-toolbar-remove-workspaces'
