@@ -1,5 +1,6 @@
 name: Temporary Phase 6 Version Promote
 
+# Retry after fixing the stale Fase 5 patch-version assertion.
 on:
   push:
     branches:
