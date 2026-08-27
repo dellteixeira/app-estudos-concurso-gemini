@@ -7,6 +7,7 @@ const vm=require('node:vm');
 const observerSource=fs.readFileSync('public/js/core/offline-sync-metadata-population-promoted-stability.js','utf8');
 const promotionSource=fs.readFileSync('public/js/core/offline-sync-metadata-population-promotion.js','utf8');
 const appStateSource=fs.readFileSync('public/js/app-state.js','utf8');
+const packageVersion=JSON.parse(fs.readFileSync('package.json','utf8')).version;
 const manifest=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 
 function makeStorage(){
@@ -106,7 +107,7 @@ test('AppState carrega 4Q após 4P e expõe diagnóstico',()=>{
 
 test('asset 4Q integra manifesto sem alterar identidade durante implementação',()=>{
   const asset='/js/core/offline-sync-metadata-population-promoted-stability.js';
-  assert.equal(manifest.version,'10.56.0');
+  assert.equal(manifest.version,packageVersion);
   assert.ok(manifest.criticalAppShell.includes(asset));
   assert.ok(manifest.networkFirstPaths.includes(asset));
   assert.ok(manifest.workerNoStorePaths.includes(asset));
