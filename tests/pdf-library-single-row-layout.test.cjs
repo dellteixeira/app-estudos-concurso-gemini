@@ -9,7 +9,7 @@ test('filtros da Biblioteca ocupam uma única linha e dividem igualmente o deskt
   assert.match(source, /\.pdf-library-filters\{display:flex!important;grid-template-columns:none!important;flex-wrap:nowrap!important/);
   assert.match(source, /width:100%!important;overflow-x:hidden/);
   assert.match(source, /\.pdf-library-filters>\*\{flex:1 1 0!important;min-width:0!important;width:0!important/);
-  assert.match(source, /#pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfWorkspaceFilter,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter/);
+  assert.match(source, /#pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter/);
 });
 
 test('controles offline ficam no mesmo trilho horizontal', () => {

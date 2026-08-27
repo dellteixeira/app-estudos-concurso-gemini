@@ -12,8 +12,8 @@ test('Ordenar é movido para a barra de ações antes de Selecionar', () => {
   assert.match(ordering, /pdf-library-sort-control--actions/);
 });
 
-test('ações da Biblioteca usam cinco colunas iguais e terminam em Selecionar', () => {
-  assert.match(ordering, /\.pdf-library-actions\{display:grid!important;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
+test('ações da Biblioteca usam quatro colunas iguais e terminam em Selecionar', () => {
+  assert.match(ordering, /\.pdf-library-actions\{display:grid!important;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)!important/);
   assert.match(ordering, /width:min\(760px,100%\)!important;margin-left:auto!important/);
   assert.match(ordering, /selectBtn\.style\.width='100%'/);
   assert.match(ordering, /addBtn\.style\.width='100%'/);

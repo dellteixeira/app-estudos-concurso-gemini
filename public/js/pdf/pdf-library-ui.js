@@ -50,13 +50,11 @@ async function ensureWorkspace(){
 }
 
 function renderWs(preferredId=''){
-  for(const id of ['pdfWorkspaceFilter','pdfUploadWorkspace','pdfLinkWorkspace']){
+  for(const id of ['pdfUploadWorkspace','pdfLinkWorkspace']){
     const e=$(id);if(!e)continue;
     const previous=preferredId||e.value||'';
-    const prefix=id==='pdfWorkspaceFilter'?'<option value="">Todos os Workspaces</option>':'';
-    e.innerHTML=prefix+state.workspaces.map(w=>`<option value="${esc(w.id)}">${esc(w.name)}</option>`).join('');
-    if(id==='pdfWorkspaceFilter') e.value=state.activeWorkspace||'';
-    else if(previous&&state.workspaces.some(w=>String(w.id)===String(previous))) e.value=previous;
+    e.innerHTML=state.workspaces.map(w=>`<option value="${esc(w.id)}">${esc(w.name)}</option>`).join('');
+    if(previous&&state.workspaces.some(w=>String(w.id)===String(previous))) e.value=previous;
     else {const def=state.workspaces.find(w=>w.is_default)||state.workspaces[0];if(def)e.value=def.id;}
   }
 }
@@ -103,7 +101,7 @@ function ensureLibraryViewStyles(){if($('pdfLibraryViewStyles'))return;const el=
 function getLibraryViewMode(){try{return localStorage.getItem(LIBRARY_VIEW_KEY)==='list'?'list':'cards'}catch(_){return'cards'}}
 function applyLibraryViewMode(mode=getLibraryViewMode()){mode=mode==='list'?'list':'cards';try{localStorage.setItem(LIBRARY_VIEW_KEY,mode)}catch(_){}const grid=$('pdfLibraryGrid');grid?.classList.toggle('pdf-library-list-view',mode==='list');document.querySelectorAll('#pdfLibraryViewToggle button[data-view]').forEach(btn=>{const active=btn.dataset.view===mode;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',active?'true':'false')})}
 function ensureLibraryViewToggle(){ensureLibraryViewStyles();const assunto=$('pdfAssuntoFilter');if(!assunto)return;let wrap=$('pdfLibraryViewToggle');if(!wrap){wrap=document.createElement('div');wrap.id='pdfLibraryViewToggle';wrap.className='pdf-library-view-toggle';wrap.setAttribute('aria-label','Modo de visualização da Biblioteca');wrap.innerHTML='<button type="button" data-view="cards" aria-label="Visualizar em cards">▦ Cards</button><button type="button" data-view="list" aria-label="Visualizar em lista">☰ Lista</button>';wrap.addEventListener('click',event=>{const btn=event.target.closest('button[data-view]');if(btn)applyLibraryViewMode(btn.dataset.view)});assunto.insertAdjacentElement('afterend',wrap)}applyLibraryViewMode()}
-function resetLibraryToGlobalView(){state.scope='global';state.activeWorkspace='';state.activeMateria='';state.activeAssunto='';state.search='';if($('pdfLibraryScope'))$('pdfLibraryScope').value='global';if($('pdfWorkspaceFilter'))$('pdfWorkspaceFilter').value='';if($('pdfMateriaFilter'))$('pdfMateriaFilter').value='';if($('pdfAssuntoFilter'))$('pdfAssuntoFilter').value='';if($('pdfLibrarySearch'))$('pdfLibrarySearch').value=''}
+function resetLibraryToGlobalView(){state.scope='global';state.activeWorkspace='';state.activeMateria='';state.activeAssunto='';state.search='';if($('pdfLibraryScope'))$('pdfLibraryScope').value='global';if($('pdfMateriaFilter'))$('pdfMateriaFilter').value='';if($('pdfAssuntoFilter'))$('pdfAssuntoFilter').value='';if($('pdfLibrarySearch'))$('pdfLibrarySearch').value=''}
 async function activateLibrary(){ensureLibraryViewToggle();applyLibraryViewMode();resetLibraryToGlobalView();state.initializedFor='';state.loadSeq++;render();if(activationPromise){try{await activationPromise}catch(_){}}lastActivationAt=Date.now();activationPromise=initialize(true).finally(()=>{activationPromise=null;ensureLibraryViewToggle();applyLibraryViewMode();render()});return activationPromise}
 async function initialize(force=false){
   if(!global.PdfStudyLinks||!global.PdfStudyLibrary){setTimeout(()=>activateLibrary().catch(handle),120);return;}
@@ -125,7 +123,6 @@ async function initialize(force=false){
   maintenancePromise.catch(()=>{});
 }
 function onScopeChange(v){state.scope=v==='global'?'global':'contest';state.activeMateria='';state.activeAssunto='';$('pdfLibraryScope').value=state.scope;load().catch(handle)}
-function onWorkspaceFilterChange(v){state.activeWorkspace=v||'';load().catch(handle)}
 function onMateriaFilterChange(v){state.activeMateria=v||'';state.activeAssunto='';renderAss('filter');load().catch(handle)}
 function onAssuntoFilterChange(v){state.activeAssunto=v||'';load().catch(handle)}
 let st;function onSearch(v){clearTimeout(st);st=setTimeout(()=>{state.search=String(v||'').trim();load().catch(handle)},180)}
@@ -194,12 +191,12 @@ function handle(e){
   status(e?.message||'Erro.','error');alert(e?.message||'Erro.');
 }
 
-global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:activateLibrary,setViewMode:applyLibraryViewMode,onScopeChange,onWorkspaceFilterChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,removeUploadFile,onUploadMateriaChange,submitUpload,retryFailedUploads,removeFailedUploads,copyUploadReport,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,toggleSelectionMode,toggleDocumentSelection,selectAllVisible,clearSelection,deleteSelected,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
+global.PdfStudyLibraryUI=Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:activateLibrary,setViewMode:applyLibraryViewMode,onScopeChange,onMateriaFilterChange,onAssuntoFilterChange,onSearch,openWorkspaceModal,closeWorkspaceModal,createWorkspace,openUploadModal,closeUploadModal,chooseUploadFile,onDropZoneKeydown,onUploadFileChange,removeUploadFile,onUploadMateriaChange,submitUpload,retryFailedUploads,removeFailedUploads,copyUploadReport,openLinkModal,closeLinkModal,onLinkMateriaChange,submitLink,unlinkDocument,toggleFavorite,deleteDocument,toggleSelectionMode,toggleDocumentSelection,selectAllVisible,clearSelection,deleteSelected,openDocument,closeViewerNoticeModal,confirmOpenTemporaryView,handleDrop,handleDragOver,handleDragLeave});
 })(window);
 
 // V10.24 — acabamento responsivo da Biblioteca e posicionamento da guia.
 function tuneLibraryUiV1024(){
-  const ids=['pdfLibraryScope','pdfWorkspaceFilter','pdfMateriaFilter','pdfAssuntoFilter'];
+  const ids=['pdfLibraryScope','pdfMateriaFilter','pdfAssuntoFilter'];
   const controls=ids.map(id=>document.getElementById(id)).filter(Boolean);
   const search=document.getElementById('pdfLibrarySearch'); if(search)controls.push(search);
   const parent=controls.find(Boolean)?.parentElement;

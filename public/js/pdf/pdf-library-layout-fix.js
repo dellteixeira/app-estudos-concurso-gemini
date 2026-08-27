@@ -23,7 +23,7 @@
   }
   .pdf-library-actions {
     display:grid!important;
-    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
     align-items:stretch!important;
     gap:10px!important;
     width:100%!important;
@@ -53,10 +53,10 @@
     min-width:0!important;
   }
 
-  /* Hoje a barra possui exatamente cinco filtros. Eles dividem 100% da linha. */
+  /* A barra possui quatro filtros. Eles dividem 100% da linha. */
   .pdf-library-filters {
     display:grid!important;
-    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
     gap:10px!important;
     align-items:stretch!important;
     overflow:visible!important;
@@ -70,7 +70,6 @@
   }
   .pdf-library-filters #pdfLibrarySearch,
   .pdf-library-filters #pdfLibraryScope,
-  .pdf-library-filters #pdfWorkspaceFilter,
   .pdf-library-filters #pdfMateriaFilter,
   .pdf-library-filters #pdfAssuntoFilter {
     width:100%!important;
@@ -140,7 +139,6 @@
   .pdf-library-filters>*{flex:0 0 auto!important;}
   .pdf-library-filters #pdfLibrarySearch{width:220px!important;min-width:220px!important;}
   .pdf-library-filters #pdfLibraryScope{width:190px!important;min-width:190px!important;}
-  .pdf-library-filters #pdfWorkspaceFilter{width:210px!important;min-width:210px!important;}
   .pdf-library-filters #pdfMateriaFilter,
   .pdf-library-filters #pdfAssuntoFilter{width:200px!important;min-width:200px!important;}
 
