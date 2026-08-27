@@ -7,11 +7,11 @@ let lastRender=0;
 function css(){
   if($('pdfOfflineManagerStyles'))return;
   const style=document.createElement('style');style.id='pdfOfflineManagerStyles';style.textContent=`
-/* Desktop: quatro filtros ocupam igualmente toda a largura útil da Biblioteca.
+/* Desktop: três filtros ocupam igualmente toda a largura útil da Biblioteca.
    Mobile: mantém uma única linha com rolagem horizontal e alvos confortáveis. */
 .pdf-library-filters{display:flex!important;grid-template-columns:none!important;flex-wrap:nowrap!important;align-items:stretch;gap:10px;width:100%!important;overflow-x:hidden;overflow-y:hidden;padding-bottom:6px;scrollbar-width:thin}
 .pdf-library-filters>*{flex:1 1 0!important;min-width:0!important;width:0!important;scroll-snap-align:start}
-.pdf-library-filters #pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter{flex:1 1 0!important;width:0!important;min-width:0!important}
+.pdf-library-filters #pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfMateriaFilter{flex:1 1 0!important;width:0!important;min-width:0!important}
 .pdf-library-filters::-webkit-scrollbar{height:6px}.pdf-library-filters::-webkit-scrollbar-thumb{background:rgba(148,163,184,.28);border-radius:999px}.pdf-library-filters::-webkit-scrollbar-track{background:transparent}
 
 .pdf-offline-manager{grid-column:1/-1;width:100%;border:1px solid var(--border-color,#29445d);border-radius:14px;background:rgba(7,25,41,.72);padding:13px 14px;display:grid;gap:11px;color:var(--text-color,#e8f3ff)}
@@ -19,10 +19,10 @@ function css(){
 .pdf-offline-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.pdf-offline-option{position:relative}.pdf-offline-option input{position:absolute;opacity:0;pointer-events:none}.pdf-offline-option span{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px;border:1px solid var(--border-color,#29445d);border-radius:10px;text-align:center;font-size:.78rem;font-weight:700;cursor:pointer;background:rgba(4,18,31,.56)}.pdf-offline-option input:checked+span{border-color:var(--accent-color,#55ddd2);background:rgba(85,221,210,.15);color:var(--accent-color,#55ddd2)}
 /* Controles offline também permanecem em uma única linha. */
 .pdf-offline-controls{display:flex;flex-wrap:nowrap;align-items:center;gap:9px;overflow-x:auto;overflow-y:hidden;padding-bottom:6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;scrollbar-width:thin}
-.pdf-offline-controls>*{flex:0 0 auto;scroll-snap-align:start}.pdf-offline-limit-wrap{width:215px}.pdf-offline-controls select{width:100%;min-height:44px;border-radius:9px;background:#071d2d;color:#e8f3ff;border:1px solid var(--border-color,#29445d);padding:0 9px}.pdf-offline-wifi{display:flex;align-items:center;gap:7px;min-height:44px;padding:0 4px;font-size:.78rem;color:var(--text-muted,#9fb2c6);white-space:nowrap}.pdf-offline-wifi input{width:18px;height:18px}.pdf-offline-storage{font-size:.76rem;color:var(--text-muted,#9fb2c6);white-space:nowrap;padding:0 4px}
+.pdf-offline-controls>*{flex:0 0 auto;scroll-snap-align:start}.pdf-offline-controls select{width:100%;min-height:44px;border-radius:9px;background:#071d2d;color:#e8f3ff;border:1px solid var(--border-color,#29445d);padding:0 9px}.pdf-offline-wifi{display:flex;align-items:center;gap:7px;min-height:44px;padding:0 4px;font-size:.78rem;color:var(--text-muted,#9fb2c6);white-space:nowrap}.pdf-offline-wifi input{width:18px;height:18px}.pdf-offline-storage{font-size:.76rem;color:var(--text-muted,#9fb2c6);white-space:nowrap;padding:0 4px}
 .pdf-offline-controls::-webkit-scrollbar{height:6px}.pdf-offline-controls::-webkit-scrollbar-thumb{background:rgba(148,163,184,.28);border-radius:999px}.pdf-offline-controls::-webkit-scrollbar-track{background:transparent}
-.pdf-offline-progress{height:7px;border-radius:999px;background:rgba(148,163,184,.16);overflow:hidden}.pdf-offline-progress span{display:block;height:100%;background:var(--accent-color,#55ddd2);width:0;transition:width .2s ease}.pdf-offline-status{font-size:.78rem;color:var(--text-muted,#9fb2c6);min-height:18px}.pdf-offline-actions{display:flex;flex-wrap:nowrap;gap:7px}.pdf-offline-actions button{min-height:44px;height:44px;white-space:nowrap;min-width:118px;width:118px}#pdfOfflineSyncBtn,#pdfOfflinePauseBtn{background:transparent!important;color:var(--text-color,#e8f3ff)!important;border:1px solid var(--border-color,#29445d)!important;box-shadow:none!important}
-@media(max-width:700px){.pdf-library-filters{gap:9px;margin-inline:0;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain}.pdf-library-filters>*{flex:0 0 auto!important;width:auto!important}.pdf-library-filters #pdfLibrarySearch{width:220px!important;min-width:220px!important}.pdf-library-filters #pdfLibraryScope{width:190px!important;min-width:190px!important}.pdf-library-filters #pdfMateriaFilter,.pdf-library-filters #pdfAssuntoFilter{width:200px!important;min-width:200px!important}.pdf-offline-manager{padding:12px;border-radius:12px}.pdf-offline-head{display:block}.pdf-offline-badge{display:inline-block;margin-top:7px}.pdf-offline-options{grid-template-columns:1fr}.pdf-offline-option span{justify-content:flex-start;text-align:left;min-height:46px;padding:10px 12px}.pdf-offline-controls{gap:8px}.pdf-offline-limit-wrap{width:190px}.pdf-offline-storage{max-width:none}.pdf-offline-actions button{min-height:44px;min-width:116px}.pdf-offline-actions button{height:44px;width:116px}}
+.pdf-offline-progress{height:7px;border-radius:999px;background:rgba(148,163,184,.16);overflow:hidden}.pdf-offline-progress span{display:block;height:100%;background:var(--accent-color,#55ddd2);width:0;transition:width .2s ease}.pdf-offline-status{font-size:.78rem;color:var(--text-muted,#9fb2c6);min-height:18px}.pdf-offline-actions{display:flex;flex-wrap:nowrap;gap:7px}.pdf-offline-actions button{min-height:44px;height:44px;white-space:nowrap;min-width:118px;width:118px}#pdfOfflineSyncBtn,#pdfOfflineCancelBtn{background:transparent!important;color:var(--text-color,#e8f3ff)!important;border:1px solid var(--border-color,#29445d)!important;box-shadow:none!important}
+@media(max-width:700px){.pdf-library-filters{gap:9px;margin-inline:0;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain}.pdf-library-filters>*{flex:0 0 auto!important;width:auto!important}.pdf-library-filters #pdfLibrarySearch{width:220px!important;min-width:220px!important}.pdf-library-filters #pdfLibraryScope{width:190px!important;min-width:190px!important}.pdf-library-filters #pdfMateriaFilter{width:200px!important;min-width:200px!important}.pdf-offline-manager{padding:12px;border-radius:12px}.pdf-offline-head{display:block}.pdf-offline-badge{display:inline-block;margin-top:7px}.pdf-offline-options{grid-template-columns:1fr}.pdf-offline-option span{justify-content:flex-start;text-align:left;min-height:46px;padding:10px 12px}.pdf-offline-controls{gap:8px}.pdf-offline-storage{max-width:none}.pdf-offline-actions button{min-height:44px;min-width:116px}.pdf-offline-actions button{height:44px;width:116px}}
 `;document.head.appendChild(style);
 }
 function anchor(){return $('pdfLibraryViewToggle')||$('pdfLibrarySortControl')||$('pdfAssuntoFilter')?.parentElement||$('pdfLibraryGrid')}
@@ -38,7 +38,7 @@ async function mount(){
       <label class="pdf-offline-option"><input type="radio" name="pdfOfflineMode" value="favorites"><span>PDFs favoritos</span></label>
       <label class="pdf-offline-option"><input type="radio" name="pdfOfflineMode" value="all"><span>Biblioteca inteira</span></label>
     </div>
-    <div class="pdf-offline-controls" aria-label="Controles da Biblioteca Offline"><label class="pdf-offline-limit-wrap"><select id="pdfOfflineLimit" aria-label="Limite de armazenamento local"><option value="1024">Limite: 1 GB</option><option value="2048">Limite: 2 GB</option><option value="5120">Limite: 5 GB</option><option value="10240">Limite: 10 GB</option><option value="0">Sem limite fixo</option></select></label><label class="pdf-offline-wifi"><input id="pdfOfflineWifiOnly" type="checkbox"> Somente Wi-Fi</label><div id="pdfOfflineStorage" class="pdf-offline-storage">Calculando armazenamento…</div><div class="pdf-offline-actions"><button class="btn btn-secondary" id="pdfOfflineSyncBtn" type="button">Preparar agora</button><button class="btn btn-secondary" id="pdfOfflinePauseBtn" type="button">Pausar</button><button class="btn btn-secondary" id="pdfOfflineCancelBtn" type="button">Cancelar fila</button></div></div>
+    <div class="pdf-offline-controls" aria-label="Controles da Biblioteca Offline"><label class="pdf-offline-wifi"><input id="pdfOfflineWifiOnly" type="checkbox"> Somente Wi-Fi</label><div id="pdfOfflineStorage" class="pdf-offline-storage">Calculando armazenamento…</div><div class="pdf-offline-actions"><button class="btn btn-secondary primary" id="pdfOfflineSyncBtn" type="button">Enviar</button><button class="btn btn-secondary" id="pdfOfflineCancelBtn" type="button">Cancelar fila</button></div></div>
     <div class="pdf-offline-progress"><span id="pdfOfflineProgressBar"></span></div><div id="pdfOfflineStatus" class="pdf-offline-status">Pronto.</div>`;
     const a=anchor();if(a?.parentElement)a.insertAdjacentElement('afterend',panel);else $('pdfLibraryGrid')?.before(panel);
     panel.addEventListener('change',async event=>{
@@ -48,14 +48,11 @@ async function mount(){
         const result=await global.PdfOfflineLibraryManager.setMode(target.value).catch(error=>({reason:error?.message||'Falha ao ativar modo.'}));
         if(result?.reason)setStatus(result.reason,'error');
         await refresh();
-      }else if(target?.id==='pdfOfflineLimit'){
-        await global.PdfOfflineLibraryManager.setLimitMb(Number(target.value));await refresh();
       }else if(target?.id==='pdfOfflineWifiOnly'){
         await global.PdfOfflineLibraryManager.setWifiOnly(target.checked);await refresh();
       }
     });
     $('pdfOfflineSyncBtn')?.addEventListener('click',()=>global.PdfOfflineLibraryManager.syncCurrentPolicy().catch(e=>setStatus(e?.message||'Falha ao preparar PDFs.','error')));
-    $('pdfOfflinePauseBtn')?.addEventListener('click',()=>{const s=global.PdfOfflineLibraryManager;const state=$('pdfOfflinePauseBtn')?.dataset.state;if(state==='paused'){s.resume();$('pdfOfflinePauseBtn').dataset.state='';$('pdfOfflinePauseBtn').textContent='Pausar'}else{s.pause();$('pdfOfflinePauseBtn').dataset.state='paused';$('pdfOfflinePauseBtn').textContent='Retomar'}});
     $('pdfOfflineCancelBtn')?.addEventListener('click',()=>global.PdfOfflineLibraryManager.cancel());
   }
   await refresh();
@@ -65,7 +62,7 @@ async function refresh(){
   if(!global.PdfOfflineLibraryManager)return;
   const data=await global.PdfOfflineLibraryManager.getStatus().catch(()=>null);if(!data)return;
   const s=data.settings||{};document.querySelectorAll('input[name="pdfOfflineMode"]').forEach(r=>r.checked=r.value===s.mode);
-  const limit=$('pdfOfflineLimit');if(limit)limit.value=String(Number(s.limitMb)||0);const wifi=$('pdfOfflineWifiOnly');if(wifi)wifi.checked=!!s.wifiOnly;
+  const wifi=$('pdfOfflineWifiOnly');if(wifi)wifi.checked=!!s.wifiOnly;
   const b=data.budget||{},backend=b.caps?.preferredBackend||'none';const badge=$('pdfOfflineBackend');if(badge)badge.textContent=backend==='opfs'?'OPFS ativo':backend==='indexeddb'?'IndexedDB':'Sem armazenamento';
   const st=$('pdfOfflineStorage');if(st)st.textContent=`Uso: ${global.PdfOfflineLibraryManager.bytesLabel(b.usage||0)} · livre seguro: ${global.PdfOfflineLibraryManager.bytesLabel(b.safeAvailable||0)}`;
   const total=Math.max(0,Number(data.total)||0),done=Math.max(0,Number(data.completed)||0)+Math.max(0,Number(data.failed)||0),pct=total?Math.min(100,Math.round(done/total*100)):0;const bar=$('pdfOfflineProgressBar');if(bar)bar.style.width=`${pct}%`;

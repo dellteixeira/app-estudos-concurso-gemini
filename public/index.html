@@ -411,16 +411,17 @@
                         <div class="pdf-library-actions">
                             <button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.refresh">↻ Atualizar</button>
                             <button class="btn btn-primary" type="button" data-action="call" data-call="PdfStudyLibraryUI.openUploadModal">+ Adicionar PDFs</button>
-                            <button class="btn btn-secondary" id="btnPdfSelectionMode" type="button" data-action="call" data-call="PdfStudyLibraryUI.toggleSelectionMode">Selecionar</button>
                         </div>
                     </div>
                     <div class="pdf-library-filters" aria-label="Filtros da Biblioteca">
                         <input id="pdfLibrarySearch" type="search" placeholder="Buscar PDF" data-inline-input="ih-014">
                         <select id="pdfLibraryScope" data-inline-change="ih-015"><option value="global" selected>Biblioteca Global</option><option value="contest">Concurso atual</option></select>
                         <select id="pdfMateriaFilter" data-inline-change="ih-017"><option value="">Todas as matérias</option></select>
-                        <select id="pdfAssuntoFilter" data-inline-change="ih-018"><option value="">Todos os assuntos</option></select>
                     </div>
                     <div id="pdfLibraryStatus" class="pdf-library-status" aria-live="polite"></div>
+                    <div class="pdf-library-selection-row">
+                        <button class="btn btn-secondary" id="btnPdfSelectionMode" type="button" data-action="call" data-call="PdfStudyLibraryUI.toggleSelectionMode">Selecionar</button>
+                    </div>
                     <div id="pdfBulkToolbar" class="pdf-bulk-toolbar" hidden>
                         <div class="pdf-bulk-count"><strong id="pdfBulkSelectedCount">0</strong> PDF(s) selecionado(s)</div>
                         <div class="pdf-bulk-actions">

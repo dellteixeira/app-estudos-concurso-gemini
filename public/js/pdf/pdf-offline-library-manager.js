@@ -2,8 +2,6 @@
 'use strict';
 
 const MODES=new Set(['opened','favorites','all']);
-const DEFAULT_LIMIT_MB_MOBILE=2048;
-const DEFAULT_LIMIT_MB_DESKTOP=5120;
 const MIN_FREE_RESERVE_BYTES=256*1024*1024;
 const FREE_RESERVE_RATIO=0.20;
 const SETTINGS_PREFIX='pdfOfflineLibrarySettings:';
@@ -15,14 +13,14 @@ const bytesLabel=n=>{n=Math.max(0,Number(n)||0);if(n<1024*1024)return `${Math.ro
 
 async function user(){return global.PdfStudyCore?.getAuthenticatedUser?.()||null}
 function settingsKey(userId){return `${SETTINGS_PREFIX}${userId}`}
-function defaults(){return{mode:'opened',limitMb:isMobile()?DEFAULT_LIMIT_MB_MOBILE:DEFAULT_LIMIT_MB_DESKTOP,wifiOnly:false,updatedAt:Date.now()}}
+function defaults(){return{mode:'opened',wifiOnly:false,updatedAt:Date.now()}}
 async function getSettings(){
   const u=await user();if(!u?.id)return defaults();
-  try{const raw=JSON.parse(localStorage.getItem(settingsKey(u.id))||'null');return{...defaults(),...(raw&&typeof raw==='object'?raw:{})}}catch(_){return defaults()}
+  try{const raw=JSON.parse(localStorage.getItem(settingsKey(u.id))||'null');const legacy=raw&&typeof raw==='object'?{...raw}:{};delete legacy.limitMb;return{...defaults(),...legacy}}catch(_){return defaults()}
 }
 async function saveSettings(next){
   const u=await user();if(!u?.id)return defaults();
-  const current=await getSettings();const value={...current,...next,mode:MODES.has(next?.mode)?next.mode:current.mode,updatedAt:Date.now()};
+  const current=await getSettings();const value={...current,...next,mode:MODES.has(next?.mode)?next.mode:current.mode,updatedAt:Date.now()};delete value.limitMb;
   try{localStorage.setItem(settingsKey(u.id),JSON.stringify(value))}catch(_){}
   emit('settings',value);return value;
 }
@@ -37,8 +35,8 @@ async function budget(){
   const quota=Number(caps?.storage?.quota||0),usage=Number(caps?.storage?.usage||0),available=Math.max(0,Number(caps?.storage?.available||quota-usage||0));
   const reserve=Math.max(MIN_FREE_RESERVE_BYTES,Math.floor(quota*FREE_RESERVE_RATIO));
   const safeAvailable=Math.max(0,available-reserve);
-  const configured=Number(s.limitMb)>0?Number(s.limitMb)*1024*1024:Number.POSITIVE_INFINITY;
-  const appBudget=Math.min(safeAvailable||configured,configured);
+  const configured=Number.POSITIVE_INFINITY;
+  const appBudget=quota>0?safeAvailable:Number.POSITIVE_INFINITY;
   return{quota,usage,available,reserve,safeAvailable,configured,appBudget,caps,settings:s};
 }
 function connectionAllowed(settings){
@@ -145,17 +143,14 @@ async function start(mode){
   }
   return getStateSync();
 }
-function pause(){if(!running)return false;paused=true;emit('paused',{reason:'Download pausado pelo usuário.'});return true}
-function resume(){if(!running||!paused)return false;paused=false;lastError='';emit('resumed',{});return true}
 function cancel(){cancelled=true;paused=false;queue=[];emit('cancelled',{});return true}
 async function syncCurrentPolicy(){const s=await getSettings();return start(s.mode)}
 async function setMode(mode){if(!MODES.has(mode))throw new Error('Modo offline inválido.');return start(mode)}
-async function setLimitMb(limitMb){const n=Number(limitMb);return saveSettings({limitMb:Number.isFinite(n)&&n>=0?n:0})}
 async function setWifiOnly(value){return saveSettings({wifiOnly:!!value})}
 async function getStatus(){return{...getStateSync(),settings:await getSettings(),budget:await budget()}}
 
 // Retoma políticas gerenciadas quando a rede retorna, sem atuar no modo "opened".
 global.addEventListener('online',()=>{getSettings().then(s=>{if(s.mode!=='opened'&&!running)setTimeout(()=>syncCurrentPolicy().catch(()=>{}),1200)})});
 
-global.PdfOfflineLibraryManager=Object.freeze({getSettings,setMode,setLimitMb,setWifiOnly,start,pause,resume,cancel,syncCurrentPolicy,getStatus,preflight,bytesLabel});
+global.PdfOfflineLibraryManager=Object.freeze({getSettings,setMode,setWifiOnly,start,cancel,syncCurrentPolicy,getStatus,preflight,bytesLabel});
 })(window);

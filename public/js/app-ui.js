@@ -578,7 +578,6 @@
             'ih-014': function(event) { PdfStudyLibraryUI.onSearch(this.value) },
             'ih-015': function(event) { PdfStudyLibraryUI.onScopeChange(this.value) },
             'ih-017': function(event) { PdfStudyLibraryUI.onMateriaFilterChange(this.value) },
-            'ih-018': function(event) { PdfStudyLibraryUI.onAssuntoFilterChange(this.value) },
             'ih-019': function(event) { document.getElementById('flashcardsImportFile').click() },
             'ih-020': function(event) { importFlashcardsFromFile(event) },
             'ih-021': function(event) { setFlashcardViewFilter('', '') },
