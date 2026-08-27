@@ -13,7 +13,7 @@ test('Fase 3 integra Playwright ao status obrigatório test-and-audit', () => {
   assert.match(workflow, /npm run test:browser/);
   assert.match(workflow, /@playwright\/test@1\.55\.0/);
   assert.match(workflow, /chromium firefox webkit/);
-  assert.match(workflow, /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/);
+  assert.match(workflow, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.match(workflow, /retention-days: 14/);
 });
 
