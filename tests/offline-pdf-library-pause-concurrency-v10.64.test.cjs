@@ -24,7 +24,9 @@ test('pausa por offline ou rede não permitida encerra o worker', () => {
 });
 
 test('start libera running após todos os workers encerrarem para permitir retomada', () => {
-  const start = manager.slice(manager.indexOf('async function start'), manager.indexOf('function cancel'));
+  const startIndex = manager.indexOf('async function start');
+  const cancelIndex = manager.indexOf('function cancel(){', startIndex);
+  const start = manager.slice(startIndex, cancelIndex);
   assert.match(start, /await Promise\.all\([\s\S]*worker\(runId\)[\s\S]*\)/);
   assert.match(start, /finally\{[\s\S]*running=false;activeDownloads\.clear\(\)/);
   assert.match(manager, /if\(running\)\{schedulePolicyResume\(reason,350\);return\}/);
