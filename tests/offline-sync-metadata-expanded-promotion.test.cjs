@@ -7,6 +7,7 @@ const vm=require('node:vm');
 const promotionSource=fs.readFileSync('public/js/core/offline-sync-metadata-expanded-promotion.js','utf8');
 const expansionSource=fs.readFileSync('public/js/core/offline-sync-metadata-expansion.js','utf8');
 const appStateSource=fs.readFileSync('public/js/app-state.js','utf8');
+const packageVersion=JSON.parse(fs.readFileSync('package.json','utf8')).version;
 const manifest=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const swSource=fs.readFileSync('public/sw.js','utf8');
 const workerSource=fs.readFileSync('src/worker.js','utf8');
@@ -141,7 +142,7 @@ test('AppState carrega 4L entre 4K e 4I e expõe diagnóstico',()=>{
 
 test('4L integra contratos PWA e no-store sem promover versão durante implementação',()=>{
   const asset='/js/core/offline-sync-metadata-expanded-promotion.js';
-  assert.equal(manifest.version,'10.56.0');
+  assert.equal(manifest.version,packageVersion);
   assert.ok(manifest.criticalAppShell.includes(asset));
   assert.ok(manifest.networkFirstPaths.includes(asset));
   assert.ok(manifest.workerNoStorePaths.includes(asset));
