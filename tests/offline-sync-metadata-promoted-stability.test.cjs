@@ -7,6 +7,7 @@ const vm=require('node:vm');
 const observerSource=fs.readFileSync('public/js/core/offline-sync-metadata-promoted-stability.js','utf8');
 const promotionSource=fs.readFileSync('public/js/core/offline-sync-metadata-expanded-promotion.js','utf8');
 const appStateSource=fs.readFileSync('public/js/app-state.js','utf8');
+const packageVersion=JSON.parse(fs.readFileSync('package.json','utf8')).version;
 const manifest=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const swSource=fs.readFileSync('public/sw.js','utf8');
 const workerSource=fs.readFileSync('src/worker.js','utf8');
@@ -188,9 +189,9 @@ test('AppState carrega 4M após 4L e antes da 4I e expõe diagnóstico',()=>{
   assert.match(appStateSource,/getOfflineSyncMetadataPromotedStabilityDiagnostics/);
 });
 
-test('4M integra PWA/no-store e preserva identidade 10.56.0 durante implementação',()=>{
+test('4M integra PWA/no-store e preserva a identidade canônica durante implementação',()=>{
   const asset='/js/core/offline-sync-metadata-promoted-stability.js';
-  assert.equal(manifest.version,'10.56.0');
+  assert.equal(manifest.version,packageVersion);
   assert.ok(manifest.criticalAppShell.includes(asset));
   assert.ok(manifest.networkFirstPaths.includes(asset));
   assert.ok(manifest.workerNoStorePaths.includes(asset));
