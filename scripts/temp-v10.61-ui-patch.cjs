@@ -97,6 +97,14 @@ function sub1(text,pattern,replacement,label){
   write(p,t);
 }
 
+{
+  const p='tests/library-toolbar-cleanup.test.cjs';
+  let t=read(p);
+  t=sub1(t,/test\('Selecionar saiu do cabeçalho e ficou junto da grade',[^\r\n]*\);/,
+    "test('Selecionar saiu do cabeçalho e fica na barra offline antes de Enviar',()=>{assert.doesNotMatch(index,/id=\"btnPdfSelectionMode\"/);assert.doesNotMatch(layout,/pdf-library-selection-row/)});",'teste toolbar Selecionar');
+  write(p,t);
+}
+
 fs.writeFileSync('tests/calendar-overdue-only-v10.61.test.cjs',`const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -129,8 +137,16 @@ test('painel renderiza exclusivamente grupos vencidos',()=>{
 });
 `);
 
-// Versão 10.61.0 e cache-busters.
+// Versão 10.61.0 e cache-busters. Preserva marcadores source exigidos pelo pipeline.
 require('node:child_process').execFileSync(process.execPath,['scripts/release-version.mjs','10.61.0'],{stdio:'inherit'});
+{
+  const p='public/version.json';
+  const data=JSON.parse(read(p));
+  data.version='10.61.0';
+  data.build='source';
+  data.commit='source';
+  write(p,JSON.stringify(data,null,2)+'\n');
+}
 {
   const p='config/app-assets.json';
   const data=JSON.parse(read(p));
