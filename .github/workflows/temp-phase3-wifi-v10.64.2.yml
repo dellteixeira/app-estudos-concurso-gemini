@@ -2,14 +2,15 @@ name: Temporary Phase 3 Wi-Fi v10.64.2
 
 on:
   push:
-    branches: ["fix/wifi-only-semantics-v10.64.2"]
+    branches:
+      - fix/wifi-only-semantics-v10.64.2
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -17,8 +18,9 @@ jobs:
           ref: fix/wifi-only-semantics-v10.64.2
           fetch-depth: 0
       - name: Apply surgical patch
-        shell: python
+        shell: bash
         run: |
+          python <<'PY'
           from pathlib import Path
 
           manager = Path('public/js/pdf/pdf-offline-library-manager.js')
@@ -42,16 +44,16 @@ jobs:
 
           ui = Path('public/js/pdf/pdf-offline-library-ui.js')
           text = ui.read_text()
-          old = """  const wifi=$('pdfOfflineWifiOnly');if(wifi)wifi.checked=!!s.wifiOnly;\n"""
-          new = """  const wifi=$('pdfOfflineWifiOnly');if(wifi){wifi.checked=!!s.wifiOnly;const unsupported=!!s.wifiOnly&&data.connection?.supported===false;wifi.setAttribute('aria-describedby',unsupported?'pdfOfflineStatus':'');wifi.parentElement.title=unsupported?(data.connection?.reason||'Detecção automática de Wi-Fi indisponível neste navegador.'):'Somente Wi-Fi';}\n"""
+          old = "  const wifi=$('pdfOfflineWifiOnly');if(wifi)wifi.checked=!!s.wifiOnly;\n"
+          new = "  const wifi=$('pdfOfflineWifiOnly');if(wifi){wifi.checked=!!s.wifiOnly;const unsupported=!!s.wifiOnly&&data.connection?.supported===false;wifi.setAttribute('aria-describedby',unsupported?'pdfOfflineStatus':'');wifi.parentElement.title=unsupported?(data.connection?.reason||'Detecção automática de Wi-Fi indisponível neste navegador.'):'Somente Wi-Fi';}\n"
           if old not in text: raise SystemExit('refresh Wi-Fi original não encontrado')
           text = text.replace(old,new,1)
-          old_status = """  if(data.running)setStatus(data.paused?(data.lastError||'Fila pausada.'):`Preparando PDFs… ${done}/${total}`);else if(data.lastError)setStatus(data.lastError,'error');else setStatus(`Modo ativo: ${modeLabels[currentMode]}.`);\n"""
-          new_status = """  if(data.running)setStatus(data.paused?(data.lastError||'Fila pausada.'):`Preparando PDFs… ${done}/${total}`);else if(data.lastError)setStatus(data.lastError,'error');else if(s.wifiOnly&&data.connection?.supported===false)setStatus(data.connection.reason||'Somente Wi-Fi está ativo, mas este navegador não permite confirmar o tipo da conexão.','warning');else setStatus(`Modo ativo: ${modeLabels[currentMode]}.`);\n"""
+          old_status = "  if(data.running)setStatus(data.paused?(data.lastError||'Fila pausada.'):`Preparando PDFs… ${done}/${total}`);else if(data.lastError)setStatus(data.lastError,'error');else setStatus(`Modo ativo: ${modeLabels[currentMode]}.`);\n"
+          new_status = "  if(data.running)setStatus(data.paused?(data.lastError||'Fila pausada.'):`Preparando PDFs… ${done}/${total}`);else if(data.lastError)setStatus(data.lastError,'error');else if(s.wifiOnly&&data.connection?.supported===false)setStatus(data.connection.reason||'Somente Wi-Fi está ativo, mas este navegador não permite confirmar o tipo da conexão.','warning');else setStatus(`Modo ativo: ${modeLabels[currentMode]}.`);\n"
           if old_status not in text: raise SystemExit('status UI original não encontrado')
           text = text.replace(old_status,new_status,1)
-          old_event = """  else if(d.type==='paused')setStatus(d.reason||'Fila pausada.');\n"""
-          new_event = """  else if(d.type==='paused')setStatus(d.reason||'Fila pausada.');\n  else if(d.type==='wifi-detection-unavailable')setStatus(d.reason||'Não foi possível confirmar automaticamente a conexão Wi-Fi.','warning');\n"""
+          old_event = "  else if(d.type==='paused')setStatus(d.reason||'Fila pausada.');\n"
+          new_event = "  else if(d.type==='paused')setStatus(d.reason||'Fila pausada.');\n  else if(d.type==='wifi-detection-unavailable')setStatus(d.reason||'Não foi possível confirmar automaticamente a conexão Wi-Fi.','warning');\n"
           if old_event not in text: raise SystemExit('evento UI original não encontrado')
           ui.write_text(text.replace(old_event,new_event,1))
 
@@ -79,6 +81,7 @@ test('Somente Wi-Fi distingue detecção suportada de navegador sem Network Info
               p.write_text(s.replace('10.64.1','10.64.2'))
 
           Path('.github/workflows/temp-phase3-wifi-v10.64.2.yml').unlink()
+          PY
       - name: Verify patch
         run: |
           grep -q "function connectionStatus(settings)" public/js/pdf/pdf-offline-library-manager.js
