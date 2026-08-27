@@ -23,7 +23,7 @@
   }
   .pdf-library-actions {
     display:grid!important;
-    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
     align-items:stretch!important;
     gap:10px!important;
     width:100%!important;
@@ -53,10 +53,10 @@
     min-width:0!important;
   }
 
-  /* A barra possui quatro filtros. Eles dividem 100% da linha. */
+  /* A barra possui três filtros. Eles dividem 100% da linha. */
   .pdf-library-filters {
     display:grid!important;
-    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
     gap:10px!important;
     align-items:stretch!important;
     overflow:visible!important;
@@ -70,12 +70,24 @@
   }
   .pdf-library-filters #pdfLibrarySearch,
   .pdf-library-filters #pdfLibraryScope,
-  .pdf-library-filters #pdfMateriaFilter,
-  .pdf-library-filters #pdfAssuntoFilter {
+  .pdf-library-filters #pdfMateriaFilter {
     width:100%!important;
     min-width:0!important;
     max-width:none!important;
     grid-column:auto!important;
+  }
+
+
+  .pdf-library-selection-row {
+    display:flex!important;
+    justify-content:flex-end!important;
+    align-items:center!important;
+    width:100%!important;
+    margin:2px 0 8px!important;
+  }
+  .pdf-library-selection-row #btnPdfSelectionMode {
+    min-width:138px!important;
+    min-height:44px!important;
   }
 
   #pdfOfflineManager {
@@ -86,14 +98,13 @@
 
   #pdfOfflineManager .pdf-offline-controls {
     display:grid!important;
-    grid-template-columns:minmax(170px,210px) max-content minmax(220px,1fr) auto!important;
+    grid-template-columns:max-content minmax(220px,1fr) auto!important;
     align-items:center!important;
     gap:10px!important;
     overflow:visible!important;
     padding-bottom:0!important;
     width:100%!important;
   }
-  #pdfOfflineManager .pdf-offline-limit-wrap{width:100%!important;min-width:0!important;}
   #pdfOfflineManager .pdf-offline-storage{min-width:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left!important;}
   #pdfOfflineManager .pdf-offline-actions{display:flex!important;flex-wrap:nowrap!important;gap:8px!important;justify-content:flex-end!important;}
   #pdfOfflineManager .pdf-offline-actions button{width:auto!important;min-width:118px!important;white-space:nowrap!important;}
@@ -139,9 +150,10 @@
   .pdf-library-filters>*{flex:0 0 auto!important;}
   .pdf-library-filters #pdfLibrarySearch{width:220px!important;min-width:220px!important;}
   .pdf-library-filters #pdfLibraryScope{width:190px!important;min-width:190px!important;}
-  .pdf-library-filters #pdfMateriaFilter,
-  .pdf-library-filters #pdfAssuntoFilter{width:200px!important;min-width:200px!important;}
+  .pdf-library-filters #pdfMateriaFilter{width:200px!important;min-width:200px!important;}
 
+  .pdf-library-selection-row{display:flex!important;justify-content:flex-end!important;width:100%!important;margin:2px 0 8px!important;}
+  .pdf-library-selection-row #btnPdfSelectionMode{min-width:132px!important;min-height:44px!important;}
   #pdfOfflineManager{width:100%!important;max-width:none!important;}
   #pdfOfflineManager .pdf-offline-controls{
     display:flex!important;
@@ -156,7 +168,6 @@
     scrollbar-width:thin;
   }
   #pdfOfflineManager .pdf-offline-controls>*{flex:0 0 auto!important;}
-  #pdfOfflineManager .pdf-offline-limit-wrap{width:190px!important;}
   #pdfOfflineManager .pdf-offline-storage{white-space:nowrap!important;}
   #pdfOfflineManager .pdf-offline-actions{display:contents!important;}
   #pdfOfflineManager .pdf-offline-actions button{
