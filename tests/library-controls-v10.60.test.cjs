@@ -12,15 +12,13 @@ const layout=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-layout-fi
 const offlineUi=fs.readFileSync(path.join(root,'public/js/pdf/pdf-offline-library-ui.js'),'utf8');
 const offlineManager=fs.readFileSync(path.join(root,'public/js/pdf/pdf-offline-library-manager.js'),'utf8');
 
-test('Selecionar fica imediatamente antes da área de seleção e da grade de PDFs',()=>{
-  const select=index.indexOf('id="btnPdfSelectionMode"');
-  const bulk=index.indexOf('id="pdfBulkToolbar"');
-  const grid=index.indexOf('id="pdfLibraryGrid"');
-  assert.ok(select>=0&&bulk>select&&grid>bulk);
-  assert.match(index,/class="pdf-library-selection-row"/);
-  const heroStart=index.indexOf('class="pdf-library-actions"');
-  const filtersStart=index.indexOf('class="pdf-library-filters"');
-  assert.ok(select>filtersStart&&select>heroStart);
+test('Selecionar fica imediatamente antes de Enviar na Biblioteca Offline',()=>{
+  assert.doesNotMatch(index,/id="btnPdfSelectionMode"/);
+  assert.doesNotMatch(index,/pdf-library-selection-row/);
+  const select=offlineUi.indexOf('id="btnPdfSelectionMode"');
+  const send=offlineUi.indexOf('id="pdfOfflineSyncBtn"');
+  const cancel=offlineUi.indexOf('id="pdfOfflineCancelBtn"');
+  assert.ok(select>=0&&send>select&&cancel>send);
 });
 
 test('Biblioteca remove o filtro Todos os assuntos e seu handler visual',()=>{

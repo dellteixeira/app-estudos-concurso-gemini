@@ -62,7 +62,6 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
         let metadataCache = {};
         let flashcardsList = [];
         let activeObjectUrl = null;
-        let currentDelayedFilter = 'hoje';
         let activeSelectedDateKey = null;
 
         let studyQueue = [];
@@ -4574,12 +4573,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 });
                 saveSyncState(state);
             }
-
-            // Atualização coordenada: calendário, abas Hoje/Atrasadas/Próximas,
+            // Atualização coordenada: calendário, matérias atrasadas,
             // Meta Diária, Pomodoro, Horas por Matéria e Progresso Geral.
-            currentDelayedFilter = 'hoje';
-            document.querySelectorAll('.filter-tab').forEach((tb, idx) => tb.classList.toggle('active', idx === 0));
-            filterDataByConcurso();
+filterDataByConcurso();
             renderMonthCalendar();
             renderDelayedPanel();
             renderPomodoroDailyCounter();
@@ -4657,14 +4653,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
 
             await appNotice(`${marcados.length} tópicos foram marcados novamente como não estudados.`, { title:'Matérias atualizadas' });
         }
-
-        function filterDelayedList(type, btn) {
-            currentDelayedFilter = type;
-            document.querySelectorAll('.filter-tab').forEach(tb => tb.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-            renderDelayedPanel();
-        }
-
         function formatScheduleShortDate(dateKey) {
             const parts = String(dateKey || '').split('-');
             if (parts.length !== 3) return String(dateKey || '');
@@ -4745,16 +4733,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 .reduce((sum, group) => sum + group.items.length, 0);
             document.getElementById('delayedBadgeCount').textContent = `${count} atrasadas`;
 
-            const displayList = scheduleWithPending.filter(group => {
-                if (!group.items.length) return false;
-                if (currentDelayedFilter === 'hoje') return group.date === todayStr;
-                if (currentDelayedFilter === 'atrasadas') return group.date < todayStr;
-                if (currentDelayedFilter === 'proximas') return group.date > todayStr;
-                return false;
-            });
+            const displayList = scheduleWithPending.filter(group =>
+                group.items.length && group.date < todayStr
+            );
 
             if (displayList.length === 0) {
-                container.innerHTML = '<p class="runtime-empty-inline runtime-empty-inline-strong">Nenhum item agendado para esta aba.</p>';
+                container.innerHTML = '<p class="runtime-empty-inline runtime-empty-inline-strong">Nenhuma matéria atrasada.</p>';
                 return;
             }
 
