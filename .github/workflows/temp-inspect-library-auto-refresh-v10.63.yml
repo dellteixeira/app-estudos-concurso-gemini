@@ -1,0 +1,21 @@
+name: TEMP Inspect Library Auto Refresh v10.63
+
+on:
+  push:
+    branches:
+      - fix/library-auto-refresh-v10.63.0
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locate library tab activation
+        run: |
+          echo '=== switchTab definitions ==='
+          grep -RniE "function[[:space:]]+switchTab|switchTab[[:space:]]*=" public/js public/index.html || true
+          echo '=== library activation hooks ==='
+          grep -RniE "onTabActivated|activateLibrary|tab-biblioteca|PdfStudyLibraryUI\.initialize|PdfStudyLibraryUI\.refresh" public/js public/index.html | head -n 200 || true
