@@ -134,7 +134,7 @@ async function persistOfflineBlob(userId,doc,blob){
     if(result?.stored)return result;
     throw new Error('O navegador não conseguiu reservar armazenamento local para este PDF.');
   }
-  return{stored:true,backend:'legacy'};
+  throw new Error('O armazenamento offline deste navegador não está disponível. Recarregue o aplicativo e tente novamente.');
 }
 function withStorageCommitGate(task){
   const next=storageCommitGate.then(task,task);
