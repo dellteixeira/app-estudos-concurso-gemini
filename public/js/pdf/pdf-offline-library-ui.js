@@ -5,6 +5,10 @@ const modeOrder=['opened','favorites','all'];
 const modeLabels={opened:'Apenas PDFs que eu abrir',favorites:'PDFs favoritos',all:'Biblioteca inteira'};
 let currentMode='opened';
 let lastRender=0;
+let bootAttempts=0;
+let bootTimer=null;
+const BOOT_RETRY_MS=100;
+const BOOT_MAX_ATTEMPTS=50;
 
 function css(){
   if($('pdfOfflineManagerStyles'))return;
@@ -39,8 +43,24 @@ async function cycleMode(){
   if(result?.reason)setStatus(result.reason,'error');
   await refresh();
 }
+function reportError(context,error,{status=true}={}){
+  const message=error?.message||String(error||'Falha desconhecida.');
+  global.console?.error?.(`[pdf-offline-ui] ${context}: ${message}`,error||'');
+  if(status)setStatus(message,'error');
+  return message;
+}
+function renderInitDiagnostic(message){
+  css();
+  let el=$('pdfOfflineInitDiagnostic');
+  if(!el){
+    el=document.createElement('div');el.id='pdfOfflineInitDiagnostic';el.className='pdf-offline-status';el.setAttribute('role','status');
+    const a=anchor();if(a?.parentElement)a.insertAdjacentElement('afterend',el);else $('pdfLibraryGrid')?.before(el);
+  }
+  el.textContent=message;el.dataset.kind='error';
+}
 async function mount(){
-  if(!global.PdfOfflineLibraryManager)return;
+  if(!global.PdfOfflineLibraryManager)throw new Error('Gerenciador da Biblioteca Offline indisponível.');
+  $('pdfOfflineInitDiagnostic')?.remove();
   css();
   let panel=$('pdfOfflineManager');
   if(!panel){
@@ -59,7 +79,9 @@ async function mount(){
 function setStatus(text,kind=''){const el=$('pdfOfflineStatus');if(el){el.textContent=text||'';el.dataset.kind=kind}}
 async function refresh(){
   if(!global.PdfOfflineLibraryManager)return;
-  const data=await global.PdfOfflineLibraryManager.getStatus().catch(()=>null);if(!data)return;
+  let data;
+  try{data=await global.PdfOfflineLibraryManager.getStatus()}catch(error){reportError('Falha ao atualizar o estado offline',error);return}
+  if(!data)return;
   const s=data.settings||{};updateModeButton(s.mode);
   const wifi=$('pdfOfflineWifiOnly');if(wifi){wifi.checked=!!s.wifiOnly;const unsupported=!!s.wifiOnly&&data.connection?.supported===false;wifi.setAttribute('aria-describedby',unsupported?'pdfOfflineStatus':'');wifi.parentElement.title=unsupported?(data.connection?.reason||'Detecção automática de Wi-Fi indisponível neste navegador.'):'Somente Wi-Fi';}
   const b=data.budget||{},backend=b.caps?.preferredBackend||'none';const badge=$('pdfOfflineBackend');if(badge)badge.textContent=backend==='opfs'?'OPFS ativo':backend==='indexeddb'?'IndexedDB':'Sem armazenamento';
@@ -70,15 +92,33 @@ async function refresh(){
 }
 global.addEventListener('pdf-offline-library',event=>{
   const d=event.detail||{},state=d.state||{},total=Number(state.total)||0,done=(Number(state.completed)||0)+(Number(state.failed)||0),bar=$('pdfOfflineProgressBar');if(bar)bar.style.width=`${total?Math.min(100,Math.round(done/total*100)):0}%`;
-  if(d.type==='blocked'||d.type==='error')setStatus(d.reason||d.error||state.lastError,'error');
+  if(d.type==='blocked'||d.type==='error'||d.type==='resume-error')setStatus(d.reason||d.error||state.lastError,'error');
+  else if(d.type==='warning')setStatus(d.reason||'A Biblioteca Offline encontrou uma limitação local.','warning');
   else if(d.type==='paused')setStatus(d.reason||'Fila pausada.');
   else if(d.type==='wifi-detection-unavailable')setStatus(d.reason||'Não foi possível confirmar automaticamente a conexão Wi-Fi.','warning');
   else if(d.type==='downloaded')setStatus(`PDFs preparados: ${done}/${total}`);
   else if(d.type==='complete')setStatus(d.message||`Preparação concluída. ${state.completed||0} PDF(s) offline.`);
   else if(d.type==='cancelled')setStatus('Fila cancelada.');
-  if(Date.now()-lastRender>400)refresh().catch(()=>{});
+  if(Date.now()-lastRender>400)refresh().catch(error=>reportError('Falha ao reconciliar evento offline',error,{status:false}));
 });
-function boot(){if(global.PdfOfflineLibraryManager)mount().catch(()=>{});else setTimeout(boot,100)}
+function clearBootTimer(){if(bootTimer){clearTimeout(bootTimer);bootTimer=null}}
+function boot(){
+  if(global.PdfOfflineLibraryManager){
+    clearBootTimer();bootAttempts=0;
+    mount().catch(error=>reportError('Falha ao inicializar a Biblioteca Offline',error));
+    return;
+  }
+  bootAttempts++;
+  if(bootAttempts>=BOOT_MAX_ATTEMPTS){
+    clearBootTimer();
+    const message='Biblioteca Offline indisponível: o gerenciador não foi carregado. Recarregue a página ou verifique a conexão.';
+    reportError('Tempo limite de inicialização',new Error(message),{status:false});
+    renderInitDiagnostic(message);
+    return;
+  }
+  clearBootTimer();bootTimer=setTimeout(boot,BOOT_RETRY_MS);
+}
+global.addEventListener('pdf-offline-library-manager-ready',()=>{clearBootTimer();bootAttempts=0;boot()},{once:true});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-document.addEventListener('click',event=>{const b=event.target.closest('button');if((b?.getAttribute('onclick')||'').includes("switchTab('tab-biblioteca'"))setTimeout(()=>mount().catch(()=>{}),80)});
+document.addEventListener('click',event=>{const b=event.target.closest('button');if((b?.getAttribute('onclick')||'').includes("switchTab('tab-biblioteca'"))setTimeout(()=>mount().catch(error=>reportError('Falha ao abrir a Biblioteca Offline',error)),80)});
 })(window);

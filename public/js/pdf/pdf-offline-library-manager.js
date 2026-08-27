@@ -7,6 +7,13 @@ const FREE_RESERVE_RATIO=0.20;
 const SETTINGS_PREFIX='pdfOfflineLibrarySettings:';
 let running=false,paused=false,cancelled=false,queue=[],completed=0,failed=0,current=null,lastError='';
 
+function diagnostic(scope,error,level='warn'){
+  const message=error?.message||String(error||'Falha desconhecida.');
+  const logger=level==='error'?'error':'warn';
+  global.console?.[logger]?.(`[pdf-offline] ${scope}: ${message}`,error||'');
+  return message;
+}
+
 const isMobile=()=>{try{return global.matchMedia?.('(max-width: 700px)')?.matches||/Android|iPhone|iPad|iPod/i.test(global.navigator?.userAgent||'')}catch(_){return false}};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const bytesLabel=n=>{n=Math.max(0,Number(n)||0);if(n<1024*1024)return `${Math.round(n/1024)} KB`;if(n<1024*1024*1024)return `${(n/1024/1024).toFixed(n>=100*1024*1024?0:1)} MB`;return `${(n/1024/1024/1024).toFixed(1)} GB`};
@@ -16,15 +23,15 @@ function settingsKey(userId){return `${SETTINGS_PREFIX}${userId}`}
 function defaults(){return{mode:'opened',wifiOnly:false,updatedAt:Date.now()}}
 async function getSettings(){
   const u=await user();if(!u?.id)return defaults();
-  try{const raw=JSON.parse(localStorage.getItem(settingsKey(u.id))||'null');const legacy=raw&&typeof raw==='object'?{...raw}:{};delete legacy.limitMb;return{...defaults(),...legacy}}catch(_){return defaults()}
+  try{const raw=JSON.parse(localStorage.getItem(settingsKey(u.id))||'null');const legacy=raw&&typeof raw==='object'?{...raw}:{};delete legacy.limitMb;return{...defaults(),...legacy}}catch(error){diagnostic('Configuração local inválida; usando padrão',error);return defaults()}
 }
 async function saveSettings(next){
   const u=await user();if(!u?.id)return defaults();
   const current=await getSettings();const value={...current,...next,mode:MODES.has(next?.mode)?next.mode:current.mode,updatedAt:Date.now()};delete value.limitMb;
-  try{localStorage.setItem(settingsKey(u.id),JSON.stringify(value))}catch(_){}
+  try{localStorage.setItem(settingsKey(u.id),JSON.stringify(value))}catch(error){const reason='Não foi possível salvar as preferências offline neste navegador.';diagnostic('Persistência de configurações',error);emit('warning',{reason})}
   emit('settings',value);return value;
 }
-function emit(type,detail={}){try{global.dispatchEvent(new CustomEvent('pdf-offline-library',{detail:{type,...detail,state:getStateSync()}}))}catch(_){} }
+function emit(type,detail={}){try{global.dispatchEvent(new CustomEvent('pdf-offline-library',{detail:{type,...detail,state:getStateSync()}}))}catch(error){diagnostic(`Falha ao publicar evento ${type}`,error)} }
 function getStateSync(){return{running,paused,cancelled,total:queue.length+completed+failed,remaining:queue.length,completed,failed,currentId:current?.id||'',lastError}}
 async function capabilities(){
   if(global.PdfLibraryOfflineAdapter?.capabilities)return global.PdfLibraryOfflineAdapter.capabilities();
@@ -60,7 +67,7 @@ async function hasOfflineCopy(userId,doc){
     if(global.PdfLibraryOfflineAdapter?.has)return !!(await global.PdfLibraryOfflineAdapter.has(userId,doc));
     if(global.PdfStudyLibrary?.hasOfflineCopy)return !!(await global.PdfStudyLibrary.hasOfflineCopy(doc));
     if(global.OfflinePdfStore?.has)return !!(await global.OfflinePdfStore.has(userId,doc));
-  }catch(_){}
+  }catch(error){diagnostic(`Falha ao verificar cópia offline de ${doc?.id||'PDF'}`,error)}
   return false;
 }
 async function buildQueue(mode){
@@ -86,7 +93,7 @@ async function ensurePersistence(){
     if(caps?.persistence?.persisted)return caps.persistence;
     const store=global.OfflinePdfStore;
     if(store?.requestPersistence)return await store.requestPersistence();
-  }catch(_){}
+  }catch(error){diagnostic('Falha ao solicitar persistência de armazenamento',error)}
   return{supported:false,persisted:false};
 }
 async function persistOfflineBlob(userId,doc,blob){
@@ -155,7 +162,8 @@ async function setWifiOnly(value){return saveSettings({wifiOnly:!!value})}
 async function getStatus(){const settings=await getSettings();return{...getStateSync(),settings,budget:await budget(),connection:connectionStatus(settings)}}
 
 // Retoma políticas gerenciadas quando a rede retorna, sem atuar no modo "opened".
-global.addEventListener('online',()=>{getSettings().then(s=>{if(s.mode!=='opened'&&!running)setTimeout(()=>syncCurrentPolicy().catch(()=>{}),1200)})});
+global.addEventListener('online',()=>{getSettings().then(s=>{if(s.mode!=='opened'&&!running)setTimeout(()=>syncCurrentPolicy().catch(error=>{const reason=error?.message||'Falha ao retomar a Biblioteca Offline após reconexão.';diagnostic('Retomada após reconexão',error,'error');emit('resume-error',{reason})}),1200)}).catch(error=>{const reason=error?.message||'Falha ao ler a política offline após reconexão.';diagnostic('Leitura da política após reconexão',error,'error');emit('resume-error',{reason})})});
 
 global.PdfOfflineLibraryManager=Object.freeze({getSettings,setMode,setWifiOnly,start,cancel,syncCurrentPolicy,getStatus,preflight,bytesLabel,connectionStatus});
+try{global.dispatchEvent(new CustomEvent('pdf-offline-library-manager-ready'))}catch(error){diagnostic('Falha ao anunciar inicialização do gerenciador',error)}
 })(window);
