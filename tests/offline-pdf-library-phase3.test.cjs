@@ -13,9 +13,10 @@ test('fase 3 oferece exatamente os três modos gerenciados',()=>{
   assert.match(ui,/Biblioteca inteira/);
 });
 
-test('mobile usa concorrência unitária e limite conservador',()=>{
+test('mobile usa concorrência unitária e armazenamento sem limite artificial do app',()=>{
   assert.match(manager,/const concurrency=isMobile\(\)\?1:2/);
-  assert.match(manager,/DEFAULT_LIMIT_MB_MOBILE=2048/);
+  assert.doesNotMatch(manager,/DEFAULT_LIMIT_MB_(?:MOBILE|DESKTOP)/);
+  assert.match(manager,/const configured=Number\.POSITIVE_INFINITY/);
   assert.match(manager,/FREE_RESERVE_RATIO=0\.20/);
   assert.match(manager,/MIN_FREE_RESERVE_BYTES=256\*1024\*1024/);
 });
