@@ -1,0 +1,50 @@
+name: Temporary Phase 9 Backend Integrity
+
+on:
+  push:
+    branches:
+      - fix/offline-backend-integrity-v10.64.8
+    paths:
+      - '.github/workflows/temp-phase9-backend-integrity.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/offline-backend-integrity-v10.64.8
+          fetch-depth: 0
+      - name: Apply backend integrity guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('public/js/pdf/pdf-offline-library-manager.js')
+          s=p.read_text()
+          old="""  if(global.OfflinePdfStore?.put){\n    const result=await global.OfflinePdfStore.put(userId,doc,blob);\n    if(result?.stored)return result;\n    throw new Error('O navegador não conseguiu reservar armazenamento local para este PDF.');\n  }\n  return{stored:true,backend:'legacy'};\n}"""
+          new="""  if(global.OfflinePdfStore?.put){\n    const result=await global.OfflinePdfStore.put(userId,doc,blob);\n    if(result?.stored)return result;\n    throw new Error('O navegador não conseguiu reservar armazenamento local para este PDF.');\n  }\n  throw new Error('O armazenamento offline deste navegador não está disponível. Recarregue o aplicativo e tente novamente.');\n}"""
+          if s.count(old)!=1:
+              raise SystemExit(f'Contrato esperado não encontrado uma única vez: {s.count(old)}')
+          p.write_text(s.replace(old,new))
+
+          t=Path('tests/offline-pdf-library-backend-integrity-v10.64.test.cjs')
+          t.write_text("""const test = require('node:test');\nconst assert = require('node:assert/strict');\nconst fs = require('node:fs');\nconst path = require('node:path');\n\nconst root = path.resolve(__dirname, '..');\nconst manager = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-manager.js'), 'utf8');\n\ntest('Fase 9 não aceita falso sucesso quando backend offline está ausente', () => {\n  const start = manager.indexOf('async function persistOfflineBlob');\n  const end = manager.indexOf('function withStorageCommitGate', start);\n  const block = manager.slice(start, end);\n  assert.doesNotMatch(block, /stored:true,backend:'legacy'/);\n  assert.match(block, /throw new Error\\('O armazenamento offline deste navegador não está disponível\\. Recarregue o aplicativo e tente novamente\\.'\\)/);\n});\n\ntest('persistência continua aceitando somente backends que confirmam stored', () => {\n  const start = manager.indexOf('async function persistOfflineBlob');\n  const end = manager.indexOf('function withStorageCommitGate', start);\n  const block = manager.slice(start, end);\n  assert.match(block, /PdfLibraryOfflineAdapter\\?\\.put/);\n  assert.match(block, /OfflinePdfStore\\?\\.put/);\n  assert.equal((block.match(/if\\(result\\?\\.stored\\)return result/g)||[]).length, 2);\n});\n""")
+          PY
+          rm .github/workflows/temp-phase9-backend-integrity.yml
+          git diff --check
+      - name: Validate automated suite
+        run: npm test
+      - name: Commit clean Phase 9 patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/js/pdf/pdf-offline-library-manager.js tests/offline-pdf-library-backend-integrity-v10.64.test.cjs .github/workflows/temp-phase9-backend-integrity.yml
+          git commit -m 'fix(offline): rejeitar falso sucesso sem backend local'
+          git push origin HEAD:fix/offline-backend-integrity-v10.64.8
