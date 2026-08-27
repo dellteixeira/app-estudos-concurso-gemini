@@ -55,7 +55,7 @@ async function exposeDashboard(page) {
   await page.waitForTimeout(80);
 }
 
-async function assertScrollableRail(page, selector) {
+async function assertReachableRail(page, selector, { requireOverflow = true } = {}) {
   const result = await page.locator(selector).evaluate(el => {
     const rect = el.getBoundingClientRect();
     const before = { clientWidth: el.clientWidth, scrollWidth: el.scrollWidth, left: rect.left, right: rect.right };
@@ -73,13 +73,20 @@ async function assertScrollableRail(page, selector) {
   });
   expect(result.right).toBeLessThanOrEqual(result.viewport + 1);
   expect(result.left).toBeGreaterThanOrEqual(-1);
-  expect(result.scrollWidth).toBeGreaterThan(result.clientWidth);
-  expect(result.scrollLeft).toBeGreaterThan(0);
+  expect(result.scrollWidth).toBeGreaterThanOrEqual(result.clientWidth);
+  if (requireOverflow) {
+    expect(result.scrollWidth).toBeGreaterThan(result.clientWidth);
+    expect(result.scrollLeft).toBeGreaterThan(0);
+  } else if (result.scrollWidth > result.clientWidth) {
+    expect(result.scrollLeft).toBeGreaterThan(0);
+  } else {
+    expect(result.scrollLeft).toBe(0);
+  }
   expect(result.lastRight).toBeLessThanOrEqual(result.right + 2);
   expect(result.lastLeft).toBeGreaterThanOrEqual(result.left - 2);
 }
 
-test('mobile Biblioteca mantém cards na viewport e trilhos alcançáveis', async ({ page }) => {
+test('mobile Biblioteca mantém cards na viewport e controles alcançáveis', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await exposeDashboard(page);
@@ -105,9 +112,11 @@ test('mobile Biblioteca mantém cards na viewport e trilhos alcançáveis', asyn
   expect(geometry.rootScroll).toBeLessThanOrEqual(geometry.viewport + 2);
   expect(geometry.bodyScroll).toBeLessThanOrEqual(geometry.viewport + 2);
 
-  await assertScrollableRail(page, '.pdf-library-actions');
-  await assertScrollableRail(page, '.pdf-library-filters');
-  await assertScrollableRail(page, '#pdfOfflineManager .pdf-offline-controls');
+  // A barra de ações pode caber integralmente no viewport quando há poucos comandos.
+  // Nesse caso, não forçamos overflow: só garantimos que o último controle permaneça alcançável.
+  await assertReachableRail(page, '.pdf-library-actions', { requireOverflow: false });
+  await assertReachableRail(page, '.pdf-library-filters');
+  await assertReachableRail(page, '#pdfOfflineManager .pdf-offline-controls');
 });
 
 test('mobile menu compacto de ações abre e fecha pelo controle vigente', async ({ page }) => {

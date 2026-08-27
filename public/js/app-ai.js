@@ -2160,6 +2160,12 @@
                     renderMonthCalendar();
                     if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
                 });
+            } else if (tabId === 'tab-biblioteca') {
+                requestAnimationFrame(() => {
+                    Promise.resolve(window.PdfStudyLibraryUI?.onTabActivated?.())
+                        .catch(error => console.warn('Atualização automática da Biblioteca falhou:', error));
+                    if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
+                });
             } else {
                 if (tabId === 'tab-edital') requestAnimationFrame(() => renderChart());
                 if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
