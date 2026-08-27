@@ -5,6 +5,11 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const manager = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-manager.js'), 'utf8');
+const packageVersion = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
+
+test('Fase 6 permanece na linha canônica 10.64.x', () => {
+  assert.match(packageVersion, /^10\.64\.\d+$/);
+});
 
 test('fila pausada observa mudança do tipo de conexão', () => {
   assert.match(manager, /connection\?\.addEventListener\?\.\('change'/);
