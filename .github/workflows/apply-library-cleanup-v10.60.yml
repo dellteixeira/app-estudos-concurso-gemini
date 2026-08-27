@@ -1,0 +1,58 @@
+name: Apply Library Cleanup v10.60
+
+on:
+  push:
+    branches:
+      - fix/library-controls-v10.60.0
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: fix/library-controls-v10.60.0
+          fetch-depth: 0
+      - name: Apply exact cleanup
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          ui = Path('public/js/pdf/pdf-offline-library-ui.js')
+          text = ui.read_text()
+          old = "function anchor(){return $('pdfLibraryViewToggle')||$('pdfLibrarySortControl')||$('pdfAssuntoFilter')?.parentElement||$('pdfLibraryGrid')}"
+          new = "function anchor(){return $('pdfLibraryViewToggle')||$('pdfLibrarySortControl')||$('pdfLibraryGrid')}"
+          if old not in text:
+              raise SystemExit('anchor residual not found')
+          ui.write_text(text.replace(old, new, 1))
+
+          manager = Path('public/js/pdf/pdf-offline-library-manager.js')
+          text = manager.read_text()
+          old = "Aumente o limite local ou libere espaço."
+          new = "Libere espaço no dispositivo."
+          if old not in text:
+              raise SystemExit('obsolete limit message not found')
+          manager.write_text(text.replace(old, new, 1))
+
+          diagnostic = Path('TEST_FAILURE_DIAGNOSTIC.txt')
+          if diagnostic.exists():
+              diagnostic.unlink()
+
+          workflow = Path('.github/workflows/apply-library-cleanup-v10.60.yml')
+          workflow.unlink()
+          PY
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix(library): remover contratos residuais dos controles'
+          git push origin HEAD:fix/library-controls-v10.60.0
