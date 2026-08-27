@@ -61,17 +61,18 @@ async function refresh(){
   if(!global.PdfOfflineLibraryManager)return;
   const data=await global.PdfOfflineLibraryManager.getStatus().catch(()=>null);if(!data)return;
   const s=data.settings||{};updateModeButton(s.mode);
-  const wifi=$('pdfOfflineWifiOnly');if(wifi)wifi.checked=!!s.wifiOnly;
+  const wifi=$('pdfOfflineWifiOnly');if(wifi){wifi.checked=!!s.wifiOnly;const unsupported=!!s.wifiOnly&&data.connection?.supported===false;wifi.setAttribute('aria-describedby',unsupported?'pdfOfflineStatus':'');wifi.parentElement.title=unsupported?(data.connection?.reason||'Detecção automática de Wi-Fi indisponível neste navegador.'):'Somente Wi-Fi';}
   const b=data.budget||{},backend=b.caps?.preferredBackend||'none';const badge=$('pdfOfflineBackend');if(badge)badge.textContent=backend==='opfs'?'OPFS ativo':backend==='indexeddb'?'IndexedDB':'Sem armazenamento';
   const st=$('pdfOfflineStorage');if(st)st.textContent=`Uso: ${global.PdfOfflineLibraryManager.bytesLabel(b.usage||0)} · livre seguro: ${global.PdfOfflineLibraryManager.bytesLabel(b.safeAvailable||0)}`;
   const total=Math.max(0,Number(data.total)||0),done=Math.max(0,Number(data.completed)||0)+Math.max(0,Number(data.failed)||0),pct=total?Math.min(100,Math.round(done/total*100)):0;const bar=$('pdfOfflineProgressBar');if(bar)bar.style.width=`${pct}%`;
-  if(data.running)setStatus(data.paused?(data.lastError||'Fila pausada.'):`Preparando PDFs… ${done}/${total}`);else if(data.lastError)setStatus(data.lastError,'error');else setStatus(`Modo ativo: ${modeLabels[currentMode]}.`);
+  if(data.running)setStatus(data.paused?(data.lastError||'Fila pausada.'):`Preparando PDFs… ${done}/${total}`);else if(data.lastError)setStatus(data.lastError,'error');else if(s.wifiOnly&&data.connection?.supported===false)setStatus(data.connection.reason||'Somente Wi-Fi está ativo, mas este navegador não permite confirmar o tipo da conexão.','warning');else setStatus(`Modo ativo: ${modeLabels[currentMode]}.`);
   lastRender=Date.now();
 }
 global.addEventListener('pdf-offline-library',event=>{
   const d=event.detail||{},state=d.state||{},total=Number(state.total)||0,done=(Number(state.completed)||0)+(Number(state.failed)||0),bar=$('pdfOfflineProgressBar');if(bar)bar.style.width=`${total?Math.min(100,Math.round(done/total*100)):0}%`;
   if(d.type==='blocked'||d.type==='error')setStatus(d.reason||d.error||state.lastError,'error');
   else if(d.type==='paused')setStatus(d.reason||'Fila pausada.');
+  else if(d.type==='wifi-detection-unavailable')setStatus(d.reason||'Não foi possível confirmar automaticamente a conexão Wi-Fi.','warning');
   else if(d.type==='downloaded')setStatus(`PDFs preparados: ${done}/${total}`);
   else if(d.type==='complete')setStatus(d.message||`Preparação concluída. ${state.completed||0} PDF(s) offline.`);
   else if(d.type==='cancelled')setStatus('Fila cancelada.');

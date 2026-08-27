@@ -39,13 +39,16 @@ async function budget(){
   const appBudget=quota>0?safeAvailable:Number.POSITIVE_INFINITY;
   return{quota,usage,available,reserve,safeAvailable,configured,appBudget,caps,settings:s};
 }
-function connectionAllowed(settings){
-  if(!settings?.wifiOnly)return true;
+function connectionStatus(settings){
+  if(!settings?.wifiOnly)return{allowed:true,supported:true,reason:''};
   const c=global.navigator?.connection;
-  if(!c)return true;
+  if(!c)return{allowed:true,supported:false,reason:'Este navegador não permite confirmar automaticamente se a conexão atual é Wi-Fi.'};
   const type=String(c.type||'').toLowerCase();
-  return !type||type==='wifi'||type==='ethernet';
+  if(!type)return{allowed:true,supported:false,reason:'O navegador não informou o tipo da conexão atual; a restrição de Wi-Fi não pode ser confirmada.'};
+  const allowed=type==='wifi'||type==='ethernet';
+  return{allowed,supported:true,reason:allowed?'':`Fila pausada: conexão atual detectada como ${type}; aguardando Wi-Fi.`};
 }
+function connectionAllowed(settings){return connectionStatus(settings).allowed}
 async function listTargets(mode){
   if(mode==='opened')return[];
   if(!global.navigator.onLine)throw new Error('Conecte-se à internet para preparar novos PDFs offline.');
@@ -115,7 +118,9 @@ async function worker(){
     if(cancelled)break;
     const s=await getSettings();
     if(!global.navigator.onLine){paused=true;lastError='Fila pausada: dispositivo offline.';emit('paused',{reason:lastError});break}
-    if(!connectionAllowed(s)){paused=true;lastError='Fila pausada: aguardando Wi-Fi.';emit('paused',{reason:lastError});break}
+    const network=connectionStatus(s);
+    if(!network.allowed){paused=true;lastError=network.reason||'Fila pausada: aguardando Wi-Fi.';emit('paused',{reason:lastError});break}
+    if(s.wifiOnly&&!network.supported)emit('wifi-detection-unavailable',{reason:network.reason});
     current=queue.shift();emit('progress',{document:current});
     try{const saved=await downloadOne(current);completed++;emit('downloaded',{document:current,backend:saved?.stored?.backend||''})}
     catch(error){failed++;lastError=error?.message||'Falha ao preparar PDF offline.';emit('error',{document:current,error:lastError})}
@@ -147,10 +152,10 @@ function cancel(){cancelled=true;paused=false;queue=[];emit('cancelled',{});retu
 async function syncCurrentPolicy(){const s=await getSettings();return start(s.mode)}
 async function setMode(mode){if(!MODES.has(mode))throw new Error('Modo offline inválido.');return start(mode)}
 async function setWifiOnly(value){return saveSettings({wifiOnly:!!value})}
-async function getStatus(){return{...getStateSync(),settings:await getSettings(),budget:await budget()}}
+async function getStatus(){const settings=await getSettings();return{...getStateSync(),settings,budget:await budget(),connection:connectionStatus(settings)}}
 
 // Retoma políticas gerenciadas quando a rede retorna, sem atuar no modo "opened".
 global.addEventListener('online',()=>{getSettings().then(s=>{if(s.mode!=='opened'&&!running)setTimeout(()=>syncCurrentPolicy().catch(()=>{}),1200)})});
 
-global.PdfOfflineLibraryManager=Object.freeze({getSettings,setMode,setWifiOnly,start,cancel,syncCurrentPolicy,getStatus,preflight,bytesLabel});
+global.PdfOfflineLibraryManager=Object.freeze({getSettings,setMode,setWifiOnly,start,cancel,syncCurrentPolicy,getStatus,preflight,bytesLabel,connectionStatus});
 })(window);
