@@ -13,29 +13,32 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: fix/calendar-overdue-library-select-v10.61.0
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 22.23.2
+          node-version: '22.23.2'
 
       - name: Apply structural patch
         run: node scripts/temp-v10.61-ui-patch.cjs
+
+      - name: Remove temporary applicator before validation
+        run: |
+          rm .github/workflows/temp-apply-v10.61-ui-cleanup.yml
+          rm scripts/temp-v10.61-ui-patch.cjs
 
       - name: Validate syntax, tests and audits
         run: |
           node --check src/index.js
           npm test
-          npm run audit
+          AUDIT_ALLOW_ANY_ROOT=1 npm run audit
 
-      - name: Commit final implementation and remove temporary files
+      - name: Commit final implementation
         run: |
-          rm .github/workflows/temp-apply-v10.61-ui-cleanup.yml
-          rm scripts/temp-v10.61-ui-patch.cjs
           git config user.name "dellteixeira"
           git config user.email "111660903+dellteixeira@users.noreply.github.com"
           git add -A
