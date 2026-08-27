@@ -1,0 +1,72 @@
+name: Prepare v10.58.0
+
+on:
+  push:
+    branches: ["release/v10.58.0"]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: release/v10.58.0
+          fetch-depth: 0
+
+      - name: Bump canonical app version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          files = [
+              Path('package.json'),
+              Path('public/version.json'),
+              Path('src/index.js'),
+              Path('public/sw.js'),
+          ]
+          old='10.56.0'
+          new='10.58.0'
+          for path in files:
+              text=path.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'{old} não encontrado em {path}')
+              path.write_text(text.replace(old,new), encoding='utf-8')
+          PY
+          rm .github/workflows/prepare-v10.58.0.yml
+
+      - name: Validate version identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./package.json').version")" = "10.58.0"
+          test "$(node -p "require('./public/version.json').version")" = "10.58.0"
+          grep -q 'const APP_VERSION = "10.58.0";' src/index.js
+          grep -q "const APP_VERSION = '10.58.0';" public/sw.js
+
+      - name: Commit release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json public/version.json src/index.js public/sw.js .github/workflows/prepare-v10.58.0.yml
+          git commit -m "chore(release): preparar v10.58.0"
+          git push origin HEAD:release/v10.58.0
+
+      - name: Open release pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr create \
+            --base main \
+            --head release/v10.58.0 \
+            --title "chore(release): publicar Estudo Adaptativo Inteligente v10.58.0" \
+            --body $'## Release v10.58.0\n\nConsolida o estado atual do app após o rollback operacional seguro e a correção do pipeline de releases imutáveis.\n\n- mantém o runtime funcional restaurado;\n- inclui a correção do workflow de release canônica;\n- atualiza a identidade de versão em package/public/Worker/Service Worker;\n- cria uma nova versão superior à v10.57.0 histórica, sem mover tags existentes.'
