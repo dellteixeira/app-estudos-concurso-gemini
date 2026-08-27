@@ -23,7 +23,7 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.63.0";
+const APP_VERSION = "10.64.0";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css", "/css/pdf-mobile-card-actions.css",
@@ -497,7 +497,6 @@ function deterministicFlashcardQuestion(sentence, materia, assunto, variant = 0)
   if (context) return variant % 2 ? `Segundo o trecho, o que deve ser lembrado sobre ${context}?` : `Qual regra central o trecho apresenta sobre ${context}?`;
   return variant % 2 ? "Segundo o trecho selecionado, qual informação central deve ser recuperada?" : "Qual é a regra ou informação principal apresentada no trecho?";
 }
-
 function tokenizeFlashcardValidation(value) {
   return fold(value)
     .replace(/[^a-z0-9\s]/g, " ")
