@@ -52,6 +52,9 @@ test('toolbar offline mantém todos os controles em uma única linha horizontal'
   assert.match(ui,/overflow-x:auto/);
   assert.match(ui,/white-space:nowrap!important/);
   assert.match(ui,/min-height:44px/);
+  assert.match(ui,/max-width:100%;box-sizing:border-box;overflow-x:auto/);
+  assert.doesNotMatch(ui,/min-width:1128px/);
+  assert.doesNotMatch(ui,/min-width:1054px/);
   assert.doesNotMatch(ui,/pdf-offline-actions/);
   assert.doesNotMatch(ui,/flex-wrap:wrap/);
 });
