@@ -5,6 +5,8 @@ const fs=require('node:fs');
 const cp=require('node:child_process');
 const read=file=>fs.readFileSync(file,'utf8');
 
+const packageVersion=JSON.parse(read('package.json')).version;
+const escapeRegex=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const client=read('public/js/learning-advisor.js');
 const css=read('public/css/learning-advisor.css');
 const server=read('src/learning-diagnosis.js');
@@ -95,8 +97,8 @@ test('wrapper isola nova rota e preserva Worker existente',()=>{
 });
 
 test('advisor faz parte do núcleo PWA e usa política anti-cache',()=>{
-  assert.match(pwa,/learning-advisor\.css\?v=10\.56\.0/);
-  assert.match(pwa,/learning-advisor\.js\?v=10\.56\.0/);
+  assert.match(pwa,new RegExp(`learning-advisor\\.css\\?v=${escapeRegex(packageVersion)}`));
+  assert.match(pwa,new RegExp(`learning-advisor\\.js\\?v=${escapeRegex(packageVersion)}`));
   assert.match(sw,/\.\/css\/learning-advisor\.css/);
   assert.match(sw,/\.\/js\/learning-advisor\.js/);
   assert.match(manifest,/"\/css\/learning-advisor\.css"/);
