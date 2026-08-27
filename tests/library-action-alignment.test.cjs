@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const ordering = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-library-ordering.js'), 'utf8');
 const libraryUi = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-library-ui.js'), 'utf8');
 const offlineUi = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-ui.js'), 'utf8');
-test('Ordenar fica antes de Cards e Lista na barra superior', () => { assert.match(ordering, /actions\.insertBefore\(wrap,viewToggle\)/); assert.match(ordering, /actions\.appendChild\(viewToggle\)/); assert.match(ordering, /pdf-library-view-toggle--actions/); assert.match(libraryUi, /id='pdfLibraryViewToggle'/); });
+test('Ordenar fica antes de Cards e Lista na barra superior', () => { assert.match(ordering, /actions\.insertBefore\(wrap,viewToggle\)/); assert.match(ordering, /actions\.appendChild\(viewToggle\)/); assert.match(ordering, /pdf-library-view-toggle--actions/); assert.match(libraryUi, /wrap\.id='pdfLibraryViewToggle'/); });
 test('ações da Biblioteca usam três colunas iguais', () => { assert.match(ordering, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/); assert.match(ordering, /\.pdf-library-actions>\.pdf-library-view-toggle/); assert.match(ordering, /addBtn\.style\.width='100%'/); });
 test('filtros restantes distribuem igualmente a largura', () => { assert.match(offlineUi, /\.pdf-library-filters>\*\{flex:1 1 0!important/); assert.doesNotMatch(offlineUi, /pdfAssuntoFilter/); });
 test('Enviar e Cancelar fila permanecem sem Pausar', () => { assert.match(offlineUi, /id="pdfOfflineSyncBtn"[^>]*>Enviar<\/button>/); assert.match(offlineUi, /id="pdfOfflineCancelBtn"/); assert.doesNotMatch(offlineUi, /pdfOfflinePauseBtn/); });
