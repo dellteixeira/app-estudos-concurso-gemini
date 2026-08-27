@@ -146,7 +146,7 @@ function augment(){
   if(mutating)return;const list=[...document.querySelectorAll('#pdfLibraryGrid .pdf-library-card')];list.forEach(augmentCard);sortVisible(mode(),mode()!=='manual');
 }
 function ensureStyles(){if($('pdfLibraryOrderingStyles'))return;const style=document.createElement('style');style.id='pdfLibraryOrderingStyles';style.textContent=`
-.pdf-library-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;width:min(760px,100%)!important;margin-left:auto!important;align-items:stretch!important}.pdf-library-actions>.btn,.pdf-library-actions>.pdf-library-sort-control{width:100%!important;min-width:0!important;max-width:none!important;min-height:48px!important;height:48px!important;box-sizing:border-box!important}.pdf-library-actions>.btn{white-space:nowrap}.pdf-library-sort-control{display:flex;align-items:center;gap:8px;min-height:48px;padding:4px 10px;border:1px solid var(--border-color,#29445d);border-radius:12px;background:rgba(7,25,41,.55);color:var(--text-muted,#9fb2c6)}.pdf-library-sort-control span{font-size:.78rem;font-weight:750;white-space:nowrap}.pdf-library-sort-control select{flex:1;min-width:0;background:#071d2d;color:#e8f3ff;border:0;outline:0;font:inherit;font-weight:650}.pdf-library-sort-control--actions{padding-block:3px}.pdf-library-action-equal{min-height:48px!important;height:48px!important}.pdf-card-title-link{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:800;line-height:1.35;text-align:left;cursor:pointer}.pdf-card-title-link:hover,.pdf-card-title-link:focus-visible{color:var(--accent-color,#55ddd2);text-decoration:underline;text-underline-offset:3px;outline:none}.pdf-drag-hint{margin-left:8px;color:#6f8ca4;font-weight:900;letter-spacing:-2px;cursor:grab;user-select:none}.pdf-library-card[draggable="true"]{cursor:grab}.pdf-library-card.dragging{opacity:.55;cursor:grabbing}.pdf-library-card.drag-over{outline:2px solid var(--accent-color,#55ddd2);outline-offset:2px;transform:translateY(-2px)}@media(max-width:700px){.pdf-library-actions{display:flex!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;gap:9px!important;-webkit-overflow-scrolling:touch;scrollbar-width:thin}.pdf-library-actions>*{flex:0 0 150px!important;width:150px!important;min-width:150px!important}.pdf-library-sort-control--actions select{flex:1;min-width:0}.pdf-drag-hint{display:none}.pdf-library-card{cursor:default!important}}
+.pdf-library-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;width:min(760px,100%)!important;margin-left:auto!important;align-items:stretch!important}.pdf-library-actions>.btn,.pdf-library-actions>.pdf-library-sort-control,.pdf-library-actions>.pdf-library-view-toggle{width:100%!important;min-width:0!important;max-width:none!important;min-height:48px!important;height:48px!important;box-sizing:border-box!important}.pdf-library-actions>.btn{white-space:nowrap}.pdf-library-sort-control{display:flex;align-items:center;gap:8px;min-height:48px;padding:4px 10px;border:1px solid var(--border-color,#29445d);border-radius:12px;background:rgba(7,25,41,.55);color:var(--text-muted,#9fb2c6)}.pdf-library-sort-control span{font-size:.78rem;font-weight:750;white-space:nowrap}.pdf-library-sort-control select{flex:1;min-width:0;background:#071d2d;color:#e8f3ff;border:0;outline:0;font:inherit;font-weight:650}.pdf-library-sort-control--actions{padding-block:3px}.pdf-library-view-toggle--actions{align-self:stretch}.pdf-library-action-equal{min-height:48px!important;height:48px!important}.pdf-card-title-link{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:800;line-height:1.35;text-align:left;cursor:pointer}.pdf-card-title-link:hover,.pdf-card-title-link:focus-visible{color:var(--accent-color,#55ddd2);text-decoration:underline;text-underline-offset:3px;outline:none}.pdf-drag-hint{margin-left:8px;color:#6f8ca4;font-weight:900;letter-spacing:-2px;cursor:grab;user-select:none}.pdf-library-card[draggable="true"]{cursor:grab}.pdf-library-card.dragging{opacity:.55;cursor:grabbing}.pdf-library-card.drag-over{outline:2px solid var(--accent-color,#55ddd2);outline-offset:2px;transform:translateY(-2px)}@media(max-width:700px){.pdf-library-actions{display:flex!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;gap:9px!important;-webkit-overflow-scrolling:touch;scrollbar-width:thin}.pdf-library-actions>*{flex:0 0 150px!important;width:150px!important;min-width:150px!important}.pdf-library-sort-control--actions select{flex:1;min-width:0}.pdf-drag-hint{display:none}.pdf-library-card{cursor:default!important}}
 `;document.head.appendChild(style)}
 function findActionButton(predicate){return [...document.querySelectorAll('.pdf-library-actions button')].find(predicate)||null}
 function syncActionButtons(){
@@ -156,11 +156,21 @@ function syncActionButtons(){
   addBtn.classList.add('pdf-library-action-equal');
   addBtn.style.width='100%';addBtn.style.minWidth='0';
 }
+function placeLibraryViewToggle(){
+  const actions=document.querySelector('.pdf-library-actions'),viewToggle=$('pdfLibraryViewToggle');
+  if(!actions||!viewToggle)return false;
+  viewToggle.classList.add('pdf-library-view-toggle--actions');
+  if(viewToggle.parentElement!==actions||viewToggle!==actions.lastElementChild)actions.appendChild(viewToggle);
+  return true;
+}
 function placeSortControl(wrap){
   const actions=document.querySelector('.pdf-library-actions');
   if(!actions)return false;
   wrap.classList.add('pdf-library-sort-control--actions');
-  if(wrap.parentElement!==actions||wrap!==actions.lastElementChild)actions.appendChild(wrap);
+  const viewToggle=$('pdfLibraryViewToggle');
+  if(viewToggle?.parentElement===actions){
+    if(wrap.parentElement!==actions||wrap.nextElementSibling!==viewToggle)actions.insertBefore(wrap,viewToggle);
+  }else if(wrap.parentElement!==actions||wrap!==actions.lastElementChild)actions.appendChild(wrap);
   return true;
 }
 function ensureControl(){
@@ -169,7 +179,8 @@ function ensureControl(){
     wrap=document.createElement('label');wrap.id='pdfLibrarySortControl';wrap.className='pdf-library-sort-control';wrap.innerHTML='<span>Ordenar</span><select id="pdfLibrarySort" aria-label="Ordenação dos PDFs"><option value="manual">Manual</option><option value="number-asc">Numérica ↑</option><option value="number-desc">Numérica ↓</option><option value="alpha-asc">A–Z</option><option value="alpha-desc">Z–A</option></select>';
     if(!placeSortControl(wrap)){const anchor=$('pdfLibraryViewToggle')||$('pdfMateriaFilter');if(!anchor)return;anchor.insertAdjacentElement('afterend',wrap)}
     $('pdfLibrarySort').addEventListener('change',event=>{const next=setMode(event.target.value);sortVisible(next,true);if(next==='manual')status('Ordem manual ativa. Segure e arraste um PDF para reposicioná-lo.','ok');else status('Organizando e salvando a nova ordem…','warn')});
-  }else placeSortControl(wrap);
+  }
+  placeLibraryViewToggle();placeSortControl(wrap);
   $('pdfLibrarySort').value=mode();syncActionButtons();
 }
 function boot(){ensureControl();syncActionButtons();augment();const grid=$('pdfLibraryGrid');if(grid&&!grid.dataset.orderObserver){grid.dataset.orderObserver='1';new MutationObserver(()=>{if(mutating)return;requestAnimationFrame(()=>{ensureControl();syncActionButtons();augment()})}).observe(grid,{childList:true,subtree:true})}}
