@@ -1,0 +1,203 @@
+name: TEMP Apply v10.61 UI Cleanup
+
+on:
+  push:
+    branches:
+      - fix/calendar-overdue-library-select-v10.61.0
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: fix/calendar-overdue-library-select-v10.61.0
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+
+      - name: Apply requested UI cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8')
+          def write(path, text):
+              Path(path).write_text(text, encoding='utf-8')
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: esperado 1 ocorrência, encontrado {count}')
+              return text.replace(old, new, 1)
+
+          # 1) Cronograma: elimina tabs Hoje/Atrasadas/Próximas e fixa a visão em atrasadas.
+          path='public/index.html'
+          text=read(path)
+          text=replace_once(text,
+              '<span class="delayed-title">Revisões / Matérias Agendadas</span>',
+              '<span class="delayed-title">Matérias Atrasadas</span>',
+              'título do painel atrasadas')
+          tabs='''                <div class="filter-tabs">\n                    <button class="filter-tab active" data-inline-click="ih-011" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Hoje</button>\n                    <button class="filter-tab" data-inline-click="ih-012" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Atrasadas</button>\n                    <button class="filter-tab" data-inline-click="ih-013" data-dblclick-call="toggleDelayedItemsContainer" title="Duplo clique para expandir ou recolher a lista">Próximas</button>\n                </div>\n\n'''
+          if tabs not in text:
+              # Repositório usa CRLF em algumas revisões; normaliza somente para a operação.
+              tabs_crlf=tabs.replace('\n','\r\n')
+              if tabs_crlf not in text:
+                  raise SystemExit('bloco das abas do cronograma não encontrado')
+              text=text.replace(tabs_crlf,'',1)
+          else:
+              text=text.replace(tabs,'',1)
+
+          selection='''                    <div class="pdf-library-selection-row">\n                        <button class="btn btn-secondary" id="btnPdfSelectionMode" type="button" data-action="call" data-call="PdfStudyLibraryUI.toggleSelectionMode">Selecionar</button>\n                    </div>\n'''
+          if selection not in text:
+              selection_crlf=selection.replace('\n','\r\n')
+              if selection_crlf not in text:
+                  raise SystemExit('linha antiga do botão Selecionar não encontrada')
+              text=text.replace(selection_crlf,'',1)
+          else:
+              text=text.replace(selection,'',1)
+          write(path,text)
+
+          # 2) Core: remove o estado/função das tabs e mostra exclusivamente datas anteriores a hoje.
+          path='public/js/app-core.js'
+          text=read(path)
+          text=text.replace("        let currentDelayedFilter = 'hoje';\n",'',1)
+          old='''            // Atualização coordenada: calendário, abas Hoje/Atrasadas/Próximas,\n            // Meta Diária, Pomodoro, Horas por Matéria e Progresso Geral.\n            currentDelayedFilter = 'hoje';\n            document.querySelectorAll('.filter-tab').forEach((tb, idx) => tb.classList.toggle('active', idx === 0));\n'''
+          new='''            // Atualização coordenada: calendário, matérias atrasadas,\n            // Meta Diária, Pomodoro, Horas por Matéria e Progresso Geral.\n'''
+          if old not in text:
+              raise SystemExit('reset legado das abas do cronograma não encontrado')
+          text=text.replace(old,new,1)
+          pattern=r"\n        function filterDelayedList\(type, btn\) \{\n            currentDelayedFilter = type;\n            document\.querySelectorAll\('\.filter-tab'\)\.forEach\(tb => tb\.classList\.remove\('active'\)\);\n            if \(btn\) btn\.classList\.add\('active'\);\n            renderDelayedPanel\(\);\n        \}\n"
+          text,n=re.subn(pattern,'\n',text,count=1)
+          if n!=1:
+              raise SystemExit(f'filterDelayedList: esperado remover 1 bloco, removidos {n}')
+          old='''            const displayList = scheduleWithPending.filter(group => {\n                if (!group.items.length) return false;\n                if (currentDelayedFilter === 'hoje') return group.date === todayStr;\n                if (currentDelayedFilter === 'atrasadas') return group.date < todayStr;\n                if (currentDelayedFilter === 'proximas') return group.date > todayStr;\n                return false;\n            });\n\n            if (displayList.length === 0) {\n                container.innerHTML = '<p class="runtime-empty-inline runtime-empty-inline-strong">Nenhum item agendado para esta aba.</p>';\n'''
+          new='''            const displayList = scheduleWithPending.filter(group =>\n                group.items.length && group.date < todayStr\n            );\n\n            if (displayList.length === 0) {\n                container.innerHTML = '<p class="runtime-empty-inline runtime-empty-inline-strong">Nenhuma matéria atrasada.</p>';\n'''
+          if old not in text:
+              raise SystemExit('filtro legado Hoje/Atrasadas/Próximas não encontrado')
+          text=text.replace(old,new,1)
+          write(path,text)
+
+          # 3) Mapa de handlers: apaga os três handlers das tabs removidas.
+          path='public/js/app-ui.js'
+          text=read(path)
+          for line in [
+              "            'ih-011': function(event) { filterDelayedList('hoje', this) },\n",
+              "            'ih-012': function(event) { filterDelayedList('atrasadas', this) },\n",
+              "            'ih-013': function(event) { filterDelayedList('proximas', this) },\n",
+          ]:
+              if line not in text:
+                  raise SystemExit(f'handler legado não encontrado: {line.strip()}')
+              text=text.replace(line,'',1)
+          write(path,text)
+
+          # 4) Export global obsoleto.
+          path='public/js/app-pwa.js'
+          text=read(path)
+          export_line='        window.filterDelayedList = filterDelayedList;\n'
+          if export_line not in text:
+              raise SystemExit('export filterDelayedList não encontrado')
+          text=text.replace(export_line,'',1)
+          write(path,text)
+
+          # 5) Biblioteca Offline: Selecionar imediatamente antes de Enviar.
+          path='public/js/pdf/pdf-offline-library-ui.js'
+          text=read(path)
+          text=replace_once(text,
+              '#pdfOfflineSyncBtn,#pdfOfflineCancelBtn{',
+              '#btnPdfSelectionMode,#pdfOfflineSyncBtn,#pdfOfflineCancelBtn{',
+              'estilo dos botões offline')
+          old='<div class="pdf-offline-actions"><button class="btn btn-secondary primary" id="pdfOfflineSyncBtn" type="button">Enviar</button><button class="btn btn-secondary" id="pdfOfflineCancelBtn" type="button">Cancelar fila</button></div>'
+          new='<div class="pdf-offline-actions"><button class="btn btn-secondary" id="btnPdfSelectionMode" type="button" data-action="call" data-call="PdfStudyLibraryUI.toggleSelectionMode">Selecionar</button><button class="btn btn-secondary primary" id="pdfOfflineSyncBtn" type="button">Enviar</button><button class="btn btn-secondary" id="pdfOfflineCancelBtn" type="button">Cancelar fila</button></div>'
+          text=replace_once(text,old,new,'ações da Biblioteca Offline')
+          write(path,text)
+
+          # 6) Remove CSS legado da linha própria do Selecionar.
+          path='public/js/pdf/pdf-library-layout-fix.js'
+          text=read(path)
+          for block in [
+          '''\n  .pdf-library-selection-row {\n    display:flex!important;\n    justify-content:flex-end!important;\n    align-items:center!important;\n    width:100%!important;\n    margin:2px 0 8px!important;\n  }\n  .pdf-library-selection-row #btnPdfSelectionMode {\n    min-width:138px!important;\n    min-height:44px!important;\n  }\n''',
+          '''\n  .pdf-library-selection-row{display:flex!important;justify-content:flex-end!important;width:100%!important;margin:2px 0 8px!important;}\n  .pdf-library-selection-row #btnPdfSelectionMode{min-width:132px!important;min-height:44px!important;}\n''']:
+              if block not in text:
+                  raise SystemExit('CSS legado de pdf-library-selection-row não encontrado')
+              text=text.replace(block,'\n',1)
+          write(path,text)
+
+          # 7) Contratos de regressão acompanham a nova estrutura.
+          path='tests/library-controls-v10.60.test.cjs'
+          text=read(path)
+          old="""test('Selecionar fica imediatamente antes da área de seleção e da grade de PDFs',()=>{\n  const select=index.indexOf('id=\"btnPdfSelectionMode\"');\n  const bulk=index.indexOf('id=\"pdfBulkToolbar\"');\n  const grid=index.indexOf('id=\"pdfLibraryGrid\"');\n  assert.ok(select>=0&&bulk>select&&grid>bulk);\n  assert.match(index,/class=\"pdf-library-selection-row\"/);\n  const heroStart=index.indexOf('class=\"pdf-library-actions\"');\n  const filtersStart=index.indexOf('class=\"pdf-library-filters\"');\n  assert.ok(select>filtersStart&&select>heroStart);\n});\n"""
+          new="""test('Selecionar fica imediatamente antes de Enviar na Biblioteca Offline',()=>{\n  assert.doesNotMatch(index,/id=\"btnPdfSelectionMode\"/);\n  assert.doesNotMatch(index,/pdf-library-selection-row/);\n  const select=offlineUi.indexOf('id=\"btnPdfSelectionMode\"');\n  const send=offlineUi.indexOf('id=\"pdfOfflineSyncBtn\"');\n  const cancel=offlineUi.indexOf('id=\"pdfOfflineCancelBtn\"');\n  assert.ok(select>=0&&send>select&&cancel>send);\n});\n"""
+          if old not in text:
+              raise SystemExit('teste legado de posição do Selecionar não encontrado')
+          text=text.replace(old,new,1)
+          write(path,text)
+
+          path='tests/library-desktop-single-row-layout.test.cjs'
+          text=read(path)
+          old="test('Selecionar possui linha própria junto à grade',()=>{assert.match(layout,/pdf-library-selection-row/);assert.match(layout,/btnPdfSelectionMode/)});\n"
+          new="test('layout não mantém linha própria obsoleta para Selecionar',()=>{assert.doesNotMatch(layout,/pdf-library-selection-row/);assert.doesNotMatch(layout,/btnPdfSelectionMode/)});\n"
+          if old not in text:
+              raise SystemExit('teste legado do layout de Selecionar não encontrado')
+          text=text.replace(old,new,1)
+          write(path,text)
+
+          # Novo contrato específico do painel de atrasadas.
+          Path('tests/calendar-overdue-only-v10.61.test.cjs').write_text('''const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst path=require('node:path');\nconst root=path.resolve(__dirname,'..');\nconst index=fs.readFileSync(path.join(root,'public/index.html'),'utf8');\nconst core=fs.readFileSync(path.join(root,'public/js/app-core.js'),'utf8');\nconst ui=fs.readFileSync(path.join(root,'public/js/app-ui.js'),'utf8');\nconst pwa=fs.readFileSync(path.join(root,'public/js/app-pwa.js'),'utf8');\n\ntest('Cronograma exibe painel Matérias Atrasadas sem tabs de período',()=>{\n  assert.match(index,/class="delayed-title">Matérias Atrasadas<\\/span>/);\n  assert.doesNotMatch(index,/class="filter-tabs"/);\n  assert.doesNotMatch(index,/>Hoje<\\/button>/);\n  assert.doesNotMatch(index,/>Atrasadas<\\/button>/);\n  assert.doesNotMatch(index,/>Próximas<\\/button>/);\n});\n\ntest('painel atrasado não mantém estado nem handlers das tabs removidas',()=>{\n  assert.doesNotMatch(core,/currentDelayedFilter/);\n  assert.doesNotMatch(core,/function filterDelayedList/);\n  assert.doesNotMatch(ui,/filterDelayedList/);\n  assert.doesNotMatch(ui,/'ih-011'|'ih-012'|'ih-013'/);\n  assert.doesNotMatch(pwa,/window\\.filterDelayedList/);\n});\n\ntest('painel filtra somente matérias com data anterior a hoje',()=>{\n  assert.match(core,/group\\.items\\.length && group\\.date < todayStr/);\n  assert.match(core,/Nenhuma matéria atrasada\\./);\n});\n''',encoding='utf-8')
+
+          # Higiene final explícita dos elementos removidos.
+          merged='\n'.join(read(p) for p in ['public/index.html','public/js/app-core.js','public/js/app-ui.js','public/js/app-pwa.js'])
+          for forbidden in ['currentDelayedFilter','filterDelayedList']:
+              if forbidden in merged:
+                  raise SystemExit(f'referência obsoleta remanescente: {forbidden}')
+          if 'pdf-library-selection-row' in read('public/index.html') or 'pdf-library-selection-row' in read('public/js/pdf/pdf-library-layout-fix.js'):
+              raise SystemExit('linha própria obsoleta do Selecionar ainda presente')
+          PY
+
+      - name: Bump release identity to v10.61.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release-version.mjs 10.61.0
+          python3 <<'PY'
+          from pathlib import Path
+          import json
+          # app-assets mantém identidade própria além do release-version.mjs.
+          p=Path('config/app-assets.json')
+          data=json.loads(p.read_text(encoding='utf-8'))
+          if 'version' in data: data['version']='10.61.0'
+          p.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          # Cache-busters/version comments dos loaders precisam acompanhar a release.
+          for name in ['public/js/app-pwa.js','public/js/app-state.js']:
+              q=Path(name); t=q.read_text(encoding='utf-8'); t=t.replace('10.60.0','10.61.0'); q.write_text(t,encoding='utf-8')
+          PY
+
+      - name: Validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/index.js
+          npm test
+          npm run audit
+
+      - name: Commit cleaned implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/temp-apply-v10.61-ui-cleanup.yml
+          git config user.name 'dellteixeira'
+          git config user.email '111660903+dellteixeira@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(ui): focar cronograma em atrasadas e alinhar seleção'
+          git push origin HEAD:fix/calendar-overdue-library-select-v10.61.0
