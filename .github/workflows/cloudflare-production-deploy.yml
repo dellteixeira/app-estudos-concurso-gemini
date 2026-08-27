@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows: ["Quality Check"]
     types: [completed]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
