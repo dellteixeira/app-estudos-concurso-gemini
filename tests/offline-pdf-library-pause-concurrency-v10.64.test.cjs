@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 const manager = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-manager.js'), 'utf8');
 const packageVersion = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
 
-test('Fase 7 permanece na linha canônica 10.64.x', () => {
+test('Fase 7 aceita patches da linha canônica 10.64.x', () => {
   assert.match(packageVersion, /^10\.64\.\d+$/);
 });
 
