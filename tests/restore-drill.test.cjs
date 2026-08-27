@@ -47,7 +47,7 @@ test('drill apaga payload antes de publicar somente relatório', () => {
   assert.match(workflow, /rm -rf restore-drill/);
   assert.match(workflow, /path:\s*safe-report\/restore-drill-report\.txt/);
   assert.doesNotMatch(workflow, /path:\s*restore-drill\//);
-  assert.match(workflow, /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/);
+  assert.match(workflow, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
 });
 
 test('novos backups não criam manifesto autorreferente', () => {
