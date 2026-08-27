@@ -5,7 +5,7 @@ const MODES=new Set(['opened','favorites','all']);
 const MIN_FREE_RESERVE_BYTES=256*1024*1024;
 const FREE_RESERVE_RATIO=0.20;
 const SETTINGS_PREFIX='pdfOfflineLibrarySettings:';
-let running=false,paused=false,cancelled=false,queue=[],completed=0,failed=0,lastError='',runGeneration=0;
+let running=false,paused=false,cancelled=false,queue=[],completed=0,failed=0,lastError='',runGeneration=0,resumeTimer=0;
 const activeDownloads=new Map();
 
 function diagnostic(scope,error,level='warn'){
@@ -60,6 +60,27 @@ function connectionStatus(settings){
   return{allowed,supported:true,reason:allowed?'':`Fila pausada: conexão atual detectada como ${type}; aguardando Wi-Fi.`};
 }
 function connectionAllowed(settings){return connectionStatus(settings).allowed}
+function schedulePolicyResume(reason='connection-change',delay=350){
+  if(resumeTimer)return false;
+  resumeTimer=global.setTimeout(async()=>{
+    resumeTimer=0;
+    if(running){schedulePolicyResume(reason,350);return}
+    if(!paused)return;
+    try{
+      const s=await getSettings();
+      if(s.mode==='opened')return;
+      if(!global.navigator.onLine){lastError='Fila pausada: dispositivo offline.';emit('paused',{reason:lastError});return}
+      const network=connectionStatus(s);
+      if(s.wifiOnly&&!network.allowed){lastError=network.reason||'Fila pausada: aguardando Wi-Fi.';emit('paused',{reason:lastError});return}
+      paused=false;lastError='';emit('resuming',{reason});
+      await syncCurrentPolicy();
+    }catch(error){
+      const message=error?.message||'Falha ao retomar a Biblioteca Offline após mudança de conexão.';
+      lastError=message;diagnostic('Retomada da política offline',error,'error');emit('resume-error',{reason:message});
+    }
+  },Math.max(0,Number(delay)||0));
+  return true;
+}
 async function listTargets(mode){
   if(mode==='opened')return[];
   if(!global.navigator.onLine)throw new Error('Conecte-se à internet para preparar novos PDFs offline.');
@@ -189,17 +210,26 @@ async function start(mode){
 }
 function cancel(){
   cancelled=true;paused=false;queue=[];
+  if(resumeTimer){global.clearTimeout?.(resumeTimer);resumeTimer=0}
   const activeIds=[...activeDownloads.keys()];
   for(const entry of activeDownloads.values()){try{entry.controller?.abort()}catch(error){diagnostic('Falha ao abortar download em andamento',error)}}
   emit('cancelled',{activeIds});return true;
 }
 async function syncCurrentPolicy(){const s=await getSettings();return start(s.mode)}
 async function setMode(mode){if(!MODES.has(mode))throw new Error('Modo offline inválido.');return start(mode)}
-async function setWifiOnly(value){return saveSettings({wifiOnly:!!value})}
+async function setWifiOnly(value){
+  const settings=await saveSettings({wifiOnly:!!value});
+  if(!settings.wifiOnly&&paused)schedulePolicyResume('wifi-only-disabled',0);
+  return settings;
+}
 async function getStatus(){const settings=await getSettings();return{...getStateSync(),settings,budget:await budget(),connection:connectionStatus(settings)}}
 
-// Retoma políticas gerenciadas quando a rede retorna, sem atuar no modo "opened".
-global.addEventListener('online',()=>{getSettings().then(s=>{if(s.mode!=='opened'&&!running)setTimeout(()=>syncCurrentPolicy().catch(error=>{const reason=error?.message||'Falha ao retomar a Biblioteca Offline após reconexão.';diagnostic('Retomada após reconexão',error,'error');emit('resume-error',{reason})}),1200)}).catch(error=>{const reason=error?.message||'Falha ao ler a política offline após reconexão.';diagnostic('Leitura da política após reconexão',error,'error');emit('resume-error',{reason})})});
+// Retoma políticas gerenciadas após reconexão real ou mudança do tipo de rede.
+global.addEventListener('online',()=>schedulePolicyResume('online',1200));
+try{
+  const connection=global.navigator?.connection;
+  connection?.addEventListener?.('change',()=>{if(paused)schedulePolicyResume('connection-change',250)});
+}catch(error){diagnostic('Não foi possível observar mudanças no tipo de conexão',error)}
 
 global.PdfOfflineLibraryManager=Object.freeze({getSettings,setMode,setWifiOnly,start,cancel,syncCurrentPolicy,getStatus,preflight,bytesLabel,connectionStatus});
 try{global.dispatchEvent(new CustomEvent('pdf-offline-library-manager-ready'))}catch(error){diagnostic('Falha ao anunciar inicialização do gerenciador',error)}
