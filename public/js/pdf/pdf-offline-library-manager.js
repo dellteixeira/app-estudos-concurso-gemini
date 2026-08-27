@@ -6,6 +6,8 @@ const MIN_FREE_RESERVE_BYTES=256*1024*1024;
 const FREE_RESERVE_RATIO=0.20;
 const SETTINGS_PREFIX='pdfOfflineLibrarySettings:';
 let running=false,paused=false,cancelled=false,queue=[],completed=0,failed=0,lastError='',runGeneration=0,resumeTimer=0;
+let runStorageRemaining=Number.POSITIVE_INFINITY;
+let storageCommitGate=Promise.resolve();
 const activeDownloads=new Map();
 
 function diagnostic(scope,error,level='warn'){
@@ -134,6 +136,28 @@ async function persistOfflineBlob(userId,doc,blob){
   }
   return{stored:true,backend:'legacy'};
 }
+function withStorageCommitGate(task){
+  const next=storageCommitGate.then(task,task);
+  storageCommitGate=next.catch(()=>{});
+  return next;
+}
+async function persistOfflineBlobWithinBudget(userId,doc,blob,runId){
+  return withStorageCommitGate(async()=>{
+    assertRunActive(runId);
+    const current=await budget();
+    assertRunActive(runId);
+    const actualBytes=Math.max(0,Number(blob?.size)||0);
+    const liveBudget=Number.isFinite(current.appBudget)?current.appBudget:Number.POSITIVE_INFINITY;
+    const runBudget=Number.isFinite(runStorageRemaining)?runStorageRemaining:Number.POSITIVE_INFINITY;
+    const allowedBytes=Math.min(liveBudget,runBudget);
+    if(Number.isFinite(allowedBytes)&&actualBytes>allowedBytes){
+      throw new Error(`Sem espaço seguro para ${doc.title||doc.original_file_name||'este PDF'}: o arquivo real possui ${bytesLabel(actualBytes)} e há ${bytesLabel(allowedBytes)} disponíveis sem consumir a reserva do dispositivo.`);
+    }
+    const stored=await persistOfflineBlob(userId,doc,blob);
+    if(Number.isFinite(runStorageRemaining))runStorageRemaining=Math.max(0,runStorageRemaining-actualBytes);
+    return stored;
+  });
+}
 async function fetchManagedBlob(doc,signal){
   if(global.PdfStudyLibrary?.createSignedUrl&&typeof global.fetch==='function'){
     const signedUrl=await global.PdfStudyLibrary.createSignedUrl(doc,180);
@@ -158,7 +182,7 @@ async function downloadOne(doc,runId){
     if(!blob?.size)throw new Error('O PDF baixado está vazio.');
     const u=await user();if(!u?.id)throw new Error('Sessão inválida ao salvar o PDF offline.');
     assertRunActive(runId);
-    const stored=await persistOfflineBlob(u.id,doc,blob);
+    const stored=await persistOfflineBlobWithinBudget(u.id,doc,blob,runId);
     assertRunActive(runId);
     return{blob,stored};
   }finally{
@@ -196,6 +220,8 @@ async function start(mode){
   if(!check.ok){lastError=check.reason;emit('blocked',{reason:check.reason,plan:check.plan});return{...check,mode}}
   await ensurePersistence();
   queue=[...check.plan.pending];completed=0;failed=0;cancelled=false;paused=false;lastError='';activeDownloads.clear();
+  runStorageRemaining=check.budget.appBudget;
+  storageCommitGate=Promise.resolve();
   if(!queue.length){emit('complete',{message:'Todos os PDFs desta política já estão disponíveis offline.'});return{mode,queued:0,already:check.plan.already}}
   const runId=++runGeneration;
   running=true;emit('start',{mode,queued:queue.length,totalBytes:check.plan.totalBytes,already:check.plan.already});
