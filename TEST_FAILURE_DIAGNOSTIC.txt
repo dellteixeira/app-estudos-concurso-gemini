@@ -1,500 +1,249 @@
-  type: 'test'
-  ...
-# Subtest: v10.25.4 informa ao usuário quando Gemini ou fallback respondeu
-ok 560 - v10.25.4 informa ao usuário quando Gemini ou fallback respondeu
-  ---
----
-  duration_ms: 1.518027
-  type: 'test'
-  ...
-# Subtest: v10.25.4 informa ao usuário quando Gemini ou fallback respondeu
-ok 560 - v10.25.4 informa ao usuário quando Gemini ou fallback respondeu
-  ---
-  duration_ms: 0.25276
-  type: 'test'
-  ...
-# Subtest: v10.25.4 usa Gemini 3.6 Flash
-ok 561 - v10.25.4 usa Gemini 3.6 Flash
-  ---
----
-  duration_ms: 0.25276
-  type: 'test'
-  ...
-# Subtest: v10.25.4 usa Gemini 3.6 Flash
-ok 561 - v10.25.4 usa Gemini 3.6 Flash
-  ---
-  duration_ms: 1.244878
-  type: 'test'
-  ...
-# Subtest: modelo manual continua protegido por fallback
-ok 562 - modelo manual continua protegido por fallback
-  ---
----
-  duration_ms: 1.244878
-  type: 'test'
-  ...
-# Subtest: modelo manual continua protegido por fallback
-ok 562 - modelo manual continua protegido por fallback
-  ---
-  duration_ms: 0.203579
-  type: 'test'
-  ...
-# Subtest: falha das IAs usa gerador local determinístico
-ok 563 - falha das IAs usa gerador local determinístico
-  ---
----
-  duration_ms: 0.203579
-  type: 'test'
-  ...
-# Subtest: falha das IAs usa gerador local determinístico
-ok 563 - falha das IAs usa gerador local determinístico
-  ---
-  duration_ms: 0.98274
-  type: 'test'
-  ...
-# Subtest: v10.25.7 inicia fallback antecipado sem reduzir o teto do Gemini
-ok 564 - v10.25.7 inicia fallback antecipado sem reduzir o teto do Gemini
-  ---
----
-  duration_ms: 0.98274
-  type: 'test'
-  ...
-# Subtest: v10.25.7 inicia fallback antecipado sem reduzir o teto do Gemini
-ok 564 - v10.25.7 inicia fallback antecipado sem reduzir o teto do Gemini
-  ---
-  duration_ms: 1.198732
-  type: 'test'
-  ...
-# Subtest: v10.25.7 registra sucesso falha e seleção com latência por provedor
-ok 565 - v10.25.7 registra sucesso falha e seleção com latência por provedor
-  ---
----
-  duration_ms: 1.198732
-  type: 'test'
-  ...
-# Subtest: v10.25.7 registra sucesso falha e seleção com latência por provedor
-ok 565 - v10.25.7 registra sucesso falha e seleção com latência por provedor
-  ---
-  duration_ms: 0.266236
-  type: 'test'
-  ...
-# Subtest: v10.25.7 preserva fallback determinístico
-ok 566 - v10.25.7 preserva fallback determinístico
-  ---
----
-  duration_ms: 0.266236
-  type: 'test'
-  ...
-# Subtest: v10.25.7 preserva fallback determinístico
-ok 566 - v10.25.7 preserva fallback determinístico
-  ---
-  duration_ms: 0.167011
-  type: 'test'
-  ...
-# Subtest: v10.25.7 percorre múltiplos candidates e parts do Gemini
-ok 567 - v10.25.7 percorre múltiplos candidates e parts do Gemini
-  ---
----
-  duration_ms: 0.167011
-  type: 'test'
-  ...
-# Subtest: v10.25.7 percorre múltiplos candidates e parts do Gemini
-ok 567 - v10.25.7 percorre múltiplos candidates e parts do Gemini
-  ---
-  duration_ms: 1.68586
-  type: 'test'
-  ...
-# Subtest: v10.25.7 recupera JSON simples malformado sem inventar conteúdo
-ok 568 - v10.25.7 recupera JSON simples malformado sem inventar conteúdo
-  ---
----
-  duration_ms: 1.68586
-  type: 'test'
-  ...
-# Subtest: v10.25.7 recupera JSON simples malformado sem inventar conteúdo
-ok 568 - v10.25.7 recupera JSON simples malformado sem inventar conteúdo
-  ---
-  duration_ms: 0.264402
-  type: 'test'
-  ...
-# Subtest: v10.25.7 registra estrutura segura e finishReason sem conteúdo bruto
-ok 569 - v10.25.7 registra estrutura segura e finishReason sem conteúdo bruto
-  ---
----
-  duration_ms: 0.264402
-  type: 'test'
-  ...
-# Subtest: v10.25.7 registra estrutura segura e finishReason sem conteúdo bruto
-ok 569 - v10.25.7 registra estrutura segura e finishReason sem conteúdo bruto
-  ---
-  duration_ms: 0.450559
-  type: 'test'
-  ...
-# Subtest: v10.25.7 mantém hedge e fallbacks existentes
-ok 570 - v10.25.7 mantém hedge e fallbacks existentes
-  ---
----
-  duration_ms: 0.450559
-  type: 'test'
-  ...
-# Subtest: v10.25.7 mantém hedge e fallbacks existentes
-ok 570 - v10.25.7 mantém hedge e fallbacks existentes
-  ---
-  duration_ms: 0.275323
-  type: 'test'
-  ...
-# Subtest: v10.25.7 preserves Gemini normal and compact output budgets
-ok 571 - v10.25.7 preserves Gemini normal and compact output budgets
-  ---
----
-  duration_ms: 0.275323
-  type: 'test'
-  ...
-# Subtest: v10.25.7 preserves Gemini normal and compact output budgets
-ok 571 - v10.25.7 preserves Gemini normal and compact output budgets
-  ---
-  duration_ms: 4.061513
-  type: 'test'
-  ...
-# Subtest: v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON
-ok 572 - v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON
-  ---
----
-  duration_ms: 4.061513
-  type: 'test'
-  ...
-# Subtest: v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON
-ok 572 - v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON
-  ---
-  duration_ms: 0.265273
-  type: 'test'
-  ...
-# Subtest: v10.25.7 keeps hedge and fallback intact
-ok 573 - v10.25.7 keeps hedge and fallback intact
-  ---
----
-  duration_ms: 0.265273
-  type: 'test'
-  ...
-# Subtest: v10.25.7 keeps hedge and fallback intact
-ok 573 - v10.25.7 keeps hedge and fallback intact
-  ---
-  duration_ms: 0.260125
-  type: 'test'
-  ...
-# Subtest: v10.25.7 logs retry without source content
-ok 574 - v10.25.7 logs retry without source content
-  ---
----
-  duration_ms: 0.260125
-  type: 'test'
-  ...
-# Subtest: v10.25.7 logs retry without source content
-ok 574 - v10.25.7 logs retry without source content
-  ---
-  duration_ms: 0.320377
-  type: 'test'
-  ...
-# Subtest: V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
-ok 575 - V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
-  ---
----
-  duration_ms: 0.320377
-  type: 'test'
-  ...
-# Subtest: V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
-ok 575 - V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
-  ---
-  duration_ms: 3.53922
-  type: 'test'
-  ...
-# Subtest: v10.26 builds deterministic evidence before asking AI
-ok 576 - v10.26 builds deterministic evidence before asking AI
-  ---
----
-  duration_ms: 3.53922
-  type: 'test'
-  ...
-# Subtest: v10.26 builds deterministic evidence before asking AI
-ok 576 - v10.26 builds deterministic evidence before asking AI
-  ---
-  duration_ms: 1.321971
-  type: 'test'
-  ...
-# Subtest: v10.26 uses structured output and low thinking
-ok 577 - v10.26 uses structured output and low thinking
-  ---
----
-  duration_ms: 1.321971
-  type: 'test'
-  ...
-# Subtest: v10.26 uses structured output and low thinking
-ok 577 - v10.26 uses structured output and low thinking
-  ---
-  duration_ms: 0.205813
-  type: 'test'
-  ...
-# Subtest: v10.26 validates source grounding and rejects weak questions
-ok 578 - v10.26 validates source grounding and rejects weak questions
-  ---
----
-  duration_ms: 0.205813
-  type: 'test'
-  ...
-# Subtest: v10.26 validates source grounding and rejects weak questions
-ok 578 - v10.26 validates source grounding and rejects weak questions
-  ---
-  duration_ms: 0.308765
-  type: 'test'
-  ...
-# Subtest: v10.26 preserves hedge and deterministic fallback
-ok 579 - v10.26 preserves hedge and deterministic fallback
-  ---
----
-  duration_ms: 0.308765
-  type: 'test'
-  ...
-# Subtest: v10.26 preserves hedge and deterministic fallback
-ok 579 - v10.26 preserves hedge and deterministic fallback
-  ---
-  duration_ms: 0.179525
-  type: 'test'
-  ...
-# Subtest: canonical version is synchronized across package, manifest, Worker and Service Worker
-ok 580 - canonical version is synchronized across package, manifest, Worker and Service Worker
-  ---
----
-  duration_ms: 0.179525
-  type: 'test'
-  ...
-# Subtest: canonical version is synchronized across package, manifest, Worker and Service Worker
-ok 580 - canonical version is synchronized across package, manifest, Worker and Service Worker
-  ---
-  duration_ms: 1.321831
-  type: 'test'
-  ...
-# Subtest: novos módulos JavaScript compilam sem erro de sintaxe
-ok 581 - novos módulos JavaScript compilam sem erro de sintaxe
-  ---
----
-  duration_ms: 1.321831
-  type: 'test'
-  ...
-# Subtest: novos módulos JavaScript compilam sem erro de sintaxe
-ok 581 - novos módulos JavaScript compilam sem erro de sintaxe
-  ---
-  duration_ms: 2.7336
-  type: 'test'
-  ...
-# Subtest: ordem manual de PDFs é persistida com isolamento por usuário
-ok 582 - ordem manual de PDFs é persistida com isolamento por usuário
-  ---
----
-  duration_ms: 2.7336
-  type: 'test'
-  ...
-# Subtest: ordem manual de PDFs é persistida com isolamento por usuário
-ok 582 - ordem manual de PDFs é persistida com isolamento por usuário
-  ---
-  duration_ms: 0.981418
-  type: 'test'
-  ...
-# Subtest: Biblioteca usa sort_order como ordem canônica e persiste subconjunto visível
-ok 583 - Biblioteca usa sort_order como ordem canônica e persiste subconjunto visível
-  ---
----
-  duration_ms: 0.981418
-  type: 'test'
-  ...
-# Subtest: Biblioteca usa sort_order como ordem canônica e persiste subconjunto visível
-ok 583 - Biblioteca usa sort_order como ordem canônica e persiste subconjunto visível
-  ---
-  duration_ms: 0.284119
-  type: 'test'
-  ...
-# Subtest: atalho oferece ordem manual numérica e alfabética
-ok 584 - atalho oferece ordem manual numérica e alfabética
-  ---
----
-  duration_ms: 0.284119
-  type: 'test'
-  ...
-# Subtest: atalho oferece ordem manual numérica e alfabética
-ok 584 - atalho oferece ordem manual numérica e alfabética
-  ---
-  duration_ms: 0.484382
-  type: 'test'
-  ...
-# Subtest: arrastar PDF troca a ordem canônica para manual e salva
-ok 585 - arrastar PDF troca a ordem canônica para manual e salva
-  ---
----
-  duration_ms: 0.484382
-  type: 'test'
-  ...
-# Subtest: arrastar PDF troca a ordem canônica para manual e salva
-ok 585 - arrastar PDF troca a ordem canônica para manual e salva
-  ---
-  duration_ms: 0.262548
-  type: 'test'
-  ...
-# Subtest: título do PDF vira atalho para abrir e botão Visualizar é removido da interface renderizada
-ok 586 - título do PDF vira atalho para abrir e botão Visualizar é removido da interface renderizada
-  ---
----
-  duration_ms: 0.262548
-  type: 'test'
-  ...
-# Subtest: título do PDF vira atalho para abrir e botão Visualizar é removido da interface renderizada
-ok 586 - título do PDF vira atalho para abrir e botão Visualizar é removido da interface renderizada
-  ---
-  duration_ms: 0.225239
-  type: 'test'
-  ...
-# Subtest: abertura do PDF repete falhas transitórias e possui fallback por URL assinada
-ok 587 - abertura do PDF repete falhas transitórias e possui fallback por URL assinada
-  ---
----
-  duration_ms: 0.225239
-  type: 'test'
-  ...
-# Subtest: abertura do PDF repete falhas transitórias e possui fallback por URL assinada
-ok 587 - abertura do PDF repete falhas transitórias e possui fallback por URL assinada
-  ---
-  duration_ms: 0.424591
-  type: 'test'
-  ...
-# Subtest: módulo de ordenação integra o app shell offline
-ok 588 - módulo de ordenação integra o app shell offline
-  ---
----
-  duration_ms: 0.424591
-  type: 'test'
-  ...
-# Subtest: módulo de ordenação integra o app shell offline
-ok 588 - módulo de ordenação integra o app shell offline
-  ---
-  duration_ms: 0.203479
-  type: 'test'
-  ...
-# Subtest: batch3 removes seven static inline visual states and later batches may reduce further
-ok 589 - batch3 removes seven static inline visual states and later batches may reduce further
-  ---
----
-  duration_ms: 0.203479
-  type: 'test'
-  ...
-# Subtest: batch3 removes seven static inline visual states and later batches may reduce further
-ok 589 - batch3 removes seven static inline visual states and later batches may reduce further
-  ---
-  duration_ms: 5.400736
-  type: 'test'
-  ...
-# Subtest: batch3 JS uses semantic visibility
-ok 590 - batch3 JS uses semantic visibility
-  ---
----
-  duration_ms: 5.400736
-  type: 'test'
-  ...
-# Subtest: batch3 JS uses semantic visibility
-ok 590 - batch3 JS uses semantic visibility
-  ---
-  duration_ms: 4.008574
-  type: 'test'
-  ...
-# Subtest: visual-state helper is installed before auth bootstrap
-ok 591 - visual-state helper is installed before auth bootstrap
-  ---
----
-  duration_ms: 4.008574
-  type: 'test'
-  ...
-# Subtest: visual-state helper is installed before auth bootstrap
-ok 591 - visual-state helper is installed before auth bootstrap
-  ---
-  duration_ms: 0.398922
-  type: 'test'
-  ...
-# Subtest: semantic CSS preserves visual modes
-ok 592 - semantic CSS preserves visual modes
-  ---
----
-  duration_ms: 0.398922
-  type: 'test'
-  ...
-# Subtest: semantic CSS preserves visual modes
-ok 592 - semantic CSS preserves visual modes
-  ---
-  duration_ms: 2.510084
-  type: 'test'
-  ...
-# Subtest: UI exposes semantic visual-state helper
-ok 593 - UI exposes semantic visual-state helper
-  ---
----
-  duration_ms: 2.510084
-  type: 'test'
-  ...
-# Subtest: UI exposes semantic visual-state helper
-ok 593 - UI exposes semantic visual-state helper
-  ---
-  duration_ms: 1.726645
-  type: 'test'
-  ...
-# Subtest: modal overlay has semantic open state
-ok 594 - modal overlay has semantic open state
-  ---
----
-  duration_ms: 1.726645
-  type: 'test'
-  ...
-# Subtest: modal overlay has semantic open state
-ok 594 - modal overlay has semantic open state
-  ---
-  duration_ms: 1.027743
-  type: 'test'
-  ...
-# Subtest: migrated app-ui modals do not mutate style.display
-ok 595 - migrated app-ui modals do not mutate style.display
-  ---
----
-  duration_ms: 1.027743
-  type: 'test'
-  ...
-# Subtest: migrated app-ui modals do not mutate style.display
-ok 595 - migrated app-ui modals do not mutate style.display
-  ---
-  duration_ms: 1.449268
-  type: 'test'
-  ...
-# Subtest: repository has no temporary workflows committed
-ok 596 - repository has no temporary workflows committed
-  ---
----
-  duration_ms: 1.449268
-  type: 'test'
-  ...
-# Subtest: repository has no temporary workflows committed
-ok 596 - repository has no temporary workflows committed
-  ---
-  duration_ms: 1.611841
-  type: 'test'
-  ...
-# Subtest: Cloudflare workflow deploys the validated SHA and verifies exact production identity
-ok 597 - Cloudflare workflow deploys the validated SHA and verifies exact production identity
-  ---
----
-  duration_ms: 1.611841
-  type: 'test'
-  ...
-# Subtest: Cloudflare workflow deploys the validated SHA and verifies exact production identity
-ok 597 - Cloudflare workflow deploys the validated SHA and verifies exact production identity
-  ---
-  duration_ms: 0.385879
-  type: 'test'
   ...
-1..597
+# Subtest: filtros restantes distribuem igualmente a largura
+not ok 82 - filtros restantes distribuem igualmente a largura
+  ---
+  duration_ms: 2.274509
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/library-action-alignment.test.cjs:10:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input was expected to not match the regular expression /pdfAssuntoFilter/. Input:
+    
+    '(function(global){\n' +
+      "'use strict';\n" +
+      'const $=id=>document.getElementById(id);\n' +
+      "const modeLabels={opened:'Apenas PDFs que eu abrir',favorites:'PDFs favoritos',all:'Biblioteca inteira'};\n" +
+      'let lastRender=0;\n' +
+      '\n' +
+      'function css(){\n' +
+      "  if($('pdfOfflineManagerStyles'))return;\n" +
+      "  const style=document.createElement('style');style.id='pdfOfflineManagerStyles';style.textContent=`\n" +
+      '/* Desktop: três filtros ocupam igualmente toda a largura útil da Biblioteca.\n' +
+      '   Mobile: mantém uma única linha com rolagem horizontal e alvos confortáveis. */\n' +
+      '.pdf-library-filters{display:flex!important;grid-template-columns:none!important;flex-wrap:nowrap!important;align-items:stretch;gap:10px;width:100%!important;overflow-x:hidden;overflow-y:hidden;padding-bottom:6px;scrollbar-width:thin}\n' +
+      '.pdf-library-filters>*{flex:1 1 0!important;min-width:0!important;width:0!important;scroll-snap-align:start}\n' +
+      '.pdf-library-filters #pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfMateriaFilter{flex:1 1 0!important;width:0!important;min-width:0!important}\n' +
+      '.pdf-library-filters::-webkit-scrollbar{height:6px}.pdf-library-filters::-webkit-scrollbar-thumb{background:rgba(148,163,184,.28);border-radius:999px}.pdf-library-filters::-webkit-scrollbar-track{background:transparent}\n' +
+      '\n' +
+      '.pdf-offline-manager{grid-column:1/-1;width:100%;border:1px solid var(--border-color,#29445d);border-radius:14px;background:rgba(7,25,41,.72);padding:13px 14px;display:grid;gap:11px;color:var(--text-color,#e8f3ff)}\n' +
+      '.pdf-offline-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.pdf-offline-head strong{font-size:.95rem}.pdf-offline-head small{display:block;color:var(--text-muted,#9fb2c6);margin-top:3px;line-height:1.35}.pdf-offline-badge{font-size:.72rem;padding:5px 8px;border-radius:999px;background:rgba(85,221,210,.14);color:var(--accent-color,#55ddd2);white-space:nowrap}\n' +
+      '.pdf-offline-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.pdf-offline-option{position:relative}.pdf-offline-option input{position:absolute;opacity:0;pointer-events:none}.pdf-offline-option span{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px;border:1px solid var(--border-color,#29445d);border-radius:10px;text-align:center;font-size:.78rem;font-weight:700;cursor:pointer;background:rgba(4,18,31,.56)}.pdf-offline-option input:checked+span{border-color:var(--accent-color,#55ddd2);background:rgba(85,221,210,.15);color:var(--accent-color,#55ddd2)}\n' +
+      '/* Controles offline também permanecem em uma única linha. */\n' +
+      '.pdf-offline-controls{display:flex;flex-wrap:nowrap;align-items:center;gap:9px;overflow-x:auto;overflow-y:hidden;padding-bottom:6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;scrollbar-width:thin}\n' +
+      '.pdf-offline-controls>*{flex:0 0 auto;scroll-snap-align:start}.pdf-offline-controls select{width:100%;min-height:44px;border-radius:9px;background:#071d2d;color:#e8f3ff;border:1px solid var(--border-color,#29445d);padding:0 9px}.pdf-offline-wifi{display:flex;align-items:center;gap:7px;min-height:44px;padding:0 4px;font-size:.78rem;color:var(--text-muted,#9fb2c6);white-space:nowrap}.pdf-offline-wifi input{width:18px;height:18px}.pdf-offline-storage{font-size:.76rem;color:var(--text-muted,#9fb2c6);white-space:nowrap;padding:0 4px}\n' +
+      '.pdf-offline-controls::-webkit-scrollbar{height:6px}.pdf-offline-controls::-webkit-scrollbar-thumb{background:rgba(148,163,184,.28);border-radius:999px}.pdf-offline-controls::-webkit-scrollbar-track{background:transparent}\n' +
+      '.pdf-offline-progress{height:7px;border-radius:999px;background:rgba(148,163,184,.16);overflow:hidden}.pdf-offline-progress span{display:block;height:100%;background:var(--accent-color,#55ddd2);width:0;transition:width .2s ease}.pdf-offline-status{font-size:.78rem;color:var(--text-muted,#9fb2c6);min-height:18px}.pdf-offline-actions{display:flex;flex-wrap:nowrap;gap:7px}.pdf-offline-actions button{min-height:44px;height:44px;white-space:nowrap;min-width:118px;width:118px}#pdfOfflineSyncBtn,#pdfOfflineCancelBtn{background:transparent!important;color:var(--text-color,#e8f3ff)!important;border:1px solid var(--border-color,#29445d)!important;box-shadow:none!important}\n' +
+      '@media(max-width:700px){.pdf-library-filters{gap:9px;margin-inline:0;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain}.pdf-library-filters>*{flex:0 0 auto!important;width:auto!important}.pdf-library-filters #pdfLibrarySearch{width:220px!important;min-width:220px!important}.pdf-library-filters #pdfLibraryScope{width:190px!important;min-width:190px!important}.pdf-library-filters #pdfMateriaFilter{width:200px!important;min-width:200px!important}.pdf-offline-manager{padding:12px;border-radius:12px}.pdf-offline-head{display:block}.pdf-offline-badge{display:inline-block;margin-top:7px}.pdf-offline-options{grid-template-columns:1fr}.pdf-offline-option span{justify-content:flex-start;text-align:left;min-height:46px;padding:10px 12px}.pdf-offline-controls{gap:8px}.pdf-offline-storage{max-width:none}.pdf-offline-actions button{min-height:44px;min-width:116px}.pdf-offline-actions button{height:44px;width:116px}}\n' +
+      '`;document.head.appendChild(style);\n' +
+      '}\n' +
+      "function anchor(){return $('pdfLibraryViewToggle')||$('pdfLibrarySortControl')||$('pdfAssuntoFilter')?.parentElement||$('pdfLibraryGrid')}\n" +
+      'async function mount(){\n' +
+      '  if(!global.PdfOfflineLibraryManager)return;\n' +
+      '  css();\n' +
+      "  let panel=$('pdfOfflineManager');\n" +
+      '  if(!panel){\n' +
+      "    panel=document.createElement('section');panel.id='pdfOfflineManager';panel.className='pdf-offline-manager';panel.setAttribute('aria-label','Biblioteca Offline Gerenciada');\n" +
+      '    panel.innerHTML=`<div class="pdf-offline-head"><div><strong>Biblioteca Offline</strong><small>Escolha quais PDFs devem ficar disponíveis neste dispositivo.</small></div><span id="pdfOfflineBackend" class="pdf-offline-badge">Verificando…</span></div>\n' +
+      '    <div class="pdf-offline-options" role="radiogroup" aria-label="Modo offline">\n' +
+===== NEXT FAILURE =====
+  ...
+# Subtest: mobile usa concorrência unitária e limite conservador
+not ok 139 - mobile usa concorrência unitária e limite conservador
+  ---
+  duration_ms: 1.763634
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-pdf-library-phase3.test.cjs:16:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /DEFAULT_LIMIT_MB_MOBILE=2048/. Input:
+    
+    '(function(global){\n' +
+      "'use strict';\n" +
+      '\n' +
+      "const MODES=new Set(['opened','favorites','all']);\n" +
+      'const MIN_FREE_RESERVE_BYTES=256*1024*1024;\n' +
+      'const FREE_RESERVE_RATIO=0.20;\n' +
+      "const SETTINGS_PREFIX='pdfOfflineLibrarySettings:';\n" +
+      "let running=false,paused=false,cancelled=false,queue=[],completed=0,failed=0,current=null,lastError='';\n" +
+      '\n' +
+      "const isMobile=()=>{try{return global.matchMedia?.('(max-width: 700px)')?.matches||/Android|iPhone|iPad|iPod/i.test(global.navigator?.userAgent||'')}catch(_){return false}};\n" +
+      'const sleep=ms=>new Promise(r=>setTimeout(r,ms));\n' +
+      'const bytesLabel=n=>{n=Math.max(0,Number(n)||0);if(n<1024*1024)return `${Math.round(n/1024)} KB`;if(n<1024*1024*1024)return `${(n/1024/1024).toFixed(n>=100*1024*1024?0:1)} MB`;return `${(n/1024/1024/1024).toFixed(1)} GB`};\n' +
+      '\n' +
+      'async function user(){return global.PdfStudyCore?.getAuthenticatedUser?.()||null}\n' +
+      'function settingsKey(userId){return `${SETTINGS_PREFIX}${userId}`}\n' +
+      "function defaults(){return{mode:'opened',wifiOnly:false,updatedAt:Date.now()}}\n" +
+      'async function getSettings(){\n' +
+      '  const u=await user();if(!u?.id)return defaults();\n' +
+      "  try{const raw=JSON.parse(localStorage.getItem(settingsKey(u.id))||'null');const legacy=raw&&typeof raw==='object'?{...raw}:{};delete legacy.limitMb;return{...defaults(),...legacy}}catch(_){return defaults()}\n" +
+      '}\n' +
+      'async function saveSettings(next){\n' +
+      '  const u=await user();if(!u?.id)return defaults();\n' +
+      '  const current=await getSettings();const value={...current,...next,mode:MODES.has(next?.mode)?next.mode:current.mode,updatedAt:Date.now()};delete value.limitMb;\n' +
+      '  try{localStorage.setItem(settingsKey(u.id),JSON.stringify(value))}catch(_){}\n' +
+      "  emit('settings',value);return value;\n" +
+      '}\n' +
+      "function emit(type,detail={}){try{global.dispatchEvent(new CustomEvent('pdf-offline-library',{detail:{type,...detail,state:getStateSync()}}))}catch(_){} }\n" +
+      "function getStateSync(){return{running,paused,cancelled,total:queue.length+completed+failed,remaining:queue.length,completed,failed,currentId:current?.id||'',lastError}}\n" +
+      'async function capabilities(){\n' +
+      '  if(global.PdfLibraryOfflineAdapter?.capabilities)return global.PdfLibraryOfflineAdapter.capabilities();\n' +
+      "  return global.PdfStudyLibrary?.getOfflineCapabilities?.()||global.OfflinePdfStore?.capabilities?.()||{storage:{usage:0,quota:0,available:0,usageRatio:0},persistence:{supported:false,persisted:false},preferredBackend:'none'};\n" +
+      '}\n' +
+      'async function budget(){\n' +
+      '  const [caps,s]=await Promise.all([capabilities(),getSettings()]);\n' +
+      '  const quota=Number(caps?.storage?.quota||0),usage=Number(caps?.storage?.usage||0),available=Math.max(0,Number(caps?.storage?.available||quota-usage||0));\n' +
+      '  const reserve=Math.max(MIN_FREE_RESERVE_BYTES,Math.floor(quota*FREE_RESERVE_RATIO));\n' +
+===== NEXT FAILURE =====
+  ...
+# Subtest: três filtros dividem igualmente o desktop
+not ok 376 - três filtros dividem igualmente o desktop
+  ---
+  duration_ms: 2.543651
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/pdf-library-single-row-layout.test.cjs:3:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input was expected to not match the regular expression /pdfAssuntoFilter/. Input:
+    
+    '(function(global){\n' +
+      "'use strict';\n" +
+      'const $=id=>document.getElementById(id);\n' +
+      "const modeLabels={opened:'Apenas PDFs que eu abrir',favorites:'PDFs favoritos',all:'Biblioteca inteira'};\n" +
+      'let lastRender=0;\n' +
+      '\n' +
+      'function css(){\n' +
+      "  if($('pdfOfflineManagerStyles'))return;\n" +
+      "  const style=document.createElement('style');style.id='pdfOfflineManagerStyles';style.textContent=`\n" +
+      '/* Desktop: três filtros ocupam igualmente toda a largura útil da Biblioteca.\n' +
+      '   Mobile: mantém uma única linha com rolagem horizontal e alvos confortáveis. */\n' +
+      '.pdf-library-filters{display:flex!important;grid-template-columns:none!important;flex-wrap:nowrap!important;align-items:stretch;gap:10px;width:100%!important;overflow-x:hidden;overflow-y:hidden;padding-bottom:6px;scrollbar-width:thin}\n' +
+      '.pdf-library-filters>*{flex:1 1 0!important;min-width:0!important;width:0!important;scroll-snap-align:start}\n' +
+      '.pdf-library-filters #pdfLibrarySearch,.pdf-library-filters #pdfLibraryScope,.pdf-library-filters #pdfMateriaFilter{flex:1 1 0!important;width:0!important;min-width:0!important}\n' +
+      '.pdf-library-filters::-webkit-scrollbar{height:6px}.pdf-library-filters::-webkit-scrollbar-thumb{background:rgba(148,163,184,.28);border-radius:999px}.pdf-library-filters::-webkit-scrollbar-track{background:transparent}\n' +
+      '\n' +
+      '.pdf-offline-manager{grid-column:1/-1;width:100%;border:1px solid var(--border-color,#29445d);border-radius:14px;background:rgba(7,25,41,.72);padding:13px 14px;display:grid;gap:11px;color:var(--text-color,#e8f3ff)}\n' +
+      '.pdf-offline-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.pdf-offline-head strong{font-size:.95rem}.pdf-offline-head small{display:block;color:var(--text-muted,#9fb2c6);margin-top:3px;line-height:1.35}.pdf-offline-badge{font-size:.72rem;padding:5px 8px;border-radius:999px;background:rgba(85,221,210,.14);color:var(--accent-color,#55ddd2);white-space:nowrap}\n' +
+      '.pdf-offline-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.pdf-offline-option{position:relative}.pdf-offline-option input{position:absolute;opacity:0;pointer-events:none}.pdf-offline-option span{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px;border:1px solid var(--border-color,#29445d);border-radius:10px;text-align:center;font-size:.78rem;font-weight:700;cursor:pointer;background:rgba(4,18,31,.56)}.pdf-offline-option input:checked+span{border-color:var(--accent-color,#55ddd2);background:rgba(85,221,210,.15);color:var(--accent-color,#55ddd2)}\n' +
+      '/* Controles offline também permanecem em uma única linha. */\n' +
+      '.pdf-offline-controls{display:flex;flex-wrap:nowrap;align-items:center;gap:9px;overflow-x:auto;overflow-y:hidden;padding-bottom:6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain;scrollbar-width:thin}\n' +
+      '.pdf-offline-controls>*{flex:0 0 auto;scroll-snap-align:start}.pdf-offline-controls select{width:100%;min-height:44px;border-radius:9px;background:#071d2d;color:#e8f3ff;border:1px solid var(--border-color,#29445d);padding:0 9px}.pdf-offline-wifi{display:flex;align-items:center;gap:7px;min-height:44px;padding:0 4px;font-size:.78rem;color:var(--text-muted,#9fb2c6);white-space:nowrap}.pdf-offline-wifi input{width:18px;height:18px}.pdf-offline-storage{font-size:.76rem;color:var(--text-muted,#9fb2c6);white-space:nowrap;padding:0 4px}\n' +
+      '.pdf-offline-controls::-webkit-scrollbar{height:6px}.pdf-offline-controls::-webkit-scrollbar-thumb{background:rgba(148,163,184,.28);border-radius:999px}.pdf-offline-controls::-webkit-scrollbar-track{background:transparent}\n' +
+      '.pdf-offline-progress{height:7px;border-radius:999px;background:rgba(148,163,184,.16);overflow:hidden}.pdf-offline-progress span{display:block;height:100%;background:var(--accent-color,#55ddd2);width:0;transition:width .2s ease}.pdf-offline-status{font-size:.78rem;color:var(--text-muted,#9fb2c6);min-height:18px}.pdf-offline-actions{display:flex;flex-wrap:nowrap;gap:7px}.pdf-offline-actions button{min-height:44px;height:44px;white-space:nowrap;min-width:118px;width:118px}#pdfOfflineSyncBtn,#pdfOfflineCancelBtn{background:transparent!important;color:var(--text-color,#e8f3ff)!important;border:1px solid var(--border-color,#29445d)!important;box-shadow:none!important}\n' +
+      '@media(max-width:700px){.pdf-library-filters{gap:9px;margin-inline:0;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain}.pdf-library-filters>*{flex:0 0 auto!important;width:auto!important}.pdf-library-filters #pdfLibrarySearch{width:220px!important;min-width:220px!important}.pdf-library-filters #pdfLibraryScope{width:190px!important;min-width:190px!important}.pdf-library-filters #pdfMateriaFilter{width:200px!important;min-width:200px!important}.pdf-offline-manager{padding:12px;border-radius:12px}.pdf-offline-head{display:block}.pdf-offline-badge{display:inline-block;margin-top:7px}.pdf-offline-options{grid-template-columns:1fr}.pdf-offline-option span{justify-content:flex-start;text-align:left;min-height:46px;padding:10px 12px}.pdf-offline-controls{gap:8px}.pdf-offline-storage{max-width:none}.pdf-offline-actions button{min-height:44px;min-width:116px}.pdf-offline-actions button{height:44px;width:116px}}\n' +
+      '`;document.head.appendChild(style);\n' +
+      '}\n' +
+      "function anchor(){return $('pdfLibraryViewToggle')||$('pdfLibrarySortControl')||$('pdfAssuntoFilter')?.parentElement||$('pdfLibraryGrid')}\n" +
+      'async function mount(){\n' +
+      '  if(!global.PdfOfflineLibraryManager)return;\n' +
+      '  css();\n' +
+      "  let panel=$('pdfOfflineManager');\n" +
+      '  if(!panel){\n' +
+      "    panel=document.createElement('section');panel.id='pdfOfflineManager';panel.className='pdf-offline-manager';panel.setAttribute('aria-label','Biblioteca Offline Gerenciada');\n" +
+      '    panel.innerHTML=`<div class="pdf-offline-head"><div><strong>Biblioteca Offline</strong><small>Escolha quais PDFs devem ficar disponíveis neste dispositivo.</small></div><span id="pdfOfflineBackend" class="pdf-offline-badge">Verificando…</span></div>\n' +
+      '    <div class="pdf-offline-options" role="radiogroup" aria-label="Modo offline">\n' +
+===== NEXT FAILURE =====
+  ...
+# Subtest: Quality Check continua executando a suíte Playwright que inclui a Fase 4
+not ok 454 - Quality Check continua executando a suíte Playwright que inclui a Fase 4
+  ---
+  duration_ms: 0.999317
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase4-accessibility-contract.test.cjs:20:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /npm run test:browser/. Input:
+    
+    'name: Quality Check\n' +
+      '\n' +
+      'on:\n' +
+      '  push:\n' +
+      '    branches: [main]\n' +
+      '  pull_request:\n' +
+      '  workflow_dispatch:\n' +
+      '\n' +
+      'permissions:\n' +
+      '  contents: write\n' +
+      '\n' +
+      'jobs:\n' +
+      '  diagnose-library-tests:\n' +
+      "    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/library-controls-v10.60.0'\n" +
+      '    runs-on: ubuntu-24.04\n' +
+      '    steps:\n' +
+      '      - name: Checkout branch\n' +
+      '        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\n' +
+      '        with:\n' +
+      '          ref: fix/library-controls-v10.60.0\n' +
+      '          fetch-depth: 0\n' +
+      '      - name: Capture only failed TAP tests\n' +
+      '        shell: bash\n' +
+      '        run: |\n' +
+      '          set +e\n' +
+      '          npm test > /tmp/npm-test.log 2>&1\n' +
+      '          status=$?\n' +
+      '          set -e\n' +
+      "          python3 - <<'PY'\n" +
+      '          from pathlib import Path\n' +
+      '          import re\n' +
+      "          lines=Path('/tmp/npm-test.log').read_text(errors='replace').splitlines()\n" +
+      '          out=[]\n' +
+      "          failure_indexes=[i for i,line in enumerate(lines) if re.match(r'^not ok\\s+\\d+\\s+-\\s+', line)]\n" +
+      '          for i in failure_indexes:\n' +
+      '              out.extend(lines[max(0,i-2):min(len(lines),i+45)])\n' +
+===== NEXT FAILURE =====
+  ...
+# Subtest: Fase 3 integra Playwright ao status obrigatório test-and-audit
+not ok 455 - Fase 3 integra Playwright ao status obrigatório test-and-audit
+  ---
+  duration_ms: 2.450607
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/playwright-visual-contract.test.cjs:10:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /Browser responsive audit/. Input:
+    
+    'name: Quality Check\n' +
+      '\n' +
+      'on:\n' +
+      '  push:\n' +
+      '    branches: [main]\n' +
+      '  pull_request:\n' +
+      '  workflow_dispatch:\n' +
+      '\n' +
+      'permissions:\n' +
+      '  contents: write\n' +
+      '\n' +
+      'jobs:\n' +
+      '  diagnose-library-tests:\n' +
+      "    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/library-controls-v10.60.0'\n" +
+      '    runs-on: ubuntu-24.04\n' +
+      '    steps:\n' +
+      '      - name: Checkout branch\n' +
+      '        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\n' +
+      '        with:\n' +
+      '          ref: fix/library-controls-v10.60.0\n' +
+      '          fetch-depth: 0\n' +
+      '      - name: Capture only failed TAP tests\n' +
+      '        shell: bash\n' +
+      '        run: |\n' +
+      '          set +e\n' +
+      '          npm test > /tmp/npm-test.log 2>&1\n' +
+      '          status=$?\n' +
+      '          set -e\n' +
+      "          python3 - <<'PY'\n" +
+      '          from pathlib import Path\n' +
+      '          import re\n' +
+      "          lines=Path('/tmp/npm-test.log').read_text(errors='replace').splitlines()\n" +
+      '          out=[]\n' +
+      "          failure_indexes=[i for i,line in enumerate(lines) if re.match(r'^not ok\\s+\\d+\\s+-\\s+', line)]\n" +
+      '          for i in failure_indexes:\n' +
+      '              out.extend(lines[max(0,i-2):min(len(lines),i+45)])\n' +
+===== NEXT FAILURE =====
+===== SUMMARY =====
 # tests 597
 # suites 0
----
+# pass 592
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3043.68636
