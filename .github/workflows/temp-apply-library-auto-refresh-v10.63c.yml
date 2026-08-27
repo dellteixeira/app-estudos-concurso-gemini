@@ -1,0 +1,119 @@
+name: TEMP Apply Library Auto Refresh v10.63c
+
+on:
+  push:
+    branches:
+      - fix/library-auto-refresh-v10.63.0
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/library-auto-refresh-v10.63.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+      - name: Apply implementation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('public/index.html')
+          data = p.read_bytes()
+          marker = b'<button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.refresh">\xe2\x86\xbb Atualizar</button>'
+          if data.count(marker) != 1:
+              raise SystemExit(f'public/index.html: botão esperado 1x, encontrado {data.count(marker)}')
+          pos = data.find(marker)
+          start = data.rfind(b'\n', 0, pos) + 1
+          end = data.find(b'\n', pos)
+          end = len(data) if end == -1 else end + 1
+          p.write_bytes(data[:start] + data[end:])
+
+          p = Path('public/js/app-ai.js')
+          data = p.read_bytes()
+          old = b"            } else {\n                if (tabId === 'tab-edital') requestAnimationFrame(() => renderChart());\n"
+          new = """            } else if (tabId === 'tab-biblioteca') {
+                requestAnimationFrame(() => {
+                    Promise.resolve(window.PdfStudyLibraryUI?.onTabActivated?.())
+                        .catch(error => console.warn('Atualização automática da Biblioteca falhou:', error));
+                    if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
+                });
+            } else {
+                if (tabId === 'tab-edital') requestAnimationFrame(() => renderChart());
+""".encode('utf-8')
+          if data.count(old) != 1:
+              raise SystemExit(f'app-ai.js: âncora esperada 1x, encontrado {data.count(old)}')
+          p.write_bytes(data.replace(old, new, 1))
+
+          p = Path('public/js/pdf/pdf-library-ui.js')
+          data = p.read_bytes()
+          data, n = re.subn(rb"async function refreshLibrary\(\)\{state\.initializedFor='';await initialize\(true\)\}\r?\n", b'', data, count=1)
+          if n != 1:
+              raise SystemExit(f'pdf-library-ui.js: refreshLibrary esperado 1x, encontrado {n}')
+          old = b'Object.freeze({initialize,refresh:refreshLibrary,getCurrentContest:contest,onTabActivated:activateLibrary,'
+          new = b'Object.freeze({initialize,getCurrentContest:contest,onTabActivated:activateLibrary,'
+          if data.count(old) != 1:
+              raise SystemExit(f'pdf-library-ui.js: export manual esperado 1x, encontrado {data.count(old)}')
+          data = data.replace(old, new, 1)
+          old_msg = 'Falha temporária de conexão. Seus PDFs salvos não foram apagados. Tente atualizar a Biblioteca em alguns segundos.'.encode('utf-8')
+          new_msg = 'Falha temporária de conexão. Seus PDFs salvos não foram apagados. A Biblioteca será atualizada novamente ao ser aberta.'.encode('utf-8')
+          if data.count(old_msg) == 1:
+              data = data.replace(old_msg, new_msg, 1)
+          p.write_bytes(data)
+
+          for path in ['config/app-assets.json','package.json','public/version.json','public/sw.js','src/index.js','public/js/app-pwa.js']:
+              p = Path(path)
+              data = p.read_bytes()
+              if b'10.62.0' not in data:
+                  raise SystemExit(f'{path}: versão 10.62.0 não encontrada')
+              p.write_bytes(data.replace(b'10.62.0', b'10.63.0'))
+
+          Path('tests/library-auto-refresh-v10.63.test.cjs').write_text("""const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const read = path => fs.readFileSync(path, 'utf8');
+
+test('Biblioteca atualiza automaticamente ao ativar a guia e não expõe botão manual', () => {
+  const index = read('public/index.html');
+  const navigation = read('public/js/app-ai.js');
+  const library = read('public/js/pdf/pdf-library-ui.js');
+  assert.doesNotMatch(index, /PdfStudyLibraryUI\\.refresh/);
+  assert.doesNotMatch(index, />\\s*↻\\s*Atualizar\\s*</);
+  assert.match(navigation, /tabId === 'tab-biblioteca'/);
+  assert.match(navigation, /PdfStudyLibraryUI\\?\\.onTabActivated\\?\\.\\(\\)/);
+  assert.match(library, /onTabActivated:activateLibrary/);
+  assert.doesNotMatch(library, /refresh:refreshLibrary/);
+  assert.doesNotMatch(library, /function refreshLibrary/);
+});
+""", encoding='utf-8')
+
+          for temp in [
+              '.github/workflows/temp-inspect-library-auto-refresh-v10.63.yml',
+              '.github/workflows/temp-apply-library-auto-refresh-v10.63.yml',
+              '.github/workflows/temp-apply-library-auto-refresh-v10.63b.yml',
+              '.github/workflows/temp-apply-library-auto-refresh-v10.63c.yml'
+          ]:
+              Path(temp).unlink(missing_ok=True)
+          PY
+      - name: Validate
+        run: |
+          node --check src/index.js
+          node --check public/js/app-ai.js
+          node --check public/js/pdf/pdf-library-ui.js
+          npm test
+          npm run audit
+          git diff --check
+          ! grep -RniE 'PdfStudyLibraryUI\.refresh|↻ Atualizar' public/index.html public/js/pdf/pdf-library-ui.js
+      - name: Commit final implementation
+        run: |
+          git config user.name "dellteixeira"
+          git config user.email "111660903+dellteixeira@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(ui): atualizar Biblioteca automaticamente ao abrir"
+          git push origin HEAD:fix/library-auto-refresh-v10.63.0
