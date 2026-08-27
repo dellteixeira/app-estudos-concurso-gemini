@@ -25,7 +25,7 @@ function css(){
 @media(max-width:700px){.pdf-library-filters{gap:9px;margin-inline:0;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain}.pdf-library-filters>*{flex:0 0 auto!important;width:auto!important}.pdf-library-filters #pdfLibrarySearch{width:220px!important;min-width:220px!important}.pdf-library-filters #pdfLibraryScope{width:190px!important;min-width:190px!important}.pdf-library-filters #pdfMateriaFilter{width:200px!important;min-width:200px!important}.pdf-offline-manager{padding:12px;border-radius:12px}.pdf-offline-head{display:block}.pdf-offline-badge{display:inline-block;margin-top:7px}.pdf-offline-options{grid-template-columns:1fr}.pdf-offline-option span{justify-content:flex-start;text-align:left;min-height:46px;padding:10px 12px}.pdf-offline-controls{gap:8px}.pdf-offline-storage{max-width:none}.pdf-offline-actions button{min-height:44px;min-width:116px}.pdf-offline-actions button{height:44px;width:116px}}
 `;document.head.appendChild(style);
 }
-function anchor(){return $('pdfLibraryViewToggle')||$('pdfLibrarySortControl')||$('pdfAssuntoFilter')?.parentElement||$('pdfLibraryGrid')}
+function anchor(){return $('pdfLibraryViewToggle')||$('pdfLibrarySortControl')||$('pdfLibraryGrid')}
 async function mount(){
   if(!global.PdfOfflineLibraryManager)return;
   css();

@@ -73,7 +73,7 @@ async function buildQueue(mode){
 async function preflight(mode){
   const [plan,b]=await Promise.all([buildQueue(mode),budget()]);
   if(mode!=='opened'&&plan.totalBytes>b.appBudget&&Number.isFinite(b.appBudget)){
-    return{ok:false,reason:`Os PDFs pendentes somam ${bytesLabel(plan.totalBytes)}, mas o limite seguro disponível é ${bytesLabel(b.appBudget)}. Aumente o limite local ou libere espaço.`,plan,budget:b};
+    return{ok:false,reason:`Os PDFs pendentes somam ${bytesLabel(plan.totalBytes)}, mas o limite seguro disponível é ${bytesLabel(b.appBudget)}. Libere espaço no dispositivo.`,plan,budget:b};
   }
   return{ok:true,plan,budget:b};
 }
