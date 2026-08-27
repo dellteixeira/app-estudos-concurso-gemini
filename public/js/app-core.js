@@ -5791,8 +5791,30 @@ filterDataByConcurso();
             if (__renderDuration >= 16) recordLocalPerformance('measure', 'renderTable', __renderDuration);
         }
 
-        function toggleMateria(materiaName) { openMaterias[materiaName] = !openMaterias[materiaName]; renderTable(); }
-        function toggleAllAccordions(open) { editalItems.forEach(i => openMaterias[i.materia] = open); renderTable(); }
+        function syncAllGuidesToggleButton() {
+            const button = document.getElementById('toggleAllGuidesBtn');
+            if (!button) return;
+            const materias = [...new Set(editalItems.map(item => item.materia).filter(Boolean))];
+            const allOpen = materias.length > 0 && materias.every(materia => !!openMaterias[materia]);
+            button.textContent = allOpen ? 'Recolher Todas as Guias' : 'Expandir Todas as Guias';
+            button.setAttribute('aria-expanded', allOpen ? 'true' : 'false');
+        }
+
+        function toggleMateria(materiaName) {
+            openMaterias[materiaName] = !openMaterias[materiaName];
+            renderTable();
+            syncAllGuidesToggleButton();
+        }
+        function toggleAllAccordions(open) {
+            editalItems.forEach(i => openMaterias[i.materia] = open);
+            renderTable();
+            syncAllGuidesToggleButton();
+        }
+        function toggleAllGuides() {
+            const materias = [...new Set(editalItems.map(item => item.materia).filter(Boolean))];
+            const allOpen = materias.length > 0 && materias.every(materia => !!openMaterias[materia]);
+            toggleAllAccordions(!allOpen);
+        }
 
         async function updateMateriaPriority(materiaName, newPriority) {
             const val = clampMateriaPriority(newPriority);
