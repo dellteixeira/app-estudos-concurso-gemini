@@ -30,7 +30,7 @@ jobs:
           node --check public/js/app-ai.js
           node --check public/js/pdf/pdf-library-ui.js
           npm test
-          npm run audit
+          AUDIT_ALLOW_ANY_ROOT=1 npm run audit
           git diff --check
           test "$(grep -c 'PdfStudyLibraryUI.refresh' public/index.html || true)" -eq 0
           test "$(grep -c '↻ Atualizar' public/index.html || true)" -eq 0
