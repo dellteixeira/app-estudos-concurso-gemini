@@ -54,6 +54,13 @@ replaceOnce(
   fs.writeFileSync(path, source, 'utf8');
 }
 
+// Atualiza o teste legado que exigia o botão manual e passa a validar o novo contrato automático.
+replaceOnce(
+  'tests/pdf-library.test.cjs',
+  `assert.match(h,/data-action="call" data-call="PdfStudyLibraryUI\\.refresh"/);`,
+  `assert.doesNotMatch(h,/PdfStudyLibraryUI\\.refresh/);const a=read('public/js/app-ai.js');assert.match(a,/tabId === 'tab-biblioteca'/);assert.match(a,/PdfStudyLibraryUI\\?\\.onTabActivated\\?\\.\\(\\)/);`
+);
+
 // Sincroniza a identidade/cache da versão.
 for (const path of [
   'config/app-assets.json',
