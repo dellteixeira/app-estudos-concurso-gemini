@@ -48,7 +48,8 @@ test('módulo de dispositivo não substitui nem envolve PdfStudyLibrary',()=>{
 test('biblioteca offline persiste explicitamente no OPFS ou IndexedDB moderno',()=>{
   cp.execFileSync(process.execPath,['--check','public/js/pdf/pdf-offline-library-manager.js'],{stdio:'pipe'});
   assert.match(manager,/PdfLibraryOfflineAdapter\?\.put/);
-  assert.match(manager,/persistOfflineBlob\(u\.id,doc,blob\)/);
+  assert.match(manager,/persistOfflineBlobWithinBudget\(u\.id,doc,blob,runId\)/);
+  assert.match(manager,/const stored=await persistOfflineBlob\(userId,doc,blob\)/);
   assert.match(manager,/PdfLibraryOfflineAdapter\?\.has/);
   assert.match(manager,/O navegador não conseguiu reservar armazenamento local para este PDF/);
 });
