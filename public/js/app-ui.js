@@ -577,7 +577,6 @@
             'ih-013': function(event) { filterDelayedList('proximas', this) },
             'ih-014': function(event) { PdfStudyLibraryUI.onSearch(this.value) },
             'ih-015': function(event) { PdfStudyLibraryUI.onScopeChange(this.value) },
-            'ih-016': function(event) { PdfStudyLibraryUI.onWorkspaceFilterChange(this.value) },
             'ih-017': function(event) { PdfStudyLibraryUI.onMateriaFilterChange(this.value) },
             'ih-018': function(event) { PdfStudyLibraryUI.onAssuntoFilterChange(this.value) },
             'ih-019': function(event) { document.getElementById('flashcardsImportFile').click() },
