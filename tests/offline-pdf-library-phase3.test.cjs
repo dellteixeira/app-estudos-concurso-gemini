@@ -58,3 +58,13 @@ test('toolbar offline mantém todos os controles em uma única linha horizontal'
   assert.doesNotMatch(ui,/pdf-offline-actions/);
   assert.doesNotMatch(ui,/flex-wrap:wrap/);
 });
+
+test('Somente Wi-Fi distingue detecção suportada de navegador sem Network Information API',()=>{
+  assert.match(manager,/function connectionStatus\(settings\)/);
+  assert.match(manager,/supported:false/);
+  assert.match(manager,/não permite confirmar automaticamente se a conexão atual é Wi-Fi/);
+  assert.match(manager,/connection:connectionStatus\(settings\)/);
+  assert.match(manager,/wifi-detection-unavailable/);
+  assert.match(ui,/data\.connection\?\.supported===false/);
+  assert.match(ui,/Detecção automática de Wi-Fi indisponível neste navegador/);
+});
