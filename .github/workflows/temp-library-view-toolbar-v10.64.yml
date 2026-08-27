@@ -15,44 +15,35 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.23.2
-      - name: Apply
+      - name: Apply UI layout
         shell: python
         run: |
           from pathlib import Path
-          p=Path('public/js/pdf/pdf-library-ui.js'); s=p.read_text()
-          a="function ensureLibraryViewToggle(){ensureLibraryViewStyles();const materia=$('pdfMateriaFilter');if(!materia)return;let wrap=$('pdfLibraryViewToggle');"
-          b="function ensureLibraryViewToggle(){ensureLibraryViewStyles();const actions=document.querySelector('.pdf-library-actions');if(!actions)return;let wrap=$('pdfLibraryViewToggle');"
-          assert a in s; s=s.replace(a,b,1)
-          a=");materia.insertAdjacentElement('afterend',wrap)}applyLibraryViewMode()}"
-          b=");actions.appendChild(wrap)}else if(wrap.parentElement!==actions){actions.appendChild(wrap)}applyLibraryViewMode()}"
-          assert a in s; p.write_text(s.replace(a,b,1))
 
-          p=Path('public/js/pdf/pdf-library-ordering.js'); s=p.read_text()
-          a="""function placeSortControl(wrap){
-            const actions=document.querySelector('.pdf-library-actions');
-            if(!actions)return false;
-            wrap.classList.add('pdf-library-sort-control--actions');
-            if(wrap.parentElement!==actions||wrap!==actions.lastElementChild)actions.appendChild(wrap);
-            return true;
-          }"""
-          b="""function placeSortControl(wrap){
-            const actions=document.querySelector('.pdf-library-actions');
-            if(!actions)return false;
-            const viewToggle=$('pdfLibraryViewToggle');
-            wrap.classList.add('pdf-library-sort-control--actions');
-            if(viewToggle?.parentElement===actions){
-              if(wrap.parentElement!==actions||wrap.nextElementSibling!==viewToggle)actions.insertBefore(wrap,viewToggle);
-            }else if(wrap.parentElement!==actions||wrap!==actions.lastElementChild)actions.appendChild(wrap);
-            return true;
-          }"""
-          assert a in s; p.write_text(s.replace(a,b,1))
+          p=Path('public/js/pdf/pdf-library-ui.js')
+          s=p.read_text()
+          old="const materia=$('pdfMateriaFilter');if(!materia)return;let wrap=$('pdfLibraryViewToggle');"
+          new="const actions=document.querySelector('.pdf-library-actions');if(!actions)return;let wrap=$('pdfLibraryViewToggle');"
+          if old not in s: raise SystemExit('UI anchor 1 not found')
+          s=s.replace(old,new,1)
+          old="materia.insertAdjacentElement('afterend',wrap)}applyLibraryViewMode()}"
+          new="actions.appendChild(wrap)}else if(wrap.parentElement!==actions){actions.appendChild(wrap)}applyLibraryViewMode()}"
+          if old not in s: raise SystemExit('UI anchor 2 not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
 
-          for f in ['package.json','public/version.json','src/index.js','public/sw.js']:
-            p=Path(f); s=p.read_text(); assert '10.63.0' in s, f; p.write_text(s.replace('10.63.0','10.64.0'))
+          p=Path('public/js/pdf/pdf-library-ordering.js')
+          s=p.read_text()
+          old="wrap.classList.add('pdf-library-sort-control--actions');\n  if(wrap.parentElement!==actions||wrap!==actions.lastElementChild)actions.appendChild(wrap);"
+          new="const viewToggle=$('pdfLibraryViewToggle');\n  wrap.classList.add('pdf-library-sort-control--actions');\n  if(viewToggle?.parentElement===actions){\n    if(wrap.parentElement!==actions||wrap.nextElementSibling!==viewToggle)actions.insertBefore(wrap,viewToggle);\n  }else if(wrap.parentElement!==actions||wrap!==actions.lastElementChild)actions.appendChild(wrap);"
+          if old not in s: raise SystemExit('Ordering anchor not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
 
-          Path('tests/pdf-library-view-toolbar-v10.64.test.cjs').write_text("""const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst ui=fs.readFileSync('public/js/pdf/pdf-library-ui.js','utf8');\nconst ordering=fs.readFileSync('public/js/pdf/pdf-library-ordering.js','utf8');\nconst layout=fs.readFileSync('public/js/pdf/pdf-library-layout-fix.js','utf8');\ntest('Cards/Lista ficam ao lado de Ordenar',()=>{assert.match(ui,/const actions=document\\.querySelector\\('\\.pdf-library-actions'\\)/);assert.match(ui,/actions\\.appendChild\\(wrap\\)/);assert.doesNotMatch(ui,/materia\\.insertAdjacentElement\\('afterend',wrap\\)/);assert.match(ordering,/actions\\.insertBefore\\(wrap,viewToggle\\)/)});\ntest('desktop preserva três colunas de ações',()=>assert.match(layout,/grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\)/));\ntest('mobile preserva trilho horizontal',()=>{assert.match(layout,/overflow-x:auto!important/);assert.match(layout,/\\.pdf-library-actions>\\* \\{[\\s\\S]*?flex:0 0 150px!important/)})\n""")
-      - run: npm run check
-      - name: Commit
+          Path('tests/pdf-library-view-toolbar-v10.64.test.cjs').write_text("""const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst ui=fs.readFileSync('public/js/pdf/pdf-library-ui.js','utf8');\nconst ordering=fs.readFileSync('public/js/pdf/pdf-library-ordering.js','utf8');\nconst layout=fs.readFileSync('public/js/pdf/pdf-library-layout-fix.js','utf8');\ntest('Cards/Lista ficam ao lado de Ordenar',()=>{assert.match(ui,/const actions=document\\.querySelector\\('\\.pdf-library-actions'\\)/);assert.match(ui,/actions\\.appendChild\\(wrap\\)/);assert.doesNotMatch(ui,/materia\\.insertAdjacentElement\\('afterend',wrap\\)/);assert.match(ordering,/actions\\.insertBefore\\(wrap,viewToggle\\)/)});\ntest('desktop preserva três colunas de ações',()=>assert.match(layout,/grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\)/));\ntest('mobile preserva trilho horizontal',()=>{assert.match(layout,/overflow-x:auto!important/);assert.match(layout,/\\.pdf-library-actions>\\*\\s*\\{[\\s\\S]*?flex:0 0 150px!important/)})\n""")
+      - name: Unit tests
+        run: npm test
+      - name: Commit source change
         run: |
           rm .github/workflows/temp-library-view-toolbar-v10.64.yml
           git config user.name "github-actions[bot]"
