@@ -4,11 +4,14 @@ on:
   push:
     branches:
       - main
+      - fix/android-mobile-ui-v10.64.17
     paths:
       - '.github/workflows/android-phase2d-direct-distribution.yml'
       - 'android/app/build.gradle'
       - 'public/**'
       - 'scripts/migrate-android-phase1b.mjs'
+      - 'scripts/apply-android-mobile-hotfix.mjs'
+      - 'tests/**'
   workflow_dispatch:
 
 permissions:
@@ -21,8 +24,9 @@ jobs:
     env:
       ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
       ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
-      APP_VERSION: '10.64.16'
-      APP_VERSION_CODE: '106416'
+      APP_VERSION: '10.64.16-mobile.1'
+      APP_VERSION_CODE: '106417'
+      WEB_VERSION: '10.64.16'
       APP_PACKAGE: 'com.estudoadaptativo.app'
       RELEASE_TAG: 'v10.64.16'
 
@@ -81,15 +85,23 @@ jobs:
       - name: Prepare Worker-proxied vendor assets
         run: npm run android:prepare
 
+      - name: Apply Android mobile UI and branding hotfix
+        run: node scripts/apply-android-mobile-hotfix.mjs
+
       - name: Sync web assets into Android
         run: npx cap sync android
 
-      - name: Verify canonical release version
+      - name: Verify Android hotfix identity
         shell: bash
         run: |
           grep -q "versionCode $APP_VERSION_CODE" android/app/build.gradle
           grep -q "versionName \"$APP_VERSION\"" android/app/build.gradle
-          grep -q "\"version\": \"$APP_VERSION\"" public/version.json
+          grep -q "\"version\": \"$WEB_VERSION\"" public/version.json
+          grep -q 'android:icon="@drawable/estudo_adaptativo_launcher"' android/app/src/main/AndroidManifest.xml
+          grep -q 'android:roundIcon="@drawable/estudo_adaptativo_launcher"' android/app/src/main/AndroidManifest.xml
+          test -s android/app/src/main/res/drawable-nodpi/estudo_adaptativo_launcher.png
+          grep -q 'android-mobile-hotfix.css' public/index.html
+          grep -q 'android-mobile-hotfix.css' android/app/src/main/assets/public/index.html
 
       - name: Build signed APK
         working-directory: android
@@ -117,6 +129,7 @@ jobs:
           printf '%s\n' "$BADGING" | grep -q "package: name='$APP_PACKAGE'"
           printf '%s\n' "$BADGING" | grep -q "versionCode='$APP_VERSION_CODE'"
           printf '%s\n' "$BADGING" | grep -q "versionName='$APP_VERSION'"
+          unzip -l "$APK" | grep -q 'assets/public/css/android-mobile-hotfix.css'
           if find android/app/build/outputs -type f -name '*.aab' -print -quit | grep -q .; then
             echo 'AAB inesperado foi produzido; Phase 2D distribui somente APK.' >&2
             exit 1
@@ -133,15 +146,16 @@ jobs:
           cp android-release-signature.txt "$OUT/android-release-signature.txt"
 
           cat > "$OUT/INSTALL-ANDROID.txt" <<EOF
-          Estudo Adaptativo Inteligente v${APP_VERSION}
+          Estudo Adaptativo Inteligente ${APP_VERSION}
           Pacote: ${APP_PACKAGE}
           Version code: ${APP_VERSION_CODE}
+          Hotfix mobile: calendario, diagnostico, Cards/Lista e logo Android.
 
           INSTALACAO DIRETA NO APARELHO
           1. Transfira o arquivo ${FINAL} para o Android.
           2. Abra o APK no aparelho.
           3. Se solicitado, permita 'Instalar apps desconhecidos' somente para o app usado para abrir o APK.
-          4. Confirme a instalacao.
+          4. Confirme a atualizacao/instalacao.
           5. Abra o Estudo Adaptativo Inteligente.
 
           VALIDACAO VIA ADB (opcional)
@@ -157,7 +171,7 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           PACKAGE="com.estudoadaptativo.app"
-          APK="${1:-EstudoAdaptativo-v10.64.16-android-release.apk}"
+          APK="${1:-EstudoAdaptativo-v10.64.16-mobile.1-android-release.apk}"
           command -v adb >/dev/null
           adb get-state
           adb install -r "$APK"
@@ -181,9 +195,11 @@ jobs:
             "package": "${APP_PACKAGE}",
             "versionName": "${APP_VERSION}",
             "versionCode": ${APP_VERSION_CODE},
+            "webVersion": "${WEB_VERSION}",
             "format": "APK",
             "signed": true,
             "aabProduced": false,
+            "androidMobileHotfix": true,
             "sourceCommit": "${GITHUB_SHA}",
             "workflowRun": "${GITHUB_RUN_ID}",
             "permanentReleaseTag": "${RELEASE_TAG}"
@@ -193,12 +209,13 @@ jobs:
       - name: Upload direct distribution APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: EstudoAdaptativo-v10.64.16-direct-distribution-apk
+          name: EstudoAdaptativo-v10.64.16-mobile.1-direct-distribution-apk
           path: dist/android/direct/
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish permanent APK assets to canonical GitHub Release
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
