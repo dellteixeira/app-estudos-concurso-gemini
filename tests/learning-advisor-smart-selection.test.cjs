@@ -20,6 +20,16 @@ test('learning advisor supports 24h close without studying',()=>{
   assert.match(client,/snoozeTopic\(topicId,24\)/);
   assert.match(client,/if\(isSnoozed\(id\)\)return null/);
   assert.match(client,/Adiar não registra estudo nem altera a retenção/);
+  assert.match(client,/global\.buildRetentionDiagnostics=function advisorAwareRetentionDiagnostics/);
+  assert.match(client,/const keep=row=>!isSnoozed\(row\?\.state\?\.key\|\|''\)/);
+});
+
+test('AI recommendation is authoritative for the recommended local layer',()=>{
+  assert.match(client,/const ACTION_LAYER=\{active_recall:1,short_review:2,questions:3,focused_restudy:4\}/);
+  assert.match(client,/global\.getLayeredReviewPlan=function advisorAwareLayeredReviewPlan/);
+  assert.match(client,/recommendedLayer:layer/);
+  assert.match(client,/global\.__learningAdvisorLayerOverride=override/);
+  assert.match(client,/openLocalIntervention\(Number\(button\.dataset\.rowIndex\),intervention\)/);
 });
 
 test('backend selector is constrained to the four layered interventions',()=>{
