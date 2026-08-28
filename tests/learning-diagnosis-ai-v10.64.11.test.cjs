@@ -1,0 +1,14 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const worker=fs.readFileSync(path.join(root,'src/index.js'),'utf8');
+const advisor=fs.readFileSync(path.join(root,'public/js/learning-advisor.js'),'utf8');
+const critical=fs.readFileSync(path.join(root,'public/js/critical-points-actions.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'public/css/learning-advisor.css'),'utf8');
+const assets=JSON.parse(fs.readFileSync(path.join(root,'config/app-assets.json'),'utf8'));
+test('backend expõe diagnóstico autenticado com fallback local',()=>{assert.match(worker,/async function learningDiagnosis\(request, env\)/);assert.match(worker,/\/api\/ai\/learning-diagnosis/);assert.match(worker,/authenticateSupabaseUser\(request, env\)/);assert.match(worker,/localLearningIntervention/);assert.match(worker,/aiUsed: false, provider: "local"/)});
+test('advisor possui fallback local real, análise individual e escolha manual',()=>{assert.match(advisor,/function localIntervention\(candidate\)/);assert.match(advisor,/function analyzeTopic\(topicId,rowIndex=null\)/);assert.match(advisor,/const payload=localPayload\(candidates/);assert.match(advisor,/data-learning-action="manual-method"/);assert.match(advisor,/Método escolhido manualmente pelo estudante/)});
+test('ponto crítico oferece Consultar IA junto com estudar e adiar',()=>{assert.match(critical,/ai\.textContent='Consultar IA'/);assert.match(critical,/AppLearningAdvisor\.analyzeTopic/);assert.match(critical,/study\.textContent='Estudar agora'/);assert.match(critical,/snoozeButton\.textContent='Adiar 24h'/);assert.match(css,/\.critical-point-ai/)});
+test('versão e assets permanecem sincronizados',()=>{assert.equal(JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version,'10.64.11');assert.equal(assets.version,'10.64.11');for(const route of ['/js/learning-advisor.js','/js/critical-points-actions.js']){assert.ok(assets.criticalAppShell.includes(route));assert.ok(assets.networkFirstPaths.includes(route));assert.ok(assets.workerNoStorePaths.includes(route))}});
