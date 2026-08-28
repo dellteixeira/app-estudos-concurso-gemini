@@ -18,4 +18,8 @@ test('grupo de ações atravessa a coluna de conteúdo até o fim do card',()=>{
   assert.match(css,/white-space:nowrap !important/);
 });
 
-test('promoção estrutural usa a versão 10.64.15',()=>assert.equal(pkg.version,'10.64.15'));
+test('release canônica não regride abaixo da correção estrutural 10.64.15',()=>{
+  const match=String(pkg.version||'').match(/^10\.64\.(\d+)$/);
+  assert.ok(match,'versão deve permanecer na linha canônica 10.64.x');
+  assert.ok(Number(match[1])>=15,`patch ${match[1]} não pode regredir abaixo de 15`);
+});
