@@ -1,13 +1,56 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 
-// 1) Load native runtime before every deferred app/vendor script.
+const LEGACY_BRIDGE_ROUTE = '/js/android-capacitor-bridge.js';
+const LEGACY_BRIDGE_FILE = 'public/js/android-capacitor-bridge.js';
+const RUNTIME_ROUTE = '/capacitor-runtime.js';
+const RUNTIME_FILE = 'public/capacitor-runtime.js';
+
+function stripLegacyBridgeReferences(text) {
+  return text
+    .replace(/^\s*<script\b[^>]*\bsrc=["'][^"']*android-capacitor-bridge\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*\n?/gim, '')
+    .replace(/['"](?:\.\/|\/)?js\/android-capacitor-bridge\.js(?:\?[^'"]*)?['"]\s*,?\s*/g, '');
+}
+
+// 0) Self-heal any residue left by an older Phase 1B implementation.
+{
+  if (fs.existsSync(LEGACY_BRIDGE_FILE)) {
+    fs.rmSync(LEGACY_BRIDGE_FILE);
+  }
+
+  const indexFile = 'public/index.html';
+  let index = fs.readFileSync(indexFile, 'utf8');
+  index = stripLegacyBridgeReferences(index);
+  fs.writeFileSync(indexFile, index);
+
+  const manifestFile = 'config/app-assets.json';
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  for (const [key, value] of Object.entries(manifest)) {
+    if (!Array.isArray(value)) continue;
+    manifest[key] = value.filter((entry) => {
+      const normalized = String(entry || '').split('?')[0];
+      return normalized !== LEGACY_BRIDGE_ROUTE && !normalized.endsWith('/android-capacitor-bridge.js');
+    });
+  }
+  fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  for (const file of ['public/sw.js', 'public/_headers', 'src/index.js']) {
+    let text = fs.readFileSync(file, 'utf8');
+    text = stripLegacyBridgeReferences(text)
+      .replace(/^\/js\/android-capacitor-bridge\.js\s*\n(?:\s+Cache-Control:[^\n]*\n)?/gim, '');
+    fs.writeFileSync(file, text);
+  }
+}
+
+// 1) Load the canonical native runtime before every deferred app/vendor script.
 {
   const file = 'public/index.html';
   let text = fs.readFileSync(file, 'utf8');
-  if (!text.includes('./capacitor-runtime.js')) {
-    text = text.replace('    <script src="./pwa-update.js" defer></script>', '    <script src="./capacitor-runtime.js" defer></script>\n    <script src="./pwa-update.js" defer></script>');
-  }
+  text = text.replace(/^\s*<script\b[^>]*\bsrc=["'][^"']*capacitor-runtime\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*\n?/gim, '');
+  const runtimeTag = '    <script src="./capacitor-runtime.js" defer></script>';
+  const pivot = '    <script src="./pwa-update.js" defer></script>';
+  if (!text.includes(pivot)) throw new Error('Não foi possível localizar pwa-update.js em public/index.html.');
+  text = text.replace(pivot, `${runtimeTag}\n${pivot}`);
   fs.writeFileSync(file, text);
 }
 
@@ -15,13 +58,13 @@ import fs from 'node:fs';
 {
   const file = 'config/app-assets.json';
   const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const route = '/capacitor-runtime.js';
   for (const key of ['criticalAppShell', 'networkFirstPaths', 'workerNoStorePaths', 'headersNoStorePaths']) {
     const list = manifest[key];
-    if (!list.includes(route)) {
-      const pivot = list.indexOf('/pwa-update.js');
-      list.splice(pivot >= 0 ? pivot + 1 : 0, 0, route);
-    }
+    if (!Array.isArray(list)) throw new Error(`Lista ${key} ausente em config/app-assets.json.`);
+    const clean = list.filter((entry) => String(entry || '').split('?')[0] !== RUNTIME_ROUTE);
+    const pivot = clean.indexOf('/pwa-update.js');
+    clean.splice(pivot >= 0 ? pivot + 1 : 0, 0, RUNTIME_ROUTE);
+    manifest[key] = clean;
   }
   fs.writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
 }
@@ -79,4 +122,18 @@ import fs from 'node:fs';
   fs.writeFileSync(file, text);
 }
 
-console.log('Android Phase 1B migration applied.');
+// 6) Fail fast if any legacy bridge residue survived the migration.
+{
+  const files = ['public/index.html', 'config/app-assets.json', 'public/sw.js', 'public/_headers', 'src/index.js'];
+  for (const file of files) {
+    const text = fs.readFileSync(file, 'utf8');
+    if (/android-capacitor-bridge\.js/i.test(text)) {
+      throw new Error(`Resíduo legado android-capacitor-bridge.js permaneceu em ${file}.`);
+    }
+  }
+  if (!fs.existsSync(RUNTIME_FILE)) {
+    throw new Error(`${RUNTIME_FILE} ausente após a migração.`);
+  }
+}
+
+console.log('Android Phase 1B migration applied; legacy bridge residue removed.');
