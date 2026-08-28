@@ -7,10 +7,13 @@ on:
   pull_request:
     paths:
       - 'android/**'
-      - 'capacitor.config.ts'
+      - 'capacitor.config.json'
       - 'package.json'
       - 'package-lock.json'
       - 'public/**'
+      - 'src/**'
+      - 'scripts/prepare-android-assets.mjs'
+      - 'scripts/migrate-android-phase1b.mjs'
       - '.github/workflows/android-phase1-build.yml'
   workflow_dispatch:
 
@@ -20,7 +23,7 @@ permissions:
 jobs:
   android-debug:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,24 +44,20 @@ jobs:
       - name: Install Capacitor dependencies
         run: npm install --package-lock=true
 
-      - name: Synchronize v10.64.16 identity
-        shell: bash
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const files = ['public/version.json','config/app-assets.json','src/index.js','public/sw.js','public/js/app-pwa.js'];
-          for (const file of files) {
-            let text = fs.readFileSync(file, 'utf8');
-            text = text.replaceAll('10.64.15', '10.64.16');
-            fs.writeFileSync(file, text);
-          }
-          NODE
+      - name: Apply Android Phase 1B migration
+        run: node scripts/migrate-android-phase1b.mjs
+
+      - name: Run web tests and structural audits
+        run: npm run check
 
       - name: Create Android native project when absent
         run: |
           if [ ! -d android ]; then
             npx cap add android
           fi
+
+      - name: Prepare Worker-proxied vendor assets for APK
+        run: npm run android:prepare
 
       - name: Sync web assets into Android
         run: npx cap sync android
@@ -67,17 +66,58 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug
 
-      - name: Persist generated Android scaffold on feature branch
+      - name: Install Android emulator image
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
+          echo no | avdmanager create avd --force --name phase1b --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
+
+      - name: Start Android emulator
+        shell: bash
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+          nohup emulator @phase1b -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel auto > android-emulator.log 2>&1 &
+          adb wait-for-device
+          timeout 300 bash -c 'until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 5; done'
+          adb shell input keyevent 82 || true
+          adb devices
+
+      - name: Run connected Android instrumentation tests
+        working-directory: android
+        run: ./gradlew connectedDebugAndroidTest
+
+      - name: Launch APK and capture runtime diagnostics
+        shell: bash
+        run: |
+          adb install -r android/app/build/outputs/apk/debug/app-debug.apk >/dev/null
+          adb logcat -c
+          adb shell am force-stop com.estudoadaptativo.app
+          adb shell monkey -p com.estudoadaptativo.app -c android.intent.category.LAUNCHER 1 >/dev/null
+          sleep 8
+          PID="$(adb shell pidof com.estudoadaptativo.app | tr -d '\r')"
+          test -n "$PID"
+          adb shell dumpsys activity activities > android-activity.txt
+          grep -q 'com.estudoadaptativo.app' android-activity.txt
+          adb exec-out screencap -p > android-phase1b-screen.png
+          adb logcat -d > android-phase1b-logcat.txt
+          if grep -A8 'FATAL EXCEPTION' android-phase1b-logcat.txt | grep -q 'com.estudoadaptativo.app'; then
+            echo 'Crash detectado no processo do Estudo Adaptativo.' >&2
+            exit 1
+          fi
+          echo "Android runtime ativo com PID $PID"
+
+      - name: Persist synchronized Phase 1B state on feature branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/feat/android-capacitor-phase-1-v10.64.16'
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package-lock.json android public/version.json config/app-assets.json src/index.js public/sw.js public/js/app-pwa.js
+          git add package-lock.json android public/index.html public/sw.js public/_headers public/version.json config/app-assets.json src/index.js public/js/app-pwa.js
           if git diff --cached --quiet; then
-            echo 'Android scaffold already synchronized.'
+            echo 'Android Phase 1B already synchronized.'
           else
-            git commit -m 'feat(android): gerar projeto nativo Capacitor e sincronizar v10.64.16'
+            git commit -m 'feat(android): sincronizar runtime nativo e auditoria funcional v10.64.16'
             git push origin HEAD:feat/android-capacitor-phase-1-v10.64.16
           fi
 
@@ -87,4 +127,18 @@ jobs:
           name: EstudoAdaptativo-v10.64.16-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Android Phase 1B diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: EstudoAdaptativo-v10.64.16-android-diagnostics
+          path: |
+            android-emulator.log
+            android-activity.txt
+            android-phase1b-logcat.txt
+            android-phase1b-screen.png
+            android/app/build/reports/androidTests/**
+          if-no-files-found: warn
           retention-days: 14
