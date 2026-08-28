@@ -51,6 +51,8 @@ jobs:
         run: npm test
 
       - name: Run structural audits
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
         run: npm run audit
 
       - name: Create Android native project when absent
