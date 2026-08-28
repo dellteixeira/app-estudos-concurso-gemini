@@ -57,16 +57,17 @@ jobs:
           const testFile='tests/critical-actions-single-row-v10.64.12.test.cjs';
           fs.writeFileSync(testFile,`const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst css=fs.readFileSync('public/css/learning-advisor.css','utf8');\nconst pkg=JSON.parse(fs.readFileSync('package.json','utf8'));\ntest('pontos críticos mantêm três ações na mesma linha',()=>{\n  assert.match(css,/grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\)/);\n  assert.match(css,/\\.critical-point-ai\\{grid-column:auto\\}/);\n  assert.match(css,/white-space:nowrap/);\n  assert.match(css,/@media\\(max-width:700px\\)[\\s\\S]*repeat\\(3,minmax\\(0,1fr\\)\\)/);\n});\ntest('release do ajuste visual é 10.64.12',()=>assert.equal(pkg.version,'10.64.12'));\n`);
           NODE
+          rm -f .github/workflows/temp-critical-actions-row.yml
           node --check public/js/learning-advisor.js
           node --check public/js/critical-points-actions.js
           npm test
           npm run audit
-      - name: Commit patch
+      - name: Commit patch and remove temporary workflow
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package.json public/version.json config/app-assets.json src/index.js public/sw.js public/js/app-pwa.js public/css/learning-advisor.css tests/learning-diagnosis-ai-v10.64.11.test.cjs tests/critical-actions-single-row-v10.64.12.test.cjs
+          git add -A
           git commit -m 'fix(ui): alinhar ações dos pontos críticos em uma linha'
           git push origin HEAD:fix/critical-actions-single-row-v10.64.12
