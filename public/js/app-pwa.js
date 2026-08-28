@@ -214,35 +214,35 @@
         window.startFilteredStudyModal = startFilteredStudyModal;
         window.resetDailyPomodoroHours = resetDailyPomodoroHours;
 
-        // V10.64.11 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
+        // V10.64.12 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
         (function loadAdaptiveScheduleReconciliation() {
             if (window.AdaptiveScheduleReconciliation || document.querySelector('script[data-adaptive-schedule-reconciliation]')) return;
             const script = document.createElement('script');
-            script.src = './js/adaptive-schedule-reconciliation.js?v=10.64.11';
+            script.src = './js/adaptive-schedule-reconciliation.js?v=10.64.12';
             script.defer = true;
             script.dataset.adaptiveScheduleReconciliation = '1';
             document.head.appendChild(script);
         })();
 
-        // V10.64.11 — IA consultiva: interpreta dificuldade, mas Retenção mantém autoridade.
+        // V10.64.12 — IA consultiva: interpreta dificuldade, mas Retenção mantém autoridade.
         (function loadLearningAdvisor() {
             if (!document.querySelector('link[data-learning-advisor-style]')) {
                 const style = document.createElement('link');
                 style.rel = 'stylesheet';
-                style.href = './css/learning-advisor.css?v=10.64.11';
+                style.href = './css/learning-advisor.css?v=10.64.12';
                 style.dataset.learningAdvisorStyle = '1';
                 document.head.appendChild(style);
             }
             if (!window.AppLearningAdvisor && !document.querySelector('script[data-learning-advisor]')) {
                 const script = document.createElement('script');
-                script.src = './js/learning-advisor.js?v=10.64.11';
+                script.src = './js/learning-advisor.js?v=10.64.12';
                 script.defer = true;
                 script.dataset.learningAdvisor = '1';
                 document.head.appendChild(script);
             }
             if (!window.CriticalPointActions && !document.querySelector('script[data-critical-point-actions]')) {
                 const criticalScript = document.createElement('script');
-                criticalScript.src = './js/critical-points-actions.js?v=10.64.11';
+                criticalScript.src = './js/critical-points-actions.js?v=10.64.12';
                 criticalScript.defer = true;
                 criticalScript.dataset.criticalPointActions = '1';
                 document.head.appendChild(criticalScript);
