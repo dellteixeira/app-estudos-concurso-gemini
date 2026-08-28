@@ -1,12 +1,21 @@
 {
   "name": "estudo-adaptativo-inteligente",
   "private": true,
-  "version": "10.64.15",
+  "version": "10.64.16",
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "test:browser": "playwright test -c playwright.config.cjs",
     "audit": "node scripts/audit-release.mjs && node scripts/audit-css-ownership.cjs && node scripts/audit-asset-manifest.mjs && node scripts/audit-inline-csp.mjs && node scripts/audit-toolchain-pins.mjs",
-    "check": "npm run test && npm run audit"
+    "check": "npm run test && npm run audit",
+    "android:sync": "npx cap sync android",
+    "android:build:debug": "npm run android:sync && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.0",
+    "@capacitor/core": "8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.0"
   },
   "engines": {
     "node": "22.23.2"
