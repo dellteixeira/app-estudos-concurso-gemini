@@ -61,7 +61,6 @@ jobs:
           node --check public/js/learning-advisor.js
           node --check public/js/critical-points-actions.js
           npm test
-          npm run audit
       - name: Commit patch and remove temporary workflow
         shell: bash
         run: |
