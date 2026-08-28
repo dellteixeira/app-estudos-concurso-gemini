@@ -27,6 +27,7 @@ let currentCandidates=[];
 let lastResult=null;
 let busy=false;
 let localIntegrationInstalled=false;
+const memorySnoozes=new Map();
 
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
 const esc=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
@@ -78,32 +79,47 @@ function recordRecommendation(topicId,action,source='advisor'){
   writeJsonStorage(historyStorageKey(),map);
 }
 function isSnoozed(topicId){
+  const now=Date.now();
+  const memoryUntil=Number(memorySnoozes.get(topicId)||0);
+  if(memoryUntil>now)return true;
+  if(memoryUntil)memorySnoozes.delete(topicId);
   const map=readJsonStorage(snoozeStorageKey(),{});
   const until=Number(map?.[topicId]||0);
   if(!until)return false;
-  if(until<=Date.now()){
+  if(until<=now){
     delete map[topicId];
     writeJsonStorage(snoozeStorageKey(),map);
     return false;
   }
+  memorySnoozes.set(topicId,until);
   return true;
 }
-function snoozeUntil(topicId){const map=readJsonStorage(snoozeStorageKey(),{});return Number(map?.[topicId]||0)}
+function snoozeUntil(topicId){
+  const memoryUntil=Number(memorySnoozes.get(topicId)||0);
+  if(memoryUntil>Date.now())return memoryUntil;
+  const map=readJsonStorage(snoozeStorageKey(),{});
+  return Number(map?.[topicId]||0);
+}
 function snoozeTopic(topicId,hours=24){
   if(!topicId)return 0;
   const map=readJsonStorage(snoozeStorageKey(),{});
   const requested=Math.max(1,Number(hours)||24)*60*60*1000;
   const until=Date.now()+(hours===24?SNOOZE_MS:requested);
+  memorySnoozes.set(topicId,until);
   map[topicId]=until;
   writeJsonStorage(snoozeStorageKey(),map);
   return until;
 }
 function countActiveSnoozes(){
+  const now=Date.now();
   const map=readJsonStorage(snoozeStorageKey(),{});
-  let count=0,dirty=false;
-  Object.entries(map).forEach(([key,value])=>{if(Number(value)>Date.now())count++;else{delete map[key];dirty=true}});
-  if(dirty)writeJsonStorage(snoozeStorageKey(),map);
-  return count;
+  memorySnoozes.forEach((value,key)=>{if(Number(value)<=now)memorySnoozes.delete(key)});
+  Object.entries(map).forEach(([key,value])=>{
+    if(Number(value)>now)memorySnoozes.set(key,Number(value));
+    else delete map[key];
+  });
+  writeJsonStorage(snoozeStorageKey(),map);
+  return new Set([...memorySnoozes.entries()].filter(([,value])=>Number(value)>now).map(([key])=>key)).size;
 }
 
 function installLocalRetentionIntegration(){
