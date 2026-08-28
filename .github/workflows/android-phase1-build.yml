@@ -47,8 +47,11 @@ jobs:
       - name: Apply Android Phase 1B migration
         run: node scripts/migrate-android-phase1b.mjs
 
-      - name: Run web tests and structural audits
-        run: npm run check
+      - name: Run web unit tests
+        run: npm test
+
+      - name: Run structural audits
+        run: npm run audit
 
       - name: Create Android native project when absent
         run: |
