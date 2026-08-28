@@ -2,7 +2,7 @@
 'use strict';
 if(global.CriticalPointActions)return;
 
-const VERSION='1.1.0';
+const VERSION='1.1.1';
 const SNOOZE_HOURS=24;
 const ENHANCED_CLASS='critical-actions-enabled';
 let observer=null;
@@ -127,9 +127,7 @@ function enhanceCard(card){
   ai.dataset.reviewIndex=String(index);
   ai.textContent='Consultar IA';
   controls.append(study,ai,snoozeButton,note);
-  const copy=article.querySelector('.retention-risk-copy');
-  if(copy)copy.appendChild(controls);
-  else article.appendChild(controls);
+  article.appendChild(controls);
   if(progress)progress.setAttribute('title',`Retenção ${retentionText(row)}`);
   card.replaceWith(article);
 }

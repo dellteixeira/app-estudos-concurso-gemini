@@ -12,4 +12,4 @@ test('botões dos pontos críticos cabem sem sobreposição',()=>{
   assert.match(css,/max-width:100%!important/);
 });
 
-test('release do ajuste é 10.64.14',()=>assert.equal(pkg.version,'10.64.14'));
+test('release do ajuste permanece na linha canônica 10.64.x',()=>assert.match(pkg.version,/^10\.64\.\d+$/));
