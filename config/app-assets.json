@@ -1,5 +1,5 @@
 {
-  "version": "10.64.9",
+  "version": "10.64.10",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -39,6 +39,7 @@
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
     "/js/learning-advisor.js",
+    "/js/critical-points-actions.js",
     "/js/app-ai.js",
     "/js/app-ui.js",
     "/js/ui/mobile.js",
@@ -122,6 +123,7 @@
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
     "/js/learning-advisor.js",
+    "/js/critical-points-actions.js",
     "/js/notes-import-export.js",
     "/js/notes-export-rich.js",
     "/js/study-performance-report.js",
@@ -190,6 +192,7 @@
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
     "/js/learning-advisor.js",
+    "/js/critical-points-actions.js",
     "/js/pdf/pdf-core.js",
     "/js/pdf/pdf-workspaces.js",
     "/js/pdf/pdf-links.js",
@@ -243,6 +246,7 @@
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
     "/js/learning-advisor.js",
+    "/js/critical-points-actions.js",
     "/js/app-ai.js",
     "/js/app-ui.js",
     "/js/app-pwa.js",
