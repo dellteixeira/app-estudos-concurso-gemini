@@ -1,0 +1,377 @@
+from pathlib import Path
+
+
+def read(path):
+    return Path(path).read_text(encoding='utf-8')
+
+
+def write(path, text):
+    Path(path).write_text(text, encoding='utf-8')
+
+
+def replace_once(text, old, new, label):
+    if old not in text:
+        raise SystemExit(f'Anchor not found: {label}')
+    return text.replace(old, new, 1)
+
+
+def replace_between(text, start, end, replacement, label):
+    a = text.find(start)
+    if a < 0:
+        raise SystemExit(f'Start not found: {label}')
+    b = text.find(end, a)
+    if b < 0:
+        raise SystemExit(f'End not found: {label}')
+    return text[:a] + replacement + text[b:]
+
+
+for path in ['package.json', 'public/version.json', 'config/app-assets.json', 'public/sw.js', 'src/index.js', 'public/js/app-pwa.js']:
+    text = read(path)
+    if '10.64.10' in text:
+        write(path, text.replace('10.64.10', '10.64.11'))
+
+path = 'src/index.js'
+text = read(path)
+backend = r'''
+const LEARNING_ACTIONS = Object.freeze(["active_recall", "short_review", "questions", "focused_restudy"]);
+const LEARNING_DIAGNOSIS_MAX_TOPICS = 5;
+const learningDiagnosisSchema = {
+  type: "object",
+  properties: {
+    interventions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          topicId: { type: "string" },
+          recommendedAction: { type: "string", enum: LEARNING_ACTIONS },
+          diagnosisType: { type: "string", enum: ["acquisition", "retention", "application", "persistent", "false_mastery", "mixed"] },
+          severity: { type: "string", enum: ["low", "medium", "high"] },
+          suggestedMinutes: { type: "integer", minimum: 5, maximum: 60 },
+          rationale: { type: "string" },
+          method: { type: "string" }
+        },
+        required: ["topicId", "recommendedAction", "diagnosisType", "severity", "suggestedMinutes", "rationale", "method"]
+      }
+    }
+  },
+  required: ["interventions"]
+};
+
+function sanitizeLearningTopics(value) {
+  const topics = Array.isArray(value) ? value.slice(0, LEARNING_DIAGNOSIS_MAX_TOPICS) : [];
+  const result = [];
+  const seen = new Set();
+  for (const topic of topics) {
+    const topicId = cleanText(topic?.topicId, 500);
+    if (!topicId || seen.has(topicId)) continue;
+    seen.add(topicId);
+    const metrics = topic?.metrics && typeof topic.metrics === "object" ? topic.metrics : {};
+    const num = (v, min, max, fallback = 0) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+    };
+    const history = (Array.isArray(topic?.recommendationHistory) ? topic.recommendationHistory : [])
+      .slice(-8)
+      .map(item => ({ action: LEARNING_ACTIONS.includes(item?.action) ? item.action : "", at: cleanText(item?.at, 40) }))
+      .filter(item => item.action);
+    result.push({
+      topicId,
+      materia: cleanText(topic?.materia, 180),
+      assunto: cleanText(topic?.assunto, 300),
+      prioridade: num(topic?.prioridade, 1, 4, 2),
+      assuntoPrioridade: num(topic?.assuntoPrioridade, 1, 20, 1),
+      frictionScore: num(topic?.frictionScore, 0, 100, 0),
+      metrics: {
+        retention: num(metrics.retention, 0, 100, 100),
+        accuracy: metrics.accuracy == null ? null : num(metrics.accuracy, 0, 100, 0),
+        confidence: num(metrics.confidence, 0, 1, 0),
+        lapseCount: num(metrics.lapseCount, 0, 30, 0),
+        reviewCount: num(metrics.reviewCount, 0, 60, 0),
+        sessionCount: num(metrics.sessionCount, 0, 120, 0),
+        totalMinutes: num(metrics.totalMinutes, 0, 20000, 0),
+        difficulty: num(metrics.difficulty, 1, 10, 5),
+        forgot: Boolean(metrics.forgot),
+        acquired: Boolean(metrics.acquired)
+      },
+      recommendationHistory: history
+    });
+  }
+  return result;
+}
+
+function localLearningIntervention(topic) {
+  const m = topic.metrics || {};
+  const history = topic.recommendationHistory || [];
+  const last = history.at(-1)?.action || "";
+  let recommendedAction = "short_review";
+  let diagnosisType = "retention";
+  let rationale = "A retenção pede reforço curto antes de nova medição.";
+  if (m.accuracy != null && m.accuracy < 55 && m.retention >= 75) {
+    recommendedAction = "questions";
+    diagnosisType = "false_mastery";
+    rationale = "A retenção está relativamente alta, mas o desempenho em questões indica falsa sensação de domínio.";
+  } else if (m.forgot || m.retention < 55 || m.lapseCount >= 2) {
+    recommendedAction = "active_recall";
+    diagnosisType = "retention";
+    rationale = "Há sinal forte de esquecimento; recuperar a resposta sem consultar o material tende a produzir melhor diagnóstico.";
+  } else if (m.accuracy != null && m.accuracy < 60) {
+    recommendedAction = "questions";
+    diagnosisType = "application";
+    rationale = "O principal gargalo está na aplicação do conteúdo em questões.";
+  } else if (topic.frictionScore >= 70 || m.reviewCount >= 4 || m.difficulty >= 8) {
+    recommendedAction = "focused_restudy";
+    diagnosisType = "persistent";
+    rationale = "A dificuldade persiste apesar do esforço acumulado; é indicado reestudo focalizado no ponto de erro.";
+  }
+  if (last === recommendedAction) {
+    const alternatives = recommendedAction === "active_recall" ? ["short_review", "questions"] : recommendedAction === "questions" ? ["active_recall", "focused_restudy"] : recommendedAction === "focused_restudy" ? ["questions", "active_recall"] : ["active_recall", "questions"];
+    recommendedAction = alternatives.find(action => action !== last) || recommendedAction;
+    rationale += " O método foi alternado porque a mesma intervenção já havia sido recomendada recentemente.";
+  }
+  const method = {
+    active_recall: "Tente responder de memória, confira a fonte e corrija apenas as lacunas identificadas.",
+    short_review: "Faça uma revisão curta dos pontos-chave e teste a recordação imediatamente depois.",
+    questions: "Resolva questões do assunto, analise os erros e registre o motivo de cada alternativa incorreta.",
+    focused_restudy: "Retorne somente ao subponto que está falhando, reconstrua a compreensão e teste novamente."
+  }[recommendedAction];
+  const severity = topic.frictionScore >= 70 ? "high" : topic.frictionScore >= 50 ? "medium" : "low";
+  const suggestedMinutes = recommendedAction === "focused_restudy" ? 30 : recommendedAction === "questions" ? 25 : recommendedAction === "active_recall" ? 15 : 12;
+  return { topicId: topic.topicId, recommendedAction, diagnosisType, severity, suggestedMinutes, rationale, method };
+}
+
+function parseLearningDiagnosisAIResponse(result) {
+  const candidates = [result?.response, result?.result?.response, result?.response?.response, result?.output, result?.data, result];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    if (typeof candidate === "object" && !Array.isArray(candidate) && Array.isArray(candidate.interventions)) return candidate;
+    if (typeof candidate === "string") {
+      const parsed = extractFirstJsonObject(candidate);
+      if (parsed && Array.isArray(parsed.interventions)) return parsed;
+    }
+  }
+  return null;
+}
+
+function normalizeLearningInterventions(parsed, topics) {
+  const source = Array.isArray(parsed?.interventions) ? parsed.interventions : [];
+  const byId = new Map(source.map(item => [String(item?.topicId || ""), item]));
+  return topics.map(topic => {
+    const fallback = localLearningIntervention(topic);
+    const item = byId.get(topic.topicId);
+    if (!item || !LEARNING_ACTIONS.includes(item.recommendedAction)) return fallback;
+    const allowedTypes = ["acquisition", "retention", "application", "persistent", "false_mastery", "mixed"];
+    const allowedSeverity = ["low", "medium", "high"];
+    return {
+      topicId: topic.topicId,
+      recommendedAction: item.recommendedAction,
+      diagnosisType: allowedTypes.includes(item.diagnosisType) ? item.diagnosisType : fallback.diagnosisType,
+      severity: allowedSeverity.includes(item.severity) ? item.severity : fallback.severity,
+      suggestedMinutes: Math.max(5, Math.min(60, Number.parseInt(item.suggestedMinutes, 10) || fallback.suggestedMinutes)),
+      rationale: cleanText(item.rationale, 500) || fallback.rationale,
+      method: cleanText(item.method, 500) || fallback.method
+    };
+  });
+}
+
+async function learningDiagnosis(request, env) {
+  if (!(request.headers.get("content-type") || "").toLowerCase().includes("application/json")) return json({ error: "Content-Type deve ser application/json." }, 415);
+  const user = await authenticateSupabaseUser(request, env);
+  if (!user?.id) return json({ error: "Sessão inválida ou expirada." }, 401);
+  if (env.AI_RATE_LIMITER?.limit) {
+    const { success } = await env.AI_RATE_LIMITER.limit({ key: `${user.id}:learning-diagnosis` });
+    if (!success) return json({ error: "Muitas análises em sequência. Aguarde um minuto." }, 429, { "retry-after": "60" });
+  }
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "Corpo JSON inválido." }, 400); }
+  const topics = sanitizeLearningTopics(body?.topics);
+  if (!topics.length) return json({ error: "Nenhum assunto válido foi enviado para análise." }, 422);
+  const local = topics.map(localLearningIntervention);
+  if (!env.AI?.run) return json({ aiUsed: false, provider: "local", model: "deterministic", interventions: local });
+  const systemPrompt = `Você é uma IA auxiliar de aprendizagem para concursos públicos. Para cada tópico recebido escolha EXATAMENTE UM método entre active_recall, short_review, questions e focused_restudy. Use somente as métricas e o histórico fornecidos. Não altere o cronograma, não marque estudo como concluído e não invente dados. Evite repetir o último método quando outra intervenção coerente puder atacar o mesmo gargalo. Retorne apenas JSON válido no schema solicitado.`;
+  const userPrompt = `Concurso: ${cleanText(body?.contest, 200) || "não informado"}\nTópicos e métricas:\n${JSON.stringify(topics)}`;
+  try {
+    const result = await env.AI.run(MODEL, {
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      response_format: { type: "json_schema", json_schema: learningDiagnosisSchema },
+      temperature: 0.15,
+      max_tokens: 2200
+    });
+    const parsed = parseLearningDiagnosisAIResponse(result);
+    if (!parsed) return json({ aiUsed: false, provider: "local", model: "deterministic", interventions: local });
+    return json({ aiUsed: true, provider: "workers-ai", model: MODEL, interventions: normalizeLearningInterventions(parsed, topics) });
+  } catch (error) {
+    console.warn("Learning diagnosis AI unavailable; using deterministic fallback", error?.message || error);
+    return json({ aiUsed: false, provider: "local", model: "deterministic", interventions: local });
+  }
+}
+
+'''
+if 'async function learningDiagnosis(request, env)' not in text:
+    text = replace_once(text, 'export default {', backend + 'export default {', 'backend insertion')
+route = '''\n    if (url.pathname === "/api/ai/learning-diagnosis") {\n      if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);\n      return learningDiagnosis(request, env);\n    }\n'''
+anchor = '''    if (url.pathname === "/api/ai/flashcard") {\n      if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);\n      return generateFlashcard(request, env);\n    }\n'''
+if 'url.pathname === "/api/ai/learning-diagnosis"' not in text:
+    text = replace_once(text, anchor, anchor + route, 'backend route')
+write(path, text)
+
+path = 'public/js/learning-advisor.js'
+text = read(path)
+text = text.replace("const VERSION='1.2.1';", "const VERSION='1.3.0';", 1)
+local_logic = r'''
+function localIntervention(candidate){
+  const m=candidate?.metrics||{};
+  const history=candidate?.recommendationHistory||[];
+  const last=history.at(-1)?.action||'';
+  let action='short_review',diagnosisType='retention',rationale='A retenção pede reforço curto antes de nova medição.';
+  if(m.accuracy!=null&&m.accuracy<55&&m.retention>=75){action='questions';diagnosisType='false_mastery';rationale='A retenção está alta, mas o desempenho em questões indica falsa sensação de domínio.'}
+  else if(m.forgot||m.retention<55||m.lapseCount>=2){action='active_recall';diagnosisType='retention';rationale='Há sinal forte de esquecimento; recuperar de memória permite localizar as lacunas reais.'}
+  else if(m.accuracy!=null&&m.accuracy<60){action='questions';diagnosisType='application';rationale='O gargalo predominante está na aplicação do conteúdo em questões.'}
+  else if(candidate.frictionScore>=70||m.reviewCount>=4||m.difficulty>=8){action='focused_restudy';diagnosisType='persistent';rationale='A dificuldade persiste apesar do esforço acumulado; reestude apenas o ponto de falha.'}
+  if(last===action){
+    const alternatives=action==='active_recall'?['short_review','questions']:action==='questions'?['active_recall','focused_restudy']:action==='focused_restudy'?['questions','active_recall']:['active_recall','questions'];
+    action=alternatives.find(value=>value!==last)||action;
+    rationale+=' O método foi alternado porque a mesma intervenção já havia sido recomendada recentemente.';
+  }
+  const method={active_recall:'Tente responder de memória, confira a fonte e corrija apenas as lacunas.',short_review:'Revise rapidamente os pontos-chave e teste a recordação em seguida.',questions:'Resolva questões, analise os erros e registre por que as alternativas estavam certas ou erradas.',focused_restudy:'Retorne apenas ao subponto que está falhando, reconstrua a compreensão e teste novamente.'}[action];
+  const severity=candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low';
+  const suggestedMinutes=action==='focused_restudy'?30:action==='questions'?25:action==='active_recall'?15:12;
+  return {topicId:candidate.topicId,recommendedAction:action,diagnosisType,severity,suggestedMinutes,rationale,method};
+}
+function localPayload(candidates,reason='IA indisponível'){
+  return {aiUsed:false,provider:'local',fallbackReason:safeText(reason,180),interventions:candidates.map(localIntervention)};
+}
+
+'''
+if 'function localIntervention(candidate)' not in text:
+    text = replace_once(text, 'function getRiskRows(){', local_logic + 'function getRiskRows(){', 'local selector')
+render = r'''function renderResults(payload,candidates){
+  const overlay=ensureDialog();
+  const box=overlay.querySelector('#learningAdvisorResults');
+  const status=overlay.querySelector('#learningAdvisorStatus');
+  const interventions=Array.isArray(payload?.interventions)?payload.interventions:[];
+  if(status)status.textContent=payload?.aiUsed?'A IA selecionou o método considerando métricas e histórico anti-repetição.':`Seleção local aplicada${payload?.fallbackReason?` porque ${payload.fallbackReason}`:' porque a IA não estava disponível'}.`;
+  if(!box)return;
+  box.innerHTML=interventions.map(intervention=>{
+    const candidate=candidates.find(c=>c.topicId===intervention.topicId);
+    if(!candidate)return'';
+    const action=ACTION_LABELS[intervention.recommendedAction]||'Intervenção focalizada';
+    const type=TYPE_LABELS[intervention.diagnosisType]||'Dificuldade mista';
+    const sev=intervention.severity==='high'?'Alto':intervention.severity==='medium'?'Médio':'Baixo';
+    const previous=(candidate.recommendationHistory||[]).at(-1);
+    const previousLabel=previous?ACTION_LABELS[previous.action]:'';
+    const options=Object.entries(ACTION_LABELS).map(([key,label])=>`<option value="${key}" ${key===intervention.recommendedAction?'selected':''}>${esc(label)}</option>`).join('');
+    return `<article class="learning-advisor-card" data-topic-id="${esc(candidate.topicId)}"><div class="learning-advisor-card-top"><div><span class="learning-advisor-subject">${esc(candidate.materia)}</span><strong>${esc(candidate.assunto)}</strong></div><span class="learning-friction learning-friction-${candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low'}">Dificuldade persistente ${candidate.frictionScore}</span></div><div class="learning-advisor-meta"><span>${esc(type)}</span><span>Risco ${sev}</span><span>${Math.round(Number(intervention.suggestedMinutes)||20)} min</span>${previousLabel?`<span>Anterior: ${esc(previousLabel)}</span>`:''}</div><p>${esc(intervention.rationale||'Recomendação baseada nos sinais de retenção, desempenho e histórico.')}</p><div class="learning-advisor-action"><strong>Método recomendado: ${esc(action)}</strong><span>${esc(intervention.method||'Aplique a intervenção e meça novamente o desempenho.')}</span></div><div class="learning-advisor-manual"><label>Você pode escolher outro método<select data-learning-method-select>${options}</select></label><button class="btn btn-secondary btn-sm" type="button" data-learning-action="manual-method" data-row-index="${candidate.rowIndex}">Usar método escolhido</button></div><div class="learning-advisor-controls"><button class="btn btn-primary btn-sm" type="button" data-learning-action="local-intervention" data-row-index="${candidate.rowIndex}">Iniciar método</button><button class="btn btn-secondary btn-sm" type="button" data-learning-action="snooze" data-topic-id="${esc(candidate.topicId)}">Adiar 24h</button><span>Adiar não registra estudo nem altera a retenção.</span></div></article>`;
+  }).join('')||'<div class="learning-advisor-empty">Nenhuma intervenção foi necessária neste momento.</div>';
+  box.querySelectorAll('[data-learning-action="local-intervention"]').forEach(button=>button.addEventListener('click',()=>{
+    const topicId=button.closest('.learning-advisor-card')?.dataset.topicId||'';
+    const intervention=interventions.find(item=>item?.topicId===topicId);
+    openLocalIntervention(Number(button.dataset.rowIndex),intervention);
+  }));
+  box.querySelectorAll('[data-learning-action="manual-method"]').forEach(button=>button.addEventListener('click',()=>{
+    const card=button.closest('.learning-advisor-card');
+    const topicId=card?.dataset.topicId||'';
+    const candidate=candidates.find(item=>item.topicId===topicId);
+    const base=interventions.find(item=>item?.topicId===topicId)||localIntervention(candidate);
+    const selected=card?.querySelector('[data-learning-method-select]')?.value||base.recommendedAction;
+    if(!ACTION_LABELS[selected])return;
+    const override={...base,recommendedAction:selected,rationale:`Método escolhido manualmente pelo estudante. ${base.rationale||''}`};
+    recordRecommendation(topicId,selected,'manual');
+    openLocalIntervention(Number(button.dataset.rowIndex),override);
+  }));
+  box.querySelectorAll('[data-learning-action="snooze"]').forEach(button=>button.addEventListener('click',()=>handleSnooze(button.dataset.topicId,button.closest('.learning-advisor-card'))));
+}
+
+'''
+text = replace_between(text, 'function renderResults(payload,candidates){', 'function handleSnooze(', render, 'renderResults')
+analyze = r'''async function analyze(options={}){
+  if(busy)return lastResult;
+  const overlay=renderInterventionShell();
+  const status=overlay?.querySelector('#learningAdvisorStatus');
+  let candidates=collectCandidates(options.limit||MAX_TOPICS);
+  if(options.topicId)candidates=candidates.filter(item=>item.topicId===options.topicId);
+  if(!candidates.length){if(status)status.textContent='Ainda não há dificuldade persistente disponível para análise. Assuntos adiados retornam automaticamente após 24 horas.';return null}
+  const cached=!options.force&&!options.topicId&&readCache(candidates);
+  if(cached){lastResult=cached;renderResults(cached,candidates);return cached}
+  busy=true;if(status)status.textContent='Consultando a IA com métricas e histórico sem alterar seu cronograma…';
+  try{
+    const payload=await requestAdvice(candidates);
+    lastResult=payload;if(!options.topicId)writeCache(candidates,payload);persistDisplayedRecommendations(payload);renderResults(payload,candidates);return payload;
+  }catch(error){
+    const payload=localPayload(candidates,error?.message||'a consulta falhou');
+    lastResult=payload;persistDisplayedRecommendations(payload);renderResults(payload,candidates);return payload;
+  }finally{busy=false}
+}
+function analyzeTopic(topicId,rowIndex=null){
+  installLocalRetentionIntegration();
+  let candidates=collectCandidates(MAX_TOPICS);
+  let candidate=candidates.find(item=>item.topicId===topicId);
+  if(!candidate&&Number.isInteger(Number(rowIndex))){
+    const row=getRows()[Number(rowIndex)];
+    const item=row?findItem(row):null;
+    if(row&&item){
+      const friction=computeLearningFriction(row,item);
+      const id=topicKey(item.materia,item.assunto);
+      candidate={topicId:id,rowIndex:Number(rowIndex),materia:safeText(item.materia,180),assunto:safeText(item.assunto,300),prioridade:clamp(numberOr(item.prioridade,2),1,4),assuntoPrioridade:clamp(numberOr(item.assunto_prioridade,1),1,20),frictionScore:Math.max(MIN_FRICTION,friction.score),metrics:friction.metrics,recommendationHistory:getRecommendationHistory(id)};
+      currentCandidates=[candidate,...currentCandidates.filter(value=>value.topicId!==candidate.topicId)];
+    }
+  }
+  if(!candidate)return Promise.resolve(null);
+  return analyze({topicId:candidate.topicId,limit:MAX_TOPICS,force:true});
+}
+
+'''
+text = replace_between(text, 'async function analyze(options={}){', 'function onRiskMetricClick(', analyze, 'analyze')
+old = "global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,snoozeTopic,isSnoozed,snoozeUntil,getRecommendationHistory,getDiagnostics:diagnostics});"
+new = "global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,analyzeTopic,localIntervention,refresh,close:closeDialog,snoozeTopic,isSnoozed,snoozeUntil,getRecommendationHistory,getDiagnostics:diagnostics});"
+text = replace_once(text, old, new, 'advisor export')
+write(path, text)
+
+path = 'public/js/critical-points-actions.js'
+text = read(path)
+text = text.replace("const VERSION='1.0.1';", "const VERSION='1.1.0';", 1)
+text = replace_once(text, "  controls.append(study,snoozeButton,note);", """  const ai=document.createElement('button');
+  ai.className='critical-point-ai';
+  ai.type='button';
+  ai.dataset.criticalAction='ai';
+  ai.dataset.topicId=topicId;
+  ai.dataset.reviewIndex=String(index);
+  ai.textContent='Consultar IA';
+  controls.append(study,ai,snoozeButton,note);""", 'AI button')
+text = replace_once(text, """  if(action.dataset.criticalAction==='study')return openStudy(action.dataset.reviewIndex);
+  if(action.dataset.criticalAction==='snooze')return snooze(action.dataset.topicId);""", """  if(action.dataset.criticalAction==='study')return openStudy(action.dataset.reviewIndex);
+  if(action.dataset.criticalAction==='ai'){
+    if(typeof global.AppLearningAdvisor?.analyzeTopic==='function')return global.AppLearningAdvisor.analyzeTopic(action.dataset.topicId,Number(action.dataset.reviewIndex));
+    return global.appNotice?.('A análise por IA ainda está carregando. Tente novamente em instantes.',{title:'Pontos críticos'});
+  }
+  if(action.dataset.criticalAction==='snooze')return snooze(action.dataset.topicId);""", 'AI click')
+write(path, text)
+
+path = 'public/css/learning-advisor.css'
+text = read(path)
+addition = """
+/* V10.64.11 — IA acionável por cartão + escolha manual do método. */
+.critical-point-ai{border:1px solid rgba(121,242,192,.48);background:rgba(40,190,142,.11);color:#8cf5c9}.critical-point-ai:hover{background:rgba(40,190,142,.2)}
+.learning-advisor-manual{display:flex;align-items:end;flex-wrap:wrap;gap:9px;margin-top:10px;padding:10px;border:1px dashed rgba(121,242,192,.24);border-radius:10px;background:rgba(24,92,73,.08)}.learning-advisor-manual label{display:grid;gap:5px;flex:1 1 260px;color:#a9bdca;font-size:.75rem}.learning-advisor-manual select{width:100%;min-height:42px;padding:7px 9px;border:1px solid rgba(115,151,178,.42);border-radius:9px;background:#0b2234;color:#e8f4f7}.learning-advisor-manual .btn{min-height:42px}
+@media(max-width:700px){.critical-point-controls{grid-template-columns:1fr 1fr}.critical-point-ai{grid-column:1/-1}.learning-advisor-manual{display:grid}.learning-advisor-manual .btn{width:100%}}
+"""
+if 'V10.64.11 — IA acionável' not in text:
+    text += addition
+write(path, text)
+
+test_path = Path('tests/learning-diagnosis-ai-v10.64.11.test.cjs')
+test_path.write_text(r'''const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const worker=fs.readFileSync(path.join(root,'src/index.js'),'utf8');
+const advisor=fs.readFileSync(path.join(root,'public/js/learning-advisor.js'),'utf8');
+const critical=fs.readFileSync(path.join(root,'public/js/critical-points-actions.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'public/css/learning-advisor.css'),'utf8');
+const assets=JSON.parse(fs.readFileSync(path.join(root,'config/app-assets.json'),'utf8'));
+test('backend expõe diagnóstico autenticado com fallback local',()=>{assert.match(worker,/async function learningDiagnosis\(request, env\)/);assert.match(worker,/\/api\/ai\/learning-diagnosis/);assert.match(worker,/authenticateSupabaseUser\(request, env\)/);assert.match(worker,/localLearningIntervention/);assert.match(worker,/aiUsed: false, provider: "local"/)});
+test('advisor possui fallback local real, análise individual e escolha manual',()=>{assert.match(advisor,/function localIntervention\(candidate\)/);assert.match(advisor,/function analyzeTopic\(topicId,rowIndex=null\)/);assert.match(advisor,/const payload=localPayload\(candidates/);assert.match(advisor,/data-learning-action="manual-method"/);assert.match(advisor,/Método escolhido manualmente pelo estudante/)});
+test('ponto crítico oferece Consultar IA junto com estudar e adiar',()=>{assert.match(critical,/ai\.textContent='Consultar IA'/);assert.match(critical,/AppLearningAdvisor\.analyzeTopic/);assert.match(critical,/study\.textContent='Estudar agora'/);assert.match(critical,/snoozeButton\.textContent='Adiar 24h'/);assert.match(css,/\.critical-point-ai/)});
+test('versão e assets permanecem sincronizados',()=>{assert.equal(JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version,'10.64.11');assert.equal(assets.version,'10.64.11');for(const route of ['/js/learning-advisor.js','/js/critical-points-actions.js']){assert.ok(assets.criticalAppShell.includes(route));assert.ok(assets.networkFirstPaths.includes(route));assert.ok(assets.workerNoStorePaths.includes(route))}});
+''', encoding='utf-8')
