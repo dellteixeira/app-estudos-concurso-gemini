@@ -79,11 +79,20 @@ jobs:
           AVDMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name avdmanager -perm -u+x | head -n 1)"
           test -n "$SDKMANAGER" && test -x "$SDKMANAGER"
           test -n "$AVDMANAGER" && test -x "$AVDMANAGER"
+
+          ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+
           echo "Android SDK: $ANDROID_SDK_ROOT"
+          echo "Android AVD home: $ANDROID_AVD_HOME"
           echo "sdkmanager: $SDKMANAGER"
+
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
-          echo no | "$AVDMANAGER" create avd --force --name phase1b --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
+          echo no | ANDROID_AVD_HOME="$ANDROID_AVD_HOME" "$AVDMANAGER" create avd --force --name phase1b --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
+
+          test -f "$ANDROID_AVD_HOME/phase1b.ini"
+          echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
           echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
           echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
           echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
@@ -92,9 +101,34 @@ jobs:
         shell: bash
         run: |
           if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
-          nohup emulator @phase1b -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel auto > android-emulator.log 2>&1 &
-          adb wait-for-device
-          timeout 300 bash -c 'until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 5; done'
+
+          echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME"
+          emulator -list-avds
+          emulator -list-avds | grep -Fxq phase1b
+
+          nohup emulator @phase1b -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -accel auto > android-emulator.log 2>&1 &
+          EMULATOR_PID=$!
+          echo "Emulator PID: $EMULATOR_PID"
+
+          if ! timeout 120 adb wait-for-device; then
+            echo 'Emulador não apareceu no ADB dentro de 120 segundos.' >&2
+            cat android-emulator.log >&2 || true
+            exit 1
+          fi
+
+          if ! kill -0 "$EMULATOR_PID" 2>/dev/null; then
+            echo 'Processo do emulador encerrou antes do boot.' >&2
+            cat android-emulator.log >&2 || true
+            exit 1
+          fi
+
+          if ! timeout 300 bash -c 'until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 5; done'; then
+            echo 'Android não concluiu o boot dentro de 300 segundos.' >&2
+            adb devices >&2 || true
+            cat android-emulator.log >&2 || true
+            exit 1
+          fi
+
           adb shell input keyevent 82 || true
           adb devices
 
