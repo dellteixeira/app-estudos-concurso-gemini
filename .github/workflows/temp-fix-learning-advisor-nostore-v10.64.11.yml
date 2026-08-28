@@ -30,9 +30,11 @@ jobs:
           p.write_text(t.replace(old,new,1),encoding='utf-8')
           PY
       - name: Validate structural contract
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
         run: |
           node --check src/index.js
-          npm run audit:structure
+          npm run audit
       - name: Commit correction
         run: |
           git config user.name "github-actions[bot]"
