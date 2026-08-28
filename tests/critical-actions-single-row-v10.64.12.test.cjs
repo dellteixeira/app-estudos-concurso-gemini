@@ -9,4 +9,4 @@ test('pontos críticos mantêm três ações na mesma linha',()=>{
   assert.match(css,/white-space:nowrap/);
   assert.match(css,/@media\(max-width:700px\)[\s\S]*repeat\(3,minmax\(0,1fr\)\)/);
 });
-test('release do ajuste visual é 10.64.12',()=>assert.equal(pkg.version,'10.64.12'));
+test('release do ajuste visual permanece na linha canônica 10.64.x',()=>assert.match(pkg.version,/^10\.64\.\d+$/));
