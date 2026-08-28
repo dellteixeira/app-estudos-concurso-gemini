@@ -13,7 +13,6 @@ jobs:
     env:
       ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
       ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
-      ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -41,7 +40,6 @@ jobs:
           test -n "$ANDROID_RELEASE_KEYSTORE_BASE64"
           test -n "$ANDROID_RELEASE_KEYSTORE_PASSWORD"
           test -n "$ANDROID_RELEASE_KEY_ALIAS"
-          test -n "$ANDROID_RELEASE_KEY_PASSWORD"
 
       - name: Materialize release keystore
         shell: bash
