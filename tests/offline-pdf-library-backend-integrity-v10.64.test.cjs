@@ -7,8 +7,8 @@ const root = path.resolve(__dirname, '..');
 const manager = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-manager.js'), 'utf8');
 const packageVersion = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
 
-test('Fase 9 está promovida para v10.64.8', () => {
-  assert.equal(packageVersion, '10.64.8');
+test('Fase 9 está promovida para v10.64.9', () => {
+  assert.equal(packageVersion, '10.64.9');
 });
 
 test('Fase 9 não aceita falso sucesso quando backend offline está ausente', () => {
