@@ -182,3 +182,6 @@
 
 /js/pdf/pdf-reader.js
   Cache-Control: no-cache, no-store, must-revalidate
+
+/capacitor-runtime.js
+  Cache-Control: no-cache, no-store, must-revalidate

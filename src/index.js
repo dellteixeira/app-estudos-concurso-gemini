@@ -25,7 +25,7 @@ const MAX_ASSUNTO_CHARS = 1200;
 
 const APP_VERSION = "10.64.16";
 const CORE_NO_STORE_PATHS = new Set([
-  "/", "/index.html", "/sw.js", "/pwa-update.js", "/version.json",
+  "/", "/index.html", "/sw.js", "/pwa-update.js", "/capacitor-runtime.js", "/version.json",
   "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/pdf-library.css", "/css/pdf-reader.css", "/css/pdf-mobile-card-actions.css",
   "/js/study-domain.js", "/js/core/local-backup-store.js", "/js/app-core.js", "/js/app-state.js", "/js/sync-engine.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/pdf/pdf-library-opfs-adapter.js", "/js/pdf/pdf-library-layout-fix.js", "/js/pdf/pdf-device-storage.js", "/js/pdf/offline-pdf-store.js", "/js/pdf/pdf-offline-library-manager.js", "/js/pdf/pdf-offline-integrity.js", "/js/pdf/pdf-offline-library-ui.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/learning-advisor.js", "/js/critical-points-actions.js", "/js/app-pwa.js"
 ]);
@@ -1128,6 +1128,32 @@ async function learningDiagnosis(request, env) {
   }
 }
 
+const NATIVE_APP_ORIGINS = new Set(["https://localhost", "capacitor://localhost"]);
+
+function withNativeCors(request, response) {
+  const origin = request.headers.get("origin") || "";
+  if (!NATIVE_APP_ORIGINS.has(origin)) return response;
+  const headers = new Headers(response.headers);
+  headers.set("access-control-allow-origin", origin);
+  headers.set("access-control-allow-methods", "POST, OPTIONS");
+  headers.set("access-control-allow-headers", "authorization, content-type");
+  headers.set("access-control-max-age", "86400");
+  headers.append("vary", "Origin");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+function nativeCorsPreflight(request) {
+  const origin = request.headers.get("origin") || "";
+  if (!NATIVE_APP_ORIGINS.has(origin)) return new Response(null, { status: 403 });
+  return new Response(null, { status: 204, headers: {
+    "access-control-allow-origin": origin,
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-headers": "authorization, content-type",
+    "access-control-max-age": "86400",
+    "vary": "Origin"
+  }});
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -1149,19 +1175,19 @@ export default {
 
     if (url.pathname === "/api/ai/analisar-edital") {
       if (request.method !== "POST") {
-        return json({ error: "Método não permitido." }, 405);
+        return withNativeCors(request, json({ error: "Método não permitido." }, 405));
       }
-      return analyzeEdital(request, env);
+      return withNativeCors(request, await analyzeEdital(request, env));
     }
 
     if (url.pathname === "/api/ai/flashcard") {
-      if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
-      return generateFlashcard(request, env);
+      if (request.method !== "POST") return withNativeCors(request, json({ error: "Método não permitido." }, 405));
+      return withNativeCors(request, await generateFlashcard(request, env));
     }
 
     if (url.pathname === "/api/ai/learning-diagnosis") {
-      if (request.method !== "POST") return json({ error: "Método não permitido." }, 405);
-      return learningDiagnosis(request, env);
+      if (request.method !== "POST") return withNativeCors(request, json({ error: "Método não permitido." }, 405));
+      return withNativeCors(request, await learningDiagnosis(request, env));
     }
 
     return env.ASSETS.fetch(request);
