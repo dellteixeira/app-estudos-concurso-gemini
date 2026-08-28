@@ -4,19 +4,26 @@ import path from 'node:path';
 
 const root = process.cwd();
 const indexFile = path.join(root, 'public/index.html');
-const cssFile = path.join(root, 'public/css/android-mobile-hotfix.css');
+const cssSource = path.join(root, 'android/mobile/android-mobile-hotfix.css');
+const cssTargetDir = path.join(root, 'public/css');
+const cssTarget = path.join(cssTargetDir, 'android-mobile-hotfix.css');
 const manifestFile = path.join(root, 'android/app/src/main/AndroidManifest.xml');
 const logoSource = path.join(root, 'public/icon-512.png');
 const drawableDir = path.join(root, 'android/app/src/main/res/drawable-nodpi');
 const logoTarget = path.join(drawableDir, 'estudo_adaptativo_launcher.png');
 
-for (const required of [indexFile, cssFile, manifestFile, logoSource]) {
+for (const required of [indexFile, cssSource, manifestFile, logoSource]) {
   if (!fs.existsSync(required)) throw new Error(`Arquivo obrigatório ausente: ${path.relative(root, required)}`);
 }
 
-// Native-only stylesheet. It is injected into the packaged web shell during
-// Android CI and therefore does not alter the canonical browser presentation.
+// Copy the Android-only stylesheet into the temporary web shell only while
+// building the native package. Its source lives outside public/ so it does not
+// change the canonical browser runtime identity.
 {
+  fs.mkdirSync(cssTargetDir, { recursive: true });
+  fs.copyFileSync(cssSource, cssTarget);
+  if (fs.statSync(cssTarget).size < 1024) throw new Error('Stylesheet Android gerado parece inválido.');
+
   let html = fs.readFileSync(indexFile, 'utf8');
   html = html.replace(/^\s*<link\b[^>]*href=["']\.\/css\/android-mobile-hotfix\.css(?:\?[^"']*)?["'][^>]*>\s*(?:\r?\n)?/gim, '');
   const tag = '    <link rel="stylesheet" href="./css/android-mobile-hotfix.css">';
