@@ -7,8 +7,10 @@
     "test:browser": "playwright test -c playwright.config.cjs",
     "audit": "node scripts/audit-release.mjs && node scripts/audit-css-ownership.cjs && node scripts/audit-asset-manifest.mjs && node scripts/audit-inline-csp.mjs && node scripts/audit-toolchain-pins.mjs",
     "check": "npm run test && npm run audit",
-    "android:sync": "npx cap sync android",
-    "android:build:debug": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:prepare": "node scripts/prepare-android-assets.mjs",
+    "android:sync": "npm run android:prepare && npx cap sync android",
+    "android:build:debug": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:test:connected": "npm run android:sync && cd android && ./gradlew connectedDebugAndroidTest"
   },
   "dependencies": {
     "@capacitor/android": "8.5.0",
