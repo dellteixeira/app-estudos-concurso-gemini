@@ -1,0 +1,43 @@
+# Dependencies / tooling
+node_modules/
+.wrangler/
+playwright-report/
+test-results/
+coverage/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+key.properties
+**/key.properties
+
+# Android local/build artifacts
+android/local.properties
+android/.gradle/
+android/**/build/
+android/captures/
+*.apk
+*.aab
+
+# Supabase local state
+supabase/.temp/
+
+# Database/backup material
+backups/
+dist-backup/
+*.sql.gz
+*.dump
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
