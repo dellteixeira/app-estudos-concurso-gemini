@@ -74,9 +74,19 @@ jobs:
       - name: Install Android emulator image
         shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
-          echo no | avdmanager create avd --force --name phase1b --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
+          ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager -perm -u+x | head -n 1)"
+          AVDMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name avdmanager -perm -u+x | head -n 1)"
+          test -n "$SDKMANAGER" && test -x "$SDKMANAGER"
+          test -n "$AVDMANAGER" && test -x "$AVDMANAGER"
+          echo "Android SDK: $ANDROID_SDK_ROOT"
+          echo "sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
+          echo no | "$AVDMANAGER" create avd --force --name phase1b --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
 
       - name: Start Android emulator
         shell: bash
