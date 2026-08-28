@@ -20,7 +20,22 @@ jobs:
           fetch-depth: 0
       - name: Apply adaptive patch
         run: python .github/scripts/temp-critical-points-patch.py
-      - name: Validate implementation
+      - name: Preserve auxiliary AI contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/learning-diagnosis.js')
+          s=p.read_text()
+          needle="const LAYER_ACTIONS=new Set(['active_recall','short_review','questions','focused_restudy']);"
+          contract="const ADVISOR_POLICY=Object.freeze({advisorRole:'auxiliary',authority:'retention-engine',autoSchedule:false});"
+          if contract not in s:
+              if needle not in s:
+                  raise SystemExit('layer actions marker missing')
+              s=s.replace(needle,needle+'\n'+contract,1)
+          p.write_text(s)
+          PY
+      - name: Validate adaptive implementation
         shell: bash
         run: |
           set -euo pipefail
