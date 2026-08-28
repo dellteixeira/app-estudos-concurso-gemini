@@ -42,15 +42,20 @@ function stripLegacyBridgeReferences(text) {
   }
 }
 
-// 1) Load the canonical native runtime before every deferred app/vendor script.
+// 1) Load the canonical native runtime before pwa-update.js.
+// This must be idempotent because release builds run after Phase 1B has already
+// synchronized the canonical runtime into public/index.html.
 {
   const file = 'public/index.html';
   let text = fs.readFileSync(file, 'utf8');
-  text = text.replace(/^\s*<script\b[^>]*\bsrc=["'][^"']*capacitor-runtime\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*\n?/gim, '');
+  text = text.replace(/^\s*<script\b[^>]*\bsrc=["'][^"']*capacitor-runtime\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*(?:\r?\n)?/gim, '');
+
   const runtimeTag = '    <script src="./capacitor-runtime.js" defer></script>';
-  const pivot = '    <script src="./pwa-update.js" defer></script>';
-  if (!text.includes(pivot)) throw new Error('Não foi possível localizar pwa-update.js em public/index.html.');
-  text = text.replace(pivot, `${runtimeTag}\n${pivot}`);
+  const pwaTagPattern = /^(\s*)<script\b[^>]*\bsrc=["']\.\/pwa-update\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*$/im;
+  const match = text.match(pwaTagPattern);
+  if (!match) throw new Error('Não foi possível localizar pwa-update.js em public/index.html.');
+
+  text = text.replace(pwaTagPattern, `${runtimeTag}\n$&`);
   fs.writeFileSync(file, text);
 }
 
