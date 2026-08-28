@@ -53,19 +53,16 @@ jobs:
             fs.writeFileSync(cssFile,css);
           }
 
+          const oldTest='tests/critical-actions-single-row-v10.64.12.test.cjs';
+          let oldSource=fs.readFileSync(oldTest,'utf8');
+          const exact="test('release do ajuste visual é 10.64.12',()=>assert.equal(pkg.version,'10.64.12'));";
+          const future="test('release do ajuste visual permanece na linha canônica 10.64.x',()=>assert.match(pkg.version,/^10\\.64\\.\\d+$/));";
+          if(!oldSource.includes(exact)) throw new Error('teste legado de v10.64.12 não encontrado');
+          oldSource=oldSource.replace(exact,future);
+          fs.writeFileSync(oldTest,oldSource);
+
           const testFile='tests/critical-buttons-nowrap-v10.64.13.test.cjs';
           fs.writeFileSync(testFile,`const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst css=fs.readFileSync('public/css/learning-advisor.css','utf8');\nconst pkg=JSON.parse(fs.readFileSync('package.json','utf8'));\n\ntest('botões de pontos críticos não quebram seus rótulos',()=>{\n  assert.match(css,/\\.critical-point-controls button\\{[^}]*white-space:nowrap!important[^}]*overflow-wrap:normal!important[^}]*word-break:keep-all!important/s);\n  assert.match(css,/grid-template-columns:minmax\\(0,1\\.15fr\\) minmax\\(0,1\\.12fr\\) minmax\\(0,\\.88fr\\)/);\n});\n\ntest('correção é promovida para 10.64.13',()=>{\n  assert.equal(pkg.version,'10.64.13');\n});\n`);
-
-          // Atualiza apenas testes de release que tenham fixado a versão anterior.
-          for(const file of fs.readdirSync('tests')){
-            if(!file.endsWith('.test.cjs')) continue;
-            const path='tests/'+file;
-            let source=fs.readFileSync(path,'utf8');
-            if(source.includes('10.64.12') && file!=='critical-actions-single-row-v10.64.12.test.cjs'){
-              source=source.replaceAll('10.64.12','10.64.13');
-              fs.writeFileSync(path,source);
-            }
-          }
           NODE
 
           rm -f .github/workflows/temp-critical-nowrap-v10.64.13.yml
