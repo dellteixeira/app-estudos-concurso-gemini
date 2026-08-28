@@ -7,6 +7,13 @@ const script = fs.readFileSync('scripts/apply-android-mobile-hotfix.mjs', 'utf8'
 const gradle = fs.readFileSync('android/app/build.gradle', 'utf8');
 const workflow = fs.readFileSync('.github/workflows/android-phase2d-direct-distribution.yml', 'utf8');
 
+function declarationBlock(selector) {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = css.match(new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`));
+  assert.ok(match, `CSS block not found: ${selector}`);
+  return match[1];
+}
+
 test('calendar mobile hotfix preserves seven columns and two-digit days', () => {
   assert.match(css, /grid-template-columns:\s*repeat\(7,\s*minmax\(0,\s*1fr\)\)\s*!important/);
   assert.match(css, /\.day-num-value[\s\S]*white-space:\s*nowrap\s*!important/);
@@ -14,9 +21,12 @@ test('calendar mobile hotfix preserves seven columns and two-digit days', () => 
 });
 
 test('retention metric icons remain prominent on mobile', () => {
-  assert.match(css, /\.rd-metric-icon-v1077[\s\S]*width:\s*50px\s*!important/);
-  assert.match(css, /\.rd-metric-icon-v1077[\s\S]*height:\s*50px\s*!important/);
-  assert.match(css, /\.rd-metric-icon-v1077[\s\S]*font-size:\s*1\.32rem\s*!important/);
+  const block = declarationBlock('.rd-metric-icon-v1077');
+  assert.match(block, /(?:^|\s)width:\s*50px\s*!important\s*;/);
+  assert.match(block, /(?:^|\s)height:\s*50px\s*!important\s*;/);
+  assert.match(block, /(?:^|\s)min-width:\s*50px\s*!important\s*;/);
+  assert.match(block, /(?:^|\s)min-height:\s*50px\s*!important\s*;/);
+  assert.match(block, /(?:^|\s)font-size:\s*1\.32rem\s*!important\s*;/);
 });
 
 test('library list mode has a distinct compact grid on mobile', () => {
