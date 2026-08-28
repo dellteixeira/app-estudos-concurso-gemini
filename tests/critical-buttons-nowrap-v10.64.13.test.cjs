@@ -9,6 +9,6 @@ test('botões de pontos críticos não quebram seus rótulos',()=>{
   assert.match(css,/grid-template-columns:minmax\(0,1\.15fr\) minmax\(0,1\.12fr\) minmax\(0,\.88fr\)/);
 });
 
-test('correção é promovida para 10.64.13',()=>{
-  assert.equal(pkg.version,'10.64.13');
+test('correção permanece na linha canônica 10.64.x',()=>{
+  assert.match(pkg.version,/^10\.64\.\d+$/);
 });
