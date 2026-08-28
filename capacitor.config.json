@@ -1,0 +1,9 @@
+{
+  "appId": "com.estudoadaptativo.app",
+  "appName": "Estudo Adaptativo",
+  "webDir": "public",
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "https"
+  }
+}
