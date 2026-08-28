@@ -28,6 +28,9 @@ android/captures/
 *.apk
 *.aab
 
+# Android-generated copies of Worker-proxied vendor assets
+public/vendor/
+
 # Supabase local state
 supabase/.temp/
 
