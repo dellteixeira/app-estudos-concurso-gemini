@@ -425,7 +425,7 @@ async function analyze(options={}){
   const overlay=renderInterventionShell();
   const status=overlay?.querySelector('#learningAdvisorStatus');
   let candidates=collectCandidates(options.limit||MAX_TOPICS);
-  if(options.topicId)candidates=candidates.filter(item=>item.topicId===options.topicId);
+  if(options.topicId){candidates=candidates.filter(item=>item.topicId===options.topicId);if(!candidates.length)candidates=currentCandidates.filter(item=>item.topicId===options.topicId)}
   if(!candidates.length){if(status)status.textContent='Ainda não há dificuldade persistente disponível para análise. Assuntos adiados retornam automaticamente após 24 horas.';return null}
   const cached=!options.force&&!options.topicId&&readCache(candidates);
   if(cached){lastResult=cached;renderResults(cached,candidates);return cached}
