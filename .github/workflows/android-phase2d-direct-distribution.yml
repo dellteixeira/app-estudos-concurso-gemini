@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   direct-distribution-apk:
@@ -24,6 +24,7 @@ jobs:
       APP_VERSION: '10.64.16'
       APP_VERSION_CODE: '106416'
       APP_PACKAGE: 'com.estudoadaptativo.app'
+      RELEASE_TAG: 'v10.64.16'
 
     steps:
       - name: Checkout
@@ -184,7 +185,8 @@ jobs:
             "signed": true,
             "aabProduced": false,
             "sourceCommit": "${GITHUB_SHA}",
-            "workflowRun": "${GITHUB_RUN_ID}"
+            "workflowRun": "${GITHUB_RUN_ID}",
+            "permanentReleaseTag": "${RELEASE_TAG}"
           }
           EOF
 
@@ -195,3 +197,35 @@ jobs:
           path: dist/android/direct/
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish permanent APK assets to canonical GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="dist/android/direct"
+          FINAL="EstudoAdaptativo-v${APP_VERSION}-android-release.apk"
+
+          gh release view "$RELEASE_TAG" >/dev/null
+
+          existing_assets="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')"
+          if printf '%s\n' "$existing_assets" | grep -Fxq "$FINAL"; then
+            echo "Asset permanente $FINAL já existe em $RELEASE_TAG; mantendo o binário publicado sem substituição."
+            gh release view "$RELEASE_TAG" --json url,tagName,assets --jq '{url,tagName,assets:[.assets[].name]}'
+            exit 0
+          fi
+
+          cp "$OUT/SHA256SUMS.txt" "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-SHA256SUMS.txt"
+          cp "$OUT/android-release-signature.txt" "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-signature.txt"
+          cp "$OUT/distribution-manifest.json" "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-distribution-manifest.json"
+          cp "$OUT/INSTALL-ANDROID.txt" "$OUT/EstudoAdaptativo-v${APP_VERSION}-INSTALL-ANDROID.txt"
+
+          gh release upload "$RELEASE_TAG" \
+            "$OUT/$FINAL" \
+            "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-SHA256SUMS.txt" \
+            "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-signature.txt" \
+            "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-distribution-manifest.json" \
+            "$OUT/EstudoAdaptativo-v${APP_VERSION}-INSTALL-ANDROID.txt"
+
+          gh release view "$RELEASE_TAG" --json url,tagName,assets --jq '{url,tagName,assets:[.assets[].name]}'
