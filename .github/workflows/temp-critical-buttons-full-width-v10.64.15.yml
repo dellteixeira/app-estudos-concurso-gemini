@@ -40,13 +40,42 @@ jobs:
               if '10.64.14' not in t:
                   raise SystemExit(f'expected version 10.64.14 not found in {file}')
               p.write_text(t.replace('10.64.14','10.64.15'))
+
+          old_test = Path('tests/critical-buttons-fit-v10.64.14.test.cjs')
+          t = old_test.read_text()
+          t = t.replace("test('release do ajuste é 10.64.14',()=>assert.equal(pkg.version,'10.64.14'));", "test('release do ajuste permanece na linha canônica 10.64.x',()=>assert.match(pkg.version,/^10\\.64\\.\\d+$/));")
+          old_test.write_text(t)
+
+          Path('tests/critical-buttons-full-width-v10.64.15.test.cjs').write_text(r'''const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const js=fs.readFileSync('public/js/critical-points-actions.js','utf8');
+const css=fs.readFileSync('public/css/learning-advisor.css','utf8');
+const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+
+test('ações críticas são filhas diretas do card e não da coluna de texto',()=>{
+  assert.match(js,/article\.appendChild\(controls\);/);
+  assert.doesNotMatch(js,/copy\.appendChild\(controls\)/);
+});
+
+test('grupo de ações atravessa a coluna de conteúdo até o fim do card',()=>{
+  assert.match(css,/V10\.64\.15 — Pontos críticos: ações ocupam toda a largura útil do card/);
+  assert.match(css,/critical-actions-enabled > \.critical-point-controls\{[\s\S]*grid-column:2 \/ -1 !important/);
+  assert.match(css,/grid-template-columns:minmax\(0,1\.2fr\) minmax\(0,1\.16fr\) minmax\(0,\.9fr\) !important/);
+  assert.match(css,/font-size:\.65rem !important/);
+  assert.match(css,/white-space:nowrap !important/);
+});
+
+test('promoção estrutural usa a versão 10.64.15',()=>assert.equal(pkg.version,'10.64.15'));
+''')
           PY
+          rm .github/workflows/temp-critical-buttons-full-width-v10.64.15.yml
           npm test
           npm run audit
       - name: Commit correction
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add public/js/critical-points-actions.js public/css/learning-advisor.css package.json public/version.json src/index.js public/sw.js config/app-assets.json public/js/app-pwa.js
+          git add -A
           git commit -m "fix(ui): dar largura real aos botões dos pontos críticos"
           git push
