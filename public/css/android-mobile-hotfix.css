@@ -1,0 +1,228 @@
+/* Android mobile hotfix — 10.64.16-mobile.1
+   Loaded only by the native build through apply-android-mobile-hotfix.mjs. */
+
+@media (max-width: 700px) {
+  /* Calendar: preserve a real seven-column month instead of allowing
+     intrinsic text width to distort/narrow individual day cells. */
+  #monthCalendarHeader,
+  .month-calendar-header,
+  #monthCalendarGrid.month-grid,
+  .month-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #monthCalendarGrid.month-grid,
+  .month-grid {
+    gap: 5px !important;
+  }
+
+  #monthCalendarGrid .month-day-cell,
+  .month-grid .month-day-cell {
+    min-width: 0 !important;
+    width: 100% !important;
+    height: 78px !important;
+    min-height: 78px !important;
+    padding: 7px 4px 6px !important;
+    gap: 3px !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+  }
+
+  #monthCalendarGrid .day-num-header,
+  .month-grid .day-num-header {
+    min-width: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 2px !important;
+  }
+
+  #monthCalendarGrid .day-num-value,
+  .month-grid .day-num-value {
+    display: block !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    font-size: 1.02rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+
+  #monthCalendarGrid .month-day-mobile-meta {
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    font-size: .66rem !important;
+  }
+
+  .month-calendar-header {
+    gap: 5px !important;
+    font-size: clamp(.54rem, 2.2vw, .64rem) !important;
+    text-align: center !important;
+  }
+
+  .month-calendar-header > * {
+    min-width: 0 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  .calendar-shell-nav,
+  .calendar-month-selectors {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .calendar-month-selectors {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .72fr) !important;
+    gap: 8px !important;
+  }
+
+  .calendar-month-selectors label {
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .calendar-month-selectors select {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+  }
+
+  .calendar-primary-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .calendar-primary-actions .btn,
+  .calendar-primary-actions button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    padding: 8px 6px !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+    font-size: clamp(.68rem, 2.7vw, .78rem) !important;
+  }
+
+  /* Retention diagnostic: restore icon prominence on small screens. */
+  .rd-metrics-v1077 {
+    gap: 10px !important;
+  }
+
+  .rd-metric-card-v1077 {
+    min-height: 166px !important;
+    padding: 16px 12px 14px !important;
+  }
+
+  .rd-metric-icon-v1077 {
+    display: grid !important;
+    place-items: center !important;
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+    margin: 0 auto 8px !important;
+    border-radius: 50% !important;
+    font-size: 1.32rem !important;
+    line-height: 1 !important;
+  }
+
+  .rd-metric-label-v1077 {
+    min-height: 2.4em !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+  }
+
+  .rd-metric-card-v1077 > strong {
+    font-size: clamp(1.75rem, 8vw, 2.25rem) !important;
+    line-height: 1 !important;
+  }
+
+  /* Library: mobile list mode must be structurally different from cards.
+     Specificity intentionally beats the runtime compatibility style. */
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-library-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 112px !important;
+    grid-template-areas:
+      "top actions"
+      "title actions"
+      "context actions"
+      "workspace actions"
+      "progress progress"
+      "meta meta" !important;
+    column-gap: 10px !important;
+    row-gap: 4px !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    padding: 12px !important;
+  }
+
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-card-top { grid-area: top !important; margin: 0 !important; }
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view h4 { grid-area: title !important; margin: 0 !important; font-size: .96rem !important; line-height: 1.2 !important; }
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-card-context { grid-area: context !important; margin: 0 !important; font-size: .74rem !important; }
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-card-workspace { grid-area: workspace !important; margin: 0 !important; font-size: .72rem !important; }
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-progress-line { grid-area: progress !important; margin: 6px 0 0 !important; }
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-card-meta { grid-area: meta !important; margin: 0 !important; font-size: .68rem !important; }
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-card-actions {
+    grid-area: actions !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-self: stretch !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    margin: 0 !important;
+  }
+
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-card-actions .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 36px !important;
+    padding: 6px 5px !important;
+    justify-content: center !important;
+    font-size: .68rem !important;
+  }
+}
+
+@media (max-width: 390px) {
+  #monthCalendarGrid.month-grid,
+  .month-grid,
+  .month-calendar-header { gap: 3px !important; }
+
+  #monthCalendarGrid .month-day-cell,
+  .month-grid .month-day-cell {
+    height: 72px !important;
+    min-height: 72px !important;
+    padding-inline: 3px !important;
+  }
+
+  #monthCalendarGrid .day-num-value,
+  .month-grid .day-num-value { font-size: .94rem !important; }
+
+  body #pdfLibraryGrid.pdf-library-grid.pdf-library-list-view .pdf-library-card {
+    grid-template-columns: minmax(0, 1fr) 98px !important;
+  }
+}
