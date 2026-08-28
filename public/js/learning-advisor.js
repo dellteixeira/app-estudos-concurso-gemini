@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppLearningAdvisor)return;
 
-const VERSION='1.2.1';
+const VERSION='1.3.0';
 const MAX_TOPICS=5;
 const MIN_FRICTION=35;
 const CACHE_TTL_MS=30*60*1000;
@@ -209,6 +209,30 @@ function collectCandidates(limit=MAX_TOPICS){
   return candidates;
 }
 
+
+function localIntervention(candidate){
+  const m=candidate?.metrics||{};
+  const history=candidate?.recommendationHistory||[];
+  const last=history.at(-1)?.action||'';
+  let action='short_review',diagnosisType='retention',rationale='A retenção pede reforço curto antes de nova medição.';
+  if(m.accuracy!=null&&m.accuracy<55&&m.retention>=75){action='questions';diagnosisType='false_mastery';rationale='A retenção está alta, mas o desempenho em questões indica falsa sensação de domínio.'}
+  else if(m.forgot||m.retention<55||m.lapseCount>=2){action='active_recall';diagnosisType='retention';rationale='Há sinal forte de esquecimento; recuperar de memória permite localizar as lacunas reais.'}
+  else if(m.accuracy!=null&&m.accuracy<60){action='questions';diagnosisType='application';rationale='O gargalo predominante está na aplicação do conteúdo em questões.'}
+  else if(candidate.frictionScore>=70||m.reviewCount>=4||m.difficulty>=8){action='focused_restudy';diagnosisType='persistent';rationale='A dificuldade persiste apesar do esforço acumulado; reestude apenas o ponto de falha.'}
+  if(last===action){
+    const alternatives=action==='active_recall'?['short_review','questions']:action==='questions'?['active_recall','focused_restudy']:action==='focused_restudy'?['questions','active_recall']:['active_recall','questions'];
+    action=alternatives.find(value=>value!==last)||action;
+    rationale+=' O método foi alternado porque a mesma intervenção já havia sido recomendada recentemente.';
+  }
+  const method={active_recall:'Tente responder de memória, confira a fonte e corrija apenas as lacunas.',short_review:'Revise rapidamente os pontos-chave e teste a recordação em seguida.',questions:'Resolva questões, analise os erros e registre por que as alternativas estavam certas ou erradas.',focused_restudy:'Retorne apenas ao subponto que está falhando, reconstrua a compreensão e teste novamente.'}[action];
+  const severity=candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low';
+  const suggestedMinutes=action==='focused_restudy'?30:action==='questions'?25:action==='active_recall'?15:12;
+  return {topicId:candidate.topicId,recommendedAction:action,diagnosisType,severity,suggestedMinutes,rationale,method};
+}
+function localPayload(candidates,reason='IA indisponível'){
+  return {aiUsed:false,provider:'local',fallbackReason:safeText(reason,180),interventions:candidates.map(localIntervention)};
+}
+
 function getRiskRows(){
   return getRows().map((row,index)=>{
     const item=findItem(row);
@@ -317,7 +341,7 @@ function renderResults(payload,candidates){
   const box=overlay.querySelector('#learningAdvisorResults');
   const status=overlay.querySelector('#learningAdvisorStatus');
   const interventions=Array.isArray(payload?.interventions)?payload.interventions:[];
-  if(status)status.textContent=payload?.aiUsed?'Gemini selecionou o método considerando as métricas e o histórico anti-repetição.':'A seleção abaixo foi produzida pelo motor local com histórico anti-repetição porque a IA não estava disponível.';
+  if(status)status.textContent=payload?.aiUsed?'A IA selecionou o método considerando métricas e histórico anti-repetição.':`Seleção local aplicada${payload?.fallbackReason?` porque ${payload.fallbackReason}`:' porque a IA não estava disponível'}.`;
   if(!box)return;
   box.innerHTML=interventions.map(intervention=>{
     const candidate=candidates.find(c=>c.topicId===intervention.topicId);
@@ -327,12 +351,24 @@ function renderResults(payload,candidates){
     const sev=intervention.severity==='high'?'Alto':intervention.severity==='medium'?'Médio':'Baixo';
     const previous=(candidate.recommendationHistory||[]).at(-1);
     const previousLabel=previous?ACTION_LABELS[previous.action]:'';
-    return `<article class="learning-advisor-card" data-topic-id="${esc(candidate.topicId)}"><div class="learning-advisor-card-top"><div><span class="learning-advisor-subject">${esc(candidate.materia)}</span><strong>${esc(candidate.assunto)}</strong></div><span class="learning-friction learning-friction-${candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low'}">Dificuldade persistente ${candidate.frictionScore}</span></div><div class="learning-advisor-meta"><span>${esc(type)}</span><span>Risco ${sev}</span><span>${Math.round(Number(intervention.suggestedMinutes)||20)} min</span>${previousLabel?`<span>Anterior: ${esc(previousLabel)}</span>`:''}</div><p>${esc(intervention.rationale||'Recomendação baseada nos sinais de retenção, desempenho e histórico.')}</p><div class="learning-advisor-action"><strong>${esc(action)}</strong><span>${esc(intervention.method||'Aplique a intervenção e meça novamente o desempenho.')}</span></div><div class="learning-advisor-controls"><button class="btn btn-secondary btn-sm" type="button" data-learning-action="local-intervention" data-row-index="${candidate.rowIndex}">Abrir intervenção local</button><button class="btn btn-secondary btn-sm" type="button" data-learning-action="snooze" data-topic-id="${esc(candidate.topicId)}">Fechar sem estudar · 24h</button><span>Adiar não registra estudo nem altera a retenção.</span></div></article>`;
+    const options=Object.entries(ACTION_LABELS).map(([key,label])=>`<option value="${key}" ${key===intervention.recommendedAction?'selected':''}>${esc(label)}</option>`).join('');
+    return `<article class="learning-advisor-card" data-topic-id="${esc(candidate.topicId)}"><div class="learning-advisor-card-top"><div><span class="learning-advisor-subject">${esc(candidate.materia)}</span><strong>${esc(candidate.assunto)}</strong></div><span class="learning-friction learning-friction-${candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low'}">Dificuldade persistente ${candidate.frictionScore}</span></div><div class="learning-advisor-meta"><span>${esc(type)}</span><span>Risco ${sev}</span><span>${Math.round(Number(intervention.suggestedMinutes)||20)} min</span>${previousLabel?`<span>Anterior: ${esc(previousLabel)}</span>`:''}</div><p>${esc(intervention.rationale||'Recomendação baseada nos sinais de retenção, desempenho e histórico.')}</p><div class="learning-advisor-action"><strong>Método recomendado: ${esc(action)}</strong><span>${esc(intervention.method||'Aplique a intervenção e meça novamente o desempenho.')}</span></div><div class="learning-advisor-manual"><label>Você pode escolher outro método<select data-learning-method-select>${options}</select></label><button class="btn btn-secondary btn-sm" type="button" data-learning-action="manual-method" data-row-index="${candidate.rowIndex}">Usar método escolhido</button></div><div class="learning-advisor-controls"><button class="btn btn-primary btn-sm" type="button" data-learning-action="local-intervention" data-row-index="${candidate.rowIndex}">Iniciar método</button><button class="btn btn-secondary btn-sm" type="button" data-learning-action="snooze" data-topic-id="${esc(candidate.topicId)}">Adiar 24h</button><span>Adiar não registra estudo nem altera a retenção.</span></div></article>`;
   }).join('')||'<div class="learning-advisor-empty">Nenhuma intervenção foi necessária neste momento.</div>';
   box.querySelectorAll('[data-learning-action="local-intervention"]').forEach(button=>button.addEventListener('click',()=>{
     const topicId=button.closest('.learning-advisor-card')?.dataset.topicId||'';
     const intervention=interventions.find(item=>item?.topicId===topicId);
     openLocalIntervention(Number(button.dataset.rowIndex),intervention);
+  }));
+  box.querySelectorAll('[data-learning-action="manual-method"]').forEach(button=>button.addEventListener('click',()=>{
+    const card=button.closest('.learning-advisor-card');
+    const topicId=card?.dataset.topicId||'';
+    const candidate=candidates.find(item=>item.topicId===topicId);
+    const base=interventions.find(item=>item?.topicId===topicId)||localIntervention(candidate);
+    const selected=card?.querySelector('[data-learning-method-select]')?.value||base.recommendedAction;
+    if(!ACTION_LABELS[selected])return;
+    const override={...base,recommendedAction:selected,rationale:`Método escolhido manualmente pelo estudante. ${base.rationale||''}`};
+    recordRecommendation(topicId,selected,'manual');
+    openLocalIntervention(Number(button.dataset.rowIndex),override);
   }));
   box.querySelectorAll('[data-learning-action="snooze"]').forEach(button=>button.addEventListener('click',()=>handleSnooze(button.dataset.topicId,button.closest('.learning-advisor-card'))));
 }
@@ -388,18 +424,36 @@ async function analyze(options={}){
   if(busy)return lastResult;
   const overlay=renderInterventionShell();
   const status=overlay?.querySelector('#learningAdvisorStatus');
-  const candidates=collectCandidates(options.limit||MAX_TOPICS);
+  let candidates=collectCandidates(options.limit||MAX_TOPICS);
+  if(options.topicId){candidates=candidates.filter(item=>item.topicId===options.topicId);if(!candidates.length)candidates=currentCandidates.filter(item=>item.topicId===options.topicId)}
   if(!candidates.length){if(status)status.textContent='Ainda não há dificuldade persistente disponível para análise. Assuntos adiados retornam automaticamente após 24 horas.';return null}
-  const cached=!options.force&&readCache(candidates);
+  const cached=!options.force&&!options.topicId&&readCache(candidates);
   if(cached){lastResult=cached;renderResults(cached,candidates);return cached}
-  busy=true;if(status)status.textContent='Analisando métricas e histórico de métodos sem alterar seu cronograma…';
+  busy=true;if(status)status.textContent='Consultando a IA com métricas e histórico sem alterar seu cronograma…';
   try{
     const payload=await requestAdvice(candidates);
-    lastResult=payload;writeCache(candidates,payload);persistDisplayedRecommendations(payload);renderResults(payload,candidates);return payload;
+    lastResult=payload;if(!options.topicId)writeCache(candidates,payload);persistDisplayedRecommendations(payload);renderResults(payload,candidates);return payload;
   }catch(error){
-    if(status)status.textContent=error?.message||'Não foi possível consultar a IA agora.';
-    throw error;
+    const payload=localPayload(candidates,error?.message||'a consulta falhou');
+    lastResult=payload;persistDisplayedRecommendations(payload);renderResults(payload,candidates);return payload;
   }finally{busy=false}
+}
+function analyzeTopic(topicId,rowIndex=null){
+  installLocalRetentionIntegration();
+  let candidates=collectCandidates(MAX_TOPICS);
+  let candidate=candidates.find(item=>item.topicId===topicId);
+  if(!candidate&&Number.isInteger(Number(rowIndex))){
+    const row=getRows()[Number(rowIndex)];
+    const item=row?findItem(row):null;
+    if(row&&item){
+      const friction=computeLearningFriction(row,item);
+      const id=topicKey(item.materia,item.assunto);
+      candidate={topicId:id,rowIndex:Number(rowIndex),materia:safeText(item.materia,180),assunto:safeText(item.assunto,300),prioridade:clamp(numberOr(item.prioridade,2),1,4),assuntoPrioridade:clamp(numberOr(item.assunto_prioridade,1),1,20),frictionScore:Math.max(MIN_FRICTION,friction.score),metrics:friction.metrics,recommendationHistory:getRecommendationHistory(id)};
+      currentCandidates=[candidate,...currentCandidates.filter(value=>value.topicId!==candidate.topicId)];
+    }
+  }
+  if(!candidate)return Promise.resolve(null);
+  return analyze({topicId:candidate.topicId,limit:MAX_TOPICS,force:true});
 }
 
 function onRiskMetricClick(event){
@@ -440,5 +494,5 @@ function boot(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
 global.addEventListener('pageshow',()=>setTimeout(boot,80));
 
-global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,snoozeTopic,isSnoozed,snoozeUntil,getRecommendationHistory,getDiagnostics:diagnostics});
+global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,analyzeTopic,localIntervention,refresh,close:closeDialog,snoozeTopic,isSnoozed,snoozeUntil,getRecommendationHistory,getDiagnostics:diagnostics});
 })(window);

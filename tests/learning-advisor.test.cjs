@@ -58,7 +58,8 @@ test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
   assert.match(server,/autoSchedule:false/);
   assert.match(server,/NÃO controla o cronograma/);
   assert.match(client,/motor de Retenção/);
-  assert.match(client,/Abrir intervenção local/);
+  assert.match(client,/data-learning-action="local-intervention"/);
+  assert.match(client,/openLocalIntervention\(Number\(button\.dataset\.rowIndex\),intervention\)/);
   assert.doesNotMatch(client,/gerarCronogramaInteligente\(/);
   assert.doesNotMatch(client,/gerarCronogramaMetodo2\(/);
 });

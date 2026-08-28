@@ -2,7 +2,7 @@
 'use strict';
 if(global.CriticalPointActions)return;
 
-const VERSION='1.0.1';
+const VERSION='1.1.0';
 const SNOOZE_HOURS=24;
 const ENHANCED_CLASS='critical-actions-enabled';
 let observer=null;
@@ -119,7 +119,14 @@ function enhanceCard(card){
   const note=document.createElement('span');
   note.className='critical-point-note';
   note.textContent='Adiar não registra estudo nem altera a retenção.';
-  controls.append(study,snoozeButton,note);
+  const ai=document.createElement('button');
+  ai.className='critical-point-ai';
+  ai.type='button';
+  ai.dataset.criticalAction='ai';
+  ai.dataset.topicId=topicId;
+  ai.dataset.reviewIndex=String(index);
+  ai.textContent='Consultar IA';
+  controls.append(study,ai,snoozeButton,note);
   const copy=article.querySelector('.retention-risk-copy');
   if(copy)copy.appendChild(controls);
   else article.appendChild(controls);
@@ -165,6 +172,10 @@ function onClick(event){
   event.preventDefault();
   event.stopPropagation();
   if(action.dataset.criticalAction==='study')return openStudy(action.dataset.reviewIndex);
+  if(action.dataset.criticalAction==='ai'){
+    if(typeof global.AppLearningAdvisor?.analyzeTopic==='function')return global.AppLearningAdvisor.analyzeTopic(action.dataset.topicId,Number(action.dataset.reviewIndex));
+    return global.appNotice?.('A análise por IA ainda está carregando. Tente novamente em instantes.',{title:'Pontos críticos'});
+  }
   if(action.dataset.criticalAction==='snooze')return snooze(action.dataset.topicId);
 }
 function boot(){

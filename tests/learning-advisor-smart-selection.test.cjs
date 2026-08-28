@@ -14,9 +14,10 @@ test('learning advisor persists recommendation history when advice is displayed'
   assert.match(client,/recommendationHistory\}\)=>\(\{topicId/);
 });
 
-test('learning advisor supports 24h close without studying',()=>{
+test('learning advisor supports 24h postpone without studying',()=>{
   assert.match(client,/const SNOOZE_MS=24\*60\*60\*1000/);
-  assert.match(client,/Fechar sem estudar · 24h/);
+  assert.match(client,/data-learning-action="snooze"/);
+  assert.match(client,/Adiar 24h/);
   assert.match(client,/snoozeTopic\(topicId,24\)/);
   assert.match(client,/if\(isSnoozed\(id\)\)return null/);
   assert.match(client,/Adiar não registra estudo nem altera a retenção/);
