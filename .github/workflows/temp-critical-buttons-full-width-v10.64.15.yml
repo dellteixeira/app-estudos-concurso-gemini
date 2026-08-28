@@ -17,8 +17,13 @@ jobs:
         run: python3 .github/scripts/patch-critical-buttons-v106415.py
       - name: Remove temporary migration files
         run: rm .github/workflows/temp-critical-buttons-full-width-v10.64.15.yml .github/scripts/patch-critical-buttons-v106415.py
-      - name: Validate
-        run: npm test && npm run audit
+      - name: Validate tests and structural contracts
+        run: |
+          npm test
+          node scripts/audit-css-ownership.cjs
+          node scripts/audit-asset-manifest.mjs
+          node scripts/audit-inline-csp.mjs
+          node scripts/audit-toolchain-pins.mjs
       - name: Commit correction
         run: |
           git config user.name github-actions[bot]
