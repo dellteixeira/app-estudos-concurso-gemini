@@ -2,7 +2,7 @@
 'use strict';
 if(global.CriticalPointActions)return;
 
-const VERSION='1.0.0';
+const VERSION='1.0.1';
 const SNOOZE_HOURS=24;
 const ENHANCED_CLASS='critical-actions-enabled';
 let observer=null;
@@ -10,6 +10,7 @@ let refreshTimer=null;
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
 
+function advisorReady(){return typeof global.AppLearningAdvisor?.snoozeTopic==='function'&&typeof global.AppLearningAdvisor?.computeLearningFriction==='function'}
 function getRows(){
   try{return typeof retentionDiagnosticRows!=='undefined'&&Array.isArray(retentionDiagnosticRows)?retentionDiagnosticRows:[]}catch(_){return[]}
 }
@@ -44,8 +45,7 @@ function persistentRisk(row,item){
 function computeGlobalRisk(row,item){
   const retention=clamp(row?.retention??row?.state?.retention??100,0,100);
   const rawAccuracy=Number(row?.questionAccuracy??row?.state?.questionStats?.lastAccuracy);
-  const hasAccuracy=Number.isFinite(rawAccuracy);
-  const accuracy=hasAccuracy?clamp(rawAccuracy,0,100):null;
+  const accuracy=Number.isFinite(rawAccuracy)?clamp(rawAccuracy,0,100):null;
   const retentionComponent=(100-retention)*0.30;
   const questionsComponent=accuracy==null?0:(100-accuracy)*0.25;
   const overdueComponent=overdueRisk(row);
@@ -68,20 +68,20 @@ function accuracyText(row){
 function findRow(index){return getRows()[Number(index)]||null}
 
 function enhanceCard(card){
-  if(!card||card.classList.contains(ENHANCED_CLASS))return;
+  if(!advisorReady()||!card||card.classList.contains(ENHANCED_CLASS))return;
   const index=Number(card.dataset.reviewIndex);
   const row=findRow(index);
   if(!row?.state)return;
   const item=findItem(row);
   const topicId=getTopicKey(item,row);
   if(!topicId)return;
-  if(global.AppLearningAdvisor?.isSnoozed?.(topicId)){
+  if(global.AppLearningAdvisor.isSnoozed?.(topicId)){
     card.remove();
     return;
   }
   const risk=computeGlobalRisk(row,item);
   const article=document.createElement('article');
-  article.className=`${card.className} ${ENHANCED_CLASS} risk-${risk.level}`.replace(/\brisk-(?:high|medium|low)\b/g,'').trim()+` risk-${risk.level}`;
+  article.className=`${card.className} ${ENHANCED_CLASS}`.replace(/\brisk-(?:high|medium|low)\b/g,'').replace(/\s+/g,' ').trim()+` risk-${risk.level}`;
   article.dataset.reviewIndex=String(index);
   article.dataset.topicId=topicId;
   article.setAttribute('aria-label',`Ponto crítico: ${row.state.materia||'Matéria'} — ${row.state.assunto||'Assunto'}. Risco global ${risk.score} de 100. Retenção ${retentionText(row)}. Questões ${accuracyText(row)}.`);
@@ -104,7 +104,22 @@ function enhanceCard(card){
   const progress=article.querySelector('.retention-risk-progress');
   const controls=document.createElement('div');
   controls.className='critical-point-controls';
-  controls.innerHTML=`<button class="critical-point-study" type="button" data-critical-action="study" data-review-index="${index}">Estudar agora</button><button class="critical-point-snooze" type="button" data-critical-action="snooze" data-topic-id="${topicId.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">Adiar 24h</button><span class="critical-point-note">Adiar não registra estudo nem altera a retenção.</span>`;
+  const study=document.createElement('button');
+  study.className='critical-point-study';
+  study.type='button';
+  study.dataset.criticalAction='study';
+  study.dataset.reviewIndex=String(index);
+  study.textContent='Estudar agora';
+  const snoozeButton=document.createElement('button');
+  snoozeButton.className='critical-point-snooze';
+  snoozeButton.type='button';
+  snoozeButton.dataset.criticalAction='snooze';
+  snoozeButton.dataset.topicId=topicId;
+  snoozeButton.textContent='Adiar 24h';
+  const note=document.createElement('span');
+  note.className='critical-point-note';
+  note.textContent='Adiar não registra estudo nem altera a retenção.';
+  controls.append(study,snoozeButton,note);
   const copy=article.querySelector('.retention-risk-copy');
   if(copy)copy.appendChild(controls);
   else article.appendChild(controls);
@@ -113,11 +128,12 @@ function enhanceCard(card){
 }
 
 function enhanceAll(){
+  if(!advisorReady())return;
   document.querySelectorAll('button.retention-risk-card-v1071[data-review-index]').forEach(enhanceCard);
 }
-function scheduleEnhance(){
+function scheduleEnhance(delay=0){
   clearTimeout(refreshTimer);
-  refreshTimer=setTimeout(enhanceAll,0);
+  refreshTimer=setTimeout(enhanceAll,delay);
 }
 function openStudy(index){
   try{
@@ -131,7 +147,12 @@ function rerenderDiagnostics(){
 }
 function snooze(topicId){
   if(!topicId)return;
-  const until=global.AppLearningAdvisor?.snoozeTopic?.(topicId,SNOOZE_HOURS);
+  if(!advisorReady()){
+    global.appNotice?.('O controle de adiamento ainda está carregando. Tente novamente em instantes.',{title:'Pontos críticos'});
+    scheduleEnhance(250);
+    return;
+  }
+  const until=global.AppLearningAdvisor.snoozeTopic(topicId,SNOOZE_HOURS);
   document.querySelectorAll(`.${ENHANCED_CLASS}`).forEach(card=>{if(card.dataset.topicId===topicId)card.remove()});
   rerenderDiagnostics();
   const when=until?new Date(until).toLocaleString('pt-BR'):'em 24 horas';
@@ -149,9 +170,10 @@ function onClick(event){
 function boot(){
   enhanceAll();
   document.addEventListener('click',onClick,true);
-  observer=new MutationObserver(scheduleEnhance);
+  observer=new MutationObserver(()=>scheduleEnhance());
   observer.observe(document.documentElement,{childList:true,subtree:true});
   global.addEventListener('learning-advisor:snooze-changed',rerenderDiagnostics);
+  [120,350,900,1800].forEach(delay=>setTimeout(enhanceAll,delay));
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
