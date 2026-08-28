@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 
-const addAfter = (text, needle, addition) => text.includes(addition.trim()) ? text : text.replace(needle, `${needle}${addition}`);
-
 // 1) Load native runtime before every deferred app/vendor script.
 {
   const file = 'public/index.html';
@@ -21,8 +19,8 @@ const addAfter = (text, needle, addition) => text.includes(addition.trim()) ? te
   for (const key of ['criticalAppShell', 'networkFirstPaths', 'workerNoStorePaths', 'headersNoStorePaths']) {
     const list = manifest[key];
     if (!list.includes(route)) {
-      const index = Math.max(0, list.indexOf('/pwa-update.js') + 1);
-      list.splice(index, 0, route);
+      const pivot = list.indexOf('/pwa-update.js');
+      list.splice(pivot >= 0 ? pivot + 1 : 0, 0, route);
     }
   }
   fs.writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -32,8 +30,14 @@ const addAfter = (text, needle, addition) => text.includes(addition.trim()) ? te
 {
   const file = 'public/sw.js';
   let text = fs.readFileSync(file, 'utf8');
-  if (!text.includes('"/capacitor-runtime.js"') && !text.includes("'/capacitor-runtime.js'")) {
-    throw new Error('Formato inesperado de sw.js: não foi possível inserir capacitor-runtime.js com segurança.');
+  if (!text.includes("'./capacitor-runtime.js'")) {
+    text = text.replace("'./', './index.html', './manifest.json', './version.json', './pwa-update.js',", "'./', './index.html', './manifest.json', './version.json', './pwa-update.js', './capacitor-runtime.js',");
+  }
+  if (!text.includes("'/capacitor-runtime.js'")) {
+    text = text.replace("'/pwa-update.js', '/sw.js', '/index.html', '/manifest.json', '/version.json',", "'/pwa-update.js', '/capacitor-runtime.js', '/sw.js', '/index.html', '/manifest.json', '/version.json',");
+  }
+  if (!text.includes("'./capacitor-runtime.js'") || !text.includes("'/capacitor-runtime.js'")) {
+    throw new Error('Falha ao sincronizar capacitor-runtime.js no Service Worker.');
   }
   fs.writeFileSync(file, text);
 }
@@ -53,7 +57,9 @@ const addAfter = (text, needle, addition) => text.includes(addition.trim()) ? te
     text = text.replace(marker, `${helper}${marker}`);
   }
 
-  text = text.replace('    const url = new URL(request.url);\n\n    if (request.method === "GET"', '    const url = new URL(request.url);\n\n    if (url.pathname.startsWith("/api/") && request.method === "OPTIONS") {\n      return nativeCorsPreflight(request);\n    }\n\n    if (request.method === "GET"');
+  if (!text.includes('nativeCorsPreflight(request)')) {
+    text = text.replace('    const url = new URL(request.url);\n\n    if (request.method === "GET"', '    const url = new URL(request.url);\n\n    if (url.pathname.startsWith("/api/") && request.method === "OPTIONS") {\n      return nativeCorsPreflight(request);\n    }\n\n    if (request.method === "GET"');
+  }
   text = text.replace('      return analyzeEdital(request, env);', '      return withNativeCors(request, await analyzeEdital(request, env));');
   text = text.replace('      return generateFlashcard(request, env);', '      return withNativeCors(request, await generateFlashcard(request, env));');
   text = text.replace('      return learningDiagnosis(request, env);', '      return withNativeCors(request, await learningDiagnosis(request, env));');
