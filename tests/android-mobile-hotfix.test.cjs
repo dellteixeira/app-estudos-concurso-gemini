@@ -39,8 +39,8 @@ test('native hotfix injects stylesheet and canonical web logo into Android launc
   assert.match(script, /android-mobile-hotfix\.css/);
   assert.match(script, /public\/icon-512\.png/);
   assert.match(script, /estudo_adaptativo_launcher\.png/);
-  assert.match(script, /android:icon=\\"@drawable\/estudo_adaptativo_launcher\\"/);
-  assert.match(script, /android:roundIcon=\\"@drawable\/estudo_adaptativo_launcher\\"/);
+  assert.match(script, /android:icon="@drawable\/estudo_adaptativo_launcher"/);
+  assert.match(script, /android:roundIcon="@drawable\/estudo_adaptativo_launcher"/);
 });
 
 test('APK hotfix increments Android identity without changing web release identity', () => {
