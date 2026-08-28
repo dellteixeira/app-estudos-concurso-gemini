@@ -1,6 +1,12 @@
 name: Android Phase 2B Signed APK
 
 on:
+  push:
+    branches:
+      - feat/android-phase2a-release-apk-v10.64.16
+    paths:
+      - '.github/workflows/android-phase2-signed-apk.yml'
+      - 'android/app/build.gradle'
   workflow_dispatch:
 
 permissions:
