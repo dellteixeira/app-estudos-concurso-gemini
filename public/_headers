@@ -99,6 +99,9 @@
 /js/learning-advisor.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+/js/critical-points-actions.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /js/app-state.js
   Cache-Control: no-cache, no-store, must-revalidate
 
