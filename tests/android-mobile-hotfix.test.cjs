@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const css = fs.readFileSync('public/css/android-mobile-hotfix.css', 'utf8');
+const css = fs.readFileSync('android/mobile/android-mobile-hotfix.css', 'utf8');
 const script = fs.readFileSync('scripts/apply-android-mobile-hotfix.mjs', 'utf8');
 const gradle = fs.readFileSync('android/app/build.gradle', 'utf8');
 const workflow = fs.readFileSync('.github/workflows/android-phase2d-direct-distribution.yml', 'utf8');
@@ -35,8 +35,14 @@ test('library list mode has a distinct compact grid on mobile', () => {
   assert.match(css, /\.pdf-card-actions[\s\S]*flex-direction:\s*column\s*!important/);
 });
 
-test('native hotfix injects stylesheet and canonical web logo into Android launcher', () => {
-  assert.match(script, /android-mobile-hotfix\.css/);
+test('native hotfix is sourced outside public and injected only during Android build', () => {
+  assert.match(script, /android\/mobile\/android-mobile-hotfix\.css/);
+  assert.match(script, /public\/css/);
+  assert.match(script, /copyFileSync\(cssSource, cssTarget\)/);
+  assert.equal(fs.existsSync('public/css/android-mobile-hotfix.css'), false);
+});
+
+test('native hotfix injects canonical web logo into Android launcher', () => {
   assert.match(script, /public\/icon-512\.png/);
   assert.match(script, /estudo_adaptativo_launcher\.png/);
   assert.match(script, /android:icon="@drawable\/estudo_adaptativo_launcher"/);
