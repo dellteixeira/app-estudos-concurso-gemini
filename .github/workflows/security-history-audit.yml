@@ -1,6 +1,7 @@
 name: Security History Audit
 
 on:
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: '30 7 * * 1'
