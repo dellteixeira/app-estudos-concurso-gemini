@@ -1,0 +1,76 @@
+name: Temp critical buttons fit v10.64.14
+
+on:
+  push:
+    branches:
+      - fix/critical-buttons-fit-v10.64.14
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: fix/critical-buttons-fit-v10.64.14
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22.23.2'
+      - name: Apply v10.64.14 fit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const replaceRequired=(file,from,to)=>{
+            const src=fs.readFileSync(file,'utf8');
+            if(!src.includes(from)) throw new Error(`${file}: token not found: ${from}`);
+            fs.writeFileSync(file,src.split(from).join(to));
+          };
+          const updateJson=(file)=>{
+            const data=JSON.parse(fs.readFileSync(file,'utf8'));
+            data.version='10.64.14';
+            fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');
+          };
+          updateJson('package.json');
+          updateJson('public/version.json');
+          updateJson('config/app-assets.json');
+          replaceRequired('src/index.js','const APP_VERSION = "10.64.13"','const APP_VERSION = "10.64.14"');
+          replaceRequired('public/sw.js',"const APP_VERSION = '10.64.13'","const APP_VERSION = '10.64.14'");
+          replaceRequired('public/js/app-pwa.js','10.64.13','10.64.14');
+
+          const cssFile='public/css/learning-advisor.css';
+          let css=fs.readFileSync(cssFile,'utf8');
+          const marker='/* V10.64.14 — Pontos críticos: botões dimensionados sem sobreposição. */';
+          if(!css.includes(marker)){
+            css += `\n${marker}\n.critical-point-controls{gap:8px!important;grid-template-columns:minmax(0,1.18fr) minmax(0,1.10fr) minmax(0,.92fr)!important}\n.critical-point-controls button{box-sizing:border-box!important;min-width:0!important;max-width:100%!important;font-size:.68rem!important;line-height:1.05!important;padding:7px 5px!important;white-space:nowrap!important;overflow-wrap:normal!important;word-break:keep-all!important;hyphens:none!important}\n@media(max-width:820px){.critical-point-controls{gap:6px!important;grid-template-columns:minmax(0,1.18fr) minmax(0,1.10fr) minmax(0,.92fr)!important}.critical-point-controls button{font-size:.62rem!important;padding-inline:3px!important}}\n@media(max-width:720px){.critical-point-controls{gap:5px!important}.critical-point-controls button{font-size:.60rem!important;padding-inline:2px!important}}\n@media(max-width:420px){.critical-point-controls{gap:4px!important}.critical-point-controls button{font-size:.56rem!important;padding-inline:1px!important}}\n`;
+            fs.writeFileSync(cssFile,css);
+          }
+
+          const oldTest='tests/critical-buttons-nowrap-v10.64.13.test.cjs';
+          if(fs.existsSync(oldTest)){
+            let t=fs.readFileSync(oldTest,'utf8');
+            t=t.replace("test('correção é promovida para 10.64.13',()=>{\n  assert.equal(pkg.version,'10.64.13');\n});","test('correção permanece na linha canônica 10.64.x',()=>{\n  assert.match(pkg.version,/^10\\.64\\.\\d+$/);\n});");
+            fs.writeFileSync(oldTest,t);
+          }
+          fs.writeFileSync('tests/critical-buttons-fit-v10.64.14.test.cjs',`const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst css=fs.readFileSync('public/css/learning-advisor.css','utf8');\nconst pkg=JSON.parse(fs.readFileSync('package.json','utf8'));\n\ntest('botões dos pontos críticos cabem sem sobreposição',()=>{\n  assert.match(css,/V10\\.64\\.14 — Pontos críticos: botões dimensionados sem sobreposição/);\n  assert.match(css,/font-size:\\.68rem!important/);\n  assert.match(css,/@media\\(max-width:820px\\)[^{]*\\{[\\s\\S]*font-size:\\.62rem!important/);\n  assert.match(css,/gap:6px!important/);\n  assert.match(css,/max-width:100%!important/);\n});\n\ntest('release do ajuste é 10.64.14',()=>assert.equal(pkg.version,'10.64.14'));\n`);
+          NODE
+
+          rm -f .github/workflows/temp-critical-buttons-fit-v10.64.14.yml
+          npm test
+          node scripts/audit-css-ownership.cjs
+          node scripts/audit-asset-manifest.mjs
+          node scripts/audit-inline-csp.mjs
+          node scripts/audit-toolchain-pins.mjs
+      - name: Commit correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(ui): ajustar botões dos pontos críticos ao card'
+          git push origin HEAD:fix/critical-buttons-fit-v10.64.14
