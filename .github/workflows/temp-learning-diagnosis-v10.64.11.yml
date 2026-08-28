@@ -1,4 +1,4 @@
-name: Temp learning diagnosis v10.64.11
+name: Temp learning diagnosis edge fix v10.64.11
 
 on:
   push:
@@ -17,19 +17,17 @@ jobs:
         with:
           ref: feat/learning-diagnosis-ai-v10.64.11
           fetch-depth: 0
-      - name: Apply controlled patch
-        run: python .github/scripts/patch-learning-diagnosis-v10.64.11.py
-      - name: Validate syntax and focused tests
+      - name: Preserve explicit topic candidate
+        run: >-
+          python -c "from pathlib import Path; p=Path('public/js/learning-advisor.js'); t=p.read_text(encoding='utf-8'); old=\"if(options.topicId)candidates=candidates.filter(item=>item.topicId===options.topicId);\"; new=\"if(options.topicId){candidates=candidates.filter(item=>item.topicId===options.topicId);if(!candidates.length)candidates=currentCandidates.filter(item=>item.topicId===options.topicId)}\"; assert old in t; p.write_text(t.replace(old,new,1),encoding='utf-8')"
+      - name: Validate
         run: |
-          node --check src/index.js
           node --check public/js/learning-advisor.js
-          node --check public/js/critical-points-actions.js
           node --test tests/learning-diagnosis-ai-v10.64.11.test.cjs
-      - name: Commit implementation
+      - name: Commit edge fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json public/version.json config/app-assets.json public/sw.js src/index.js public/js/app-pwa.js public/js/learning-advisor.js public/js/critical-points-actions.js public/css/learning-advisor.css tests/learning-diagnosis-ai-v10.64.11.test.cjs
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "feat(ai): concluir diagnóstico de aprendizagem v10.64.11"
+          git add public/js/learning-advisor.js
+          git commit -m "fix(ai): preservar diagnóstico individual fora do limiar"
           git push origin HEAD:feat/learning-diagnosis-ai-v10.64.11
