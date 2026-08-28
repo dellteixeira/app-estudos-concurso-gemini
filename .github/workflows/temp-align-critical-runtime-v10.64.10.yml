@@ -1,0 +1,68 @@
+name: Temp align critical runtime v10.64.10
+
+on:
+  push:
+    branches:
+      - fix/critical-points-snooze
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/critical-points-snooze
+          fetch-depth: 0
+      - name: Align runtime route lists
+        shell: python
+        run: |
+          from pathlib import Path
+
+          route = "'/js/critical-points-actions.js'"
+
+          sw = Path('public/sw.js')
+          text = sw.read_text(encoding='utf-8')
+          needle = "'/js/adaptive-schedule-reconciliation.js', '/js/learning-advisor.js', '/js/notes-import-export.js'"
+          replacement = "'/js/adaptive-schedule-reconciliation.js', '/js/learning-advisor.js', '/js/critical-points-actions.js', '/js/notes-import-export.js'"
+          if replacement not in text:
+              if needle not in text:
+                  raise SystemExit('Service Worker network-first anchor not found')
+              text = text.replace(needle, replacement, 1)
+          sw.write_text(text, encoding='utf-8')
+
+          worker = Path('src/index.js')
+          text = worker.read_text(encoding='utf-8')
+          if route not in text:
+              candidates = [
+                  "'/js/learning-advisor.js',",
+                  '"/js/learning-advisor.js",',
+                  "'/js/learning-advisor.js'",
+                  '"/js/learning-advisor.js"'
+              ]
+              replaced = False
+              for needle in candidates:
+                  if needle in text:
+                      quote = "'" if needle.startswith("'") else '"'
+                      sep = ',' if needle.endswith(',') else ''
+                      replacement = f"{quote}/js/learning-advisor.js{quote}, {quote}/js/critical-points-actions.js{quote}{sep}"
+                      text = text.replace(needle, replacement, 1)
+                      replaced = True
+                      break
+              if not replaced:
+                  raise SystemExit('Cloudflare Worker no-store anchor not found')
+          worker.write_text(text, encoding='utf-8')
+      - name: Commit runtime alignment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/sw.js src/index.js
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix(runtime): alinhar rotas dos pontos críticos"
+          git push origin HEAD:fix/critical-points-snooze
