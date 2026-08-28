@@ -12,9 +12,14 @@ for(const width of [320,390,560,1024,1440]){
       window.currentConcurso='Concurso Teste';
       window.getStudyTopicKey=(m,a)=>`${m}::${a}`.toLowerCase();
       window.editalItems=[{id:'t1',materia:'Direito Civil com identificação extensa para validar responsividade total',assunto:'PessoasNaturaisComTextoMuitoLongoSemEspacosParaValidarQuebraDentroDoDialogoSemQualquerOverflowVisual',prioridade:1,assunto_prioridade:1,teoria:true,questoes:true}];
-      window.retentionDiagnosticRows=[{retention:38,questionAccuracy:42,retentionDue:true,retentionDueDays:6,scheduledPending:false,scheduledOverdue:false,overdue:false,riskScore:130,state:{key:'direito civil com identificação extensa para validar responsividade total::pessoasnaturaiscomtextomuitolongosemespacosparavalidarquebradentrododialogosemqualqueroverflowvisual',retention:38,difficulty:8,reviewCount:4,lapseCount:2,sessionCount:7,totalMinutes:110,lastRating:'hard',ratingCounts:{hard:3},questionStats:{lastAccuracy:42,averageAccuracy:47,confidence:.7}}}];
+      window.retentionDiagnosticRows=[{retention:38,questionAccuracy:42,retentionDue:true,retentionDueDays:6,scheduledPending:false,scheduledOverdue:false,overdue:false,riskScore:130,state:{key:'direito civil com identificação extensa para validar responsividade total::pessoasnaturaiscomtextomuitolongosemespacosparavalidarquebradentrododialogosemqualqueroverflowvisual',materia:'Direito Civil com identificação extensa para validar responsividade total',assunto:'PessoasNaturaisComTextoMuitoLongoSemEspacosParaValidarQuebraDentroDoDialogoSemQualquerOverflowVisual',retention:38,difficulty:8,reviewCount:4,lapseCount:2,sessionCount:7,totalMinutes:110,lastRating:'hard',ratingCounts:{hard:3},questionStats:{lastAccuracy:42,averageAccuracy:47,confidence:.7}}}];
+      window.getLayeredReviewPlan=(row)=>({recommendedLayer:2,reason:'Regra legada escolheria revisão curta.',retention:row.retention,accuracy:row.questionAccuracy,layers:[{layer:1,label:'Recuperação mental'},{layer:2,label:'Revisão curta'},{layer:3,label:'Questões'},{layer:4,label:'Reestudo de teoria'}]});
+      window.buildRetentionDiagnostics=()=>({rows:[...window.retentionDiagnosticRows],risk:[...window.retentionDiagnosticRows],overdue:[],mastered:[],avg:38});
       window.supabaseClient={auth:{getSession:async()=>({data:{session:{access_token:'test-token'}}})}};
-      window.openLayeredReviewModal=index=>{window.__localInterventionIndex=index};
+      window.openLayeredReviewModal=index=>{
+        window.__localInterventionIndex=index;
+        window.__localPlan=window.getLayeredReviewPlan(window.retentionDiagnosticRows[index],window.editalItems[0]);
+      };
       window.fetch=async(url,options)=>{
         window.__advisorRequest={url:String(url),body:JSON.parse(options.body),authorization:options.headers.authorization};
         return new Response(JSON.stringify({advisorRole:'auxiliary',authority:'retention-engine',autoSchedule:false,aiUsed:true,provider:'gemini',model:'gemini-3.6-flash',interventions:[{topicId:'direito civil com identificação extensa para validar responsividade total::pessoasnaturaiscomtextomuitolongosemespacosparavalidarquebradentrododialogosemqualqueroverflowvisual',diagnosisType:'persistent',severity:'high',recommendedAction:'focused_restudy',suggestedMinutes:30,method:'ReestudoFocalizadoComExplicacaoMuitoLongaSemEspacosParaValidarQueTodoTextoSeAjustaAoContainerSemCorte.',rationale:'Baixa retenção após múltiplas revisões indica dificuldade persistente sem alteração automática do cronograma.'}]}),{status:200,headers:{'content-type':'application/json'}});
@@ -55,6 +60,7 @@ for(const width of [320,390,560,1024,1440]){
 
     await dialog.locator('[data-learning-action="local-intervention"]').click();
     expect(await page.evaluate(()=>window.__localInterventionIndex)).toBe(0);
+    expect(await page.evaluate(()=>window.__localPlan?.recommendedLayer)).toBe(4);
     await expect(overlay).not.toHaveClass(/is-open/);
 
     if(width<=700){
@@ -62,6 +68,16 @@ for(const width of [320,390,560,1024,1440]){
       const buttonBox=await dialog.locator('#learningAdvisorAnalyze').boundingBox();
       expect(buttonBox.height).toBeGreaterThanOrEqual(44);
       expect(buttonBox.width).toBeGreaterThan(0);
+      await page.locator('#learningAdvisorClose').click();
+    }
+
+    if(width===1024){
+      await page.locator('#riskMetric').click();
+      await dialog.locator('#learningAdvisorAnalyze').click();
+      await dialog.locator('[data-learning-action="snooze"]').click();
+      const filtered=await page.evaluate(()=>window.buildRetentionDiagnostics());
+      expect(filtered.risk).toHaveLength(0);
+      expect(filtered.rows).toHaveLength(0);
     }
   });
 }

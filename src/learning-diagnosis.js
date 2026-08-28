@@ -4,7 +4,7 @@ const MAX_BODY_BYTES=32*1024;
 const TIMEOUT_MS=10000;
 const DIAGNOSIS_TYPES=new Set(['acquisition','retention','application','persistent','false_mastery','mixed']);
 const SEVERITIES=new Set(['low','medium','high']);
-const ACTIONS=new Set(['active_recall','short_review','questions','focused_restudy','flashcards','compare_map','law_reading']);
+const SELECTOR_ACTIONS=new Set(['active_recall','short_review','questions','focused_restudy']);
 
 const clean=(value,max=500)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
@@ -18,6 +18,14 @@ async function authenticate(request,env){
   return response.json();
 }
 
+function sanitizeRecommendationHistory(raw){
+  return (Array.isArray(raw)?raw:[]).slice(-8).map(item=>({
+    action:SELECTOR_ACTIONS.has(item?.action)?item.action:'',
+    at:clean(item?.at,40),
+    source:clean(item?.source,30)||'advisor'
+  })).filter(item=>item.action);
+}
+
 function sanitizeTopic(raw){
   const topicId=clean(raw?.topicId,600),materia=clean(raw?.materia,180),assunto=clean(raw?.assunto,300);
   if(!topicId||!materia||!assunto)return null;
@@ -27,6 +35,7 @@ function sanitizeTopic(raw){
     prioridade:clamp(raw?.prioridade,1,4)||2,
     assuntoPrioridade:clamp(raw?.assuntoPrioridade,1,20)||1,
     frictionScore:clamp(raw?.frictionScore,0,100),
+    recommendationHistory:sanitizeRecommendationHistory(raw?.recommendationHistory),
     metrics:{
       retention:clamp(m.retention,0,100),
       accuracy:m.accuracy==null?null:clamp(m.accuracy,0,100),
@@ -42,26 +51,88 @@ function sanitizeTopic(raw){
   };
 }
 
-function deterministicIntervention(topic){
+const ACTION_METHODS={
+  active_recall:{minutes:12,method:'Explique o assunto sem consultar material, liste as lacunas e só então confira a fonte.'},
+  short_review:{minutes:15,method:'Faça uma revisão curta dos pontos-chave e imediatamente tente recuperar o conteúdo sem consulta.'},
+  questions:{minutes:25,method:'Resolva uma bateria curta de questões comentadas e classifique o motivo de cada erro antes de revisar.'},
+  focused_restudy:{minutes:30,method:'Reconstrua apenas os conceitos que continuam falhando e finalize com um teste de recuperação sem consulta.'}
+};
+
+function actionScores(topic){
   const m=topic.metrics;
-  let diagnosisType='mixed',recommendedAction='active_recall',method='Explique o assunto sem consultar material e depois confira as lacunas.',minutes=10;
-  if((m.forgot||m.retention<42)&&m.reviewCount>=2){diagnosisType='persistent';recommendedAction='focused_restudy';method='Reconstrua somente os conceitos que continuam falhando e teste a recuperação logo depois.';minutes=30}
-  else if(m.acquired&&m.accuracy!=null&&m.accuracy<55&&m.confidence>=.2){diagnosisType='application';recommendedAction='questions';method='Resolva uma bateria curta de questões comentadas, classificando o motivo de cada erro.';minutes=25}
-  else if(m.acquired&&m.accuracy!=null&&m.accuracy<50&&m.retention>=70){diagnosisType='false_mastery';recommendedAction='questions';method='Troque leitura passiva por questões e recuperação ativa até o desempenho acompanhar a retenção estimada.';minutes=25}
-  else if(m.retention<65){diagnosisType='retention';recommendedAction=m.sessionCount>=3?'active_recall':'short_review';method=m.sessionCount>=3?'Use recuperação ativa espaçada em vez de repetir a mesma leitura.':'Faça uma revisão curta e imediatamente tente recuperar sem consulta.';minutes=15}
-  else if(!m.acquired||m.sessionCount<=1){diagnosisType='acquisition';recommendedAction='focused_restudy';method='Faça uma primeira construção conceitual focalizada e finalize com recuperação sem consulta.';minutes=25}
+  const scores={
+    active_recall:26,
+    short_review:22,
+    questions:20,
+    focused_restudy:20
+  };
+  if(m.sessionCount>=2)scores.active_recall+=14;
+  if(m.retention>=45&&m.retention<82)scores.active_recall+=14;
+  if(m.reviewCount>=2)scores.active_recall+=6;
+
+  if(m.retention<68)scores.short_review+=18;
+  if(m.sessionCount<=2)scores.short_review+=10;
+  if(!m.forgot)scores.short_review+=4;
+
+  if(m.accuracy!=null)scores.questions+=(100-m.accuracy)*0.34;
+  if(m.acquired)scores.questions+=8;
+  if(m.confidence>=.2&&m.accuracy!=null&&m.accuracy<60)scores.questions+=8;
+
+  if(m.forgot)scores.focused_restudy+=22;
+  if(m.retention<45)scores.focused_restudy+=18;
+  if(m.reviewCount>=2&&m.retention<65)scores.focused_restudy+=10;
+  if(!m.acquired)scores.focused_restudy+=12;
+  if(m.lapseCount>=2)scores.focused_restudy+=8;
+
+  const now=Date.now();
+  topic.recommendationHistory.forEach((entry,index,history)=>{
+    const age=Date.parse(entry.at);
+    const ageHours=Number.isFinite(age)?Math.max(0,(now-age)/36e5):999;
+    let penalty=ageHours<24?24:ageHours<72?14:7;
+    if(index===history.length-1)penalty+=34;
+    scores[entry.action]-=penalty;
+  });
+  return scores;
+}
+
+function diagnosisForAction(topic,action){
+  const m=topic.metrics;
+  if((m.forgot||m.retention<42)&&m.reviewCount>=2)return'persistent';
+  if(m.acquired&&m.accuracy!=null&&m.accuracy<55&&m.confidence>=.2)return m.retention>=70?'false_mastery':'application';
+  if(action==='questions')return'application';
+  if(action==='focused_restudy'&&(!m.acquired||m.sessionCount<=1))return'acquisition';
+  if(m.retention<70)return'retention';
+  return'mixed';
+}
+
+function deterministicIntervention(topic){
+  const scores=actionScores(topic);
+  const ranked=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const lastAction=topic.recommendationHistory.at(-1)?.action||'';
+  let selected=ranked[0]?.[0]||'active_recall';
+  if(lastAction&&selected===lastAction){
+    const alternate=ranked.find(([action])=>action!==lastAction);
+    if(alternate)selected=alternate[0];
+  }
+  const preset=ACTION_METHODS[selected]||ACTION_METHODS.active_recall;
+  const m=topic.metrics;
+  const diagnosisType=diagnosisForAction(topic,selected);
   const severity=topic.frictionScore>=70?'high':topic.frictionScore>=50?'medium':'low';
-  return {topicId:topic.topicId,diagnosisType,severity,recommendedAction,suggestedMinutes:minutes,method,rationale:`Fricção ${Math.round(topic.frictionScore)}/100; retenção ${Math.round(m.retention)}%${m.accuracy==null?'':`; questões ${Math.round(m.accuracy)}%`}. A recomendação é consultiva e deve ser validada pelo motor local.`};
+  const prior=lastAction?` O último método sugerido foi ${lastAction}; a repetição imediata recebeu penalidade.`:'';
+  return {topicId:topic.topicId,diagnosisType,severity,recommendedAction:selected,suggestedMinutes:preset.minutes,method:preset.method,rationale:`Fricção ${Math.round(topic.frictionScore)}/100; retenção ${Math.round(m.retention)}%${m.accuracy==null?'':`; questões ${Math.round(m.accuracy)}%`}.${prior}`};
 }
 
 function validateIntervention(raw,topic){
-  if(!raw||clean(raw.topicId,600)!==topic.topicId)return deterministicIntervention(topic);
   const fallback=deterministicIntervention(topic);
+  if(!raw||clean(raw.topicId,600)!==topic.topicId)return fallback;
+  const lastAction=topic.recommendationHistory.at(-1)?.action||'';
+  const aiAction=SELECTOR_ACTIONS.has(raw.recommendedAction)?raw.recommendedAction:fallback.recommendedAction;
+  if(lastAction&&aiAction===lastAction)return fallback;
   return {
     topicId:topic.topicId,
     diagnosisType:DIAGNOSIS_TYPES.has(raw.diagnosisType)?raw.diagnosisType:fallback.diagnosisType,
     severity:SEVERITIES.has(raw.severity)?raw.severity:fallback.severity,
-    recommendedAction:ACTIONS.has(raw.recommendedAction)?raw.recommendedAction:fallback.recommendedAction,
+    recommendedAction:aiAction,
     suggestedMinutes:Math.round(clamp(raw.suggestedMinutes,5,45)||fallback.suggestedMinutes),
     method:clean(raw.method,360)||fallback.method,
     rationale:clean(raw.rationale,420)||fallback.rationale
@@ -82,8 +153,8 @@ async function runGemini(env,contest,topics){
   if(!env.GEMINI_API_KEY)throw new Error('GEMINI_API_KEY não configurada');
   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),TIMEOUT_MS);
   const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
-  const system=`Você é um consultor pedagógico para preparação de concursos públicos. Você NÃO controla o cronograma, NÃO altera prioridades, NÃO cria assuntos e NÃO diagnostica condições médicas. O Retention Engine determinístico é a autoridade. Sua única função é interpretar métricas já calculadas e sugerir UMA intervenção de estudo por tópico. Seja conservador, objetivo e use somente os dados fornecidos. Nunca recomende excluir conteúdo. Retorne apenas JSON no schema solicitado.`;
-  const body={systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:`Concurso: ${clean(contest,180)||'não informado'}\nTópicos já selecionados pelo Retention Engine:\n${JSON.stringify(topics)}\n\nClassifique o tipo de dificuldade e sugira a mudança de método com maior utilidade provável. Não modifique topicId.`}]}],generationConfig:{temperature:.1,maxOutputTokens:2200,responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{interventions:{type:'ARRAY',items:{type:'OBJECT',properties:{topicId:{type:'STRING'},diagnosisType:{type:'STRING',enum:[...DIAGNOSIS_TYPES]},severity:{type:'STRING',enum:[...SEVERITIES]},recommendedAction:{type:'STRING',enum:[...ACTIONS]},suggestedMinutes:{type:'INTEGER',minimum:5,maximum:45},method:{type:'STRING'},rationale:{type:'STRING'}},required:['topicId','diagnosisType','severity','recommendedAction','suggestedMinutes','method','rationale']}}},required:['interventions']},thinkingConfig:{thinkingLevel:'LOW'}}};
+  const system=`Você é o seletor pedagógico auxiliar do Estudo Adaptativo Inteligente. O Retention Engine determinístico continua sendo a autoridade sobre risco, prioridade e cronograma. A IA NÃO controla o cronograma. Para cada tópico, escolha exatamente UM entre quatro métodos existentes: active_recall, short_review, questions ou focused_restudy. Use retenção, desempenho em questões, lapsos, esforço, aquisição e recommendationHistory. NÃO repita o método mais recente do histórico quando houver alternativa pedagogicamente adequada. A recomendação já exibida conta como histórico mesmo que o usuário não tenha iniciado a sessão. Você NÃO cria assuntos, NÃO altera prioridades, NÃO agenda revisões e NÃO diagnostica condições médicas. Retorne apenas JSON no schema solicitado.`;
+  const body={systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:`Concurso: ${clean(contest,180)||'não informado'}\nTópicos já selecionados pelo Retention Engine:\n${JSON.stringify(topics)}\n\nEscolha a intervenção com maior utilidade provável, levando em conta explicitamente o histórico de recomendações. Não modifique topicId.`}]}],generationConfig:{temperature:.25,maxOutputTokens:2200,responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{interventions:{type:'ARRAY',items:{type:'OBJECT',properties:{topicId:{type:'STRING'},diagnosisType:{type:'STRING',enum:[...DIAGNOSIS_TYPES]},severity:{type:'STRING',enum:[...SEVERITIES]},recommendedAction:{type:'STRING',enum:[...SELECTOR_ACTIONS]},suggestedMinutes:{type:'INTEGER',minimum:5,maximum:45},method:{type:'STRING'},rationale:{type:'STRING'}},required:['topicId','diagnosisType','severity','recommendedAction','suggestedMinutes','method','rationale']}}},required:['interventions']},thinkingConfig:{thinkingLevel:'LOW'}}};
   try{
     const response=await fetch(endpoint,{method:'POST',signal:controller.signal,headers:{'content-type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify(body)});
     if(!response.ok)throw new Error(`Gemini HTTP ${response.status}`);
@@ -110,5 +181,5 @@ export async function handleLearningDiagnosis(request,env){
     interventions=topics.map(topic=>validateIntervention(byId.get(topic.topicId),topic));
     aiUsed=true;
   }catch(error){console.warn('Learning Advisor Gemini fallback:',error?.message||error)}
-  return responseJson({advisorVersion:'1.0.0',advisorRole:'auxiliary',authority:'retention-engine',autoSchedule:false,provider:aiUsed?'gemini':'local-deterministic',model:aiUsed?GEMINI_MODEL:'local',aiUsed,interventions});
+  return responseJson({advisorVersion:'1.2.0',advisorRole:'auxiliary',authority:'retention-engine',autoSchedule:false,provider:aiUsed?'gemini':'local-deterministic',model:aiUsed?GEMINI_MODEL:'local',aiUsed,antiRepeat:true,interventions});
 }

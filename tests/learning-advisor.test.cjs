@@ -57,7 +57,7 @@ test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
   assert.match(server,/authority:'retention-engine'/);
   assert.match(server,/autoSchedule:false/);
   assert.match(server,/NÃO controla o cronograma/);
-  assert.match(client,/A Retenção continua sendo a autoridade/);
+  assert.match(client,/motor de Retenção/);
   assert.match(client,/Abrir intervenção local/);
   assert.doesNotMatch(client,/gerarCronogramaInteligente\(/);
   assert.doesNotMatch(client,/gerarCronogramaMetodo2\(/);
