@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppLearningAdvisor)return;
 
-const VERSION='1.2.0';
+const VERSION='1.2.1';
 const MAX_TOPICS=5;
 const MIN_FRICTION=35;
 const CACHE_TTL_MS=30*60*1000;
@@ -14,6 +14,7 @@ const ACTION_LABELS={
   questions:'Questões comentadas',
   focused_restudy:'Reestudo focalizado'
 };
+const ACTION_LAYER={active_recall:1,short_review:2,questions:3,focused_restudy:4};
 const TYPE_LABELS={
   acquisition:'Aquisição inicial',
   retention:'Retenção',
@@ -25,6 +26,7 @@ const TYPE_LABELS={
 let currentCandidates=[];
 let lastResult=null;
 let busy=false;
+let localIntegrationInstalled=false;
 
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
 const esc=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
@@ -90,7 +92,8 @@ function snoozeUntil(topicId){const map=readJsonStorage(snoozeStorageKey(),{});r
 function snoozeTopic(topicId,hours=24){
   if(!topicId)return 0;
   const map=readJsonStorage(snoozeStorageKey(),{});
-  const until=Date.now()+Math.max(1,Number(hours)||24)*60*60*1000;
+  const requested=Math.max(1,Number(hours)||24)*60*60*1000;
+  const until=Date.now()+(hours===24?SNOOZE_MS:requested);
   map[topicId]=until;
   writeJsonStorage(snoozeStorageKey(),map);
   return until;
@@ -101,6 +104,36 @@ function countActiveSnoozes(){
   Object.entries(map).forEach(([key,value])=>{if(Number(value)>Date.now())count++;else{delete map[key];dirty=true}});
   if(dirty)writeJsonStorage(snoozeStorageKey(),map);
   return count;
+}
+
+function installLocalRetentionIntegration(){
+  if(localIntegrationInstalled)return true;
+  if(typeof global.getLayeredReviewPlan!=='function'||typeof global.buildRetentionDiagnostics!=='function')return false;
+  const originalPlan=global.getLayeredReviewPlan;
+  const originalDiagnostics=global.buildRetentionDiagnostics;
+  global.getLayeredReviewPlan=function advisorAwareLayeredReviewPlan(row,item,options={}){
+    const plan=originalPlan(row,item,options);
+    if(!plan)return plan;
+    const pending=global.__learningAdvisorLayerOverride;
+    const rowKey=row?.state?.key||topicKey(item?.materia,item?.assunto);
+    const explicit=ACTION_LAYER[options?.recommendedAction]?options:null;
+    const inherited=pending?.topicId===rowKey&&ACTION_LAYER[pending?.recommendedAction]?pending:null;
+    const advisor=explicit||inherited;
+    if(!advisor)return plan;
+    const action=advisor.recommendedAction;
+    const layer=ACTION_LAYER[action];
+    const rationale=safeText(advisor.advisorRationale||advisor.rationale,420);
+    return {...plan,recommendedLayer:layer,reason:rationale||`Método ${ACTION_LABELS[action]} selecionado pela IA a partir das métricas atuais e do histórico de intervenções.`};
+  };
+  global.buildRetentionDiagnostics=function advisorAwareRetentionDiagnostics(...args){
+    const diag=originalDiagnostics.apply(this,args);
+    if(!diag||!Array.isArray(diag.rows))return diag;
+    const keep=row=>!isSnoozed(row?.state?.key||'');
+    const rows=diag.rows.filter(keep);
+    return {...diag,rows,risk:(diag.risk||[]).filter(keep),overdue:(diag.overdue||[]).filter(keep),mastered:(diag.mastered||[]).filter(keep),avg:rows.length?rows.reduce((sum,row)=>sum+(Number(row?.retention)||0),0)/rows.length:null};
+  };
+  localIntegrationInstalled=true;
+  return true;
 }
 
 function computeLearningFriction(row,item){
@@ -231,6 +264,7 @@ function riskStateText(entry){
 }
 
 function openRiskView(){
+  installLocalRetentionIntegration();
   const overlay=ensureDialog();
   const title=overlay.querySelector('#learningAdvisorTitle');
   const subtitle=overlay.querySelector('#learningAdvisorSubtitle');
@@ -279,7 +313,11 @@ function renderResults(payload,candidates){
     const previousLabel=previous?ACTION_LABELS[previous.action]:'';
     return `<article class="learning-advisor-card" data-topic-id="${esc(candidate.topicId)}"><div class="learning-advisor-card-top"><div><span class="learning-advisor-subject">${esc(candidate.materia)}</span><strong>${esc(candidate.assunto)}</strong></div><span class="learning-friction learning-friction-${candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low'}">Dificuldade persistente ${candidate.frictionScore}</span></div><div class="learning-advisor-meta"><span>${esc(type)}</span><span>Risco ${sev}</span><span>${Math.round(Number(intervention.suggestedMinutes)||20)} min</span>${previousLabel?`<span>Anterior: ${esc(previousLabel)}</span>`:''}</div><p>${esc(intervention.rationale||'Recomendação baseada nos sinais de retenção, desempenho e histórico.')}</p><div class="learning-advisor-action"><strong>${esc(action)}</strong><span>${esc(intervention.method||'Aplique a intervenção e meça novamente o desempenho.')}</span></div><div class="learning-advisor-controls"><button class="btn btn-secondary btn-sm" type="button" data-learning-action="local-intervention" data-row-index="${candidate.rowIndex}">Abrir intervenção local</button><button class="btn btn-secondary btn-sm" type="button" data-learning-action="snooze" data-topic-id="${esc(candidate.topicId)}">Fechar sem estudar · 24h</button><span>Adiar não registra estudo nem altera a retenção.</span></div></article>`;
   }).join('')||'<div class="learning-advisor-empty">Nenhuma intervenção foi necessária neste momento.</div>';
-  box.querySelectorAll('[data-learning-action="local-intervention"]').forEach(button=>button.addEventListener('click',()=>openLocalIntervention(Number(button.dataset.rowIndex))));
+  box.querySelectorAll('[data-learning-action="local-intervention"]').forEach(button=>button.addEventListener('click',()=>{
+    const topicId=button.closest('.learning-advisor-card')?.dataset.topicId||'';
+    const intervention=interventions.find(item=>item?.topicId===topicId);
+    openLocalIntervention(Number(button.dataset.rowIndex),intervention);
+  }));
   box.querySelectorAll('[data-learning-action="snooze"]').forEach(button=>button.addEventListener('click',()=>handleSnooze(button.dataset.topicId,button.closest('.learning-advisor-card'))));
 }
 
@@ -291,17 +329,25 @@ function handleSnooze(topicId,card){
   if(status)status.textContent=`Assunto fechado sem estudo. Ele voltará para revisão após ${new Date(until).toLocaleString('pt-BR')}.`;
   if(box&&!box.querySelector('.learning-advisor-card'))box.innerHTML='<div class="learning-advisor-empty">Os assuntos desta análise foram estudados ou adiados.</div>';
   currentCandidates=currentCandidates.filter(candidate=>candidate.topicId!==topicId);
+  installLocalRetentionIntegration();
+  try{if(typeof global.renderRetentionDiagnostics==='function')global.renderRetentionDiagnostics()}catch(_){}
+  global.dispatchEvent(new CustomEvent('learning-advisor:snooze-changed',{detail:{topicId,until}}));
 }
 
-function openLocalIntervention(rowIndex){
+function openLocalIntervention(rowIndex,intervention){
   if(!Number.isInteger(rowIndex)||rowIndex<0)return;
   try{
+    installLocalRetentionIntegration();
     if(typeof openLayeredReviewModal==='function'){
+      const candidate=currentCandidates.find(item=>item.rowIndex===rowIndex);
+      const override={topicId:intervention?.topicId||candidate?.topicId||'',recommendedAction:intervention?.recommendedAction||'',advisorRationale:intervention?.rationale||''};
+      global.__learningAdvisorLayerOverride=override;
       closeDialog();
       openLayeredReviewModal(rowIndex);
+      if(global.__learningAdvisorLayerOverride===override)delete global.__learningAdvisorLayerOverride;
       return;
     }
-  }catch(_){}
+  }catch(_){delete global.__learningAdvisorLayerOverride}
   global.appNotice?.('A recomendação da IA foi preservada, mas o fluxo local de intervenção ainda não está disponível.',{title:'IA auxiliar'});
 }
 
@@ -353,6 +399,7 @@ function onKeydown(event){
 }
 
 function refresh(){
+  installLocalRetentionIntegration();
   const stale=document.getElementById('learningAdvisorPanel');
   if(stale)stale.remove();
   const overlay=document.getElementById('learningAdvisorOverlay');
@@ -361,11 +408,13 @@ function refresh(){
     if(title==='Assuntos em risco')openRiskView();
   }
 }
-function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'risk-details',candidateCount:collectCandidates().length,snoozedCount:countActiveSnoozes(),busy,hasResult:!!lastResult,antiRepeat:true})}
+function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'risk-details',candidateCount:collectCandidates().length,snoozedCount:countActiveSnoozes(),busy,hasResult:!!lastResult,antiRepeat:true,localIntegration:localIntegrationInstalled})}
 
 function boot(){
   document.getElementById('learningAdvisorPanel')?.remove();
   ensureDialog();
+  installLocalRetentionIntegration();
+  if(!localIntegrationInstalled)setTimeout(installLocalRetentionIntegration,250);
   if(!document.documentElement.dataset.learningAdvisorRiskBound){
     document.documentElement.dataset.learningAdvisorRiskBound='1';
     document.addEventListener('click',onRiskMetricClick,true);
@@ -375,5 +424,5 @@ function boot(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
 global.addEventListener('pageshow',()=>setTimeout(boot,80));
 
-global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,snoozeTopic,getRecommendationHistory,getDiagnostics:diagnostics});
+global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,snoozeTopic,isSnoozed,snoozeUntil,getRecommendationHistory,getDiagnostics:diagnostics});
 })(window);
