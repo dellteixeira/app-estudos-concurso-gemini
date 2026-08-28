@@ -76,7 +76,10 @@ jobs:
           rm -f .github/workflows/temp-critical-nowrap-v10.64.13.yml
           node --check public/js/critical-points-actions.js
           npm test
-          npm run audit
+          node scripts/audit-css-ownership.cjs
+          node scripts/audit-asset-manifest.mjs
+          node scripts/audit-inline-csp.mjs
+          node scripts/audit-toolchain-pins.mjs
       - name: Commit correction
         shell: bash
         run: |
