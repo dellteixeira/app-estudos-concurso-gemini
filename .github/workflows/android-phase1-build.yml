@@ -1,0 +1,90 @@
+name: Android Phase 1 Build
+
+on:
+  push:
+    branches:
+      - feat/android-capacitor-phase-1-v10.64.16
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'public/**'
+      - '.github/workflows/android-phase1-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.23.2'
+
+      - name: Setup Java
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Capacitor dependencies
+        run: npm install --package-lock=true
+
+      - name: Synchronize v10.64.16 identity
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const files = ['public/version.json','config/app-assets.json','src/index.js','public/sw.js','public/js/app-pwa.js'];
+          for (const file of files) {
+            let text = fs.readFileSync(file, 'utf8');
+            text = text.replaceAll('10.64.15', '10.64.16');
+            fs.writeFileSync(file, text);
+          }
+          NODE
+
+      - name: Create Android native project when absent
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+
+      - name: Sync web assets into Android
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Persist generated Android scaffold on feature branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/android-capacitor-phase-1-v10.64.16'
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json android public/version.json config/app-assets.json src/index.js public/sw.js public/js/app-pwa.js
+          if git diff --cached --quiet; then
+            echo 'Android scaffold already synchronized.'
+          else
+            git commit -m 'feat(android): gerar projeto nativo Capacitor e sincronizar v10.64.16'
+            git push origin HEAD:feat/android-capacitor-phase-1-v10.64.16
+          fi
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: EstudoAdaptativo-v10.64.16-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
