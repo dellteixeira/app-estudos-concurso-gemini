@@ -61,6 +61,14 @@ jobs:
           oldSource=oldSource.replace(exact,future);
           fs.writeFileSync(oldTest,oldSource);
 
+          const diagnosisTest='tests/learning-diagnosis-ai-v10.64.11.test.cjs';
+          let diagnosisSource=fs.readFileSync(diagnosisTest,'utf8');
+          const diagnosisExact="test('versão e assets permanecem sincronizados',()=>{assert.equal(JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version,'10.64.12');assert.equal(assets.version,'10.64.12');for(const route of ['/js/learning-advisor.js','/js/critical-points-actions.js']){assert.ok(assets.criticalAppShell.includes(route));assert.ok(assets.networkFirstPaths.includes(route));assert.ok(assets.workerNoStorePaths.includes(route))}});";
+          const diagnosisFuture="test('versão e assets permanecem sincronizados',()=>{const packageVersion=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;assert.match(packageVersion,/^10\\.64\\.\\d+$/);assert.equal(assets.version,packageVersion);for(const route of ['/js/learning-advisor.js','/js/critical-points-actions.js']){assert.ok(assets.criticalAppShell.includes(route));assert.ok(assets.networkFirstPaths.includes(route));assert.ok(assets.workerNoStorePaths.includes(route))}});";
+          if(!diagnosisSource.includes(diagnosisExact)) throw new Error('teste de diagnóstico com versão fixa não encontrado');
+          diagnosisSource=diagnosisSource.replace(diagnosisExact,diagnosisFuture);
+          fs.writeFileSync(diagnosisTest,diagnosisSource);
+
           const testFile='tests/critical-buttons-nowrap-v10.64.13.test.cjs';
           fs.writeFileSync(testFile,`const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('node:fs');\nconst css=fs.readFileSync('public/css/learning-advisor.css','utf8');\nconst pkg=JSON.parse(fs.readFileSync('package.json','utf8'));\n\ntest('botões de pontos críticos não quebram seus rótulos',()=>{\n  assert.match(css,/\\.critical-point-controls button\\{[^}]*white-space:nowrap!important[^}]*overflow-wrap:normal!important[^}]*word-break:keep-all!important/s);\n  assert.match(css,/grid-template-columns:minmax\\(0,1\\.15fr\\) minmax\\(0,1\\.12fr\\) minmax\\(0,\\.88fr\\)/);\n});\n\ntest('correção é promovida para 10.64.13',()=>{\n  assert.equal(pkg.version,'10.64.13');\n});\n`);
           NODE
