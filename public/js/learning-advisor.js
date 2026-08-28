@@ -2,18 +2,17 @@
 'use strict';
 if(global.AppLearningAdvisor)return;
 
-const VERSION='1.1.0';
+const VERSION='1.2.0';
 const MAX_TOPICS=5;
 const MIN_FRICTION=35;
 const CACHE_TTL_MS=30*60*1000;
+const SNOOZE_MS=24*60*60*1000;
+const HISTORY_LIMIT=8;
 const ACTION_LABELS={
   active_recall:'Recuperação ativa',
   short_review:'Revisão curta',
   questions:'Questões comentadas',
-  focused_restudy:'Reestudo focalizado',
-  flashcards:'Flashcards',
-  compare_map:'Mapa comparativo',
-  law_reading:'Lei seca guiada'
+  focused_restudy:'Reestudo focalizado'
 };
 const TYPE_LABELS={
   acquisition:'Aquisição inicial',
@@ -40,6 +39,14 @@ function getItems(){
 function getContestName(){
   try{return typeof currentConcurso!=='undefined'?String(currentConcurso||'Concurso Geral'):'Concurso Geral'}catch(_){return'Concurso Geral'}
 }
+function getUserId(){
+  try{return typeof currentUser!=='undefined'&&currentUser?.id?String(currentUser.id):'guest'}catch(_){return'guest'}
+}
+function storageScope(){return `${getUserId()}_${safeText(getContestName(),100)}`.replace(/[^a-z0-9_.-]+/gi,'_')}
+function historyStorageKey(){return `learning_advisor_history_${storageScope()}`}
+function snoozeStorageKey(){return `learning_advisor_snooze_${storageScope()}`}
+function readJsonStorage(key,fallback={}){try{const parsed=JSON.parse(localStorage.getItem(key)||'null');return parsed&&typeof parsed==='object'?parsed:fallback}catch(_){return fallback}}
+function writeJsonStorage(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(_){return false}}
 function topicKey(materia,assunto){
   try{if(typeof getStudyTopicKey==='function')return getStudyTopicKey(materia,assunto)}catch(_){}
   return `${safeText(materia,180)}::${safeText(assunto,300)}`.toLowerCase();
@@ -51,6 +58,50 @@ function findItem(row){
   return items.find(item=>item?.materia===row?.materia&&item?.assunto===row?.assunto)||null;
 }
 function numberOr(value,fallback=null){const n=Number(value);return Number.isFinite(n)?n:fallback}
+
+function getRecommendationHistory(topicId){
+  const map=readJsonStorage(historyStorageKey(),{});
+  const entries=Array.isArray(map?.[topicId])?map[topicId]:[];
+  return entries.slice(-HISTORY_LIMIT).filter(item=>ACTION_LABELS[item?.action]).map(item=>({action:item.action,at:safeText(item.at,40),source:safeText(item.source,30)||'advisor'}));
+}
+function recordRecommendation(topicId,action,source='advisor'){
+  if(!topicId||!ACTION_LABELS[action])return;
+  const map=readJsonStorage(historyStorageKey(),{});
+  const list=Array.isArray(map[topicId])?map[topicId]:[];
+  const now=new Date().toISOString();
+  const last=list[list.length-1];
+  if(last?.action===action&&Date.now()-Date.parse(last?.at||0)<60*1000)return;
+  list.push({action,at:now,source});
+  map[topicId]=list.slice(-HISTORY_LIMIT);
+  writeJsonStorage(historyStorageKey(),map);
+}
+function isSnoozed(topicId){
+  const map=readJsonStorage(snoozeStorageKey(),{});
+  const until=Number(map?.[topicId]||0);
+  if(!until)return false;
+  if(until<=Date.now()){
+    delete map[topicId];
+    writeJsonStorage(snoozeStorageKey(),map);
+    return false;
+  }
+  return true;
+}
+function snoozeUntil(topicId){const map=readJsonStorage(snoozeStorageKey(),{});return Number(map?.[topicId]||0)}
+function snoozeTopic(topicId,hours=24){
+  if(!topicId)return 0;
+  const map=readJsonStorage(snoozeStorageKey(),{});
+  const until=Date.now()+Math.max(1,Number(hours)||24)*60*60*1000;
+  map[topicId]=until;
+  writeJsonStorage(snoozeStorageKey(),map);
+  return until;
+}
+function countActiveSnoozes(){
+  const map=readJsonStorage(snoozeStorageKey(),{});
+  let count=0,dirty=false;
+  Object.entries(map).forEach(([key,value])=>{if(Number(value)>Date.now())count++;else{delete map[key];dirty=true}});
+  if(dirty)writeJsonStorage(snoozeStorageKey(),map);
+  return count;
+}
 
 function computeLearningFriction(row,item){
   const state=row?.state||{};
@@ -88,16 +139,19 @@ function collectCandidates(limit=MAX_TOPICS){
   const candidates=rows.map((row,index)=>{
     const item=findItem(row);
     if(!item)return null;
+    const id=topicKey(item.materia,item.assunto);
+    if(isSnoozed(id))return null;
     const friction=computeLearningFriction(row,item);
     return {
-      topicId:topicKey(item.materia,item.assunto),
+      topicId:id,
       rowIndex:index,
       materia:safeText(item.materia,180),
       assunto:safeText(item.assunto,300),
       prioridade:clamp(numberOr(item.prioridade,2),1,4),
       assuntoPrioridade:clamp(numberOr(item.assunto_prioridade,1),1,20),
       frictionScore:friction.score,
-      metrics:friction.metrics
+      metrics:friction.metrics,
+      recommendationHistory:getRecommendationHistory(id)
     };
   }).filter(Boolean).filter(item=>item.frictionScore>=MIN_FRICTION)
     .sort((a,b)=>b.frictionScore-a.frictionScore||a.prioridade-b.prioridade)
@@ -110,17 +164,19 @@ function getRiskRows(){
   return getRows().map((row,index)=>{
     const item=findItem(row);
     if(!item)return null;
+    const id=topicKey(item.materia,item.assunto);
+    if(isSnoozed(id))return null;
     const retention=clamp(numberOr(row?.retention,numberOr(row?.state?.retention,100)),0,100);
     const accuracy=numberOr(row?.questionAccuracy,numberOr(row?.state?.questionStats?.lastAccuracy,null));
     const risk=retention<70||Boolean(row?.retentionDue)||Boolean(row?.scheduledOverdue||row?.overdue)||(accuracy!=null&&accuracy<60);
     if(!risk)return null;
     const persistent=computeLearningFriction(row,item).score;
-    return {row,index,item,retention,accuracy,persistent,riskScore:numberOr(row?.riskScore,100-retention)};
+    return {row,index,item,topicId:id,retention,accuracy,persistent,riskScore:numberOr(row?.riskScore,100-retention)};
   }).filter(Boolean).sort((a,b)=>b.riskScore-a.riskScore||a.retention-b.retention);
 }
 
 function cacheKey(candidates){
-  const compact=candidates.map(c=>[c.topicId,c.frictionScore,Math.round(c.metrics.retention),c.metrics.accuracy==null?null:Math.round(c.metrics.accuracy),c.metrics.reviewCount,c.metrics.lapseCount]);
+  const compact=candidates.map(c=>[c.topicId,c.frictionScore,Math.round(c.metrics.retention),c.metrics.accuracy==null?null:Math.round(c.metrics.accuracy),c.metrics.reviewCount,c.metrics.lapseCount,(c.recommendationHistory||[]).slice(-4).map(h=>h.action)]);
   let hash=2166136261;
   const text=JSON.stringify(compact);
   for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619)}
@@ -182,10 +238,11 @@ function openRiskView(){
   const footer=overlay.querySelector('#learningAdvisorFooter');
   const risks=getRiskRows();
   const candidates=collectCandidates();
+  const snoozed=countActiveSnoozes();
   if(title)title.textContent='Assuntos em risco';
-  if(subtitle)subtitle.textContent='O risco é calculado pelo motor de Retenção. Limpar o cronograma não apaga sinais reais de memória e desempenho.';
+  if(subtitle)subtitle.textContent='O risco é calculado pelo motor de Retenção. Assuntos adiados ficam fora desta fila por 24 horas sem serem marcados como estudados.';
   if(body)body.innerHTML=risks.length?`<div class="learning-risk-list">${risks.map(entry=>`<article class="learning-risk-card"><div class="learning-risk-copy"><span class="learning-advisor-subject">${esc(entry.item.materia)}</span><strong>${esc(entry.item.assunto)}</strong><p>${esc(riskStateText(entry))}</p></div><div class="learning-risk-metrics"><span>Retenção <strong>${Math.round(entry.retention)}%</strong></span>${entry.accuracy!=null?`<span>Questões <strong>${Math.round(entry.accuracy)}%</strong></span>`:''}${entry.persistent>=MIN_FRICTION?`<span class="learning-friction learning-friction-${entry.persistent>=70?'high':entry.persistent>=50?'medium':'low'}">Dificuldade persistente ${entry.persistent}</span>`:''}</div></article>`).join('')}</div>`:'<div class="learning-advisor-empty">Nenhum assunto está em risco neste momento.</div>';
-  if(footer)footer.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>A IA interpreta somente os sinais críticos; a Retenção continua sendo a autoridade.</span></div><button id="learningAdvisorAnalyze" class="btn btn-secondary" type="button" ${candidates.length?'':'disabled'}>Analisar dificuldades com IA</button>`;
+  if(footer)footer.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>A IA escolhe entre quatro métodos e considera o histórico de recomendações.${snoozed?` ${snoozed} assunto(s) adiado(s) por 24h.`:''}</span></div><button id="learningAdvisorAnalyze" class="btn btn-secondary" type="button" ${candidates.length?'':'disabled'}>Analisar dificuldades com IA</button>`;
   footer?.querySelector('#learningAdvisorAnalyze')?.addEventListener('click',()=>analyze().catch(()=>{}));
   openDialog();
 }
@@ -197,7 +254,7 @@ function renderInterventionShell(){
   const body=overlay.querySelector('#learningAdvisorBody');
   const footer=overlay.querySelector('#learningAdvisorFooter');
   if(title)title.textContent='Intervenções para dificuldades persistentes';
-  if(subtitle)subtitle.textContent='A Retenção continua sendo a autoridade. A IA apenas interpreta os sinais e sugere estratégias pedagógicas.';
+  if(subtitle)subtitle.textContent='A IA escolhe entre Recuperação ativa, Revisão curta, Questões comentadas e Reestudo focalizado, considerando o que já foi recomendado para cada assunto.';
   if(body)body.innerHTML='<div id="learningAdvisorStatus" class="learning-advisor-status" role="status" aria-live="polite"></div><div id="learningAdvisorResults" class="learning-advisor-results"></div>';
   if(footer)footer.innerHTML='<button id="learningAdvisorBack" class="btn btn-secondary" type="button">Voltar aos assuntos em risco</button>';
   footer?.querySelector('#learningAdvisorBack')?.addEventListener('click',openRiskView);
@@ -210,7 +267,7 @@ function renderResults(payload,candidates){
   const box=overlay.querySelector('#learningAdvisorResults');
   const status=overlay.querySelector('#learningAdvisorStatus');
   const interventions=Array.isArray(payload?.interventions)?payload.interventions:[];
-  if(status)status.textContent=payload?.aiUsed?'Gemini analisou somente os pontos críticos selecionados pelo motor de Retenção.':'A recomendação abaixo foi produzida pelo fallback local porque a IA não estava disponível.';
+  if(status)status.textContent=payload?.aiUsed?'Gemini selecionou o método considerando as métricas e o histórico anti-repetição.':'A seleção abaixo foi produzida pelo motor local com histórico anti-repetição porque a IA não estava disponível.';
   if(!box)return;
   box.innerHTML=interventions.map(intervention=>{
     const candidate=candidates.find(c=>c.topicId===intervention.topicId);
@@ -218,9 +275,22 @@ function renderResults(payload,candidates){
     const action=ACTION_LABELS[intervention.recommendedAction]||'Intervenção focalizada';
     const type=TYPE_LABELS[intervention.diagnosisType]||'Dificuldade mista';
     const sev=intervention.severity==='high'?'Alto':intervention.severity==='medium'?'Médio':'Baixo';
-    return `<article class="learning-advisor-card" data-topic-id="${esc(candidate.topicId)}"><div class="learning-advisor-card-top"><div><span class="learning-advisor-subject">${esc(candidate.materia)}</span><strong>${esc(candidate.assunto)}</strong></div><span class="learning-friction learning-friction-${candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low'}">Dificuldade persistente ${candidate.frictionScore}</span></div><div class="learning-advisor-meta"><span>${esc(type)}</span><span>Risco ${sev}</span><span>${Math.round(Number(intervention.suggestedMinutes)||20)} min</span></div><p>${esc(intervention.rationale||'Recomendação baseada nos sinais de retenção e desempenho.')}</p><div class="learning-advisor-action"><strong>${esc(action)}</strong><span>${esc(intervention.method||'Aplique a intervenção e meça novamente o desempenho.')}</span></div><div class="learning-advisor-controls"><button class="btn btn-secondary btn-sm" type="button" data-learning-action="local-intervention" data-row-index="${candidate.rowIndex}">Abrir intervenção local</button><span>O motor local valida a execução.</span></div></article>`;
+    const previous=(candidate.recommendationHistory||[]).at(-1);
+    const previousLabel=previous?ACTION_LABELS[previous.action]:'';
+    return `<article class="learning-advisor-card" data-topic-id="${esc(candidate.topicId)}"><div class="learning-advisor-card-top"><div><span class="learning-advisor-subject">${esc(candidate.materia)}</span><strong>${esc(candidate.assunto)}</strong></div><span class="learning-friction learning-friction-${candidate.frictionScore>=70?'high':candidate.frictionScore>=50?'medium':'low'}">Dificuldade persistente ${candidate.frictionScore}</span></div><div class="learning-advisor-meta"><span>${esc(type)}</span><span>Risco ${sev}</span><span>${Math.round(Number(intervention.suggestedMinutes)||20)} min</span>${previousLabel?`<span>Anterior: ${esc(previousLabel)}</span>`:''}</div><p>${esc(intervention.rationale||'Recomendação baseada nos sinais de retenção, desempenho e histórico.')}</p><div class="learning-advisor-action"><strong>${esc(action)}</strong><span>${esc(intervention.method||'Aplique a intervenção e meça novamente o desempenho.')}</span></div><div class="learning-advisor-controls"><button class="btn btn-secondary btn-sm" type="button" data-learning-action="local-intervention" data-row-index="${candidate.rowIndex}">Abrir intervenção local</button><button class="btn btn-secondary btn-sm" type="button" data-learning-action="snooze" data-topic-id="${esc(candidate.topicId)}">Fechar sem estudar · 24h</button><span>Adiar não registra estudo nem altera a retenção.</span></div></article>`;
   }).join('')||'<div class="learning-advisor-empty">Nenhuma intervenção foi necessária neste momento.</div>';
   box.querySelectorAll('[data-learning-action="local-intervention"]').forEach(button=>button.addEventListener('click',()=>openLocalIntervention(Number(button.dataset.rowIndex))));
+  box.querySelectorAll('[data-learning-action="snooze"]').forEach(button=>button.addEventListener('click',()=>handleSnooze(button.dataset.topicId,button.closest('.learning-advisor-card'))));
+}
+
+function handleSnooze(topicId,card){
+  const until=snoozeTopic(topicId,24);
+  card?.remove();
+  const box=document.getElementById('learningAdvisorResults');
+  const status=document.getElementById('learningAdvisorStatus');
+  if(status)status.textContent=`Assunto fechado sem estudo. Ele voltará para revisão após ${new Date(until).toLocaleString('pt-BR')}.`;
+  if(box&&!box.querySelector('.learning-advisor-card'))box.innerHTML='<div class="learning-advisor-empty">Os assuntos desta análise foram estudados ou adiados.</div>';
+  currentCandidates=currentCandidates.filter(candidate=>candidate.topicId!==topicId);
 }
 
 function openLocalIntervention(rowIndex){
@@ -242,10 +312,14 @@ async function authToken(){
 async function requestAdvice(candidates){
   const token=await authToken();
   if(!token)throw new Error('Sessão expirada. Entre novamente para usar a análise por IA.');
-  const response=await fetch('/api/ai/learning-diagnosis',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({contest:getContestName(),topics:candidates.map(({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics})=>({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics}))})});
+  const response=await fetch('/api/ai/learning-diagnosis',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({contest:getContestName(),topics:candidates.map(({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics,recommendationHistory})=>({topicId,materia,assunto,prioridade,assuntoPrioridade,frictionScore,metrics,recommendationHistory}))})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data?.error||`Falha na análise (${response.status}).`);
   return data;
+}
+
+function persistDisplayedRecommendations(payload){
+  (Array.isArray(payload?.interventions)?payload.interventions:[]).forEach(intervention=>recordRecommendation(intervention?.topicId,intervention?.recommendedAction,payload?.aiUsed?'gemini':'local'));
 }
 
 async function analyze(options={}){
@@ -253,13 +327,13 @@ async function analyze(options={}){
   const overlay=renderInterventionShell();
   const status=overlay?.querySelector('#learningAdvisorStatus');
   const candidates=collectCandidates(options.limit||MAX_TOPICS);
-  if(!candidates.length){if(status)status.textContent='Ainda não há dificuldade persistente suficiente para uma análise por IA.';return null}
+  if(!candidates.length){if(status)status.textContent='Ainda não há dificuldade persistente disponível para análise. Assuntos adiados retornam automaticamente após 24 horas.';return null}
   const cached=!options.force&&readCache(candidates);
   if(cached){lastResult=cached;renderResults(cached,candidates);return cached}
-  busy=true;if(status)status.textContent='Analisando padrões de dificuldade sem alterar seu cronograma…';
+  busy=true;if(status)status.textContent='Analisando métricas e histórico de métodos sem alterar seu cronograma…';
   try{
     const payload=await requestAdvice(candidates);
-    lastResult=payload;writeCache(candidates,payload);renderResults(payload,candidates);return payload;
+    lastResult=payload;writeCache(candidates,payload);persistDisplayedRecommendations(payload);renderResults(payload,candidates);return payload;
   }catch(error){
     if(status)status.textContent=error?.message||'Não foi possível consultar a IA agora.';
     throw error;
@@ -287,7 +361,7 @@ function refresh(){
     if(title==='Assuntos em risco')openRiskView();
   }
 }
-function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'risk-details',candidateCount:collectCandidates().length,busy,hasResult:!!lastResult})}
+function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'risk-details',candidateCount:collectCandidates().length,snoozedCount:countActiveSnoozes(),busy,hasResult:!!lastResult,antiRepeat:true})}
 
 function boot(){
   document.getElementById('learningAdvisorPanel')?.remove();
@@ -301,5 +375,5 @@ function boot(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
 global.addEventListener('pageshow',()=>setTimeout(boot,80));
 
-global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,getDiagnostics:diagnostics});
+global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,refresh,close:closeDialog,snoozeTopic,getRecommendationHistory,getDiagnostics:diagnostics});
 })(window);
