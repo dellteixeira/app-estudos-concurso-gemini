@@ -8,11 +8,12 @@ const css = fs.readFileSync(path.join(root, 'public/css/canonical-ui.css'), 'utf
 const navigation = fs.readFileSync(path.join(root, 'public/js/ui/navigation.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8');
 
-test('cards de diagnóstico preservam ícone acima, rótulo central e estrutura compacta', () => {
+test('cards de diagnóstico preservam estrutura compacta sem ícones decorativos', () => {
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077/);
-  assert.match(css, /grid-template-rows:\s*38px minmax\(24px, auto\) 1fr 6px\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077[\s\S]*grid-row:\s*1\s*!important[\s\S]*justify-self:\s*center\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*grid-row:\s*2\s*!important[\s\S]*text-align:\s*center\s*!important/);
+  assert.match(css, /grid-template-rows:\s*minmax\(24px, auto\) 1fr 6px\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077[\s\S]*display:\s*none\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*grid-row:\s*1\s*!important[\s\S]*text-align:\s*center\s*!important/);
+  assert.match(css, /font-size:\s*clamp\(13px/);
   assert.match(css, /white-space:\s*normal\s*!important/);
   assert.match(css, /overflow:\s*visible\s*!important/);
 });
