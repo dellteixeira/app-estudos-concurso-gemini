@@ -32,6 +32,8 @@ test('auditoria responsiva cobre bandas canônicas e falhas visuais críticas', 
   assert.match(spec, /documentElement overflow/);
   assert.match(spec, /Controles com texto cortado\/escapando/);
   assert.match(spec, /Rótulo fora do card/);
-  assert.match(spec, /Ícone não centralizado/);
+  assert.match(spec, /Ícone decorativo ainda visível/);
+  assert.match(spec, /Título sem destaque suficiente/);
+  assert.match(spec, /Título sem peso visual suficiente/);
   assert.match(spec, /page\.screenshot/);
 });
