@@ -18,8 +18,10 @@ assert(css.includes('grid-template-columns: repeat(4, minmax(0, 1fr)) !important
 assert(css.includes('grid-auto-rows: 142px !important'), 'desktop retention cards must stay compact');
 assert(css.includes('height: 142px !important'), 'retention card height must remain bounded');
 assert(css.includes('display: none !important'), 'retention decorative icons must remain hidden');
-assert(css.includes('font-size: clamp(13px'), 'retention labels must keep readable emphasized typography');
+assert(css.includes('font-size: clamp(.82rem, .76rem + .18vw, .94rem) !important'), 'retention labels must keep readable emphasized typography');
+assert(css.includes('font-weight: 740 !important'), 'retention labels must keep strong visual emphasis');
 assert(css.includes('@media (max-width: 600px)'), 'retention layout must adapt only on real mobile viewport');
+assert(css.includes('font-size: .82rem !important'), 'mobile retention labels must stay at least 13px-equivalent');
 assert(css.includes('grid-template-columns: repeat(2, minmax(0, 1fr)) !important'), 'mobile retention metrics must use two columns');
 assert(css.includes('position: static !important'), 'legacy positioning must not pull labels out of the card flow');
 assert(css.includes('ACCESSIBILITY BASELINE'), 'accessibility contract must stay in canonical UI layer');
