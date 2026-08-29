@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-      - fix/ui-mobile-web-v10.64.17
+      - fix/remove-retention-icons-v10.64.18
     paths:
       - '.github/workflows/android-phase2d-direct-distribution.yml'
       - 'android/app/build.gradle'
@@ -26,11 +26,11 @@ jobs:
     env:
       ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
       ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
-      ANDROID_VERSION_NAME: '10.64.17-mobile.1'
-      APP_VERSION_CODE: '106419'
-      WEB_VERSION: '10.64.17'
+      ANDROID_VERSION_NAME: '10.64.18-mobile.1'
+      APP_VERSION_CODE: '106420'
+      WEB_VERSION: '10.64.18'
       APP_PACKAGE: 'com.estudoadaptativo.app'
-      RELEASE_TAG: 'v10.64.17'
+      RELEASE_TAG: 'v10.64.18'
 
     steps:
       - name: Checkout
@@ -104,7 +104,7 @@ jobs:
           test -s android/app/src/main/res/drawable-nodpi/estudo_adaptativo_launcher.png
           grep -q 'android-mobile-hotfix.css' public/index.html
           grep -q 'android-mobile-hotfix.css' android/app/src/main/assets/public/index.html
-          test -s android/app/src/main/assets/public/css/responsive-polish-v10.64.17.css
+          test -s android/app/src/main/assets/public/css/responsive-polish-v10.64.18.css
 
       - name: Build signed APK
         working-directory: android
@@ -133,7 +133,7 @@ jobs:
           printf '%s\n' "$BADGING" | grep -q "versionCode='$APP_VERSION_CODE'"
           printf '%s\n' "$BADGING" | grep -q "versionName='$ANDROID_VERSION_NAME'"
           unzip -l "$APK" | grep -q 'assets/public/css/android-mobile-hotfix.css'
-          unzip -l "$APK" | grep -q 'assets/public/css/responsive-polish-v10.64.17.css'
+          unzip -l "$APK" | grep -q 'assets/public/css/responsive-polish-v10.64.18.css'
           if find android/app/build/outputs -type f -name '*.aab' -print -quit | grep -q .; then
             echo 'AAB inesperado foi produzido; Phase 2D distribui somente APK.' >&2
             exit 1
@@ -175,7 +175,7 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           PACKAGE="com.estudoadaptativo.app"
-          APK="${1:-EstudoAdaptativo-v10.64.17-mobile.1-android-release.apk}"
+          APK="${1:-EstudoAdaptativo-v10.64.18-mobile.1-android-release.apk}"
           command -v adb >/dev/null
           adb get-state
           adb install -r "$APK"
@@ -214,7 +214,7 @@ jobs:
       - name: Upload direct distribution APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: EstudoAdaptativo-v10.64.17-mobile.1-direct-distribution-apk
+          name: EstudoAdaptativo-v10.64.18-mobile.1-direct-distribution-apk
           path: dist/android/direct/
           if-no-files-found: error
           retention-days: 30
