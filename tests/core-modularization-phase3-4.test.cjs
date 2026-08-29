@@ -12,6 +12,7 @@ const worker=fs.readFileSync('src/index.js','utf8');
 const headers=fs.readFileSync('public/_headers','utf8');
 const assets=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+const publicVersion=JSON.parse(fs.readFileSync('public/version.json','utf8'));
 const browser=fs.readFileSync('tests/browser/state-sync-critical.spec.cjs','utf8');
 
 test('phase 3 extracted backup store has valid syntax and stable API',()=>{
@@ -49,9 +50,12 @@ test('phase 4 critical e2e covers real app shell, AppState, SyncEngine and offli
 });
 
 test('release identity is synchronized with canonical package version',()=>{
-  const version=String(pkg.version);
-  const escaped=version.replace(/\./g,'\\.');
-  assert.equal(assets.version,version);
-  assert.match(sw,new RegExp(`const APP_VERSION = '${escaped}'`));
-  assert.match(worker,new RegExp(`const APP_VERSION = "${escaped}"`));
+  const canonical=String(pkg.version||'').trim();
+  const swVersion=sw.match(/const APP_VERSION = '([^']+)'/)?.[1];
+  const workerVersion=worker.match(/const APP_VERSION = "([^"]+)"/)?.[1];
+  assert.match(canonical,/^10\.64\.\d+$/);
+  assert.equal(String(publicVersion.version||'').trim(),canonical);
+  assert.equal(String(assets.version||'').trim(),canonical);
+  assert.equal(swVersion,canonical);
+  assert.equal(workerVersion,canonical);
 });
