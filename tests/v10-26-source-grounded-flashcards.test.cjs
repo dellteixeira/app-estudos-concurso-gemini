@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const worker=fs.readFileSync('src/index.js','utf8');
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
 const version=JSON.parse(fs.readFileSync('public/version.json','utf8'));
+const assets=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const sw=fs.readFileSync('public/sw.js','utf8');
 
 test('v10.26 builds deterministic evidence before asking AI',()=>{
@@ -40,9 +41,14 @@ test('v10.26 preserves hedge and deterministic fallback',()=>{
 });
 
 test('canonical version is synchronized across package, manifest, Worker and Service Worker',()=>{
-  const expected=String(pkg.version||'').trim();
-  assert.match(expected,/^\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?$/);
-  assert.equal(version.version,expected);
-  assert.equal(worker.match(/const APP_VERSION = "([^"]+)"/)?.[1],expected);
-  assert.equal(sw.match(/const APP_VERSION = '([^']+)'/)?.[1],expected);
+  const canonical=String(pkg.version||'').trim();
+  const publicVersion=String(version.version||'').trim();
+  const assetVersion=String(assets.version||'').trim();
+  const workerVersion=worker.match(/const APP_VERSION = "([^"]+)"/)?.[1];
+  const swVersion=sw.match(/const APP_VERSION = '([^']+)'/)?.[1];
+  assert.match(canonical,/^10\.64\.\d+$/);
+  assert.equal(publicVersion,canonical);
+  assert.equal(assetVersion,canonical);
+  assert.equal(workerVersion,canonical);
+  assert.equal(swVersion,canonical);
 });
