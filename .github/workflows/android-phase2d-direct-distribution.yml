@@ -1,3 +1,4 @@
+# Phase 2D direct APK distribution. Keep tests/** in the push filter so release-contract fixes are validated before APK publication.
 name: Android Phase 2D Direct APK Distribution
 
 on:
