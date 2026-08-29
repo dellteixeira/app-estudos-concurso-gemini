@@ -22,8 +22,10 @@ test('retention actions are optically centered', () => {
   assert.match(css, /\.retention-diagnostic-tools[\s\S]*justify-content:\s*center\s*!important/);
 });
 
-test('mobile retention removes tiny decorative icons and promotes labels', () => {
-  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-icon-v1077[\s\S]*display:\s*none\s*!important/);
+test('mobile retention keeps enlarged centered metric icons and readable labels', () => {
+  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-icon-v1077[\s\S]*display:\s*flex\s*!important/);
+  assert.match(css, /\.rd-metric-icon-v1077[\s\S]*justify-self:\s*center\s*!important/);
+  assert.match(css, /\.rd-metric-icon-v1077[\s\S]*width:\s*50px\s*!important[\s\S]*height:\s*50px\s*!important/);
   assert.match(css, /\.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.76rem/);
   assert.match(css, /\.rd-metric-label-v1077[\s\S]*font-weight:\s*820\s*!important/);
 });
