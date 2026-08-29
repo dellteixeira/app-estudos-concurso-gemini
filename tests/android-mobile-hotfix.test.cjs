@@ -15,8 +15,10 @@ test('calendar mobile hotfix preserves seven columns and two-digit days', () => 
   assert.match(sharedCss, /\.calendar-month-selectors[\s\S]*grid-template-columns:\s*auto minmax\(0, 1\.12fr\) minmax\(0, \.88fr\)/);
 });
 
-test('mobile retention prioritizes readable labels over decorative icons', () => {
-  assert.match(sharedCss, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-icon-v1077[\s\S]*display:\s*none\s*!important/);
+test('mobile retention keeps metric icons visible, enlarged and centered', () => {
+  assert.match(sharedCss, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-icon-v1077[\s\S]*display:\s*flex\s*!important/);
+  assert.match(sharedCss, /\.rd-metric-icon-v1077[\s\S]*justify-self:\s*center\s*!important/);
+  assert.match(sharedCss, /\.rd-metric-icon-v1077[\s\S]*width:\s*50px\s*!important[\s\S]*height:\s*50px\s*!important/);
   assert.match(sharedCss, /\.rd-metric-label-v1077[\s\S]*font-weight:\s*820\s*!important/);
 });
 
