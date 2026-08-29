@@ -1,16 +1,32 @@
-# Phase 2D direct APK distribution. Keep tests/** in the push filter so release-contract fixes are validated before APK publication.
+# Canonical signed APK distribution. Release identity is resolved from config/release-contract.json.
 name: Android Phase 2D Direct APK Distribution
 
 on:
   push:
     branches:
       - main
-      - release/v10.64.19
     paths:
       - '.github/workflows/android-phase2d-direct-distribution.yml'
+      - 'config/release-contract.json'
       - 'android/app/build.gradle'
+      - 'package.json'
       - 'public/**'
+      - 'src/**'
       - 'android/mobile/**'
+      - 'scripts/release-contract.mjs'
+      - 'scripts/migrate-android-phase1b.mjs'
+      - 'scripts/apply-android-mobile-hotfix.mjs'
+      - 'tests/**'
+  pull_request:
+    paths:
+      - '.github/workflows/android-phase2d-direct-distribution.yml'
+      - 'config/release-contract.json'
+      - 'android/app/build.gradle'
+      - 'package.json'
+      - 'public/**'
+      - 'src/**'
+      - 'android/mobile/**'
+      - 'scripts/release-contract.mjs'
       - 'scripts/migrate-android-phase1b.mjs'
       - 'scripts/apply-android-mobile-hotfix.mjs'
       - 'tests/**'
@@ -26,11 +42,6 @@ jobs:
     env:
       ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
       ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
-      ANDROID_VERSION_NAME: '10.64.19-mobile.1'
-      APP_VERSION_CODE: '106421'
-      WEB_VERSION: '10.64.19'
-      APP_PACKAGE: 'com.estudoadaptativo.app'
-      RELEASE_TAG: 'v10.64.19'
 
     steps:
       - name: Checkout
@@ -43,6 +54,10 @@ jobs:
         with:
           node-version: '22.23.2'
           cache: npm
+
+      - name: Resolve canonical release contract
+        id: release_contract
+        run: node scripts/release-contract.mjs github
 
       - name: Setup Java
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.1.0
@@ -104,7 +119,7 @@ jobs:
           test -s android/app/src/main/res/drawable-nodpi/estudo_adaptativo_launcher.png
           grep -q 'android-mobile-hotfix.css' public/index.html
           grep -q 'android-mobile-hotfix.css' android/app/src/main/assets/public/index.html
-          test -s android/app/src/main/assets/public/css/responsive-polish-v10.64.19.css
+          test -s "android/app/src/main/assets/public/css/$RESPONSIVE_CSS"
 
       - name: Build signed APK
         working-directory: android
@@ -133,7 +148,7 @@ jobs:
           printf '%s\n' "$BADGING" | grep -q "versionCode='$APP_VERSION_CODE'"
           printf '%s\n' "$BADGING" | grep -q "versionName='$ANDROID_VERSION_NAME'"
           unzip -l "$APK" | grep -q 'assets/public/css/android-mobile-hotfix.css'
-          unzip -l "$APK" | grep -q 'assets/public/css/responsive-polish-v10.64.19.css'
+          unzip -l "$APK" | grep -q "assets/public/css/$RESPONSIVE_CSS"
           if find android/app/build/outputs -type f -name '*.aab' -print -quit | grep -q .; then
             echo 'AAB inesperado foi produzido; Phase 2D distribui somente APK.' >&2
             exit 1
@@ -167,26 +182,24 @@ jobs:
           adb shell pm list packages | grep ${APP_PACKAGE}
           adb shell dumpsys package ${APP_PACKAGE} | grep -E 'versionName|versionCode'
           adb shell monkey -p ${APP_PACKAGE} -c android.intent.category.LAUNCHER 1
-
-          O arquivo SHA256SUMS.txt permite conferir a integridade do APK antes da instalacao.
           EOF
 
-          cat > "$OUT/validate-device.sh" <<'EOF'
+          cat > "$OUT/validate-device.sh" <<EOF
           #!/usr/bin/env bash
           set -euo pipefail
-          PACKAGE="com.estudoadaptativo.app"
-          APK="${1:-EstudoAdaptativo-v10.64.19-mobile.1-android-release.apk}"
+          PACKAGE="${APP_PACKAGE}"
+          APK="\${1:-EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-release.apk}"
           command -v adb >/dev/null
           adb get-state
-          adb install -r "$APK"
-          adb shell pm path "$PACKAGE"
-          adb shell dumpsys package "$PACKAGE" | grep -E 'versionName|versionCode'
+          adb install -r "\$APK"
+          adb shell pm path "\$PACKAGE"
+          adb shell dumpsys package "\$PACKAGE" | grep -E 'versionName|versionCode'
           adb logcat -c
-          adb shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1
+          adb shell monkey -p "\$PACKAGE" -c android.intent.category.LAUNCHER 1
           sleep 8
-          adb shell dumpsys activity activities | grep -m1 "$PACKAGE"
-          if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime" | grep -q "$PACKAGE"; then
-            echo "Falha: crash AndroidRuntime detectado para $PACKAGE" >&2
+          adb shell dumpsys activity activities | grep -m1 "\$PACKAGE"
+          if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime" | grep -q "\$PACKAGE"; then
+            echo "Falha: crash AndroidRuntime detectado para \$PACKAGE" >&2
             exit 1
           fi
           echo "Validacao fisica basica concluida sem crash detectado."
@@ -214,7 +227,7 @@ jobs:
       - name: Upload direct distribution APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: EstudoAdaptativo-v10.64.19-mobile.1-direct-distribution-apk
+          name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-direct-distribution-apk
           path: dist/android/direct/
           if-no-files-found: error
           retention-days: 30

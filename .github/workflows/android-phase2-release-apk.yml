@@ -37,6 +37,10 @@ jobs:
           node-version: '22.23.2'
           cache: npm
 
+      - name: Resolve canonical release contract
+        id: release_contract
+        run: node scripts/release-contract.mjs github
+
       - name: Setup Java
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.1.0
         with:
@@ -64,34 +68,13 @@ jobs:
         run: npx cap sync android
 
       - name: Resolve and verify release identity
-        id: release_identity
         shell: bash
         run: |
           set -euo pipefail
-
-          VERSION_CODE="$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*/\1/p' android/app/build.gradle | head -n1)"
-          VERSION_NAME="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' android/app/build.gradle | head -n1)"
-          WEB_VERSION="$(node -p "require('./public/version.json').version")"
-
-          test -n "$VERSION_CODE"
-          test -n "$VERSION_NAME"
-          test -n "$WEB_VERSION"
-
-          # Android may carry an explicit mobile suffix, but its base release must
-          # always match the canonical web version.
-          ANDROID_BASE_VERSION="${VERSION_NAME%%-mobile.*}"
-          if [[ "$ANDROID_BASE_VERSION" != "$WEB_VERSION" ]]; then
-            echo "Release identity mismatch: Android=$VERSION_NAME Web=$WEB_VERSION" >&2
-            exit 1
-          fi
-
-          grep -q "versionCode $VERSION_CODE" android/app/build.gradle
-          grep -q "versionName \"$VERSION_NAME\"" android/app/build.gradle
+          node scripts/release-contract.mjs check
+          grep -q "versionCode $APP_VERSION_CODE" android/app/build.gradle
+          grep -q "versionName \"$ANDROID_VERSION_NAME\"" android/app/build.gradle
           grep -q "\"version\": \"$WEB_VERSION\"" public/version.json
-
-          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
-          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-          echo "web_version=$WEB_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build release APK only
         working-directory: android
@@ -99,8 +82,6 @@ jobs:
 
       - name: Validate release APK artifact
         shell: bash
-        env:
-          WEB_VERSION: ${{ steps.release_identity.outputs.web_version }}
         run: |
           set -euo pipefail
           APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
@@ -114,7 +95,7 @@ jobs:
           fi
 
           mkdir -p dist/android
-          OUTPUT="dist/android/EstudoAdaptativo-v${WEB_VERSION}-release-unsigned.apk"
+          OUTPUT="dist/android/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-release-unsigned.apk"
           cp "$APK" "$OUTPUT"
           sha256sum "$OUTPUT" | tee dist/android/SHA256SUMS.txt
           ls -lh dist/android
