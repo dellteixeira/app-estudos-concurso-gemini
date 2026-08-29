@@ -22,12 +22,12 @@ test('retention actions are optically centered', () => {
   assert.match(css, /\.retention-diagnostic-tools[\s\S]*justify-content:\s*center\s*!important/);
 });
 
-test('mobile retention keeps enlarged centered metric icons and readable labels', () => {
-  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-icon-v1077[\s\S]*display:\s*flex\s*!important/);
-  assert.match(css, /\.rd-metric-icon-v1077[\s\S]*justify-self:\s*center\s*!important/);
-  assert.match(css, /\.rd-metric-icon-v1077[\s\S]*width:\s*50px\s*!important[\s\S]*height:\s*50px\s*!important/);
-  assert.match(css, /\.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.76rem/);
-  assert.match(css, /\.rd-metric-label-v1077[\s\S]*font-weight:\s*820\s*!important/);
+test('retention metrics remove decorative icons and elevate titles on all viewports', () => {
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077\s*\{[\s\S]*display:\s*none\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.94rem/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*850\s*!important/);
+  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-card-v1077[\s\S]*grid-template-rows:\s*minmax\(42px, auto\) minmax\(62px, 1fr\) 5px/);
+  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.88rem/);
 });
 
 test('responsive polish stylesheet is loaded after canonical UI', () => {
