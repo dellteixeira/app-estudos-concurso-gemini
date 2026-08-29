@@ -1,0 +1,66 @@
+name: Repair responsive cache contract
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/repair-responsive-cache-contract.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Govern responsive stylesheet in critical offline shell
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          route = '/css/responsive-polish-v10.64.17.css'
+          sw_entry = "'./css/responsive-polish-v10.64.17.css'"
+          manifest_path = Path('config/app-assets.json')
+          sw_path = Path('public/sw.js')
+
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          items = manifest['criticalAppShell']
+          anchor = '/css/responsive-system.css'
+          if route not in items:
+              if anchor not in items:
+                  raise SystemExit('critical manifest anchor missing')
+              items.insert(items.index(anchor) + 1, route)
+          if items.count(route) != 1:
+              raise SystemExit('responsive stylesheet must occur once in criticalAppShell')
+          manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+          sw = sw_path.read_text(encoding='utf-8')
+          anchor_entry = "'./css/responsive-system.css'"
+          if sw_entry not in sw:
+              if anchor_entry not in sw:
+                  raise SystemExit('critical service-worker anchor missing')
+              sw = sw.replace(anchor_entry, anchor_entry + ', ' + sw_entry, 1)
+          if sw.count(sw_entry) != 1:
+              raise SystemExit('responsive stylesheet must occur once in SW critical shell')
+          sw_path.write_text(sw, encoding='utf-8')
+
+      - name: Run canonical asset audit
+        run: node scripts/audit-asset-manifest.mjs
+
+      - name: Commit repaired cache contract
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add config/app-assets.json public/sw.js
+          if git diff --cached --quiet; then
+            echo 'Cache contract already correct.'
+            exit 0
+          fi
+          git commit -m 'fix(pwa): govern responsive polish offline cache'
+          git push origin HEAD:main
