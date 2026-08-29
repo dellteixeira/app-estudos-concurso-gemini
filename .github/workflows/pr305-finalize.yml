@@ -47,6 +47,7 @@ jobs:
           replace_required('public/sw.js', "const APP_VERSION = '10.64.19'", "const APP_VERSION = '10.64.20'", 1)
           replace_required('public/sw.js', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
           replace_required('public/index.html', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
+          replace_required('public/index.html', '?v=10.64.19', '?v=10.64.20')
           replace_required('public/js/ui/navigation.js', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
           replace_required('android/app/build.gradle', 'versionCode 106422', 'versionCode 106423', 1)
           replace_required('android/app/build.gradle', 'versionName "10.64.19-mobile.2"', 'versionName "10.64.20-mobile.1"', 1)
@@ -121,6 +122,7 @@ jobs:
           ! grep -q "responsive-polish-v10.64.19.css" public/index.html
           ! grep -q "responsive-polish-v10.64.19.css" public/sw.js
           ! grep -q "responsive-polish-v10.64.19.css" public/js/ui/navigation.js
+          ! grep -q "?v=10.64.19" public/index.html
           grep -q "cache: gradle" .github/workflows/android-release.yml
       - name: Remove one-shot finalizer and commit validated changes
         shell: bash
