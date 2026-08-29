@@ -43,7 +43,7 @@ test('native hotfix injects canonical web logo into Android launcher', () => {
 test('APK identity advances with v10.64.17 web release', () => {
   assert.match(gradle, /versionCode\s+106419/);
   assert.match(gradle, /versionName\s+"10\.64\.17-mobile\.1"/);
-  assert.match(workflow, /APP_VERSION:\s*'10\.64\.17-mobile\.1'/);
+  assert.match(workflow, /ANDROID_VERSION_NAME:\s*'10\.64\.17-mobile\.1'/);
   assert.match(workflow, /APP_VERSION_CODE:\s*'106419'/);
   assert.match(workflow, /WEB_VERSION:\s*'10\.64\.17'/);
   assert.match(workflow, /RELEASE_TAG:\s*'v10\.64\.17'/);
