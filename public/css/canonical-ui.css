@@ -99,9 +99,9 @@ header.modern-header .btn-search-header {
     appearance: none !important;
     display: grid !important;
     grid-template-columns: 1fr !important;
-    grid-template-rows: 38px minmax(24px, auto) 1fr 6px !important;
+    grid-template-rows: minmax(30px, auto) 1fr 6px !important;
     place-items: center stretch !important;
-    row-gap: 4px !important;
+    row-gap: 6px !important;
     position: relative !important;
     inset: auto !important;
     transform: none !important;
@@ -111,29 +111,22 @@ header.modern-header .btn-search-header {
     height: 142px !important;
     min-height: 142px !important;
     max-height: 142px !important;
-    padding: 9px 8px 9px !important;
+    padding: 12px 10px 10px !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
     text-align: center !important;
 }
 
 #retentionDiagnosticPanel .rd-metric-icon-v1077 {
-    position: static !important;
-    inset: auto !important;
-    transform: none !important;
-    float: none !important;
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    justify-self: center !important;
-    align-self: center !important;
-    display: grid !important;
-    place-items: center !important;
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
     margin: 0 !important;
-    font-size: .92rem !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
 }
 
 #retentionDiagnosticPanel .rd-metric-label-v1077 {
@@ -142,9 +135,9 @@ header.modern-header .btn-search-header {
     transform: none !important;
     float: none !important;
     grid-column: 1 !important;
-    grid-row: 2 !important;
+    grid-row: 1 !important;
     justify-self: stretch !important;
-    align-self: start !important;
+    align-self: center !important;
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -154,9 +147,9 @@ header.modern-header .btn-search-header {
     margin: 0 !important;
     padding: 0 1px !important;
     box-sizing: border-box !important;
-    font-size: clamp(.54rem, .48rem + .16vw, .66rem) !important;
+    font-size: clamp(.82rem, .76rem + .18vw, .94rem) !important;
     font-weight: 740 !important;
-    line-height: 1.08 !important;
+    line-height: 1.15 !important;
     letter-spacing: -.01em !important;
     text-align: center !important;
     white-space: normal !important;
@@ -171,7 +164,7 @@ header.modern-header .btn-search-header {
     position: static !important;
     inset: auto !important;
     grid-column: 1 !important;
-    grid-row: 3 !important;
+    grid-row: 2 !important;
     justify-self: start !important;
     align-self: end !important;
     display: block !important;
@@ -187,7 +180,7 @@ header.modern-header .btn-search-header {
     position: static !important;
     inset: auto !important;
     grid-column: 1 !important;
-    grid-row: 4 !important;
+    grid-row: 3 !important;
     align-self: end !important;
     display: block !important;
     width: 100% !important;
@@ -269,24 +262,25 @@ header.modern-header .btn:focus-visible,
     }
 
     #retentionDiagnosticPanel .rd-metric-card-v1077 {
-        grid-template-rows: 34px minmax(22px, auto) 1fr 5px !important;
+        grid-template-rows: minmax(28px, auto) 1fr 5px !important;
         height: 128px !important;
         min-height: 128px !important;
         max-height: 128px !important;
-        padding: 8px !important;
+        padding: 10px 8px 8px !important;
+        row-gap: 5px !important;
     }
 
     #retentionDiagnosticPanel .rd-metric-icon-v1077 {
-        width: 32px !important;
-        height: 32px !important;
-        min-width: 32px !important;
-        min-height: 32px !important;
-        font-size: .82rem !important;
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
     }
 
     #retentionDiagnosticPanel .rd-metric-label-v1077 {
-        font-size: .62rem !important;
-        line-height: 1.08 !important;
+        font-size: .82rem !important;
+        line-height: 1.15 !important;
     }
 
     #retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
