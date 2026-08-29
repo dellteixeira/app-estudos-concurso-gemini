@@ -54,39 +54,44 @@ async function auditVisibleControls(page, roots) {
 
 async function auditRetentionCards(page) {
   const result = await page.evaluate(() => {
+    const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const cards = [...document.querySelectorAll('#visualAuditRetentionFixture .rd-metric-card-v1077')];
-    return cards.map(card => {
-      const cardRect = card.getBoundingClientRect();
-      const icon = card.querySelector('.rd-metric-icon-v1077');
-      const label = card.querySelector('.rd-metric-label-v1077');
-      const iconStyle = icon ? getComputedStyle(icon) : null;
-      const iconRect = icon?.getBoundingClientRect();
-      const labelStyle = label ? getComputedStyle(label) : null;
-      const labelRect = label?.getBoundingClientRect();
-      return {
-        label: label?.textContent?.trim() || '',
-        labelInside: !!labelRect && labelRect.left >= cardRect.left - 1 && labelRect.right <= cardRect.right + 1 && labelRect.top >= cardRect.top - 1 && labelRect.bottom <= cardRect.bottom + 1,
-        iconHidden: !icon || iconStyle?.display === 'none' || !iconRect || iconRect.width < 1 || iconRect.height < 1,
-        labelOverflowX: label ? label.scrollWidth > label.clientWidth + 2 : true,
-        labelOverflowY: label ? label.scrollHeight > label.clientHeight + 2 : true,
-        labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
-        labelFontWeight: labelStyle ? Number.parseInt(labelStyle.fontWeight, 10) || 0 : 0,
-        labelTextAlign: labelStyle?.textAlign || ''
-      };
-    });
+    return {
+      rootFontSize,
+      cards: cards.map(card => {
+        const cardRect = card.getBoundingClientRect();
+        const icon = card.querySelector('.rd-metric-icon-v1077');
+        const label = card.querySelector('.rd-metric-label-v1077');
+        const iconStyle = icon ? getComputedStyle(icon) : null;
+        const iconRect = icon?.getBoundingClientRect();
+        const labelStyle = label ? getComputedStyle(label) : null;
+        const labelRect = label?.getBoundingClientRect();
+        return {
+          label: label?.textContent?.trim() || '',
+          labelInside: !!labelRect && labelRect.left >= cardRect.left - 1 && labelRect.right <= cardRect.right + 1 && labelRect.top >= cardRect.top - 1 && labelRect.bottom <= cardRect.bottom + 1,
+          iconHidden: !icon || iconStyle?.display === 'none' || !iconRect || iconRect.width < 1 || iconRect.height < 1,
+          labelOverflowX: label ? label.scrollWidth > label.clientWidth + 2 : true,
+          labelOverflowY: label ? label.scrollHeight > label.clientHeight + 2 : true,
+          labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
+          labelFontWeight: labelStyle ? Number.parseInt(labelStyle.fontWeight, 10) || 0 : 0,
+          labelTextAlign: labelStyle?.textAlign || ''
+        };
+      })
+    };
   });
-  expect(result.length).toBe(4);
-  for (const item of result) {
+  expect(result.cards.length).toBe(4);
+  const desktopCapPx = result.rootFontSize * 0.86 + 0.15;
+  for (const item of result.cards) {
     expect(item.labelInside, `Rótulo fora do card: ${item.label}`).toBe(true);
     expect(item.iconHidden, `Ícone decorativo ainda visível: ${item.label}`).toBe(true);
     expect(item.labelOverflowX, `Rótulo cortado horizontalmente: ${item.label}`).toBe(false);
     expect(item.labelOverflowY, `Rótulo cortado verticalmente: ${item.label}`).toBe(false);
     expect(item.labelTextAlign, `Título não centralizado: ${item.label}`).toBe('center');
     expect(item.labelFontSize, `Título pequeno demais: ${item.label}`).toBeGreaterThanOrEqual(12);
-    // Computed rem/clamp values vary by a few tenths of a pixel across browser
-    // engines and device-scale rounding. Keep the contract compact without
-    // turning harmless 14.6px subpixel rendering into a false-negative gate.
-    expect(item.labelFontSize, `Título maior que o contrato compacto: ${item.label}`).toBeLessThanOrEqual(14.75);
+    // The production cap is .86rem. Validate the actual CSS contract relative
+    // to the runtime root font-size so browser/user root scaling does not turn
+    // a valid compact label into a false-negative absolute-pixel failure.
+    expect(item.labelFontSize, `Título maior que o contrato compacto: ${item.label}`).toBeLessThanOrEqual(desktopCapPx);
     expect(item.labelFontWeight, `Título sem peso visual suficiente: ${item.label}`).toBeGreaterThanOrEqual(700);
   }
 }
