@@ -6,13 +6,17 @@ const { execFileSync } = require('node:child_process');
 const contract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf8'));
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const gradle = fs.readFileSync('android/app/build.gradle', 'utf8');
-const workflows = [
+const workflowNames = fs.readdirSync('.github/workflows')
+  .filter(name => /^android-.*\.ya?ml$/i.test(name))
+  .sort();
+const workflows = workflowNames.map(name => [name, fs.readFileSync(`.github/workflows/${name}`, 'utf8')]);
+const legacyWorkflowNames = [
   'android-phase1-build.yml',
   'android-phase2-release-apk.yml',
   'android-phase2-signed-apk.yml',
   'android-phase2c-signed-apk-runtime.yml',
   'android-phase2d-direct-distribution.yml'
-].map(name => [name, fs.readFileSync(`.github/workflows/${name}`, 'utf8')]);
+];
 
 const androidVersionName = `${contract.version}-mobile.${contract.android.revision}`;
 
@@ -25,6 +29,13 @@ test('release contract is the canonical version identity', () => {
   assert.doesNotThrow(() => execFileSync(process.execPath, ['scripts/release-contract.mjs', 'check'], { stdio: 'pipe' }));
 });
 
+test('Android pipeline is consolidated into CI and Release workflows only', () => {
+  assert.deepEqual(workflowNames, ['android-ci.yml', 'android-release.yml']);
+  for (const name of legacyWorkflowNames) {
+    assert.equal(fs.existsSync(`.github/workflows/${name}`), false, `${name} legado ainda existe`);
+  }
+});
+
 test('all Android workflows resolve runtime identity from the canonical contract', () => {
   for (const [name, workflow] of workflows) {
     assert.match(workflow, /node scripts\/release-contract\.mjs github/, `${name} não resolve o contrato`);
@@ -32,12 +43,28 @@ test('all Android workflows resolve runtime identity from the canonical contract
   assert.doesNotThrow(() => execFileSync(process.execPath, ['scripts/audit-workflow-release-contract.mjs'], { stdio: 'pipe' }));
 });
 
-test('Phase 2D publishes artifacts and tags from resolved contract outputs', () => {
-  const workflow = workflows.find(([name]) => name === 'android-phase2d-direct-distribution.yml')[1];
+test('Android CI preserves tests, structural audit, instrumentation and runtime diagnostics', () => {
+  const workflow = workflows.find(([name]) => name === 'android-ci.yml')[1];
+  assert.match(workflow, /npm test/);
+  assert.match(workflow, /npm run audit/);
+  assert.match(workflow, /connectedDebugAndroidTest/);
+  assert.match(workflow, /adb install -r/);
+  assert.match(workflow, /FATAL EXCEPTION/);
+  assert.match(workflow, /android-ci-screen\.png/);
+});
+
+test('Android Release owns signed runtime validation and permanent distribution', () => {
+  const workflow = workflows.find(([name]) => name === 'android-release.yml')[1];
+  assert.match(workflow, /ANDROID_RELEASE_KEYSTORE_BASE64/);
+  assert.match(workflow, /assembleRelease/);
+  assert.match(workflow, /APKSIGNER/);
+  assert.match(workflow, /AAPT/);
+  assert.match(workflow, /adb install -r/);
   assert.match(workflow, /RELEASE_TAG/);
   assert.match(workflow, /ANDROID_VERSION_NAME/);
   assert.match(workflow, /APP_VERSION_CODE/);
   assert.match(workflow, /RESPONSIVE_CSS/);
+  assert.match(workflow, /gh release upload/);
   assert.doesNotMatch(workflow, /ANDROID_VERSION_NAME:\s*['"]\d/);
   assert.doesNotMatch(workflow, /WEB_VERSION:\s*['"]\d/);
   assert.doesNotMatch(workflow, /RELEASE_TAG:\s*['"]v\d/);
