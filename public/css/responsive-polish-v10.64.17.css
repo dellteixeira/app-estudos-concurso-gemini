@@ -157,21 +157,34 @@
     margin-inline: auto !important;
   }
 
-  /* On phones the tiny decorative glyphs cost more space than information.
-     Remove them and promote the metric label instead. */
+  /* Retention metrics: keep the visual cue on phones, enlarge it and center it
+     independently from the label so every engine preserves the same geometry. */
   #retentionDiagnosticPanel .rd-metric-card-v1077 {
-    grid-template-rows: minmax(36px, auto) 1fr 5px !important;
-    row-gap: 8px !important;
+    grid-template-rows: 50px minmax(36px, auto) 1fr 5px !important;
+    row-gap: 7px !important;
     padding: 12px 10px 10px !important;
   }
 
   #retentionDiagnosticPanel .rd-metric-icon-v1077 {
-    display: none !important;
+    display: flex !important;
+    grid-row: 1 !important;
+    justify-self: center !important;
+    align-self: center !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+    margin: 0 !important;
+    font-size: 1.32rem !important;
   }
 
   #retentionDiagnosticPanel .rd-metric-label-v1077 {
-    grid-row: 1 !important;
+    grid-row: 2 !important;
     align-self: center !important;
+    justify-self: stretch !important;
+    text-align: center !important;
     font-size: clamp(.76rem, 3.05vw, .86rem) !important;
     font-weight: 820 !important;
     line-height: 1.14 !important;
@@ -179,11 +192,11 @@
   }
 
   #retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
-    grid-row: 2 !important;
+    grid-row: 3 !important;
   }
 
   #retentionDiagnosticPanel .rd-metric-progress-v1077 {
-    grid-row: 3 !important;
+    grid-row: 4 !important;
   }
 }
 
