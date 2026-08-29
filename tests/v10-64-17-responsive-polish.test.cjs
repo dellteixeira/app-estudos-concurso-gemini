@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const css = fs.readFileSync('public/css/responsive-polish-v10.64.18.css', 'utf8');
+const css = fs.readFileSync('public/css/responsive-polish-v10.64.19.css', 'utf8');
 const nav = fs.readFileSync('public/js/ui/navigation.js', 'utf8');
 
 test('flashcard action labels do not split on mobile', () => {
@@ -33,7 +33,7 @@ test('retention metrics remove decorative icons and keep compact balanced titles
 
 test('responsive polish stylesheet is loaded after canonical UI', () => {
   const canonicalIndex = nav.indexOf('canonical-ui.css');
-  const polishIndex = nav.indexOf('responsive-polish-v10.64.18.css');
+  const polishIndex = nav.indexOf('responsive-polish-v10.64.19.css');
   assert.ok(canonicalIndex >= 0);
   assert.ok(polishIndex > canonicalIndex);
   assert.match(nav, /data-responsive-polish|dataset\.responsivePolish/);

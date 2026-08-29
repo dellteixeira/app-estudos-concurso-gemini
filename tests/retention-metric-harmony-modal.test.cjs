@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const root = path.join(__dirname, '..');
-const polish = fs.readFileSync(path.join(root, 'public/css/responsive-polish-v10.64.18.css'), 'utf8');
+const polish = fs.readFileSync(path.join(root, 'public/css/responsive-polish-v10.64.19.css'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'public/js/app-ui.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
 
