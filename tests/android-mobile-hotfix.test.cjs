@@ -50,9 +50,10 @@ test('native hotfix injects canonical web logo into Android launcher', () => {
 });
 
 test('APK hotfix increments Android identity without changing web release identity', () => {
-  assert.match(gradle, /versionCode\s+106417/);
-  assert.match(gradle, /versionName\s+"10\.64\.16-mobile\.1"/);
-  assert.match(workflow, /APP_VERSION:\s*'10\.64\.16-mobile\.1'/);
+  assert.match(gradle, /versionCode\s+106418/);
+  assert.match(gradle, /versionName\s+"10\.64\.16-mobile\.2"/);
+  assert.match(workflow, /APP_VERSION:\s*'10\.64\.16-mobile\.2'/);
+  assert.match(workflow, /APP_VERSION_CODE:\s*'106418'/);
   assert.match(workflow, /WEB_VERSION:\s*'10\.64\.16'/);
   assert.match(workflow, /AAB inesperado foi produzido/);
   assert.match(workflow, /if:\s*github\.ref == 'refs\/heads\/main'/);
