@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - fix/android-mobile-ui-v10.64.17
+      - fix/ui-mobile-web-v10.64.17
     paths:
       - '.github/workflows/android-phase2d-direct-distribution.yml'
       - 'android/app/build.gradle'
@@ -25,11 +25,11 @@ jobs:
     env:
       ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
       ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
-      APP_VERSION: '10.64.16-mobile.2'
-      APP_VERSION_CODE: '106418'
-      WEB_VERSION: '10.64.16'
+      APP_VERSION: '10.64.17-mobile.1'
+      APP_VERSION_CODE: '106419'
+      WEB_VERSION: '10.64.17'
       APP_PACKAGE: 'com.estudoadaptativo.app'
-      RELEASE_TAG: 'v10.64.16'
+      RELEASE_TAG: 'v10.64.17'
 
     steps:
       - name: Checkout
@@ -103,6 +103,7 @@ jobs:
           test -s android/app/src/main/res/drawable-nodpi/estudo_adaptativo_launcher.png
           grep -q 'android-mobile-hotfix.css' public/index.html
           grep -q 'android-mobile-hotfix.css' android/app/src/main/assets/public/index.html
+          test -s android/app/src/main/assets/public/css/responsive-polish-v10.64.17.css
 
       - name: Build signed APK
         working-directory: android
@@ -131,6 +132,7 @@ jobs:
           printf '%s\n' "$BADGING" | grep -q "versionCode='$APP_VERSION_CODE'"
           printf '%s\n' "$BADGING" | grep -q "versionName='$APP_VERSION'"
           unzip -l "$APK" | grep -q 'assets/public/css/android-mobile-hotfix.css'
+          unzip -l "$APK" | grep -q 'assets/public/css/responsive-polish-v10.64.17.css'
           if find android/app/build/outputs -type f -name '*.aab' -print -quit | grep -q .; then
             echo 'AAB inesperado foi produzido; Phase 2D distribui somente APK.' >&2
             exit 1
@@ -150,7 +152,7 @@ jobs:
           Estudo Adaptativo Inteligente ${APP_VERSION}
           Pacote: ${APP_PACKAGE}
           Version code: ${APP_VERSION_CODE}
-          Hotfix mobile: calendario, diagnostico, Cards/Lista e logo Android.
+          Atualizacao responsiva: flashcards, calendario e Retencao/Diagnostico.
 
           INSTALACAO DIRETA NO APARELHO
           1. Transfira o arquivo ${FINAL} para o Android.
@@ -172,7 +174,7 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           PACKAGE="com.estudoadaptativo.app"
-          APK="${1:-EstudoAdaptativo-v10.64.16-mobile.2-android-release.apk}"
+          APK="${1:-EstudoAdaptativo-v10.64.17-mobile.1-android-release.apk}"
           command -v adb >/dev/null
           adb get-state
           adb install -r "$APK"
@@ -201,6 +203,7 @@ jobs:
             "signed": true,
             "aabProduced": false,
             "androidMobileHotfix": true,
+            "responsivePolish": true,
             "sourceCommit": "${GITHUB_SHA}",
             "workflowRun": "${GITHUB_RUN_ID}",
             "permanentReleaseTag": "${RELEASE_TAG}"
@@ -210,7 +213,7 @@ jobs:
       - name: Upload direct distribution APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: EstudoAdaptativo-v10.64.16-mobile.2-direct-distribution-apk
+          name: EstudoAdaptativo-v10.64.17-mobile.1-direct-distribution-apk
           path: dist/android/direct/
           if-no-files-found: error
           retention-days: 30
@@ -225,7 +228,19 @@ jobs:
           OUT="dist/android/direct"
           FINAL="EstudoAdaptativo-v${APP_VERSION}-android-release.apk"
 
-          gh release view "$RELEASE_TAG" >/dev/null
+          release_ready=0
+          for attempt in {1..20}; do
+            if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+              release_ready=1
+              break
+            fi
+            echo "Aguardando release canônica $RELEASE_TAG... tentativa $attempt/20"
+            sleep 15
+          done
+          if [ "$release_ready" -ne 1 ]; then
+            echo "Release canônica $RELEASE_TAG não ficou disponível no prazo." >&2
+            exit 1
+          fi
 
           existing_assets="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')"
           if printf '%s\n' "$existing_assets" | grep -Fxq "$FINAL"; then
