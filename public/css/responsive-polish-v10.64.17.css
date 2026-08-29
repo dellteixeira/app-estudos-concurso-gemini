@@ -37,9 +37,24 @@
 
 /* Retention metrics — v10.64.18 visual contract.
    Decorative icons are intentionally removed on every viewport. Titles become
-   the primary visual anchor and values receive the freed vertical space. */
+   the primary visual anchor and values receive the freed vertical space.
+   The zero-geometry fallback protects the contract even if a browser keeps a
+   stale display value during an asynchronous panel refresh. */
+.rd-metric-icon-v1077,
 #retentionDiagnosticPanel .rd-metric-icon-v1077 {
   display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
 }
 
 #retentionDiagnosticPanel .rd-metric-card-v1077 {
