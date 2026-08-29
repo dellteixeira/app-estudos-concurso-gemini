@@ -6,6 +6,7 @@ on:
       - chore/ci-performance-architecture
     paths:
       - '.github/workflows/pr305-finalize.yml'
+      - 'public/css/components/retention.css'
 
 permissions:
   contents: write
