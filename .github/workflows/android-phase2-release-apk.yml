@@ -63,12 +63,35 @@ jobs:
       - name: Sync web assets into Android
         run: npx cap sync android
 
-      - name: Verify release version
+      - name: Resolve and verify release identity
+        id: release_identity
         shell: bash
         run: |
-          grep -q 'versionCode 106416' android/app/build.gradle
-          grep -q 'versionName "10.64.16"' android/app/build.gradle
-          grep -q '"version": "10.64.16"' public/version.json
+          set -euo pipefail
+
+          VERSION_CODE="$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*/\1/p' android/app/build.gradle | head -n1)"
+          VERSION_NAME="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' android/app/build.gradle | head -n1)"
+          WEB_VERSION="$(node -p "require('./public/version.json').version")"
+
+          test -n "$VERSION_CODE"
+          test -n "$VERSION_NAME"
+          test -n "$WEB_VERSION"
+
+          # Android may carry an explicit mobile suffix, but its base release must
+          # always match the canonical web version.
+          ANDROID_BASE_VERSION="${VERSION_NAME%%-mobile.*}"
+          if [[ "$ANDROID_BASE_VERSION" != "$WEB_VERSION" ]]; then
+            echo "Release identity mismatch: Android=$VERSION_NAME Web=$WEB_VERSION" >&2
+            exit 1
+          fi
+
+          grep -q "versionCode $VERSION_CODE" android/app/build.gradle
+          grep -q "versionName \"$VERSION_NAME\"" android/app/build.gradle
+          grep -q "\"version\": \"$WEB_VERSION\"" public/version.json
+
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "web_version=$WEB_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build release APK only
         working-directory: android
@@ -76,7 +99,10 @@ jobs:
 
       - name: Validate release APK artifact
         shell: bash
+        env:
+          WEB_VERSION: ${{ steps.release_identity.outputs.web_version }}
         run: |
+          set -euo pipefail
           APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           test -f "$APK"
           test -s "$APK"
@@ -88,16 +114,17 @@ jobs:
           fi
 
           mkdir -p dist/android
-          cp "$APK" "dist/android/EstudoAdaptativo-v10.64.16-release-unsigned.apk"
-          sha256sum "dist/android/EstudoAdaptativo-v10.64.16-release-unsigned.apk" | tee dist/android/SHA256SUMS.txt
+          OUTPUT="dist/android/EstudoAdaptativo-v${WEB_VERSION}-release-unsigned.apk"
+          cp "$APK" "$OUTPUT"
+          sha256sum "$OUTPUT" | tee dist/android/SHA256SUMS.txt
           ls -lh dist/android
 
       - name: Upload release APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: EstudoAdaptativo-v10.64.16-release-apk
+          name: EstudoAdaptativo-release-apk
           path: |
-            dist/android/EstudoAdaptativo-v10.64.16-release-unsigned.apk
+            dist/android/*-release-unsigned.apk
             dist/android/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30

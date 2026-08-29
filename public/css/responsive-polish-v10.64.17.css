@@ -1,5 +1,6 @@
 /* Release gate: canonical cache/offline contract validated for v10.64.17. */
 /* Release gate: v10.64.17 responsive runtime validated after canonical index linkage. */
+/* Retention contract candidate v10.64.18: icon-free metrics on web and mobile. */
 /* Responsive polish — v10.64.17
    Shared by web/PWA and Android. Mobile-first refinements requested after
    physical-device validation; desktop behavior is preserved unless noted. */
@@ -34,13 +35,58 @@
   justify-content: center !important;
 }
 
-/* Desktop/tablet keeps icons, but gives them a more deliberate visual weight. */
+/* Retention metrics — v10.64.18 visual contract.
+   Decorative icons are intentionally removed on every viewport. Titles become
+   the primary visual anchor and values receive the freed vertical space.
+   The zero-geometry fallback protects the contract even if a browser keeps a
+   stale display value during an asynchronous panel refresh. */
+.rd-metric-icon-v1077,
 #retentionDiagnosticPanel .rd-metric-icon-v1077 {
-  width: 42px !important;
-  height: 42px !important;
-  min-width: 42px !important;
-  min-height: 42px !important;
-  font-size: 1.08rem !important;
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+#retentionDiagnosticPanel .rd-metric-card-v1077 {
+  grid-template-rows: minmax(36px, auto) minmax(54px, 1fr) 5px !important;
+  row-gap: 8px !important;
+  align-items: center !important;
+  padding: 18px 16px 13px !important;
+}
+
+#retentionDiagnosticPanel .rd-metric-label-v1077 {
+  grid-row: 1 !important;
+  align-self: center !important;
+  justify-self: stretch !important;
+  text-align: center !important;
+  font-size: clamp(.94rem, 1.35vw, 1.08rem) !important;
+  font-weight: 850 !important;
+  line-height: 1.18 !important;
+  letter-spacing: .01em !important;
+}
+
+#retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
+  grid-row: 2 !important;
+  align-self: center !important;
+  justify-self: stretch !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+#retentionDiagnosticPanel .rd-metric-progress-v1077 {
+  grid-row: 3 !important;
+  align-self: end !important;
+  margin: 0 !important;
 }
 
 @media (max-width: 700px) {
@@ -157,46 +203,25 @@
     margin-inline: auto !important;
   }
 
-  /* Retention metrics: keep the visual cue on phones, enlarge it and center it
-     independently from the label so every engine preserves the same geometry. */
+  /* Mobile retention metrics: no icon row. More space goes to title and value. */
   #retentionDiagnosticPanel .rd-metric-card-v1077 {
-    grid-template-rows: 50px minmax(36px, auto) 1fr 5px !important;
-    row-gap: 7px !important;
-    padding: 12px 10px 10px !important;
-  }
-
-  #retentionDiagnosticPanel .rd-metric-icon-v1077 {
-    display: flex !important;
-    grid-row: 1 !important;
-    justify-self: center !important;
-    align-self: center !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 50px !important;
-    height: 50px !important;
-    min-width: 50px !important;
-    min-height: 50px !important;
-    margin: 0 !important;
-    font-size: 1.32rem !important;
+    grid-template-rows: minmax(42px, auto) minmax(62px, 1fr) 5px !important;
+    row-gap: 8px !important;
+    min-height: 172px !important;
+    padding: 16px 10px 11px !important;
   }
 
   #retentionDiagnosticPanel .rd-metric-label-v1077 {
-    grid-row: 2 !important;
-    align-self: center !important;
-    justify-self: stretch !important;
-    text-align: center !important;
-    font-size: clamp(.76rem, 3.05vw, .86rem) !important;
-    font-weight: 820 !important;
-    line-height: 1.14 !important;
+    font-size: clamp(.88rem, 3.65vw, 1rem) !important;
+    font-weight: 850 !important;
+    line-height: 1.16 !important;
     letter-spacing: 0 !important;
+    padding-inline: 2px !important;
   }
 
   #retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
-    grid-row: 3 !important;
-  }
-
-  #retentionDiagnosticPanel .rd-metric-progress-v1077 {
-    grid-row: 4 !important;
+    font-size: clamp(2rem, 9.4vw, 2.55rem) !important;
+    line-height: .96 !important;
   }
 }
 
@@ -242,5 +267,13 @@
 
   #flashcardsWorkspace .anki-folder-actions > span:last-child {
     font-size: .58rem !important;
+  }
+
+  #retentionDiagnosticPanel .rd-metric-label-v1077 {
+    font-size: clamp(.82rem, 3.8vw, .94rem) !important;
+  }
+
+  #retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
+    font-size: clamp(1.9rem, 9.8vw, 2.35rem) !important;
   }
 }
