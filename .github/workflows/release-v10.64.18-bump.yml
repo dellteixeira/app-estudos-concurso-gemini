@@ -1,10 +1,10 @@
-# release trigger refresh 2026-08-29-2
-name: Prepare v10.64.18
+# release trigger refresh 2026-08-29-3
+name: Prepare v10.64.19
 
 on:
   push:
     branches:
-      - fix/remove-retention-icons-v10.64.18
+      - release/v10.64.19
     paths:
       - '.github/workflows/release-v10.64.18-bump.yml'
 
@@ -33,20 +33,16 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          old = '10.64.17'
-          new = '10.64.18'
-          old_mobile = '10.64.17-mobile.1'
-          new_mobile = '10.64.18-mobile.1'
+          old = '10.64.18'
+          new = '10.64.19'
+          old_mobile = '10.64.18-mobile.1'
+          new_mobile = '10.64.19-mobile.1'
 
-          old_css = Path('public/css/responsive-polish-v10.64.17.css')
-          new_css = Path('public/css/responsive-polish-v10.64.18.css')
+          old_css = Path('public/css/responsive-polish-v10.64.18.css')
+          new_css = Path('public/css/responsive-polish-v10.64.19.css')
           if old_css.exists():
               old_css.rename(new_css)
 
-          # Important: GitHub Actions' GITHUB_TOKEN cannot push modifications
-          # to .github/workflows without the separate workflows permission.
-          # Release-code identity is synchronized here; workflow identity is
-          # updated explicitly through the repository API before this job runs.
           roots = [
               Path('package.json'), Path('package-lock.json'), Path('config/app-assets.json'),
               Path('public'), Path('src'), Path('tests'), Path('android/app/build.gradle')
@@ -67,15 +63,16 @@ jobs:
               original = text
               text = text.replace(old_mobile, new_mobile)
               text = text.replace(old, new)
-              text = text.replace('106419', '106420')
+              text = text.replace('106420', '106421')
               if text != original:
                   path.write_text(text, encoding='utf-8')
 
-          # Explicit sanity checks for release-code identity only.
-          assert '"version": "10.64.18"' in Path('package.json').read_text()
-          assert '"version": "10.64.18"' in Path('public/version.json').read_text()
-          assert 'versionCode 106420' in Path('android/app/build.gradle').read_text()
-          assert 'versionName "10.64.18-mobile.1"' in Path('android/app/build.gradle').read_text()
+          assert '"version": "10.64.19"' in Path('package.json').read_text()
+          assert '"version": "10.64.19"' in Path('public/version.json').read_text()
+          assert 'const APP_VERSION = "10.64.19"' in Path('src/index.js').read_text()
+          assert "const APP_VERSION = '10.64.19'" in Path('public/sw.js').read_text()
+          assert 'versionCode 106421' in Path('android/app/build.gradle').read_text()
+          assert 'versionName "10.64.19-mobile.1"' in Path('android/app/build.gradle').read_text()
           assert new_css.exists()
           PY
 
@@ -98,5 +95,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git diff --cached --check
-          git commit -m 'chore(release): prepare v10.64.18 and Android mobile.1'
-          git push origin HEAD:fix/remove-retention-icons-v10.64.18
+          git commit -m 'chore(release): prepare v10.64.19 and Android mobile.1'
+          git push origin HEAD:release/v10.64.19
