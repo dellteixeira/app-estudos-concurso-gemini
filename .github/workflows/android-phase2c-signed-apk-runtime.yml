@@ -6,6 +6,12 @@ on:
       - feat/android-phase2a-release-apk-v10.64.16
     paths:
       - '.github/workflows/android-phase2c-signed-apk-runtime.yml'
+      - 'config/release-contract.json'
+      - 'scripts/release-contract.mjs'
+      - 'android/**'
+      - 'package.json'
+      - 'public/**'
+      - 'src/**'
   workflow_dispatch:
 
 permissions:
@@ -30,6 +36,10 @@ jobs:
         with:
           node-version: '22.23.2'
           cache: npm
+
+      - name: Resolve canonical release contract
+        id: release_contract
+        run: node scripts/release-contract.mjs github
 
       - name: Setup Java
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.1.0
@@ -80,9 +90,10 @@ jobs:
       - name: Verify release version
         shell: bash
         run: |
-          grep -q 'versionCode 106416' android/app/build.gradle
-          grep -q 'versionName "10.64.16"' android/app/build.gradle
-          grep -q '"version": "10.64.16"' public/version.json
+          node scripts/release-contract.mjs check
+          grep -q "versionCode $APP_VERSION_CODE" android/app/build.gradle
+          grep -q "versionName \"$ANDROID_VERSION_NAME\"" android/app/build.gradle
+          grep -q "\"version\": \"$WEB_VERSION\"" public/version.json
 
       - name: Build signed release APK
         working-directory: android
@@ -143,17 +154,17 @@ jobs:
           APK="android/app/build/outputs/apk/release/app-release.apk"
           adb install -r "$APK" | tee android-phase2c-install.txt
           adb logcat -c
-          adb shell am force-stop com.estudoadaptativo.app
-          adb shell monkey -p com.estudoadaptativo.app -c android.intent.category.LAUNCHER 1 >/dev/null
+          adb shell am force-stop "$APP_PACKAGE"
+          adb shell monkey -p "$APP_PACKAGE" -c android.intent.category.LAUNCHER 1 >/dev/null
           sleep 10
-          PID="$(adb shell pidof com.estudoadaptativo.app | tr -d '\r')"
+          PID="$(adb shell pidof "$APP_PACKAGE" | tr -d '\r')"
           test -n "$PID"
           echo "ANDROID_APP_PID=$PID" >> "$GITHUB_ENV"
           adb shell dumpsys activity activities > android-phase2c-activity.txt
-          grep -q 'com.estudoadaptativo.app' android-phase2c-activity.txt
+          grep -q "$APP_PACKAGE" android-phase2c-activity.txt
           adb exec-out screencap -p > android-phase2c-launch.png
           adb logcat -d > android-phase2c-launch-logcat.txt
-          if grep -A10 'FATAL EXCEPTION' android-phase2c-launch-logcat.txt | grep -q 'com.estudoadaptativo.app'; then
+          if grep -A10 'FATAL EXCEPTION' android-phase2c-launch-logcat.txt | grep -q "$APP_PACKAGE"; then
             echo 'Crash detectado no lançamento do APK assinado.' >&2
             exit 1
           fi
@@ -163,13 +174,13 @@ jobs:
         run: |
           adb shell input keyevent 3
           sleep 3
-          adb shell monkey -p com.estudoadaptativo.app -c android.intent.category.LAUNCHER 1 >/dev/null
+          adb shell monkey -p "$APP_PACKAGE" -c android.intent.category.LAUNCHER 1 >/dev/null
           sleep 8
-          PID="$(adb shell pidof com.estudoadaptativo.app | tr -d '\r')"
+          PID="$(adb shell pidof "$APP_PACKAGE" | tr -d '\r')"
           test -n "$PID"
           adb exec-out screencap -p > android-phase2c-resume.png
           adb logcat -d > android-phase2c-resume-logcat.txt
-          if grep -A10 'FATAL EXCEPTION' android-phase2c-resume-logcat.txt | grep -q 'com.estudoadaptativo.app'; then
+          if grep -A10 'FATAL EXCEPTION' android-phase2c-resume-logcat.txt | grep -q "$APP_PACKAGE"; then
             echo 'Crash detectado após retorno do background.' >&2
             exit 1
           fi
@@ -188,15 +199,15 @@ jobs:
         if: always()
         shell: bash
         run: |
-          adb shell dumpsys package com.estudoadaptativo.app > android-phase2c-package.txt 2>/dev/null || true
-          adb shell dumpsys meminfo com.estudoadaptativo.app > android-phase2c-meminfo.txt 2>/dev/null || true
+          adb shell dumpsys package "$APP_PACKAGE" > android-phase2c-package.txt 2>/dev/null || true
+          adb shell dumpsys meminfo "$APP_PACKAGE" > android-phase2c-meminfo.txt 2>/dev/null || true
           adb logcat -d > android-phase2c-final-logcat.txt 2>/dev/null || true
 
       - name: Upload Phase 2C diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: EstudoAdaptativo-v10.64.16-phase2c-runtime-diagnostics
+          name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-phase2c-runtime-diagnostics
           path: |
             android-phase2c-signature.txt
             android-phase2c-emulator.log
