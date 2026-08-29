@@ -297,3 +297,5 @@
     font-size: clamp(1.82rem, 9.2vw, 2.28rem) !important;
   }
 }
+
+/* PR305 finalizer retrigger: canonical ownership validated after legacy cleanup. */
