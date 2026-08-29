@@ -18,13 +18,13 @@ test('header controls stay on one row with complete labels', () => {
   assert.doesNotMatch(css, /\.header-account-actions \.btn[\s\S]{0,450}text-overflow:\s*ellipsis/);
 });
 
-test('retention metrics are compact and remain four-across outside real mobile', () => {
+test('retention metrics are compact, iconless and remain four-across outside real mobile', () => {
   const css = read('public/css/canonical-ui.css');
   assert.match(css, /#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*grid-auto-rows:\s*142px\s*!important/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077[\s\S]*height:\s*142px\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077[\s\S]*width:\s*36px\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.54rem/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077[\s\S]*display:\s*none\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(13px/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*white-space:\s*normal\s*!important/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(max-width: 340px\)[\s\S]*#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*grid-template-columns:\s*1fr\s*!important/);
