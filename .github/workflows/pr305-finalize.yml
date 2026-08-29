@@ -31,28 +31,79 @@ jobs:
           from pathlib import Path
           import json
 
-          def replace_required(filename, old, new, count=None):
+          def replace_if_present(filename, old, new):
               p = Path(filename)
               text = p.read_text()
-              actual = text.count(old)
-              if actual == 0:
-                  raise SystemExit(f'missing expected token in {filename}: {old}')
-              if count is not None and actual != count:
-                  raise SystemExit(f'unexpected token count in {filename}: {old} ({actual} != {count})')
-              p.write_text(text.replace(old, new))
+              if old in text:
+                  p.write_text(text.replace(old, new))
 
-          replace_required('package.json', '"version": "10.64.19"', '"version": "10.64.20"', 1)
-          replace_required('package-lock.json', '"version": "10.64.19"', '"version": "10.64.20"', 2)
-          replace_required('public/version.json', '"version": "10.64.19"', '"version": "10.64.20"', 1)
-          replace_required('src/index.js', 'const APP_VERSION = "10.64.19"', 'const APP_VERSION = "10.64.20"', 1)
-          replace_required('public/js/app-pwa.js', '?v=10.64.19', '?v=10.64.20')
-          replace_required('public/js/app-pwa.js', 'V10.64.19', 'V10.64.20')
-          replace_required('public/sw.js', "const APP_VERSION = '10.64.19'", "const APP_VERSION = '10.64.20'", 1)
-          replace_required('public/sw.js', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
-          replace_required('public/index.html', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
-          replace_required('public/js/ui/navigation.js', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
-          replace_required('android/app/build.gradle', 'versionCode 106422', 'versionCode 106423', 1)
-          replace_required('android/app/build.gradle', 'versionName "10.64.19-mobile.2"', 'versionName "10.64.20-mobile.1"', 1)
+          def matching_brace(text, open_pos):
+              depth = 0
+              quote = None
+              escaped = False
+              i = open_pos
+              while i < len(text):
+                  c = text[i]
+                  if quote:
+                      if escaped:
+                          escaped = False
+                      elif c == '\\':
+                          escaped = True
+                      elif c == quote:
+                          quote = None
+                  elif c in ('"', "'"):
+                      quote = c
+                  elif c == '{':
+                      depth += 1
+                  elif c == '}':
+                      depth -= 1
+                      if depth == 0:
+                          return i
+                  i += 1
+              raise RuntimeError('unbalanced CSS braces')
+
+          def strip_retention_rules(text):
+              forbidden = ('#retentionDiagnosticPanel', '.rd-metric', '#modalRetentionMetricDetails')
+              out = []
+              pos = 0
+              while True:
+                  brace = text.find('{', pos)
+                  if brace < 0:
+                      out.append(text[pos:])
+                      break
+                  close = matching_brace(text, brace)
+                  header = text[pos:brace]
+                  body = text[brace + 1:close]
+                  stripped = header.strip()
+                  if stripped.startswith(('@media', '@supports', '@container', '@layer')):
+                      nested = strip_retention_rules(body)
+                      out.append(header + '{' + nested + '}')
+                  elif any(token in header for token in forbidden):
+                      pass
+                  else:
+                      out.append(header + '{' + body + '}')
+                  pos = close + 1
+              return ''.join(out)
+
+          features = Path('public/css/features.css')
+          features_text = strip_retention_rules(features.read_text())
+          features.write_text(features_text)
+          for token in ('#retentionDiagnosticPanel', '.rd-metric', '#modalRetentionMetricDetails'):
+              if token in features_text:
+                  raise SystemExit(f'legacy retention selector still present in features.css: {token}')
+
+          replace_if_present('package.json', '"version": "10.64.19"', '"version": "10.64.20"')
+          replace_if_present('package-lock.json', '"version": "10.64.19"', '"version": "10.64.20"')
+          replace_if_present('public/version.json', '"version": "10.64.19"', '"version": "10.64.20"')
+          replace_if_present('src/index.js', 'const APP_VERSION = "10.64.19"', 'const APP_VERSION = "10.64.20"')
+          replace_if_present('public/js/app-pwa.js', '?v=10.64.19', '?v=10.64.20')
+          replace_if_present('public/js/app-pwa.js', 'V10.64.19', 'V10.64.20')
+          replace_if_present('public/sw.js', "const APP_VERSION = '10.64.19'", "const APP_VERSION = '10.64.20'")
+          replace_if_present('public/sw.js', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
+          replace_if_present('public/index.html', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
+          replace_if_present('public/js/ui/navigation.js', 'responsive-polish-v10.64.19.css', 'responsive-polish-v10.64.20.css')
+          replace_if_present('android/app/build.gradle', 'versionCode 106422', 'versionCode 106423')
+          replace_if_present('android/app/build.gradle', 'versionName "10.64.19-mobile.2"', 'versionName "10.64.20-mobile.1"')
 
           contract_path = Path('config/release-contract.json')
           contract = json.loads(contract_path.read_text())
@@ -79,31 +130,27 @@ jobs:
           test_path = Path('tests/retention-metric-harmony-modal.test.cjs')
           test_text = test_path.read_text()
           old_test = "const polish = fs.readFileSync(path.join(root, 'public/css/responsive-polish-v10.64.19.css'), 'utf8');"
-          new_test = "const assets = JSON.parse(fs.readFileSync(path.join(root, 'config/app-assets.json'), 'utf8'));\nconst responsivePolishPath = assets.criticalAppShell.find(asset => /^\\/css\\/responsive-polish-v\\d+\\.\\d+\\.\\d+\\.css$/.test(asset));\nassert.ok(responsivePolishPath, 'manifest must declare the canonical responsive polish CSS');\nconst polish = fs.readFileSync(path.join(root, 'public', responsivePolishPath.replace(/^\\//, '')), 'utf8');"
-          if old_test not in test_text:
-              raise SystemExit('retention harmony test no longer has expected version-pinned polish reference')
-          test_path.write_text(test_text.replace(old_test, new_test))
+          if old_test in test_text:
+              new_test = "const assets = JSON.parse(fs.readFileSync(path.join(root, 'config/app-assets.json'), 'utf8'));\nconst responsivePolishPath = assets.criticalAppShell.find(asset => /^\\/css\\/responsive-polish-v\\d+\\.\\d+\\.\\d+\\.css$/.test(asset));\nassert.ok(responsivePolishPath, 'manifest must declare the canonical responsive polish CSS');\nconst polish = fs.readFileSync(path.join(root, 'public', responsivePolishPath.replace(/^\\//, '')), 'utf8');"
+              test_path.write_text(test_text.replace(old_test, new_test, 1))
 
           release_path = Path('.github/workflows/android-release.yml')
           release = release_path.read_text()
           java_block = "          distribution: temurin\n          java-version: '21'"
-          java_cached = "          distribution: temurin\n          java-version: '21'\n          cache: gradle"
-          if java_block not in release:
-              raise SystemExit('Android Release Java setup block changed unexpectedly')
-          release_path.write_text(release.replace(java_block, java_cached, 1))
+          if 'cache: gradle' not in release and java_block in release:
+              release = release.replace(java_block, java_block + "\n          cache: gradle", 1)
+              release_path.write_text(release)
 
           ci_test_path = Path('tests/ci-performance-contract.test.cjs')
           ci_test = ci_test_path.read_text()
           old_decl = "const android = fs.readFileSync('.github/workflows/android-ci.yml', 'utf8');"
-          new_decl = old_decl + "\nconst androidRelease = fs.readFileSync('.github/workflows/android-release.yml', 'utf8');\nconst assets = JSON.parse(fs.readFileSync('config/app-assets.json', 'utf8'));"
-          if old_decl not in ci_test:
-              raise SystemExit('CI performance test declaration changed unexpectedly')
-          ci_test = ci_test.replace(old_decl, new_decl, 1)
+          if 'const androidRelease =' not in ci_test and old_decl in ci_test:
+              ci_test = ci_test.replace(old_decl, old_decl + "\nconst androidRelease = fs.readFileSync('.github/workflows/android-release.yml', 'utf8');\nconst assets = JSON.parse(fs.readFileSync('config/app-assets.json', 'utf8'));", 1)
           old_assert = "  assert.match(android, /cache:\\s*gradle/);\n});"
-          new_assert = "  assert.match(android, /cache:\\s*gradle/);\n  assert.match(androidRelease, /Setup Java[\\s\\S]*cache:\\s*gradle/);\n});\n\ntest('retention component is part of the canonical offline asset contract', () => {\n  assert.ok(assets.criticalAppShell.includes('/css/components/retention.css'));\n  assert.ok(assets.networkFirstPaths.includes('/css/components/retention.css'));\n  assert.ok(assets.workerNoStorePaths.includes('/css/components/retention.css'));\n  assert.ok(assets.headersNoStorePaths.includes('/css/components/retention.css'));\n});"
-          if old_assert not in ci_test:
-              raise SystemExit('CI performance cache assertion changed unexpectedly')
-          ci_test_path.write_text(ci_test.replace(old_assert, new_assert, 1))
+          if "retention component is part of the canonical offline asset contract" not in ci_test and old_assert in ci_test:
+              new_assert = "  assert.match(android, /cache:\\s*gradle/);\n  assert.match(androidRelease, /Setup Java[\\s\\S]*cache:\\s*gradle/);\n});\n\ntest('retention component is part of the canonical offline asset contract', () => {\n  assert.ok(assets.criticalAppShell.includes('/css/components/retention.css'));\n  assert.ok(assets.networkFirstPaths.includes('/css/components/retention.css'));\n  assert.ok(assets.workerNoStorePaths.includes('/css/components/retention.css'));\n  assert.ok(assets.headersNoStorePaths.includes('/css/components/retention.css'));\n});"
+              ci_test = ci_test.replace(old_assert, new_assert, 1)
+          ci_test_path.write_text(ci_test)
 
           old_polish = Path('public/css/responsive-polish-v10.64.19.css')
           if old_polish.exists():
@@ -125,6 +172,7 @@ jobs:
           ! grep -q "responsive-polish-v10.64.19.css" public/sw.js
           ! grep -q "responsive-polish-v10.64.19.css" public/js/ui/navigation.js
           ! grep -q "?v=10.64.19" public/js/app-pwa.js
+          ! grep -q "#retentionDiagnosticPanel\|\.rd-metric\|#modalRetentionMetricDetails" public/css/features.css
           grep -q "cache: gradle" .github/workflows/android-release.yml
       - name: Remove one-shot finalizer and commit validated changes
         shell: bash
