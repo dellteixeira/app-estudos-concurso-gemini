@@ -46,9 +46,7 @@
   grid-row: 1 !important;
   align-self: center !important;
   justify-self: center !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: block !important;
   box-sizing: border-box !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -57,10 +55,10 @@
   min-height: 2.2em !important;
   padding-inline: 2px !important;
   text-align: center !important;
-  text-wrap: balance !important;
+  text-wrap: wrap !important;
   white-space: normal !important;
   overflow: visible !important;
-  overflow-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
   word-break: normal !important;
   hyphens: none !important;
   font-size: clamp(.76rem, .70rem + .22vw, .86rem) !important;
@@ -246,6 +244,7 @@
 
   #retentionDiagnosticPanel .rd-metric-label-v1077,
   .rd-metric-label-v1077 {
+    display: block !important;
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -256,7 +255,8 @@
     line-height: 1.1 !important;
     letter-spacing: 0 !important;
     padding-inline: 2px !important;
-    overflow-wrap: break-word !important;
+    text-wrap: wrap !important;
+    overflow-wrap: anywhere !important;
   }
 
   #retentionDiagnosticPanel .rd-metric-risk-v1077 .rd-metric-label-v1077 {
