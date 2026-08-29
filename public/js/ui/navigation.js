@@ -2,12 +2,20 @@
     'use strict';
 
     function ensureCanonicalUiStyle() {
-        if (document.querySelector('link[data-canonical-ui]')) return;
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = './css/canonical-ui.css?v=20260823-phase5';
-        link.dataset.canonicalUi = '1';
-        document.head.appendChild(link);
+        if (!document.querySelector('link[data-canonical-ui]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = './css/canonical-ui.css?v=20260823-phase5';
+            link.dataset.canonicalUi = '1';
+            document.head.appendChild(link);
+        }
+        if (!document.querySelector('link[data-responsive-polish]')) {
+            const polish = document.createElement('link');
+            polish.rel = 'stylesheet';
+            polish.href = './css/responsive-polish-v10.64.17.css?v=20260829';
+            polish.dataset.responsivePolish = '1';
+            document.head.appendChild(polish);
+        }
     }
 
     function ensureAccessibleNames() {
