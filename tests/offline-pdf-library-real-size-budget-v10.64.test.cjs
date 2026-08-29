@@ -5,12 +5,14 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const manager = fs.readFileSync(path.join(root, 'public/js/pdf/pdf-offline-library-manager.js'), 'utf8');
-const packageVersion = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
-const publicVersion = JSON.parse(fs.readFileSync(path.join(root, 'public/version.json'), 'utf8')).version;
+const packageVersion = String(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version || '').trim();
+const publicVersion = String(JSON.parse(fs.readFileSync(path.join(root, 'public/version.json'), 'utf8')).version || '').trim();
+const assetVersion = String(JSON.parse(fs.readFileSync(path.join(root, 'config/app-assets.json'), 'utf8')).version || '').trim();
 
 test('Fase 8 permanece na linha canônica 10.64.x com identidade pública sincronizada', () => {
   assert.match(packageVersion, /^10\.64\.\d+$/);
   assert.equal(publicVersion, packageVersion);
+  assert.equal(assetVersion, packageVersion);
 });
 
 test('persistência valida o tamanho real do blob antes de gravar', () => {
