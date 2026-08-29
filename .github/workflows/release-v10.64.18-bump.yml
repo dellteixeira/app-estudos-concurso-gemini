@@ -43,10 +43,13 @@ jobs:
           if old_css.exists():
               old_css.rename(new_css)
 
+          # Important: GitHub Actions' GITHUB_TOKEN cannot push modifications
+          # to .github/workflows without the separate workflows permission.
+          # Release-code identity is synchronized here; workflow identity is
+          # updated explicitly through the repository API before this job runs.
           roots = [
               Path('package.json'), Path('package-lock.json'), Path('config/app-assets.json'),
-              Path('public'), Path('src'), Path('tests'), Path('android/app/build.gradle'),
-              Path('.github/workflows/android-phase2d-direct-distribution.yml')
+              Path('public'), Path('src'), Path('tests'), Path('android/app/build.gradle')
           ]
           allowed = {'.json','.js','.mjs','.cjs','.css','.html','.yml','.yaml','.gradle','.txt'}
           files = []
@@ -65,23 +68,14 @@ jobs:
               text = text.replace(old_mobile, new_mobile)
               text = text.replace(old, new)
               text = text.replace('106419', '106420')
-              if path == Path('.github/workflows/android-phase2d-direct-distribution.yml'):
-                  text = text.replace('fix/ui-mobile-web-v10.64.18', 'fix/remove-retention-icons-v10.64.18')
-                  text = text.replace('fix/ui-mobile-web-v10.64.17', 'fix/remove-retention-icons-v10.64.18')
               if text != original:
                   path.write_text(text, encoding='utf-8')
 
-          # Explicit sanity checks for the release identity.
+          # Explicit sanity checks for release-code identity only.
           assert '"version": "10.64.18"' in Path('package.json').read_text()
           assert '"version": "10.64.18"' in Path('public/version.json').read_text()
           assert 'versionCode 106420' in Path('android/app/build.gradle').read_text()
           assert 'versionName "10.64.18-mobile.1"' in Path('android/app/build.gradle').read_text()
-          wf = Path('.github/workflows/android-phase2d-direct-distribution.yml').read_text()
-          assert "ANDROID_VERSION_NAME: '10.64.18-mobile.1'" in wf
-          assert "APP_VERSION_CODE: '106420'" in wf
-          assert "WEB_VERSION: '10.64.18'" in wf
-          assert "RELEASE_TAG: 'v10.64.18'" in wf
-          assert 'responsive-polish-v10.64.18.css' in wf
           assert new_css.exists()
           PY
 
