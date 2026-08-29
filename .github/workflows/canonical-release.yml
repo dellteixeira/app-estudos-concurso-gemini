@@ -80,14 +80,18 @@ jobs:
               exit 0
             fi
 
-            runtime_paths=(package.json public src wrangler.jsonc config android/app/build.gradle)
-            if git diff --quiet "$RELEASE_TAG" "$RELEASE_SHA" -- "${runtime_paths[@]}"; then
+            # A tag vX.Y.Z representa exclusivamente a identidade do runtime web.
+            # Revisões Android (mobile.N / versionCode) podem evoluir sob a mesma
+            # versão web e não devem invalidar nem mover a tag web histórica.
+            web_runtime_paths=(package.json public src wrangler.jsonc config)
+            web_runtime_excludes=(':(exclude)config/release-contract.json')
+            if git diff --quiet "$RELEASE_TAG" "$RELEASE_SHA" -- "${web_runtime_paths[@]}" "${web_runtime_excludes[@]}"; then
               echo "mode=operational-rollback" >> "$GITHUB_OUTPUT"
-              echo "::notice::Rollback operacional detectado. $RELEASE_TAG permanece imutável em $tag_sha; o SHA implantado $RELEASE_SHA possui o mesmo conteúdo de runtime da release canônica."
+              echo "::notice::Runtime web idêntico ao da tag $RELEASE_TAG. A tag permanece imutável em $tag_sha; diferenças Android/operacionais no SHA $RELEASE_SHA são permitidas."
               exit 0
             fi
 
-            echo "::error::A tag $RELEASE_TAG já existe em $tag_sha e o runtime do SHA $RELEASE_SHA é diferente. A tag não será movida. Incremente a versão antes de publicar outra release."
+            echo "::error::A tag $RELEASE_TAG já existe em $tag_sha e o runtime web do SHA $RELEASE_SHA é diferente. A tag não será movida. Incremente a versão web antes de publicar outra release."
             exit 1
           fi
 

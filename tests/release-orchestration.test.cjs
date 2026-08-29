@@ -28,7 +28,14 @@ test('canonical GitHub Release derives identity from release contract', () => {
   assert.doesNotMatch(canonicalRelease, /const APP_VERSION/);
 });
 
-test('canonical tag stays immutable when runtime differs', () => {
+test('canonical web tag ignores Android-only revision drift', () => {
+  assert.match(canonicalRelease, /web_runtime_paths=\(package\.json public src wrangler\.jsonc config\)/);
+  assert.match(canonicalRelease, /web_runtime_excludes=\('\:\(exclude\)config\/release-contract\.json'\)/);
+  assert.doesNotMatch(canonicalRelease, /runtime_paths=.*android\/app\/build\.gradle/);
+  assert.match(canonicalRelease, /diferenças Android\/operacionais/);
+});
+
+test('canonical tag stays immutable when web runtime differs', () => {
   assert.match(canonicalRelease, /A tag \$RELEASE_TAG já existe/);
   assert.match(canonicalRelease, /A tag não será movida/);
   assert.match(canonicalRelease, /git tag -a "\$RELEASE_TAG" "\$RELEASE_SHA"/);
