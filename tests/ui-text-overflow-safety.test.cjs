@@ -24,8 +24,10 @@ test('retention metrics are compact, iconless and remain four-across outside rea
   assert.match(css, /#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*grid-auto-rows:\s*142px\s*!important/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077[\s\S]*height:\s*142px\s*!important/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077[\s\S]*display:\s*none\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(13px/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.82rem,/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*740\s*!important/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*white-space:\s*normal\s*!important/);
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*\.82rem\s*!important/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(max-width: 340px\)[\s\S]*#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*grid-template-columns:\s*1fr\s*!important/);
   assert.doesNotMatch(css, /@container retentionMetrics/);
