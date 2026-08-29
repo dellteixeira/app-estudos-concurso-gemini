@@ -1,0 +1,163 @@
+name: Android CI
+
+on:
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'android/mobile/**'
+      - 'capacitor.config.json'
+      - 'config/release-contract.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'public/**'
+      - 'src/**'
+      - 'scripts/release-contract.mjs'
+      - 'scripts/prepare-android-assets.mjs'
+      - 'scripts/migrate-android-phase1b.mjs'
+      - 'scripts/apply-android-mobile-hotfix.mjs'
+      - 'tests/**'
+      - '.github/workflows/android-ci.yml'
+      - '.github/workflows/android-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.23.2'
+          cache: npm
+
+      - name: Resolve canonical release contract
+        id: release_contract
+        run: node scripts/release-contract.mjs github
+
+      - name: Setup Java
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply canonical Android migration
+        run: node scripts/migrate-android-phase1b.mjs
+
+      - name: Run web unit tests
+        run: npm test
+
+      - name: Run structural audits
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: npm run audit
+
+      - name: Prepare Worker-proxied vendor assets
+        run: npm run android:prepare
+
+      - name: Apply Android mobile UI and branding hotfix
+        run: node scripts/apply-android-mobile-hotfix.mjs
+
+      - name: Sync web assets into Android
+        run: npx cap sync android
+
+      - name: Verify Android identity after sync
+        run: node scripts/release-contract.mjs check
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Install Android emulator image
+        shell: bash
+        run: |
+          set -euo pipefail
+          ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager -perm -u+x | head -n 1)"
+          AVDMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name avdmanager -perm -u+x | head -n 1)"
+          test -x "$SDKMANAGER"
+          test -x "$AVDMANAGER"
+          ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd-ci"
+          mkdir -p "$ANDROID_AVD_HOME"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
+          echo no | ANDROID_AVD_HOME="$ANDROID_AVD_HOME" "$AVDMANAGER" create avd --force --name android-ci --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
+          echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
+
+      - name: Start Android emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+          nohup emulator @android-ci -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -accel auto > android-ci-emulator.log 2>&1 &
+          EMULATOR_PID=$!
+          timeout 120 adb wait-for-device
+          kill -0 "$EMULATOR_PID"
+          timeout 300 bash -c 'until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 5; done'
+          adb shell input keyevent 82 || true
+          adb devices
+
+      - name: Run connected Android instrumentation tests
+        working-directory: android
+        run: ./gradlew --no-daemon connectedDebugAndroidTest
+
+      - name: Launch debug APK and validate runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          adb install -r "$APK" >/dev/null
+          adb logcat -c
+          adb shell am force-stop "$APP_PACKAGE"
+          adb shell monkey -p "$APP_PACKAGE" -c android.intent.category.LAUNCHER 1 >/dev/null
+          sleep 8
+          PID="$(adb shell pidof "$APP_PACKAGE" | tr -d '\r')"
+          test -n "$PID"
+          adb shell dumpsys activity activities > android-ci-activity.txt
+          grep -q "$APP_PACKAGE" android-ci-activity.txt
+          adb exec-out screencap -p > android-ci-screen.png
+          adb logcat -d > android-ci-logcat.txt
+          if grep -A10 'FATAL EXCEPTION' android-ci-logcat.txt | grep -q "$APP_PACKAGE"; then
+            echo 'Crash detectado no APK Android de validação.' >&2
+            exit 1
+          fi
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Android CI diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-android-ci-diagnostics
+          path: |
+            android-ci-emulator.log
+            android-ci-activity.txt
+            android-ci-logcat.txt
+            android-ci-screen.png
+            android/app/build/reports/androidTests/**
+          if-no-files-found: warn
+          retention-days: 14

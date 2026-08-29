@@ -1,7 +1,7 @@
-/* Release gate: canonical cache/offline contract validated for v10.64.18. */
-/* Release gate: v10.64.18 responsive runtime validated after canonical index linkage. */
-/* Retention contract candidate v10.64.18: icon-free metrics on web and mobile. */
-/* Responsive polish — v10.64.18
+/* Release gate: canonical cache/offline contract validated for v10.64.19. */
+/* Release gate: v10.64.19 responsive runtime validated after canonical index linkage. */
+/* Retention contract candidate v10.64.19: icon-free metrics on web and mobile. */
+/* Responsive polish — v10.64.19
    Shared by web/PWA and Android. Mobile-first refinements requested after
    physical-device validation; desktop behavior is preserved unless noted. */
 
@@ -35,7 +35,7 @@
   justify-content: center !important;
 }
 
-/* Retention metrics — v10.64.18 visual contract.
+/* Retention metrics — v10.64.19 visual contract.
    Decorative icons are intentionally removed on every viewport. Titles become
    the primary visual anchor and values receive the freed vertical space.
    The zero-geometry fallback protects the contract even if a browser keeps a

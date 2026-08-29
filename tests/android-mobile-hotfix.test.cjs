@@ -4,10 +4,11 @@ const fs = require('node:fs');
 
 const css = fs.readFileSync('android/mobile/android-mobile-hotfix.css', 'utf8');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const contract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf8'));
 const sharedCss = fs.readFileSync(`public/css/responsive-polish-v${pkg.version}.css`, 'utf8');
 const script = fs.readFileSync('scripts/apply-android-mobile-hotfix.mjs', 'utf8');
 const gradle = fs.readFileSync('android/app/build.gradle', 'utf8');
-const workflow = fs.readFileSync('.github/workflows/android-phase2d-direct-distribution.yml', 'utf8');
+const workflow = fs.readFileSync('.github/workflows/android-release.yml', 'utf8');
 
 function readMatch(text, pattern, label) {
   const match = text.match(pattern);
@@ -50,19 +51,25 @@ test('native hotfix injects canonical web logo into Android launcher', () => {
   assert.match(script, /android:roundIcon="@drawable\/estudo_adaptativo_launcher"/);
 });
 
-test('APK identity follows the canonical web release', () => {
+test('APK identity follows the canonical release contract', () => {
   const versionName = readMatch(gradle, /versionName\s+"([^"]+)"/, 'versionName Android');
   const versionCode = readMatch(gradle, /versionCode\s+(\d+)/, 'versionCode Android');
-  const workflowVersionName = readMatch(workflow, /ANDROID_VERSION_NAME:\s*'([^']+)'/, 'ANDROID_VERSION_NAME');
-  const workflowVersionCode = readMatch(workflow, /APP_VERSION_CODE:\s*'(\d+)'/, 'APP_VERSION_CODE');
-  const workflowWebVersion = readMatch(workflow, /WEB_VERSION:\s*'([^']+)'/, 'WEB_VERSION');
-  const workflowReleaseTag = readMatch(workflow, /RELEASE_TAG:\s*'([^']+)'/, 'RELEASE_TAG');
+  const expectedVersionName = `${contract.version}-mobile.${contract.android.revision}`;
 
-  assert.equal(versionName, `${pkg.version}-mobile.1`);
-  assert.equal(workflowVersionName, versionName);
-  assert.equal(workflowVersionCode, versionCode);
-  assert.equal(workflowWebVersion, pkg.version);
-  assert.equal(workflowReleaseTag, `v${pkg.version}`);
+  assert.equal(pkg.version, contract.version);
+  assert.equal(versionName, expectedVersionName);
+  assert.equal(versionCode, String(contract.android.versionCode));
+
+  assert.match(workflow, /node scripts\/release-contract\.mjs github/);
+  assert.match(workflow, /versionCode \$APP_VERSION_CODE/);
+  assert.match(workflow, /versionName \\\"\$ANDROID_VERSION_NAME\\\"/);
+  assert.match(workflow, /\$RESPONSIVE_CSS/);
   assert.match(workflow, /AAB inesperado foi produzido/);
   assert.match(workflow, /if:\s*github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /gh release upload/);
+
+  assert.doesNotMatch(workflow, /ANDROID_VERSION_NAME:\s*['"]\d/);
+  assert.doesNotMatch(workflow, /APP_VERSION_CODE:\s*['"]?\d/);
+  assert.doesNotMatch(workflow, /WEB_VERSION:\s*['"]\d/);
+  assert.doesNotMatch(workflow, /RELEASE_TAG:\s*['"]v\d/);
 });

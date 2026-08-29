@@ -33,26 +33,19 @@ jobs:
         with:
           node-version: '22.23.2'
 
+      - name: Resolve canonical release contract
+        id: release_contract
+        run: node scripts/release-contract.mjs github
+
       - name: Validate release candidate identity
         id: identity
         shell: bash
         run: |
           set -euo pipefail
+          node scripts/release-contract.mjs check
           sha="$(git rev-parse HEAD)"
-          version="$(node -p "require('./package.json').version")"
-          public_version="$(node -p "require('./public/version.json').version")"
-          worker_version="$(node -e "const fs=require('fs');const m=fs.readFileSync('src/index.js','utf8').match(/const APP_VERSION = \"([^\"]+)\"/);process.stdout.write(m?.[1]||'')")"
-          sw_version="$(node -e "const fs=require('fs');const m=fs.readFileSync('public/sw.js','utf8').match(/const APP_VERSION = '([^']+)'/);process.stdout.write(m?.[1]||'')")"
-
-          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Versão inválida para release canônica: $version"
-            exit 1
-          fi
-
-          if [ "$public_version" != "$version" ] || [ "$worker_version" != "$version" ] || [ "$sw_version" != "$version" ]; then
-            echo "::error::Versões inconsistentes: package=$version public=$public_version worker=$worker_version sw=$sw_version"
-            exit 1
-          fi
+          version="$WEB_VERSION"
+          tag="$RELEASE_TAG"
 
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
             expected_sha="${{ github.event.workflow_run.head_sha }}"
@@ -62,7 +55,6 @@ jobs:
             fi
           fi
 
-          tag="v${version}"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
@@ -88,10 +80,7 @@ jobs:
               exit 0
             fi
 
-            # Rollbacks operacionais podem gerar um novo SHA de main com o mesmo
-            # conteúdo de runtime da release histórica. Nesse caso, a tag antiga
-            # deve permanecer imutável e o workflow deve terminar com sucesso.
-            runtime_paths=(package.json public src wrangler.jsonc config)
+            runtime_paths=(package.json public src wrangler.jsonc config android/app/build.gradle)
             if git diff --quiet "$RELEASE_TAG" "$RELEASE_SHA" -- "${runtime_paths[@]}"; then
               echo "mode=operational-rollback" >> "$GITHUB_OUTPUT"
               echo "::notice::Rollback operacional detectado. $RELEASE_TAG permanece imutável em $tag_sha; o SHA implantado $RELEASE_SHA possui o mesmo conteúdo de runtime da release canônica."
