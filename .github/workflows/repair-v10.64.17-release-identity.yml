@@ -1,0 +1,76 @@
+name: Repair v10.64.17 Release Identity
+
+on:
+  push:
+    branches:
+      - fix/ui-mobile-web-v10.64.17
+    paths:
+      - '.github/workflows/repair-v10.64.17-release-identity.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'config/app-assets.json'
+      - 'src/index.js'
+
+permissions:
+  contents: write
+
+jobs:
+  repair-release-identity:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Synchronize canonical 10.64.17 identity
+        shell: python
+        run: |
+          from pathlib import Path
+
+          replacements = {
+              'package.json': [('"version": "10.64.16"', '"version": "10.64.17"', 1)],
+              'package-lock.json': [('"version": "10.64.16"', '"version": "10.64.17"', 2)],
+              'config/app-assets.json': [('"version": "10.64.16"', '"version": "10.64.17"', 1)],
+              'src/index.js': [('const APP_VERSION = "10.64.16";', 'const APP_VERSION = "10.64.17";', 1)],
+          }
+
+          for file_name, edits in replacements.items():
+              path = Path(file_name)
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for old, new, count in edits:
+                  occurrences = text.count(old)
+                  if occurrences == 0:
+                      if new not in text:
+                          raise SystemExit(f'{file_name}: neither stale nor corrected identity found')
+                      continue
+                  if occurrences < count:
+                      raise SystemExit(f'{file_name}: expected at least {count} stale occurrence(s), found {occurrences}')
+                  text = text.replace(old, new, count)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+
+      - name: Verify repaired identity
+        shell: bash
+        run: |
+          grep -q '"version": "10.64.17"' package.json
+          test "$(grep -c '"version": "10.64.17"' package-lock.json)" -ge 2
+          grep -q '"version": "10.64.17"' config/app-assets.json
+          grep -q 'const APP_VERSION = "10.64.17";' src/index.js
+          ! grep -q 'const APP_VERSION = "10.64.16";' src/index.js
+          git diff --check
+          git diff -- package.json package-lock.json config/app-assets.json src/index.js
+
+      - name: Commit repair when needed
+        shell: bash
+        run: |
+          if git diff --quiet -- package.json package-lock.json config/app-assets.json src/index.js; then
+            echo 'Canonical release identity already synchronized.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json config/app-assets.json src/index.js
+          git commit -m 'fix(release): synchronize v10.64.17 canonical identity'
+          git push origin HEAD:fix/ui-mobile-web-v10.64.17
