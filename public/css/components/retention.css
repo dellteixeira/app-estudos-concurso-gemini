@@ -55,7 +55,7 @@
   min-height: 2.2em !important;
   padding-inline: 2px !important;
   text-align: center !important;
-  text-wrap: wrap !important;
+  text-wrap: balance !important;
   white-space: normal !important;
   overflow: visible !important;
   overflow-wrap: anywhere !important;
@@ -255,7 +255,7 @@
     line-height: 1.1 !important;
     letter-spacing: 0 !important;
     padding-inline: 2px !important;
-    text-wrap: wrap !important;
+    text-wrap: balance !important;
     overflow-wrap: anywhere !important;
   }
 
