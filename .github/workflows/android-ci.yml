@@ -1,9 +1,10 @@
-name: Android Phase 1 Build
+name: Android CI
 
 on:
   pull_request:
     paths:
       - 'android/**'
+      - 'android/mobile/**'
       - 'capacitor.config.json'
       - 'config/release-contract.json'
       - 'package.json'
@@ -13,16 +14,23 @@ on:
       - 'scripts/release-contract.mjs'
       - 'scripts/prepare-android-assets.mjs'
       - 'scripts/migrate-android-phase1b.mjs'
-      - '.github/workflows/android-phase1-build.yml'
+      - 'scripts/apply-android-mobile-hotfix.mjs'
+      - 'tests/**'
+      - '.github/workflows/android-ci.yml'
+      - '.github/workflows/android-release.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: android-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  android-debug:
+  validate-runtime:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 50
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,10 +53,10 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install Capacitor dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Apply Android Phase 1B migration
+      - name: Apply canonical Android migration
         run: node scripts/migrate-android-phase1b.mjs
 
       - name: Run web unit tests
@@ -59,14 +67,11 @@ jobs:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: npm run audit
 
-      - name: Create Android native project when absent
-        run: |
-          if [ ! -d android ]; then
-            npx cap add android
-          fi
-
-      - name: Prepare Worker-proxied vendor assets for APK
+      - name: Prepare Worker-proxied vendor assets
         run: npm run android:prepare
+
+      - name: Apply Android mobile UI and branding hotfix
+        run: node scripts/apply-android-mobile-hotfix.mjs
 
       - name: Sync web assets into Android
         run: npx cap sync android
@@ -76,84 +81,64 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew --no-daemon assembleDebug
 
       - name: Install Android emulator image
         shell: bash
         run: |
+          set -euo pipefail
           ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           SDKMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager -perm -u+x | head -n 1)"
           AVDMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name avdmanager -perm -u+x | head -n 1)"
-          test -n "$SDKMANAGER" && test -x "$SDKMANAGER"
-          test -n "$AVDMANAGER" && test -x "$AVDMANAGER"
-
-          ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd"
+          test -x "$SDKMANAGER"
+          test -x "$AVDMANAGER"
+          ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd-ci"
           mkdir -p "$ANDROID_AVD_HOME"
-
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
-          echo no | ANDROID_AVD_HOME="$ANDROID_AVD_HOME" "$AVDMANAGER" create avd --force --name phase1b --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
-
-          test -f "$ANDROID_AVD_HOME/phase1b.ini"
+          echo no | ANDROID_AVD_HOME="$ANDROID_AVD_HOME" "$AVDMANAGER" create avd --force --name android-ci --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
           echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
           echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
           echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
-          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
 
       - name: Start Android emulator
         shell: bash
         run: |
+          set -euo pipefail
           if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
-
-          emulator -list-avds | grep -Fxq phase1b
-          nohup emulator @phase1b -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -accel auto > android-emulator.log 2>&1 &
+          nohup emulator @android-ci -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -accel auto > android-ci-emulator.log 2>&1 &
           EMULATOR_PID=$!
-
-          if ! timeout 120 adb wait-for-device; then
-            echo 'Emulador não apareceu no ADB dentro de 120 segundos.' >&2
-            cat android-emulator.log >&2 || true
-            exit 1
-          fi
-
-          if ! kill -0 "$EMULATOR_PID" 2>/dev/null; then
-            echo 'Processo do emulador encerrou antes do boot.' >&2
-            cat android-emulator.log >&2 || true
-            exit 1
-          fi
-
-          if ! timeout 300 bash -c 'until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 5; done'; then
-            echo 'Android não concluiu o boot dentro de 300 segundos.' >&2
-            adb devices >&2 || true
-            cat android-emulator.log >&2 || true
-            exit 1
-          fi
-
+          timeout 120 adb wait-for-device
+          kill -0 "$EMULATOR_PID"
+          timeout 300 bash -c 'until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 5; done'
           adb shell input keyevent 82 || true
           adb devices
 
       - name: Run connected Android instrumentation tests
         working-directory: android
-        run: ./gradlew connectedDebugAndroidTest
+        run: ./gradlew --no-daemon connectedDebugAndroidTest
 
-      - name: Launch APK and capture runtime diagnostics
+      - name: Launch debug APK and validate runtime
         shell: bash
         run: |
-          adb install -r android/app/build/outputs/apk/debug/app-debug.apk >/dev/null
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          adb install -r "$APK" >/dev/null
           adb logcat -c
           adb shell am force-stop "$APP_PACKAGE"
           adb shell monkey -p "$APP_PACKAGE" -c android.intent.category.LAUNCHER 1 >/dev/null
           sleep 8
           PID="$(adb shell pidof "$APP_PACKAGE" | tr -d '\r')"
           test -n "$PID"
-          adb shell dumpsys activity activities > android-activity.txt
-          grep -q "$APP_PACKAGE" android-activity.txt
-          adb exec-out screencap -p > android-phase1b-screen.png
-          adb logcat -d > android-phase1b-logcat.txt
-          if grep -A8 'FATAL EXCEPTION' android-phase1b-logcat.txt | grep -q "$APP_PACKAGE"; then
-            echo 'Crash detectado no processo do Estudo Adaptativo.' >&2
+          adb shell dumpsys activity activities > android-ci-activity.txt
+          grep -q "$APP_PACKAGE" android-ci-activity.txt
+          adb exec-out screencap -p > android-ci-screen.png
+          adb logcat -d > android-ci-logcat.txt
+          if grep -A10 'FATAL EXCEPTION' android-ci-logcat.txt | grep -q "$APP_PACKAGE"; then
+            echo 'Crash detectado no APK Android de validação.' >&2
             exit 1
           fi
-          echo "Android runtime ativo com PID $PID"
 
       - name: Upload debug APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -163,16 +148,16 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Android Phase 1B diagnostics
+      - name: Upload Android CI diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-android-diagnostics
+          name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-android-ci-diagnostics
           path: |
-            android-emulator.log
-            android-activity.txt
-            android-phase1b-logcat.txt
-            android-phase1b-screen.png
+            android-ci-emulator.log
+            android-ci-activity.txt
+            android-ci-logcat.txt
+            android-ci-screen.png
             android/app/build/reports/androidTests/**
           if-no-files-found: warn
           retention-days: 14

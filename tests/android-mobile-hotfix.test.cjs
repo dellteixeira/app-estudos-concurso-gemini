@@ -8,7 +8,7 @@ const contract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf
 const sharedCss = fs.readFileSync(`public/css/responsive-polish-v${pkg.version}.css`, 'utf8');
 const script = fs.readFileSync('scripts/apply-android-mobile-hotfix.mjs', 'utf8');
 const gradle = fs.readFileSync('android/app/build.gradle', 'utf8');
-const workflow = fs.readFileSync('.github/workflows/android-phase2d-direct-distribution.yml', 'utf8');
+const workflow = fs.readFileSync('.github/workflows/android-release.yml', 'utf8');
 
 function readMatch(text, pattern, label) {
   const match = text.match(pattern);
@@ -66,6 +66,7 @@ test('APK identity follows the canonical release contract', () => {
   assert.match(workflow, /\$RESPONSIVE_CSS/);
   assert.match(workflow, /AAB inesperado foi produzido/);
   assert.match(workflow, /if:\s*github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /gh release upload/);
 
   assert.doesNotMatch(workflow, /ANDROID_VERSION_NAME:\s*['"]\d/);
   assert.doesNotMatch(workflow, /APP_VERSION_CODE:\s*['"]?\d/);
