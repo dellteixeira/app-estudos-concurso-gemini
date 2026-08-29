@@ -1,4 +1,4 @@
-/* Android mobile hotfix — 10.64.16-mobile.1
+/* Android mobile hotfix — 10.64.19-mobile.2
    Loaded only by the native build through apply-android-mobile-hotfix.mjs. */
 
 @media (max-width: 700px) {
@@ -114,24 +114,43 @@
     font-size: clamp(.68rem, 2.7vw, .78rem) !important;
   }
 
-  .rd-metrics-v1077 { gap: 10px !important; }
-
-  .rd-metric-card-v1077 {
-    min-height: 166px !important;
-    padding: 16px 12px 14px !important;
+  /* Retention metrics: keep both rows inside the grid tracks. The previous
+     native hotfix raised card min-height above canonical-ui's 128px rows,
+     which allowed row 2 to visually overlap row 1 on physical devices. */
+  #retentionDiagnosticPanel .rd-metrics-v1077,
+  .rd-metrics-v1077 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(166px, auto) !important;
+    column-gap: 10px !important;
+    row-gap: 14px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    align-items: stretch !important;
   }
 
+  #retentionDiagnosticPanel .rd-metric-card-v1077,
+  .rd-metric-card-v1077 {
+    height: auto !important;
+    min-height: 166px !important;
+    max-height: none !important;
+    padding: 16px 12px 14px !important;
+    box-sizing: border-box !important;
+    align-self: stretch !important;
+    margin: 0 !important;
+  }
+
+  #retentionDiagnosticPanel .rd-metric-icon-v1077,
   .rd-metric-icon-v1077 {
-    display: grid !important;
-    place-items: center !important;
-    width: 50px !important;
-    height: 50px !important;
-    min-width: 50px !important;
-    min-height: 50px !important;
-    margin: 0 auto 8px !important;
-    border-radius: 50% !important;
-    font-size: 1.32rem !important;
-    line-height: 1 !important;
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
 
   .rd-metric-label-v1077 {

@@ -29,6 +29,17 @@ test('retention metric icons are removed on web and mobile while titles stay com
   assert.match(sharedCss, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*760\s*!important/);
   assert.match(sharedCss, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*text-wrap:\s*balance\s*!important/);
   assert.match(sharedCss, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.74rem,\s*3\.1vw,\s*\.84rem\)\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077,[\s\S]*display:\s*none\s*!important/);
+});
+
+test('Android retention grid keeps independent rows without card overlap', () => {
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metrics-v1077,[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/);
+  assert.match(css, /grid-auto-rows:\s*minmax\(166px,\s*auto\)\s*!important/);
+  assert.match(css, /row-gap:\s*14px\s*!important/);
+  assert.match(css, /column-gap:\s*10px\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077,[\s\S]*height:\s*auto\s*!important/);
+  assert.match(css, /min-height:\s*166px\s*!important/);
+  assert.match(css, /max-height:\s*none\s*!important/);
 });
 
 test('library list mode has a distinct compact grid on mobile', () => {
