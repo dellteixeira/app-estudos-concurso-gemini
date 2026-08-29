@@ -9,18 +9,67 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test-and-audit:
+  changes:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    outputs:
+      ui: ${{ steps.scope.outputs.ui }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed scopes
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ui=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base="HEAD^"
+          fi
+
+          files="$(git diff --name-only "$base" HEAD)"
+          printf '%s\n' "$files"
+
+          ui=false
+          while IFS= read -r file; do
+            case "$file" in
+              public/*.html|public/css/*|public/css/**/*|public/js/*|public/js/**/*|playwright.config.cjs|tests/browser/*|tests/browser/**/*|tests/*retention*|.github/workflows/quality-check.yml)
+                ui=true
+                ;;
+            esac
+          done <<< "$files"
+          echo "ui=$ui" >> "$GITHUB_OUTPUT"
+
+  fast-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup Node
+      - name: Setup Node with npm cache
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22.23.2'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Syntax check
         run: node --check src/index.js
@@ -33,11 +82,38 @@ jobs:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: npm run audit
 
+  ui-check:
+    needs: changes
+    if: needs.changes.outputs.ui == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node with npm cache
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.23.2'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
       - name: Install Playwright test runner
         run: npm install --no-save --package-lock=false @playwright/test@1.55.0
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-1.55.0
+
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps chromium firefox webkit
+
+      - name: Install Playwright browsers on cache miss
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium firefox webkit
 
       - name: Browser responsive audit
         run: npm run test:browser
@@ -52,3 +128,22 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  test-and-audit:
+    name: test-and-audit
+    needs: [changes, fast-check, ui-check]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify required quality gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ needs.fast-check.result }}" = "success"
+          ui_result="${{ needs.ui-check.result }}"
+          if [ "$ui_result" != "success" ] && [ "$ui_result" != "skipped" ]; then
+            echo "ui-check terminou com $ui_result" >&2
+            exit 1
+          fi
+          echo "Fast Check: success"
+          echo "UI Check: $ui_result"
