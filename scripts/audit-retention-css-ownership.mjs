@@ -44,34 +44,51 @@ function listCssFiles(dir) {
   });
 }
 
-const forbiddenOutsideOwner = [
-  /#retentionDiagnosticPanel/,
+/* Actual ownership contracts: retention metric layout and its details modal. */
+const forbiddenRetentionOwnership = [
   /\.rd-metric(?:s|-)/,
   /#modalRetentionMetricDetails/
 ];
 
-/*
- * features.css is the historical/base component stylesheet. The dedicated
- * owner file is intentionally the authoritative responsive/current override
- * layer loaded through responsive-polish. Treating the base layer as a
- * competing override would force a large unrelated migration and, worse,
- * make the audit reject the architecture it is supposed to protect.
- *
- * Every other CSS layer remains forbidden from owning retention selectors,
- * especially versioned responsive-polish files and the Android hotfix.
- */
-const competitors = [
-  ...listCssFiles(cssRoot).filter(file => file !== ownerPath && file !== baseRetentionLayerPath),
-  androidHotfixPath
+/* Delegator/native layers must not contain any direct retention-panel override. */
+const forbiddenDelegatorOverrides = [
+  /#retentionDiagnosticPanel/,
+  ...forbiddenRetentionOwnership
 ];
 
-for (const file of competitors) {
-  const css = fs.readFileSync(file, 'utf8').replace(/@import[^;]+;/g, '');
-  for (const pattern of forbiddenOutsideOwner) {
+const delegatorLayers = [
+  [responsivePath, responsive.replace(/@import[^;]+;/g, '')],
+  [androidHotfixPath, fs.readFileSync(androidHotfixPath, 'utf8')]
+];
+
+for (const [file, css] of delegatorLayers) {
+  for (const pattern of forbiddenDelegatorOverrides) {
     if (pattern.test(css)) {
-      throw new Error(`${file} contains retention CSS owned exclusively by ${ownerPath}: ${pattern}`);
+      throw new Error(`${file} duplicates retention overrides owned by ${ownerPath}: ${pattern}`);
     }
   }
 }
 
-console.log(`Retention CSS ownership OK: base=${baseRetentionLayerPath}; responsive owner=${ownerPath}; audited ${competitors.length} competing CSS files`);
+/*
+ * features.css is the historical/base component stylesheet. The dedicated
+ * owner file is the authoritative responsive/current metric layer loaded by
+ * responsive-polish. learning-advisor.css may legitimately scope its own
+ * critical-action controls under #retentionDiagnosticPanel (V10.64.15), but
+ * it must not own .rd-metric* layout or the retention details modal.
+ */
+const competitors = listCssFiles(cssRoot).filter(file =>
+  file !== ownerPath &&
+  file !== baseRetentionLayerPath &&
+  file !== responsivePath
+);
+
+for (const file of competitors) {
+  const css = fs.readFileSync(file, 'utf8').replace(/@import[^;]+;/g, '');
+  for (const pattern of forbiddenRetentionOwnership) {
+    if (pattern.test(css)) {
+      throw new Error(`${file} contains retention metric CSS owned by ${ownerPath}: ${pattern}`);
+    }
+  }
+}
+
+console.log(`Retention CSS ownership OK: base=${baseRetentionLayerPath}; responsive owner=${ownerPath}; audited ${competitors.length + delegatorLayers.length} non-owner CSS layers`);
