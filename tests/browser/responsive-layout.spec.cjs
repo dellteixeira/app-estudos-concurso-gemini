@@ -70,7 +70,8 @@ async function auditRetentionCards(page) {
         labelOverflowX: label ? label.scrollWidth > label.clientWidth + 2 : true,
         labelOverflowY: label ? label.scrollHeight > label.clientHeight + 2 : true,
         labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
-        labelFontWeight: labelStyle ? Number.parseInt(labelStyle.fontWeight, 10) || 0 : 0
+        labelFontWeight: labelStyle ? Number.parseInt(labelStyle.fontWeight, 10) || 0 : 0,
+        labelTextAlign: labelStyle?.textAlign || ''
       };
     });
   });
@@ -80,7 +81,9 @@ async function auditRetentionCards(page) {
     expect(item.iconHidden, `Ícone decorativo ainda visível: ${item.label}`).toBe(true);
     expect(item.labelOverflowX, `Rótulo cortado horizontalmente: ${item.label}`).toBe(false);
     expect(item.labelOverflowY, `Rótulo cortado verticalmente: ${item.label}`).toBe(false);
-    expect(item.labelFontSize, `Título sem destaque suficiente: ${item.label}`).toBeGreaterThanOrEqual(13);
+    expect(item.labelTextAlign, `Título não centralizado: ${item.label}`).toBe('center');
+    expect(item.labelFontSize, `Título pequeno demais: ${item.label}`).toBeGreaterThanOrEqual(12);
+    expect(item.labelFontSize, `Título maior que o contrato compacto: ${item.label}`).toBeLessThanOrEqual(14.5);
     expect(item.labelFontWeight, `Título sem peso visual suficiente: ${item.label}`).toBeGreaterThanOrEqual(700);
   }
 }
