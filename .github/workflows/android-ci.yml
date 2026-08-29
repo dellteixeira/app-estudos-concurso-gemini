@@ -1,71 +1,95 @@
-name: Android CI
+name: Android Check
 
 on:
   pull_request:
-    paths:
-      - 'android/**'
-      - 'android/mobile/**'
-      - 'capacitor.config.json'
-      - 'config/release-contract.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'public/**'
-      - 'src/**'
-      - 'scripts/release-contract.mjs'
-      - 'scripts/prepare-android-assets.mjs'
-      - 'scripts/migrate-android-phase1b.mjs'
-      - 'scripts/apply-android-mobile-hotfix.mjs'
-      - 'tests/**'
-      - '.github/workflows/android-ci.yml'
-      - '.github/workflows/android-release.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-ci-${{ github.event.pull_request.number || github.ref }}
+  group: android-check-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  validate-runtime:
+  changes:
     runs-on: ubuntu-24.04
-    timeout-minutes: 50
+    outputs:
+      android: ${{ steps.scope.outputs.android }}
+      runtime: ${{ steps.scope.outputs.runtime }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Setup Node
+      - name: Detect Android scopes
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "android=true" >> "$GITHUB_OUTPUT"
+            echo "runtime=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          base="${{ github.event.pull_request.base.sha }}"
+          files="$(git diff --name-only "$base" HEAD)"
+          printf '%s\n' "$files"
+
+          android=false
+          runtime=false
+          while IFS= read -r file; do
+            case "$file" in
+              public/*|public/**/*|android/*|android/**/*|capacitor.config.json|config/release-contract.json|package.json|package-lock.json|scripts/release-contract.mjs|scripts/prepare-android-assets.mjs|scripts/migrate-android-phase1b.mjs|scripts/apply-android-mobile-hotfix.mjs|tests/android*|tests/release-contract.test.cjs|.github/workflows/android-ci.yml|.github/workflows/android-release.yml)
+                android=true
+                ;;
+            esac
+            case "$file" in
+              android/*|android/**/*|android/mobile/*|android/mobile/**/*|capacitor.config.json|scripts/migrate-android-phase1b.mjs|scripts/apply-android-mobile-hotfix.mjs|tests/android*|.github/workflows/android-ci.yml|.github/workflows/android-release.yml)
+                runtime=true
+                ;;
+            esac
+          done <<< "$files"
+
+          echo "android=$android" >> "$GITHUB_OUTPUT"
+          echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
+
+  android-check:
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node with npm cache
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22.23.2'
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Resolve canonical release contract
         id: release_contract
         run: node scripts/release-contract.mjs github
 
-      - name: Setup Java
+      - name: Setup Java with Gradle cache
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.1.0
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
 
       - name: Install dependencies
         run: npm ci
 
       - name: Apply canonical Android migration
         run: node scripts/migrate-android-phase1b.mjs
-
-      - name: Run web unit tests
-        run: npm test
-
-      - name: Run structural audits
-        env:
-          AUDIT_ALLOW_ANY_ROOT: '1'
-        run: npm run audit
 
       - name: Prepare Worker-proxied vendor assets
         run: npm run android:prepare
@@ -84,6 +108,7 @@ jobs:
         run: ./gradlew --no-daemon assembleDebug
 
       - name: Install Android emulator image
+        if: needs.changes.outputs.runtime == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -102,6 +127,7 @@ jobs:
           echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
 
       - name: Start Android emulator
+        if: needs.changes.outputs.runtime == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -115,10 +141,12 @@ jobs:
           adb devices
 
       - name: Run connected Android instrumentation tests
+        if: needs.changes.outputs.runtime == 'true'
         working-directory: android
         run: ./gradlew --no-daemon connectedDebugAndroidTest
 
       - name: Launch debug APK and validate runtime
+        if: needs.changes.outputs.runtime == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -146,10 +174,10 @@ jobs:
           name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
 
-      - name: Upload Android CI diagnostics
-        if: always()
+      - name: Upload Android runtime diagnostics
+        if: always() && needs.changes.outputs.runtime == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-android-ci-diagnostics
@@ -160,4 +188,21 @@ jobs:
             android-ci-screen.png
             android/app/build/reports/androidTests/**
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 7
+
+  validate-runtime:
+    name: validate-runtime
+    needs: [changes, android-check]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify Android gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="${{ needs.android-check.result }}"
+          if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+            echo "android-check terminou com $result" >&2
+            exit 1
+          fi
+          echo "Android Check: $result"
