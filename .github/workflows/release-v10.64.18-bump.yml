@@ -1,0 +1,107 @@
+name: Prepare v10.64.18
+
+on:
+  push:
+    branches:
+      - fix/remove-retention-icons-v10.64.18
+    paths:
+      - '.github/workflows/release-v10.64.18-bump.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.23.2'
+
+      - name: Synchronize release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          old = '10.64.17'
+          new = '10.64.18'
+          old_mobile = '10.64.17-mobile.1'
+          new_mobile = '10.64.18-mobile.1'
+
+          old_css = Path('public/css/responsive-polish-v10.64.17.css')
+          new_css = Path('public/css/responsive-polish-v10.64.18.css')
+          if old_css.exists():
+              old_css.rename(new_css)
+
+          roots = [
+              Path('package.json'), Path('package-lock.json'), Path('config/app-assets.json'),
+              Path('public'), Path('src'), Path('tests'), Path('android/app/build.gradle'),
+              Path('.github/workflows/android-phase2d-direct-distribution.yml')
+          ]
+          allowed = {'.json','.js','.mjs','.cjs','.css','.html','.yml','.yaml','.gradle','.txt'}
+          files = []
+          for root in roots:
+              if root.is_file():
+                  files.append(root)
+              elif root.is_dir():
+                  files.extend(p for p in root.rglob('*') if p.is_file() and p.suffix in allowed)
+
+          for path in files:
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              original = text
+              text = text.replace(old_mobile, new_mobile)
+              text = text.replace(old, new)
+              text = text.replace('106419', '106420')
+              if path == Path('.github/workflows/android-phase2d-direct-distribution.yml'):
+                  text = text.replace('fix/ui-mobile-web-v10.64.18', 'fix/remove-retention-icons-v10.64.18')
+                  text = text.replace('fix/ui-mobile-web-v10.64.17', 'fix/remove-retention-icons-v10.64.18')
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+
+          # Explicit sanity checks for the release identity.
+          assert '"version": "10.64.18"' in Path('package.json').read_text()
+          assert '"version": "10.64.18"' in Path('public/version.json').read_text()
+          assert 'versionCode 106420' in Path('android/app/build.gradle').read_text()
+          assert 'versionName "10.64.18-mobile.1"' in Path('android/app/build.gradle').read_text()
+          wf = Path('.github/workflows/android-phase2d-direct-distribution.yml').read_text()
+          assert "ANDROID_VERSION_NAME: '10.64.18-mobile.1'" in wf
+          assert "APP_VERSION_CODE: '106420'" in wf
+          assert "WEB_VERSION: '10.64.18'" in wf
+          assert "RELEASE_TAG: 'v10.64.18'" in wf
+          assert 'responsive-polish-v10.64.18.css' in wf
+          assert new_css.exists()
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate unit and structural gates
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
+        run: |
+          node --check src/index.js
+          npm test
+          npm run audit
+
+      - name: Commit synchronized release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'chore(release): prepare v10.64.18 and Android mobile.1'
+          git push origin HEAD:fix/remove-retention-icons-v10.64.18
