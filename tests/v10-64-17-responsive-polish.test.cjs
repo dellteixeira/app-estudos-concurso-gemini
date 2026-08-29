@@ -22,12 +22,13 @@ test('retention actions are optically centered', () => {
   assert.match(css, /\.retention-diagnostic-tools[\s\S]*justify-content:\s*center\s*!important/);
 });
 
-test('retention metrics remove decorative icons and elevate titles on all viewports', () => {
+test('retention metrics remove decorative icons and keep compact balanced titles on all viewports', () => {
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077\s*\{[\s\S]*display:\s*none\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.94rem/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*850\s*!important/);
-  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-card-v1077[\s\S]*grid-template-rows:\s*minmax\(42px, auto\) minmax\(62px, 1fr\) 5px/);
-  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.88rem/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.76rem,\s*\.70rem \+ \.22vw,\s*\.86rem\)\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*760\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*text-wrap:\s*balance\s*!important/);
+  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-card-v1077[\s\S]*grid-template-rows:\s*minmax\(40px, auto\) minmax\(58px, 1fr\) 5px/);
+  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.74rem,\s*3\.1vw,\s*\.84rem\)\s*!important/);
 });
 
 test('responsive polish stylesheet is loaded after canonical UI', () => {
