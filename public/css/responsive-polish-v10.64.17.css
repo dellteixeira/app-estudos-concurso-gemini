@@ -1,0 +1,231 @@
+/* Responsive polish — v10.64.17
+   Shared by web/PWA and Android. Mobile-first refinements requested after
+   physical-device validation; desktop behavior is preserved unless noted. */
+
+/* Flashcards: never split short action labels inside the Anki folder rows. */
+#flashcardsWorkspace .anki-folder-header,
+#flashcardsWorkspace .anki-folder-title,
+#flashcardsWorkspace .anki-folder-actions {
+  min-width: 0 !important;
+}
+
+#flashcardsWorkspace .anki-folder-actions .btn,
+#flashcardsWorkspace .anki-folder-actions > span:last-child {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+
+/* Retention: action controls share the same optical center on web and mobile. */
+#retentionDiagnosticPanel .retention-study-now-v1072,
+#retentionDiagnosticPanel .retention-export-btn {
+  width: min(100%, 360px) !important;
+  margin-inline: auto !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+#retentionDiagnosticPanel .retention-diagnostic-tools {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+/* Desktop/tablet keeps icons, but gives them a more deliberate visual weight. */
+#retentionDiagnosticPanel .rd-metric-icon-v1077 {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  font-size: 1.08rem !important;
+}
+
+@media (max-width: 700px) {
+  /* Calendar: Hoje + Mês/Ano occupy one balanced row; month/year never stack. */
+  #calendarWorkspace .calendar-shell-nav {
+    display: grid !important;
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #calendarWorkspace .calendar-shell-nav > .btn {
+    width: 72px !important;
+    min-width: 72px !important;
+    padding-inline: 6px !important;
+    font-size: .72rem !important;
+    justify-content: center !important;
+  }
+
+  #calendarWorkspace .calendar-month-selectors {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1.12fr) minmax(0, .88fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #calendarWorkspace .calendar-month-selectors label {
+    width: auto !important;
+    min-width: max-content !important;
+    margin: 0 !important;
+    font-size: .68rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  #calendarWorkspace .calendar-month-selectors select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 42px !important;
+    padding: 7px 24px 7px 8px !important;
+    font-size: clamp(.76rem, 3.35vw, .88rem) !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Flashcard subject rows: use the available width before reducing typography. */
+  #flashcardsWorkspace .anki-folder-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 1.92fr) !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-title > span:first-child {
+    font-size: clamp(.80rem, 3.25vw, .94rem) !important;
+    line-height: 1.12 !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-actions {
+    display: grid !important;
+    grid-template-columns: minmax(58px, .88fr) minmax(70px, 1.05fr) max-content !important;
+    align-items: center !important;
+    gap: 5px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-actions .anki-folder-count {
+    min-width: 0 !important;
+    padding-inline: 6px !important;
+    font-size: clamp(.60rem, 2.65vw, .70rem) !important;
+    line-height: 1.05 !important;
+    text-align: center !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-actions .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 7px 5px !important;
+    font-size: clamp(.60rem, 2.65vw, .70rem) !important;
+    line-height: 1.05 !important;
+    justify-content: center !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-actions > span:last-child {
+    min-width: max-content !important;
+    font-size: clamp(.58rem, 2.55vw, .68rem) !important;
+    line-height: 1 !important;
+  }
+
+  /* Retention header actions use one centered column on narrow screens. */
+  #retentionDiagnosticPanel .retention-diagnostic-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: center !important;
+  }
+
+  #retentionDiagnosticPanel .retention-diagnostic-head > div:first-child {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #retentionDiagnosticPanel .retention-study-now-v1072,
+  #retentionDiagnosticPanel .retention-export-btn {
+    width: min(100%, 310px) !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+  }
+
+  /* On phones the tiny decorative glyphs cost more space than information.
+     Remove them and promote the metric label instead. */
+  #retentionDiagnosticPanel .rd-metric-card-v1077 {
+    grid-template-rows: minmax(36px, auto) 1fr 5px !important;
+    row-gap: 8px !important;
+    padding: 12px 10px 10px !important;
+  }
+
+  #retentionDiagnosticPanel .rd-metric-icon-v1077 {
+    display: none !important;
+  }
+
+  #retentionDiagnosticPanel .rd-metric-label-v1077 {
+    grid-row: 1 !important;
+    align-self: center !important;
+    font-size: clamp(.76rem, 3.05vw, .86rem) !important;
+    font-weight: 820 !important;
+    line-height: 1.14 !important;
+    letter-spacing: 0 !important;
+  }
+
+  #retentionDiagnosticPanel .rd-metric-card-v1077 > strong {
+    grid-row: 2 !important;
+  }
+
+  #retentionDiagnosticPanel .rd-metric-progress-v1077 {
+    grid-row: 3 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  #calendarWorkspace .calendar-shell-nav {
+    grid-template-columns: 64px minmax(0, 1fr) !important;
+    gap: 7px !important;
+  }
+
+  #calendarWorkspace .calendar-shell-nav > .btn {
+    width: 64px !important;
+    min-width: 64px !important;
+    font-size: .66rem !important;
+  }
+
+  #calendarWorkspace .calendar-month-selectors {
+    gap: 5px !important;
+  }
+
+  #calendarWorkspace .calendar-month-selectors label {
+    font-size: .62rem !important;
+  }
+
+  #calendarWorkspace .calendar-month-selectors select {
+    padding-inline: 6px 20px !important;
+    font-size: .74rem !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-header {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) !important;
+    gap: 6px !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-actions {
+    grid-template-columns: minmax(52px, .86fr) minmax(64px, 1fr) max-content !important;
+    gap: 4px !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-actions .anki-folder-count,
+  #flashcardsWorkspace .anki-folder-actions .btn {
+    font-size: .60rem !important;
+  }
+
+  #flashcardsWorkspace .anki-folder-actions > span:last-child {
+    font-size: .58rem !important;
+  }
+}
