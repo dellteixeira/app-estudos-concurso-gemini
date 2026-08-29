@@ -1,12 +1,10 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
 const ownerPath = 'public/css/components/retention.css';
-const responsivePath = 'public/css/responsive-polish-v10.64.19.css';
+const cssRoot = 'public/css';
 const androidHotfixPath = 'android/mobile/android-mobile-hotfix.css';
-
 const owner = fs.readFileSync(ownerPath, 'utf8');
-const responsive = fs.readFileSync(responsivePath, 'utf8');
-const androidHotfix = fs.readFileSync(androidHotfixPath, 'utf8');
 
 const requiredContracts = [
   /#retentionDiagnosticPanel \.rd-metrics-v1077/,
@@ -23,8 +21,26 @@ for (const pattern of requiredContracts) {
   }
 }
 
+const responsiveFiles = fs.readdirSync(cssRoot)
+  .filter(name => /^responsive-polish-v\d+\.\d+\.\d+\.css$/.test(name))
+  .map(name => path.posix.join(cssRoot, name));
+
+if (responsiveFiles.length !== 1) {
+  throw new Error(`Expected exactly one versioned responsive-polish CSS, found ${responsiveFiles.length}: ${responsiveFiles.join(', ')}`);
+}
+
+const responsivePath = responsiveFiles[0];
+const responsive = fs.readFileSync(responsivePath, 'utf8');
 if (!/@import\s+url\(['"]\.\/components\/retention\.css['"]\)/.test(responsive)) {
-  throw new Error('responsive-polish must import the canonical retention component');
+  throw new Error(`${responsivePath} must import the canonical retention component`);
+}
+
+function listCssFiles(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return listCssFiles(full);
+    return entry.isFile() && entry.name.endsWith('.css') ? [full.replaceAll('\\', '/')] : [];
+  });
 }
 
 const forbiddenOutsideOwner = [
@@ -33,15 +49,18 @@ const forbiddenOutsideOwner = [
   /#modalRetentionMetricDetails/
 ];
 
-for (const [label, css] of [
-  [responsivePath, responsive.replace(/@import[^;]+;/g, '')],
-  [androidHotfixPath, androidHotfix]
-]) {
+const competitors = [
+  ...listCssFiles(cssRoot).filter(file => file !== ownerPath),
+  androidHotfixPath
+];
+
+for (const file of competitors) {
+  const css = fs.readFileSync(file, 'utf8').replace(/@import[^;]+;/g, '');
   for (const pattern of forbiddenOutsideOwner) {
     if (pattern.test(css)) {
-      throw new Error(`${label} contains retention override owned by ${ownerPath}: ${pattern}`);
+      throw new Error(`${file} contains retention CSS owned exclusively by ${ownerPath}: ${pattern}`);
     }
   }
 }
 
-console.log(`Retention CSS ownership OK: ${ownerPath}`);
+console.log(`Retention CSS ownership OK: ${ownerPath}; audited ${competitors.length} competing CSS files`);
