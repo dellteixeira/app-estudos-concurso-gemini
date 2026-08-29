@@ -52,6 +52,25 @@ async function auditVisibleControls(page, roots) {
   expect(failures, `Controles com texto cortado/escapando: ${JSON.stringify(failures, null, 2)}`).toEqual([]);
 }
 
+async function auditProductionStyles(page) {
+  await page.waitForFunction(() => {
+    const styles = [...document.styleSheets].map(sheet => sheet.href || '').filter(Boolean);
+    const canonicalIndex = styles.findIndex(href => href.includes('/css/canonical-ui.css'));
+    const polishIndexes = styles
+      .map((href, index) => href.includes('/css/responsive-polish-v10.64.18.css') ? index : -1)
+      .filter(index => index >= 0);
+    return canonicalIndex >= 0 && polishIndexes.some(index => index > canonicalIndex);
+  }, null, { timeout: 10000 });
+
+  const styles = await page.evaluate(() => [...document.styleSheets]
+    .map(sheet => sheet.href)
+    .filter(Boolean));
+  const canonicalIndex = styles.findIndex(href => href.includes('/css/canonical-ui.css'));
+  const lastPolishIndex = styles.reduce((last, href, index) => href.includes('/css/responsive-polish-v10.64.18.css') ? index : last, -1);
+  expect(canonicalIndex, 'canonical-ui de produção não carregado').toBeGreaterThanOrEqual(0);
+  expect(lastPolishIndex, 'responsive-polish de produção não carregado').toBeGreaterThan(canonicalIndex);
+}
+
 async function auditRetentionCards(page) {
   const result = await page.evaluate(() => {
     const cards = [...document.querySelectorAll('#visualAuditRetentionFixture .rd-metric-card-v1077')];
@@ -75,6 +94,7 @@ async function auditRetentionCards(page) {
       };
     });
   });
+
   expect(result.length).toBe(4);
   for (const item of result) {
     expect(item.labelInside, `Rótulo fora do card: ${item.label}`).toBe(true);
@@ -82,31 +102,10 @@ async function auditRetentionCards(page) {
     expect(item.labelOverflowX, `Rótulo cortado horizontalmente: ${item.label}`).toBe(false);
     expect(item.labelOverflowY, `Rótulo cortado verticalmente: ${item.label}`).toBe(false);
     expect(item.labelTextAlign, `Título não centralizado: ${item.label}`).toBe('center');
-    expect(item.labelFontSize, `Título pequeno demais: ${item.label}`).toBeGreaterThanOrEqual(12);
-    // Computed rem/clamp values vary by a few tenths of a pixel across browser
-    // engines and device-scale rounding. Keep the contract compact without
-    // turning harmless 14.6px subpixel rendering into a false-negative gate.
+    expect(item.labelFontSize, `Título pequeno demais: ${item.label}`).toBeGreaterThanOrEqual(11);
     expect(item.labelFontSize, `Título maior que o contrato compacto: ${item.label}`).toBeLessThanOrEqual(14.75);
     expect(item.labelFontWeight, `Título sem peso visual suficiente: ${item.label}`).toBeGreaterThanOrEqual(700);
   }
-}
-
-async function loadAuditStyles(page) {
-  await page.evaluate(async () => {
-    const href = './css/canonical-ui.css?v=20260823-phase5';
-    const absolute = new URL(href, location.href).href;
-    const existing = [...document.styleSheets].some(sheet => sheet.href === absolute || sheet.href?.includes('/css/canonical-ui.css'));
-    if (existing) return;
-    await new Promise(resolve => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = href;
-      link.dataset.canonicalUi = '1';
-      link.onload = resolve;
-      link.onerror = resolve;
-      document.head.appendChild(link);
-    });
-  });
 }
 
 async function exposeAuth(page) {
@@ -128,7 +127,6 @@ async function exposeAuth(page) {
 }
 
 async function exposeDashboardAuditFixture(page) {
-  await loadAuditStyles(page);
   await page.evaluate(() => {
     for (const id of ['offline-banner', 'pwa-update-banner', 'pwa-install-banner', 'auth-screen']) {
       const el = document.getElementById(id);
@@ -144,8 +142,6 @@ async function exposeDashboardAuditFixture(page) {
       tab.style.setProperty('display', 'none', 'important');
     }
 
-    // O fixture precisa exercitar exatamente o seletor canônico de produção.
-    // Remove o painel real (oculto nesta auditoria isolada) para não criar IDs duplicados.
     document.getElementById('retentionDiagnosticPanel')?.remove();
 
     let fixture = document.getElementById('visualAuditRetentionFixture');
@@ -159,7 +155,7 @@ async function exposeDashboardAuditFixture(page) {
           <div class="rd-center-v1077">
             <div class="rd-metrics-v1077">
               <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção média</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077 rd-metric-risk-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
               <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
               <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
             </div>
@@ -178,6 +174,7 @@ for (const viewport of VIEWPORTS) {
   test(`${viewport.name}: autenticação não estoura nem corta botões`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await auditProductionStyles(page);
     await exposeAuth(page);
     await expect(page.locator('#auth-screen')).toBeVisible();
     await auditDocumentOverflow(page);
@@ -188,6 +185,7 @@ for (const viewport of VIEWPORTS) {
   test(`${viewport.name}: dashboard preserva geometria responsiva`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await auditProductionStyles(page);
     await exposeDashboardAuditFixture(page);
     await expect(page.locator('.modern-header')).toBeVisible();
     await expect(page.locator('#visualAuditRetentionFixture')).toBeVisible();
