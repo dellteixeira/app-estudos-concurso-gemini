@@ -101,6 +101,10 @@ jobs:
           if old_assert not in ci_test:
               raise SystemExit('CI performance cache assertion changed unexpectedly')
           ci_test_path.write_text(ci_test.replace(old_assert, new_assert, 1))
+
+          old_polish = Path('public/css/responsive-polish-v10.64.19.css')
+          if old_polish.exists():
+              old_polish.unlink()
           PY
       - name: Validate migration and architecture
         shell: bash
@@ -113,6 +117,7 @@ jobs:
           node scripts/release-contract.mjs check
           grep -q "responsive-polish-v10.64.20.css" public/index.html
           grep -q "components/retention.css" public/css/responsive-polish-v10.64.20.css
+          test ! -e public/css/responsive-polish-v10.64.19.css
           ! grep -q "responsive-polish-v10.64.19.css" public/index.html
           ! grep -q "responsive-polish-v10.64.19.css" public/sw.js
           ! grep -q "responsive-polish-v10.64.19.css" public/js/ui/navigation.js
