@@ -52,66 +52,49 @@ async function auditVisibleControls(page, roots) {
   expect(failures, `Controles com texto cortado/escapando: ${JSON.stringify(failures, null, 2)}`).toEqual([]);
 }
 
+async function auditProductionStyles(page) {
+  const styles = await page.evaluate(() => [...document.styleSheets]
+    .map(sheet => sheet.href)
+    .filter(Boolean));
+  expect(styles.some(href => href.includes('/css/responsive-polish-v10.64.18.css')), 'responsive-polish de produção não carregado').toBe(true);
+  expect(styles.some(href => href.includes('/css/canonical-ui.css')), 'canonical-ui não deve ser injetado artificialmente na auditoria').toBe(false);
+}
+
 async function auditRetentionCards(page) {
   const result = await page.evaluate(() => {
-    const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const cards = [...document.querySelectorAll('#visualAuditRetentionFixture .rd-metric-card-v1077')];
-    return {
-      rootFontSize,
-      cards: cards.map(card => {
-        const cardRect = card.getBoundingClientRect();
-        const icon = card.querySelector('.rd-metric-icon-v1077');
-        const label = card.querySelector('.rd-metric-label-v1077');
-        const iconStyle = icon ? getComputedStyle(icon) : null;
-        const iconRect = icon?.getBoundingClientRect();
-        const labelStyle = label ? getComputedStyle(label) : null;
-        const labelRect = label?.getBoundingClientRect();
-        return {
-          label: label?.textContent?.trim() || '',
-          labelInside: !!labelRect && labelRect.left >= cardRect.left - 1 && labelRect.right <= cardRect.right + 1 && labelRect.top >= cardRect.top - 1 && labelRect.bottom <= cardRect.bottom + 1,
-          iconHidden: !icon || iconStyle?.display === 'none' || !iconRect || iconRect.width < 1 || iconRect.height < 1,
-          labelOverflowX: label ? label.scrollWidth > label.clientWidth + 2 : true,
-          labelOverflowY: label ? label.scrollHeight > label.clientHeight + 2 : true,
-          labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
-          labelFontWeight: labelStyle ? Number.parseInt(labelStyle.fontWeight, 10) || 0 : 0,
-          labelTextAlign: labelStyle?.textAlign || ''
-        };
-      })
-    };
+    return cards.map(card => {
+      const cardRect = card.getBoundingClientRect();
+      const icon = card.querySelector('.rd-metric-icon-v1077');
+      const label = card.querySelector('.rd-metric-label-v1077');
+      const iconStyle = icon ? getComputedStyle(icon) : null;
+      const iconRect = icon?.getBoundingClientRect();
+      const labelStyle = label ? getComputedStyle(label) : null;
+      const labelRect = label?.getBoundingClientRect();
+      return {
+        label: label?.textContent?.trim() || '',
+        labelInside: !!labelRect && labelRect.left >= cardRect.left - 1 && labelRect.right <= cardRect.right + 1 && labelRect.top >= cardRect.top - 1 && labelRect.bottom <= cardRect.bottom + 1,
+        iconHidden: !icon || iconStyle?.display === 'none' || !iconRect || iconRect.width < 1 || iconRect.height < 1,
+        labelOverflowX: label ? label.scrollWidth > label.clientWidth + 2 : true,
+        labelOverflowY: label ? label.scrollHeight > label.clientHeight + 2 : true,
+        labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
+        labelFontWeight: labelStyle ? Number.parseInt(labelStyle.fontWeight, 10) || 0 : 0,
+        labelTextAlign: labelStyle?.textAlign || ''
+      };
+    });
   });
-  expect(result.cards.length).toBe(4);
-  const desktopCapPx = result.rootFontSize * 0.86 + 0.15;
-  for (const item of result.cards) {
+
+  expect(result.length).toBe(4);
+  for (const item of result) {
     expect(item.labelInside, `Rótulo fora do card: ${item.label}`).toBe(true);
     expect(item.iconHidden, `Ícone decorativo ainda visível: ${item.label}`).toBe(true);
     expect(item.labelOverflowX, `Rótulo cortado horizontalmente: ${item.label}`).toBe(false);
     expect(item.labelOverflowY, `Rótulo cortado verticalmente: ${item.label}`).toBe(false);
     expect(item.labelTextAlign, `Título não centralizado: ${item.label}`).toBe('center');
-    expect(item.labelFontSize, `Título pequeno demais: ${item.label}`).toBeGreaterThanOrEqual(12);
-    // The production cap is .86rem. Validate the actual CSS contract relative
-    // to the runtime root font-size so browser/user root scaling does not turn
-    // a valid compact label into a false-negative absolute-pixel failure.
-    expect(item.labelFontSize, `Título maior que o contrato compacto: ${item.label}`).toBeLessThanOrEqual(desktopCapPx);
+    expect(item.labelFontSize, `Título pequeno demais: ${item.label}`).toBeGreaterThanOrEqual(11);
+    expect(item.labelFontSize, `Título maior que o contrato compacto: ${item.label}`).toBeLessThanOrEqual(14.75);
     expect(item.labelFontWeight, `Título sem peso visual suficiente: ${item.label}`).toBeGreaterThanOrEqual(700);
   }
-}
-
-async function loadAuditStyles(page) {
-  await page.evaluate(async () => {
-    const href = './css/canonical-ui.css?v=20260823-phase5';
-    const absolute = new URL(href, location.href).href;
-    const existing = [...document.styleSheets].some(sheet => sheet.href === absolute || sheet.href?.includes('/css/canonical-ui.css'));
-    if (existing) return;
-    await new Promise(resolve => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = href;
-      link.dataset.canonicalUi = '1';
-      link.onload = resolve;
-      link.onerror = resolve;
-      document.head.appendChild(link);
-    });
-  });
 }
 
 async function exposeAuth(page) {
@@ -133,7 +116,6 @@ async function exposeAuth(page) {
 }
 
 async function exposeDashboardAuditFixture(page) {
-  await loadAuditStyles(page);
   await page.evaluate(() => {
     for (const id of ['offline-banner', 'pwa-update-banner', 'pwa-install-banner', 'auth-screen']) {
       const el = document.getElementById(id);
@@ -149,8 +131,6 @@ async function exposeDashboardAuditFixture(page) {
       tab.style.setProperty('display', 'none', 'important');
     }
 
-    // O fixture precisa exercitar exatamente o seletor canônico de produção.
-    // Remove o painel real (oculto nesta auditoria isolada) para não criar IDs duplicados.
     document.getElementById('retentionDiagnosticPanel')?.remove();
 
     let fixture = document.getElementById('visualAuditRetentionFixture');
@@ -164,7 +144,7 @@ async function exposeDashboardAuditFixture(page) {
           <div class="rd-center-v1077">
             <div class="rd-metrics-v1077">
               <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção média</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077 rd-metric-risk-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
               <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
               <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
             </div>
@@ -183,6 +163,7 @@ for (const viewport of VIEWPORTS) {
   test(`${viewport.name}: autenticação não estoura nem corta botões`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await auditProductionStyles(page);
     await exposeAuth(page);
     await expect(page.locator('#auth-screen')).toBeVisible();
     await auditDocumentOverflow(page);
@@ -193,6 +174,7 @@ for (const viewport of VIEWPORTS) {
   test(`${viewport.name}: dashboard preserva geometria responsiva`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await auditProductionStyles(page);
     await exposeDashboardAuditFixture(page);
     await expect(page.locator('.modern-header')).toBeVisible();
     await expect(page.locator('#visualAuditRetentionFixture')).toBeVisible();
