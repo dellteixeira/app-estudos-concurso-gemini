@@ -11,6 +11,7 @@ const worker=fs.readFileSync('src/index.js','utf8');
 const headers=fs.readFileSync('public/_headers','utf8');
 const assets=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+const publicVersion=JSON.parse(fs.readFileSync('public/version.json','utf8'));
 
 test('state and sync modules have valid JavaScript syntax',()=>{
   for(const file of ['public/js/app-state.js','public/js/sync-engine.js','public/pwa-update.js']) {
@@ -61,9 +62,12 @@ test('production no-store policy covers state and sync modules',()=>{
 });
 
 test('state-sync release sources remain synchronized with canonical package version',()=>{
-  const version=String(pkg.version);
-  const escaped=version.replace(/\./g,'\\.');
-  assert.equal(assets.version,version);
-  assert.match(worker,new RegExp(`const APP_VERSION = "${escaped}"`));
-  assert.match(sw,new RegExp(`const APP_VERSION = '${escaped}'`));
+  const canonical=String(pkg.version||'').trim();
+  const swVersion=sw.match(/const APP_VERSION = '([^']+)'/)?.[1];
+  const workerVersion=worker.match(/const APP_VERSION = "([^"]+)"/)?.[1];
+  assert.match(canonical,/^10\.64\.\d+$/);
+  assert.equal(String(publicVersion.version||'').trim(),canonical);
+  assert.equal(String(assets.version||'').trim(),canonical);
+  assert.equal(swVersion,canonical);
+  assert.equal(workerVersion,canonical);
 });
