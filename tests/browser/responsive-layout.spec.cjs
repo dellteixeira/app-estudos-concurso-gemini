@@ -59,23 +59,29 @@ async function auditRetentionCards(page) {
       const cardRect = card.getBoundingClientRect();
       const icon = card.querySelector('.rd-metric-icon-v1077');
       const label = card.querySelector('.rd-metric-label-v1077');
+      const iconStyle = icon ? getComputedStyle(icon) : null;
       const iconRect = icon?.getBoundingClientRect();
+      const labelStyle = label ? getComputedStyle(label) : null;
       const labelRect = label?.getBoundingClientRect();
       return {
         label: label?.textContent?.trim() || '',
         labelInside: !!labelRect && labelRect.left >= cardRect.left - 1 && labelRect.right <= cardRect.right + 1 && labelRect.top >= cardRect.top - 1 && labelRect.bottom <= cardRect.bottom + 1,
-        iconCenterDelta: iconRect ? Math.abs((iconRect.left + iconRect.width / 2) - (cardRect.left + cardRect.width / 2)) : 999,
+        iconHidden: !icon || iconStyle?.display === 'none' || !iconRect || iconRect.width < 1 || iconRect.height < 1,
         labelOverflowX: label ? label.scrollWidth > label.clientWidth + 2 : true,
-        labelOverflowY: label ? label.scrollHeight > label.clientHeight + 2 : true
+        labelOverflowY: label ? label.scrollHeight > label.clientHeight + 2 : true,
+        labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
+        labelFontWeight: labelStyle ? Number.parseInt(labelStyle.fontWeight, 10) || 0 : 0
       };
     });
   });
   expect(result.length).toBe(4);
   for (const item of result) {
     expect(item.labelInside, `Rótulo fora do card: ${item.label}`).toBe(true);
-    expect(item.iconCenterDelta, `Ícone não centralizado: ${item.label}`).toBeLessThanOrEqual(4);
+    expect(item.iconHidden, `Ícone decorativo ainda visível: ${item.label}`).toBe(true);
     expect(item.labelOverflowX, `Rótulo cortado horizontalmente: ${item.label}`).toBe(false);
     expect(item.labelOverflowY, `Rótulo cortado verticalmente: ${item.label}`).toBe(false);
+    expect(item.labelFontSize, `Título sem destaque suficiente: ${item.label}`).toBeGreaterThanOrEqual(13);
+    expect(item.labelFontWeight, `Título sem peso visual suficiente: ${item.label}`).toBeGreaterThanOrEqual(700);
   }
 }
 
@@ -146,10 +152,10 @@ async function exposeDashboardAuditFixture(page) {
         <div id="retentionDiagnosticPanel">
           <div class="rd-center-v1077">
             <div class="rd-metrics-v1077">
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção consolidada</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">↗</span><span class="rd-metric-label-v1077">Revisões em dia</span><strong>24</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Pontos de atenção</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção média</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
+              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
             </div>
           </div>
         </div>`;
