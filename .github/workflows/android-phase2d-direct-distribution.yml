@@ -26,7 +26,7 @@ jobs:
     env:
       ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
       ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
-      APP_VERSION: '10.64.17-mobile.1'
+      ANDROID_VERSION_NAME: '10.64.17-mobile.1'
       APP_VERSION_CODE: '106419'
       WEB_VERSION: '10.64.17'
       APP_PACKAGE: 'com.estudoadaptativo.app'
@@ -97,7 +97,7 @@ jobs:
         shell: bash
         run: |
           grep -q "versionCode $APP_VERSION_CODE" android/app/build.gradle
-          grep -q "versionName \"$APP_VERSION\"" android/app/build.gradle
+          grep -q "versionName \"$ANDROID_VERSION_NAME\"" android/app/build.gradle
           grep -q "\"version\": \"$WEB_VERSION\"" public/version.json
           grep -q 'android:icon="@drawable/estudo_adaptativo_launcher"' android/app/src/main/AndroidManifest.xml
           grep -q 'android:roundIcon="@drawable/estudo_adaptativo_launcher"' android/app/src/main/AndroidManifest.xml
@@ -131,7 +131,7 @@ jobs:
           BADGING="$($AAPT dump badging "$APK")"
           printf '%s\n' "$BADGING" | grep -q "package: name='$APP_PACKAGE'"
           printf '%s\n' "$BADGING" | grep -q "versionCode='$APP_VERSION_CODE'"
-          printf '%s\n' "$BADGING" | grep -q "versionName='$APP_VERSION'"
+          printf '%s\n' "$BADGING" | grep -q "versionName='$ANDROID_VERSION_NAME'"
           unzip -l "$APK" | grep -q 'assets/public/css/android-mobile-hotfix.css'
           unzip -l "$APK" | grep -q 'assets/public/css/responsive-polish-v10.64.17.css'
           if find android/app/build/outputs -type f -name '*.aab' -print -quit | grep -q .; then
@@ -144,13 +144,13 @@ jobs:
         run: |
           OUT="dist/android/direct"
           mkdir -p "$OUT"
-          FINAL="EstudoAdaptativo-v${APP_VERSION}-android-release.apk"
+          FINAL="EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-release.apk"
           cp android/app/build/outputs/apk/release/app-release.apk "$OUT/$FINAL"
           sha256sum "$OUT/$FINAL" | tee "$OUT/SHA256SUMS.txt"
           cp android-release-signature.txt "$OUT/android-release-signature.txt"
 
           cat > "$OUT/INSTALL-ANDROID.txt" <<EOF
-          Estudo Adaptativo Inteligente ${APP_VERSION}
+          Estudo Adaptativo Inteligente ${ANDROID_VERSION_NAME}
           Pacote: ${APP_PACKAGE}
           Version code: ${APP_VERSION_CODE}
           Atualizacao responsiva: flashcards, calendario e Retencao/Diagnostico.
@@ -197,7 +197,7 @@ jobs:
           {
             "app": "Estudo Adaptativo Inteligente",
             "package": "${APP_PACKAGE}",
-            "versionName": "${APP_VERSION}",
+            "versionName": "${ANDROID_VERSION_NAME}",
             "versionCode": ${APP_VERSION_CODE},
             "webVersion": "${WEB_VERSION}",
             "format": "APK",
@@ -227,7 +227,7 @@ jobs:
         run: |
           set -euo pipefail
           OUT="dist/android/direct"
-          FINAL="EstudoAdaptativo-v${APP_VERSION}-android-release.apk"
+          FINAL="EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-release.apk"
 
           release_ready=0
           for attempt in {1..20}; do
@@ -250,16 +250,16 @@ jobs:
             exit 0
           fi
 
-          cp "$OUT/SHA256SUMS.txt" "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-SHA256SUMS.txt"
-          cp "$OUT/android-release-signature.txt" "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-signature.txt"
-          cp "$OUT/distribution-manifest.json" "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-distribution-manifest.json"
-          cp "$OUT/INSTALL-ANDROID.txt" "$OUT/EstudoAdaptativo-v${APP_VERSION}-INSTALL-ANDROID.txt"
+          cp "$OUT/SHA256SUMS.txt" "$OUT/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-SHA256SUMS.txt"
+          cp "$OUT/android-release-signature.txt" "$OUT/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-signature.txt"
+          cp "$OUT/distribution-manifest.json" "$OUT/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-distribution-manifest.json"
+          cp "$OUT/INSTALL-ANDROID.txt" "$OUT/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-INSTALL-ANDROID.txt"
 
           gh release upload "$RELEASE_TAG" \
             "$OUT/$FINAL" \
-            "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-SHA256SUMS.txt" \
-            "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-signature.txt" \
-            "$OUT/EstudoAdaptativo-v${APP_VERSION}-android-distribution-manifest.json" \
-            "$OUT/EstudoAdaptativo-v${APP_VERSION}-INSTALL-ANDROID.txt"
+            "$OUT/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-SHA256SUMS.txt" \
+            "$OUT/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-signature.txt" \
+            "$OUT/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-distribution-manifest.json" \
+            "$OUT/EstudoAdaptativo-v${ANDROID_VERSION_NAME}-INSTALL-ANDROID.txt"
 
           gh release view "$RELEASE_TAG" --json url,tagName,assets --jq '{url,tagName,assets:[.assets[].name]}'
