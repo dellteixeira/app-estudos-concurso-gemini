@@ -3,7 +3,7 @@
 if(global.AppWeaknessMapV2)return;
 
 const TYPE_LABELS={retention:'Retenção',application:'Aplicação',persistent:'Persistente',false_mastery:'Falsa maestria',acquisition:'Aquisição',mixed:'Mista'};
-const ERROR_LABELS={knowledge:'Conhecimento',application:'Aplicação',interpretation:'Interpretação',distraction:'Distração',recurrence:'Recorrência'};
+const ERROR_LABELS={knowledge:'Conhecimento',application:'Aplicação',interpretation:'Interpretação',distraction:'Distração',recurrence:'Recorrência',unclassified:'Não classificado'};
 let currentSnapshot=null;
 
 function safe(value,max=180){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
