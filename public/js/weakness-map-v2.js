@@ -16,6 +16,10 @@ function ensureQuestionPerformance(){
   if(global.AppQuestionPerformanceIntelligence||document.querySelector('script[data-question-performance-intelligence]'))return;
   const script=document.createElement('script');script.src='./js/question-performance-intelligence.js?v=20260830';script.defer=true;script.dataset.questionPerformanceIntelligence='1';script.onerror=()=>console.warn('Não foi possível carregar a inteligência de desempenho em questões.');document.head.appendChild(script);
 }
+function ensureDiagnosticProvider(){
+  if(global.AppDiagnosticCandidateProvider||document.querySelector('script[data-diagnostic-candidate-provider]'))return;
+  const script=document.createElement('script');script.src='./js/diagnostic-candidate-provider.js?v=20260830';script.defer=true;script.dataset.diagnosticCandidateProvider='1';script.onload=()=>render();script.onerror=()=>console.warn('Não foi possível carregar o provedor de candidatos diagnósticos.');document.head.appendChild(script);
+}
 function ensureAdaptiveFlashcards(){
   if(global.AppAdaptiveFlashcards||document.querySelector('script[data-adaptive-flashcards]'))return;
   const script=document.createElement('script');script.src='./js/adaptive-flashcards.js?v=20260830';script.defer=true;script.dataset.adaptiveFlashcards='1';script.onerror=()=>console.warn('Não foi possível carregar os flashcards adaptativos.');document.head.appendChild(script);
@@ -41,8 +45,9 @@ function classify(candidate,advisor){
 }
 function buildSnapshot(){
   const advisor=global.AppLearningAdvisor;
-  if(!advisor?.collectCandidates||!advisor?.localIntervention)return null;
-  const candidates=advisor.collectCandidates?.(5)||[];
+  if(!advisor?.localIntervention)return null;
+  const provider=global.AppDiagnosticCandidateProvider;
+  const candidates=provider?.collect?.(40)||advisor.collectCandidates?.(5)||[];
   const topics=candidates.map(candidate=>classify(candidate,advisor));
   const subjects=[];const bySubject=new Map();
   topics.forEach(topic=>{
@@ -63,7 +68,7 @@ function buildSnapshot(){
     diagnoses:bucket.diagnoses,
     errors:bucket.errors
   }));
-  currentSnapshot={topics,subjects:matterRows,authority:'diagnostic-only'};
+  currentSnapshot={topics,subjects:matterRows,authority:'diagnostic-only',orderingAuthority:provider?.authority||'learning-advisor-friction-order'};
   return currentSnapshot;
 }
 function ensurePanel(){
@@ -85,7 +90,7 @@ function render(snapshot=buildSnapshot()){
   global.dispatchEvent(new CustomEvent('weakness-map-rendered',{detail:{topics:snapshot.topics.length,subjects:snapshot.subjects.length}}));
   return snapshot;
 }
-function init(){ensureStyle();ensureQuestionPerformance();ensureAdaptiveFlashcards();ensurePanel();global.addEventListener('adaptive-plan-changed',()=>render());global.addEventListener('adaptive-feedback-evaluated',()=>render());global.addEventListener('question-performance-classified',()=>render());if(global.AppLearningAdvisor)render();}
+function init(){ensureStyle();ensureQuestionPerformance();ensureDiagnosticProvider();ensureAdaptiveFlashcards();ensurePanel();global.addEventListener('adaptive-plan-changed',()=>render());global.addEventListener('adaptive-feedback-evaluated',()=>render());global.addEventListener('question-performance-classified',()=>render());global.addEventListener('diagnostic-candidate-provider-ready',()=>render());if(global.AppLearningAdvisor)render();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 global.AppWeaknessMapV2=Object.freeze({buildSnapshot,render,getSnapshot:()=>currentSnapshot});
 })(window);
