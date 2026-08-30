@@ -4,14 +4,15 @@ const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
 const CRITICAL_APP_SHELL = [
   './', './index.html', './manifest.json', './version.json', './pwa-update.js', './capacitor-runtime.js',
-  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/responsive-polish-v10.64.19.css', './css/canonical-ui.css', './css/pdf-library.css', './css/pdf-reader.css', './css/learning-advisor.css',
+  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/responsive-polish-v10.64.19.css', './css/canonical-ui.css', './css/pdf-library.css', './css/pdf-reader.css',
   './js/study-domain.js', './js/core/edital-integrity.js', './js/core/local-backup-store.js', './js/core/offline-outbox-store.js', './js/core/offline-sync-shadow.js', './js/core/offline-sync-metadata-shadow.js', './js/core/offline-sync-metadata-authority.js', './js/core/offline-sync-metadata-graduation.js', './js/core/offline-sync-metadata-rollout.js', './js/core/offline-sync-metadata-stability.js', './js/core/offline-sync-metadata-expanded-stability.js', './js/core/offline-sync-metadata-expanded-promotion.js', './js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-population-promotion.js', './js/core/offline-sync-metadata-population-promoted-stability.js', './js/core/offline-sync-metadata-ring2-promotion.js', './js/core/offline-sync-metadata-ring2-promoted-stability.js',
-  './js/core/offline-sync-metadata-ring3-promotion.js', './js/core/offline-sync-metadata-expansion.js', './js/core/offline-sync-authority.js', './js/core/offline-sync-delete-authority.js', './js/core/offline-sync-edital-graduation.js', './js/app-core.js', './js/app-state.js', './js/sync-engine.js', './js/adaptive-schedule-reconciliation.js', './js/learning-advisor.js', './js/critical-points-actions.js', './js/app-ai.js', './js/app-ui.js',
+  './js/core/offline-sync-metadata-ring3-promotion.js', './js/core/offline-sync-metadata-expansion.js', './js/core/offline-sync-authority.js', './js/core/offline-sync-delete-authority.js', './js/core/offline-sync-edital-graduation.js', './js/app-core.js', './js/app-state.js', './js/sync-engine.js', './js/adaptive-schedule-reconciliation.js', './js/app-ui.js',
   './js/ui/mobile.js', './js/ui/navigation.js', './js/ui/search.js', './js/app-pwa.js',
   './vendor/supabase.js', './vendor/chart.umd.min.js', './icon-192.png', './icon-512.png'
 ];
 
 const OPTIONAL_OFFLINE_ASSETS = [
+  './css/learning-advisor.css', './js/learning-advisor.js', './js/critical-points-actions.js', './js/app-ai.js',
   './js/performance-loader.js', './js/performance-metrics.js', './js/notes-import-export.js', './js/notes-export-rich.js', './js/study-performance-report.js',
   './js/adaptive-ai-experience.js', './css/adaptive-ai-experience.css', './js/adaptive-feedback-loop.js', './js/method-calibration.js',
   './js/session-orchestrator.js', './css/session-orchestrator.css', './js/session-continuity.js', './css/session-continuity.css', './js/session-completion.js',
