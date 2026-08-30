@@ -11,7 +11,8 @@ assert.match(continuity,/resumeNext\(/,'deve permitir retomar o próximo bloco p
 assert.match(continuity,/restore\(/,'deve restaurar sessão interrompida');
 assert.match(orchestrator,/adaptive-session-rendered/,'orquestrador deve publicar renderização da fila');
 assert.match(orchestrator,/adaptive-session-promoted/,'orquestrador deve publicar promoção do bloco');
-assert.match(orchestrator,/authority:'retention-engine-order'/,'Retention Engine deve continuar explícito como autoridade da ordem');
+assert.match(orchestrator,/authority:'learning-advisor-friction-order'/,'Learning Advisor deve continuar explícito como autoridade da ordem pedagógica');
+assert.match(orchestrator,/scheduleAuthority:'retention-engine'/,'Retention Engine deve continuar explícito como autoridade de agenda');
 assert.doesNotMatch(continuity,/collectCandidates\s*\(/,'continuidade não pode coletar ou reordenar candidatos');
 assert.doesNotMatch(continuity,/\.sort\s*\(/,'continuidade não pode reordenar a fila');
 assert.doesNotMatch(continuity,/nextReviewAt|dataProva|schedule|cronograma/i,'continuidade não pode controlar cronograma ou datas de revisão');
