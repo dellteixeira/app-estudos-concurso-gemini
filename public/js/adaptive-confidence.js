@@ -8,6 +8,7 @@ const DAY_MS=24*60*60*1000;
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
 function safe(value,max=180){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
 function finite(value){return Number.isFinite(Number(value))}
+function numericScore(value){return typeof value==='number'&&Number.isFinite(value)}
 function timestamp(value){const parsed=Date.parse(value);return Number.isFinite(parsed)?parsed:null}
 function withinEvidenceWindow(item,now=Date.now()){
   const at=timestamp(item?.at);
@@ -38,7 +39,7 @@ function score(plan){
   const now=Date.now();
   const recentTimeline=timeline.filter(item=>withinEvidenceWindow(item,now));
   const recentCompletedExecutions=recentTimeline.filter(item=>item?.type==='execution_finished'&&item?.status==='completed');
-  const recentAttributedFeedback=recentTimeline.filter(item=>item?.type==='feedback'&&Number.isFinite(Number(item?.score)));
+  const recentAttributedFeedback=recentTimeline.filter(item=>item?.type==='feedback'&&numericScore(item?.score));
   const recentBehavioralEvidence=[...recentCompletedExecutions,...recentAttributedFeedback];
   add(10,recentCompletedExecutions.length>=1,'execução concluída recente');
   add(10,recentAttributedFeedback.length>=1,'feedback atribuído recente');
