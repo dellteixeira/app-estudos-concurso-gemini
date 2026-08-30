@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   audit-history:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 15
     steps:
       - name: Checkout full history
