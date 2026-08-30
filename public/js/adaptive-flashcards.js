@@ -24,16 +24,7 @@ function buildSuggestions(){
   currentSuggestions=[];
   for(const candidate of candidates){
     const signal=shouldSuggest(candidate,advisor);if(!signal.eligible)continue;
-    currentSuggestions.push({
-      topicId:safe(candidate?.topicId,600),
-      materia:safe(candidate?.materia,100),
-      assunto:safe(candidate?.assunto,160),
-      retention:clamp(candidate?.metrics?.retention,0,100),
-      diagnosis:signal.diagnosis,
-      activeErrorCount:signal.errors.length,
-      reason:signal.errors.length?'active-error':signal.lowRetention?'low-retention':'persistent-difficulty',
-      authority:'pedagogical-method-only'
-    });
+    currentSuggestions.push({topicId:safe(candidate?.topicId,600),materia:safe(candidate?.materia,100),assunto:safe(candidate?.assunto,160),retention:clamp(candidate?.metrics?.retention,0,100),diagnosis:signal.diagnosis,activeErrorCount:signal.errors.length,reason:signal.errors.length?'active-error':signal.lowRetention?'low-retention':'persistent-difficulty',authority:'pedagogical-method-only'});
   }
   return currentSuggestions;
 }
@@ -41,12 +32,17 @@ function findItem(suggestion){
   try{if(Array.isArray(global.editalItems))return global.editalItems.find(item=>item?.materia===suggestion?.materia&&item?.assunto===suggestion?.assunto)||null}catch(_){}
   return null;
 }
+function emitLaunch(suggestion){
+  const detail={topicId:safe(suggestion?.topicId,600),reason:safe(suggestion?.reason,40),source:'adaptive-flashcards'};
+  global.dispatchEvent(new CustomEvent('adaptive-flashcard-launched',{detail}));
+  global.dispatchEvent(new CustomEvent('adaptive-flashcards-started',{detail}));
+}
 function start(index=0){
   const suggestion=currentSuggestions[index]||buildSuggestions()[index];if(!suggestion)return false;
   const item=findItem(suggestion);
   if(typeof global.openActiveRecallGuide!=='function')return false;
   global.openActiveRecallGuide({kind:'study',materia:suggestion.materia,assunto:suggestion.assunto,itemId:item?.id,isRevision:true,minutes:10,activityType:'revisao_ativa',method:'flashcards_adaptativos',methodLabel:'Flashcards adaptativos',source:'adaptive_flashcards'});
-  global.dispatchEvent(new CustomEvent('adaptive-flashcards-started',{detail:{topicId:suggestion.topicId,reason:suggestion.reason}}));
+  emitLaunch(suggestion);
   return true;
 }
 function ensurePanel(){
@@ -66,5 +62,5 @@ function render(){
 }
 function init(){ensurePanel();global.addEventListener('intelligent-error-notebook-changed',()=>render());global.addEventListener('adaptive-plan-changed',()=>render());if(global.AppLearningAdvisor)render();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-global.AppAdaptiveFlashcards=Object.freeze({buildSuggestions,render,start,getSuggestions:()=>currentSuggestions,RETENTION_THRESHOLD});
+global.AppAdaptiveFlashcards=Object.freeze({buildSuggestions,render,start,emitLaunch,getSuggestions:()=>currentSuggestions,RETENTION_THRESHOLD});
 })(window);
