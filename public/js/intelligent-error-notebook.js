@@ -18,13 +18,14 @@ function entries(){const data=read();return Array.isArray(data.entries)?data.ent
 
 function upsertFromClassification(detail={}){
   const topicId=safe(detail.topicId,600);const type=safe(detail.type,40);if(!topicId||!type)return null;
+  const occurrences=Math.max(1,Math.round(clamp(detail.occurrences,1,200)));
   const data=read();const list=Array.isArray(data.entries)?data.entries:[];
   const existingIndex=list.findIndex(item=>item?.topicId===topicId&&item?.type===type&&item?.status!=='resolved');
   const existing=existingIndex>=0?list[existingIndex]:null;
-  const next=existing?{...existing,count:(Number(existing.count)||0)+1,lastSeenAt:nowIso(),status:'active',correctStreak:0,resolutionEvidence:0,perfectEvidence:0}:{topicId,type,count:1,firstSeenAt:nowIso(),lastSeenAt:nowIso(),status:'active',correctStreak:0,resolutionEvidence:0,perfectEvidence:0};
+  const next=existing?{...existing,count:(Number(existing.count)||0)+occurrences,lastSeenAt:nowIso(),status:'active',correctStreak:0,resolutionEvidence:0,perfectEvidence:0}:{topicId,type,count:occurrences,firstSeenAt:nowIso(),lastSeenAt:nowIso(),status:'active',correctStreak:0,resolutionEvidence:0,perfectEvidence:0};
   const nextList=existingIndex>=0?list.map((item,index)=>index===existingIndex?next:item):[...list,next];
   write({version:2,entries:nextList.slice(-HISTORY_LIMIT)});
-  global.dispatchEvent(new CustomEvent('intelligent-error-notebook-changed',{detail:{topicId,type,status:'active'}}));
+  global.dispatchEvent(new CustomEvent('intelligent-error-notebook-changed',{detail:{topicId,type,status:'active',occurrences}}));
   return next;
 }
 
@@ -68,7 +69,7 @@ function onQuestionResult(event){recordBatchEvidence(event?.detail||{})}
 function getTopicEntries(topicId){const id=safe(topicId,600);return entries().filter(item=>item?.topicId===id)}
 function getActive(){return entries().filter(item=>item?.status!=='resolved')}
 function getResolved(){return entries().filter(item=>item?.status==='resolved')}
-function getSummary(){const all=entries();return {total:all.length,active:all.filter(item=>item?.status!=='resolved').length,resolved:all.filter(item=>item?.status==='resolved').length,authority:'diagnostic-only'}}
+function getSummary(){const all=entries();return {total:all.length,active:all.filter(item=>item?.status!=='resolved').length,resolved:all.filter(item=>item?.status==='resolved').length,activeOccurrences:all.filter(item=>item?.status!=='resolved').reduce((sum,item)=>sum+(Number(item?.count)||0),0),authority:'diagnostic-only'}}
 function init(){global.addEventListener('question-performance-classified',onClassified);global.addEventListener('adaptive-question-result',onQuestionResult)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 global.AppIntelligentErrorNotebook=Object.freeze({upsertFromClassification,recordCorrect,recordBatchEvidence,batchEvidence,getTopicEntries,getActive,getResolved,getSummary,RESOLUTION_STREAK,MIN_RESOLUTION_ACCURACY,MIN_RESOLUTION_TOTAL,RESOLUTION_EVIDENCE_TARGET});
