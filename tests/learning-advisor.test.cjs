@@ -5,16 +5,13 @@ const fs=require('node:fs');
 const cp=require('node:child_process');
 const read=file=>fs.readFileSync(file,'utf8');
 
-const packageVersion=JSON.parse(read('package.json')).version;
-const escapeRegex=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const client=read('public/js/learning-advisor.js');
 const css=read('public/css/learning-advisor.css');
 const server=read('src/learning-diagnosis.js');
 const wrapper=read('src/worker.js');
 const wrangler=read('wrangler.jsonc');
-const pwa=read('public/js/app-pwa.js');
 const sw=read('public/sw.js');
-const manifest=read('config/app-assets.json');
+const manifest=JSON.parse(read('config/app-assets.json'));
 const headers=read('public/_headers');
 
 test('advisor e endpoint possuem sintaxe JavaScript válida',()=>{
@@ -93,17 +90,18 @@ test('wrapper isola nova rota e preserva Worker existente',()=>{
   assert.match(wrapper,/import app from '\.\/index\.js'/);
   assert.match(wrapper,/handleLearningDiagnosis/);
   assert.match(wrapper,/\/api\/ai\/learning-diagnosis/);
-  assert.match(wrapper,/return app\.fetch\(request, env, ctx\)/);
+  assert.match(wrapper,/const response = await app\.fetch\(request, env, ctx\)/);
+  assert.match(wrapper,/return response/);
   assert.match(wrangler,/"main": "\.\/src\/worker\.js"/);
 });
 
-test('advisor faz parte do núcleo PWA e usa política anti-cache',()=>{
-  assert.match(pwa,new RegExp(`learning-advisor\\.css\\?v=${escapeRegex(packageVersion)}`));
-  assert.match(pwa,new RegExp(`learning-advisor\\.js\\?v=${escapeRegex(packageVersion)}`));
+test('advisor permanece offline opcional e usa política anti-cache',()=>{
+  assert.ok(manifest.optionalOfflineAssets.includes('/css/learning-advisor.css'));
+  assert.ok(manifest.optionalOfflineAssets.includes('/js/learning-advisor.js'));
+  assert.ok(!manifest.criticalAppShell.includes('/css/learning-advisor.css'));
+  assert.ok(!manifest.criticalAppShell.includes('/js/learning-advisor.js'));
   assert.match(sw,/\.\/css\/learning-advisor\.css/);
   assert.match(sw,/\.\/js\/learning-advisor\.js/);
-  assert.match(manifest,/"\/css\/learning-advisor\.css"/);
-  assert.match(manifest,/"\/js\/learning-advisor\.js"/);
   assert.match(headers,/\/css\/learning-advisor\.css[\s\S]*Cache-Control: no-cache, no-store, must-revalidate/);
   assert.match(headers,/\/js\/learning-advisor\.js[\s\S]*Cache-Control: no-cache, no-store, must-revalidate/);
 });

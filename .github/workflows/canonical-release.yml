@@ -19,8 +19,8 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - name: Checkout production-verified revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -60,6 +60,36 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "Production release candidate: tag=$tag version=$version deployed_sha=$sha"
 
+      - name: Verify manual release matches live production
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          APP_URL: https://estudoadaptativo.com
+          EXPECTED_SHA: ${{ steps.identity.outputs.sha }}
+          EXPECTED_VERSION: ${{ steps.identity.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          matched=0
+          for attempt in 1 2 3 4 5 6; do
+            cache_buster="${EXPECTED_SHA}-${GITHUB_RUN_ID}-${attempt}"
+            if curl --fail --silent --show-error --header 'Cache-Control: no-cache, no-store' \
+              "$APP_URL/version.json?canonical-release=$cache_buster" --output /tmp/live-version.json; then
+              live_version="$(node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('/tmp/live-version.json','utf8'));process.stdout.write(String(d.version||''))")"
+              live_commit="$(node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('/tmp/live-version.json','utf8'));process.stdout.write(String(d.commit||''))")"
+              if [ "$live_version" = "$EXPECTED_VERSION" ] && [ "$live_commit" = "$EXPECTED_SHA" ]; then
+                matched=1
+                break
+              fi
+              echo "Manual release parity attempt $attempt: live_version=$live_version live_commit=$live_commit"
+            fi
+            sleep 5
+          done
+          if [ "$matched" -ne 1 ]; then
+            echo "::error::Release manual bloqueada: HEAD não corresponde à revisão atualmente publicada em produção."
+            exit 1
+          fi
+          echo "Manual release parity OK: production commit=$EXPECTED_SHA version=$EXPECTED_VERSION"
+
       - name: Resolve immutable canonical tag
         id: canonical_tag
         env:
@@ -80,9 +110,6 @@ jobs:
               exit 0
             fi
 
-            # A tag vX.Y.Z representa exclusivamente a identidade do runtime web.
-            # Revisões Android (mobile.N / versionCode) podem evoluir sob a mesma
-            # versão web e não devem invalidar nem mover a tag web histórica.
             web_runtime_paths=(package.json public src wrangler.jsonc config)
             web_runtime_excludes=(':(exclude)config/release-contract.json')
             if git diff --quiet "$RELEASE_TAG" "$RELEASE_SHA" -- "${web_runtime_paths[@]}" "${web_runtime_excludes[@]}"; then

@@ -224,27 +224,28 @@
             document.head.appendChild(script);
         })();
 
-        // V10.64.19 — IA consultiva: interpreta dificuldade, mas Retenção mantém autoridade.
-        (function loadLearningAdvisor() {
-            if (!document.querySelector('link[data-learning-advisor-style]')) {
-                const style = document.createElement('link');
-                style.rel = 'stylesheet';
-                style.href = './css/learning-advisor.css?v=10.64.19';
-                style.dataset.learningAdvisorStyle = '1';
-                document.head.appendChild(style);
-            }
-            if (!window.AppLearningAdvisor && !document.querySelector('script[data-learning-advisor]')) {
+        // Classificador leve de desempenho em questões. Não carrega provedor de IA.
+        (function loadQuestionPerformanceIntelligence() {
+            if (window.AppQuestionPerformanceIntelligence || document.querySelector('script[data-question-performance-intelligence]')) return;
+            const script = document.createElement('script');
+            script.src = './js/question-performance-intelligence.js?v=20260830';
+            script.defer = true;
+            script.dataset.questionPerformanceIntelligence = '1';
+            script.onerror = () => console.warn('Não foi possível carregar a inteligência de desempenho em questões.');
+            document.head.appendChild(script);
+        })();
+
+        // Shell adaptativo leve: prepara apenas o carregador e a interface. Advisor/IA entram por ação explícita.
+        (function loadAdaptiveRuntimeShell() {
+            function ensureScript(src, selector, datasetKey, globalKey) {
+                if (window[globalKey] || document.querySelector(`script[${selector}]`)) return;
                 const script = document.createElement('script');
-                script.src = './js/learning-advisor.js?v=10.64.19';
+                script.src = src;
                 script.defer = true;
-                script.dataset.learningAdvisor = '1';
+                script.dataset[datasetKey] = '1';
+                script.onerror = () => console.warn('Não foi possível preparar o runtime adaptativo.');
                 document.head.appendChild(script);
             }
-            if (!window.CriticalPointActions && !document.querySelector('script[data-critical-point-actions]')) {
-                const criticalScript = document.createElement('script');
-                criticalScript.src = './js/critical-points-actions.js?v=10.64.19';
-                criticalScript.defer = true;
-                criticalScript.dataset.criticalPointActions = '1';
-                document.head.appendChild(criticalScript);
-            }
+            ensureScript('./js/performance-loader.js?v=20260830', 'data-performance-loader', 'performanceLoader', 'AppPerformanceLoader');
+            ensureScript('./js/adaptive-ai-experience.js?v=20260830', 'data-adaptive-ai-experience', 'adaptiveAiExperience', 'AppAdaptiveAIExperience');
         })();

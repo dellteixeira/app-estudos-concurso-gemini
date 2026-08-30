@@ -1,71 +1,50 @@
-name: Android CI
+name: Android Check
 
-on:
-  pull_request:
-    paths:
-      - 'android/**'
-      - 'android/mobile/**'
-      - 'capacitor.config.json'
-      - 'config/release-contract.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'public/**'
-      - 'src/**'
-      - 'scripts/release-contract.mjs'
-      - 'scripts/prepare-android-assets.mjs'
-      - 'scripts/migrate-android-phase1b.mjs'
-      - 'scripts/apply-android-mobile-hotfix.mjs'
-      - 'tests/**'
-      - '.github/workflows/android-ci.yml'
-      - '.github/workflows/android-release.yml'
+"on":
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-ci-${{ github.event.pull_request.number || github.ref }}
+  group: android-check-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  validate-runtime:
-    runs-on: ubuntu-24.04
+  android-check:
+    runs-on: ubuntu-latest
     timeout-minutes: 50
+    env:
+      FORCE_ANDROID_VALIDATION: '1'
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Setup Node
+      - name: Setup Node with npm cache
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22.23.2'
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Resolve canonical release contract
         id: release_contract
         run: node scripts/release-contract.mjs github
 
-      - name: Setup Java
+      - name: Setup Java with Gradle cache
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.1.0
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
 
       - name: Install dependencies
-        run: npm ci
+        run: node scripts/ci-retry.mjs --attempts=3 --delay-ms=4000 npm ci
 
       - name: Apply canonical Android migration
         run: node scripts/migrate-android-phase1b.mjs
-
-      - name: Run web unit tests
-        run: npm test
-
-      - name: Run structural audits
-        env:
-          AUDIT_ALLOW_ANY_ROOT: '1'
-        run: npm run audit
 
       - name: Prepare Worker-proxied vendor assets
         run: npm run android:prepare
@@ -81,9 +60,9 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug
+        run: node ../scripts/ci-retry.mjs --attempts=2 --delay-ms=8000 ./gradlew --no-daemon assembleDebug
 
-      - name: Install Android emulator image
+      - name: Locate Android SDK tools
         shell: bash
         run: |
           set -euo pipefail
@@ -92,14 +71,26 @@ jobs:
           AVDMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name avdmanager -perm -u+x | head -n 1)"
           test -x "$SDKMANAGER"
           test -x "$AVDMANAGER"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          echo "AVDMANAGER=$AVDMANAGER" >> "$GITHUB_ENV"
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
+
+      - name: Install Android emulator image
+        shell: bash
+        run: |
+          set -euo pipefail
           ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd-ci"
           mkdir -p "$ANDROID_AVD_HOME"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
+          for attempt in 1 2 3; do
+            if "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'; then break; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep $((attempt * 8))
+          done
           echo no | ANDROID_AVD_HOME="$ANDROID_AVD_HOME" "$AVDMANAGER" create avd --force --name android-ci --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
           echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
-          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
-          echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
 
       - name: Start Android emulator
         shell: bash
@@ -146,9 +137,9 @@ jobs:
           name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
 
-      - name: Upload Android CI diagnostics
+      - name: Upload Android runtime diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -160,4 +151,4 @@ jobs:
             android-ci-screen.png
             android/app/build/reports/androidTests/**
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 7

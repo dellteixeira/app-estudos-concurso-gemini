@@ -29,7 +29,7 @@ test('release contract is the canonical version identity', () => {
   assert.doesNotThrow(() => execFileSync(process.execPath, ['scripts/release-contract.mjs', 'check'], { stdio: 'pipe' }));
 });
 
-test('Android pipeline is consolidated into CI and Release workflows only', () => {
+test('Android pipeline is consolidated into Check and Release workflows only', () => {
   assert.deepEqual(workflowNames, ['android-ci.yml', 'android-release.yml']);
   for (const name of legacyWorkflowNames) {
     assert.equal(fs.existsSync(`.github/workflows/${name}`), false, `${name} legado ainda existe`);
@@ -43,14 +43,20 @@ test('all Android workflows resolve runtime identity from the canonical contract
   assert.doesNotThrow(() => execFileSync(process.execPath, ['scripts/audit-workflow-release-contract.mjs'], { stdio: 'pipe' }));
 });
 
-test('Android CI preserves tests, structural audit, instrumentation and runtime diagnostics', () => {
+test('Android Check permanece completo em execução manual no modo degradado', () => {
   const workflow = workflows.find(([name]) => name === 'android-ci.yml')[1];
-  assert.match(workflow, /npm test/);
-  assert.match(workflow, /npm run audit/);
+  assert.match(workflow, /name:\s*Android Check/);
+  assert.match(workflow, /workflow_dispatch/);
+  assert.doesNotMatch(workflow, /pull_request:/);
+  assert.match(workflow, /FORCE_ANDROID_VALIDATION:\s*'1'/);
+  assert.match(workflow, /cache:\s*gradle/);
+  assert.match(workflow, /assembleDebug/);
   assert.match(workflow, /connectedDebugAndroidTest/);
   assert.match(workflow, /adb install -r/);
   assert.match(workflow, /FATAL EXCEPTION/);
   assert.match(workflow, /android-ci-screen\.png/);
+  assert.doesNotMatch(workflow, /Run web unit tests/);
+  assert.doesNotMatch(workflow, /Run structural audits/);
 });
 
 test('Android Release owns signed runtime validation and permanent distribution', () => {

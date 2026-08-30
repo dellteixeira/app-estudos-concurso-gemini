@@ -1,0 +1,81 @@
+stages:
+  - validate
+  - security
+
+variables:
+  NODE_VERSION: "22.23.2"
+  GITHUB_REPOSITORY_URL: "https://github.com/dellteixeira/app-estudos-concurso-gemini.git"
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - when: never
+
+.default_node:
+  image: node:22.23.2-bookworm
+  before_script:
+    - node --version
+    - npm --version
+    - |
+      if [ "$CI_PIPELINE_SOURCE" = "trigger" ]; then
+        test -n "$TRIGGER_PAYLOAD" || { echo "TRIGGER_PAYLOAD ausente" >&2; exit 1; }
+        test -f "$TRIGGER_PAYLOAD" || { echo "TRIGGER_PAYLOAD não materializado" >&2; exit 1; }
+        test -n "$GITHUB_READ_TOKEN" || { echo "GITHUB_READ_TOKEN ausente" >&2; exit 1; }
+
+        GITHUB_SHA="$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.TRIGGER_PAYLOAD,'utf8'));process.stdout.write(String(p.after||''))")"
+        GITHUB_REF="$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.env.TRIGGER_PAYLOAD,'utf8'));process.stdout.write(String(p.ref||''))")"
+
+        case "$GITHUB_SHA" in
+          0000000000000000000000000000000000000000)
+            echo "Push representa exclusão de ref; nenhuma árvore será validada."
+            exit 0
+            ;;
+        esac
+
+        printf '%s' "$GITHUB_SHA" | grep -Eq '^[0-9a-f]{40}$' || { echo "SHA inválido no payload" >&2; exit 1; }
+        if [ -n "$GITHUB_REF" ]; then
+          case "$GITHUB_REF" in
+            refs/heads/*|refs/tags/*) : ;;
+            *) echo "Ref recebida em formato não canônico; tratada apenas como observabilidade: $GITHUB_REF" ;;
+          esac
+        else
+          GITHUB_REF="(ref ausente no payload)"
+        fi
+
+        git remote remove github >/dev/null 2>&1 || true
+        git remote add github "https://dellteixeira:${GITHUB_READ_TOKEN}@github.com/dellteixeira/app-estudos-concurso-gemini.git"
+        git fetch --no-tags --depth=1 github "$GITHUB_SHA"
+        git checkout --detach FETCH_HEAD
+        git remote set-url github "$GITHUB_REPOSITORY_URL"
+
+        ACTUAL_SHA="$(git rev-parse HEAD)"
+        test "$ACTUAL_SHA" = "$GITHUB_SHA" || { echo "Checkout divergente do SHA do webhook" >&2; exit 1; }
+        echo "GitHub SHA validado: $ACTUAL_SHA ($GITHUB_REF)"
+      fi
+
+quality:
+  extends: .default_node
+  stage: validate
+  script:
+    - node --check src/index.js
+    - npm test
+    - AUDIT_ALLOW_ANY_ROOT=1 npm run audit
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
+security_current_tree:
+  extends: .default_node
+  stage: security
+  script:
+    - node scripts/audit-secrets.mjs
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'

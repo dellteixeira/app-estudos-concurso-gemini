@@ -1,5 +1,6 @@
 import app from './index.js';
 import { handleLearningDiagnosis } from './learning-diagnosis.js';
+import { isAppShellPath, stripEagerFeatureAssets } from './runtime-delivery.js';
 
 const EXTENDED_NO_STORE_PATHS = new Set([
   '/css/learning-advisor.css',
@@ -35,11 +36,30 @@ function withNoStore(response) {
   return new Response(response.body, { status:response.status, statusText:response.statusText, headers });
 }
 
+async function withOnDemandAppShell(response) {
+  const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+  if (!contentType.includes('text/html')) return response;
+
+  const html = await response.text();
+  const optimizedHtml = stripEagerFeatureAssets(html);
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+  headers.set('x-painel-runtime-delivery', 'on-demand-v1');
+  return new Response(optimizedHtml, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === '/api/ai/learning-diagnosis') return handleLearningDiagnosis(request, env);
     if (request.method === 'GET' && EXTENDED_NO_STORE_PATHS.has(url.pathname)) return withNoStore(await env.ASSETS.fetch(request));
-    return app.fetch(request, env, ctx);
+
+    const response = await app.fetch(request, env, ctx);
+    if (request.method === 'GET' && isAppShellPath(url.pathname)) return withOnDemandAppShell(response);
+    return response;
   }
 };

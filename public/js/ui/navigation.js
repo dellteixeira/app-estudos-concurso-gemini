@@ -40,6 +40,26 @@
         document.head.appendChild(script);
     }
 
+    function ensureDashboardV2() {
+        if (global.AppDashboardV2 || document.querySelector('script[data-dashboard-v2-loader]')) return;
+        const script = document.createElement('script');
+        script.src = './js/dashboard-v2.js?v=20260830';
+        script.defer = true;
+        script.dataset.dashboardV2Loader = '1';
+        script.onerror = () => console.warn('Não foi possível carregar o Dashboard 2.0.');
+        document.head.appendChild(script);
+    }
+
+    function ensureAdaptiveAIExperience() {
+        if (global.AppAdaptiveAIExperience || document.querySelector('script[data-adaptive-ai-experience]')) return;
+        const script = document.createElement('script');
+        script.src = './js/adaptive-ai-experience.js?v=20260830';
+        script.defer = true;
+        script.dataset.adaptiveAiExperience = '1';
+        script.onerror = () => console.warn('Não foi possível carregar a experiência adaptativa de IA.');
+        document.head.appendChild(script);
+    }
+
     function resolveCallable(path) {
         const parts = String(path || '').split('.').filter(Boolean);
         if (!parts.length) return null;
@@ -77,7 +97,19 @@
         });
     }
 
-    function navigateTo(tabId, options = {}) {
+    async function prepareTabFeatures(tabId) {
+        const loader = global.AppPerformanceLoader;
+        if (!loader?.ensureFeaturesForTab) return null;
+        try {
+            return await loader.ensureFeaturesForTab(tabId);
+        } catch (error) {
+            console.warn(`[performance] módulo opcional indisponível para ${tabId}:`, error);
+            return null;
+        }
+    }
+
+    async function navigateTo(tabId, options = {}) {
+        await prepareTabFeatures(tabId);
         const desktopBtn = options.desktopButton || findDesktopTabButton(tabId);
         if (typeof global.switchTab === 'function') {
             global.switchTab(tabId, desktopBtn || null);
@@ -154,6 +186,7 @@
     global.AppNavigation = Object.freeze({
         findDesktopTabButton,
         syncMobileNav,
+        prepareTabFeatures,
         navigateTo,
         mobileSwitchTab,
         callPath
@@ -167,8 +200,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             ensureAccessibleNames();
             ensurePerformanceLoader();
+            ensureDashboardV2();
+            ensureAdaptiveAIExperience();
         }, { once: true });
     } else {
         ensurePerformanceLoader();
+        ensureDashboardV2();
+        ensureAdaptiveAIExperience();
     }
 })(window);

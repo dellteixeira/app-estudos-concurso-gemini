@@ -1,3 +1,5 @@
+import { classifyAiError, createAiObservationTimer } from './ai-observability.js';
+
 const GEMINI_MODEL='gemini-3.6-flash';
 const MAX_TOPICS=5;
 const MAX_BODY_BYTES=32*1024;
@@ -60,30 +62,21 @@ const ACTION_METHODS={
 
 function actionScores(topic){
   const m=topic.metrics;
-  const scores={
-    active_recall:26,
-    short_review:22,
-    questions:20,
-    focused_restudy:20
-  };
+  const scores={active_recall:26,short_review:22,questions:20,focused_restudy:20};
   if(m.sessionCount>=2)scores.active_recall+=14;
   if(m.retention>=45&&m.retention<82)scores.active_recall+=14;
   if(m.reviewCount>=2)scores.active_recall+=6;
-
   if(m.retention<68)scores.short_review+=18;
   if(m.sessionCount<=2)scores.short_review+=10;
   if(!m.forgot)scores.short_review+=4;
-
   if(m.accuracy!=null)scores.questions+=(100-m.accuracy)*0.34;
   if(m.acquired)scores.questions+=8;
   if(m.confidence>=.2&&m.accuracy!=null&&m.accuracy<60)scores.questions+=8;
-
   if(m.forgot)scores.focused_restudy+=22;
   if(m.retention<45)scores.focused_restudy+=18;
   if(m.reviewCount>=2&&m.retention<65)scores.focused_restudy+=10;
   if(!m.acquired)scores.focused_restudy+=12;
   if(m.lapseCount>=2)scores.focused_restudy+=8;
-
   const now=Date.now();
   topic.recommendationHistory.forEach((entry,index,history)=>{
     const age=Date.parse(entry.at);
@@ -110,10 +103,7 @@ function deterministicIntervention(topic){
   const ranked=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
   const lastAction=topic.recommendationHistory.at(-1)?.action||'';
   let selected=ranked[0]?.[0]||'active_recall';
-  if(lastAction&&selected===lastAction){
-    const alternate=ranked.find(([action])=>action!==lastAction);
-    if(alternate)selected=alternate[0];
-  }
+  if(lastAction&&selected===lastAction){const alternate=ranked.find(([action])=>action!==lastAction);if(alternate)selected=alternate[0]}
   const preset=ACTION_METHODS[selected]||ACTION_METHODS.active_recall;
   const m=topic.metrics;
   const diagnosisType=diagnosisForAction(topic,selected);
@@ -128,15 +118,7 @@ function validateIntervention(raw,topic){
   const lastAction=topic.recommendationHistory.at(-1)?.action||'';
   const aiAction=SELECTOR_ACTIONS.has(raw.recommendedAction)?raw.recommendedAction:fallback.recommendedAction;
   if(lastAction&&aiAction===lastAction)return fallback;
-  return {
-    topicId:topic.topicId,
-    diagnosisType:DIAGNOSIS_TYPES.has(raw.diagnosisType)?raw.diagnosisType:fallback.diagnosisType,
-    severity:SEVERITIES.has(raw.severity)?raw.severity:fallback.severity,
-    recommendedAction:aiAction,
-    suggestedMinutes:Math.round(clamp(raw.suggestedMinutes,5,45)||fallback.suggestedMinutes),
-    method:clean(raw.method,360)||fallback.method,
-    rationale:clean(raw.rationale,420)||fallback.rationale
-  };
+  return {topicId:topic.topicId,diagnosisType:DIAGNOSIS_TYPES.has(raw.diagnosisType)?raw.diagnosisType:fallback.diagnosisType,severity:SEVERITIES.has(raw.severity)?raw.severity:fallback.severity,recommendedAction:aiAction,suggestedMinutes:Math.round(clamp(raw.suggestedMinutes,5,45)||fallback.suggestedMinutes),method:clean(raw.method,360)||fallback.method,rationale:clean(raw.rationale,420)||fallback.rationale};
 }
 
 function parseGemini(payload){
@@ -174,12 +156,19 @@ export async function handleLearningDiagnosis(request,env){
   const topics=(Array.isArray(body?.topics)?body.topics:[]).slice(0,MAX_TOPICS).map(sanitizeTopic).filter(Boolean);
   if(!topics.length)return responseJson({error:'Nenhum ponto crítico válido foi enviado.'},422);
   const fallback=topics.map(deterministicIntervention);
-  let interventions=fallback,aiUsed=false;
+  const finishObservation=createAiObservationTimer({feature:'learning-advisor',provider:'gemini',model:GEMINI_MODEL,itemCount:topics.length});
+  let interventions=fallback,aiUsed=false,observation;
   try{
     const raw=await runGemini(env,body?.contest,topics);
     const byId=new Map(raw.map(item=>[clean(item?.topicId,600),item]));
     interventions=topics.map(topic=>validateIntervention(byId.get(topic.topicId),topic));
     aiUsed=true;
-  }catch(error){console.warn('Learning Advisor Gemini fallback:',error?.message||error)}
-  return responseJson({advisorVersion:'1.2.0',advisorRole:'auxiliary',authority:'retention-engine',autoSchedule:false,provider:aiUsed?'gemini':'local-deterministic',model:aiUsed?GEMINI_MODEL:'local',aiUsed,antiRepeat:true,interventions});
+    observation=finishObservation({outcome:'success',fallback:'none',errorClass:'none'});
+  }catch(error){
+    const errorClass=classifyAiError(error);
+    const fallbackType=errorClass==='timeout'?'timeout-fallback':'local-deterministic';
+    observation=finishObservation({outcome:'fallback',fallback:fallbackType,errorClass});
+    console.warn('Learning Advisor Gemini fallback:',errorClass);
+  }
+  return responseJson({advisorVersion:'1.3.0',advisorRole:'auxiliary',authority:'retention-engine',autoSchedule:false,provider:aiUsed?'gemini':'local-deterministic',model:aiUsed?GEMINI_MODEL:'local',aiUsed,antiRepeat:true,observability:observation,interventions});
 }

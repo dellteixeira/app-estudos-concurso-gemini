@@ -2,9 +2,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { stripEagerFeatureAssets } from '../src/runtime-delivery.js';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const vendorDir = path.join(root, 'public', 'vendor');
+const indexPath = path.join(root, 'public', 'index.html');
 
 const assets = [
   ['supabase.js', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.js'],
@@ -25,6 +27,15 @@ for (const [name, url] of assets) {
   await fs.writeFile(path.join(vendorDir, name), body);
   const digest = crypto.createHash('sha256').update(body).digest('hex');
   console.log(`${name} ${body.length} bytes sha256:${digest}`);
+}
+
+const sourceIndex = await fs.readFile(indexPath, 'utf8');
+const optimizedIndex = stripEagerFeatureAssets(sourceIndex);
+if (optimizedIndex !== sourceIndex) {
+  await fs.writeFile(indexPath, optimizedIndex, 'utf8');
+  console.log('App shell Android otimizado: PDF e IA serão carregados sob demanda.');
+} else {
+  console.log('App shell Android já está otimizado para carregamento sob demanda.');
 }
 
 console.log('Vendor assets Android preparados em public/vendor.');
