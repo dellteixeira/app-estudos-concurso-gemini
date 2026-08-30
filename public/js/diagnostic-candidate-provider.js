@@ -35,17 +35,26 @@ function toCandidate(row,index,{enforceMinFriction=true}={}){
     authority:'diagnostic-source-order'
   };
 }
-function collect(limit=DEFAULT_LIMIT){
-  const advisor=global.AppLearningAdvisor;
-  if(typeof advisor?.computeLearningFriction!=='function')return [];
-  const max=Math.max(1,Math.min(MAX_LIMIT,Math.round(Number(limit)||DEFAULT_LIMIT)));
+function eligibleCandidates(){
+  const advisor=global.AppLearningAdvisor;if(typeof advisor?.computeLearningFriction!=='function')return [];
   const result=[];const rows=getRows();
-  for(let index=0;index<rows.length&&result.length<max;index+=1){
+  for(let index=0;index<rows.length;index+=1){
     const candidate=toCandidate(rows[index],index,{enforceMinFriction:true});if(!candidate)continue;
     if(advisor.isSnoozed?.(candidate.topicId))continue;
     result.push(candidate);
   }
   return result;
+}
+function collect(limit=DEFAULT_LIMIT){
+  const max=Math.max(1,Math.min(MAX_LIMIT,Math.round(Number(limit)||DEFAULT_LIMIT)));
+  return eligibleCandidates().slice(0,max);
+}
+function collectByFriction(limit=DEFAULT_LIMIT){
+  const max=Math.max(1,Math.min(MAX_LIMIT,Math.round(Number(limit)||DEFAULT_LIMIT)));
+  return eligibleCandidates()
+    .sort((a,b)=>b.frictionScore-a.frictionScore||a.prioridade-b.prioridade||a.rowIndex-b.rowIndex)
+    .slice(0,max)
+    .map(candidate=>({...candidate,authority:'learning-advisor-friction-order'}));
 }
 function findByTopicId(topicId){
   const id=safe(topicId,600);if(!id)return null;
@@ -57,6 +66,6 @@ function findByTopicId(topicId){
   return null;
 }
 
-global.AppDiagnosticCandidateProvider=Object.freeze({collect,findByTopicId,DEFAULT_LIMIT,MAX_LIMIT,authority:'diagnostic-source-order'});
-global.dispatchEvent(new CustomEvent('diagnostic-candidate-provider-ready',{detail:{authority:'diagnostic-source-order'}}));
+global.AppDiagnosticCandidateProvider=Object.freeze({collect,collectByFriction,findByTopicId,DEFAULT_LIMIT,MAX_LIMIT,authority:'diagnostic-source-order',rankingAuthority:'learning-advisor-friction-order'});
+global.dispatchEvent(new CustomEvent('diagnostic-candidate-provider-ready',{detail:{authority:'diagnostic-source-order',rankingAuthority:'learning-advisor-friction-order'}}));
 })(window);
