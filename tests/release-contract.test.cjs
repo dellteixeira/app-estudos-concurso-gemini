@@ -43,15 +43,15 @@ test('all Android workflows resolve runtime identity from the canonical contract
   assert.doesNotThrow(() => execFileSync(process.execPath, ['scripts/audit-workflow-release-contract.mjs'], { stdio: 'pipe' }));
 });
 
-test('Android Check scopes expensive runtime validation to native changes', () => {
+test('Android Check permanece completo em execução manual no modo degradado', () => {
   const workflow = workflows.find(([name]) => name === 'android-ci.yml')[1];
   assert.match(workflow, /name:\s*Android Check/);
-  assert.match(workflow, /Detect Android scopes/);
-  assert.match(workflow, /android:\s*\$\{\{ steps\.scope\.outputs\.android \}\}/);
-  assert.match(workflow, /runtime:\s*\$\{\{ steps\.scope\.outputs\.runtime \}\}/);
-  assert.match(workflow, /if:\s*needs\.changes\.outputs\.runtime == 'true'[\s\S]*connectedDebugAndroidTest/);
+  assert.match(workflow, /workflow_dispatch/);
+  assert.doesNotMatch(workflow, /pull_request:/);
+  assert.match(workflow, /FORCE_ANDROID_VALIDATION:\s*'1'/);
   assert.match(workflow, /cache:\s*gradle/);
   assert.match(workflow, /assembleDebug/);
+  assert.match(workflow, /connectedDebugAndroidTest/);
   assert.match(workflow, /adb install -r/);
   assert.match(workflow, /FATAL EXCEPTION/);
   assert.match(workflow, /android-ci-screen\.png/);
