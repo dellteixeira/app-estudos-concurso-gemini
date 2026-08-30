@@ -28,8 +28,10 @@ function currentBlock(){
 }
 function begin(block=currentBlock()){
   if(!block?.candidate?.topicId)return null;
+  const topicId=safe(block.candidate.topicId,600);
+  if(activeExecution)return activeExecution.topicId===topicId?activeExecution:null;
   activeExecution={
-    topicId:safe(block.candidate.topicId,600),
+    topicId,
     plannedMinutes:Math.max(5,Math.round(Number(block.minutes||block.intervention?.suggestedMinutes)||15)),
     action:safe(block.intervention?.recommendedAction,40),
     startedAt:new Date().toISOString()
@@ -39,7 +41,7 @@ function begin(block=currentBlock()){
 }
 function finish(status='completed',meta={}){
   if(!VALID_STATUS.has(status))status='interrupted';
-  const execution=activeExecution||begin();
+  const execution=activeExecution;
   if(!execution)return null;
   const elapsedMinutes=clamp(meta.elapsedMinutes,0,180);
   const plannedMinutes=Math.max(5,Number(execution.plannedMinutes)||15);
@@ -57,8 +59,10 @@ function finish(status='completed',meta={}){
   };
   const data=read();
   const history=Array.isArray(data.history)?data.history:[];
-  write({version:1,history:[...history,record].slice(-HISTORY_LIMIT)});
+  const duplicate=history.some(item=>item?.topicId===record.topicId&&item?.startedAt===record.startedAt);
   activeExecution=null;
+  if(duplicate)return null;
+  write({version:1,history:[...history,record].slice(-HISTORY_LIMIT)});
   if(effectiveStatus==='completed')global.AppSessionContinuity?.completeActive?.();
   global.dispatchEvent(new CustomEvent('adaptive-session-execution-finished',{detail:record}));
   return record;
@@ -66,8 +70,10 @@ function finish(status='completed',meta={}){
 function onPromoted(){begin()}
 function onExternalExecution(event){
   const detail=event?.detail||{};
+  const execution=activeExecution;if(!execution)return null;
+  const topicId=safe(detail.topicId,600);if(topicId&&topicId!==execution.topicId)return null;
   const status=VALID_STATUS.has(detail.status)?detail.status:'interrupted';
-  finish(status,{elapsedMinutes:detail.elapsedMinutes});
+  return finish(status,{elapsedMinutes:detail.elapsedMinutes});
 }
 function getHistory(){return Array.isArray(read().history)?read().history:[]}
 function init(){
