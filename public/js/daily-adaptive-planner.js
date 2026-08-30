@@ -89,10 +89,12 @@ function ensurePanel(){
 
 function startBlock(index){
   const block=currentPlan?.blocks?.[Number(index)];if(!block||block.completed)return null;
-  const id=blockId(block);const state=readState();activeBlockId=id;writeState({...state,budget:Number(currentPlan.budget)||120,activeBlockId:id});
+  const completion=global.AppAdaptiveSessionCompletion;if(!completion?.begin){ensureCompletion();return null}
+  const existing=completion.getActiveExecution?.();if(existing)return existing.owner==='daily-plan'&&existing.executionId===blockId(block)?existing:null;
+  const id=blockId(block);const execution=completion.begin({...block,executionOwner:'daily-plan',executionId:id});if(!execution||execution.owner!=='daily-plan')return null;
+  const state=readState();activeBlockId=id;writeState({...state,budget:Number(currentPlan.budget)||120,activeBlockId:id});
   const plan={candidate:block.candidate,intervention:block.intervention,source:'daily-plan'};global.AppAdaptiveAIExperience?.setCurrentPlan?.(plan);
-  const execution=global.AppAdaptiveSessionCompletion?.begin?.({...block,executionOwner:'daily-plan',executionId:id});
-  render(currentPlan);global.dispatchEvent(new CustomEvent('adaptive-day-block-started',{detail:{index:Number(index),topicId:safe(block.candidate?.topicId,600),executionId:id,minutes:block.minutes}}));return execution||plan;
+  render(currentPlan);global.dispatchEvent(new CustomEvent('adaptive-day-block-started',{detail:{index:Number(index),topicId:safe(block.candidate?.topicId,600),executionId:id,minutes:block.minutes}}));return execution;
 }
 function startNext(){
   if(!currentPlan?.blocks?.length)return null;applyExecutionState(currentPlan);
@@ -118,10 +120,10 @@ function render(plan){
   if(!plan?.blocks?.length){summary.textContent='Ainda não há dados suficientes para montar o plano do dia.';list.replaceChildren();if(progress){progress.setAttribute('aria-valuenow','0');progress.querySelector('span').style.width='0%'}return plan}
   applyExecutionState(plan);persistPlanState(plan);const done=completedMinutes(plan);const pct=plan.used?Math.round(done/plan.used*100):0;const phase=plan.examContext?.phase?` · ${plan.examContext.label}`:'';summary.textContent=`${done}/${plan.used} min concluídos · ${remainingMinutes(plan)} min restantes${phase}`;
   if(progress){progress.setAttribute('aria-valuenow',String(pct));const fill=progress.querySelector('span');if(fill)fill.style.width=`${pct}%`}
-  list.innerHTML=plan.sessions.map(session=>`<article class="daily-adaptive-session"><strong>Sessão ${session.index+1} · ${session.minutes} min</strong>${session.blocks.map(block=>{const index=plan.blocks.indexOf(block);const part=block.segmentCount>1?` · parte ${block.segmentIndex+1}/${block.segmentCount}`:'';const state=block.completed?'Concluído':block.active?'Em andamento':'Iniciar';return `<button type="button" class="daily-adaptive-block${block.completed?' is-completed':''}${block.active?' is-active':''}" data-day-block-index="${index}" ${block.completed?'disabled':''}><span>${block.priorityIndex+1}. ${safe(block.candidate.materia,70)} — ${safe(block.candidate.assunto,110)}${part}</span><span>${block.minutes} min · ${state}</span></button>`}).join('')}</article>`).join('');
+  list.innerHTML=plan.sessions.map(session=>`<article class="daily-adaptive-session"><strong>Sessão ${session.index+1} · ${session.minutes} min</strong>${session.blocks.map(block=>{const index=plan.blocks.indexOf(block);const part=block.segmentCount>1?` · parte ${block.segmentIndex+1}/${block.segmentCount}`:'';const state=block.completed?'Concluído':block.active?'Em andamento':'Iniciar';const locked=Boolean(activeBlockId&&!block.active&&!block.completed);return `<button type="button" class="daily-adaptive-block${block.completed?' is-completed':''}${block.active?' is-active':''}" data-day-block-index="${index}" ${block.completed||locked?'disabled':''}><span>${block.priorityIndex+1}. ${safe(block.candidate.materia,70)} — ${safe(block.candidate.assunto,110)}${part}</span><span>${block.minutes} min · ${state}</span></button>`}).join('')}</article>`).join('');
   list.querySelectorAll('[data-day-block-index]').forEach(button=>button.addEventListener('click',()=>startBlock(Number(button.dataset.dayBlockIndex))));
   const complete=document.getElementById('dailyAdaptiveComplete');if(complete){const execution=global.AppAdaptiveSessionCompletion?.getActiveExecution?.();complete.disabled=!activeBlockId||execution?.owner!=='daily-plan';complete.title='A conclusão exige pelo menos 70% da duração planejada registrada pelo Pomodoro.'}
-  const next=document.getElementById('dailyAdaptiveNext');if(next)next.disabled=!plan.blocks.some(block=>!block.completed)||Boolean(activeBlockId);
+  const next=document.getElementById('dailyAdaptiveNext');if(next)next.disabled=!plan.blocks.some(block=>!block.completed)||Boolean(activeBlockId)||Boolean(global.AppAdaptiveSessionCompletion?.getActiveExecution?.());
   global.dispatchEvent(new CustomEvent('adaptive-day-plan-rendered',{detail:{budget:plan.budget,count:plan.blocks.length,sessions:plan.sessions.length,maxSessionMinutes:Math.max(...plan.sessions.map(session=>session.minutes)),completedMinutes:done,remainingMinutes:remainingMinutes(plan)}}));return plan;
 }
 
