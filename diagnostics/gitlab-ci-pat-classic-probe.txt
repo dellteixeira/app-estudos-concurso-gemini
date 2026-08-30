@@ -1,0 +1,2 @@
+GitLab CI classic PAT probe
+Generated to trigger webhook and validate read access to the exact GitHub commit.
