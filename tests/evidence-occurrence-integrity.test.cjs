@@ -15,7 +15,8 @@ test('timeline preserva ocorrências agregadas sem conteúdo textual',()=>{
 test('revisão semanal distingue ocorrências de padrões ativos',()=>{
   assert.match(weekly,/questionErrorOccurrences/);
   assert.match(weekly,/padrão/);
-  assert.match(weekly,/erros? em questões/);
+  assert.match(weekly,/questionErrorOccurrences===1\?'':'s'/);
+  assert.match(weekly,/em questões/);
 });
 
 test('ocorrências não alteram autoridade das camadas observacionais',()=>{
