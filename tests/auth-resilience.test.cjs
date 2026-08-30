@@ -6,16 +6,19 @@ const {spawnSync}=require('node:child_process');
 const auth=fs.readFileSync('public/js/auth-resilience.js','utf8');
 const runtime=fs.readFileSync('public/capacitor-runtime.js','utf8');
 
-test('módulo de autenticação mantém Supabase como fonte de verdade',()=>{
+test('módulo de autenticação mantém Supabase como fonte de verdade para sessão',()=>{
   assert.match(auth,/typeof supabaseClient!=='undefined'/);
   assert.match(auth,/auth\.getSession\(\)/);
   assert.match(auth,/auth\.refreshSession\(\)/);
-  assert.match(auth,/auth\.signInWithPassword\(\{email,password\}\)/);
 });
 
-test('login explícito descarta somente sessão local antes de autenticar',()=>{
+test('login explícito descarta somente sessão local antes de delegar ao fluxo canônico',()=>{
   assert.match(auth,/signOut\(\{scope:'local'\}\)/);
   assert.match(auth,/await clearLocalSession\(client\)/);
+  assert.match(auth,/typeof handleLogin==='function'/);
+  assert.match(auth,/const result=legacyLogin\(\)/);
+  assert.doesNotMatch(auth,/signInWithPassword/);
+  assert.doesNotMatch(auth,/location\.reload/);
   assert.doesNotMatch(auth,/localStorage\.clear\(/);
   assert.doesNotMatch(auth,/indexedDB\.deleteDatabase/);
 });
@@ -39,9 +42,9 @@ test('camada intercepta clique e Enter antes do dispatcher legado',()=>{
   assert.match(auth,/event\.key!=='Enter'/);
 });
 
-test('runtime carrega resiliência após DOMContentLoaded em web e nativo',()=>{
+test('runtime carrega hotfix com cache-buster novo em web e nativo',()=>{
   assert.match(runtime,/DOMContentLoaded', loadAuthResilience/);
-  assert.match(runtime,/auth-resilience\.js\?v=20260830/);
+  assert.match(runtime,/auth-resilience\.js\?v=20260830-2/);
   const loaderIndex=runtime.indexOf('loadAuthResilience');
   const nativeReturn=runtime.indexOf('if (!isNative) return');
   assert.ok(loaderIndex>=0&&nativeReturn>loaderIndex);
