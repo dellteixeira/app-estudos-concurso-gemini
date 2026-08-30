@@ -19,6 +19,17 @@ test('workflows não fixam o runner ubuntu-24.04',()=>{
   for(const source of [quality,android,androidRelease,canonicalRelease,secrets,history,deploy,mirror])assert.match(source,/runs-on: ubuntu-latest/);
 });
 
+test('modo degradado não dispara hosted runners em pull request',()=>{
+  assert.doesNotMatch(quality,/\npull_request:/);
+  assert.doesNotMatch(secrets,/\npull_request:/);
+  assert.doesNotMatch(android,/\npull_request:/);
+  assert.match(quality,/push:\n\s+branches: \[main\]/);
+  assert.match(quality,/workflow_dispatch:/);
+  assert.match(secrets,/push:\n\s+branches: \[main\]/);
+  assert.match(secrets,/workflow_dispatch:/);
+  assert.match(android,/workflow_dispatch:/);
+});
+
 test('retentativas são restritas a dependências e builds transitórios',()=>{
   assert.match(retry,/tentativa \$\{attempt\}\/\$\{attempts\}/);
   assert.match(quality,/ci-retry\.mjs[^\n]*npm install/);
@@ -30,24 +41,24 @@ test('retentativas são restritas a dependências e builds transitórios',()=>{
   assert.doesNotMatch(quality,/ci-retry\.mjs[^\n]*npm run audit/);
 });
 
-test('PR visual usa Chromium e main mantém cobertura completa',()=>{
-  assert.match(quality,/full_browser=false/);
-  assert.match(quality,/full_browser=true/);
-  assert.match(quality,/--project=chromium/);
+test('Quality da main mantém cobertura completa de navegadores',()=>{
   assert.match(quality,/install chromium firefox webkit/);
+  assert.match(quality,/npm run test:browser/);
+  assert.doesNotMatch(quality,/--project=chromium/);
 });
 
-test('audit completo de histórico não consome minutos em todo PR',()=>{
+test('audit completo de histórico permanece semanal/manual',()=>{
   assert.doesNotMatch(history,/pull_request:/);
   assert.match(history,/workflow_dispatch:/);
   assert.match(history,/cron:/);
-  assert.match(secrets,/pull_request:/);
 });
 
-test('Android Check não gera APK para mudanças web genéricas',()=>{
-  assert.doesNotMatch(android,/public\/\*\|public\/\*\*\/\*/);
-  assert.match(android,/public\/capacitor-runtime\.js/);
-  assert.match(android,/if: needs\.changes\.outputs\.android == 'true'/);
+test('Android Check em modo degradado é somente manual e completo',()=>{
+  assert.match(android,/workflow_dispatch:/);
+  assert.doesNotMatch(android,/pull_request:/);
+  assert.match(android,/connectedDebugAndroidTest/);
+  assert.match(android,/assembleDebug/);
+  assert.match(android,/FATAL EXCEPTION/);
 });
 
 test('Android Release só dispara para identidade/toolchain e exige runtime web canônico',()=>{
