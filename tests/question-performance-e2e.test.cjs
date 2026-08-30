@@ -4,6 +4,7 @@ const assert=require('node:assert/strict');
 
 const core=fs.readFileSync('public/js/app-core.js','utf8');
 const intelligence=fs.readFileSync('public/js/question-performance-intelligence.js','utf8');
+const pwa=fs.readFileSync('public/js/app-pwa.js','utf8');
 
 test('fluxo real de questões continua sendo a fonte de desempenho',()=>{
   assert.match(core,/async function submitQuestionPerformance\(\)/);
@@ -41,4 +42,14 @@ test('ponte é idempotente e tolera ordem de carregamento',()=>{
   assert.match(intelligence,/scheduleCoreBridge/);
   assert.match(intelligence,/attempts>=40/);
   assert.match(intelligence,/installCoreBridge/);
+});
+
+test('bootstrap PWA carrega somente o classificador leve para capturar qualquer bateria',()=>{
+  assert.match(pwa,/loadQuestionPerformanceIntelligence/);
+  assert.match(pwa,/question-performance-intelligence\.js/);
+  assert.match(pwa,/data-question-performance-intelligence/);
+  const bootstrap=pwa.indexOf('loadQuestionPerformanceIntelligence');
+  assert.ok(bootstrap>=0);
+  const block=pwa.slice(bootstrap,pwa.indexOf('// V10.64.19 — IA consultiva',bootstrap));
+  assert.doesNotMatch(block,/learning-advisor|app-ai|Gemini|fetch\(/i);
 });
