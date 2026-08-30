@@ -10,7 +10,14 @@ function safe(value,max=600){return String(value??'').replace(/[\u0000-\u001F\u0
 function read(){try{const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');return value&&typeof value==='object'?value:{}}catch(_){return{}}}
 function write(value){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(value));return true}catch(_){return false}}
 function blockId(block){return safe(block?.candidate?.topicId,600)}
-function completedSet(){return new Set((Array.isArray(read().completed)?read().completed:[]).map(item=>safe(item,600)).filter(Boolean))}
+function ensureStyle(){
+  if(document.querySelector('link[data-session-continuity-style]'))return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='./css/session-continuity.css?v=20260830';
+  link.dataset.sessionContinuityStyle='1';
+  document.head.appendChild(link);
+}
 
 function saveSession(session){
   if(!session?.blocks?.length)return false;
@@ -73,6 +80,7 @@ function decorate(session){
     document.getElementById('adaptiveSessionComplete')?.addEventListener('click',completeActive);
     document.getElementById('adaptiveSessionResume')?.addEventListener('click',resumeNext);
   }
+  const completed=new Set(Array.isArray(read().completed)?read().completed:[]);
   const complete=document.getElementById('adaptiveSessionComplete');
   if(complete)complete.disabled=!activeTopicId||completed.has(activeTopicId);
   const resume=document.getElementById('adaptiveSessionResume');
@@ -140,6 +148,7 @@ function onRendered(){
 }
 
 function init(){
+  ensureStyle();
   global.addEventListener('adaptive-session-rendered',onRendered);
   global.addEventListener('adaptive-session-promoted',onPromoted);
   setTimeout(restore,900);
