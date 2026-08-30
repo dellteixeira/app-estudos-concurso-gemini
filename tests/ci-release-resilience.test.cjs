@@ -15,6 +15,7 @@ test('workflows não fixam o runner ubuntu-24.04',()=>{
   assert.match(android,/runs-on: ubuntu-latest/);
   assert.match(secrets,/runs-on: ubuntu-latest/);
   assert.match(history,/runs-on: ubuntu-latest/);
+  assert.match(deploy,/runs-on: ubuntu-latest/);
 });
 
 test('retentativas são restritas a dependências e builds transitórios',()=>{
@@ -64,4 +65,11 @@ test('produção valida identidade exata e estabilidade após deploy',()=>{
   assert.match(deploy,/EXPECTED_BUILD/);
   assert.match(deploy,/DEPLOY_COMMIT_SHA/);
   assert.match(deploy,/Stability re-check/);
+});
+
+test('deploy não é cancelado no meio e faz rollback automático em falha posterior',()=>{
+  assert.match(deploy,/cancel-in-progress: false/);
+  assert.match(deploy,/id: deploy/);
+  assert.match(deploy,/if: failure\(\) && steps\.deploy\.outcome == 'success'/);
+  assert.match(deploy,/wrangler@4\.120\.0 rollback --message/);
 });
