@@ -5,9 +5,16 @@ if(global.AppDailyAdaptivePlanner)return;
 const DAY_BUDGETS=[60,120,180];
 const SESSION_SLICE=60;
 const MIN_BLOCK_MINUTES=5;
+const MIN_COMPLETION_RATIO=.7;
+const STORAGE_KEY='adaptive_daily_plan_execution_v1';
 let currentPlan=null;
+let activeBlockId='';
 
 function safe(value,max=160){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
+function todayKey(){const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`}
+function readState(){try{const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');return value&&typeof value==='object'&&value.day===todayKey()?value:{day:todayKey(),completed:[],activeBlockId:''}}catch(_){return{day:todayKey(),completed:[],activeBlockId:''}}}
+function writeState(value){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({...value,day:todayKey(),updatedAt:new Date().toISOString()}));return true}catch(_){return false}}
+function blockId(block){return safe(`${block?.candidate?.topicId||''}::${Number(block?.segmentIndex)||0}::${Number(block?.priorityIndex)||0}`,700)}
 function calibrate(intervention){return global.AppMethodCalibration?.calibrate?.(intervention)||intervention}
 function adaptToExam(intervention){return global.AppExamProximityStrategy?.adapt?.(intervention)||intervention}
 function ensureExamStrategy(){
@@ -18,6 +25,10 @@ function ensureCandidateProvider(){
   if(global.AppDiagnosticCandidateProvider||document.querySelector('script[data-diagnostic-candidate-provider]'))return;
   const script=document.createElement('script');script.src='./js/diagnostic-candidate-provider.js?v=20260830';script.defer=true;script.dataset.diagnosticCandidateProvider='1';script.onerror=()=>console.warn('Não foi possível ampliar os candidatos do plano diário.');document.head.appendChild(script);
 }
+function ensureCompletion(){
+  if(global.AppAdaptiveSessionCompletion||document.querySelector('script[data-session-completion]'))return;
+  const script=document.createElement('script');script.src='./js/session-completion.js?v=20260830';script.defer=true;script.dataset.sessionCompletion='1';script.onerror=()=>console.warn('Não foi possível carregar a conclusão do plano diário.');document.head.appendChild(script);
+}
 function rankedCandidates(limit=40){return global.AppDiagnosticCandidateProvider?.collectByFriction?.(limit)||global.AppLearningAdvisor?.collectCandidates?.(5)||[]}
 
 function splitDuration(totalMinutes){
@@ -27,6 +38,25 @@ function splitDuration(totalMinutes){
   const extra=total-(base*count);
   return Array.from({length:count},(_,index)=>base+(index<extra?1:0)).filter(value=>value>=MIN_BLOCK_MINUTES);
 }
+
+function applyExecutionState(plan){
+  if(!plan?.blocks?.length)return plan;
+  const state=readState();
+  const completed=new Set(Array.isArray(state.completed)?state.completed:[]);
+  activeBlockId=safe(state.activeBlockId,700);
+  plan.blocks.forEach(block=>{const id=blockId(block);block.executionId=id;block.completed=completed.has(id);block.active=Boolean(activeBlockId&&id===activeBlockId&&!block.completed)});
+  return plan;
+}
+function persistPlanState(plan){
+  if(!plan?.blocks?.length)return false;
+  const previous=readState();
+  const validIds=new Set(plan.blocks.map(blockId));
+  const completed=(Array.isArray(previous.completed)?previous.completed:[]).filter(id=>validIds.has(id));
+  const persistedActive=validIds.has(activeBlockId)?activeBlockId:'';
+  return writeState({...previous,budget:Number(plan.budget)||120,completed,activeBlockId:persistedActive});
+}
+function completedMinutes(plan){return plan?.blocks?.reduce((sum,block)=>sum+(block.completed?Number(block.minutes)||0:0),0)||0}
+function remainingMinutes(plan){return Math.max(0,(Number(plan?.used)||0)-completedMinutes(plan))}
 
 function buildDay(totalMinutes=120){
   const advisor=global.AppLearningAdvisor;
@@ -46,26 +76,56 @@ function buildDay(totalMinutes=120){
   for(const block of blocks){if(session.blocks.length&&session.minutes+block.minutes>SESSION_SLICE){sessions.push(session);session={index:sessions.length,minutes:0,blocks:[]}}session.blocks.push(block);session.minutes+=block.minutes}
   if(session.blocks.length)sessions.push(session);
   currentPlan={budget,used,remaining:Math.max(0,budget-used),blocks,sessions,authority:'learning-advisor-friction-order',scheduleAuthority:'retention-engine',examContext:global.AppExamProximityStrategy?.getContext?.()||null};
-  return currentPlan;
+  applyExecutionState(currentPlan);persistPlanState(currentPlan);return currentPlan;
 }
 
 function ensurePanel(){
   const host=document.getElementById('adaptiveSessionOrchestrator')||document.getElementById('adaptiveAiExperience');if(!host)return null;
   let panel=document.getElementById('dailyAdaptivePlanner');if(panel)return panel;
   panel=document.createElement('section');panel.id='dailyAdaptivePlanner';panel.className='daily-adaptive-planner';
-  panel.innerHTML=`<div class="adaptive-session-head"><span class="dashboard-v2-section-label">Plano do dia</span><span class="adaptive-session-authority">ordem do Learning Advisor · agenda do Retention Engine</span></div><div class="adaptive-session-budget" role="group" aria-label="Tempo de estudo no dia">${DAY_BUDGETS.map(value=>`<button type="button" class="btn btn-secondary btn-sm" data-day-budget="${value}">${value} min</button>`).join('')}</div><div id="dailyAdaptiveSummary" class="adaptive-session-summary">Escolha o tempo disponível hoje.</div><div id="dailyAdaptiveSessions" class="daily-adaptive-sessions"></div>`;
-  host.appendChild(panel);panel.querySelectorAll('[data-day-budget]').forEach(button=>button.addEventListener('click',()=>render(buildDay(Number(button.dataset.dayBudget)))));return panel;
+  panel.innerHTML=`<div class="adaptive-session-head"><span class="dashboard-v2-section-label">Plano do dia</span><span class="adaptive-session-authority">ordem do Learning Advisor · agenda do Retention Engine</span></div><div class="adaptive-session-budget" role="group" aria-label="Tempo de estudo no dia">${DAY_BUDGETS.map(value=>`<button type="button" class="btn btn-secondary btn-sm" data-day-budget="${value}">${value} min</button>`).join('')}</div><div id="dailyAdaptiveSummary" class="adaptive-session-summary">Escolha o tempo disponível hoje.</div><div id="dailyAdaptiveProgress" class="daily-adaptive-progress" role="progressbar" aria-label="Progresso do plano do dia" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div><div id="dailyAdaptiveSessions" class="daily-adaptive-sessions"></div><div id="dailyAdaptiveControls" class="daily-adaptive-controls"><button id="dailyAdaptiveComplete" class="btn btn-success btn-sm" type="button">Concluir bloco atual</button><button id="dailyAdaptiveNext" class="btn btn-secondary btn-sm" type="button">Iniciar próximo</button></div>`;
+  host.appendChild(panel);panel.querySelectorAll('[data-day-budget]').forEach(button=>button.addEventListener('click',()=>render(buildDay(Number(button.dataset.dayBudget)))));panel.querySelector('#dailyAdaptiveComplete')?.addEventListener('click',finishActive);panel.querySelector('#dailyAdaptiveNext')?.addEventListener('click',startNext);return panel;
+}
+
+function startBlock(index){
+  const block=currentPlan?.blocks?.[Number(index)];if(!block||block.completed)return null;
+  const id=blockId(block);const state=readState();activeBlockId=id;writeState({...state,budget:Number(currentPlan.budget)||120,activeBlockId:id});
+  const plan={candidate:block.candidate,intervention:block.intervention,source:'daily-plan'};global.AppAdaptiveAIExperience?.setCurrentPlan?.(plan);
+  const execution=global.AppAdaptiveSessionCompletion?.begin?.({...block,executionOwner:'daily-plan',executionId:id});
+  render(currentPlan);global.dispatchEvent(new CustomEvent('adaptive-day-block-started',{detail:{index:Number(index),topicId:safe(block.candidate?.topicId,600),executionId:id,minutes:block.minutes}}));return execution||plan;
+}
+function startNext(){
+  if(!currentPlan?.blocks?.length)return null;applyExecutionState(currentPlan);
+  let index=currentPlan.blocks.findIndex(block=>block.active&&!block.completed);if(index<0)index=currentPlan.blocks.findIndex(block=>!block.completed);if(index<0)return null;return startBlock(index);
+}
+function completionState(){
+  const execution=global.AppAdaptiveSessionCompletion?.getActiveExecution?.();
+  if(!execution||execution.owner!=='daily-plan')return {eligible:false,elapsedMinutes:0,plannedMinutes:0,ratio:0};
+  const elapsedMinutes=Number(global.AppAdaptivePomodoroBridge?.elapsedMinutes?.()||0);const plannedMinutes=Math.max(MIN_BLOCK_MINUTES,Number(execution.plannedMinutes)||15);const ratio=plannedMinutes?Math.max(0,Math.min(1,elapsedMinutes/plannedMinutes)):0;
+  return {eligible:ratio>=MIN_COMPLETION_RATIO,elapsedMinutes,plannedMinutes,ratio};
+}
+function finishActive(){
+  const state=completionState();if(!state.eligible){global.dispatchEvent(new CustomEvent('adaptive-day-completion-blocked',{detail:{elapsedMinutes:Number(state.elapsedMinutes.toFixed(1)),plannedMinutes:state.plannedMinutes,minRatio:MIN_COMPLETION_RATIO}}));return false}
+  return global.AppAdaptiveSessionCompletion?.finish?.('completed',{elapsedMinutes:state.elapsedMinutes})||false;
+}
+function onExecutionFinished(event){
+  const detail=event?.detail||{};if(detail.owner!=='daily-plan'||detail.status!=='completed'||!currentPlan?.blocks?.length)return;
+  const state=readState();const id=safe(detail.executionId||activeBlockId,700);const completed=new Set(Array.isArray(state.completed)?state.completed:[]);if(id)completed.add(id);activeBlockId='';writeState({...state,budget:Number(currentPlan.budget)||120,completed:[...completed],activeBlockId:''});applyExecutionState(currentPlan);render(currentPlan);global.dispatchEvent(new CustomEvent('adaptive-day-block-completed',{detail:{executionId:id,topicId:safe(detail.topicId,600),completedMinutes:completedMinutes(currentPlan),budget:currentPlan.budget}}));setTimeout(startNext,0);
 }
 
 function render(plan){
-  ensurePanel();const summary=document.getElementById('dailyAdaptiveSummary');const list=document.getElementById('dailyAdaptiveSessions');if(!summary||!list)return plan;
-  if(!plan?.blocks?.length){summary.textContent='Ainda não há dados suficientes para montar o plano do dia.';list.replaceChildren();return plan}
-  const phase=plan.examContext?.phase?` · ${plan.examContext.label}`:'';summary.textContent=`${plan.sessions.length} sessão${plan.sessions.length===1?'':'ões'} · ${plan.used}/${plan.budget} min planejados${phase}`;
-  list.innerHTML=plan.sessions.map(session=>`<article class="daily-adaptive-session"><strong>Sessão ${session.index+1} · ${session.minutes} min</strong>${session.blocks.map(block=>{const part=block.segmentCount>1?` · parte ${block.segmentIndex+1}/${block.segmentCount}`:'';return `<div class="daily-adaptive-block"><span>${block.priorityIndex+1}. ${safe(block.candidate.materia,70)} — ${safe(block.candidate.assunto,110)}${part}</span><span>${block.minutes} min</span></div>`}).join('')}</article>`).join('');
-  global.dispatchEvent(new CustomEvent('adaptive-day-plan-rendered',{detail:{budget:plan.budget,count:plan.blocks.length,sessions:plan.sessions.length,maxSessionMinutes:Math.max(...plan.sessions.map(session=>session.minutes))}}));return plan;
+  ensurePanel();const summary=document.getElementById('dailyAdaptiveSummary');const progress=document.getElementById('dailyAdaptiveProgress');const list=document.getElementById('dailyAdaptiveSessions');if(!summary||!list)return plan;
+  if(!plan?.blocks?.length){summary.textContent='Ainda não há dados suficientes para montar o plano do dia.';list.replaceChildren();if(progress){progress.setAttribute('aria-valuenow','0');progress.querySelector('span').style.width='0%'}return plan}
+  applyExecutionState(plan);persistPlanState(plan);const done=completedMinutes(plan);const pct=plan.used?Math.round(done/plan.used*100):0;const phase=plan.examContext?.phase?` · ${plan.examContext.label}`:'';summary.textContent=`${done}/${plan.used} min concluídos · ${remainingMinutes(plan)} min restantes${phase}`;
+  if(progress){progress.setAttribute('aria-valuenow',String(pct));const fill=progress.querySelector('span');if(fill)fill.style.width=`${pct}%`}
+  list.innerHTML=plan.sessions.map(session=>`<article class="daily-adaptive-session"><strong>Sessão ${session.index+1} · ${session.minutes} min</strong>${session.blocks.map(block=>{const index=plan.blocks.indexOf(block);const part=block.segmentCount>1?` · parte ${block.segmentIndex+1}/${block.segmentCount}`:'';const state=block.completed?'Concluído':block.active?'Em andamento':'Iniciar';return `<button type="button" class="daily-adaptive-block${block.completed?' is-completed':''}${block.active?' is-active':''}" data-day-block-index="${index}" ${block.completed?'disabled':''}><span>${block.priorityIndex+1}. ${safe(block.candidate.materia,70)} — ${safe(block.candidate.assunto,110)}${part}</span><span>${block.minutes} min · ${state}</span></button>`}).join('')}</article>`).join('');
+  list.querySelectorAll('[data-day-block-index]').forEach(button=>button.addEventListener('click',()=>startBlock(Number(button.dataset.dayBlockIndex))));
+  const complete=document.getElementById('dailyAdaptiveComplete');if(complete){const execution=global.AppAdaptiveSessionCompletion?.getActiveExecution?.();complete.disabled=!activeBlockId||execution?.owner!=='daily-plan';complete.title='A conclusão exige pelo menos 70% da duração planejada registrada pelo Pomodoro.'}
+  const next=document.getElementById('dailyAdaptiveNext');if(next)next.disabled=!plan.blocks.some(block=>!block.completed)||Boolean(activeBlockId);
+  global.dispatchEvent(new CustomEvent('adaptive-day-plan-rendered',{detail:{budget:plan.budget,count:plan.blocks.length,sessions:plan.sessions.length,maxSessionMinutes:Math.max(...plan.sessions.map(session=>session.minutes)),completedMinutes:done,remainingMinutes:remainingMinutes(plan)}}));return plan;
 }
 
-function init(){ensurePanel();ensureExamStrategy();ensureCandidateProvider();global.addEventListener('adaptive-exam-date-changed',()=>{if(currentPlan)render(buildDay(currentPlan.budget))})}
+function init(){ensurePanel();ensureExamStrategy();ensureCandidateProvider();ensureCompletion();global.addEventListener('adaptive-exam-date-changed',()=>{if(currentPlan)render(buildDay(currentPlan.budget))});global.addEventListener('adaptive-session-execution-finished',onExecutionFinished)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-global.AppDailyAdaptivePlanner=Object.freeze({buildDay,render,rankedCandidates,splitDuration,getCurrentPlan:()=>currentPlan,SESSION_SLICE,MIN_BLOCK_MINUTES});
+global.AppDailyAdaptivePlanner=Object.freeze({buildDay,render,rankedCandidates,splitDuration,startBlock,startNext,finishActive,completionState,getCurrentPlan:()=>currentPlan,SESSION_SLICE,MIN_BLOCK_MINUTES,MIN_COMPLETION_RATIO});
 })(window);
