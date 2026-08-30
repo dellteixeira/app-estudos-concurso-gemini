@@ -2,9 +2,21 @@
 'use strict';
 if(global.AppAdaptiveConfidence)return;
 
+const EVIDENCE_WINDOW_DAYS=30;
+const DAY_MS=24*60*60*1000;
+
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
 function safe(value,max=180){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
 function finite(value){return Number.isFinite(Number(value))}
+function timestamp(value){const parsed=Date.parse(value);return Number.isFinite(parsed)?parsed:null}
+function withinEvidenceWindow(item,now=Date.now()){
+  const at=timestamp(item?.at);
+  return at!==null&&at>=now-(EVIDENCE_WINDOW_DAYS*DAY_MS)&&at<=now;
+}
+function evidenceAgeDays(items,now=Date.now()){
+  const latest=items.reduce((max,item)=>Math.max(max,timestamp(item?.at)??-Infinity),-Infinity);
+  return Number.isFinite(latest)?Math.max(0,Math.floor((now-latest)/DAY_MS)):null;
+}
 
 function score(plan){
   if(!plan?.candidate||!plan?.intervention)return null;
@@ -23,18 +35,24 @@ function score(plan){
   const notebook=global.AppIntelligentErrorNotebook?.getTopicEntries?.(candidate.topicId)||[];
   add(8,notebook.length>0,'caderno de erros');
   const timeline=global.AppStudyEvidenceTimeline?.getEntries?.(candidate.topicId)||[];
-  const completedExecutions=timeline.filter(item=>item?.type==='execution_finished'&&item?.status==='completed');
-  const attributedFeedback=timeline.filter(item=>item?.type==='feedback'&&Number.isFinite(Number(item?.score)));
-  add(10,completedExecutions.length>=1,'execução concluída registrada');
-  add(10,attributedFeedback.length>=1,'feedback atribuído');
+  const now=Date.now();
+  const recentTimeline=timeline.filter(item=>withinEvidenceWindow(item,now));
+  const recentCompletedExecutions=recentTimeline.filter(item=>item?.type==='execution_finished'&&item?.status==='completed');
+  const recentAttributedFeedback=recentTimeline.filter(item=>item?.type==='feedback'&&Number.isFinite(Number(item?.score)));
+  const recentBehavioralEvidence=[...recentCompletedExecutions,...recentAttributedFeedback];
+  add(10,recentCompletedExecutions.length>=1,'execução concluída recente');
+  add(10,recentAttributedFeedback.length>=1,'feedback atribuído recente');
 
   if(finite(metrics.retention)&&finite(metrics.accuracy)&&Math.abs(Number(metrics.retention)-Number(metrics.accuracy))>=30){
     earned-=8;uncertainty.push('retenção e acurácia divergem');
   }
   if(Number(metrics.reviewCount)<2)uncertainty.push('poucas revisões observadas');
   if(Number(metrics.sessionCount)<2)uncertainty.push('poucas sessões observadas');
-  if(!attributedFeedback.length)uncertainty.push('sem feedback atribuído');
-  if(!completedExecutions.length)uncertainty.push('sem execução concluída registrada');
+  if(!recentBehavioralEvidence.length)uncertainty.push(`sem evidência comportamental recente (${EVIDENCE_WINDOW_DAYS} dias)`);
+  else{
+    if(!recentAttributedFeedback.length)uncertainty.push('sem feedback atribuído recente');
+    if(!recentCompletedExecutions.length)uncertainty.push('sem execução concluída recente');
+  }
 
   const confidence=clamp(Math.round((Math.max(0,earned)/Math.max(1,possible))*100),0,100);
   const level=confidence>=75?'high':confidence>=50?'medium':'low';
@@ -45,8 +63,10 @@ function score(plan){
     signals:signals.slice(0,6),
     uncertaintyReasons:uncertainty.slice(0,4),
     evidenceCount:signals.length,
-    completedExecutions:completedExecutions.length,
-    attributedFeedback:attributedFeedback.length,
+    recentCompletedExecutions:recentCompletedExecutions.length,
+    recentAttributedFeedback:recentAttributedFeedback.length,
+    evidenceWindowDays:EVIDENCE_WINDOW_DAYS,
+    evidenceAgeDays:evidenceAgeDays(recentBehavioralEvidence,now),
     authority:'confidence-only'
   };
 }
@@ -69,7 +89,7 @@ function render(plan){
   return result;
 }
 
-global.AppAdaptiveConfidence=Object.freeze({score,render,label});
+global.AppAdaptiveConfidence=Object.freeze({score,render,label,EVIDENCE_WINDOW_DAYS});
 const activePlan=global.AppAdaptiveAIExperience?.getCurrentPlan?.();
 if(activePlan)setTimeout(()=>render(activePlan),0);
 })(window);
