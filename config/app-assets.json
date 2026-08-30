@@ -82,6 +82,8 @@
     "/js/adaptive-confidence.js",
     "/js/adaptive-pomodoro-bridge.js",
     "/js/learning-advisor-headless.js",
+    "/js/progress-forecast.js",
+    "/js/adaptive-weekly-review.js",
     "/js/pdf/pdf-core.js",
     "/js/pdf/pdf-workspaces.js",
     "/js/pdf/pdf-links.js",
