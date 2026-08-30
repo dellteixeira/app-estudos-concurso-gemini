@@ -10,6 +10,10 @@ function safe(value,max=180){return String(value??'').replace(/[\u0000-\u001F\u0
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
 function read(){try{const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');return value&&typeof value==='object'?value:{}}catch(_){return{}}}
 function write(value){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(value));return true}catch(_){return false}}
+function ensureErrorNotebook(){
+  if(global.AppIntelligentErrorNotebook||document.querySelector('script[data-intelligent-error-notebook]'))return;
+  const script=document.createElement('script');script.src='./js/intelligent-error-notebook.js?v=20260830';script.defer=true;script.dataset.intelligentErrorNotebook='1';script.onerror=()=>console.warn('Não foi possível carregar o caderno inteligente de erros.');document.head.appendChild(script);
+}
 function inferType(detail={}){
   const explicit=safe(detail.errorType,40);
   if(ERROR_TYPES.has(explicit))return explicit;
@@ -46,7 +50,7 @@ function getTopicProfile(topicId){
   return {topicId:safe(topicId,600),count:rows.length,counts,dominantType:dominant[1]?dominant[0]:null,authority:'diagnostic-only'};
 }
 function onResult(event){record(event?.detail||{})}
-function init(){global.addEventListener('adaptive-question-result',onResult)}
+function init(){ensureErrorNotebook();global.addEventListener('adaptive-question-result',onResult)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 global.AppQuestionPerformanceIntelligence=Object.freeze({record,inferType,getHistory,getTopicProfile,ERROR_TYPES:[...ERROR_TYPES]});
 })(window);
