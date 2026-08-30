@@ -6,7 +6,6 @@ const PRESETS=[60,120,180];
 const MIN_ATTEMPTS=2;
 const LOOKBACK_DAYS=7;
 let installed=false;
-let lastRequestedBudget=0;
 let lastDecision=null;
 
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
@@ -53,7 +52,8 @@ function evaluate(requestedBudget){
   const low=evidence.completionRate<75||evidence.averageCompletionRatio<.75||evidence.executionAdherence<75||evidence.interruptions>=2;
   const severe=evidence.completionRate<50||evidence.averageCompletionRatio<.55||evidence.executionAdherence<55||interruptionRate>=.5;
   const index=PRESETS.indexOf(requested);const effective=low&&index>0?PRESETS[index-1]:requested;
-  return Object.freeze({requestedBudget:requested,effectiveBudget:effective,adjusted:effective<requested,reason:effective<requested?(severe?'low-adherence':'moderate-adherence'):'adherence-sustained',evidence,authority:'execution-load-cap-only'});
+  const reason=effective<requested?(severe?'low-adherence':'moderate-adherence'):(low&&index===0?'minimum-load-floor':'adherence-sustained');
+  return Object.freeze({requestedBudget:requested,effectiveBudget:effective,adjusted:effective<requested,reason,evidence,authority:'execution-load-cap-only'});
 }
 
 function ensureNote(){
@@ -67,13 +67,14 @@ function renderDecision(decision=lastDecision){
   if(evidence.attempts<MIN_ATTEMPTS){note.textContent=`Carga mantida em ${decision.effectiveBudget} min: o último dia estudado tem apenas ${evidence.attempts} execução${evidence.attempts===1?'':'ões'}; são necessárias ${MIN_ATTEMPTS} para adaptação automática.`;return decision}
   const basis=`${evidence.completionRate}% de conclusões · ${Math.round(evidence.averageCompletionRatio*100)}% de execução média · ${evidence.interruptions} interrupção${evidence.interruptions===1?'':'ões'}`;
   if(decision.adjusted)note.innerHTML=`<strong>Carga adaptada: ${decision.requestedBudget} → ${decision.effectiveBudget} min.</strong> Evidência do último dia estudado: ${basis}. O tempo escolhido continua sendo o teto; a agenda do Retention Engine não foi alterada.`;
+  else if(decision.reason==='minimum-load-floor')note.innerHTML=`<strong>Carga mantida no piso de ${decision.effectiveBudget} min.</strong> A evidência anterior recomenda cautela (${basis}), mas o app não reduz abaixo do mínimo diário.`;
   else note.innerHTML=`<strong>Carga mantida em ${decision.effectiveBudget} min.</strong> Evidência do último dia estudado: ${basis}.`;
   return decision;
 }
 
 function applyRequestedBudget(requestedBudget){
   const planner=global.AppDailyAdaptivePlanner;if(!planner?.buildDay||!planner?.render)return null;
-  const decision=evaluate(requestedBudget);lastRequestedBudget=decision.requestedBudget;lastDecision=decision;
+  const decision=evaluate(requestedBudget);lastDecision=decision;
   const plan=planner.buildDay(decision.effectiveBudget);if(!plan)return null;
   plan.requestedBudget=decision.requestedBudget;plan.workloadAdjustment=decision;planner.render(plan);renderDecision(decision);
   global.dispatchEvent(new CustomEvent('adaptive-day-workload-adjusted',{detail:{requestedBudget:decision.requestedBudget,effectiveBudget:decision.effectiveBudget,adjusted:decision.adjusted,reason:decision.reason,evidenceDay:decision.evidence?.day||'',authority:decision.authority}}));
