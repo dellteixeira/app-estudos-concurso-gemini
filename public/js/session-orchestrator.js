@@ -47,7 +47,7 @@ function buildQueue(minutes=DEFAULT_BUDGET){
     used+=allocated;
     if(used>=budget)break;
   }
-  currentSession={budget,used,remaining:Math.max(0,budget-used),blocks,authority:'retention-engine-order'};
+  currentSession={budget,used,remaining:Math.max(0,budget-used),blocks,authority:'learning-advisor-friction-order',scheduleAuthority:'retention-engine'};
   return currentSession;
 }
 
@@ -62,7 +62,7 @@ function ensurePanel(){
   panel.innerHTML=`
     <div class="adaptive-session-head">
       <span class="dashboard-v2-section-label">Sessão adaptativa</span>
-      <span class="adaptive-session-authority">ordem do Retention Engine</span>
+      <span class="adaptive-session-authority">ordem do Learning Advisor · agenda do Retention Engine</span>
     </div>
     <div class="adaptive-session-budget" role="group" aria-label="Tempo disponível">
       ${BUDGETS.map(value=>`<button type="button" class="btn btn-secondary btn-sm" data-session-budget="${value}">${value} min</button>`).join('')}
@@ -103,7 +103,7 @@ function render(session){
 function promote(index=0){
   const block=currentSession?.blocks?.[index];
   if(!block)return null;
-  const plan={candidate:block.candidate,intervention:block.intervention,source:'retention-engine'};
+  const plan={candidate:block.candidate,intervention:block.intervention,source:'learning-advisor'};
   global.AppAdaptiveAIExperience?.setCurrentPlan?.(plan);
   global.dispatchEvent(new CustomEvent('adaptive-session-promoted',{detail:{index,topicId:safe(block.candidate?.topicId,600)}}));
   return plan;
