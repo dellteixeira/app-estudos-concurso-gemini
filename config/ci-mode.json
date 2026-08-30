@@ -1,0 +1,6 @@
+{
+  "mode": "degraded",
+  "reason": "github_hosted_runners_unavailable",
+  "updatedAt": "2026-08-30T14:22:00Z",
+  "productionDeployAllowed": false
+}
