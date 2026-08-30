@@ -5,11 +5,12 @@ const fs=require('node:fs');
 const planner=fs.readFileSync('public/js/daily-adaptive-planner.js','utf8');
 const orchestrator=fs.readFileSync('public/js/session-orchestrator.js','utf8');
 
-test('planejador diário preserva a ordem do Retention Engine',()=>{
+test('planejador diário preserva a ordem do Learning Advisor',()=>{
   assert.match(planner,/collectCandidates\?\.\(12\)/);
   assert.doesNotMatch(planner,/\.sort\s*\(/);
   assert.match(planner,/priorityIndex:blocks\.length/);
-  assert.match(planner,/authority:'retention-engine-order'/);
+  assert.match(planner,/authority:'learning-advisor-friction-order'/);
+  assert.match(planner,/scheduleAuthority:'retention-engine'/);
 });
 
 test('planejador diário apenas empacota blocos dentro do orçamento',()=>{
