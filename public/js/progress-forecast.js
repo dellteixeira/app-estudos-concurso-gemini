@@ -8,10 +8,16 @@ function average(values){const rows=values.filter(Number.isFinite);return rows.l
 function pct(value){return Number.isFinite(value)?`${Math.round(clamp(value,0,100))}%`:'—'}
 function trajectoryLabel(value){return value==='improving'?'Trajetória em melhora':value==='declining'?'Trajetória exige atenção':value==='stable'?'Trajetória estável':'Dados insuficientes'}
 function confidenceLabel(value){return value==='high'?'alta':value==='medium'?'moderada':'baixa'}
+function diagnosticCandidates(){
+  const provider=global.AppDiagnosticCandidateProvider;
+  const broad=provider?.collect?.(40)||[];
+  if(broad.length)return broad;
+  const advisor=global.AppLearningAdvisor;
+  return advisor?.collectCandidates?.(12)||[];
+}
 
 function build(){
-  const advisor=global.AppLearningAdvisor;
-  const candidates=advisor?.collectCandidates?.(12)||[];
+  const candidates=diagnosticCandidates();
   const timeline=global.AppStudyEvidenceTimeline?.getEntries?.()||[];
   const feedback=timeline.filter(item=>item?.type==='feedback'&&Number.isFinite(Number(item.score))).slice(-MAX_FEEDBACK);
   const executions=timeline.filter(item=>item?.type==='execution_finished'&&item?.status==='completed');
@@ -45,6 +51,7 @@ function build(){
     examPhase:exam?.label||'',
     dailyBudget:Number(daily?.budget)||null,
     authority:'forecast-only',
+    diagnosticCoverage:global.AppDiagnosticCandidateProvider?'broad':'advisor-fallback',
     disclaimer:'Projeção de trajetória baseada em evidências observadas; não estima chance de aprovação.'
   };
 }
@@ -69,7 +76,7 @@ function render(){
   global.dispatchEvent(new CustomEvent('adaptive-progress-forecast-updated',{detail:{trajectory:result.trajectory,confidence:result.confidence,criticalTopics:result.criticalTopics}}));
   return result;
 }
-function init(){ensurePanel();render();['study-evidence-timeline-changed','intelligent-error-notebook-changed','adaptive-exam-date-changed','adaptive-day-plan-rendered'].forEach(name=>global.addEventListener(name,render));}
+function init(){ensurePanel();render();['study-evidence-timeline-changed','intelligent-error-notebook-changed','adaptive-exam-date-changed','adaptive-day-plan-rendered','diagnostic-candidate-provider-ready'].forEach(name=>global.addEventListener(name,render));}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 global.AppProgressForecast=Object.freeze({build,render});
 })(window);
