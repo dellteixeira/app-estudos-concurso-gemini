@@ -11,6 +11,15 @@ function safe(value,max=600){return String(value??'').replace(/[\u0000-\u001F\u0
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
 function read(){try{const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');return value&&typeof value==='object'?value:{}}catch(_){return{}}}
 function write(value){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(value));return true}catch(_){return false}}
+function ensurePomodoroBridge(){
+  if(global.AppAdaptivePomodoroBridge||document.querySelector('script[data-adaptive-pomodoro-bridge]'))return;
+  const script=document.createElement('script');
+  script.src='./js/adaptive-pomodoro-bridge.js?v=20260830';
+  script.defer=true;
+  script.dataset.adaptivePomodoroBridge='1';
+  script.onerror=()=>console.warn('Não foi possível conectar o Pomodoro à execução adaptativa.');
+  document.head.appendChild(script);
+}
 function currentBlock(){
   const session=global.AppSessionOrchestrator?.getCurrentSession?.();
   if(!session?.blocks?.length)return null;
@@ -62,6 +71,7 @@ function onExternalExecution(event){
 }
 function getHistory(){return Array.isArray(read().history)?read().history:[]}
 function init(){
+  ensurePomodoroBridge();
   global.addEventListener('adaptive-session-promoted',onPromoted);
   global.addEventListener('adaptive-study-execution',onExternalExecution);
 }
