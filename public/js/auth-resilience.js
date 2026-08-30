@@ -4,11 +4,13 @@ if(global.AppAuthResilience)return;
 
 const LOGIN_SELECTOR='[data-action="auth-login"]';
 const STATUS_ID='authStatusMessage';
-const RELOAD_GUARD='auth_resilience_reload_guard';
 let busy=false;
 
 function getClient(){
   try{return typeof supabaseClient!=='undefined'?supabaseClient:null}catch(_){return null}
+}
+function getLegacyLogin(){
+  try{return typeof handleLogin==='function'?handleLogin:null}catch(_){return null}
 }
 function setStatus(message,type='info'){
   const el=document.getElementById(STATUS_ID);if(!el)return;
@@ -46,14 +48,16 @@ async function login(){
   const email=String(document.getElementById('email')?.value||'').trim();
   const password=String(document.getElementById('password')?.value||'');
   if(!email||!password){setStatus('Informe e-mail e senha.','error');return false}
-  setBusy(true);setStatus('Validando sua conta…','loading');
+  const legacyLogin=getLegacyLogin();
+  if(!legacyLogin){setStatus('O inicializador do aplicativo ainda não está disponível. Atualize a página e tente novamente.','error');return false}
+  setBusy(true);setStatus('Preparando uma sessão limpa…','loading');
   try{
     await clearLocalSession(client);
-    const {data,error}=await client.auth.signInWithPassword({email,password});
-    if(error)throw error;
-    if(!data?.session||!data?.user)throw new Error('Sessão não foi criada pelo servidor.');
-    sessionStorage.removeItem(RELOAD_GUARD);cleanAuthUrl();setStatus('Login confirmado. Abrindo o painel…','success');
-    setTimeout(()=>global.location.reload(),80);return true;
+    cleanAuthUrl();
+    setStatus('Validando sua conta…','loading');
+    const result=legacyLogin();
+    if(result&&typeof result.then==='function')await result;
+    return true;
   }catch(error){
     setStatus(authErrorMessage(error),'error');return false;
   }finally{setBusy(false)}
@@ -92,12 +96,6 @@ async function boot(){
   const session=await inspectStoredSession();
   if(session){
     global.dispatchEvent(new CustomEvent('auth-resilience-session-valid',{detail:{userId:session.user?.id||'',authority:'supabase-session'}}));
-    const auth=document.getElementById('auth-screen');
-    if(auth&&getComputedStyle(auth).display!=='none'&&!sessionStorage.getItem(RELOAD_GUARD)){
-      sessionStorage.setItem(RELOAD_GUARD,'1');
-      try{await getClient().auth.refreshSession()}catch(_){}
-      setTimeout(()=>{if(getComputedStyle(auth).display!=='none')global.location.reload()},350);
-    }else if(!auth||getComputedStyle(auth).display==='none')sessionStorage.removeItem(RELOAD_GUARD);
   }
 }
 
