@@ -158,8 +158,8 @@
       idle(async () => {
         try {
           resolve(await task());
-        } catch (error) {
-          console.warn('[performance] tarefa ociosa falhou:', error);
+        } catch (_error) {
+          console.warn('[performance] tarefa ociosa indisponível');
           resolve(null);
         }
       }, timeout);
@@ -169,8 +169,8 @@
   function ensurePerformanceMetrics() {
     if (global.AppPerformanceMetrics) return Promise.resolve(global.AppPerformanceMetrics);
     return loadScript('./js/performance-metrics.js', { dataset: { performanceMetrics: '1' } })
-      .catch(error => {
-        console.warn('[performance] métricas indisponíveis:', error);
+      .catch(() => {
+        console.warn('[performance] métricas indisponíveis');
         return null;
       });
   }
@@ -188,18 +188,10 @@
       scheduleIdleTask(() => loadBundle('pdf'), 1200);
     };
 
-    const warmAi = () => scheduleIdleTask(() => loadBundle('ai'), 1500);
-
     document.querySelectorAll('[onclick*="tab-biblioteca"], [data-tab="tab-biblioteca"], [onclick*="openModalViewEdital"]').forEach(el => {
       el.addEventListener('pointerenter', warmPdf, { once: true, passive: true });
       el.addEventListener('touchstart', warmPdf, { once: true, passive: true });
       el.addEventListener('focus', warmPdf, { once: true });
-    });
-
-    document.querySelectorAll('[data-tab="tab-flashcards"], [data-inline-click="ih-004"], [data-call*="AI"], [data-call*="Ai"]').forEach(el => {
-      el.addEventListener('pointerenter', warmAi, { once: true, passive: true });
-      el.addEventListener('touchstart', warmAi, { once: true, passive: true });
-      el.addEventListener('focus', warmAi, { once: true });
     });
   }
 
