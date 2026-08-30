@@ -5,6 +5,8 @@ if(global.AppQuestionPerformanceIntelligence)return;
 const STORAGE_KEY='question_performance_intelligence_v1';
 const HISTORY_LIMIT=80;
 const ERROR_TYPES=new Set(['knowledge','application','interpretation','distraction','recurrence']);
+let coreContext=null;
+let coreBridgeInstalled=false;
 
 function safe(value,max=180){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
@@ -49,8 +51,49 @@ function getTopicProfile(topicId){
   const dominant=Object.entries(counts).reduce((best,current)=>current[1]>best[1]?current:best,['',0]);
   return {topicId:safe(topicId,600),count:rows.length,counts,dominantType:dominant[1]?dominant[0]:null,authority:'diagnostic-only'};
 }
+function topicIdFromContext(options={}){
+  const materia=safe(options.materia,180);const assunto=safe(options.assunto,300);
+  if(!materia||!assunto)return '';
+  try{if(typeof global.getStudyTopicKey==='function')return safe(global.getStudyTopicKey(materia,assunto),600)}catch(_){}
+  return safe(`${materia}::${assunto}`,600);
+}
+function installCoreBridge(){
+  if(coreBridgeInstalled)return true;
+  const openOriginal=global.openQuestionPerformanceModal;
+  const submitOriginal=global.submitQuestionPerformance;
+  const closeOriginal=global.closeQuestionPerformanceModal;
+  if(typeof openOriginal!=='function'||typeof submitOriginal!=='function')return false;
+  global.openQuestionPerformanceModal=function(options={}){
+    coreContext={topicId:topicIdFromContext(options)};
+    return openOriginal.apply(this,arguments);
+  };
+  global.closeQuestionPerformanceModal=function(){
+    coreContext=null;
+    return typeof closeOriginal==='function'?closeOriginal.apply(this,arguments):undefined;
+  };
+  global.submitQuestionPerformance=async function(){
+    const total=Number(document.getElementById('questionPerformanceTotal')?.value);
+    const correct=Number(document.getElementById('questionPerformanceCorrect')?.value);
+    const context=coreContext?{...coreContext}:null;
+    const result=await submitOriginal.apply(this,arguments);
+    const modal=document.getElementById('modalQuestionPerformance');
+    const completed=Boolean(context?.topicId)&&Number.isFinite(total)&&total>=1&&Number.isFinite(correct)&&correct>=0&&correct<=total&&modal?.hidden===true;
+    if(completed){
+      global.dispatchEvent(new CustomEvent('adaptive-question-result',{detail:{topicId:context.topicId,correct:correct===total,errorCount:Math.max(0,Math.round(total-correct)),total:Math.round(total),accuracy:Math.round((correct/total)*100),source:'core-question-performance'}}));
+      coreContext=null;
+    }
+    return result;
+  };
+  coreBridgeInstalled=true;
+  return true;
+}
+function scheduleCoreBridge(){
+  if(installCoreBridge())return;
+  let attempts=0;
+  const timer=setInterval(()=>{attempts+=1;if(installCoreBridge()||attempts>=40)clearInterval(timer)},100);
+}
 function onResult(event){record(event?.detail||{})}
-function init(){ensureErrorNotebook();global.addEventListener('adaptive-question-result',onResult)}
+function init(){ensureErrorNotebook();global.addEventListener('adaptive-question-result',onResult);scheduleCoreBridge()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-global.AppQuestionPerformanceIntelligence=Object.freeze({record,inferType,getHistory,getTopicProfile,ERROR_TYPES:[...ERROR_TYPES]});
+global.AppQuestionPerformanceIntelligence=Object.freeze({record,inferType,getHistory,getTopicProfile,installCoreBridge,ERROR_TYPES:[...ERROR_TYPES]});
 })(window);
