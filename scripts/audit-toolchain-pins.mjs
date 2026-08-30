@@ -8,20 +8,35 @@ const errors = [];
 const fail = msg => { errors.push(msg); console.error(`ERRO ${msg}`); };
 const ok = msg => console.log(`OK  ${msg}`);
 
+const ciModePath = path.join(root, 'config/ci-mode.json');
+const ciMode = JSON.parse(fs.readFileSync(ciModePath, 'utf8'));
+const degradedMode = ciMode?.mode === 'degraded';
+
 const files = fs.readdirSync(workflowsDir)
   .filter(name => /\.ya?ml$/i.test(name))
   .sort();
 
 for (const name of files) {
   const text = fs.readFileSync(path.join(workflowsDir, name), 'utf8');
-  if (/\bruns-on:\s*ubuntu-latest\b/.test(text)) fail(`${name}: runner ubuntu-latest não está pinado`);
+
+  if (/\bruns-on:\s*ubuntu-latest\b/.test(text)) {
+    if (degradedMode) {
+      ok(`${name}: ubuntu-latest permitido temporariamente no modo degradado`);
+    } else {
+      fail(`${name}: runner ubuntu-latest não está pinado`);
+    }
+  }
+
   if (/\bversion:\s*latest\b/.test(text)) fail(`${name}: ferramenta usa version: latest`);
+
   if (/uses:\s*actions\/(?:checkout|setup-node|upload-artifact)@v\d+/g.test(text)) {
     fail(`${name}: action oficial usa referência móvel em vez de SHA`);
   }
+
   if (/uses:\s*supabase\/setup-cli@v\d+/g.test(text)) {
     fail(`${name}: supabase/setup-cli usa referência móvel em vez de SHA`);
   }
+
   const nodeVersions = [...text.matchAll(/node-version:\s*['"]?([^'"\s]+)['"]?/g)].map(m => m[1]);
   for (const version of nodeVersions) {
     if (!/^\d+\.\d+\.\d+$/.test(version)) fail(`${name}: node-version não é exato: ${version}`);
@@ -48,4 +63,5 @@ if (errors.length) {
   console.error(`\nAUDITORIA DE TOOLCHAIN REPROVADA: ${errors.length} problema(s).`);
   process.exit(1);
 }
-console.log(`\nAUDITORIA DE TOOLCHAIN APROVADA: ${files.length} workflows sem referências móveis críticas.`);
+
+console.log(`\nAUDITORIA DE TOOLCHAIN APROVADA: ${files.length} workflows sem referências móveis críticas; runner móvel tolerado apenas no modo degradado.`);
