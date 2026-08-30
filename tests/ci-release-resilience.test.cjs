@@ -9,14 +9,12 @@ const history=fs.readFileSync('.github/workflows/security-history-audit.yml','ut
 const deploy=fs.readFileSync('.github/workflows/cloudflare-production-deploy.yml','utf8');
 const retry=fs.readFileSync('scripts/ci-retry.mjs','utf8');
 
-test('gates diversificam pools e não fixam ubuntu-24.04',()=>{
+test('workflows não fixam o runner ubuntu-24.04',()=>{
   for(const source of [quality,android,secrets,history,deploy])assert.doesNotMatch(source,/runs-on: ubuntu-24\.04/);
-  assert.match(quality,/runs-on: macos-latest/);
   assert.match(quality,/runs-on: ubuntu-latest/);
   assert.match(android,/runs-on: ubuntu-latest/);
-  assert.match(secrets,/runs-on: macos-latest/);
-  assert.match(history,/runs-on: macos-latest/);
-  assert.match(deploy,/runs-on: macos-latest/);
+  assert.match(secrets,/runs-on: ubuntu-latest/);
+  assert.match(history,/runs-on: ubuntu-latest/);
 });
 
 test('retentativas são restritas a dependências e builds transitórios',()=>{
@@ -26,6 +24,26 @@ test('retentativas são restritas a dependências e builds transitórios',()=>{
   assert.match(android,/ci-retry\.mjs[^\n]*gradlew/);
   assert.doesNotMatch(quality,/ci-retry\.mjs[^\n]*npm test/);
   assert.doesNotMatch(quality,/ci-retry\.mjs[^\n]*npm run audit/);
+});
+
+test('PR visual usa Chromium e main mantém cobertura completa',()=>{
+  assert.match(quality,/full_browser=false/);
+  assert.match(quality,/full_browser=true/);
+  assert.match(quality,/--project=chromium/);
+  assert.match(quality,/install chromium firefox webkit/);
+});
+
+test('audit completo de histórico não consome minutos em todo PR',()=>{
+  assert.doesNotMatch(history,/pull_request:/);
+  assert.match(history,/workflow_dispatch:/);
+  assert.match(history,/cron:/);
+  assert.match(secrets,/pull_request:/);
+});
+
+test('Android não gera APK para mudanças web genéricas',()=>{
+  assert.doesNotMatch(android,/public\/\*\|public\/\*\*\/\*/);
+  assert.match(android,/public\/capacitor-runtime\.js/);
+  assert.match(android,/if: needs\.changes\.outputs\.android == 'true'/);
 });
 
 test('produção só segue automaticamente após Quality Check bem-sucedido',()=>{
