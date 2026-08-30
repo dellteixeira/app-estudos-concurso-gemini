@@ -27,6 +27,9 @@
       ])
     }),
     ai: Object.freeze({
+      styles: Object.freeze([
+        './css/learning-advisor.css'
+      ]),
       scripts: Object.freeze([
         './js/app-ai.js',
         './js/learning-advisor.js',
