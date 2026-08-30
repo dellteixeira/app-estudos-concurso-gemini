@@ -7,6 +7,7 @@ const read=file=>fs.readFileSync(file,'utf8');
 
 const client=read('public/js/learning-advisor.js');
 const css=read('public/css/learning-advisor.css');
+const retentionCss=read('public/css/components/retention.css');
 const server=read('src/learning-diagnosis.js');
 const wrapper=read('src/worker.js');
 const wrangler=read('wrangler.jsonc');
@@ -31,14 +32,28 @@ test('motor local calcula dificuldade persistente e limita triagem antes da IA',
   assert.doesNotMatch(client,/>Fricção \$\{candidate\.frictionScore\}</);
 });
 
-test('IA passa a ser contextual de Assuntos em risco, sem faixa permanente no dashboard',()=>{
+test('IA auxiliar fica visível em faixa horizontal dentro de Retenção e Diagnóstico',()=>{
+  assert.match(client,/learningAdvisorInlineBar/);
+  assert.match(client,/learning-advisor-inline-bar/);
+  assert.match(client,/IA AUXILIAR/);
+  assert.match(client,/Intervenções para dificuldades persistentes/);
+  assert.match(client,/panel\.querySelector\('\.retention-diagnostic-head'\)/);
+  assert.match(client,/panel\.insertBefore\(bar,head\.nextSibling\)/);
+  assert.match(client,/Analisar com IA/);
+  assert.match(client,/Ver assuntos em risco/);
+  assert.match(client,/entryPoint:'retention-inline-bar'/);
+  assert.match(client,/secondaryEntryPoint:'risk-details'/);
+  assert.match(retentionCss,/#retentionDiagnosticPanel \.learning-advisor-inline-bar/);
+  assert.match(retentionCss,/grid-column: 1 \/ -1/);
+  assert.match(retentionCss,/width: 100%/);
+  assert.match(retentionCss,/grid-template-columns: minmax\(0, 1fr\) auto/);
+});
+
+test('métrica de risco continua abrindo a visão contextual detalhada',()=>{
   assert.match(client,/\[data-action="retention-details"\]\[data-metric="risk"\]/);
   assert.match(client,/openRiskView/);
   assert.match(client,/Assuntos em risco/);
-  assert.match(client,/Intervenções para dificuldades persistentes/);
   assert.match(client,/document\.getElementById\('learningAdvisorPanel'\)\?\.remove\(\)/);
-  assert.doesNotMatch(client,/parent\.appendChild\(section\)/);
-  assert.match(client,/entryPoint:'risk-details'/);
 });
 
 test('janela de risco diferencia revisão agendada vencida de necessidade cognitiva',()=>{
@@ -55,6 +70,7 @@ test('IA é explicitamente auxiliar e não agenda automaticamente',()=>{
   assert.match(server,/autoSchedule:false/);
   assert.match(server,/NÃO controla o cronograma/);
   assert.match(client,/motor de Retenção/);
+  assert.match(client,/sem alterar o cronograma/);
   assert.match(client,/data-learning-action="local-intervention"/);
   assert.match(client,/openLocalIntervention\(Number\(button\.dataset\.rowIndex\),intervention\)/);
   assert.doesNotMatch(client,/gerarCronogramaInteligente\(/);
@@ -73,6 +89,15 @@ test('modal contextual é responsivo e preserva contrato global de texto',()=>{
   assert.match(css,/#app-dashboard :where\(/);
   assert.match(css,/white-space:normal/);
   assert.match(css,/word-break:normal/);
+});
+
+test('faixa inline pertence ao CSS canônico de Retenção e responde no mobile',()=>{
+  assert.match(retentionCss,/Retention & Diagnostic — canonical component ownership/);
+  assert.match(retentionCss,/IA Auxiliar — faixa contextual dentro de Retenção e Diagnóstico/);
+  assert.match(retentionCss,/#retentionDiagnosticPanel \.learning-advisor-inline-copy/);
+  assert.match(retentionCss,/#retentionDiagnosticPanel \.learning-advisor-inline-state/);
+  assert.match(retentionCss,/@media \(max-width: 700px\)[\s\S]*learning-advisor-inline-bar/);
+  assert.match(retentionCss,/grid-template-columns: 1fr 1fr/);
 });
 
 test('endpoint usa Gemini com autenticação, rate limit, schema fechado e fallback local',()=>{
