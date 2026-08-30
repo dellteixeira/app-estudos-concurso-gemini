@@ -9,11 +9,14 @@ const history=fs.readFileSync('.github/workflows/security-history-audit.yml','ut
 const deploy=fs.readFileSync('.github/workflows/cloudflare-production-deploy.yml','utf8');
 const retry=fs.readFileSync('scripts/ci-retry.mjs','utf8');
 
-test('gates usam pool gerenciado e não fixam ubuntu-24.04',()=>{
-  for(const source of [quality,android,secrets,history,deploy]){
-    assert.match(source,/runs-on: ubuntu-latest/);
-    assert.doesNotMatch(source,/runs-on: ubuntu-24\.04/);
-  }
+test('gates diversificam pools e não fixam ubuntu-24.04',()=>{
+  for(const source of [quality,android,secrets,history,deploy])assert.doesNotMatch(source,/runs-on: ubuntu-24\.04/);
+  assert.match(quality,/runs-on: macos-latest/);
+  assert.match(quality,/runs-on: ubuntu-latest/);
+  assert.match(android,/runs-on: ubuntu-latest/);
+  assert.match(secrets,/runs-on: macos-latest/);
+  assert.match(history,/runs-on: macos-latest/);
+  assert.match(deploy,/runs-on: macos-latest/);
 });
 
 test('retentativas são restritas a dependências e builds transitórios',()=>{
