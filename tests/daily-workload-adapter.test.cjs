@@ -10,35 +10,49 @@ test('ajuste de carga usa somente evidência de execução do Plano do Dia',()=>
   assert.match(adapter,/AppAdaptiveSessionCompletion\?\.getHistory\?\.\(\)/);
   assert.match(adapter,/item\?\.owner!=='daily-plan'/);
   assert.match(adapter,/LOOKBACK_DAYS=7/);
-  assert.match(adapter,/MIN_ATTEMPTS=2/);
+  assert.match(adapter,/MIN_TREND_DAYS=3/);
   assert.match(adapter,/execution-evidence-only/);
+});
+
+test('tendência pondera mais os dias recentes e exige múltiplos dias',()=>{
+  assert.match(adapter,/weightForAge\(age\)/);
+  assert.match(adapter,/LOOKBACK_DAYS-Math\.max\(1,Number\(age\)\|\|1\)\+1/);
+  assert.match(adapter,/dayCount>=MIN_TREND_DAYS/);
+  assert.match(adapter,/requiredStressedDays=Math\.max\(2,Math\.ceil\(dayCount\/2\)\)/);
+  assert.match(adapter,/stressedDays>=requiredStressedDays&&weightedLow/);
 });
 
 test('tempo escolhido pelo usuário é teto e ajuste nunca aumenta a carga',()=>{
   assert.match(adapter,/const PRESETS=\[60,120,180\]/);
-  assert.match(adapter,/const effective=low&&index>0\?PRESETS\[index-1\]:requested/);
+  assert.match(adapter,/const effective=trend\.overloadProbable&&index>0\?PRESETS\[index-1\]:requested/);
   assert.match(adapter,/adjusted:effective<requested/);
   assert.doesNotMatch(adapter,/PRESETS\[index\+1\]/);
   assert.match(adapter,/execution-load-cap-only/);
 });
 
 test('evidência insuficiente mantém o orçamento solicitado',()=>{
-  assert.match(adapter,/evidence\.attempts<MIN_ATTEMPTS/);
+  assert.match(adapter,/!trend\.enoughEvidence/);
   assert.match(adapter,/effectiveBudget:requested,adjusted:false,reason:'insufficient-prior-evidence'/);
+  assert.match(adapter,/classification:'insufficient'/);
 });
 
-test('aderência baixa considera conclusão, razão média, minutos e interrupções',()=>{
-  assert.match(adapter,/evidence\.completionRate<75/);
-  assert.match(adapter,/evidence\.averageCompletionRatio<\.75/);
-  assert.match(adapter,/evidence\.executionAdherence<75/);
-  assert.match(adapter,/evidence\.interruptions>=2/);
-  assert.match(adapter,/interruptionRate>=\.5/);
+test('sobrecarga considera conclusão, execução, aderência e interrupções',()=>{
+  assert.match(adapter,/weightedCompletionRate<HEALTHY_THRESHOLD/);
+  assert.match(adapter,/weightedCompletionRatio<HEALTHY_THRESHOLD\/100/);
+  assert.match(adapter,/weightedExecutionAdherence<HEALTHY_THRESHOLD/);
+  assert.match(adapter,/weightedInterruptionRate>=INTERRUPTION_THRESHOLD/);
+  assert.match(adapter,/classification=!enoughEvidence\?'insufficient':overloadProbable\?'overload-probable':'stable'/);
 });
 
-test('piso de 60 minutos não é confundido com aderência sustentada',()=>{
-  assert.match(adapter,/low&&index===0\?'minimum-load-floor':'adherence-sustained'/);
+test('piso de 60 minutos não é confundido com tendência estável',()=>{
+  assert.match(adapter,/trend\.overloadProbable&&index===0\?'minimum-load-floor':'adherence-sustained'/);
   assert.match(adapter,/Carga mantida no piso de/);
   assert.doesNotMatch(adapter,/PRESETS\[-1\]/);
+});
+
+test('API antiga de último dia permanece disponível por compatibilidade',()=>{
+  assert.match(adapter,/function latestPriorDayEvidence\(\)/);
+  assert.match(adapter,/latestPriorDayEvidence,applyRequestedBudget/);
 });
 
 test('adaptação intercepta orçamento diário e reconstrói plano no limite efetivo',()=>{
@@ -48,6 +62,7 @@ test('adaptação intercepta orçamento diário e reconstrói plano no limite ef
   assert.match(adapter,/plan\.requestedBudget=decision\.requestedBudget/);
   assert.match(adapter,/plan\.workloadAdjustment=decision/);
   assert.match(adapter,/adaptive-day-workload-adjusted/);
+  assert.match(adapter,/trendDays:decision\.trend\?\.dayCount\|\|0/);
 });
 
 test('ajuste de carga não toma autoridade de agenda nem altera prioridade',()=>{
@@ -57,13 +72,16 @@ test('ajuste de carga não toma autoridade de agenda nem altera prioridade',()=>
   assert.match(adapter,/agenda do Retention Engine não foi alterada/);
 });
 
-test('nota de carga usa CSS canônico sem style inline',()=>{
+test('nota de carga usa CSS canônico e expõe estados de tendência',()=>{
   assert.match(css,/\.daily-adaptive-workload-note/);
+  assert.match(css,/data-trend="stable"/);
+  assert.match(css,/data-trend="overload-probable"/);
+  assert.match(css,/data-trend="insufficient"/);
   assert.doesNotMatch(adapter,/createElement\('style'\)/);
   assert.doesNotMatch(adapter,/style\.textContent/);
 });
 
-test('orquestrador carrega adaptador de carga sem duplicar script',()=>{
+test('orquestrador continua carregando o mesmo adaptador sem duplicar script',()=>{
   assert.match(orchestrator,/data-daily-workload-adapter/);
   assert.match(orchestrator,/daily-workload-adapter\.js\?v=20260830/);
   assert.match(orchestrator,/ensureDailyWorkloadAdapter\(\)/);
