@@ -40,6 +40,16 @@
         document.head.appendChild(script);
     }
 
+    function ensureDashboardV2() {
+        if (global.AppDashboardV2 || document.querySelector('script[data-dashboard-v2-loader]')) return;
+        const script = document.createElement('script');
+        script.src = './js/dashboard-v2.js?v=20260830';
+        script.defer = true;
+        script.dataset.dashboardV2Loader = '1';
+        script.onerror = () => console.warn('Não foi possível carregar o Dashboard 2.0.');
+        document.head.appendChild(script);
+    }
+
     function resolveCallable(path) {
         const parts = String(path || '').split('.').filter(Boolean);
         if (!parts.length) return null;
@@ -180,8 +190,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             ensureAccessibleNames();
             ensurePerformanceLoader();
+            ensureDashboardV2();
         }, { once: true });
     } else {
         ensurePerformanceLoader();
+        ensureDashboardV2();
     }
 })(window);
