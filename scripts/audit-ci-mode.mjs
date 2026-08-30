@@ -23,6 +23,11 @@ if(mode.mode==='normal'){
   if(!hasPullRequest(android)) failures.push('Android Check deve voltar a disparar em PR no modo normal');
 }
 
+const productionWorkflow = process.env.GITHUB_WORKFLOW === 'Cloudflare Production Verify';
+if(productionWorkflow && mode.productionDeployAllowed !== true){
+  failures.push('deploy de produção bloqueado enquanto o CI estiver em modo degradado');
+}
+
 if(failures.length){
   console.error('CI mode audit FAILED:');
   for(const failure of failures) console.error(`- ${failure}`);
