@@ -34,7 +34,7 @@ function calibrate(intervention){
   let selected=intervention.recommendedAction;let reason='insufficient-evidence';
   if(eligible.length){eligible.sort((a,b)=>b.averageScore-a.averageScore||b.positive-a.positive);const preferred=eligible[0];const currentScore=current?.count>=MIN_SAMPLES?Number(current.averageScore)||0:0;if(preferred.action!==selected&&preferred.averageScore-currentScore>=SWITCH_MARGIN){selected=preferred.action;reason='personal-efficacy-margin'}else reason='keep-current-method';}
   const selectedStats=stats.get(selected);const duration=chooseDuration(selected,intervention.suggestedMinutes);const calibratedMinutes=duration.minutes;
-  return {...intervention,recommendedAction:selected,suggestedMinutes:calibratedMinutes,calibration:{applied:selected!==intervention.recommendedAction||calibratedMinutes!==Number(intervention.suggestedMinutes),reason,samples:Number(selectedStats?.count)||0,averageScore:Number(selectedStats?.averageScore)||0,durationReason:duration.reason,durationSamples:duration.samples,durationAverageScore:duration.averageScore,authority:'pedagogical-method-and-duration-only'}};
+  return {...intervention,recommendedAction:selected,suggestedMinutes:calibratedMinutes,calibration:{applied:selected!==intervention.recommendedAction||calibratedMinutes!==Number(intervention.suggestedMinutes),reason,samples:Number(selectedStats?.count)||0,averageScore:Number(selectedStats?.averageScore)||0,durationReason:duration.reason,durationSamples:duration.samples,durationAverageScore:duration.averageScore,authority:'pedagogical-method-only',durationAuthority:'pedagogical-duration-only'}};
 }
 
 global.AppMethodCalibration=Object.freeze({calibrate,chooseDuration,MIN_SAMPLES,SWITCH_MARGIN,MAX_MINUTES_DELTA,DURATION_MARGIN});
