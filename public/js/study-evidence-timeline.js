@@ -14,11 +14,16 @@ function entries(){const data=read();return Array.isArray(data.entries)?data.ent
 function append(type,detail={}){
   if(!EVENT_TYPES.has(type))return null;
   const topicId=safe(detail.topicId,600);
-  const entry={type,topicId,status:safe(detail.status,40),source:safe(detail.source,40),action:safe(detail.action,60),errorType:safe(detail.type||detail.errorType,40),score:Number.isFinite(Number(detail.score))?Number(clamp(detail.score,-100,100).toFixed(1)):null,minutes:Number.isFinite(Number(detail.elapsedMinutes||detail.minutes))?Math.round(clamp(detail.elapsedMinutes||detail.minutes,0,240)):null,at:new Date().toISOString()};
-  const next=[...entries(),entry].slice(-HISTORY_LIMIT);write({version:1,entries:next});global.dispatchEvent(new CustomEvent('study-evidence-timeline-changed',{detail:{type,topicId}}));return entry;
+  const occurrences=Number.isFinite(Number(detail.occurrences))?Math.max(1,Math.round(clamp(detail.occurrences,1,200))):null;
+  const entry={type,topicId,status:safe(detail.status,40),source:safe(detail.source,40),action:safe(detail.action,60),errorType:safe(detail.type||detail.errorType,40),occurrences,score:Number.isFinite(Number(detail.score))?Number(clamp(detail.score,-100,100).toFixed(1)):null,minutes:Number.isFinite(Number(detail.elapsedMinutes||detail.minutes))?Math.round(clamp(detail.elapsedMinutes||detail.minutes,0,240)):null,at:new Date().toISOString()};
+  const next=[...entries(),entry].slice(-HISTORY_LIMIT);write({version:2,entries:next});global.dispatchEvent(new CustomEvent('study-evidence-timeline-changed',{detail:{type,topicId}}));return entry;
 }
 function getEntries(topicId=''){const id=safe(topicId,600);const rows=entries();return id?rows.filter(item=>item?.topicId===id):rows}
-function getSummary(){const rows=entries();const counts={};rows.forEach(item=>{counts[item.type]=(counts[item.type]||0)+1});return {total:rows.length,counts,authority:'observational-only'}}
+function getSummary(){
+  const rows=entries();const counts={};rows.forEach(item=>{counts[item.type]=(counts[item.type]||0)+1});
+  const questionErrorOccurrences=rows.filter(item=>item?.type==='question_error').reduce((sum,item)=>sum+(Number(item?.occurrences)||1),0);
+  return {total:rows.length,counts,questionErrorOccurrences,authority:'observational-only'};
+}
 function bind(name,type,mapper){global.addEventListener(name,event=>append(type,mapper?mapper(event?.detail||{}):(event?.detail||{})))}
 function onFeedback(event){
   const detail=event?.detail||{};
