@@ -12,6 +12,8 @@ function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0)
 function read(){try{const parsed=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');return parsed&&typeof parsed==='object'?parsed:{}}catch(_){return{}}}
 function write(value){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(value));return true}catch(_){return false}}
 function nowIso(){return new Date().toISOString()}
+function attributedHistory(){return (Array.isArray(read().history)?read().history:[]).filter(item=>item?.attributed===true)}
+function durationBucket(minutes){const value=Math.max(5,Math.min(90,Number(minutes)||0));return Math.max(5,Math.min(90,Math.round(value/5)*5))}
 
 function snapshot(candidate){
   const m=candidate?.metrics||{};
@@ -51,9 +53,20 @@ function evaluatePending(){
   return completed;
 }
 function getActionStats(){
-  const history=(Array.isArray(read().history)?read().history:[]).filter(item=>item?.attributed===true);const map={};
-  history.forEach(item=>{const action=safe(item?.action,40)||'unknown';const bucket=map[action]||(map[action]={action,count:0,positive:0,neutral:0,negative:0,averageScore:0});bucket.count+=1;bucket[item?.outcome]=(bucket[item?.outcome]||0)+1;bucket.averageScore+=Number(item?.score)||0;});
+  const map={};
+  attributedHistory().forEach(item=>{const action=safe(item?.action,40)||'unknown';const bucket=map[action]||(map[action]={action,count:0,positive:0,neutral:0,negative:0,averageScore:0});bucket.count+=1;bucket[item?.outcome]=(bucket[item?.outcome]||0)+1;bucket.averageScore+=Number(item?.score)||0;});
   return Object.values(map).map(item=>({...item,averageScore:item.count?Number((item.averageScore/item.count).toFixed(2)):0}));
+}
+function getDurationStats(action){
+  const selected=safe(action,40);const buckets={};
+  attributedHistory().forEach(item=>{
+    if(selected&&safe(item?.action,40)!==selected)return;
+    const executed=Number(item?.executedMinutes)||0;if(executed<5)return;
+    const minutes=durationBucket(executed);const key=`${safe(item?.action,40)||'unknown'}:${minutes}`;
+    const bucket=buckets[key]||(buckets[key]={action:safe(item?.action,40)||'unknown',minutes,count:0,averageScore:0,positive:0,neutral:0,negative:0,averageCompletionRatio:0});
+    bucket.count+=1;bucket.averageScore+=Number(item?.score)||0;bucket[item?.outcome]=(bucket[item?.outcome]||0)+1;bucket.averageCompletionRatio+=Number(item?.completionRatio)||0;
+  });
+  return Object.values(buckets).map(item=>({...item,averageScore:item.count?Number((item.averageScore/item.count).toFixed(2)):0,averageCompletionRatio:item.count?Number((item.averageCompletionRatio/item.count).toFixed(2)):0}));
 }
 function getPreferredAction(candidates=[]){const stats=getActionStats().filter(item=>item.count>=2);if(!stats.length)return null;const candidateActions=new Set(candidates.map(item=>item?.recommendedAction).filter(Boolean));return stats.filter(item=>!candidateActions.size||candidateActions.has(item.action)).sort((a,b)=>b.averageScore-a.averageScore||b.positive-a.positive)[0]||null}
 function findItem(plan){const candidate=plan?.candidate;if(!candidate)return null;try{if(Array.isArray(global.editalItems))return global.editalItems.find(item=>item?.materia===candidate.materia&&item?.assunto===candidate.assunto)||null}catch(_){}return null}
@@ -65,5 +78,5 @@ function startCurrentPlan(){
 function ensureStartButton(){const actions=document.querySelector('#adaptiveAiExperience .adaptive-ai-actions');if(!actions||document.getElementById('adaptiveAiStart'))return;const button=document.createElement('button');button.id='adaptiveAiStart';button.type='button';button.className='btn btn-success btn-sm';button.textContent='Iniciar plano';button.addEventListener('click',startCurrentPlan);actions.prepend(button)}
 function init(){ensureStartButton();evaluatePending();const observer=new MutationObserver(()=>ensureStartButton());observer.observe(document.documentElement,{childList:true,subtree:true});global.addEventListener('adaptive-session-execution-finished',event=>{recordExecutionOutcome(event?.detail||{});setTimeout(evaluatePending,EVALUATION_DELAY_MS)});global.addEventListener('adaptive-feedback-evaluated',()=>global.AppAdaptiveAIExperience?.refresh?.({refine:false}));setInterval(evaluatePending,60*1000)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0),{once:true});else setTimeout(init,0);
-global.AppAdaptiveFeedbackLoop=Object.freeze({recordStart,recordExecutionOutcome,evaluatePending,getActionStats,getPreferredAction,startCurrentPlan});
+global.AppAdaptiveFeedbackLoop=Object.freeze({recordStart,recordExecutionOutcome,evaluatePending,getActionStats,getDurationStats,getPreferredAction,startCurrentPlan});
 })(window);
