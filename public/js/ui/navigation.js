@@ -50,6 +50,16 @@
         document.head.appendChild(script);
     }
 
+    function ensureAdaptiveAIExperience() {
+        if (global.AppAdaptiveAIExperience || document.querySelector('script[data-adaptive-ai-experience]')) return;
+        const script = document.createElement('script');
+        script.src = './js/adaptive-ai-experience.js?v=20260830';
+        script.defer = true;
+        script.dataset.adaptiveAiExperience = '1';
+        script.onerror = () => console.warn('Não foi possível carregar a experiência adaptativa de IA.');
+        document.head.appendChild(script);
+    }
+
     function resolveCallable(path) {
         const parts = String(path || '').split('.').filter(Boolean);
         if (!parts.length) return null;
@@ -191,9 +201,11 @@
             ensureAccessibleNames();
             ensurePerformanceLoader();
             ensureDashboardV2();
+            ensureAdaptiveAIExperience();
         }, { once: true });
     } else {
         ensurePerformanceLoader();
         ensureDashboardV2();
+        ensureAdaptiveAIExperience();
     }
 })(window);
