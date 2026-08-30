@@ -34,25 +34,53 @@ test('Plano do Dia tem estado executável próprio e persiste somente no dia cor
   assert.match(planner,/remainingMinutes\(plan\)/);
 });
 
-test('início promove o bloco sem alterar autoridade de agenda',()=>{
+test('início promove o bloco, registra baseline adaptativo e não altera agenda',()=>{
   assert.match(planner,/function startBlock\(index\)/);
   assert.match(planner,/setCurrentPlan\?\.\(plan\)/);
+  assert.match(planner,/AppAdaptiveFeedbackLoop\?\.recordStart\?\.\(plan\)/);
   assert.match(planner,/executionOwner:'daily-plan'/);
   assert.match(planner,/adaptive-day-block-started/);
   assert.doesNotMatch(planner,/nextReviewDate\s*=/);
 });
 
-test('conclusão diária exige 70 por cento e avança apenas após evidência concluída',()=>{
+test('conclusão diária exige 70 por cento; interrupção libera o bloco sem concluir',()=>{
   assert.match(planner,/const MIN_COMPLETION_RATIO=\.7/);
   assert.match(planner,/ratio>=MIN_COMPLETION_RATIO/);
   assert.match(planner,/AppAdaptiveSessionCompletion\?\.finish\?\.\('completed'/);
-  assert.match(planner,/detail\.owner!=='daily-plan'/);
-  assert.match(planner,/detail\.status!=='completed'/);
+  assert.match(planner,/if\(detail\.status==='completed'&&id\)completed\.add\(id\)/);
+  assert.match(planner,/activeBlockId=''/);
+  assert.match(planner,/adaptive-day-block-interrupted/);
   assert.match(planner,/adaptive-day-block-completed/);
-  assert.match(planner,/setTimeout\(startNext,0\)/);
+  assert.match(planner,/if\(detail\.status==='completed'\)setTimeout\(startNext,0\)/);
 });
 
-test('interface expõe progresso, iniciar, concluir e próximo bloco',()=>{
+test('resumo de desempenho deriva somente do histórico real do owner daily-plan',()=>{
+  assert.match(planner,/function dailyExecutionHistory\(\)/);
+  assert.match(planner,/AppAdaptiveSessionCompletion\?\.getHistory\?\.\(\)/);
+  assert.match(planner,/item\?\.owner==='daily-plan'/);
+  assert.match(planner,/localDayKey\(item\?\.finishedAt\|\|item\?\.startedAt\)===todayKey\(\)/);
+  assert.match(planner,/function performanceSummary\(plan=currentPlan\)/);
+  assert.match(planner,/realizedMinutes/);
+  assert.match(planner,/interruptions/);
+  assert.match(planner,/completionRate/);
+  assert.match(planner,/adherence/);
+  assert.match(planner,/authority:'execution-evidence-only'/);
+});
+
+test('interface mostra conclusão, minutos, interrupções e aderência com atualização adaptativa',()=>{
+  assert.match(planner,/dailyAdaptivePerformance/);
+  assert.match(planner,/dailyPerformanceCompletion/);
+  assert.match(planner,/dailyPerformanceMinutes/);
+  assert.match(planner,/dailyPerformanceInterruptions/);
+  assert.match(planner,/dailyPerformanceAdherence/);
+  assert.match(planner,/adaptive-day-performance-updated/);
+  assert.match(css,/\.daily-adaptive-performance/);
+  assert.match(css,/\.daily-performance-grid/);
+  assert.match(css,/@media\(max-width:700px\)/);
+  assert.match(css,/@media\(max-width:390px\)/);
+});
+
+test('interface executável mantém progresso, concluir e próximo bloco',()=>{
   assert.match(planner,/dailyAdaptiveProgress/);
   assert.match(planner,/Concluir bloco atual/);
   assert.match(planner,/Iniciar próximo/);
