@@ -11,13 +11,10 @@ on:
       - 'config/release-contract.json'
       - 'package.json'
       - 'package-lock.json'
-      - 'public/**'
-      - 'src/**'
       - 'scripts/release-contract.mjs'
       - 'scripts/prepare-android-assets.mjs'
       - 'scripts/migrate-android-phase1b.mjs'
       - 'scripts/apply-android-mobile-hotfix.mjs'
-      - 'tests/**'
       - '.github/workflows/android-release.yml'
   workflow_dispatch:
 
@@ -30,7 +27,7 @@ concurrency:
 
 jobs:
   signed-runtime-distribution:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 55
     env:
       ANDROID_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
@@ -81,7 +78,7 @@ jobs:
           echo "ANDROID_RELEASE_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
 
       - name: Install dependencies
-        run: npm ci
+        run: node scripts/ci-retry.mjs --attempts=3 --delay-ms=4000 npm ci
 
       - name: Apply canonical Android migration
         run: node scripts/migrate-android-phase1b.mjs
@@ -93,6 +90,24 @@ jobs:
         env:
           AUDIT_ALLOW_ANY_ROOT: '1'
         run: npm run audit
+
+      - name: Verify embedded web runtime is canonical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          if ! git show-ref --tags --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            echo "::error::Release Android bloqueada: tag canônica $RELEASE_TAG ainda não existe."
+            exit 1
+          fi
+          web_runtime_paths=(package.json public src wrangler.jsonc config)
+          web_runtime_excludes=(':(exclude)config/release-contract.json')
+          if ! git diff --quiet "$RELEASE_TAG" HEAD -- "${web_runtime_paths[@]}" "${web_runtime_excludes[@]}"; then
+            echo "::error::Release Android bloqueada: runtime web embutido difere da tag canônica $RELEASE_TAG. Publique/valide primeiro a release web correspondente."
+            git diff --name-only "$RELEASE_TAG" HEAD -- "${web_runtime_paths[@]}" "${web_runtime_excludes[@]}"
+            exit 1
+          fi
+          echo "Embedded web runtime matches canonical tag $RELEASE_TAG."
 
       - name: Prepare Worker-proxied vendor assets
         run: npm run android:prepare
@@ -119,7 +134,7 @@ jobs:
 
       - name: Build signed release APK
         working-directory: android
-        run: ./gradlew --no-daemon clean assembleRelease
+        run: node ../scripts/ci-retry.mjs --attempts=2 --delay-ms=8000 ./gradlew --no-daemon clean assembleRelease
 
       - name: Locate Android SDK tools
         shell: bash
@@ -167,7 +182,11 @@ jobs:
           ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd-release"
           mkdir -p "$ANDROID_AVD_HOME"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
+          for attempt in 1 2 3; do
+            if "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'; then break; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep $((attempt * 8))
+          done
           echo no | ANDROID_AVD_HOME="$ANDROID_AVD_HOME" "$AVDMANAGER" create avd --force --name android-release --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
           echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
           echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
@@ -258,7 +277,7 @@ jobs:
           name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-direct-distribution-apk
           path: dist/android/direct/
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 14
 
       - name: Upload signed runtime diagnostics
         if: always()
@@ -274,7 +293,7 @@ jobs:
             android-release-resume.png
             android-release-logcat.txt
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 14
 
       - name: Publish permanent APK assets to canonical GitHub Release
         if: github.ref == 'refs/heads/main'
