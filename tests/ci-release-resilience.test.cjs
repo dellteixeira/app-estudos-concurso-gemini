@@ -7,16 +7,19 @@ const android=fs.readFileSync('.github/workflows/android-ci.yml','utf8');
 const secrets=fs.readFileSync('.github/workflows/security-secrets-audit.yml','utf8');
 const history=fs.readFileSync('.github/workflows/security-history-audit.yml','utf8');
 const deploy=fs.readFileSync('.github/workflows/cloudflare-production-deploy.yml','utf8');
+const mirror=fs.readFileSync('.github/workflows/mirror-gitlab.yml','utf8');
 const gitlab=fs.readFileSync('.gitlab-ci.yml','utf8');
+const runbook=fs.readFileSync('docs/ci-resilience-runbook.md','utf8');
 const retry=fs.readFileSync('scripts/ci-retry.mjs','utf8');
 
 test('workflows não fixam o runner ubuntu-24.04',()=>{
-  for(const source of [quality,android,secrets,history,deploy])assert.doesNotMatch(source,/runs-on: ubuntu-24\.04/);
+  for(const source of [quality,android,secrets,history,deploy,mirror])assert.doesNotMatch(source,/runs-on: ubuntu-24\.04/);
   assert.match(quality,/runs-on: ubuntu-latest/);
   assert.match(android,/runs-on: ubuntu-latest/);
   assert.match(secrets,/runs-on: ubuntu-latest/);
   assert.match(history,/runs-on: ubuntu-latest/);
   assert.match(deploy,/runs-on: ubuntu-latest/);
+  assert.match(mirror,/runs-on: ubuntu-latest/);
 });
 
 test('retentativas são restritas a dependências e builds transitórios',()=>{
@@ -81,4 +84,21 @@ test('GitLab oferece CI alternativo para indisponibilidade do GitHub Actions',()
   assert.match(gitlab,/npm test/);
   assert.match(gitlab,/AUDIT_ALLOW_ANY_ROOT=1 npm run audit/);
   assert.match(gitlab,/node scripts\/audit-secrets\.mjs/);
+});
+
+test('mirror GitLab não consome runner em toda branch de feature',()=>{
+  assert.match(mirror,/branches: \[main\]/);
+  assert.match(mirror,/tags:/);
+  assert.match(mirror,/- 'v\*'/);
+  assert.doesNotMatch(mirror,/\n  delete:/);
+  assert.match(mirror,/workflow_dispatch:/);
+});
+
+test('runbook documenta falha sem steps e failover independente',()=>{
+  assert.match(runbook,/steps: \[\]/);
+  assert.match(runbook,/steps: null/);
+  assert.match(runbook,/GitLab CI/);
+  assert.match(runbook,/Pull/);
+  assert.match(runbook,/wrangler rollback/);
+  assert.match(runbook,/CI externo indisponível != app quebrado/);
 });
