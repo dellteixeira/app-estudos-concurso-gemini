@@ -65,6 +65,15 @@ function ensureWeaknessMap(){
   script.onerror=()=>console.warn('Não foi possível carregar o mapa de fragilidades.');
   document.head.appendChild(script);
 }
+function ensureStudyEvidenceTimeline(){
+  if(global.AppStudyEvidenceTimeline||document.querySelector('script[data-study-evidence-timeline]'))return;
+  const script=document.createElement('script');
+  script.src='./js/study-evidence-timeline.js?v=20260830';
+  script.defer=true;
+  script.dataset.studyEvidenceTimeline='1';
+  script.onerror=()=>console.warn('Não foi possível carregar a trilha de evidências de estudo.');
+  document.head.appendChild(script);
+}
 function calibrate(intervention){return global.AppMethodCalibration?.calibrate?.(intervention)||intervention}
 
 async function ensureAdvisor(){
@@ -131,7 +140,7 @@ function renderPlan(plan){
   const calibrated=intervention?.calibration?.applied;
   setText('adaptiveAiSource',plan.source==='ai'?(calibrated?'IA auxiliar + calibração pessoal':'IA auxiliar + Retention Engine'):(calibrated?'Retention Engine + calibração pessoal':'Retention Engine'));
   const refine=qs('adaptiveAiRefine');if(refine)refine.hidden=false;
-  global.dispatchEvent(new CustomEvent('adaptive-plan-changed',{detail:{topicId:candidate.topicId||'',source:plan.source||'retention-engine'}}));
+  global.dispatchEvent(new CustomEvent('adaptive-plan-changed',{detail:{topicId:candidate.topicId||'',source:plan.source||'retention-engine',action:intervention.recommendedAction||''}}));
   return plan;
 }
 
@@ -158,8 +167,8 @@ async function refresh(options={}){
     global.AppWeaknessMapV2?.render?.();
     if(options.refine&&plan){plan=await refinePlan(advisor,plan);renderPlan(plan);}
     return plan;
-  }catch(error){
-    console.warn('[adaptive-ai] recommendation unavailable:',error?.message||error);
+  }catch(_error){
+    console.warn('[adaptive-ai] recommendation unavailable');
     renderPlan(currentPlan);return currentPlan;
   }finally{
     busy=false;if(calculate)calculate.disabled=false;if(refine)refine.disabled=false;
@@ -167,7 +176,7 @@ async function refresh(options={}){
 }
 
 function init(){
-  ensureStyle();ensurePanel();ensureFeedbackLoop();ensureCalibration();ensureSessionOrchestrator();ensureWeaknessMap();
+  ensureStyle();ensurePanel();ensureFeedbackLoop();ensureCalibration();ensureSessionOrchestrator();ensureWeaknessMap();ensureStudyEvidenceTimeline();
   global.addEventListener('adaptive-feedback-evaluated',()=>setTimeout(()=>refresh({refine:false}),0));
   setTimeout(()=>refresh({refine:false}),500);
 }
