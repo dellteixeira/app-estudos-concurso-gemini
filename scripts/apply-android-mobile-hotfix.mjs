@@ -27,9 +27,14 @@ for (const required of [indexFile, cssSource, manifestFile, logoSource]) {
   let html = fs.readFileSync(indexFile, 'utf8');
   html = html.replace(/^\s*<link\b[^>]*href=["']\.\/css\/android-mobile-hotfix\.css(?:\?[^"']*)?["'][^>]*>\s*(?:\r?\n)?/gim, '');
   const tag = '    <link rel="stylesheet" href="./css/android-mobile-hotfix.css">';
-  const pivot = /^(\s*)<link\b[^>]*href=["']\.\/css\/pdf-reader\.css(?:\?[^"']*)?["'][^>]*>\s*$/im;
-  if (!pivot.test(html)) throw new Error('Não foi possível localizar pdf-reader.css para inserir o hotfix mobile Android.');
-  html = html.replace(pivot, `$&\n${tag}`);
+
+  // Phase 2 removes PDF CSS from the Android app shell before this hotfix is
+  // applied, so the injection anchor must belong to the stable document shell.
+  // Inserting immediately before </head> keeps ordering deterministic and does
+  // not reintroduce any eager PDF dependency.
+  const headClose = /^(\s*)<\/head>\s*$/im;
+  if (!headClose.test(html)) throw new Error('Não foi possível localizar </head> para inserir o hotfix mobile Android.');
+  html = html.replace(headClose, `${tag}\n$&`);
   fs.writeFileSync(indexFile, html);
 }
 
