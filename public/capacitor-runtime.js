@@ -9,7 +9,7 @@
   function loadAuthResilience() {
     if (document.querySelector('script[data-auth-resilience]')) return;
     const script = document.createElement('script');
-    script.src = './js/auth-resilience-v3.js?v=20260830';
+    script.src = './js/auth-resilience-v4.js?v=20260830-2';
     script.dataset.authResilience = 'true';
     script.async = false;
     document.head.appendChild(script);
