@@ -224,6 +224,17 @@
             document.head.appendChild(script);
         })();
 
+        // Classificador leve de desempenho em questões. Não carrega provedor de IA.
+        (function loadQuestionPerformanceIntelligence() {
+            if (window.AppQuestionPerformanceIntelligence || document.querySelector('script[data-question-performance-intelligence]')) return;
+            const script = document.createElement('script');
+            script.src = './js/question-performance-intelligence.js?v=20260830';
+            script.defer = true;
+            script.dataset.questionPerformanceIntelligence = '1';
+            script.onerror = () => console.warn('Não foi possível carregar a inteligência de desempenho em questões.');
+            document.head.appendChild(script);
+        })();
+
         // V10.64.19 — IA consultiva: interpreta dificuldade, mas Retenção mantém autoridade.
         (function loadLearningAdvisor() {
             if (!document.querySelector('link[data-learning-advisor-style]')) {
