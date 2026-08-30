@@ -39,11 +39,11 @@ test('bundle de IA continua completo mas não é carregado implicitamente',()=>{
   assert.doesNotMatch(loader,/scheduleIdleTask\(\(\) => loadBundle\('ai'\)/);
 });
 
-test('bootstrap não volta a calcular recomendação automaticamente',()=>{
+test('startup não calcula recomendação automaticamente e feedback real pode atualizar',()=>{
   assert.doesNotMatch(adaptive,/setTimeout\(\(\)=>refresh\(\{refine:false\}\),500\)/);
-  assert.doesNotMatch(adaptive,/setTimeout\([^\n]*refresh\(/);
   assert.match(adaptive,/adaptiveAiCalculate/);
   assert.match(adaptive,/addEventListener\('click',\(\)=>refresh\(\{refine:false\}\)\)/);
+  assert.match(adaptive,/adaptive-feedback-evaluated/);
 });
 
 test('captura leve de desempenho em questões permanece no startup',()=>{
