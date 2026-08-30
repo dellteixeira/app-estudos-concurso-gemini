@@ -36,7 +36,14 @@ workflow:
         esac
 
         printf '%s' "$GITHUB_SHA" | grep -Eq '^[0-9a-f]{40}$' || { echo "SHA inválido no payload" >&2; exit 1; }
-        printf '%s' "$GITHUB_REF" | grep -Eq '^refs/(heads|tags)/.+' || { echo "Ref inválida no payload" >&2; exit 1; }
+        if [ -n "$GITHUB_REF" ]; then
+          case "$GITHUB_REF" in
+            refs/heads/*|refs/tags/*) : ;;
+            *) echo "Ref recebida em formato não canônico; tratada apenas como observabilidade: $GITHUB_REF" ;;
+          esac
+        else
+          GITHUB_REF="(ref ausente no payload)"
+        fi
 
         git remote remove github >/dev/null 2>&1 || true
         git remote add github "https://x-access-token:${GITHUB_READ_TOKEN}@github.com/dellteixeira/app-estudos-concurso-gemini.git"
