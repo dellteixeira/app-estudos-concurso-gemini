@@ -24,7 +24,9 @@ test('proximidade altera apenas composição pedagógica',()=>{
 });
 
 test('planejador preserva ranking do Advisor e aplica estratégia antes da calibração pessoal',()=>{
-  assert.match(planner,/collectCandidates\?\.\(12\)/);
+  assert.match(planner,/AppDiagnosticCandidateProvider\?\.collectByFriction\?\.\(limit\)/);
+  assert.match(planner,/AppLearningAdvisor\?\.collectCandidates\?\.\(5\)/);
+  assert.match(planner,/const candidates=rankedCandidates\(40\)/);
   assert.match(planner,/calibrate\(adaptToExam\(advisor\.localIntervention\(candidate\)\)\)/);
   assert.match(planner,/priorityIndex:blocks\.length/);
   assert.match(planner,/authority:'learning-advisor-friction-order'/);
