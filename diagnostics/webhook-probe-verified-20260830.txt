@@ -1,3 +1,0 @@
-GitHub -> GitLab webhook probe after GitLab account verification.
-Timestamp marker: 2026-08-30.
-No production impact.
