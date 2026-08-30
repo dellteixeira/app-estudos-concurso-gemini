@@ -6,7 +6,8 @@ const weekly=fs.readFileSync('public/js/adaptive-weekly-review.js','utf8');
 
 test('revisão semanal conta resoluções apenas dentro da janela de 7 dias',()=>{
   assert.match(weekly,/resolvedThisWeek=rows\.filter\(item=>item\?\.type==='error_state'&&item\?\.status==='resolved'\)\.length/);
-  assert.match(weekly,/resolvidos na semana/);
+  assert.match(weekly,/resolvedThisWeek===1\?'':'s'/);
+  assert.match(weekly,/na semana/);
   assert.doesNotMatch(weekly,/Number\(notebook\.resolved\)>0\)wins\.push/);
 });
 
