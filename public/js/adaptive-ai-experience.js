@@ -56,17 +56,21 @@ function ensureSessionOrchestrator(){
   script.onerror=()=>console.warn('Não foi possível carregar o orquestrador de sessão adaptativa.');
   document.head.appendChild(script);
 }
-function calibrate(intervention){
-  return global.AppMethodCalibration?.calibrate?.(intervention)||intervention;
+function ensureWeaknessMap(){
+  if(global.AppWeaknessMapV2||document.querySelector('script[data-weakness-map-v2]'))return;
+  const script=document.createElement('script');
+  script.src='./js/weakness-map-v2.js?v=20260830';
+  script.defer=true;
+  script.dataset.weaknessMapV2='1';
+  script.onerror=()=>console.warn('Não foi possível carregar o mapa de fragilidades.');
+  document.head.appendChild(script);
 }
+function calibrate(intervention){return global.AppMethodCalibration?.calibrate?.(intervention)||intervention}
 
 async function ensureAdvisor(){
   if(global.AppLearningAdvisor)return global.AppLearningAdvisor;
   const loader=global.AppPerformanceLoader;
-  if(loader?.loadBundle){
-    await loader.loadBundle('ai');
-    return global.AppLearningAdvisor||null;
-  }
+  if(loader?.loadBundle){await loader.loadBundle('ai');return global.AppLearningAdvisor||null;}
   return null;
 }
 
@@ -131,10 +135,7 @@ function renderPlan(plan){
   return plan;
 }
 
-function setCurrentPlan(plan){
-  if(!plan?.candidate||!plan?.intervention)return currentPlan;
-  return renderPlan(plan);
-}
+function setCurrentPlan(plan){if(!plan?.candidate||!plan?.intervention)return currentPlan;return renderPlan(plan)}
 
 async function refinePlan(advisor,basePlan){
   if(!basePlan?.candidate?.topicId||typeof advisor.analyze!=='function')return basePlan;
@@ -147,36 +148,26 @@ async function refinePlan(advisor,basePlan){
 
 async function refresh(options={}){
   if(busy)return currentPlan;
-  busy=true;
-  ensurePanel();
+  busy=true;ensurePanel();
   const calculate=qs('adaptiveAiCalculate');const refine=qs('adaptiveAiRefine');
   if(calculate)calculate.disabled=true;if(refine)refine.disabled=true;
   try{
     const advisor=await ensureAdvisor();
     if(!advisor){renderPlan(null);return null}
-    let plan=choosePlan(advisor);
-    renderPlan(plan);
-    if(options.refine&&plan){
-      plan=await refinePlan(advisor,plan);
-      renderPlan(plan);
-    }
+    let plan=choosePlan(advisor);renderPlan(plan);
+    global.AppWeaknessMapV2?.render?.();
+    if(options.refine&&plan){plan=await refinePlan(advisor,plan);renderPlan(plan);}
     return plan;
   }catch(error){
     console.warn('[adaptive-ai] recommendation unavailable:',error?.message||error);
-    renderPlan(currentPlan);
-    return currentPlan;
+    renderPlan(currentPlan);return currentPlan;
   }finally{
-    busy=false;
-    if(calculate)calculate.disabled=false;if(refine)refine.disabled=false;
+    busy=false;if(calculate)calculate.disabled=false;if(refine)refine.disabled=false;
   }
 }
 
 function init(){
-  ensureStyle();
-  ensurePanel();
-  ensureFeedbackLoop();
-  ensureCalibration();
-  ensureSessionOrchestrator();
+  ensureStyle();ensurePanel();ensureFeedbackLoop();ensureCalibration();ensureSessionOrchestrator();ensureWeaknessMap();
   global.addEventListener('adaptive-feedback-evaluated',()=>setTimeout(()=>refresh({refine:false}),0));
   setTimeout(()=>refresh({refine:false}),500);
 }
