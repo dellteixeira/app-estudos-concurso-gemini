@@ -8,6 +8,16 @@ let currentPlan=null;
 
 function safe(value,max=160){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
 function calibrate(intervention){return global.AppMethodCalibration?.calibrate?.(intervention)||intervention}
+function adaptToExam(intervention){return global.AppExamProximityStrategy?.adapt?.(intervention)||intervention}
+function ensureExamStrategy(){
+  if(global.AppExamProximityStrategy||document.querySelector('script[data-exam-proximity-strategy]'))return;
+  const script=document.createElement('script');
+  script.src='./js/exam-proximity-strategy.js?v=20260830';
+  script.defer=true;
+  script.dataset.examProximityStrategy='1';
+  script.onerror=()=>console.warn('Não foi possível carregar a estratégia de proximidade da prova.');
+  document.head.appendChild(script);
+}
 
 function buildDay(totalMinutes=120){
   const advisor=global.AppLearningAdvisor;
@@ -17,7 +27,7 @@ function buildDay(totalMinutes=120){
   const blocks=[];
   let used=0;
   for(const candidate of candidates){
-    const intervention=calibrate(advisor.localIntervention(candidate));
+    const intervention=calibrate(adaptToExam(advisor.localIntervention(candidate)));
     if(!intervention)continue;
     const desired=Math.max(5,Math.round(Number(intervention.suggestedMinutes)||15));
     const remaining=budget-used;
@@ -34,7 +44,7 @@ function buildDay(totalMinutes=120){
     session.blocks.push(block);session.minutes+=block.minutes;
   }
   if(session.blocks.length)sessions.push(session);
-  currentPlan={budget,used,remaining:Math.max(0,budget-used),blocks,sessions,authority:'retention-engine-order'};
+  currentPlan={budget,used,remaining:Math.max(0,budget-used),blocks,sessions,authority:'retention-engine-order',examContext:global.AppExamProximityStrategy?.getContext?.()||null};
   return currentPlan;
 }
 
@@ -58,13 +68,18 @@ function render(plan){
   const list=document.getElementById('dailyAdaptiveSessions');
   if(!summary||!list)return plan;
   if(!plan?.blocks?.length){summary.textContent='Ainda não há dados suficientes para montar o plano do dia.';list.replaceChildren();return plan;}
-  summary.textContent=`${plan.sessions.length} sessão${plan.sessions.length===1?'':'ões'} · ${plan.used}/${plan.budget} min planejados`;
+  const phase=plan.examContext?.phase?` · ${plan.examContext.label}`:'';
+  summary.textContent=`${plan.sessions.length} sessão${plan.sessions.length===1?'':'ões'} · ${plan.used}/${plan.budget} min planejados${phase}`;
   list.innerHTML=plan.sessions.map(session=>`<article class="daily-adaptive-session"><strong>Sessão ${session.index+1} · ${session.minutes} min</strong>${session.blocks.map(block=>`<div class="daily-adaptive-block"><span>${block.priorityIndex+1}. ${safe(block.candidate.materia,70)} — ${safe(block.candidate.assunto,110)}</span><span>${block.minutes} min</span></div>`).join('')}</article>`).join('');
   global.dispatchEvent(new CustomEvent('adaptive-day-plan-rendered',{detail:{budget:plan.budget,count:plan.blocks.length,sessions:plan.sessions.length}}));
   return plan;
 }
 
-function init(){ensurePanel();}
+function init(){
+  ensurePanel();
+  ensureExamStrategy();
+  global.addEventListener('adaptive-exam-date-changed',()=>{if(currentPlan)render(buildDay(currentPlan.budget));});
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 global.AppDailyAdaptivePlanner=Object.freeze({buildDay,render,getCurrentPlan:()=>currentPlan});
 })(window);
