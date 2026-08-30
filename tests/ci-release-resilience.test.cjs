@@ -91,8 +91,8 @@ test('produção valida identidade exata e estabilidade após deploy',()=>{
   assert.match(deploy,/Stability re-check/);
 });
 
-test('deploy não é cancelado no meio e faz rollback automático em falha posterior',()=>{
-  assert.match(deploy,/cancel-in-progress: false/);
+test('deploy obsoleto é cancelado antes de publicar e falhas pós-deploy ainda fazem rollback',()=>{
+  assert.match(deploy,/cancel-in-progress: true/);
   assert.match(deploy,/id: deploy/);
   assert.match(deploy,/if: failure\(\) && steps\.deploy\.outcome == 'success'/);
   assert.match(deploy,/wrangler@4\.120\.0 rollback --message/);
