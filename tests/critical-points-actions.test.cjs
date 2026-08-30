@@ -5,10 +5,7 @@ const fs=require('node:fs');
 const cp=require('node:child_process');
 
 const read=file=>fs.readFileSync(file,'utf8');
-const packageVersion=JSON.parse(read('package.json')).version;
-const escapeRegex=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const client=read('public/js/critical-points-actions.js');
-const pwa=read('public/js/app-pwa.js');
 const sw=read('public/sw.js');
 const manifest=read('config/app-assets.json');
 const css=read('public/css/learning-advisor.css');
@@ -46,11 +43,12 @@ test('adiamento usa o mesmo snooze de 24h do Learning Advisor e força novo diag
   assert.match(client,/advisorReady\(\)/);
 });
 
-test('novo módulo integra núcleo PWA e manifesto offline da versão canônica',()=>{
-  assert.match(pwa,new RegExp(`critical-points-actions\\.js\\?v=${escapeRegex(packageVersion)}`));
+test('novo módulo integra cache opcional e políticas de revalidação da versão canônica',()=>{
   assert.match(sw,/\.\/js\/critical-points-actions\.js/);
   const cfg=JSON.parse(manifest);
-  for(const key of ['criticalAppShell','networkFirstPaths','workerNoStorePaths','headersNoStorePaths']){
+  assert.ok(cfg.optionalOfflineAssets.includes('/js/critical-points-actions.js'),'optionalOfflineAssets sem critical-points-actions.js');
+  for(const key of ['networkFirstPaths','workerNoStorePaths','headersNoStorePaths']){
     assert.ok(cfg[key].includes('/js/critical-points-actions.js'),`${key} sem critical-points-actions.js`);
   }
+  assert.ok(!cfg.criticalAppShell.includes('/js/critical-points-actions.js'),'módulo adaptativo pesado não deve pertencer ao shell crítico');
 });
