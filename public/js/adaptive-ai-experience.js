@@ -31,6 +31,18 @@ function ensureFeedbackLoop(){
   script.onerror=()=>console.warn('Não foi possível carregar o feedback loop adaptativo.');
   document.head.appendChild(script);
 }
+function ensureCalibration(){
+  if(global.AppMethodCalibration||document.querySelector('script[data-method-calibration]'))return;
+  const script=document.createElement('script');
+  script.src='./js/method-calibration.js?v=20260830';
+  script.defer=true;
+  script.dataset.methodCalibration='1';
+  script.onerror=()=>console.warn('Não foi possível carregar a calibração personalizada de método.');
+  document.head.appendChild(script);
+}
+function calibrate(intervention){
+  return global.AppMethodCalibration?.calibrate?.(intervention)||intervention;
+}
 
 async function ensureAdvisor(){
   if(global.AppLearningAdvisor)return global.AppLearningAdvisor;
@@ -75,7 +87,7 @@ function choosePlan(advisor){
   const candidates=advisor.collectCandidates?.(1)||[];
   const candidate=candidates[0];
   if(!candidate)return null;
-  const intervention=advisor.localIntervention?.(candidate);
+  const intervention=calibrate(advisor.localIntervention?.(candidate));
   if(!intervention)return null;
   return {candidate,intervention,source:'retention-engine'};
 }
@@ -96,15 +108,17 @@ function renderPlan(plan){
   setText('adaptiveAiMethod',safe(intervention.method||intervention.rationale,300));
   setText('adaptiveAiAction',ACTION_LABELS[intervention.recommendedAction]||'Revisão adaptativa');
   setText('adaptiveAiMinutes',`${Math.max(5,Number(intervention.suggestedMinutes)||15)} min`);
-  setText('adaptiveAiSource',plan.source==='ai'?'IA auxiliar + Retention Engine':'Retention Engine');
+  const calibrated=intervention?.calibration?.applied;
+  setText('adaptiveAiSource',plan.source==='ai'?(calibrated?'IA auxiliar + calibração pessoal':'IA auxiliar + Retention Engine'):(calibrated?'Retention Engine + calibração pessoal':'Retention Engine'));
   const refine=qs('adaptiveAiRefine');if(refine)refine.hidden=false;
 }
 
 async function refinePlan(advisor,basePlan){
   if(!basePlan?.candidate?.topicId||typeof advisor.analyze!=='function')return basePlan;
   const result=await advisor.analyze({limit:1,topicId:basePlan.candidate.topicId});
-  const intervention=result?.interventions?.find(item=>item?.topicId===basePlan.candidate.topicId)||result?.interventions?.[0];
-  if(!intervention)return basePlan;
+  const raw=result?.interventions?.find(item=>item?.topicId===basePlan.candidate.topicId)||result?.interventions?.[0];
+  if(!raw)return basePlan;
+  const intervention=calibrate(raw);
   return {candidate:basePlan.candidate,intervention,source:result?.aiUsed?'ai':'retention-engine'};
 }
 
@@ -138,6 +152,8 @@ function init(){
   ensureStyle();
   ensurePanel();
   ensureFeedbackLoop();
+  ensureCalibration();
+  global.addEventListener('adaptive-feedback-evaluated',()=>setTimeout(()=>refresh({refine:false}),0));
   setTimeout(()=>refresh({refine:false}),500);
 }
 
