@@ -77,7 +77,19 @@
         });
     }
 
-    function navigateTo(tabId, options = {}) {
+    async function prepareTabFeatures(tabId) {
+        const loader = global.AppPerformanceLoader;
+        if (!loader?.ensureFeaturesForTab) return null;
+        try {
+            return await loader.ensureFeaturesForTab(tabId);
+        } catch (error) {
+            console.warn(`[performance] módulo opcional indisponível para ${tabId}:`, error);
+            return null;
+        }
+    }
+
+    async function navigateTo(tabId, options = {}) {
+        await prepareTabFeatures(tabId);
         const desktopBtn = options.desktopButton || findDesktopTabButton(tabId);
         if (typeof global.switchTab === 'function') {
             global.switchTab(tabId, desktopBtn || null);
@@ -154,6 +166,7 @@
     global.AppNavigation = Object.freeze({
         findDesktopTabButton,
         syncMobileNav,
+        prepareTabFeatures,
         navigateTo,
         mobileSwitchTab,
         callPath
