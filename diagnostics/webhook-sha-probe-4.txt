@@ -1,0 +1,1 @@
+GitLab webhook SHA validation probe after canonical ref handling.
