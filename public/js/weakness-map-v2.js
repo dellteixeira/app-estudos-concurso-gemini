@@ -16,6 +16,10 @@ function ensureQuestionPerformance(){
   if(global.AppQuestionPerformanceIntelligence||document.querySelector('script[data-question-performance-intelligence]'))return;
   const script=document.createElement('script');script.src='./js/question-performance-intelligence.js?v=20260830';script.defer=true;script.dataset.questionPerformanceIntelligence='1';script.onerror=()=>console.warn('Não foi possível carregar a inteligência de desempenho em questões.');document.head.appendChild(script);
 }
+function ensureAdaptiveFlashcards(){
+  if(global.AppAdaptiveFlashcards||document.querySelector('script[data-adaptive-flashcards]'))return;
+  const script=document.createElement('script');script.src='./js/adaptive-flashcards.js?v=20260830';script.defer=true;script.dataset.adaptiveFlashcards='1';script.onerror=()=>console.warn('Não foi possível carregar os flashcards adaptativos.');document.head.appendChild(script);
+}
 function classify(candidate,advisor){
   const intervention=advisor?.localIntervention?.(candidate)||{};
   const m=candidate?.metrics||{};
@@ -81,7 +85,7 @@ function render(snapshot=buildSnapshot()){
   global.dispatchEvent(new CustomEvent('weakness-map-rendered',{detail:{topics:snapshot.topics.length,subjects:snapshot.subjects.length}}));
   return snapshot;
 }
-function init(){ensureStyle();ensureQuestionPerformance();ensurePanel();global.addEventListener('adaptive-plan-changed',()=>render());global.addEventListener('adaptive-feedback-evaluated',()=>render());global.addEventListener('question-performance-classified',()=>render());if(global.AppLearningAdvisor)render();}
+function init(){ensureStyle();ensureQuestionPerformance();ensureAdaptiveFlashcards();ensurePanel();global.addEventListener('adaptive-plan-changed',()=>render());global.addEventListener('adaptive-feedback-evaluated',()=>render());global.addEventListener('question-performance-classified',()=>render());if(global.AppLearningAdvisor)render();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 global.AppWeaknessMapV2=Object.freeze({buildSnapshot,render,getSnapshot:()=>currentSnapshot});
 })(window);
