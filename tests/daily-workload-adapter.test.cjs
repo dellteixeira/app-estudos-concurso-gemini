@@ -4,6 +4,7 @@ const fs=require('node:fs');
 
 const adapter=fs.readFileSync('public/js/daily-workload-adapter.js','utf8');
 const orchestrator=fs.readFileSync('public/js/session-orchestrator.js','utf8');
+const css=fs.readFileSync('public/css/session-orchestrator.css','utf8');
 
 test('ajuste de carga usa somente evidência de execução do Plano do Dia',()=>{
   assert.match(adapter,/AppAdaptiveSessionCompletion\?\.getHistory\?\.\(\)/);
@@ -34,6 +35,12 @@ test('aderência baixa considera conclusão, razão média, minutos e interrupç
   assert.match(adapter,/interruptionRate>=\.5/);
 });
 
+test('piso de 60 minutos não é confundido com aderência sustentada',()=>{
+  assert.match(adapter,/low&&index===0\?'minimum-load-floor':'adherence-sustained'/);
+  assert.match(adapter,/Carga mantida no piso de/);
+  assert.doesNotMatch(adapter,/PRESETS\[-1\]/);
+});
+
 test('adaptação intercepta orçamento diário e reconstrói plano no limite efetivo',()=>{
   assert.match(adapter,/\[data-day-budget\]/);
   assert.match(adapter,/event\.stopImmediatePropagation\(\)/);
@@ -48,6 +55,12 @@ test('ajuste de carga não toma autoridade de agenda nem altera prioridade',()=>
   assert.doesNotMatch(adapter,/prioridade\s*=/i);
   assert.doesNotMatch(adapter,/autoSchedule\s*=\s*true/);
   assert.match(adapter,/agenda do Retention Engine não foi alterada/);
+});
+
+test('nota de carga usa CSS canônico sem style inline',()=>{
+  assert.match(css,/\.daily-adaptive-workload-note/);
+  assert.doesNotMatch(adapter,/createElement\('style'\)/);
+  assert.doesNotMatch(adapter,/style\.textContent/);
 });
 
 test('orquestrador carrega adaptador de carga sem duplicar script',()=>{
