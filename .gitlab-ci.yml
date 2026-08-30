@@ -5,6 +5,14 @@ stages:
 variables:
   NODE_VERSION: "22.23.2"
 
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - when: never
+
 .default_node:
   image: node:22.23.2-bookworm
   before_script:
@@ -19,6 +27,7 @@ quality:
     - npm test
     - AUDIT_ALLOW_ANY_ROOT=1 npm run audit
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
     - if: '$CI_PIPELINE_SOURCE == "push"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
@@ -29,6 +38,7 @@ security_current_tree:
   script:
     - node scripts/audit-secrets.mjs
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
     - if: '$CI_PIPELINE_SOURCE == "push"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
