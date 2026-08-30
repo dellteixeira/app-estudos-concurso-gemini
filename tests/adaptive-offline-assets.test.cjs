@@ -7,7 +7,8 @@ const adaptiveAssets=[
   '/js/session-orchestrator.js','/css/session-orchestrator.css','/js/session-continuity.js','/css/session-continuity.css','/js/session-completion.js',
   '/js/daily-adaptive-planner.js','/js/exam-proximity-strategy.js','/js/weakness-map-v2.js','/css/weakness-map-v2.css',
   '/js/question-performance-intelligence.js','/js/intelligent-error-notebook.js','/js/adaptive-flashcards.js','/js/study-evidence-timeline.js',
-  '/js/explainable-recommendations.js','/js/adaptive-confidence.js','/js/adaptive-pomodoro-bridge.js','/js/learning-advisor-headless.js'
+  '/js/explainable-recommendations.js','/js/adaptive-confidence.js','/js/adaptive-pomodoro-bridge.js','/js/learning-advisor-headless.js',
+  '/js/progress-forecast.js','/js/adaptive-weekly-review.js'
 ];
 
 test('todos os módulos adaptativos dinâmicos têm cache offline opcional',()=>{
