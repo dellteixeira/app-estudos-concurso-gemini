@@ -5,10 +5,11 @@ const assert=require('node:assert/strict');
 const orchestrator=fs.readFileSync('public/js/session-orchestrator.js','utf8');
 const experience=fs.readFileSync('public/js/adaptive-ai-experience.js','utf8');
 
-test('session orchestrator preserves Retention Engine ordering',()=>{
+test('session orchestrator preserves Learning Advisor candidate ordering',()=>{
   assert.match(orchestrator,/collectCandidates\?\.\(5\)/);
   assert.match(orchestrator,/priorityIndex:blocks\.length/);
-  assert.match(orchestrator,/authority:'retention-engine-order'/);
+  assert.match(orchestrator,/authority:'learning-advisor-friction-order'/);
+  assert.match(orchestrator,/scheduleAuthority:'retention-engine'/);
   assert.doesNotMatch(orchestrator,/\.sort\(/);
   assert.doesNotMatch(orchestrator,/prioridade\s*[+\-*/]?=/);
 });
@@ -21,6 +22,7 @@ test('session budget only allocates time and never edits schedule',()=>{
 
 test('promoting a block reuses the canonical adaptive plan surface',()=>{
   assert.match(orchestrator,/AppAdaptiveAIExperience\?\.setCurrentPlan/);
+  assert.match(orchestrator,/source:'learning-advisor'/);
   assert.match(experience,/function setCurrentPlan\(plan\)/);
   assert.match(experience,/Object\.freeze\(\{refresh,renderPlan,setCurrentPlan,getCurrentPlan/);
 });
