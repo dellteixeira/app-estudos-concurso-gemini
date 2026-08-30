@@ -14,6 +14,14 @@ let busy=false;
 function qs(id){return document.getElementById(id)}
 function setText(id,value){const el=qs(id);if(el)el.textContent=value}
 function safe(value,max=240){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
+function ensureStyle(){
+  if(document.querySelector('link[data-adaptive-ai-style]'))return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='./css/adaptive-ai-experience.css?v=20260830';
+  link.dataset.adaptiveAiStyle='1';
+  document.head.appendChild(link);
+}
 
 async function ensureAdvisor(){
   if(global.AppLearningAdvisor)return global.AppLearningAdvisor;
@@ -118,6 +126,7 @@ async function refresh(options={}){
 }
 
 function init(){
+  ensureStyle();
   ensurePanel();
   setTimeout(()=>refresh({refine:false}),500);
 }
