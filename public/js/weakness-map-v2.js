@@ -3,6 +3,7 @@
 if(global.AppWeaknessMapV2)return;
 
 const TYPE_LABELS={retention:'Retenção',application:'Aplicação',persistent:'Persistente',false_mastery:'Falsa maestria',acquisition:'Aquisição',mixed:'Mista'};
+const ERROR_LABELS={knowledge:'Conhecimento',application:'Aplicação',interpretation:'Interpretação',distraction:'Distração',recurrence:'Recorrência'};
 let currentSnapshot=null;
 
 function safe(value,max=180){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
@@ -11,9 +12,14 @@ function ensureStyle(){
   if(document.querySelector('link[data-weakness-map-v2-style]'))return;
   const link=document.createElement('link');link.rel='stylesheet';link.href='./css/weakness-map-v2.css?v=20260830';link.dataset.weaknessMapV2Style='1';document.head.appendChild(link);
 }
+function ensureQuestionPerformance(){
+  if(global.AppQuestionPerformanceIntelligence||document.querySelector('script[data-question-performance-intelligence]'))return;
+  const script=document.createElement('script');script.src='./js/question-performance-intelligence.js?v=20260830';script.defer=true;script.dataset.questionPerformanceIntelligence='1';script.onerror=()=>console.warn('Não foi possível carregar a inteligência de desempenho em questões.');document.head.appendChild(script);
+}
 function classify(candidate,advisor){
   const intervention=advisor?.localIntervention?.(candidate)||{};
   const m=candidate?.metrics||{};
+  const errorProfile=global.AppQuestionPerformanceIntelligence?.getTopicProfile?.(candidate?.topicId)||null;
   return {
     topicId:safe(candidate?.topicId,600),
     materia:safe(candidate?.materia,100),
@@ -24,7 +30,9 @@ function classify(candidate,advisor){
     lapses:clamp(m.lapseCount,0,99),
     reviews:clamp(m.reviewCount,0,999),
     diagnosis:safe(intervention?.diagnosisType,40)||'mixed',
-    severity:safe(intervention?.severity,20)||'low'
+    severity:safe(intervention?.severity,20)||'low',
+    errorType:safe(errorProfile?.dominantType,40),
+    errorCount:clamp(errorProfile?.count,0,999)
   };
 }
 function buildSnapshot(){
@@ -35,10 +43,11 @@ function buildSnapshot(){
   const subjects=[];const bySubject=new Map();
   topics.forEach(topic=>{
     let bucket=bySubject.get(topic.materia);
-    if(!bucket){bucket={materia:topic.materia,count:0,frictionTotal:0,retentionTotal:0,accuracyTotal:0,accuracyCount:0,lapses:0,diagnoses:{}};bySubject.set(topic.materia,bucket);subjects.push(bucket);}
+    if(!bucket){bucket={materia:topic.materia,count:0,frictionTotal:0,retentionTotal:0,accuracyTotal:0,accuracyCount:0,lapses:0,diagnoses:{},errors:{}};bySubject.set(topic.materia,bucket);subjects.push(bucket);}
     bucket.count+=1;bucket.frictionTotal+=topic.friction;bucket.retentionTotal+=topic.retention;bucket.lapses+=topic.lapses;
     if(topic.accuracy!=null){bucket.accuracyTotal+=topic.accuracy;bucket.accuracyCount+=1;}
     bucket.diagnoses[topic.diagnosis]=(bucket.diagnoses[topic.diagnosis]||0)+1;
+    if(topic.errorType)bucket.errors[topic.errorType]=(bucket.errors[topic.errorType]||0)+topic.errorCount;
   });
   const matterRows=subjects.map(bucket=>({
     materia:bucket.materia,
@@ -47,7 +56,8 @@ function buildSnapshot(){
     averageRetention:Number((bucket.retentionTotal/bucket.count).toFixed(1)),
     averageAccuracy:bucket.accuracyCount?Number((bucket.accuracyTotal/bucket.accuracyCount).toFixed(1)):null,
     lapses:bucket.lapses,
-    diagnoses:bucket.diagnoses
+    diagnoses:bucket.diagnoses,
+    errors:bucket.errors
   }));
   currentSnapshot={topics,subjects:matterRows,authority:'diagnostic-only'};
   return currentSnapshot;
@@ -67,11 +77,11 @@ function render(snapshot=buildSnapshot()){
   if(!snapshot?.topics?.length){summary.textContent='Nenhuma fragilidade relevante detectada nos dados atuais.';subjects.replaceChildren();topics.replaceChildren();return snapshot;}
   summary.textContent=`${snapshot.topics.length} tópico${snapshot.topics.length===1?'':'s'} crítico${snapshot.topics.length===1?'':'s'} em ${snapshot.subjects.length} matéria${snapshot.subjects.length===1?'':'s'}.`;
   subjects.innerHTML=snapshot.subjects.map(row=>`<article class="weakness-map-subject"><strong>${safe(row.materia,100)}</strong><span>Fricção ${row.averageFriction}/100 · Retenção ${row.averageRetention}%${row.averageAccuracy==null?'':` · Acerto ${row.averageAccuracy}%`} · Lapsos ${row.lapses}</span></article>`).join('');
-  topics.innerHTML=snapshot.topics.map((topic,index)=>`<article class="weakness-map-topic" data-severity="${safe(topic.severity,20)}"><span class="weakness-map-rank">${index+1}</span><div><strong>${safe(topic.materia,90)} — ${safe(topic.assunto,140)}</strong><span>${TYPE_LABELS[topic.diagnosis]||'Mista'} · Fricção ${topic.friction}/100 · Retenção ${topic.retention}%${topic.accuracy==null?'':` · Acerto ${topic.accuracy}%`} · ${topic.lapses} lapso${topic.lapses===1?'':'s'}</span></div></article>`).join('');
+  topics.innerHTML=snapshot.topics.map((topic,index)=>`<article class="weakness-map-topic" data-severity="${safe(topic.severity,20)}"><span class="weakness-map-rank">${index+1}</span><div><strong>${safe(topic.materia,90)} — ${safe(topic.assunto,140)}</strong><span>${TYPE_LABELS[topic.diagnosis]||'Mista'} · Fricção ${topic.friction}/100 · Retenção ${topic.retention}%${topic.accuracy==null?'':` · Acerto ${topic.accuracy}%`} · ${topic.lapses} lapso${topic.lapses===1?'':'s'}${topic.errorType?` · Erro dominante: ${ERROR_LABELS[topic.errorType]||safe(topic.errorType,40)} (${topic.errorCount})`:''}</span></div></article>`).join('');
   global.dispatchEvent(new CustomEvent('weakness-map-rendered',{detail:{topics:snapshot.topics.length,subjects:snapshot.subjects.length}}));
   return snapshot;
 }
-function init(){ensureStyle();ensurePanel();global.addEventListener('adaptive-plan-changed',()=>render());global.addEventListener('adaptive-feedback-evaluated',()=>render());if(global.AppLearningAdvisor)render();}
+function init(){ensureStyle();ensureQuestionPerformance();ensurePanel();global.addEventListener('adaptive-plan-changed',()=>render());global.addEventListener('adaptive-feedback-evaluated',()=>render());global.addEventListener('question-performance-classified',()=>render());if(global.AppLearningAdvisor)render();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 global.AppWeaknessMapV2=Object.freeze({buildSnapshot,render,getSnapshot:()=>currentSnapshot});
 })(window);
