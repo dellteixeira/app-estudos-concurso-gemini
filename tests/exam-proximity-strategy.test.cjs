@@ -23,11 +23,12 @@ test('proximidade altera apenas composição pedagógica',()=>{
   assert.doesNotMatch(strategy,/autoSchedule\s*=\s*true/);
 });
 
-test('planejador preserva ordem canônica e aplica estratégia antes da calibração pessoal',()=>{
+test('planejador preserva ranking do Advisor e aplica estratégia antes da calibração pessoal',()=>{
   assert.match(planner,/collectCandidates\?\.\(12\)/);
   assert.match(planner,/calibrate\(adaptToExam\(advisor\.localIntervention\(candidate\)\)\)/);
   assert.match(planner,/priorityIndex:blocks\.length/);
-  assert.match(planner,/authority:'retention-engine-order'/);
+  assert.match(planner,/authority:'learning-advisor-friction-order'/);
+  assert.match(planner,/scheduleAuthority:'retention-engine'/);
   assert.doesNotMatch(planner,/\.sort\(/);
 });
 
