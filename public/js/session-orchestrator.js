@@ -10,6 +10,15 @@ let currentSession=null;
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
 function safe(value,max=160){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
 function calibrate(intervention){return global.AppMethodCalibration?.calibrate?.(intervention)||intervention}
+function ensureContinuity(){
+  if(global.AppSessionContinuity||document.querySelector('script[data-session-continuity]'))return;
+  const script=document.createElement('script');
+  script.src='./js/session-continuity.js?v=20260830';
+  script.defer=true;
+  script.dataset.sessionContinuity='1';
+  script.onerror=()=>console.warn('Não foi possível carregar a continuidade da sessão adaptativa.');
+  document.head.appendChild(script);
+}
 
 function buildQueue(minutes=DEFAULT_BUDGET){
   const advisor=global.AppLearningAdvisor;
@@ -64,6 +73,7 @@ function render(session){
   if(!session?.blocks?.length){
     summary.textContent='Ainda não há blocos suficientes para montar uma sessão adaptativa.';
     list.replaceChildren();
+    global.dispatchEvent(new CustomEvent('adaptive-session-rendered',{detail:{budget:session?.budget||DEFAULT_BUDGET,count:0}}));
     return session;
   }
   summary.textContent=`${session.blocks.length} bloco${session.blocks.length===1?'':'s'} · ${session.used}/${session.budget} min planejados`;
@@ -77,6 +87,7 @@ function render(session){
       <span class="adaptive-session-use">Usar</span>
     </button>`).join('');
   list.querySelectorAll('[data-session-index]').forEach(button=>button.addEventListener('click',()=>promote(Number(button.dataset.sessionIndex))));
+  global.dispatchEvent(new CustomEvent('adaptive-session-rendered',{detail:{budget:session.budget,count:session.blocks.length}}));
   return session;
 }
 
@@ -85,11 +96,13 @@ function promote(index=0){
   if(!block)return null;
   const plan={candidate:block.candidate,intervention:block.intervention,source:'retention-engine'};
   global.AppAdaptiveAIExperience?.setCurrentPlan?.(plan);
+  global.dispatchEvent(new CustomEvent('adaptive-session-promoted',{detail:{index,topicId:safe(block.candidate?.topicId,600)}}));
   return plan;
 }
 
 function init(){
   ensurePanel();
+  ensureContinuity();
   setTimeout(()=>render(buildQueue(DEFAULT_BUDGET)),700);
   global.addEventListener('adaptive-feedback-evaluated',()=>setTimeout(()=>render(buildQueue(currentSession?.budget||DEFAULT_BUDGET)),0));
 }
