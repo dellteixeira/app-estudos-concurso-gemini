@@ -6,7 +6,8 @@ const planner=fs.readFileSync('public/js/daily-adaptive-planner.js','utf8');
 const orchestrator=fs.readFileSync('public/js/session-orchestrator.js','utf8');
 
 test('planejador diário preserva a ordem do Learning Advisor',()=>{
-  assert.match(planner,/collectCandidates\?\.\(12\)/);
+  assert.match(planner,/AppDiagnosticCandidateProvider\?\.collectByFriction\?\.\(limit\)/);
+  assert.match(planner,/AppLearningAdvisor\?\.collectCandidates\?\.\(5\)/);
   assert.doesNotMatch(planner,/\.sort\s*\(/);
   assert.match(planner,/priorityIndex:blocks\.length/);
   assert.match(planner,/authority:'learning-advisor-friction-order'/);
