@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppLearningAdvisor)return;
 
-const VERSION='1.3.0';
+const VERSION='1.4.0';
 const MAX_TOPICS=5;
 const MIN_FRICTION=35;
 const CACHE_TTL_MS=30*60*1000;
@@ -27,10 +27,11 @@ let currentCandidates=[];
 let lastResult=null;
 let busy=false;
 let localIntegrationInstalled=false;
+let inlineBarSyncTimer=null;
 const memorySnoozes=new Map();
 
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
-const esc=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+const esc=value=>String(value??'').replace(/[&<>'\"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[ch]));
 const safeText=(value,max=500)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 
 function getRows(){
@@ -146,7 +147,9 @@ function installLocalRetentionIntegration(){
     if(!diag||!Array.isArray(diag.rows))return diag;
     const keep=row=>!isSnoozed(row?.state?.key||'');
     const rows=diag.rows.filter(keep);
-    return {...diag,rows,risk:(diag.risk||[]).filter(keep),overdue:(diag.overdue||[]).filter(keep),mastered:(diag.mastered||[]).filter(keep),avg:rows.length?rows.reduce((sum,row)=>sum+(Number(row?.retention)||0),0)/rows.length:null};
+    const next={...diag,rows,risk:(diag.risk||[]).filter(keep),overdue:(diag.overdue||[]).filter(keep),mastered:(diag.mastered||[]).filter(keep),avg:rows.length?rows.reduce((sum,row)=>sum+(Number(row?.retention)||0),0)/rows.length:null};
+    scheduleInlineBarSync(0);
+    return next;
   };
   localIntegrationInstalled=true;
   return true;
@@ -208,7 +211,6 @@ function collectCandidates(limit=MAX_TOPICS){
   currentCandidates=candidates;
   return candidates;
 }
-
 
 function localIntervention(candidate){
   const m=candidate?.metrics||{};
@@ -289,6 +291,46 @@ function closeDialog(){
   overlay.classList.remove('is-open');
   overlay.setAttribute('aria-hidden','true');
   document.body.classList.remove('learning-advisor-modal-open');
+}
+
+function inlineBarStatus(candidates,snoozed){
+  if(candidates.length)return `${candidates.length} dificuldade${candidates.length===1?'':'s'} persistente${candidates.length===1?'':'s'} pronta${candidates.length===1?'':'s'} para análise${snoozed?` · ${snoozed} adiada${snoozed===1?'':'s'} por 24h`:''}.`;
+  if(snoozed)return `Nenhuma dificuldade disponível agora · ${snoozed} adiada${snoozed===1?'':'s'} por 24h.`;
+  return 'Nenhuma dificuldade persistente disponível agora.';
+}
+function ensureInlineBar(){
+  const panel=document.getElementById('retentionDiagnosticPanel');
+  if(!panel)return null;
+  let bar=document.getElementById('learningAdvisorInlineBar');
+  if(bar&&bar.parentElement!==panel){bar.remove();bar=null}
+  if(!bar){
+    bar=document.createElement('section');
+    bar.id='learningAdvisorInlineBar';
+    bar.className='learning-advisor-inline-bar';
+    bar.setAttribute('aria-label','IA auxiliar para dificuldades persistentes');
+    bar.innerHTML=`<div class="learning-advisor-inline-copy"><span class="learning-advisor-inline-kicker">IA AUXILIAR</span><strong>Intervenções para dificuldades persistentes</strong><span>Combina retenção, desempenho e histórico para sugerir o próximo método sem alterar o cronograma.</span></div><div class="learning-advisor-inline-state"><span id="learningAdvisorInlineStatus" aria-live="polite"></span><button id="learningAdvisorInlineRisks" class="btn btn-secondary btn-sm" type="button">Ver assuntos em risco</button><button id="learningAdvisorInlineAnalyze" class="btn btn-primary btn-sm" type="button">Analisar com IA</button></div>`;
+    const head=panel.querySelector('.retention-diagnostic-head');
+    if(head?.nextSibling)panel.insertBefore(bar,head.nextSibling);else panel.appendChild(bar);
+    bar.querySelector('#learningAdvisorInlineRisks')?.addEventListener('click',openRiskView);
+    bar.querySelector('#learningAdvisorInlineAnalyze')?.addEventListener('click',()=>analyze().catch(()=>{}));
+  }
+  return bar;
+}
+function syncInlineBar(){
+  const bar=ensureInlineBar();
+  if(!bar)return null;
+  const candidates=collectCandidates(MAX_TOPICS);
+  const snoozed=countActiveSnoozes();
+  const status=bar.querySelector('#learningAdvisorInlineStatus');
+  const analyzeButton=bar.querySelector('#learningAdvisorInlineAnalyze');
+  if(status)status.textContent=inlineBarStatus(candidates,snoozed);
+  if(analyzeButton){analyzeButton.disabled=!candidates.length||busy;analyzeButton.setAttribute('aria-disabled',String(analyzeButton.disabled))}
+  bar.classList.toggle('is-empty',!candidates.length);
+  return bar;
+}
+function scheduleInlineBarSync(delay=0){
+  if(inlineBarSyncTimer)clearTimeout(inlineBarSyncTimer);
+  inlineBarSyncTimer=setTimeout(()=>{inlineBarSyncTimer=null;syncInlineBar()},Math.max(0,Number(delay)||0));
 }
 
 function riskStateText(entry){
@@ -383,6 +425,7 @@ function handleSnooze(topicId,card){
   currentCandidates=currentCandidates.filter(candidate=>candidate.topicId!==topicId);
   installLocalRetentionIntegration();
   try{if(typeof global.renderRetentionDiagnostics==='function')global.renderRetentionDiagnostics()}catch(_){}
+  scheduleInlineBarSync(0);
   global.dispatchEvent(new CustomEvent('learning-advisor:snooze-changed',{detail:{topicId,until}}));
 }
 
@@ -429,14 +472,14 @@ async function analyze(options={}){
   if(!candidates.length){if(status)status.textContent='Ainda não há dificuldade persistente disponível para análise. Assuntos adiados retornam automaticamente após 24 horas.';return null}
   const cached=!options.force&&!options.topicId&&readCache(candidates);
   if(cached){lastResult=cached;renderResults(cached,candidates);return cached}
-  busy=true;if(status)status.textContent='Consultando a IA com métricas e histórico sem alterar seu cronograma…';
+  busy=true;scheduleInlineBarSync(0);if(status)status.textContent='Consultando a IA com métricas e histórico sem alterar seu cronograma…';
   try{
     const payload=await requestAdvice(candidates);
     lastResult=payload;if(!options.topicId)writeCache(candidates,payload);persistDisplayedRecommendations(payload);renderResults(payload,candidates);return payload;
   }catch(error){
     const payload=localPayload(candidates,error?.message||'a consulta falhou');
     lastResult=payload;persistDisplayedRecommendations(payload);renderResults(payload,candidates);return payload;
-  }finally{busy=false}
+  }finally{busy=false;scheduleInlineBarSync(0)}
 }
 function analyzeTopic(topicId,rowIndex=null){
   installLocalRetentionIntegration();
@@ -472,18 +515,21 @@ function refresh(){
   installLocalRetentionIntegration();
   const stale=document.getElementById('learningAdvisorPanel');
   if(stale)stale.remove();
+  scheduleInlineBarSync(0);
   const overlay=document.getElementById('learningAdvisorOverlay');
   if(overlay?.classList.contains('is-open')){
     const title=overlay.querySelector('#learningAdvisorTitle')?.textContent||'';
     if(title==='Assuntos em risco')openRiskView();
   }
 }
-function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'risk-details',candidateCount:collectCandidates().length,snoozedCount:countActiveSnoozes(),busy,hasResult:!!lastResult,antiRepeat:true,localIntegration:localIntegrationInstalled})}
+function diagnostics(){return Object.freeze({version:VERSION,role:'auxiliary',authority:'retention-engine',entryPoint:'retention-inline-bar',secondaryEntryPoint:'risk-details',candidateCount:collectCandidates().length,snoozedCount:countActiveSnoozes(),busy,hasResult:!!lastResult,antiRepeat:true,localIntegration:localIntegrationInstalled})}
 
 function boot(){
   document.getElementById('learningAdvisorPanel')?.remove();
   ensureDialog();
   installLocalRetentionIntegration();
+  scheduleInlineBarSync(0);
+  scheduleInlineBarSync(350);
   if(!localIntegrationInstalled)setTimeout(installLocalRetentionIntegration,250);
   if(!document.documentElement.dataset.learningAdvisorRiskBound){
     document.documentElement.dataset.learningAdvisorRiskBound='1';
@@ -494,5 +540,5 @@ function boot(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
 global.addEventListener('pageshow',()=>setTimeout(boot,80));
 
-global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,analyzeTopic,localIntervention,refresh,close:closeDialog,snoozeTopic,isSnoozed,snoozeUntil,getRecommendationHistory,getDiagnostics:diagnostics});
+global.AppLearningAdvisor=Object.freeze({VERSION,computeLearningFriction,collectCandidates,getRiskRows,openRiskView,analyze,analyzeTopic,localIntervention,refresh,syncInlineBar,close:closeDialog,snoozeTopic,isSnoozed,snoozeUntil,getRecommendationHistory,getDiagnostics:diagnostics});
 })(window);
