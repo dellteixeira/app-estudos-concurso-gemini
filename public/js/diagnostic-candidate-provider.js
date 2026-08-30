@@ -16,33 +16,47 @@ function findItem(row){
   if(key)return items.find(item=>topicKey(item?.materia,item?.assunto)===key)||null;
   return items.find(item=>item?.materia===row?.materia&&item?.assunto===row?.assunto)||null;
 }
+function toCandidate(row,index,{enforceMinFriction=true}={}){
+  const advisor=global.AppLearningAdvisor;if(typeof advisor?.computeLearningFriction!=='function')return null;
+  const item=findItem(row);if(!item)return null;
+  const topicId=topicKey(item.materia,item.assunto);if(!topicId)return null;
+  const friction=advisor.computeLearningFriction(row,item);if(!friction)return null;
+  if(enforceMinFriction&&Number(friction.score)<MIN_FRICTION)return null;
+  return {
+    topicId,
+    rowIndex:index,
+    materia:safe(item.materia,180),
+    assunto:safe(item.assunto,300),
+    prioridade:clamp(item.prioridade||2,1,4),
+    assuntoPrioridade:clamp(item.assunto_prioridade||1,1,20),
+    frictionScore:clamp(friction.score,0,100),
+    metrics:friction.metrics||{},
+    recommendationHistory:[],
+    authority:'diagnostic-source-order'
+  };
+}
 function collect(limit=DEFAULT_LIMIT){
   const advisor=global.AppLearningAdvisor;
   if(typeof advisor?.computeLearningFriction!=='function')return [];
   const max=Math.max(1,Math.min(MAX_LIMIT,Math.round(Number(limit)||DEFAULT_LIMIT)));
-  const result=[];
-  const rows=getRows();
+  const result=[];const rows=getRows();
   for(let index=0;index<rows.length&&result.length<max;index+=1){
-    const row=rows[index];const item=findItem(row);if(!item)continue;
-    const topicId=topicKey(item.materia,item.assunto);if(!topicId)continue;
-    if(advisor.isSnoozed?.(topicId))continue;
-    const friction=advisor.computeLearningFriction(row,item);if(!friction||Number(friction.score)<MIN_FRICTION)continue;
-    result.push({
-      topicId,
-      rowIndex:index,
-      materia:safe(item.materia,180),
-      assunto:safe(item.assunto,300),
-      prioridade:clamp(item.prioridade||2,1,4),
-      assuntoPrioridade:clamp(item.assunto_prioridade||1,1,20),
-      frictionScore:clamp(friction.score,0,100),
-      metrics:friction.metrics||{},
-      recommendationHistory:[],
-      authority:'diagnostic-source-order'
-    });
+    const candidate=toCandidate(rows[index],index,{enforceMinFriction:true});if(!candidate)continue;
+    if(advisor.isSnoozed?.(candidate.topicId))continue;
+    result.push(candidate);
   }
   return result;
 }
+function findByTopicId(topicId){
+  const id=safe(topicId,600);if(!id)return null;
+  const rows=getRows();
+  for(let index=0;index<rows.length;index+=1){
+    const candidate=toCandidate(rows[index],index,{enforceMinFriction:false});
+    if(candidate?.topicId===id)return candidate;
+  }
+  return null;
+}
 
-global.AppDiagnosticCandidateProvider=Object.freeze({collect,DEFAULT_LIMIT,MAX_LIMIT,authority:'diagnostic-source-order'});
+global.AppDiagnosticCandidateProvider=Object.freeze({collect,findByTopicId,DEFAULT_LIMIT,MAX_LIMIT,authority:'diagnostic-source-order'});
 global.dispatchEvent(new CustomEvent('diagnostic-candidate-provider-ready',{detail:{authority:'diagnostic-source-order'}}));
 })(window);
