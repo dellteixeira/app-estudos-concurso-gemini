@@ -42,12 +42,12 @@ jobs:
           runtime=false
           while IFS= read -r file; do
             case "$file" in
-              public/*|public/**/*|android/*|android/**/*|capacitor.config.json|config/release-contract.json|package.json|package-lock.json|scripts/release-contract.mjs|scripts/prepare-android-assets.mjs|scripts/migrate-android-phase1b.mjs|scripts/apply-android-mobile-hotfix.mjs|tests/android*|tests/release-contract.test.cjs|.github/workflows/android-ci.yml|.github/workflows/android-release.yml)
+              android/*|android/**/*|capacitor.config.json|public/capacitor-runtime.js|config/release-contract.json|package.json|package-lock.json|scripts/release-contract.mjs|scripts/prepare-android-assets.mjs|scripts/migrate-android-phase1b.mjs|scripts/apply-android-mobile-hotfix.mjs|tests/android*|tests/release-contract.test.cjs|.github/workflows/android-ci.yml|.github/workflows/android-release.yml)
                 android=true
                 ;;
             esac
             case "$file" in
-              android/*|android/**/*|android/mobile/*|android/mobile/**/*|capacitor.config.json|scripts/migrate-android-phase1b.mjs|scripts/apply-android-mobile-hotfix.mjs|tests/android*|.github/workflows/android-ci.yml|.github/workflows/android-release.yml)
+              android/*|android/**/*|android/mobile/*|android/mobile/**/*|capacitor.config.json|public/capacitor-runtime.js|scripts/migrate-android-phase1b.mjs|scripts/apply-android-mobile-hotfix.mjs|tests/android*|.github/workflows/android-ci.yml|.github/workflows/android-release.yml)
                 runtime=true
                 ;;
             esac
