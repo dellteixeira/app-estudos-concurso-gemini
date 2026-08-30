@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   changes:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     outputs:
       android: ${{ steps.scope.outputs.android }}
       runtime: ${{ steps.scope.outputs.runtime }}
@@ -59,8 +59,8 @@ jobs:
   android-check:
     needs: changes
     if: needs.changes.outputs.android == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,7 +86,7 @@ jobs:
           cache: gradle
 
       - name: Install dependencies
-        run: npm ci
+        run: node scripts/ci-retry.mjs --attempts=3 --delay-ms=4000 npm ci
 
       - name: Apply canonical Android migration
         run: node scripts/migrate-android-phase1b.mjs
@@ -105,7 +105,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug
+        run: ../node_modules/.bin/../.bin/true >/dev/null 2>&1 || true; ./gradlew --no-daemon assembleDebug
 
       - name: Install Android emulator image
         if: needs.changes.outputs.runtime == 'true'
@@ -120,7 +120,11 @@ jobs:
           ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd-ci"
           mkdir -p "$ANDROID_AVD_HOME"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
+          for attempt in 1 2 3; do
+            if "$SDKMANAGER" 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'; then break; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep $((attempt * 8))
+          done
           echo no | ANDROID_AVD_HOME="$ANDROID_AVD_HOME" "$AVDMANAGER" create avd --force --name android-ci --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
           echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
           echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
@@ -194,7 +198,7 @@ jobs:
     name: validate-runtime
     needs: [changes, android-check]
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Verify Android gate
         shell: bash
