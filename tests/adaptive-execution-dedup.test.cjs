@@ -19,12 +19,19 @@ test('evento externo só finaliza a execução ativa correspondente',()=>{
 });
 
 test('histórico rejeita duplicidade pelo identificador natural da execução',()=>{
-  assert.match(completion,/item\?\.topicId===record\.topicId&&item\?\.startedAt===record\.startedAt/);
+  assert.match(completion,/\(item\?\.executionId\|\|item\?\.topicId\)===\(record\.executionId\|\|record\.topicId\)&&item\?\.startedAt===record\.startedAt/);
   assert.match(completion,/if\(duplicate\)return null/);
 });
 
-test('begin é idempotente e não sobrescreve outra execução ativa',()=>{
-  assert.match(completion,/if\(activeExecution\)return activeExecution\.topicId===topicId\?activeExecution:null/);
+test('begin é idempotente por executionId e não sobrescreve outra execução ativa',()=>{
+  assert.match(completion,/const executionId=safe\(block\.executionId\|\|topicId,700\)/);
+  assert.match(completion,/if\(activeExecution\)return activeExecution\.executionId===executionId\?activeExecution:null/);
+});
+
+test('owner separa Plano do Dia da continuidade da Sessão Adaptativa',()=>{
+  assert.match(completion,/const owner=safe\(block\.executionOwner\|\|'adaptive-session',40\)/);
+  assert.match(completion,/record\.owner==='adaptive-session'/);
+  assert.match(completion,/adaptive-session-execution-finished/);
 });
 
 test('ponte Pomodoro protege wrappers e tenta instalação até runtime ficar pronto',()=>{
