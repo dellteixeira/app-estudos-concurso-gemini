@@ -40,6 +40,22 @@ function ensureCalibration(){
   script.onerror=()=>console.warn('Não foi possível carregar a calibração personalizada de método.');
   document.head.appendChild(script);
 }
+function ensureSessionOrchestrator(){
+  if(!document.querySelector('link[data-session-orchestrator-style]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='./css/session-orchestrator.css?v=20260830';
+    link.dataset.sessionOrchestratorStyle='1';
+    document.head.appendChild(link);
+  }
+  if(global.AppSessionOrchestrator||document.querySelector('script[data-session-orchestrator]'))return;
+  const script=document.createElement('script');
+  script.src='./js/session-orchestrator.js?v=20260830';
+  script.defer=true;
+  script.dataset.sessionOrchestrator='1';
+  script.onerror=()=>console.warn('Não foi possível carregar o orquestrador de sessão adaptativa.');
+  document.head.appendChild(script);
+}
 function calibrate(intervention){
   return global.AppMethodCalibration?.calibrate?.(intervention)||intervention;
 }
@@ -101,7 +117,7 @@ function renderPlan(plan){
     setText('adaptiveAiMinutes','— min');
     setText('adaptiveAiSource','Retention Engine');
     const refine=qs('adaptiveAiRefine');if(refine)refine.hidden=true;
-    return;
+    return null;
   }
   const {candidate,intervention}=plan;
   setText('adaptiveAiTopic',`${safe(candidate.materia,90)} — ${safe(candidate.assunto,140)}`);
@@ -111,6 +127,13 @@ function renderPlan(plan){
   const calibrated=intervention?.calibration?.applied;
   setText('adaptiveAiSource',plan.source==='ai'?(calibrated?'IA auxiliar + calibração pessoal':'IA auxiliar + Retention Engine'):(calibrated?'Retention Engine + calibração pessoal':'Retention Engine'));
   const refine=qs('adaptiveAiRefine');if(refine)refine.hidden=false;
+  global.dispatchEvent(new CustomEvent('adaptive-plan-changed',{detail:{topicId:candidate.topicId||'',source:plan.source||'retention-engine'}}));
+  return plan;
+}
+
+function setCurrentPlan(plan){
+  if(!plan?.candidate||!plan?.intervention)return currentPlan;
+  return renderPlan(plan);
 }
 
 async function refinePlan(advisor,basePlan){
@@ -153,10 +176,11 @@ function init(){
   ensurePanel();
   ensureFeedbackLoop();
   ensureCalibration();
+  ensureSessionOrchestrator();
   global.addEventListener('adaptive-feedback-evaluated',()=>setTimeout(()=>refresh({refine:false}),0));
   setTimeout(()=>refresh({refine:false}),500);
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-global.AppAdaptiveAIExperience=Object.freeze({refresh,getCurrentPlan:()=>currentPlan});
+global.AppAdaptiveAIExperience=Object.freeze({refresh,renderPlan,setCurrentPlan,getCurrentPlan:()=>currentPlan});
 })(window);
