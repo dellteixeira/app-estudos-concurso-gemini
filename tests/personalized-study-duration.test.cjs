@@ -25,9 +25,10 @@ test('ajuste de duração permanece limitado a vinte por cento',()=>{
   assert.match(calibration,/1\+MAX_MINUTES_DELTA/);
 });
 
-test('calibração não assume autoridade de prioridade ou cronograma',()=>{
+test('calibração preserva autoridade de método e separa duração',()=>{
   assert.doesNotMatch(calibration,/collectCandidates/);
   assert.doesNotMatch(calibration,/autoSchedule\s*=\s*true/);
   assert.doesNotMatch(calibration,/nextReviewDate\s*=/);
-  assert.match(calibration,/pedagogical-method-and-duration-only/);
+  assert.match(calibration,/authority:'pedagogical-method-only'/);
+  assert.match(calibration,/durationAuthority:'pedagogical-duration-only'/);
 });
