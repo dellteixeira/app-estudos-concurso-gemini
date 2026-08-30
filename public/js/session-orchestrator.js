@@ -19,6 +19,15 @@ function ensureContinuity(){
   script.onerror=()=>console.warn('Não foi possível carregar a continuidade da sessão adaptativa.');
   document.head.appendChild(script);
 }
+function ensureDailyPlanner(){
+  if(global.AppDailyAdaptivePlanner||document.querySelector('script[data-daily-adaptive-planner]'))return;
+  const script=document.createElement('script');
+  script.src='./js/daily-adaptive-planner.js?v=20260830';
+  script.defer=true;
+  script.dataset.dailyAdaptivePlanner='1';
+  script.onerror=()=>console.warn('Não foi possível carregar o planejador adaptativo diário.');
+  document.head.appendChild(script);
+}
 
 function buildQueue(minutes=DEFAULT_BUDGET){
   const advisor=global.AppLearningAdvisor;
@@ -103,6 +112,7 @@ function promote(index=0){
 function init(){
   ensurePanel();
   ensureContinuity();
+  ensureDailyPlanner();
   setTimeout(()=>render(buildQueue(DEFAULT_BUDGET)),700);
   global.addEventListener('adaptive-feedback-evaluated',()=>setTimeout(()=>render(buildQueue(currentSession?.budget||DEFAULT_BUDGET)),0));
 }
