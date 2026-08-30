@@ -20,6 +20,7 @@ function build(reference=new Date()){
   const completed=executions.filter(item=>item?.status==='completed');
   const interrupted=executions.filter(item=>item?.status==='interrupted'||item?.status==='abandoned');
   const feedback=rows.filter(item=>item?.type==='feedback'&&Number.isFinite(Number(item.score)));
+  const resolvedThisWeek=rows.filter(item=>item?.type==='error_state'&&item?.status==='resolved').length;
   const scores=feedback.map(item=>Number(item.score));
   const methods=methodStats(rows);
   const notebook=global.AppIntelligentErrorNotebook?.getSummary?.()||{active:0,resolved:0};
@@ -28,15 +29,15 @@ function build(reference=new Date()){
   const bestMethod=methods.find(item=>item.count>=2&&item.averageScore>0)||null;
   const attention=[];
   if(executions.length>=3&&completionRate<.7)attention.push('Muitas sessões foram interrompidas; reduza o tamanho dos blocos ou proteja melhor o tempo de foco.');
-  if(Number(notebook.active)>Number(notebook.resolved)+2)attention.push('O caderno ainda acumula mais erros ativos do que resolvidos; priorize correção e recuperação ativa.');
+  if(Number(notebook.active)>resolvedThisWeek+2)attention.push('Há mais padrões de erro ativos do que resoluções observadas nesta semana; priorize correção e recuperação ativa.');
   if(scores.length>=3&&average(scores)<=-3)attention.push('A eficácia observada da semana ficou negativa; reavalie os métodos usados nos pontos críticos.');
   if(forecast?.trajectory==='declining')attention.push('A trajetória recente exige atenção; mantenha intervenções curtas e mensuráveis antes de ampliar carga.');
   const wins=[];
   if(completed.length>=3&&completionRate>=.8)wins.push('Boa consistência de execução: a maior parte das sessões iniciadas foi concluída.');
-  if(Number(notebook.resolved)>0)wins.push(`${Number(notebook.resolved)} padrão${Number(notebook.resolved)===1?'':'ões'} de erro resolvido${Number(notebook.resolved)===1?'':'s'} no caderno.`);
+  if(resolvedThisWeek>0)wins.push(`${resolvedThisWeek} padrão${resolvedThisWeek===1?'':'ões'} de erro resolvido${resolvedThisWeek===1?'':'s'} nesta semana.`);
   if(bestMethod)wins.push(`${bestMethod.action} apresentou a melhor eficácia observada entre os métodos com evidência suficiente.`);
   if(scores.length>=3&&average(scores)>=5)wins.push('O feedback atribuído indica melhora relevante na semana.');
-  return {windowDays:WINDOW_DAYS,events:rows.length,executions:executions.length,completed:completed.length,interrupted:interrupted.length,completionRate:Number(completionRate.toFixed(2)),feedbackCount:feedback.length,averageFeedback:Number.isFinite(average(scores))?Number(average(scores).toFixed(1)):null,bestMethod,wins:wins.slice(0,3),attention:attention.slice(0,3),activeErrors:Number(notebook.active)||0,resolvedErrors:Number(notebook.resolved)||0,authority:'review-only'};
+  return {windowDays:WINDOW_DAYS,events:rows.length,executions:executions.length,completed:completed.length,interrupted:interrupted.length,completionRate:Number(completionRate.toFixed(2)),feedbackCount:feedback.length,averageFeedback:Number.isFinite(average(scores))?Number(average(scores).toFixed(1)):null,bestMethod,wins:wins.slice(0,3),attention:attention.slice(0,3),activeErrors:Number(notebook.active)||0,resolvedThisWeek,totalResolvedErrors:Number(notebook.resolved)||0,authority:'review-only'};
 }
 function ensurePanel(){
   const host=document.getElementById('progressForecast')||document.getElementById('dailyAdaptivePlanner')||document.getElementById('adaptiveAiExperience');if(!host)return null;
@@ -47,10 +48,10 @@ function ensurePanel(){
 }
 function render(){
   const result=build();ensurePanel();
-  const summary=document.getElementById('adaptiveWeeklyReviewSummary');if(summary)summary.textContent=`${result.completed}/${result.executions} sessões concluídas · ${result.feedbackCount} feedbacks atribuídos · ${result.activeErrors} erros ativos · ${result.resolvedErrors} resolvidos`;
+  const summary=document.getElementById('adaptiveWeeklyReviewSummary');if(summary)summary.textContent=`${result.completed}/${result.executions} sessões concluídas · ${result.feedbackCount} feedbacks atribuídos · ${result.activeErrors} erros ativos · ${result.resolvedThisWeek} resolvidos na semana`;
   const wins=document.getElementById('adaptiveWeeklyReviewWins');if(wins)wins.innerHTML=result.wins.length?`<strong>Funcionou bem</strong><ul>${result.wins.map(item=>`<li>${safe(item,240)}</li>`).join('')}</ul>`:'<strong>Funcionou bem</strong><p>Ainda não há evidência semanal suficiente.</p>';
   const attention=document.getElementById('adaptiveWeeklyReviewAttention');if(attention)attention.innerHTML=result.attention.length?`<strong>Ajustar</strong><ul>${result.attention.map(item=>`<li>${safe(item,240)}</li>`).join('')}</ul>`:'<strong>Ajustar</strong><p>Nenhum sinal relevante de ajuste foi detectado.</p>';
-  global.dispatchEvent(new CustomEvent('adaptive-weekly-review-updated',{detail:{executions:result.executions,feedbackCount:result.feedbackCount,authority:result.authority}}));
+  global.dispatchEvent(new CustomEvent('adaptive-weekly-review-updated',{detail:{executions:result.executions,feedbackCount:result.feedbackCount,resolvedThisWeek:result.resolvedThisWeek,authority:result.authority}}));
   return result;
 }
 function init(){ensurePanel();render();['study-evidence-timeline-changed','intelligent-error-notebook-changed','adaptive-progress-forecast-updated'].forEach(name=>global.addEventListener(name,render));}
