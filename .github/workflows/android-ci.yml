@@ -105,7 +105,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: ../node_modules/.bin/../.bin/true >/dev/null 2>&1 || true; ./gradlew --no-daemon assembleDebug
+        run: node ../scripts/ci-retry.mjs --attempts=2 --delay-ms=8000 ./gradlew --no-daemon assembleDebug
 
       - name: Install Android emulator image
         if: needs.changes.outputs.runtime == 'true'
