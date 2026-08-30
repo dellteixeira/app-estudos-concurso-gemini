@@ -4,6 +4,7 @@ if(global.AppDailyAdaptivePlanner)return;
 
 const DAY_BUDGETS=[60,120,180];
 const SESSION_SLICE=60;
+const MIN_BLOCK_MINUTES=5;
 let currentPlan=null;
 
 function safe(value,max=160){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
@@ -19,6 +20,14 @@ function ensureExamStrategy(){
   document.head.appendChild(script);
 }
 
+function splitDuration(totalMinutes){
+  const total=Math.max(MIN_BLOCK_MINUTES,Math.round(Number(totalMinutes)||0));
+  const count=Math.max(1,Math.ceil(total/SESSION_SLICE));
+  const base=Math.floor(total/count);
+  const extra=total-(base*count);
+  return Array.from({length:count},(_,index)=>base+(index<extra?1:0)).filter(value=>value>=MIN_BLOCK_MINUTES);
+}
+
 function buildDay(totalMinutes=120){
   const advisor=global.AppLearningAdvisor;
   if(!advisor?.collectCandidates||!advisor?.localIntervention)return null;
@@ -29,12 +38,23 @@ function buildDay(totalMinutes=120){
   for(const candidate of candidates){
     const intervention=calibrate(adaptToExam(advisor.localIntervention(candidate)));
     if(!intervention)continue;
-    const desired=Math.max(5,Math.round(Number(intervention.suggestedMinutes)||15));
+    const desired=Math.max(MIN_BLOCK_MINUTES,Math.round(Number(intervention.suggestedMinutes)||15));
     const remaining=budget-used;
-    if(remaining<5)break;
-    const minutes=Math.min(desired,remaining);
-    blocks.push({candidate,intervention:{...intervention,suggestedMinutes:minutes},minutes,priorityIndex:blocks.length});
-    used+=minutes;
+    if(remaining<MIN_BLOCK_MINUTES)break;
+    const planned=Math.min(desired,remaining);
+    const slices=splitDuration(planned);
+    slices.forEach((minutes,segmentIndex)=>{
+      blocks.push({
+        candidate,
+        intervention:{...intervention,suggestedMinutes:minutes},
+        minutes,
+        priorityIndex:blocks.length,
+        segmentIndex,
+        segmentCount:slices.length,
+        totalRecommendedMinutes:planned
+      });
+      used+=minutes;
+    });
     if(used>=budget)break;
   }
   const sessions=[];
@@ -70,8 +90,8 @@ function render(plan){
   if(!plan?.blocks?.length){summary.textContent='Ainda não há dados suficientes para montar o plano do dia.';list.replaceChildren();return plan;}
   const phase=plan.examContext?.phase?` · ${plan.examContext.label}`:'';
   summary.textContent=`${plan.sessions.length} sessão${plan.sessions.length===1?'':'ões'} · ${plan.used}/${plan.budget} min planejados${phase}`;
-  list.innerHTML=plan.sessions.map(session=>`<article class="daily-adaptive-session"><strong>Sessão ${session.index+1} · ${session.minutes} min</strong>${session.blocks.map(block=>`<div class="daily-adaptive-block"><span>${block.priorityIndex+1}. ${safe(block.candidate.materia,70)} — ${safe(block.candidate.assunto,110)}</span><span>${block.minutes} min</span></div>`).join('')}</article>`).join('');
-  global.dispatchEvent(new CustomEvent('adaptive-day-plan-rendered',{detail:{budget:plan.budget,count:plan.blocks.length,sessions:plan.sessions.length}}));
+  list.innerHTML=plan.sessions.map(session=>`<article class="daily-adaptive-session"><strong>Sessão ${session.index+1} · ${session.minutes} min</strong>${session.blocks.map(block=>{const part=block.segmentCount>1?` · parte ${block.segmentIndex+1}/${block.segmentCount}`:'';return `<div class="daily-adaptive-block"><span>${block.priorityIndex+1}. ${safe(block.candidate.materia,70)} — ${safe(block.candidate.assunto,110)}${part}</span><span>${block.minutes} min</span></div>`}).join('')}</article>`).join('');
+  global.dispatchEvent(new CustomEvent('adaptive-day-plan-rendered',{detail:{budget:plan.budget,count:plan.blocks.length,sessions:plan.sessions.length,maxSessionMinutes:Math.max(...plan.sessions.map(session=>session.minutes))}}));
   return plan;
 }
 
@@ -81,5 +101,5 @@ function init(){
   global.addEventListener('adaptive-exam-date-changed',()=>{if(currentPlan)render(buildDay(currentPlan.budget));});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-global.AppDailyAdaptivePlanner=Object.freeze({buildDay,render,getCurrentPlan:()=>currentPlan});
+global.AppDailyAdaptivePlanner=Object.freeze({buildDay,render,splitDuration,getCurrentPlan:()=>currentPlan,SESSION_SLICE,MIN_BLOCK_MINUTES});
 })(window);
