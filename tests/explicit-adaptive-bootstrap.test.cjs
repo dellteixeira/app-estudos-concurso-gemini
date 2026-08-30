@@ -14,6 +14,7 @@ test('startup prepara apenas shell adaptativo leve',()=>{
   assert.doesNotMatch(shell,/\.\/js\/learning-advisor\.js/);
   assert.doesNotMatch(shell,/\.\/js\/critical-points-actions\.js/);
   assert.doesNotMatch(shell,/\.\/js\/app-ai\.js/);
+  assert.doesNotMatch(shell,/learning-advisor\.css/);
 });
 
 test('ação de calcular plano garante loader e bundle da IA',()=>{
@@ -27,8 +28,9 @@ test('ação de calcular plano garante loader e bundle da IA',()=>{
   assert.ok(refresh>=0&&ensure>refresh);
 });
 
-test('bundle de IA continua completo mas não é carregado implicitamente',()=>{
+test('bundle de IA inclui estilo e scripts mas não é carregado implicitamente',()=>{
   assert.match(loader,/ai: Object\.freeze/);
+  assert.match(loader,/\.\/css\/learning-advisor\.css/);
   assert.match(loader,/\.\/js\/app-ai\.js/);
   assert.match(loader,/\.\/js\/learning-advisor\.js/);
   assert.match(loader,/\.\/js\/critical-points-actions\.js/);
