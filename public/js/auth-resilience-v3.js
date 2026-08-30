@@ -1,0 +1,138 @@
+(function installAuthResilience(global){
+'use strict';
+if(global.AppAuthResilienceV3)return;
+
+const LOGIN_SELECTOR='[data-action="auth-login"]';
+const STATUS_ID='authStatusMessage';
+const RECOVERY_GUARD='auth_resilience_v3_recovery_reload';
+let busy=false;
+
+function getClient(){
+  try{return typeof supabaseClient!=='undefined'?supabaseClient:null}catch(_){return null}
+}
+function setStatus(message,type='info'){
+  const el=document.getElementById(STATUS_ID);if(!el)return;
+  el.hidden=false;el.setAttribute('aria-hidden','false');el.dataset.state=type;el.textContent=String(message||'');
+}
+function setBusy(value){
+  busy=!!value;
+  document.querySelectorAll(LOGIN_SELECTOR).forEach(btn=>{btn.disabled=busy;btn.setAttribute('aria-busy',busy?'true':'false')});
+}
+function authScreenVisible(){
+  const auth=document.getElementById('auth-screen');
+  return !!auth&&getComputedStyle(auth).display!=='none'&&!auth.hidden;
+}
+function dashboardVisible(){
+  const dash=document.getElementById('app-dashboard');
+  return !!dash&&getComputedStyle(dash).display!=='none'&&!dash.hidden;
+}
+function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
+async function waitForAppTransition(timeoutMs=3000){
+  const started=Date.now();
+  while(Date.now()-started<timeoutMs){
+    if(!authScreenVisible()||dashboardVisible())return true;
+    await wait(80);
+  }
+  return !authScreenVisible()||dashboardVisible();
+}
+function cleanAuthUrl(){
+  try{
+    const url=new URL(global.location.href);let changed=false;
+    ['error','error_code','error_description','code','type'].forEach(key=>{if(url.searchParams.has(key)){url.searchParams.delete(key);changed=true}});
+    if(url.hash&&/(error|error_code|error_description|access_token|refresh_token|type=recovery)/.test(url.hash)){url.hash='';changed=true}
+    if(changed)history.replaceState(history.state,'',`${url.pathname}${url.search}${url.hash}`);
+  }catch(_){}
+}
+function authErrorMessage(error){
+  const raw=String(error?.message||error||'').toLowerCase();
+  if(raw.includes('invalid login credentials'))return'E-mail ou senha inválidos.';
+  if(raw.includes('email not confirmed'))return'Confirme seu e-mail antes de entrar.';
+  if(raw.includes('rate limit')||raw.includes('too many'))return'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+  if(raw.includes('refresh token')||raw.includes('session')&&raw.includes('invalid'))return'A sessão anterior expirou. Entre novamente.';
+  if(raw.includes('failed to fetch')||raw.includes('network'))return'Não foi possível alcançar o servidor de autenticação. Verifique a conexão.';
+  return error?.message||'Não foi possível entrar. Tente novamente.';
+}
+async function clearLocalSession(client){
+  try{await client.auth.signOut({scope:'local'})}catch(_){try{await client.auth.signOut()}catch(__){}}
+}
+async function recoverTransition(client){
+  const {data,error}=await client.auth.getSession();
+  if(error||!data?.session)return false;
+  if(sessionStorage.getItem(RECOVERY_GUARD)==='1'){
+    setStatus('A conta foi autenticada, mas o painel não inicializou. Atualize o aplicativo para a versão mais recente.','error');
+    return false;
+  }
+  sessionStorage.setItem(RECOVERY_GUARD,'1');
+  setStatus('Sessão confirmada. Finalizando a abertura do painel…','loading');
+  await wait(250);
+  global.location.reload();
+  return true;
+}
+async function login(){
+  if(busy)return false;
+  const client=getClient();
+  if(!client){setStatus('Serviço de autenticação ainda não está disponível. Reabra o aplicativo e tente novamente.','error');return false}
+  const email=String(document.getElementById('email')?.value||'').trim();
+  const password=String(document.getElementById('password')?.value||'');
+  if(!email||!password){setStatus('Informe e-mail e senha.','error');return false}
+  setBusy(true);setStatus('Validando sua conta…','loading');
+  try{
+    await clearLocalSession(client);
+    cleanAuthUrl();
+    const {data,error}=await client.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    if(!data?.session||!data?.user)throw new Error('Sessão não foi criada pelo servidor.');
+    global.dispatchEvent(new CustomEvent('auth-resilience-session-valid',{detail:{userId:data.user.id||'',authority:'supabase-sign-in'}}));
+    setStatus('Login confirmado. Abrindo o painel…','success');
+    const transitioned=await waitForAppTransition(3200);
+    if(transitioned){sessionStorage.removeItem(RECOVERY_GUARD);return true}
+    return await recoverTransition(client);
+  }catch(error){
+    setStatus(authErrorMessage(error),'error');return false;
+  }finally{setBusy(false)}
+}
+async function inspectStoredSession(){
+  const client=getClient();if(!client)return null;
+  try{
+    const {data,error}=await client.auth.getSession();if(error)throw error;
+    let session=data?.session||null;if(!session)return null;
+    const expiresAt=Number(session.expires_at||0)*1000;
+    if(expiresAt&&expiresAt<=Date.now()+30000){
+      const refreshed=await client.auth.refreshSession();if(refreshed.error)throw refreshed.error;
+      session=refreshed.data?.session||null;
+    }
+    return session;
+  }catch(error){await clearLocalSession(client);setStatus(authErrorMessage(error),'warning');return null}
+}
+function recoveryErrorFromUrl(){
+  try{
+    const url=new URL(global.location.href);const params=new URLSearchParams(url.hash.startsWith('#')?url.hash.slice(1):url.hash);
+    const code=url.searchParams.get('error_code')||params.get('error_code');const desc=url.searchParams.get('error_description')||params.get('error_description');
+    if(code||desc)return{code,desc};
+  }catch(_){}
+  return null;
+}
+async function boot(){
+  const recoveryError=recoveryErrorFromUrl();
+  if(recoveryError){setStatus('O link de recuperação expirou ou já foi utilizado. Entre normalmente com sua senha atual.','warning');cleanAuthUrl()}
+  const session=await inspectStoredSession();
+  if(!session){sessionStorage.removeItem(RECOVERY_GUARD);return}
+  global.dispatchEvent(new CustomEvent('auth-resilience-session-valid',{detail:{userId:session.user?.id||'',authority:'supabase-session'}}));
+  const transitioned=await waitForAppTransition(1800);
+  if(transitioned){sessionStorage.removeItem(RECOVERY_GUARD);return}
+  await recoverTransition(getClient());
+}
+
+document.addEventListener('click',event=>{
+  const button=event.target?.closest?.(LOGIN_SELECTOR);if(!button)return;
+  event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void login();
+},true);
+document.addEventListener('keydown',event=>{
+  if(event.key!=='Enter')return;const auth=document.getElementById('auth-screen');
+  if(!auth||getComputedStyle(auth).display==='none'||!auth.contains(event.target))return;
+  event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void login();
+},true);
+
+void boot();
+global.AppAuthResilienceV3=Object.freeze({login,inspectStoredSession,clearLocalSession,authErrorMessage,cleanAuthUrl,waitForAppTransition});
+})(window);
