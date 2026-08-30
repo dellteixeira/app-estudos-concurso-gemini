@@ -4,6 +4,8 @@ const assert=require('node:assert/strict');
 
 const quality=fs.readFileSync('.github/workflows/quality-check.yml','utf8');
 const android=fs.readFileSync('.github/workflows/android-ci.yml','utf8');
+const androidRelease=fs.readFileSync('.github/workflows/android-release.yml','utf8');
+const canonicalRelease=fs.readFileSync('.github/workflows/canonical-release.yml','utf8');
 const secrets=fs.readFileSync('.github/workflows/security-secrets-audit.yml','utf8');
 const history=fs.readFileSync('.github/workflows/security-history-audit.yml','utf8');
 const deploy=fs.readFileSync('.github/workflows/cloudflare-production-deploy.yml','utf8');
@@ -13,13 +15,8 @@ const runbook=fs.readFileSync('docs/ci-resilience-runbook.md','utf8');
 const retry=fs.readFileSync('scripts/ci-retry.mjs','utf8');
 
 test('workflows não fixam o runner ubuntu-24.04',()=>{
-  for(const source of [quality,android,secrets,history,deploy,mirror])assert.doesNotMatch(source,/runs-on: ubuntu-24\.04/);
-  assert.match(quality,/runs-on: ubuntu-latest/);
-  assert.match(android,/runs-on: ubuntu-latest/);
-  assert.match(secrets,/runs-on: ubuntu-latest/);
-  assert.match(history,/runs-on: ubuntu-latest/);
-  assert.match(deploy,/runs-on: ubuntu-latest/);
-  assert.match(mirror,/runs-on: ubuntu-latest/);
+  for(const source of [quality,android,androidRelease,canonicalRelease,secrets,history,deploy,mirror])assert.doesNotMatch(source,/runs-on: ubuntu-24\.04/);
+  for(const source of [quality,android,androidRelease,canonicalRelease,secrets,history,deploy,mirror])assert.match(source,/runs-on: ubuntu-latest/);
 });
 
 test('retentativas são restritas a dependências e builds transitórios',()=>{
@@ -27,6 +24,8 @@ test('retentativas são restritas a dependências e builds transitórios',()=>{
   assert.match(quality,/ci-retry\.mjs[^\n]*npm install/);
   assert.match(android,/ci-retry\.mjs[^\n]*npm ci/);
   assert.match(android,/ci-retry\.mjs[^\n]*gradlew/);
+  assert.match(androidRelease,/ci-retry\.mjs[^\n]*npm ci/);
+  assert.match(androidRelease,/ci-retry\.mjs[^\n]*gradlew/);
   assert.doesNotMatch(quality,/ci-retry\.mjs[^\n]*npm test/);
   assert.doesNotMatch(quality,/ci-retry\.mjs[^\n]*npm run audit/);
 });
@@ -45,10 +44,20 @@ test('audit completo de histórico não consome minutos em todo PR',()=>{
   assert.match(secrets,/pull_request:/);
 });
 
-test('Android não gera APK para mudanças web genéricas',()=>{
+test('Android Check não gera APK para mudanças web genéricas',()=>{
   assert.doesNotMatch(android,/public\/\*\|public\/\*\*\/\*/);
   assert.match(android,/public\/capacitor-runtime\.js/);
   assert.match(android,/if: needs\.changes\.outputs\.android == 'true'/);
+});
+
+test('Android Release só dispara para identidade/toolchain e exige runtime web canônico',()=>{
+  assert.doesNotMatch(androidRelease,/- 'public\/\*\*'/);
+  assert.doesNotMatch(androidRelease,/- 'src\/\*\*'/);
+  assert.doesNotMatch(androidRelease,/- 'tests\/\*\*'/);
+  assert.match(androidRelease,/- 'config\/release-contract\.json'/);
+  assert.match(androidRelease,/Verify embedded web runtime is canonical/);
+  assert.match(androidRelease,/git diff --quiet \"\$RELEASE_TAG\" HEAD/);
+  assert.match(androidRelease,/Release Android bloqueada: runtime web embutido difere/);
 });
 
 test('produção só segue automaticamente após Quality Check bem-sucedido',()=>{
@@ -76,6 +85,14 @@ test('deploy não é cancelado no meio e faz rollback automático em falha poste
   assert.match(deploy,/id: deploy/);
   assert.match(deploy,/if: failure\(\) && steps\.deploy\.outcome == 'success'/);
   assert.match(deploy,/wrangler@4\.120\.0 rollback --message/);
+});
+
+test('release canônica manual só opera sobre o SHA realmente publicado',()=>{
+  assert.match(canonicalRelease,/Verify manual release matches live production/);
+  assert.match(canonicalRelease,/version\.json\?canonical-release=/);
+  assert.match(canonicalRelease,/live_commit/);
+  assert.match(canonicalRelease,/EXPECTED_SHA/);
+  assert.match(canonicalRelease,/Release manual bloqueada: HEAD não corresponde à revisão atualmente publicada/);
 });
 
 test('GitLab oferece CI alternativo para indisponibilidade do GitHub Actions',()=>{
