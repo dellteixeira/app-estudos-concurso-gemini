@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     outputs:
       ui: ${{ steps.scope.outputs.ui }}
     steps:
@@ -50,7 +50,7 @@ jobs:
           ui=false
           while IFS= read -r file; do
             case "$file" in
-              public/*.html|public/css/*|public/css/**/*|public/js/*|public/js/**/*|playwright.config.cjs|tests/browser/*|tests/browser/**/*|tests/*retention*|.github/workflows/quality-check.yml)
+              public/*.html|public/css/*|public/css/**/*|public/js/*|public/js/**/*|playwright.config.cjs|tests/browser/*|tests/browser/**/*|tests/*retention*)
                 ui=true
                 ;;
             esac
@@ -58,7 +58,7 @@ jobs:
           echo "ui=$ui" >> "$GITHUB_OUTPUT"
 
   fast-check:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 12
     steps:
       - name: Checkout
@@ -133,7 +133,7 @@ jobs:
     name: test-and-audit
     needs: [changes, fast-check, ui-check]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Verify required quality gates
         shell: bash
