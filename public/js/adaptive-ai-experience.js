@@ -22,6 +22,15 @@ function ensureStyle(){
   link.dataset.adaptiveAiStyle='1';
   document.head.appendChild(link);
 }
+function ensureFeedbackLoop(){
+  if(global.AppAdaptiveFeedbackLoop||document.querySelector('script[data-adaptive-feedback-loop]'))return;
+  const script=document.createElement('script');
+  script.src='./js/adaptive-feedback-loop.js?v=20260830';
+  script.defer=true;
+  script.dataset.adaptiveFeedbackLoop='1';
+  script.onerror=()=>console.warn('Não foi possível carregar o feedback loop adaptativo.');
+  document.head.appendChild(script);
+}
 
 async function ensureAdvisor(){
   if(global.AppLearningAdvisor)return global.AppLearningAdvisor;
@@ -128,6 +137,7 @@ async function refresh(options={}){
 function init(){
   ensureStyle();
   ensurePanel();
+  ensureFeedbackLoop();
   setTimeout(()=>refresh({refine:false}),500);
 }
 
