@@ -21,7 +21,7 @@ test('startup da experiência adaptativa permanece leve',()=>{
 test('módulos adaptativos são ativados dentro do fluxo explícito',()=>{
   assert.match(file,/async function activateAdaptiveModules\(\)/);
   assert.match(file,/ensureFeedbackLoop\(\);ensureCalibration\(\);ensureSessionOrchestrator\(\);ensureWeaknessMap\(\);ensureStudyEvidenceTimeline\(\);ensureExplainableRecommendations\(\);ensureAdaptiveConfidence\(\)/);
-  assert.match(file,/await activateAdaptiveModules\(\);const advisor=await ensureAdvisor\(\)/);
+  assert.match(file,/const advisor=await ensureAdvisor\(\);if\(!advisor\).*await activateAdaptiveModules\(\)/s);
   assert.match(file,/adaptiveAiCalculate[^]*refresh\(\{refine:false\}\)/);
 });
 
