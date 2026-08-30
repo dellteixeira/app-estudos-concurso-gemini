@@ -93,7 +93,8 @@ test('wrapper isola nova rota e preserva Worker existente',()=>{
   assert.match(wrapper,/import app from '\.\/index\.js'/);
   assert.match(wrapper,/handleLearningDiagnosis/);
   assert.match(wrapper,/\/api\/ai\/learning-diagnosis/);
-  assert.match(wrapper,/return app\.fetch\(request, env, ctx\)/);
+  assert.match(wrapper,/const response = await app\.fetch\(request, env, ctx\)/);
+  assert.match(wrapper,/return response/);
   assert.match(wrangler,/"main": "\.\/src\/worker\.js"/);
 });
 
