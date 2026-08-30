@@ -5,15 +5,19 @@ const fs=require('node:fs');
 const notebook=fs.readFileSync('public/js/intelligent-error-notebook.js','utf8');
 const question=fs.readFileSync('public/js/question-performance-intelligence.js','utf8');
 
-test('caderno registra recorrência e resolução por sequência de acertos',()=>{
+test('caderno registra recorrência e resolução por evidência forte acumulada',()=>{
   assert.match(notebook,/const RESOLUTION_STREAK=3/);
+  assert.match(notebook,/const RESOLUTION_EVIDENCE_TARGET=4/);
   assert.match(notebook,/status:'active'/);
+  assert.match(notebook,/resolutionEvidence>=RESOLUTION_EVIDENCE_TARGET/);
+  assert.match(notebook,/perfectEvidence>=1/);
+  assert.match(notebook,/correctStreak>=2/);
   assert.match(notebook,/status:resolved\?'resolved':'active'/);
-  assert.match(notebook,/correctStreak>=RESOLUTION_STREAK/);
 });
 
 test('novo erro reabre o padrão e zera sequência correta',()=>{
   assert.match(notebook,/status:'active',correctStreak:0/);
+  assert.match(notebook,/resolutionEvidence:0,perfectEvidence:0/);
   assert.match(notebook,/lastSeenAt:nowIso\(\)/);
 });
 
