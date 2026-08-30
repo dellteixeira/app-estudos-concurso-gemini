@@ -5,6 +5,7 @@ if(global.AppAdaptiveFeedbackLoop)return;
 const STORAGE_KEY='adaptive_feedback_loop_v1';
 const HISTORY_LIMIT=60;
 const EVALUATION_DELAY_MS=2*60*1000;
+const EVALUATION_INTERVAL_MS=60*1000;
 const EXECUTION_STATUS=new Set(['completed','interrupted','abandoned']);
 
 function safe(value,max=180){return String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
@@ -14,6 +15,10 @@ function write(value){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(value)
 function nowIso(){return new Date().toISOString()}
 function attributedHistory(){return (Array.isArray(read().history)?read().history:[]).filter(item=>item?.attributed===true)}
 function durationBucket(minutes){const value=Math.max(5,Math.min(90,Number(minutes)||0));return Math.max(5,Math.min(90,Math.round(value/5)*5))}
+function ensureDiagnosticProvider(){
+  if(global.AppDiagnosticCandidateProvider||document.querySelector('script[data-diagnostic-candidate-provider]'))return;
+  const script=document.createElement('script');script.src='./js/diagnostic-candidate-provider.js?v=20260830';script.defer=true;script.dataset.diagnosticCandidateProvider='1';script.onload=()=>evaluatePending();script.onerror=()=>console.warn('Não foi possível carregar a cobertura diagnóstica do feedback.');document.head.appendChild(script);
+}
 
 function snapshot(candidate){const m=candidate?.metrics||{};return {retention:clamp(m.retention,0,100),accuracy:m.accuracy==null?null:clamp(m.accuracy,0,100),reviewCount:clamp(m.reviewCount,0,999),sessionCount:clamp(m.sessionCount,0,999),lapseCount:clamp(m.lapseCount,0,999)}}
 function recommendationKey(plan){return safe(plan?.candidate?.topicId,600)}
@@ -24,8 +29,16 @@ function scoreOutcome(before,after){const retentionDelta=after.retention-before.
 function feedbackEventItems(completed=[]){return completed.map(item=>({topicId:safe(item?.topicId,600),score:Number(clamp(item?.score,-100,100).toFixed(2)),outcome:safe(item?.outcome,20),action:safe(item?.action,40),source:safe(item?.source,30)}))}
 function evaluatePending(){
   const advisor=global.AppLearningAdvisor;if(!advisor?.collectCandidates)return [];
-  const candidates=advisor.collectCandidates?.(5)||[];const byId=new Map(candidates.map(candidate=>[candidate.topicId,candidate]));const data=read();const pending=Array.isArray(data.pending)?data.pending:[];const history=Array.isArray(data.history)?data.history:[];const keep=[];const completed=[];const now=Date.now();
-  pending.forEach(entry=>{if(entry?.executionStatus==='interrupted'||entry?.executionStatus==='abandoned')return;if(entry?.executionStatus!=='completed'){keep.push(entry);return}const finished=Date.parse(entry?.executionFinishedAt||entry?.startedAt||0);if(Number.isFinite(finished)&&now-finished<EVALUATION_DELAY_MS){keep.push(entry);return}const candidate=byId.get(entry?.topicId);if(!candidate){keep.push(entry);return}const after=snapshot(candidate);const before=entry?.baseline||snapshot({});if(!changedEnough(before,after)){keep.push(entry);return}completed.push({topicId:entry.topicId,action:entry.action,source:entry.source,suggestedMinutes:entry.suggestedMinutes,executedMinutes:Number(entry.executedMinutes)||0,completionRatio:Number(entry.completionRatio)||0,startedAt:entry.startedAt,executionFinishedAt:entry.executionFinishedAt,evaluatedAt:nowIso(),attributed:true,...scoreOutcome(before,after)})});
+  const fallback=advisor.collectCandidates?.(5)||[];const fallbackById=new Map(fallback.map(candidate=>[candidate.topicId,candidate]));const provider=global.AppDiagnosticCandidateProvider;
+  const data=read();const pending=Array.isArray(data.pending)?data.pending:[];const history=Array.isArray(data.history)?data.history:[];const keep=[];const completed=[];const now=Date.now();
+  pending.forEach(entry=>{
+    if(entry?.executionStatus==='interrupted'||entry?.executionStatus==='abandoned')return;
+    if(entry?.executionStatus!=='completed'){keep.push(entry);return}
+    const finished=Date.parse(entry?.executionFinishedAt||entry?.startedAt||0);if(Number.isFinite(finished)&&now-finished<EVALUATION_DELAY_MS){keep.push(entry);return}
+    const candidate=provider?.findByTopicId?.(entry?.topicId)||fallbackById.get(entry?.topicId);if(!candidate){keep.push(entry);return}
+    const after=snapshot(candidate);const before=entry?.baseline||snapshot({});if(!changedEnough(before,after)){keep.push(entry);return}
+    completed.push({topicId:entry.topicId,action:entry.action,source:entry.source,suggestedMinutes:entry.suggestedMinutes,executedMinutes:Number(entry.executedMinutes)||0,completionRatio:Number(entry.completionRatio)||0,startedAt:entry.startedAt,executionFinishedAt:entry.executionFinishedAt,evaluatedAt:nowIso(),attributed:true,...scoreOutcome(before,after)})
+  });
   if(completed.length||keep.length!==pending.length){data.pending=keep;data.history=[...history,...completed].slice(-HISTORY_LIMIT);write(data)}
   if(completed.length)global.dispatchEvent(new CustomEvent('adaptive-feedback-evaluated',{detail:{count:completed.length,attributed:true,items:feedbackEventItems(completed)}}));
   return completed;
@@ -36,7 +49,7 @@ function getPreferredAction(candidates=[]){const stats=getActionStats().filter(i
 function findItem(plan){const candidate=plan?.candidate;if(!candidate)return null;try{if(Array.isArray(global.editalItems))return global.editalItems.find(item=>item?.materia===candidate.materia&&item?.assunto===candidate.assunto)||null}catch(_){}return null}
 function startCurrentPlan(){const plan=global.AppAdaptiveAIExperience?.getCurrentPlan?.();if(!plan?.candidate||!plan?.intervention)return false;const item=findItem(plan);recordStart(plan);const action=plan.intervention.recommendedAction;const minutes=Math.max(5,Number(plan.intervention.suggestedMinutes)||15);const base={kind:'study',materia:plan.candidate.materia,assunto:plan.candidate.assunto,itemId:item?.id,isRevision:true,minutes,source:'adaptive_feedback_loop'};if(action==='active_recall'&&typeof global.openActiveRecallGuide==='function'){global.openActiveRecallGuide({...base,activityType:'revisao_ativa',method:'revisao_ativa',methodLabel:'Recuperação ativa'});return true}if(typeof global.launchOpportunityPomodoro==='function'){const config=action==='questions'?{activityType:'questoes',method:'questoes',methodLabel:'Questões comentadas'}:action==='focused_restudy'?{activityType:'teoria',method:'reestudo',methodLabel:'Reestudo focalizado'}:{activityType:'teoria',method:'revisao_curta',methodLabel:'Revisão curta'};global.launchOpportunityPomodoro({...base,...config});return true}return false}
 function ensureStartButton(){const actions=document.querySelector('#adaptiveAiExperience .adaptive-ai-actions');if(!actions||document.getElementById('adaptiveAiStart'))return;const button=document.createElement('button');button.id='adaptiveAiStart';button.type='button';button.className='btn btn-success btn-sm';button.textContent='Iniciar plano';button.addEventListener('click',startCurrentPlan);actions.prepend(button)}
-function init(){ensureStartButton();evaluatePending();const observer=new MutationObserver(()=>ensureStartButton());observer.observe(document.documentElement,{childList:true,subtree:true});global.addEventListener('adaptive-session-execution-finished',event=>{recordExecutionOutcome(event?.detail||{});setTimeout(evaluatePending,EVALUATION_DELAY_MS)});global.addEventListener('adaptive-feedback-evaluated',()=>global.AppAdaptiveAIExperience?.refresh?.({refine:false}));setInterval(evaluatePending,60*1000)}
+function init(){ensureStartButton();ensureDiagnosticProvider();evaluatePending();const observer=new MutationObserver(()=>ensureStartButton());observer.observe(document.documentElement,{childList:true,subtree:true});global.addEventListener('adaptive-session-execution-finished',event=>recordExecutionOutcome(event?.detail||{}));global.addEventListener('adaptive-feedback-evaluated',()=>global.AppAdaptiveAIExperience?.refresh?.({refine:false}));setInterval(evaluatePending,EVALUATION_INTERVAL_MS)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0),{once:true});else setTimeout(init,0);
 global.AppAdaptiveFeedbackLoop=Object.freeze({recordStart,recordExecutionOutcome,evaluatePending,getActionStats,getDurationStats,getPreferredAction,startCurrentPlan,feedbackEventItems});
 })(window);
