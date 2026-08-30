@@ -23,18 +23,18 @@ function score(plan){
   const notebook=global.AppIntelligentErrorNotebook?.getTopicEntries?.(candidate.topicId)||[];
   add(8,notebook.length>0,'caderno de erros');
   const timeline=global.AppStudyEvidenceTimeline?.getEntries?.(candidate.topicId)||[];
-  const executions=timeline.filter(item=>item?.type==='execution_finished');
-  const feedback=timeline.filter(item=>item?.type==='feedback');
-  add(10,executions.length>=1,'execução registrada');
-  add(10,feedback.length>=1,'feedback atribuído');
+  const completedExecutions=timeline.filter(item=>item?.type==='execution_finished'&&item?.status==='completed');
+  const attributedFeedback=timeline.filter(item=>item?.type==='feedback'&&Number.isFinite(Number(item?.score)));
+  add(10,completedExecutions.length>=1,'execução concluída registrada');
+  add(10,attributedFeedback.length>=1,'feedback atribuído');
 
   if(finite(metrics.retention)&&finite(metrics.accuracy)&&Math.abs(Number(metrics.retention)-Number(metrics.accuracy))>=30){
     earned-=8;uncertainty.push('retenção e acurácia divergem');
   }
   if(Number(metrics.reviewCount)<2)uncertainty.push('poucas revisões observadas');
   if(Number(metrics.sessionCount)<2)uncertainty.push('poucas sessões observadas');
-  if(!feedback.length)uncertainty.push('sem feedback atribuído recente');
-  if(!executions.length)uncertainty.push('sem execução concluída registrada');
+  if(!attributedFeedback.length)uncertainty.push('sem feedback atribuído');
+  if(!completedExecutions.length)uncertainty.push('sem execução concluída registrada');
 
   const confidence=clamp(Math.round((Math.max(0,earned)/Math.max(1,possible))*100),0,100);
   const level=confidence>=75?'high':confidence>=50?'medium':'low';
@@ -45,6 +45,8 @@ function score(plan){
     signals:signals.slice(0,6),
     uncertaintyReasons:uncertainty.slice(0,4),
     evidenceCount:signals.length,
+    completedExecutions:completedExecutions.length,
+    attributedFeedback:attributedFeedback.length,
     authority:'confidence-only'
   };
 }
