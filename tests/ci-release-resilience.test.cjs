@@ -7,6 +7,7 @@ const android=fs.readFileSync('.github/workflows/android-ci.yml','utf8');
 const secrets=fs.readFileSync('.github/workflows/security-secrets-audit.yml','utf8');
 const history=fs.readFileSync('.github/workflows/security-history-audit.yml','utf8');
 const deploy=fs.readFileSync('.github/workflows/cloudflare-production-deploy.yml','utf8');
+const gitlab=fs.readFileSync('.gitlab-ci.yml','utf8');
 const retry=fs.readFileSync('scripts/ci-retry.mjs','utf8');
 
 test('workflows não fixam o runner ubuntu-24.04',()=>{
@@ -72,4 +73,12 @@ test('deploy não é cancelado no meio e faz rollback automático em falha poste
   assert.match(deploy,/id: deploy/);
   assert.match(deploy,/if: failure\(\) && steps\.deploy\.outcome == 'success'/);
   assert.match(deploy,/wrangler@4\.120\.0 rollback --message/);
+});
+
+test('GitLab oferece CI alternativo para indisponibilidade do GitHub Actions',()=>{
+  assert.match(gitlab,/image: node:22\.23\.2-bookworm/);
+  assert.match(gitlab,/node --check src\/index\.js/);
+  assert.match(gitlab,/npm test/);
+  assert.match(gitlab,/AUDIT_ALLOW_ANY_ROOT=1 npm run audit/);
+  assert.match(gitlab,/node scripts\/audit-secrets\.mjs/);
 });
