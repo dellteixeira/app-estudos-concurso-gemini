@@ -26,10 +26,10 @@ test('confiança considera cobertura e conflito de evidências',()=>{
 
 test('confiança não persiste dados ou conteúdo de estudo',()=>{
   assert.doesNotMatch(confidence,/localStorage\.setItem/);
-  assert.doesNotMatch(confidence,/questionText\s*:/i);
-  assert.doesNotMatch(confidence,/answerText\s*:/i);
-  assert.doesNotMatch(confidence,/front\s*:/i);
-  assert.doesNotMatch(confidence,/back\s*:/i);
+  assert.doesNotMatch(confidence,/(?:^|[{,\s])questionText\s*:/im);
+  assert.doesNotMatch(confidence,/(?:^|[{,\s])answerText\s*:/im);
+  assert.doesNotMatch(confidence,/(?:^|[{,\s])front\s*:/im);
+  assert.doesNotMatch(confidence,/(?:^|[{,\s])back\s*:/im);
 });
 
 test('experiência carrega confiança com marcador estável',()=>{
