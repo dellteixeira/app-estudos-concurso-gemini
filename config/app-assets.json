@@ -15,7 +15,6 @@
     "/css/canonical-ui.css",
     "/css/pdf-library.css",
     "/css/pdf-reader.css",
-    "/css/learning-advisor.css",
     "/js/study-domain.js",
     "/js/core/edital-integrity.js",
     "/js/core/local-backup-store.js",
@@ -40,9 +39,6 @@
     "/js/core/offline-sync-edital-graduation.js",
     "/js/app-core.js",
     "/js/adaptive-schedule-reconciliation.js",
-    "/js/learning-advisor.js",
-    "/js/critical-points-actions.js",
-    "/js/app-ai.js",
     "/js/app-ui.js",
     "/js/ui/mobile.js",
     "/js/ui/navigation.js",
@@ -56,6 +52,10 @@
     "/js/sync-engine.js"
   ],
   "optionalOfflineAssets": [
+    "/css/learning-advisor.css",
+    "/js/learning-advisor.js",
+    "/js/critical-points-actions.js",
+    "/js/app-ai.js",
     "/js/performance-loader.js",
     "/js/performance-metrics.js",
     "/js/notes-import-export.js",
