@@ -23,7 +23,7 @@ function recommendationKey(plan){return safe(plan?.candidate?.topicId,600)}
 function recordStart(plan){
   const topicId=recommendationKey(plan);if(!topicId)return null;
   const data=read();const pending=Array.isArray(data.pending)?data.pending:[];
-  const entry={topicId,action:safe(plan?.intervention?.recommendedAction,40),suggestedMinutes:Math.round(clamp(plan?.intervention?.suggestedMinutes,5,90)),source:plan?.source==='ai'?'ai':'retention-engine',startedAt:nowIso(),executionStatus:'pending',baseline:snapshot(plan.candidate)};
+  const entry={topicId,action:safe(plan?.intervention?.recommendedAction,40),suggestedMinutes:Math.round(clamp(plan?.intervention?.suggestedMinutes,5,90)),source:plan?.source==='ai'?'ai':'learning-advisor',startedAt:nowIso(),executionStatus:'pending',baseline:snapshot(plan.candidate)};
   data.pending=[...pending.filter(item=>item?.topicId!==topicId),entry].slice(-20);data.history=Array.isArray(data.history)?data.history:[];write(data);return entry;
 }
 function recordExecutionOutcome(detail={}){
