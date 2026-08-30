@@ -46,7 +46,7 @@ workflow:
         fi
 
         git remote remove github >/dev/null 2>&1 || true
-        git remote add github "https://x-access-token:${GITHUB_READ_TOKEN}@github.com/dellteixeira/app-estudos-concurso-gemini.git"
+        git remote add github "https://dellteixeira:${GITHUB_READ_TOKEN}@github.com/dellteixeira/app-estudos-concurso-gemini.git"
         git fetch --no-tags --depth=1 github "$GITHUB_SHA"
         git checkout --detach FETCH_HEAD
         git remote set-url github "$GITHUB_REPOSITORY_URL"
