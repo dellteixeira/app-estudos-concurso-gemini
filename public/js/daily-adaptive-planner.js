@@ -44,7 +44,7 @@ function buildDay(totalMinutes=120){
     session.blocks.push(block);session.minutes+=block.minutes;
   }
   if(session.blocks.length)sessions.push(session);
-  currentPlan={budget,used,remaining:Math.max(0,budget-used),blocks,sessions,authority:'retention-engine-order',examContext:global.AppExamProximityStrategy?.getContext?.()||null};
+  currentPlan={budget,used,remaining:Math.max(0,budget-used),blocks,sessions,authority:'learning-advisor-friction-order',scheduleAuthority:'retention-engine',examContext:global.AppExamProximityStrategy?.getContext?.()||null};
   return currentPlan;
 }
 
@@ -56,7 +56,7 @@ function ensurePanel(){
   panel=document.createElement('section');
   panel.id='dailyAdaptivePlanner';
   panel.className='daily-adaptive-planner';
-  panel.innerHTML=`<div class="adaptive-session-head"><span class="dashboard-v2-section-label">Plano do dia</span><span class="adaptive-session-authority">ordem do Retention Engine</span></div><div class="adaptive-session-budget" role="group" aria-label="Tempo de estudo no dia">${DAY_BUDGETS.map(value=>`<button type="button" class="btn btn-secondary btn-sm" data-day-budget="${value}">${value} min</button>`).join('')}</div><div id="dailyAdaptiveSummary" class="adaptive-session-summary">Escolha o tempo disponível hoje.</div><div id="dailyAdaptiveSessions" class="daily-adaptive-sessions"></div>`;
+  panel.innerHTML=`<div class="adaptive-session-head"><span class="dashboard-v2-section-label">Plano do dia</span><span class="adaptive-session-authority">ordem do Learning Advisor · agenda do Retention Engine</span></div><div class="adaptive-session-budget" role="group" aria-label="Tempo de estudo no dia">${DAY_BUDGETS.map(value=>`<button type="button" class="btn btn-secondary btn-sm" data-day-budget="${value}">${value} min</button>`).join('')}</div><div id="dailyAdaptiveSummary" class="adaptive-session-summary">Escolha o tempo disponível hoje.</div><div id="dailyAdaptiveSessions" class="daily-adaptive-sessions"></div>`;
   host.appendChild(panel);
   panel.querySelectorAll('[data-day-budget]').forEach(button=>button.addEventListener('click',()=>render(buildDay(Number(button.dataset.dayBudget)))));
   return panel;
