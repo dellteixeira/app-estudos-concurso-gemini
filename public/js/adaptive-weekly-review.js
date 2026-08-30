@@ -20,6 +20,7 @@ function build(reference=new Date()){
   const completed=executions.filter(item=>item?.status==='completed');
   const interrupted=executions.filter(item=>item?.status==='interrupted'||item?.status==='abandoned');
   const feedback=rows.filter(item=>item?.type==='feedback'&&Number.isFinite(Number(item.score)));
+  const questionErrorOccurrences=rows.filter(item=>item?.type==='question_error').reduce((sum,item)=>sum+(Number(item?.occurrences)||1),0);
   const resolvedThisWeek=rows.filter(item=>item?.type==='error_state'&&item?.status==='resolved').length;
   const scores=feedback.map(item=>Number(item.score));
   const methods=methodStats(rows);
@@ -37,7 +38,7 @@ function build(reference=new Date()){
   if(resolvedThisWeek>0)wins.push(`${resolvedThisWeek} padrão${resolvedThisWeek===1?'':'ões'} de erro resolvido${resolvedThisWeek===1?'':'s'} nesta semana.`);
   if(bestMethod)wins.push(`${bestMethod.action} apresentou a melhor eficácia observada entre os métodos com evidência suficiente.`);
   if(scores.length>=3&&average(scores)>=5)wins.push('O feedback atribuído indica melhora relevante na semana.');
-  return {windowDays:WINDOW_DAYS,events:rows.length,executions:executions.length,completed:completed.length,interrupted:interrupted.length,completionRate:Number(completionRate.toFixed(2)),feedbackCount:feedback.length,averageFeedback:Number.isFinite(average(scores))?Number(average(scores).toFixed(1)):null,bestMethod,wins:wins.slice(0,3),attention:attention.slice(0,3),activeErrors:Number(notebook.active)||0,resolvedThisWeek,totalResolvedErrors:Number(notebook.resolved)||0,authority:'review-only'};
+  return {windowDays:WINDOW_DAYS,events:rows.length,executions:executions.length,completed:completed.length,interrupted:interrupted.length,completionRate:Number(completionRate.toFixed(2)),feedbackCount:feedback.length,questionErrorOccurrences,averageFeedback:Number.isFinite(average(scores))?Number(average(scores).toFixed(1)):null,bestMethod,wins:wins.slice(0,3),attention:attention.slice(0,3),activeErrors:Number(notebook.active)||0,resolvedThisWeek,totalResolvedErrors:Number(notebook.resolved)||0,authority:'review-only'};
 }
 function ensurePanel(){
   const host=document.getElementById('progressForecast')||document.getElementById('dailyAdaptivePlanner')||document.getElementById('adaptiveAiExperience');if(!host)return null;
@@ -48,10 +49,10 @@ function ensurePanel(){
 }
 function render(){
   const result=build();ensurePanel();
-  const summary=document.getElementById('adaptiveWeeklyReviewSummary');if(summary)summary.textContent=`${result.completed}/${result.executions} sessões concluídas · ${result.feedbackCount} feedbacks atribuídos · ${result.activeErrors} erros ativos · ${result.resolvedThisWeek} resolvidos na semana`;
+  const summary=document.getElementById('adaptiveWeeklyReviewSummary');if(summary)summary.textContent=`${result.completed}/${result.executions} sessões concluídas · ${result.feedbackCount} feedbacks atribuídos · ${result.questionErrorOccurrences} erro${result.questionErrorOccurrences===1?'':'s'} em questões · ${result.activeErrors} padrão${result.activeErrors===1?'':'ões'} ativo${result.activeErrors===1?'':'s'} · ${result.resolvedThisWeek} resolvido${result.resolvedThisWeek===1?'':'s'} na semana`;
   const wins=document.getElementById('adaptiveWeeklyReviewWins');if(wins)wins.innerHTML=result.wins.length?`<strong>Funcionou bem</strong><ul>${result.wins.map(item=>`<li>${safe(item,240)}</li>`).join('')}</ul>`:'<strong>Funcionou bem</strong><p>Ainda não há evidência semanal suficiente.</p>';
   const attention=document.getElementById('adaptiveWeeklyReviewAttention');if(attention)attention.innerHTML=result.attention.length?`<strong>Ajustar</strong><ul>${result.attention.map(item=>`<li>${safe(item,240)}</li>`).join('')}</ul>`:'<strong>Ajustar</strong><p>Nenhum sinal relevante de ajuste foi detectado.</p>';
-  global.dispatchEvent(new CustomEvent('adaptive-weekly-review-updated',{detail:{executions:result.executions,feedbackCount:result.feedbackCount,resolvedThisWeek:result.resolvedThisWeek,authority:result.authority}}));
+  global.dispatchEvent(new CustomEvent('adaptive-weekly-review-updated',{detail:{executions:result.executions,feedbackCount:result.feedbackCount,questionErrorOccurrences:result.questionErrorOccurrences,resolvedThisWeek:result.resolvedThisWeek,authority:result.authority}}));
   return result;
 }
 function init(){ensurePanel();render();['study-evidence-timeline-changed','intelligent-error-notebook-changed','adaptive-progress-forecast-updated'].forEach(name=>global.addEventListener(name,render));}
