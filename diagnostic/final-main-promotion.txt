@@ -1,0 +1,2 @@
+Trigger final validation for main promotion.
+Expected GitHub SHA ancestry includes validated integration head 840b07387ca2a1a92662ca4e40aea524700b8275.
