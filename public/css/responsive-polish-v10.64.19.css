@@ -4,6 +4,7 @@
    Shared by web/PWA and Android. Component-specific responsive contracts are
    delegated to dedicated owner files to prevent cascade conflicts. */
 
+@import url('./design-system-v2.css');
 @import url('./components/retention.css');
 
 /* Flashcards: never split short action labels inside the Anki folder rows. */
