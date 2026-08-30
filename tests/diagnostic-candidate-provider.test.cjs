@@ -5,12 +5,14 @@ const assert=require('node:assert/strict');
 const provider=fs.readFileSync('public/js/diagnostic-candidate-provider.js','utf8');
 const weakness=fs.readFileSync('public/js/weakness-map-v2.js','utf8');
 
-test('provedor diagnóstico reutiliza o cálculo de fricção sem duplicar ranking',()=>{
+test('provedor diagnóstico reutiliza o cálculo de fricção com ranking explícito e isolado',()=>{
   assert.match(provider,/AppLearningAdvisor/);
   assert.match(provider,/computeLearningFriction/);
   assert.match(provider,/retentionDiagnosticRows/);
   assert.match(provider,/editalItems/);
-  assert.doesNotMatch(provider,/\.sort\s*\(/);
+  assert.match(provider,/function collectByFriction/);
+  assert.match(provider,/b\.frictionScore-a\.frictionScore/);
+  assert.match(provider,/rankingAuthority:'learning-advisor-friction-order'/);
   assert.doesNotMatch(provider,/nextReviewDate\s*=/);
   assert.doesNotMatch(provider,/priorityIndex\s*=/);
 });
@@ -18,11 +20,11 @@ test('provedor diagnóstico reutiliza o cálculo de fricção sem duplicar ranki
 test('provedor amplia a leitura além do teto histórico de cinco tópicos',()=>{
   assert.match(provider,/DEFAULT_LIMIT=40/);
   assert.match(provider,/MAX_LIMIT=80/);
-  assert.match(provider,/result\.length<max/);
+  assert.match(provider,/eligibleCandidates\(\)\.slice\(0,max\)/);
   assert.doesNotMatch(provider,/MAX_TOPICS=5/);
 });
 
-test('ordem permanece a ordem da fonte diagnóstica',()=>{
+test('ordem permanece a ordem da fonte diagnóstica no coletor canônico',()=>{
   assert.match(provider,/for\(let index=0;index<rows\.length/);
   assert.match(provider,/authority:'diagnostic-source-order'/);
   assert.match(weakness,/provider\?\.collect\?\.\(40\)/);
