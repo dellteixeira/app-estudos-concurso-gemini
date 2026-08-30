@@ -68,4 +68,6 @@ function render(plan){
 }
 
 global.AppAdaptiveConfidence=Object.freeze({score,render,label});
+const activePlan=global.AppAdaptiveAIExperience?.getCurrentPlan?.();
+if(activePlan)setTimeout(()=>render(activePlan),0);
 })(window);
