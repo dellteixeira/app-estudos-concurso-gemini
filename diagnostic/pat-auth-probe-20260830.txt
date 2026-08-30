@@ -1,1 +1,0 @@
-GitLab PAT authentication probe after switching HTTPS credentials to username:token.
