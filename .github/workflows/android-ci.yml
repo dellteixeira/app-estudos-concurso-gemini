@@ -1,66 +1,21 @@
 name: Android Check
 
 "on":
-  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-check-${{ github.event.pull_request.number || github.ref }}
+  group: android-check-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      android: ${{ steps.scope.outputs.android }}
-      runtime: ${{ steps.scope.outputs.runtime }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-
-      - name: Detect Android scopes
-        id: scope
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "android=true" >> "$GITHUB_OUTPUT"
-            echo "runtime=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          base="${{ github.event.pull_request.base.sha }}"
-          files="$(git diff --name-only "$base" HEAD)"
-          printf '%s\n' "$files"
-
-          android=false
-          runtime=false
-          while IFS= read -r file; do
-            case "$file" in
-              android/*|android/**/*|capacitor.config.json|public/capacitor-runtime.js|config/release-contract.json|package.json|package-lock.json|scripts/release-contract.mjs|scripts/prepare-android-assets.mjs|scripts/migrate-android-phase1b.mjs|scripts/apply-android-mobile-hotfix.mjs|tests/android*|tests/release-contract.test.cjs|.github/workflows/android-ci.yml|.github/workflows/android-release.yml)
-                android=true
-                ;;
-            esac
-            case "$file" in
-              android/*|android/**/*|android/mobile/*|android/mobile/**/*|capacitor.config.json|public/capacitor-runtime.js|scripts/migrate-android-phase1b.mjs|scripts/apply-android-mobile-hotfix.mjs|tests/android*|.github/workflows/android-ci.yml|.github/workflows/android-release.yml)
-                runtime=true
-                ;;
-            esac
-          done <<< "$files"
-
-          echo "android=$android" >> "$GITHUB_OUTPUT"
-          echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
-
   android-check:
-    needs: changes
-    if: needs.changes.outputs.android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 50
+    env:
+      FORCE_ANDROID_VALIDATION: '1'
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -107,8 +62,7 @@ jobs:
         working-directory: android
         run: node ../scripts/ci-retry.mjs --attempts=2 --delay-ms=8000 ./gradlew --no-daemon assembleDebug
 
-      - name: Install Android emulator image
-        if: needs.changes.outputs.runtime == 'true'
+      - name: Locate Android SDK tools
         shell: bash
         run: |
           set -euo pipefail
@@ -117,6 +71,16 @@ jobs:
           AVDMANAGER="$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name avdmanager -perm -u+x | head -n 1)"
           test -x "$SDKMANAGER"
           test -x "$AVDMANAGER"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          echo "AVDMANAGER=$AVDMANAGER" >> "$GITHUB_ENV"
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
+
+      - name: Install Android emulator image
+        shell: bash
+        run: |
+          set -euo pipefail
           ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd-ci"
           mkdir -p "$ANDROID_AVD_HOME"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
@@ -127,11 +91,8 @@ jobs:
           done
           echo no | ANDROID_AVD_HOME="$ANDROID_AVD_HOME" "$AVDMANAGER" create avd --force --name android-ci --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_6'
           echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
-          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
-          echo "$ANDROID_SDK_ROOT/emulator" >> "$GITHUB_PATH"
 
       - name: Start Android emulator
-        if: needs.changes.outputs.runtime == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -145,12 +106,10 @@ jobs:
           adb devices
 
       - name: Run connected Android instrumentation tests
-        if: needs.changes.outputs.runtime == 'true'
         working-directory: android
         run: ./gradlew --no-daemon connectedDebugAndroidTest
 
       - name: Launch debug APK and validate runtime
-        if: needs.changes.outputs.runtime == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -181,7 +140,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Android runtime diagnostics
-        if: always() && needs.changes.outputs.runtime == 'true'
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-android-ci-diagnostics
@@ -193,20 +152,3 @@ jobs:
             android/app/build/reports/androidTests/**
           if-no-files-found: warn
           retention-days: 7
-
-  validate-runtime:
-    name: validate-runtime
-    needs: [changes, android-check]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify Android gate
-        shell: bash
-        run: |
-          set -euo pipefail
-          result="${{ needs.android-check.result }}"
-          if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
-            echo "android-check terminou com $result" >&2
-            exit 1
-          fi
-          echo "Android Check: $result"
