@@ -61,10 +61,6 @@ function ensureNote(){
   let note=document.getElementById('dailyAdaptiveWorkloadNote');if(note)return note;
   note=document.createElement('div');note.id='dailyAdaptiveWorkloadNote';note.className='daily-adaptive-workload-note';note.setAttribute('role','status');note.setAttribute('aria-live','polite');summary.insertAdjacentElement('afterend',note);return note;
 }
-function ensureStyle(){
-  if(document.getElementById('dailyAdaptiveWorkloadStyle'))return;
-  const style=document.createElement('style');style.id='dailyAdaptiveWorkloadStyle';style.textContent='.daily-adaptive-workload-note{margin:-.15rem 0 .65rem;padding:.55rem .65rem;border:1px solid var(--ds-border,#2b3950);border-radius:10px;background:var(--ds-surface-1,#111b2c);color:var(--ds-text-muted,#9fb0c5);font-size:.72rem;line-height:1.35}.daily-adaptive-workload-note strong{color:var(--ds-text,#eef4fb)}';document.head.appendChild(style);
-}
 function renderDecision(decision=lastDecision){
   const note=ensureNote();if(!note||!decision)return decision;const evidence=decision.evidence;
   if(!evidence){note.textContent=`Carga mantida em ${decision.effectiveBudget} min: ainda não há um dia anterior com evidência de execução suficiente.`;return decision}
@@ -94,7 +90,7 @@ function waitForPlanner(attempt=0){
   if(attempt>=40)return;setTimeout(()=>waitForPlanner(attempt+1),100);
 }
 function install(){
-  if(installed||!global.AppDailyAdaptivePlanner)return false;installed=true;ensureStyle();document.addEventListener('click',onBudgetClick,true);global.addEventListener('adaptive-day-plan-rendered',onPlanRendered);return true;
+  if(installed||!global.AppDailyAdaptivePlanner)return false;installed=true;document.addEventListener('click',onBudgetClick,true);global.addEventListener('adaptive-day-plan-rendered',onPlanRendered);return true;
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>waitForPlanner(),{once:true});else waitForPlanner();
