@@ -22,7 +22,7 @@ function recentEvidence(entries,reference=new Date()){
   return entries.filter(item=>{const at=Date.parse(item?.at||item?.finishedAt||item?.evaluatedAt||0);return Number.isFinite(at)&&at>=floor&&at<=reference.getTime()});
 }
 function evidenceAgeDays(rows,reference=new Date()){
-  const latest=rows.map(item=>Date.parse(item?.at||item?.finishedAt||item?.evaluatedAt||0)).filter(Number.isFinite).sort((a,b)=>b-a)[0];
+  const latest=rows.reduce((max,item)=>{const at=Date.parse(item?.at||item?.finishedAt||item?.evaluatedAt||0);return Number.isFinite(at)&&at>max?at:max},Number.NEGATIVE_INFINITY);
   return Number.isFinite(latest)?Math.max(0,Math.floor((reference.getTime()-latest)/(24*60*60*1000))):null;
 }
 
