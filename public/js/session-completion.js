@@ -29,14 +29,18 @@ function currentBlock(){
 function begin(block=currentBlock()){
   if(!block?.candidate?.topicId)return null;
   const topicId=safe(block.candidate.topicId,600);
-  if(activeExecution)return activeExecution.topicId===topicId?activeExecution:null;
+  const owner=safe(block.executionOwner||'adaptive-session',40)||'adaptive-session';
+  const executionId=safe(block.executionId||topicId,700)||topicId;
+  if(activeExecution)return activeExecution.executionId===executionId?activeExecution:null;
   activeExecution={
     topicId,
+    executionId,
+    owner,
     plannedMinutes:Math.max(5,Math.round(Number(block.minutes||block.intervention?.suggestedMinutes)||15)),
     action:safe(block.intervention?.recommendedAction,40),
     startedAt:new Date().toISOString()
   };
-  global.dispatchEvent(new CustomEvent('adaptive-session-execution-started',{detail:{topicId:activeExecution.topicId,plannedMinutes:activeExecution.plannedMinutes}}));
+  global.dispatchEvent(new CustomEvent('adaptive-session-execution-started',{detail:{topicId:activeExecution.topicId,executionId:activeExecution.executionId,owner:activeExecution.owner,plannedMinutes:activeExecution.plannedMinutes}}));
   return activeExecution;
 }
 function finish(status='completed',meta={}){
@@ -49,6 +53,8 @@ function finish(status='completed',meta={}){
   const effectiveStatus=status==='completed'&&completionRatio<.7?'interrupted':status;
   const record={
     topicId:execution.topicId,
+    executionId:execution.executionId,
+    owner:execution.owner,
     action:execution.action,
     plannedMinutes,
     elapsedMinutes:Number(elapsedMinutes.toFixed(1)),
@@ -59,11 +65,11 @@ function finish(status='completed',meta={}){
   };
   const data=read();
   const history=Array.isArray(data.history)?data.history:[];
-  const duplicate=history.some(item=>item?.topicId===record.topicId&&item?.startedAt===record.startedAt);
+  const duplicate=history.some(item=>(item?.executionId||item?.topicId)===(record.executionId||record.topicId)&&item?.startedAt===record.startedAt);
   activeExecution=null;
   if(duplicate)return null;
   write({version:1,history:[...history,record].slice(-HISTORY_LIMIT)});
-  if(effectiveStatus==='completed')global.AppSessionContinuity?.completeActive?.();
+  if(effectiveStatus==='completed'&&record.owner==='adaptive-session')global.AppSessionContinuity?.completeActive?.();
   global.dispatchEvent(new CustomEvent('adaptive-session-execution-finished',{detail:record}));
   return record;
 }
