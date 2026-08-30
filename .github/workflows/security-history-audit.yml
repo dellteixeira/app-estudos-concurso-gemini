@@ -1,7 +1,6 @@
 name: Security History Audit
 
 on:
-  pull_request:
   workflow_dispatch:
   schedule:
     - cron: '30 7 * * 1'
@@ -11,7 +10,7 @@ permissions:
 
 jobs:
   audit-history:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout full history
