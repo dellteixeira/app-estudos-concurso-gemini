@@ -3,19 +3,22 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const {spawnSync}=require('node:child_process');
 
-const auth=fs.readFileSync('public/js/auth-resilience.js','utf8');
+const auth=fs.readFileSync('public/js/auth-resilience-v2.js','utf8');
 const runtime=fs.readFileSync('public/capacitor-runtime.js','utf8');
 
-test('módulo de autenticação mantém Supabase como fonte de verdade',()=>{
+test('módulo de autenticação mantém Supabase como fonte de verdade para sessão',()=>{
   assert.match(auth,/typeof supabaseClient!=='undefined'/);
   assert.match(auth,/auth\.getSession\(\)/);
   assert.match(auth,/auth\.refreshSession\(\)/);
-  assert.match(auth,/auth\.signInWithPassword\(\{email,password\}\)/);
 });
 
-test('login explícito descarta somente sessão local antes de autenticar',()=>{
+test('login explícito descarta somente sessão local antes de delegar ao fluxo canônico',()=>{
   assert.match(auth,/signOut\(\{scope:'local'\}\)/);
   assert.match(auth,/await clearLocalSession\(client\)/);
+  assert.match(auth,/typeof handleLogin==='function'/);
+  assert.match(auth,/const result=legacyLogin\(\)/);
+  assert.doesNotMatch(auth,/signInWithPassword/);
+  assert.doesNotMatch(auth,/location\.reload/);
   assert.doesNotMatch(auth,/localStorage\.clear\(/);
   assert.doesNotMatch(auth,/indexedDB\.deleteDatabase/);
 });
@@ -39,16 +42,17 @@ test('camada intercepta clique e Enter antes do dispatcher legado',()=>{
   assert.match(auth,/event\.key!=='Enter'/);
 });
 
-test('runtime carrega resiliência após DOMContentLoaded em web e nativo',()=>{
+test('runtime carrega hotfix por caminho novo para escapar do cache legado',()=>{
   assert.match(runtime,/DOMContentLoaded', loadAuthResilience/);
-  assert.match(runtime,/auth-resilience\.js\?v=20260830/);
+  assert.match(runtime,/auth-resilience-v2\.js\?v=20260830/);
+  assert.doesNotMatch(runtime,/auth-resilience\.js\?v=/);
   const loaderIndex=runtime.indexOf('loadAuthResilience');
   const nativeReturn=runtime.indexOf('if (!isNative) return');
   assert.ok(loaderIndex>=0&&nativeReturn>loaderIndex);
 });
 
 test('scripts modificados passam no parser do Node',()=>{
-  for(const file of ['public/js/auth-resilience.js','public/capacitor-runtime.js']){
+  for(const file of ['public/js/auth-resilience-v2.js','public/capacitor-runtime.js']){
     const result=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
     assert.equal(result.status,0,result.stderr||`${file} falhou no node --check`);
   }
