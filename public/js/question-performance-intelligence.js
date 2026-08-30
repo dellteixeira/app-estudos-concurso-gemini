@@ -40,7 +40,7 @@ function record(detail={}){
   if(detail.correct===true)return null;
   const topicId=safe(detail.topicId,600);if(!topicId)return null;
   const type=inferType(detail);const occurrences=occurrencesFrom(detail);
-  const entry={topicId,type,occurrences,confidence:Number(clamp(detail.confidence,0,1).toFixed(2)),responseSeconds:Math.round(clamp(detail.responseSeconds,0,3600)),at:new Date().toISOString()};
+  const entry={topicId,type,confidence:Number(clamp(detail.confidence,0,1).toFixed(2)),responseSeconds:Math.round(clamp(detail.responseSeconds,0,3600)),occurrences,at:new Date().toISOString()};
   const data=read();const history=Array.isArray(data.history)?data.history:[];
   write({version:2,history:[...history,entry].slice(-HISTORY_LIMIT)});
   global.dispatchEvent(new CustomEvent('question-performance-classified',{detail:{topicId,type,occurrences}}));
