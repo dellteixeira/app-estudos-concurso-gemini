@@ -1,5 +1,4 @@
-/* Release 10.64.20: mantém a camada visual estável da 10.64.19 enquanto o versionamento de assets é migrado para hashing. */
-@import url('./responsive-polish-v10.64.19.css');
+/* Release 10.64.20: delta visual aplicado sobre o baseline estável 10.64.19 carregado pelo shell. */
 
 /*
  * Release-scoped responsive guarantees.
@@ -50,12 +49,7 @@
     justify-content: center !important;
 }
 
-/*
- * Contrato visual de retenção da release corrente.
- * As regras críticas são declaradas diretamente nesta folha, em vez de depender
- * apenas do @import anterior. Isso torna a release autocontida para Web/PWA e
- * mantém o hotfix Android alinhado ao mesmo contrato visual.
- */
+/* Contrato visual de retenção da release corrente. */
 #retentionDiagnosticPanel .rd-metric-icon-v1077 {
     display: none !important;
     visibility: hidden !important;
