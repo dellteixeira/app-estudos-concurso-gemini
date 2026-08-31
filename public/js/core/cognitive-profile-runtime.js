@@ -131,6 +131,10 @@ function fingerprintInput(userId,contest,rows,sessions){
   ].join('|');
 }
 
+function readMethodEffectiveness(userId,contest){
+  try{return global.AppInterventionEffectiveness?.aggregate?.(userId,contest)||undefined}catch(_){return undefined}
+}
+
 function refresh(options={}){
   const profileApi=global.AppCognitiveProfile;
   if(!profileApi?.refresh)return null;
@@ -139,7 +143,8 @@ function refresh(options={}){
   const fingerprint=fingerprintInput(userId,contest,rows,sessions);
   if(!options.force&&fingerprint===lastFingerprint)return profileApi.read?.(userId,contest)||null;
   lastFingerprint=fingerprint;
-  const profile=profileApi.refresh({userId,contest,rows,sessions});
+  const methodEffectiveness=readMethodEffectiveness(userId,contest);
+  const profile=profileApi.refresh({userId,contest,rows,sessions,methodEffectiveness});
   try{
     global.dispatchEvent(new CustomEvent('app:cognitive-profile-updated',{detail:{
       userId,contest,updatedAt:profile?.updatedAt||null,metrics:profile?.metrics||null
@@ -197,6 +202,7 @@ function installHooks(){
     global.addEventListener('storage',event=>{
       if(String(event?.key||'').startsWith('concursos_metadata_'))scheduleRefresh({force:true});
     });
+    global.addEventListener('app:intervention-effectiveness-event',()=>scheduleRefresh({force:true}));
     global.addEventListener('pageshow',()=>scheduleRefresh({force:false}),{passive:true});
     document.addEventListener('visibilitychange',()=>{
       if(!document.hidden)scheduleRefresh({force:false});
@@ -219,6 +225,7 @@ global.AppCognitiveProfileRuntime=Object.freeze({
   resolveContest,
   buildRows,
   resolveInputSnapshot,
+  readMethodEffectiveness,
   refresh,
   scheduleRefresh,
   installHooks,
