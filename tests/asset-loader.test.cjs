@@ -3,15 +3,18 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 
-function loadModule(){
+function loadModule(options={}){
   const source=fs.readFileSync('public/js/core/asset-loader.js','utf8');
   const appended=[];
   const head={appendChild(node){appended.push(node); if(typeof node._load==='function')node._load();}};
+  const existingScripts=options.scripts||[];
+  const existingStyles=options.styles||[];
   const document={
-    scripts:[],
+    readyState:'complete',
+    scripts:existingScripts,
     head,
     documentElement:head,
-    querySelectorAll(){return[]},
+    querySelectorAll(selector){return selector==='link[rel="stylesheet"]'?existingStyles:[]},
     createElement(tag){
       const listeners={};
       return {
@@ -42,6 +45,15 @@ test('loadScript deduplicates the same versioned asset',async()=>{
   await first;
   assert.equal(appended.length,1);
   assert.match(appended[0].src,/chart\.umd\.min\.js\?v=10\.64\.19$/);
+});
+
+test('versioned request reuses an already loaded legacy script with the same pathname',async()=>{
+  const legacy={src:'https://estudoadaptativo.com/vendor/chart.umd.min.js',dataset:{loaded:'true'},readyState:'complete',addEventListener(){}};
+  const {api,appended}=loadModule({scripts:[legacy]});
+  assert.equal(api.sameAsset(legacy.src,'./vendor/chart.umd.min.js?v=10.64.19'),true);
+  const resolved=await api.loadScript('./vendor/chart.umd.min.js');
+  assert.equal(resolved,legacy);
+  assert.equal(appended.length,0);
 });
 
 test('core features are registered for chart and PDF lazy loading',()=>{
