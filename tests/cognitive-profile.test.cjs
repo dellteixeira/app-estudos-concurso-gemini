@@ -37,6 +37,22 @@ test('buildProfile aggregates cognitive metrics without changing schedule state'
   assert.equal('schedule' in profile,false);
 });
 
+test('fractional retention and accuracy are normalized to percentage scale',()=>{
+  const api=loadModule();
+  const profile=api.buildProfile({
+    userId:'u-ratio',contest:'TRF',
+    rows:[
+      {materia:'Administrativo',assunto:'Atos',retention:.82,questionAccuracy:.75,state:{sessionCount:2,totalMinutes:60,questionStats:{confidence:.7}}},
+      {materia:'Constitucional',assunto:'Direitos',retention:90,questionAccuracy:88,state:{sessionCount:1,totalMinutes:30,questionStats:{confidence:.9}}}
+    ]
+  });
+  assert.equal(api.toPercent(.82),82);
+  assert.equal(api.toPercent(82),82);
+  assert.equal(profile.topicState['administrativo::atos'].retention,82);
+  assert.equal(profile.topicState['administrativo::atos'].accuracy,75);
+  assert.equal(profile.metrics.avgRetention,86);
+});
+
 test('refresh persists profile scoped by user and contest',()=>{
   const api=loadModule();
   const saved=api.refresh({userId:'user-x',contest:'FCC',rows:[{materia:'A',assunto:'B',retention:90,state:{sessionCount:1,totalMinutes:30}}]});
