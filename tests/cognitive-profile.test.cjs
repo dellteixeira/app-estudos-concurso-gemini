@@ -53,6 +53,20 @@ test('fractional retention and accuracy are normalized to percentage scale',()=>
   assert.equal(profile.metrics.avgRetention,86);
 });
 
+test('current intervention effectiveness aggregate is accepted by profile build',()=>{
+  const api=loadModule();
+  const profile=api.buildProfile({
+    userId:'u-method',contest:'TJ',rows:[],
+    previous:{methodEffectiveness:{active_recall:{samples:9,immediateGain:1,score:40}}},
+    methodEffectiveness:{active_recall:{samples:3,immediateGain:12.5,gain24h:8,gain7d:5,score:71}}
+  });
+  assert.equal(profile.methodEffectiveness.active_recall.samples,3);
+  assert.equal(profile.methodEffectiveness.active_recall.immediateGain,12.5);
+  assert.equal(profile.methodEffectiveness.active_recall.gain24h,8);
+  assert.equal(profile.methodEffectiveness.active_recall.gain7d,5);
+  assert.equal(profile.methodEffectiveness.active_recall.score,71);
+});
+
 test('refresh persists profile scoped by user and contest',()=>{
   const api=loadModule();
   const saved=api.refresh({userId:'user-x',contest:'FCC',rows:[{materia:'A',assunto:'B',retention:90,state:{sessionCount:1,totalMinutes:30}}]});
