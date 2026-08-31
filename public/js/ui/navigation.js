@@ -82,6 +82,9 @@
             if (!global.AppErrorIntelligence) {
                 await loader.loadScript('./js/core/error-intelligence.js', { async: false });
             }
+            if (!global.AppNextBestStudyAction) {
+                await loader.loadScript('./js/core/next-best-study-action.js', { async: false });
+            }
             if (!global.AppCognitiveProfileRuntime) {
                 await loader.loadScript('./js/core/cognitive-profile-runtime.js', { async: false });
             }
