@@ -1,0 +1,98 @@
+name: One-shot bump v10.64.21
+
+on:
+  push:
+    branches: [feat/next-best-study-action-v1]
+    paths:
+      - '.github/workflows/one-shot-bump-10.64.21.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-bump-10-64-21
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: feat/next-best-study-action-v1
+          fetch-depth: 0
+
+      - name: Bump canonical release contract safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const oldVersion = '10.64.20';
+          const newVersion = '10.64.21';
+
+          function replaceExact(file, from, to, { all = false } = {}) {
+            let text = fs.readFileSync(file, 'utf8');
+            if (!text.includes(from)) throw new Error(`${file}: padrão ausente: ${from}`);
+            text = all ? text.split(from).join(to) : text.replace(from, to);
+            fs.writeFileSync(file, text);
+          }
+
+          const contract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf8'));
+          if (contract.version !== oldVersion) throw new Error(`release-contract version inesperada: ${contract.version}`);
+          if (Number(contract.android?.versionCode) !== 106422) throw new Error(`versionCode inesperado: ${contract.android?.versionCode}`);
+          contract.version = newVersion;
+          contract.android.versionCode = 106423;
+          fs.writeFileSync('config/release-contract.json', JSON.stringify(contract, null, 2) + '\n');
+
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          if (pkg.version !== oldVersion) throw new Error(`package version inesperada: ${pkg.version}`);
+          pkg.version = newVersion;
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+
+          if (fs.existsSync('package-lock.json')) {
+            const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+            if (lock.version === oldVersion) lock.version = newVersion;
+            if (lock.packages?.['']?.version === oldVersion) lock.packages[''].version = newVersion;
+            fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
+          }
+
+          const publicVersion = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
+          publicVersion.version = newVersion;
+          fs.writeFileSync('public/version.json', JSON.stringify(publicVersion, null, 2) + '\n');
+
+          replaceExact('src/index.js', 'const APP_VERSION = "10.64.20";', 'const APP_VERSION = "10.64.21";');
+          replaceExact('public/sw.js', "const APP_VERSION = '10.64.20';", "const APP_VERSION = '10.64.21';");
+          replaceExact('public/sw.js', 'responsive-polish-v10.64.20.css', 'responsive-polish-v10.64.21.css', { all: true });
+          replaceExact('config/app-assets.json', '"version": "10.64.20"', '"version": "10.64.21"');
+          replaceExact('config/app-assets.json', 'responsive-polish-v10.64.20.css', 'responsive-polish-v10.64.21.css', { all: true });
+          replaceExact('android/app/build.gradle', 'versionCode 106422', 'versionCode 106423');
+          replaceExact('android/app/build.gradle', 'versionName "10.64.20-mobile.1"', 'versionName "10.64.21-mobile.1"');
+          replaceExact('public/js/ui/navigation.js', "const CORE_VERSION = '10.64.20';", "const CORE_VERSION = '10.64.21';");
+          replaceExact('public/js/ui/navigation.js', 'responsive-polish-v10.64.20.css?v=10.64.20', 'responsive-polish-v10.64.21.css?v=10.64.21');
+
+          for (const file of ['public/js/core/asset-loader.js', 'public/js/app-pwa.js']) {
+            if (fs.existsSync(file)) {
+              const text = fs.readFileSync(file, 'utf8');
+              if (text.includes(oldVersion)) fs.writeFileSync(file, text.split(oldVersion).join(newVersion));
+            }
+          }
+
+          const oldCss = 'public/css/responsive-polish-v10.64.20.css';
+          const newCss = 'public/css/responsive-polish-v10.64.21.css';
+          if (!fs.existsSync(newCss)) fs.copyFileSync(oldCss, newCss);
+          NODE
+
+          node scripts/release-contract.mjs check
+
+      - name: Commit bump
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add config/release-contract.json package.json package-lock.json public/version.json src/index.js public/sw.js config/app-assets.json android/app/build.gradle public/js/ui/navigation.js public/js/core/asset-loader.js public/js/app-pwa.js public/css/responsive-polish-v10.64.21.css
+          git diff --cached --quiet && { echo 'Nenhuma alteração necessária.'; exit 0; }
+          git commit -m 'chore(release): bump runtime to v10.64.21'
+          git push origin HEAD:feat/next-best-study-action-v1
