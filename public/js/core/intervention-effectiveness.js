@@ -7,6 +7,15 @@ const STORAGE_PREFIX='intervention_effectiveness_v1';
 const MAX_EVENTS=1200;
 const START_DEDUP_MS=30*1000;
 const METHODS=['active_recall','short_review','questions','focused_restudy','teoria','videoaula','lei_seca'];
+const METHOD_LABELS=Object.freeze({
+  active_recall:'Recuperação ativa',
+  short_review:'Revisão curta',
+  questions:'Questões comentadas',
+  focused_restudy:'Reestudo focalizado',
+  teoria:'Teoria',
+  videoaula:'Videoaula',
+  lei_seca:'Lei Seca'
+});
 const WINDOWS=Object.freeze({immediate:0,h24:20*60*60*1000,d7:6*24*60*60*1000});
 const WINDOW_ORDER=['immediate','h24','d7'];
 
@@ -222,6 +231,12 @@ function aggregate(userId,contest){
   return result;
 }
 
+function methodFromRecommendedCard(card){
+  const text=safe(card?.querySelector?.('.learning-advisor-action strong')?.textContent,180).toLowerCase();
+  if(!text)return '';
+  return METHODS.find(method=>text.includes(String(METHOD_LABELS[method]||'').toLowerCase()))||'';
+}
+
 function handleInterventionStarted(event){
   const detail=event?.detail||{};
   start({
@@ -241,9 +256,11 @@ function handleAdvisorActionClick(event){
   if(!button)return;
   const card=button.closest('.learning-advisor-card');
   const topicId=safe(card?.dataset?.topicId,640);
-  const method=safe(card?.querySelector?.('[data-learning-method-select]')?.value,60);
-  if(!topicId||!METHODS.includes(method))return;
   const manual=button.dataset.learningAction==='manual-method';
+  const method=manual
+    ?safe(card?.querySelector?.('[data-learning-method-select]')?.value,60)
+    :methodFromRecommendedCard(card);
+  if(!topicId||!METHODS.includes(method))return;
   start({topicId,method,source:manual?'manual':'learning-advisor',recommended:!manual});
 }
 
@@ -263,6 +280,7 @@ if(typeof document!=='undefined'&&!document.documentElement?.dataset?.interventi
 global.AppInterventionEffectiveness=Object.freeze({
   schemaVersion:SCHEMA_VERSION,
   methods:[...METHODS],
+  methodLabels:{...METHOD_LABELS},
   windows:{...WINDOWS},
   scopeKey,
   readEvents,
@@ -274,6 +292,7 @@ global.AppInterventionEffectiveness=Object.freeze({
   dueWindow,
   scoreObservation,
   recentEquivalentStart,
+  methodFromRecommendedCard,
   handleAdvisorActionClick
 });
 })(window);
