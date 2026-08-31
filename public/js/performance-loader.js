@@ -6,6 +6,10 @@
   const loadedScripts = new Map();
   const loadedStyles = new Map();
 
+  function assetLoader() {
+    return global.AppAssetLoader || null;
+  }
+
   function connectionProfile() {
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
     const effectiveType = String(connection?.effectiveType || '').toLowerCase();
@@ -17,6 +21,8 @@
   }
 
   function idle(callback, timeout = 1800) {
+    const canonical = assetLoader();
+    if (canonical?.idle) return canonical.idle(callback, timeout);
     if (typeof global.requestIdleCallback === 'function') {
       return global.requestIdleCallback(callback, { timeout });
     }
@@ -25,6 +31,18 @@
 
   function loadScript(src, options = {}) {
     if (!src) return Promise.reject(new Error('Script sem src.'));
+    const canonical = assetLoader();
+    if (canonical?.loadScript) {
+      return canonical.loadScript(src, {
+        async: false,
+        defer: options.defer !== false,
+        versioned: options.versioned !== false
+      }).then(script => {
+        if (options.dataset) Object.assign(script.dataset, options.dataset);
+        return script;
+      });
+    }
+
     if (loadedScripts.has(src)) return loadedScripts.get(src);
 
     const existing = document.querySelector(`script[src="${src}"]`);
@@ -53,6 +71,9 @@
 
   function loadStyle(href) {
     if (!href) return Promise.reject(new Error('Stylesheet sem href.'));
+    const canonical = assetLoader();
+    if (canonical?.loadStyle) return canonical.loadStyle(href);
+
     if (loadedStyles.has(href)) return loadedStyles.get(href);
 
     const existing = document.querySelector(`link[rel="stylesheet"][href="${href}"]`);
@@ -76,6 +97,17 @@
 
     loadedStyles.set(href, promise);
     return promise;
+  }
+
+  function loadFeature(name, fallbackTask) {
+    const canonical = assetLoader();
+    if (canonical?.loadFeature) {
+      return canonical.loadFeature(name).catch(error => {
+        console.warn(`[performance] feature ${name} indisponível no loader canônico:`, error);
+        return fallbackTask ? fallbackTask() : null;
+      });
+    }
+    return fallbackTask ? fallbackTask() : Promise.resolve(null);
   }
 
   function scheduleIdleTask(task, timeout = 1800) {
@@ -110,10 +142,11 @@
   function bindIntentPreload() {
     const warmPdf = () => {
       if (!navigator.onLine && !global.pdfjsLib) return;
-      scheduleIdleTask(() => Promise.all([
+      scheduleIdleTask(() => loadFeature('pdf-engine', () => Promise.all([
         loadScript('./vendor/pdf.min.js'),
-        loadStyle('./vendor/pdf_viewer.min.css')
-      ]), 1200);
+        loadStyle('./vendor/pdf_viewer.min.css'),
+        loadStyle('./css/pdf-reader.css')
+      ])), 1200);
     };
 
     document.querySelectorAll('[onclick*="tab-biblioteca"], [data-tab="tab-biblioteca"], [onclick*="openModalViewEdital"]').forEach(el => {
@@ -142,6 +175,7 @@
     idle,
     loadScript,
     loadStyle,
+    loadFeature,
     scheduleIdleTask,
     ensurePerformanceMetrics,
     warmOptionalFeatures,
