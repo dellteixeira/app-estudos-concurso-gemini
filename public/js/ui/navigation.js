@@ -76,6 +76,9 @@
             if (!global.AppCognitiveDataSource) {
                 await loader.loadScript('./js/core/cognitive-profile-source.js', { async: false });
             }
+            if (!global.AppInterventionEffectiveness) {
+                await loader.loadScript('./js/core/intervention-effectiveness.js', { async: false });
+            }
             if (!global.AppCognitiveProfileRuntime) {
                 await loader.loadScript('./js/core/cognitive-profile-runtime.js', { async: false });
             }
