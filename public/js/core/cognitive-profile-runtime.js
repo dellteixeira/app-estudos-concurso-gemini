@@ -11,6 +11,13 @@ let installAttempts=0;
 let installed=false;
 let lastFingerprint='';
 
+function readSourceSnapshot(){
+  try{
+    const snapshot=global.AppCognitiveDataSource?.snapshot?.();
+    return snapshot&&typeof snapshot==='object'?snapshot:null;
+  }catch(_){return null}
+}
+
 function decodeJwtSubject(token){
   try{
     const part=String(token||'').split('.')[1];
@@ -23,6 +30,8 @@ function decodeJwtSubject(token){
 }
 
 function resolveUserId(){
+  const sourceUser=String(readSourceSnapshot()?.userId||'').trim();
+  if(sourceUser)return sourceUser;
   try{
     for(let index=0;index<global.localStorage.length;index++){
       const key=global.localStorage.key(index);
@@ -41,6 +50,8 @@ function resolveUserId(){
 }
 
 function resolveContest(){
+  const sourceContest=String(readSourceSnapshot()?.contest||'').trim();
+  if(sourceContest)return sourceContest;
   const select=document.getElementById('concursoSelect');
   const selected=String(select?.value||'').trim();
   if(selected)return selected;
@@ -87,26 +98,44 @@ function buildRows(contestMeta){
   }));
 }
 
+function resolveInputSnapshot(){
+  const source=readSourceSnapshot();
+  if(source){
+    return {
+      userId:String(source.userId||'').trim(),
+      contest:String(source.contest||'Concurso Geral').trim()||'Concurso Geral',
+      rows:Array.isArray(source.rows)?source.rows:[],
+      sessions:Array.isArray(source.sessions)?source.sessions:[]
+    };
+  }
+  const userId=resolveUserId();
+  const contest=resolveContest();
+  const metadata=getMetadata();
+  const contestMeta=metadata?.[contest]||{};
+  return {
+    userId,
+    contest,
+    rows:buildRows(contestMeta),
+    sessions:Array.isArray(contestMeta?.studySessions)?contestMeta.studySessions:[]
+  };
+}
+
 function fingerprintInput(userId,contest,rows,sessions){
   const lastSession=sessions[sessions.length-1];
   const lastRow=rows[rows.length-1];
   return [
     userId,contest,rows.length,sessions.length,
     lastSession?.id||'',lastSession?.createdAt||'',
-    lastRow?.state?.updatedAt||'',lastRow?.state?.questionStats?.lastAt||''
+    lastRow?.state?.updatedAt||'',lastRow?.state?.questionStats?.lastAt||'',
+    lastRow?.retention??''
   ].join('|');
 }
 
 function refresh(options={}){
   const profileApi=global.AppCognitiveProfile;
   if(!profileApi?.refresh)return null;
-  const userId=resolveUserId();
+  const {userId,contest,rows,sessions}=resolveInputSnapshot();
   if(!userId)return null;
-  const contest=resolveContest();
-  const metadata=getMetadata();
-  const contestMeta=metadata?.[contest]||{};
-  const sessions=Array.isArray(contestMeta?.studySessions)?contestMeta.studySessions:[];
-  const rows=buildRows(contestMeta);
   const fingerprint=fingerprintInput(userId,contest,rows,sessions);
   if(!options.force&&fingerprint===lastFingerprint)return profileApi.read?.(userId,contest)||null;
   lastFingerprint=fingerprint;
@@ -128,8 +157,7 @@ function wrapFunction(name,{after=true}={}){
   const original=global[name];
   if(typeof original!=='function'||original[WRAPPED])return false;
   const wrapped=function(...args){
-    let result;
-    try{result=original.apply(this,args)}catch(error){throw error}
+    const result=original.apply(this,args);
     if(result&&typeof result.then==='function'){
       return result.then(value=>{
         if(after)scheduleRefresh({force:true});
@@ -153,11 +181,11 @@ function installHooks(){
     'recordStudyMinutesForContext',
     'submitQuestionPerformance',
     'submitAdaptiveReviewFeedback',
-    'rebuildRetentionEngineForContest'
+    'rebuildRetentionEngineForContest',
+    'renderRetentionDiagnostics',
+    'filterDataByConcurso'
   ];
-  let available=0;
-  names.forEach(name=>{if(typeof global[name]==='function')available++;wrapFunction(name)});
-  if(available<3)return false;
+  names.forEach(name=>wrapFunction(name));
 
   const selector=document.getElementById('concursoSelect');
   if(selector&&!selector.dataset.cognitiveProfileBound){
@@ -180,15 +208,17 @@ function installHooks(){
 }
 
 function bootstrap(){
-  if(installHooks())return;
-  if(++installAttempts>=INSTALL_MAX_ATTEMPTS)return;
+  if(global.AppCognitiveProfile&&global.AppCognitiveDataSource)return installHooks();
+  if(++installAttempts>=INSTALL_MAX_ATTEMPTS)return installHooks();
   global.setTimeout(bootstrap,INSTALL_RETRY_MS);
 }
 
 global.AppCognitiveProfileRuntime=Object.freeze({
+  readSourceSnapshot,
   resolveUserId,
   resolveContest,
   buildRows,
+  resolveInputSnapshot,
   refresh,
   scheduleRefresh,
   installHooks,
