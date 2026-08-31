@@ -3,13 +3,14 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 
-function loadModule(){
+function loadModule({boardSignal=null}={}){
   const source=fs.readFileSync('public/js/core/next-best-study-action.js','utf8');
   const listeners=new Map();
   const window={
     addEventListener(type,fn){listeners.set(type,fn);},
     dispatchEvent(){},
-    AppCognitiveProfile:{read(){return null;}}
+    AppCognitiveProfile:{read(){return null;}},
+    AppExamBoardIntelligence:boardSignal?{signalForTopic:boardSignal}:undefined
   };
   window.window=window;
   class CustomEvent{constructor(type,init){this.type=type;this.detail=init?.detail;}}
@@ -65,4 +66,21 @@ test('recommend exposes alternatives without mutating schedule state',()=>{
   assert.ok(result.alternatives.length>=2);
   assert.equal('schedule' in result,false);
   assert.equal('calendar' in result,false);
+});
+
+test('board evidence can break a near cognitive tie but remains bounded and auditable',()=>{
+  const api=loadModule({boardSignal(_contest,materia){
+    if(materia==='Direito Constitucional')return {board:'FCC',priority:100,confidence:100,questions:40,years:4,source:{title:'Provas FCC 2022-2026'},asOf:'2026-08-31'};
+    return null;
+  }});
+  const profile={userId:'u3',contest:'TJ',metrics:{fatigueIndex:10},recurringErrors:[],methodEffectiveness:{},topicState:{
+    adm:{materia:'Direito Administrativo',assunto:'Atos',retention:63,accuracy:67,difficulty:6,lastStudyAt:'2026-08-20T10:00:00Z'},
+    const:{materia:'Direito Constitucional',assunto:'Controle',retention:65,accuracy:68,difficulty:6,lastStudyAt:'2026-08-20T10:00:00Z'}
+  }};
+  const result=api.recommend(profile,{now:Date.parse('2026-08-31T12:00:00Z')});
+  assert.equal(result.topicId,'const');
+  assert.equal(result.boardEvidence.board,'FCC');
+  assert.equal(result.boardEvidence.source.title,'Provas FCC 2022-2026');
+  assert.ok(result.reasons.some(item=>/incidência FCC/.test(item)));
+  assert.ok(result.metrics.boardPriority===100);
 });
