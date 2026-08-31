@@ -11,6 +11,13 @@ const mean=values=>{
   return valid.length?valid.reduce((sum,value)=>sum+value,0)/valid.length:null;
 };
 
+function toPercent(value){
+  const numeric=Number(value);
+  if(!Number.isFinite(numeric))return null;
+  const normalized=numeric>=0&&numeric<=1?numeric*100:numeric;
+  return clamp(normalized,0,100);
+}
+
 function topicKey(materia,assunto){
   return `${safe(materia,180)}::${safe(assunto,400)}`.toLowerCase();
 }
@@ -38,14 +45,14 @@ function normalizeMethodEffectiveness(value={}){
 function normalizeRow(row){
   const state=row?.state||{};
   const qs=state.questionStats||{};
-  const retention=Number(row?.retention??state.retention);
-  const accuracy=Number(row?.questionAccuracy??qs.lastAccuracy??qs.averageAccuracy);
+  const retention=toPercent(row?.retention??state.retention);
+  const accuracy=toPercent(row?.questionAccuracy??qs.lastAccuracy??qs.averageAccuracy);
   return {
     key:safe(state.key||topicKey(row?.materia,row?.assunto),640),
     materia:safe(row?.materia,180),
     assunto:safe(row?.assunto,400),
-    retention:Number.isFinite(retention)?clamp(retention,0,100):null,
-    accuracy:Number.isFinite(accuracy)?clamp(accuracy,0,100):null,
+    retention,
+    accuracy,
     confidence:clamp(qs.confidence,0,1),
     lapseCount:Math.max(0,Number(state.lapseCount)||0),
     reviewCount:Math.max(0,Number(state.reviewCount)||0),
@@ -192,6 +199,7 @@ function refreshFromGlobals(){
 global.AppCognitiveProfile=Object.freeze({
   schemaVersion:SCHEMA_VERSION,
   scopeKey,
+  toPercent,
   buildProfile,
   read,
   write,
