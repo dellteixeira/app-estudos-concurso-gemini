@@ -89,6 +89,13 @@
 }
 
 @media (max-width: 700px) {
+    #retentionDiagnosticPanel .rd-metric-card-v1077 {
+        grid-template-rows: minmax(40px, auto) minmax(58px, 1fr) 5px !important;
+        row-gap: 7px !important;
+        min-height: 164px !important;
+        padding: 14px 8px 10px !important;
+    }
+
     #retentionDiagnosticPanel .rd-metric-label-v1077 {
         max-inline-size: 12.5ch !important;
         min-height: 2.18em !important;
