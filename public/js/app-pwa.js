@@ -214,6 +214,16 @@
         window.startFilteredStudyModal = startFilteredStudyModal;
         window.resetDailyPomodoroHours = resetDailyPomodoroHours;
 
+        // O HTML mantém o baseline responsivo estável; a release atual aplica apenas o delta versionado.
+        (function loadCurrentResponsiveReleaseDelta() {
+            if (document.querySelector('link[data-responsive-release-delta]')) return;
+            const style = document.createElement('link');
+            style.rel = 'stylesheet';
+            style.href = './css/responsive-polish-v10.64.20.css?v=10.64.20';
+            style.dataset.responsiveReleaseDelta = '1';
+            document.head.appendChild(style);
+        })();
+
         // V10.64.20 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
         (function loadAdaptiveScheduleReconciliation() {
             if (window.AdaptiveScheduleReconciliation || document.querySelector('script[data-adaptive-schedule-reconciliation]')) return;
