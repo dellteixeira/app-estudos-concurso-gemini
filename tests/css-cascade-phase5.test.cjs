@@ -6,11 +6,10 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
-test('Fase 5 mantém uma única camada canônica de UI por responsabilidade', () => {
+test('Fase 5 mantém uma única camada canônica de UI', () => {
   const navigation = read('public/js/ui/navigation.js');
   const sw = read('public/sw.js');
   const canonical = read('public/css/canonical-ui.css');
-  const retention = read('public/css/components/retention.css');
 
   assert.match(navigation, /canonical-ui\.css\?v=20260823-phase5/);
   assert.match(navigation, /data-canonical-ui|dataset\.canonicalUi/);
@@ -19,13 +18,9 @@ test('Fase 5 mantém uma única camada canônica de UI por responsabilidade', ()
   assert.match(sw, /\.\/css\/canonical-ui\.css/);
   assert.doesNotMatch(sw, /retention-metrics-fix|ui-text-safety|accessibility-baseline/);
 
+  assert.match(canonical, /RETENTION METRICS/);
   assert.match(canonical, /ACCESSIBILITY BASELINE/);
   assert.match(canonical, /btn-logout-header/);
-  assert.doesNotMatch(canonical, /#retentionDiagnosticPanel|\.rd-metric(?:s|-)|#modalRetentionMetricDetails/);
-
-  assert.match(retention, /Retention & Diagnostic — canonical component ownership/);
-  assert.match(retention, /#retentionDiagnosticPanel \.rd-metric-card-v1077/);
-  assert.match(retention, /#modalRetentionMetricDetails \.retention-metric-modal-content/);
 
   for (const legacy of [
     'public/css/retention-metrics-fix.css',

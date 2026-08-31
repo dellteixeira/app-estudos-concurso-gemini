@@ -38,6 +38,7 @@
 @media(max-width:720px){.critical-point-controls{gap:5px!important}.critical-point-controls button{font-size:.60rem!important;padding-inline:2px!important}}
 @media(max-width:420px){.critical-point-controls{gap:4px!important}.critical-point-controls button{font-size:.56rem!important;padding-inline:1px!important}}
 
+
 /* V10.64.15 — Pontos críticos: ações ocupam toda a largura útil do card. */
 #retentionDiagnosticPanel.retention-dashboard-v1072 .retention-risk-card-v1071.critical-actions-enabled > .critical-point-controls{
   grid-column:2 / -1 !important;

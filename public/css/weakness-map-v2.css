@@ -1,9 +1,0 @@
-.weakness-map-v2{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color,#dfe3e8)}
-.weakness-map-subjects,.weakness-map-topics{display:grid;gap:.65rem;margin-top:.75rem}
-.weakness-map-subject{display:flex;justify-content:space-between;gap:1rem;padding:.75rem;border:1px solid var(--border-color,#dfe3e8);border-radius:.75rem}
-.weakness-map-subject span,.weakness-map-topic span{font-size:.85rem;opacity:.8}
-.weakness-map-topic{display:grid;grid-template-columns:auto 1fr;gap:.75rem;align-items:start;padding:.75rem;border:1px solid var(--border-color,#dfe3e8);border-radius:.75rem}
-.weakness-map-topic>div{display:grid;gap:.2rem}
-.weakness-map-rank{display:grid;place-items:center;min-width:1.75rem;height:1.75rem;border-radius:999px;border:1px solid currentColor;font-weight:700}
-.weakness-map-topic[data-severity="high"]{border-width:2px}
-@media(max-width:720px){.weakness-map-subject{display:grid;gap:.25rem}}

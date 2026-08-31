@@ -5,48 +5,6 @@
 
   const loadedScripts = new Map();
   const loadedStyles = new Map();
-  const loadedBundles = new Map();
-
-  const FEATURE_BUNDLES = Object.freeze({
-    pdf: Object.freeze({
-      styles: Object.freeze([
-        './vendor/pdf_viewer.min.css',
-        './css/pdf-library.css',
-        './css/pdf-reader.css'
-      ]),
-      scripts: Object.freeze([
-        './vendor/pdf.min.js',
-        './js/pdf/pdf-core.js',
-        './js/pdf/pdf-workspaces.js',
-        './js/pdf/pdf-links.js',
-        './js/pdf/pdf-library.js',
-        './js/pdf/pdf-upload.js',
-        './js/pdf/pdf-annotations.js',
-        './js/pdf/pdf-reader.js',
-        './js/pdf/pdf-library-ui.js'
-      ])
-    }),
-    ai: Object.freeze({
-      styles: Object.freeze([
-        './css/learning-advisor.css'
-      ]),
-      scripts: Object.freeze([
-        './js/app-ai.js',
-        './js/learning-advisor.js',
-        './js/critical-points-actions.js'
-      ])
-    }),
-    reports: Object.freeze({
-      scripts: Object.freeze([
-        './js/study-performance-report.js'
-      ])
-    }),
-    notes: Object.freeze({
-      scripts: Object.freeze([
-        './js/notes-import-export.js'
-      ])
-    })
-  });
 
   function connectionProfile() {
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
@@ -120,49 +78,13 @@
     return promise;
   }
 
-  async function loadScriptsInOrder(sources) {
-    for (const src of sources || []) {
-      await loadScript(src);
-    }
-  }
-
-  function loadBundle(name) {
-    const key = String(name || '').trim();
-    if (!key || !FEATURE_BUNDLES[key]) return Promise.reject(new Error(`Bundle desconhecido: ${key || 'vazio'}`));
-    if (loadedBundles.has(key)) return loadedBundles.get(key);
-
-    const bundle = FEATURE_BUNDLES[key];
-    const promise = Promise.all((bundle.styles || []).map(loadStyle))
-      .then(() => loadScriptsInOrder(bundle.scripts || []))
-      .then(() => key)
-      .catch(error => {
-        loadedBundles.delete(key);
-        throw error;
-      });
-
-    loadedBundles.set(key, promise);
-    return promise;
-  }
-
-  function bundleForTab(tabId) {
-    if (tabId === 'tab-biblioteca') return 'pdf';
-    if (tabId === 'tab-flashcards') return 'ai';
-    if (tabId === 'tab-anotacoes') return 'notes';
-    return null;
-  }
-
-  function ensureFeaturesForTab(tabId) {
-    const bundle = bundleForTab(tabId);
-    return bundle ? loadBundle(bundle) : Promise.resolve(null);
-  }
-
   function scheduleIdleTask(task, timeout = 1800) {
     return new Promise(resolve => {
       idle(async () => {
         try {
           resolve(await task());
-        } catch (_error) {
-          console.warn('[performance] tarefa ociosa indisponível');
+        } catch (error) {
+          console.warn('[performance] tarefa ociosa falhou:', error);
           resolve(null);
         }
       }, timeout);
@@ -172,8 +94,8 @@
   function ensurePerformanceMetrics() {
     if (global.AppPerformanceMetrics) return Promise.resolve(global.AppPerformanceMetrics);
     return loadScript('./js/performance-metrics.js', { dataset: { performanceMetrics: '1' } })
-      .catch(() => {
-        console.warn('[performance] métricas indisponíveis');
+      .catch(error => {
+        console.warn('[performance] métricas indisponíveis:', error);
         return null;
       });
   }
@@ -181,14 +103,17 @@
   function warmOptionalFeatures() {
     const profile = connectionProfile();
     if (!navigator.onLine || profile.constrained) return;
-    scheduleIdleTask(() => loadBundle('notes'), 2400);
-    scheduleIdleTask(() => loadBundle('reports'), 3600);
+    scheduleIdleTask(() => loadScript('./js/notes-import-export.js', { dataset: { notesImportExport: '1' } }), 2400);
+    scheduleIdleTask(() => loadScript('./js/study-performance-report.js', { dataset: { studyPerformanceReport: '1' } }), 3600);
   }
 
   function bindIntentPreload() {
     const warmPdf = () => {
       if (!navigator.onLine && !global.pdfjsLib) return;
-      scheduleIdleTask(() => loadBundle('pdf'), 1200);
+      scheduleIdleTask(() => Promise.all([
+        loadScript('./vendor/pdf.min.js'),
+        loadStyle('./vendor/pdf_viewer.min.css')
+      ]), 1200);
     };
 
     document.querySelectorAll('[onclick*="tab-biblioteca"], [data-tab="tab-biblioteca"], [onclick*="openModalViewEdital"]').forEach(el => {
@@ -213,14 +138,10 @@
   }
 
   global.AppPerformanceLoader = Object.freeze({
-    FEATURE_BUNDLES,
     connectionProfile,
     idle,
     loadScript,
     loadStyle,
-    loadBundle,
-    bundleForTab,
-    ensureFeaturesForTab,
     scheduleIdleTask,
     ensurePerformanceMetrics,
     warmOptionalFeatures,

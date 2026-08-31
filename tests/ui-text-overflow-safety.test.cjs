@@ -18,16 +18,18 @@ test('header controls stay on one row with complete labels', () => {
   assert.doesNotMatch(css, /\.header-account-actions \.btn[\s\S]{0,450}text-overflow:\s*ellipsis/);
 });
 
-test('retention metrics stay iconless, readable and two-column only on mobile', () => {
-  const css = read('public/css/components/retention.css');
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077[\s\S]*grid-template-rows:\s*minmax\(38px, auto\) minmax\(54px, 1fr\) 5px\s*!important/);
+test('retention metrics are compact, iconless and remain four-across outside real mobile', () => {
+  const css = read('public/css/canonical-ui.css');
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*grid-auto-rows:\s*142px\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077[\s\S]*height:\s*142px\s*!important/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-icon-v1077[\s\S]*display:\s*none\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.76rem, \.70rem \+ \.22vw, \.86rem\)\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*760\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.82rem,/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*740\s*!important/);
   assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*white-space:\s*normal\s*!important/);
-  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*overflow-wrap:\s*break-word\s*!important/);
-  assert.match(css, /@media \(max-width: 700px\)[\s\S]*#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-label-v1077[\s\S]*max-inline-size:\s*100%\s*!important/);
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*\.82rem\s*!important/);
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /@media \(max-width: 340px\)[\s\S]*#retentionDiagnosticPanel \.rd-metrics-v1077[\s\S]*grid-template-columns:\s*1fr\s*!important/);
   assert.doesNotMatch(css, /@container retentionMetrics/);
 });
 
