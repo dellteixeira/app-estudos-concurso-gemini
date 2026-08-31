@@ -1,2 +1,51 @@
 /* Release 10.64.20: mantém a camada visual estável da 10.64.19 enquanto o versionamento de assets é migrado para hashing. */
 @import url('./responsive-polish-v10.64.19.css');
+
+/*
+ * Release-scoped responsive guarantees.
+ * Mantidas aqui, e não na 10.64.19 restaurada, para preservar o baseline imutável.
+ */
+
+/* Flashcards: ações permanecem legíveis, compactas e sem quebra indevida. */
+#flashcardsWorkspace .anki-folder-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(112px, max-content));
+    align-items: center;
+    justify-content: center;
+    gap: clamp(.4rem, 1.4vw, .75rem);
+}
+
+#flashcardsWorkspace .anki-folder-actions > span:last-child {
+    white-space: nowrap !important;
+}
+
+#flashcardsWorkspace .anki-folder-actions .btn {
+    font-size: clamp(.76rem, .72rem + .18vw, .88rem);
+}
+
+/* Calendário: mês e ano permanecem alinhados na mesma linha. */
+#calendarWorkspace .calendar-month-selectors {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1.12fr) minmax(0, .88fr);
+    align-items: center;
+    gap: clamp(.4rem, 1.2vw, .75rem);
+}
+
+#calendarWorkspace .calendar-month-selectors label {
+    white-space: nowrap !important;
+}
+
+#calendarWorkspace .calendar-month-selectors select {
+    min-width: 0;
+    font-size: clamp(.78rem, .74rem + .18vw, .9rem);
+}
+
+/* Retenção: ações principais permanecem centralizadas opticamente. */
+.retention-study-now-v1072,
+.retention-export-btn {
+    margin-inline: auto !important;
+}
+
+.retention-diagnostic-tools {
+    justify-content: center !important;
+}
