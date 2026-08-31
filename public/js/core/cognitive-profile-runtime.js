@@ -135,6 +135,18 @@ function readMethodEffectiveness(userId,contest){
   try{return global.AppInterventionEffectiveness?.aggregate?.(userId,contest)||undefined}catch(_){return undefined}
 }
 
+function applyErrorIntelligence(profile){
+  try{
+    const engine=global.AppErrorIntelligence;
+    const profileApi=global.AppCognitiveProfile;
+    if(!profile||!engine?.recurringErrors||!profileApi?.write)return profile;
+    const recurringErrors=engine.recurringErrors(profile);
+    const next={...profile,recurringErrors,errorIntelligence:engine.aggregate(recurringErrors)};
+    profileApi.write(next);
+    return next;
+  }catch(_){return profile}
+}
+
 function refresh(options={}){
   const profileApi=global.AppCognitiveProfile;
   if(!profileApi?.refresh)return null;
@@ -144,10 +156,12 @@ function refresh(options={}){
   if(!options.force&&fingerprint===lastFingerprint)return profileApi.read?.(userId,contest)||null;
   lastFingerprint=fingerprint;
   const methodEffectiveness=readMethodEffectiveness(userId,contest);
-  const profile=profileApi.refresh({userId,contest,rows,sessions,methodEffectiveness});
+  let profile=profileApi.refresh({userId,contest,rows,sessions,methodEffectiveness});
+  profile=applyErrorIntelligence(profile);
   try{
     global.dispatchEvent(new CustomEvent('app:cognitive-profile-updated',{detail:{
-      userId,contest,updatedAt:profile?.updatedAt||null,metrics:profile?.metrics||null
+      userId,contest,updatedAt:profile?.updatedAt||null,metrics:profile?.metrics||null,
+      recurringErrors:profile?.recurringErrors?.length||0
     }}));
   }catch(_){}
   return profile;
@@ -226,6 +240,7 @@ global.AppCognitiveProfileRuntime=Object.freeze({
   buildRows,
   resolveInputSnapshot,
   readMethodEffectiveness,
+  applyErrorIntelligence,
   refresh,
   scheduleRefresh,
   installHooks,
