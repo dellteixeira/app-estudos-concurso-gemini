@@ -7,14 +7,14 @@ const workflow = fs.readFileSync('.github/workflows/quality-check.yml', 'utf8');
 const config = fs.readFileSync('playwright.config.cjs', 'utf8');
 const spec = fs.readFileSync('tests/browser/responsive-layout.spec.cjs', 'utf8');
 
-test('Fase 3 preserva suíte Playwright mesmo com GitHub Actions degradado', () => {
+test('Fase 3 integra Playwright ao status obrigatório test-and-audit', () => {
   assert.equal(pkg.scripts['test:browser'], 'playwright test -c playwright.config.cjs');
-  assert.match(workflow, /name:\s*Quality Check/);
-  assert.match(workflow, /workflow_dispatch/);
+  assert.match(workflow, /Browser responsive audit/);
   assert.match(workflow, /npm run test:browser/);
   assert.match(workflow, /@playwright\/test@1\.55\.0/);
+  assert.match(workflow, /chromium firefox webkit/);
   assert.match(workflow, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
-  assert.doesNotMatch(workflow,/pull_request:/);
+  assert.match(workflow, /retention-days: 14/);
 });
 
 test('Playwright cobre três engines e servidor local do app real', () => {

@@ -2,9 +2,7 @@ name: Mirror GitHub to GitLab
 
 on:
   push:
-    branches: [main]
-    tags:
-      - 'v*'
+  delete:
   workflow_dispatch:
 
 permissions:
@@ -17,7 +15,7 @@ concurrency:
 jobs:
   mirror:
     name: Sync repository to GitLab
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
@@ -42,8 +40,3 @@ jobs:
             -c http.extraHeader="Authorization: Basic ${AUTH}" \
             push --mirror \
             "https://gitlab.com/dellteixeira-group/app-estudos-concurso-gemini.git"
-
-      - name: Explain independent failover requirement
-        run: |
-          echo 'GitLab CI is configured in .gitlab-ci.yml.'
-          echo 'For failover independent of GitHub Actions, enable GitLab pull mirroring from this GitHub repository.'

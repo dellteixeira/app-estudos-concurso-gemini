@@ -6,7 +6,6 @@ const css = fs.readFileSync('android/mobile/android-mobile-hotfix.css', 'utf8');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const contract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf8'));
 const sharedCss = fs.readFileSync(`public/css/responsive-polish-v${pkg.version}.css`, 'utf8');
-const retentionCss = fs.readFileSync('public/css/components/retention.css', 'utf8');
 const script = fs.readFileSync('scripts/apply-android-mobile-hotfix.mjs', 'utf8');
 const gradle = fs.readFileSync('android/app/build.gradle', 'utf8');
 const workflow = fs.readFileSync('.github/workflows/android-release.yml', 'utf8');
@@ -24,23 +23,12 @@ test('calendar mobile hotfix preserves seven columns and two-digit days', () => 
   assert.match(sharedCss, /\.calendar-month-selectors[\s\S]*grid-template-columns:\s*auto minmax\(0, 1\.12fr\) minmax\(0, \.88fr\)/);
 });
 
-test('retention styling is shared with web instead of duplicated in Android hotfix', () => {
-  assert.match(sharedCss, /@import\s+url\(['"]\.\/components\/retention\.css['"]\)/);
-  assert.match(retentionCss, /#retentionDiagnosticPanel \.rd-metric-icon-v1077[\s\S]*display:\s*none\s*!important/);
-  assert.match(retentionCss, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.76rem,\s*\.70rem \+ \.22vw,\s*\.86rem\)\s*!important/);
-  assert.match(retentionCss, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*760\s*!important/);
-  assert.match(retentionCss, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*text-wrap:\s*balance\s*!important/);
-  assert.doesNotMatch(css, /#retentionDiagnosticPanel|\.rd-metric(?:s|-)|#modalRetentionMetricDetails/);
-});
-
-test('shared retention grid keeps independent mobile rows without card overlap', () => {
-  assert.match(retentionCss, /#retentionDiagnosticPanel \.rd-metrics-v1077,[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/);
-  assert.match(retentionCss, /grid-auto-rows:\s*minmax\(166px,\s*auto\)\s*!important/);
-  assert.match(retentionCss, /row-gap:\s*14px\s*!important/);
-  assert.match(retentionCss, /column-gap:\s*10px\s*!important/);
-  assert.match(retentionCss, /#retentionDiagnosticPanel \.rd-metric-card-v1077,[\s\S]*height:\s*auto\s*!important/);
-  assert.match(retentionCss, /min-height:\s*166px\s*!important/);
-  assert.match(retentionCss, /max-height:\s*none\s*!important/);
+test('retention metric icons are removed on web and mobile while titles stay compact and readable', () => {
+  assert.match(sharedCss, /#retentionDiagnosticPanel \.rd-metric-icon-v1077\s*\{[\s\S]*display:\s*none\s*!important/);
+  assert.match(sharedCss, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.76rem,\s*\.70rem \+ \.22vw,\s*\.86rem\)\s*!important/);
+  assert.match(sharedCss, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*font-weight:\s*760\s*!important/);
+  assert.match(sharedCss, /#retentionDiagnosticPanel \.rd-metric-label-v1077[\s\S]*text-wrap:\s*balance\s*!important/);
+  assert.match(sharedCss, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.74rem,\s*3\.1vw,\s*\.84rem\)\s*!important/);
 });
 
 test('library list mode has a distinct compact grid on mobile', () => {
