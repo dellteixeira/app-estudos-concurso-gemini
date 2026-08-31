@@ -12,7 +12,7 @@
         if (!document.querySelector('link[data-responsive-polish]')) {
             const polish = document.createElement('link');
             polish.rel = 'stylesheet';
-            polish.href = './css/responsive-polish-v10.64.19.css?v=20260829';
+            polish.href = './css/responsive-polish-v10.64.20.css?v=10.64.20';
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
         }

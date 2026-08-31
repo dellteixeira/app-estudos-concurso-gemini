@@ -125,11 +125,45 @@ for (const route of [...manifest.criticalAppShell, ...manifest.optionalOfflineAs
 }
 
 const html = read('public/index.html');
+const appPwa = read('public/js/app-pwa.js');
+const currentResponsiveRoute = `/css/responsive-polish-v${version}.css`;
+const currentResponsiveFile = `public${currentResponsiveRoute}`;
+const currentResponsiveSource = fs.existsSync(path.join(root, currentResponsiveFile))
+  ? read(currentResponsiveFile)
+  : '';
+const responsiveBaselineMatch = html.match(/href=["']\.\/css\/responsive-polish-v(\d+\.\d+\.\d+)\.css["']/);
+const responsiveBaselineRoute = responsiveBaselineMatch
+  ? `/css/responsive-polish-v${responsiveBaselineMatch[1]}.css`
+  : null;
+
+// Contrato de transição: o shell pode manter um baseline responsivo imutável,
+// desde que a release atual tenha um delta versionado, pré-cacheado e carregado
+// explicitamente pelo runtime. Assim um bump incompleto volta a falhar no CI.
+let governedResponsiveBaseline = null;
+if (responsiveBaselineRoute && responsiveBaselineRoute !== currentResponsiveRoute) {
+  const baselineFile = `public${responsiveBaselineRoute}`;
+  const currentIsCritical = manifest.criticalAppShell.includes(currentResponsiveRoute);
+  const runtimeLoadsCurrent = appPwa.includes(`.${currentResponsiveRoute}?v=${version}`);
+  const currentIsDeltaOnly = currentResponsiveSource.length > 0 && !/@import\s+/i.test(currentResponsiveSource);
+  const baselineExists = fs.existsSync(path.join(root, baselineFile));
+
+  if (!baselineExists) fail(`baseline responsivo referenciado não existe: ${baselineFile}`);
+  if (!currentIsCritical) fail(`delta responsivo atual não está no critical app shell: ${currentResponsiveRoute}`);
+  if (!runtimeLoadsCurrent) fail(`runtime PWA não carrega o delta responsivo da release: ${currentResponsiveRoute}?v=${version}`);
+  if (!currentIsDeltaOnly) fail(`delta responsivo atual não pode importar outro responsive-polish: ${currentResponsiveRoute}`);
+
+  if (baselineExists && currentIsCritical && runtimeLoadsCurrent && currentIsDeltaOnly) {
+    governedResponsiveBaseline = responsiveBaselineRoute;
+    ok(`baseline responsivo ${responsiveBaselineRoute} governado por delta ${currentResponsiveRoute}`);
+  }
+}
+
 const referenced = [
   ...html.matchAll(/(?:src|href)=["']\.\/(css\/[^"']+|js\/[^"']+|pwa-update\.js)["']/g)
 ].map(match => `/${match[1].split('?')[0]}`);
 const knownRuntime = new Set([...manifest.criticalAppShell, ...manifest.optionalOfflineAssets, ...manifest.networkFirstPaths]);
 for (const route of referenced) {
+  if (route === governedResponsiveBaseline) continue;
   if (!knownRuntime.has(route)) fail(`asset carregado no index sem contrato de cache/offline: ${route}`);
 }
 

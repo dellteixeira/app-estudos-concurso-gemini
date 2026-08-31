@@ -1,4 +1,8 @@
 const { test, expect } = require('@playwright/test');
+const fs = require('node:fs');
+
+const releaseContract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf8'));
+const RESPONSIVE_POLISH_PATH = `/css/responsive-polish-v${releaseContract.version}.css`;
 
 const VIEWPORTS = [
   { name: 'mobile-360', width: 360, height: 800 },
@@ -53,20 +57,20 @@ async function auditVisibleControls(page, roots) {
 }
 
 async function auditProductionStyles(page) {
-  await page.waitForFunction(() => {
+  await page.waitForFunction((responsivePolishPath) => {
     const styles = [...document.styleSheets].map(sheet => sheet.href || '').filter(Boolean);
     const canonicalIndex = styles.findIndex(href => href.includes('/css/canonical-ui.css'));
     const polishIndexes = styles
-      .map((href, index) => href.includes('/css/responsive-polish-v10.64.19.css') ? index : -1)
+      .map((href, index) => href.includes(responsivePolishPath) ? index : -1)
       .filter(index => index >= 0);
     return canonicalIndex >= 0 && polishIndexes.some(index => index > canonicalIndex);
-  }, null, { timeout: 10000 });
+  }, RESPONSIVE_POLISH_PATH, { timeout: 10000 });
 
   const styles = await page.evaluate(() => [...document.styleSheets]
     .map(sheet => sheet.href)
     .filter(Boolean));
   const canonicalIndex = styles.findIndex(href => href.includes('/css/canonical-ui.css'));
-  const lastPolishIndex = styles.reduce((last, href, index) => href.includes('/css/responsive-polish-v10.64.19.css') ? index : last, -1);
+  const lastPolishIndex = styles.reduce((last, href, index) => href.includes(RESPONSIVE_POLISH_PATH) ? index : last, -1);
   expect(canonicalIndex, 'canonical-ui de produção não carregado').toBeGreaterThanOrEqual(0);
   expect(lastPolishIndex, 'responsive-polish de produção não carregado').toBeGreaterThan(canonicalIndex);
 }

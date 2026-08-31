@@ -1,8 +1,21 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 
-const css = fs.readFileSync('public/css/responsive-polish-v10.64.19.css', 'utf8');
+const contract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf8'));
+const responsiveCss = `responsive-polish-v${contract.version}.css`;
+const responsivePath = path.join('public', 'css', responsiveCss);
+
+function readResponsiveCss(filePath) {
+  const source = fs.readFileSync(filePath, 'utf8');
+  const importMatch = source.match(/@import\s+url\(['"]?([^'")]+)['"]?\)\s*;/);
+  if (!importMatch) return source;
+  const importedPath = path.resolve(path.dirname(filePath), importMatch[1]);
+  return `${source}\n${fs.readFileSync(importedPath, 'utf8')}`;
+}
+
+const css = readResponsiveCss(responsivePath);
 const nav = fs.readFileSync('public/js/ui/navigation.js', 'utf8');
 
 test('flashcard action labels do not split on mobile', () => {
@@ -33,7 +46,7 @@ test('retention metrics remove decorative icons and keep compact balanced titles
 
 test('responsive polish stylesheet is loaded after canonical UI', () => {
   const canonicalIndex = nav.indexOf('canonical-ui.css');
-  const polishIndex = nav.indexOf('responsive-polish-v10.64.19.css');
+  const polishIndex = nav.indexOf(responsiveCss);
   assert.ok(canonicalIndex >= 0);
   assert.ok(polishIndex > canonicalIndex);
   assert.match(nav, /data-responsive-polish|dataset\.responsivePolish/);
