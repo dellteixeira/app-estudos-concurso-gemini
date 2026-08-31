@@ -79,6 +79,9 @@
             if (!global.AppInterventionEffectiveness) {
                 await loader.loadScript('./js/core/intervention-effectiveness.js', { async: false });
             }
+            if (!global.AppErrorIntelligence) {
+                await loader.loadScript('./js/core/error-intelligence.js', { async: false });
+            }
             if (!global.AppCognitiveProfileRuntime) {
                 await loader.loadScript('./js/core/cognitive-profile-runtime.js', { async: false });
             }
