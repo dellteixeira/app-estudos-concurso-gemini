@@ -146,7 +146,7 @@ function buildProfile(input={}){
     weaknesses:weakSubjects,
     subjects,
     recurringErrors:Array.isArray(previous.recurringErrors)?previous.recurringErrors:[],
-    methodEffectiveness:normalizeMethodEffectiveness(previous.methodEffectiveness),
+    methodEffectiveness:normalizeMethodEffectiveness(input.methodEffectiveness||previous.methodEffectiveness),
     topicState:Object.fromEntries(rows.map(row=>[row.key,{
       materia:row.materia,
       assunto:row.assunto,
