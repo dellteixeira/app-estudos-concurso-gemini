@@ -73,6 +73,9 @@
             if (!global.AppCognitiveProfile) {
                 await loader.loadScript('./js/core/cognitive-profile.js', { async: false });
             }
+            if (!global.AppCognitiveProfileRuntime) {
+                await loader.loadScript('./js/core/cognitive-profile-runtime.js', { async: false });
+            }
             return loader;
         })().catch(error => {
             coreRuntimePromise = null;
