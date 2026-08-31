@@ -1,6 +1,9 @@
 (function (global) {
     'use strict';
 
+    const CORE_VERSION = '10.64.20';
+    let coreRuntimePromise = null;
+
     function ensureCanonicalUiStyle() {
         if (!document.querySelector('link[data-canonical-ui]')) {
             const link = document.createElement('link');
@@ -30,14 +33,78 @@
         }
     }
 
+    function appendCoreScript(src, datasetKey) {
+        return new Promise((resolve, reject) => {
+            const existing = [...document.scripts].find(script => script.src && script.src.includes(src));
+            if (existing) {
+                if (datasetKey) existing.dataset[datasetKey] = '1';
+                if (existing.dataset.loaded === 'true' || existing.readyState === 'complete') {
+                    resolve(existing);
+                    return;
+                }
+                existing.addEventListener('load', () => resolve(existing), { once: true });
+                existing.addEventListener('error', reject, { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = `${src}?v=${CORE_VERSION}`;
+            script.defer = true;
+            if (datasetKey) script.dataset[datasetKey] = '1';
+            script.addEventListener('load', () => {
+                script.dataset.loaded = 'true';
+                resolve(script);
+            }, { once: true });
+            script.addEventListener('error', () => reject(new Error(`Falha ao carregar ${src}`)), { once: true });
+            document.head.appendChild(script);
+        });
+    }
+
+    function ensureCoreRuntime() {
+        if (coreRuntimePromise) return coreRuntimePromise;
+        coreRuntimePromise = (async () => {
+            if (!global.AppAssetLoader) {
+                await appendCoreScript('./js/core/asset-loader.js', 'assetLoader');
+            }
+
+            const loader = global.AppAssetLoader;
+            if (!loader) throw new Error('AppAssetLoader indisponível após bootstrap.');
+
+            if (!global.AppCognitiveProfile) {
+                await loader.loadScript('./js/core/cognitive-profile.js', { async: false });
+            }
+            if (!global.AppCognitiveDataSource) {
+                await loader.loadScript('./js/core/cognitive-profile-source.js', { async: false });
+            }
+            if (!global.AppCognitiveProfileRuntime) {
+                await loader.loadScript('./js/core/cognitive-profile-runtime.js', { async: false });
+            }
+            return loader;
+        })().catch(error => {
+            coreRuntimePromise = null;
+            console.warn('Não foi possível carregar o runtime modular.', error);
+            return null;
+        });
+        return coreRuntimePromise;
+    }
+
     function ensurePerformanceLoader() {
-        if (global.AppPerformanceLoader || document.querySelector('script[data-performance-loader]')) return;
-        const script = document.createElement('script');
-        script.src = './js/performance-loader.js';
-        script.defer = true;
-        script.dataset.performanceLoader = '1';
-        script.onerror = () => console.warn('Não foi possível carregar o otimizador de performance.');
-        document.head.appendChild(script);
+        if (global.AppPerformanceLoader || document.querySelector('script[data-performance-loader]')) return Promise.resolve(global.AppPerformanceLoader || null);
+        return ensureCoreRuntime().then(loader => {
+            if (global.AppPerformanceLoader) return global.AppPerformanceLoader;
+            if (loader) {
+                return loader.loadScript('./js/performance-loader.js', { async: false })
+                    .then(script => {
+                        script.dataset.performanceLoader = '1';
+                        return global.AppPerformanceLoader || null;
+                    });
+            }
+            return appendCoreScript('./js/performance-loader.js', 'performanceLoader')
+                .then(() => global.AppPerformanceLoader || null);
+        }).catch(error => {
+            console.warn('Não foi possível carregar o otimizador de performance.', error);
+            return null;
+        });
     }
 
     function resolveCallable(path) {
@@ -156,7 +223,8 @@
         syncMobileNav,
         navigateTo,
         mobileSwitchTab,
-        callPath
+        callPath,
+        ensureCoreRuntime
     });
 
     ensureCanonicalUiStyle();
@@ -166,9 +234,9 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             ensureAccessibleNames();
-            ensurePerformanceLoader();
+            ensureCoreRuntime().then(() => ensurePerformanceLoader());
         }, { once: true });
     } else {
-        ensurePerformanceLoader();
+        ensureCoreRuntime().then(() => ensurePerformanceLoader());
     }
 })(window);

@@ -16,6 +16,14 @@ function versionedUrl(input,version=DEFAULT_VERSION){
   return url.href;
 }
 
+function sameAsset(left,right){
+  try{
+    const a=normalizeUrl(left);
+    const b=normalizeUrl(right);
+    return a.origin===b.origin&&a.pathname===b.pathname;
+  }catch(_){return String(left||'')===String(right||'')}
+}
+
 function once(key,factory){
   if(registry.has(key))return registry.get(key);
   const promise=Promise.resolve().then(factory).catch(error=>{
@@ -28,10 +36,10 @@ function once(key,factory){
 
 function loadScript(src,options={}){
   const finalUrl=options.versioned===false?normalizeUrl(src).href:versionedUrl(src,options.version||DEFAULT_VERSION);
-  return once(`script:${finalUrl}`,()=>new Promise((resolve,reject)=>{
-    const existing=[...document.scripts].find(node=>node.src===finalUrl);
+  return once(`script:${normalizeUrl(finalUrl).pathname}`,()=>new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(node=>node.src&&sameAsset(node.src,finalUrl));
     if(existing){
-      if(existing.dataset.loaded==='true'||existing.readyState==='complete')return resolve(existing);
+      if(existing.dataset.loaded==='true'||existing.readyState==='complete'||document.readyState!=='loading')return resolve(existing);
       existing.addEventListener('load',()=>resolve(existing),{once:true});
       existing.addEventListener('error',()=>reject(new Error(`Falha ao carregar ${finalUrl}`)),{once:true});
       return;
@@ -50,8 +58,8 @@ function loadScript(src,options={}){
 
 function loadStyle(href,options={}){
   const finalUrl=options.versioned===false?normalizeUrl(href).href:versionedUrl(href,options.version||DEFAULT_VERSION);
-  return once(`style:${finalUrl}`,()=>new Promise((resolve,reject)=>{
-    const existing=[...document.querySelectorAll('link[rel="stylesheet"]')].find(node=>node.href===finalUrl);
+  return once(`style:${normalizeUrl(finalUrl).pathname}`,()=>new Promise((resolve,reject)=>{
+    const existing=[...document.querySelectorAll('link[rel="stylesheet"]')].find(node=>node.href&&sameAsset(node.href,finalUrl));
     if(existing)return resolve(existing);
     const link=document.createElement('link');
     link.rel='stylesheet';
@@ -107,6 +115,7 @@ defineFeature('pdf-engine',{
 global.AppAssetLoader=Object.freeze({
   version:DEFAULT_VERSION,
   versionedUrl,
+  sameAsset,
   loadScript,
   loadStyle,
   defineFeature,
