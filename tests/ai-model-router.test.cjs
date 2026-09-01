@@ -8,8 +8,17 @@ const {pathToFileURL}=require('node:url');
 const root=path.resolve(__dirname,'..');
 const moduleUrl=pathToFileURL(path.join(root,'src/ai-model-router.js')).href;
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
+const routerModule=import(moduleUrl);
+async function router(){return routerModule}
 
-async function router(){return import(`${moduleUrl}?t=${Date.now()}-${Math.random()}`)}
+test('configuração explícita preserva modelos primário e fast',async()=>{
+  const {resolveConfiguredModels}=await router();
+  const models=resolveConfiguredModels({GEMINI_PRIMARY_MODEL:'primary-model',GEMINI_FAST_MODEL:'fast-model'});
+  assert.equal(models.primary,'primary-model');
+  assert.equal(models.fast,'fast-model');
+  assert.equal(models.standard,'primary-model');
+  assert.equal(models.reasoning,'primary-model');
+});
 
 test('diagnóstico curto usa tier fast e mantém autoridade determinística',async()=>{
   const {routeAiModel}=await router();
