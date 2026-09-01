@@ -28,6 +28,7 @@ const LEGACY_BRIDGES=Object.freeze({
 let sequence=0;
 let bridgedCount=0;
 let emittedCount=0;
+let dedupDropped=0;
 const recent=new Map();
 const subscriptions=new Set();
 
@@ -51,7 +52,8 @@ function shouldEmit(name,detail){
   if(recent.size>80){
     for(const [candidate,at] of recent){if(now-at>DEDUP_WINDOW_MS*4)recent.delete(candidate)}
   }
-  return now-previous>DEDUP_WINDOW_MS;
+  if(now-previous<=DEDUP_WINDOW_MS){dedupDropped+=1;return false}
+  return true;
 }
 function emit(name,detail={},meta={}){
   const eventName=String(name||'').trim();
@@ -97,10 +99,36 @@ function getDiagnostics(){
     sequence,
     emittedCount,
     bridgedCount,
+    dedupDropped,
     activeSubscriptions:subscriptions.size,
     canonicalEvents:Object.values(EVENTS),
     legacyBridges:{...LEGACY_BRIDGES}
   });
+}
+function loadHardeningScript(src,marker){
+  return new Promise((resolve,reject)=>{
+    const selector=`script[data-study-hardening="${marker}"]`;
+    const existing=document.querySelector?.(selector);
+    if(existing){
+      if(existing.dataset.loaded==='1')return resolve(existing);
+      existing.addEventListener('load',()=>resolve(existing),{once:true});
+      existing.addEventListener('error',reject,{once:true});
+      return;
+    }
+    const script=document.createElement('script');
+    script.src=src;
+    script.async=false;
+    script.dataset.studyHardening=marker;
+    script.addEventListener('load',()=>{script.dataset.loaded='1';resolve(script)},{once:true});
+    script.addEventListener('error',reject,{once:true});
+    (document.head||document.documentElement).appendChild(script);
+  });
+}
+function bootstrapHardening(){
+  const tasks=[];
+  if(!global.OfflineSyncCoordinator)tasks.push(loadHardeningScript('./js/core/offline-sync-coordinator.js?v=10.64.28','offline-sync-coordinator').then(()=>global.OfflineSyncCoordinator?.install?.()).catch(error=>console.warn('Coordenador offline indisponível; legado preservado.',error)));
+  if(!global.AppStudyObservability)tasks.push(loadHardeningScript('./js/core/study-observability.js?v=10.64.28','study-observability').catch(error=>console.warn('Observabilidade de estudo indisponível.',error)));
+  return Promise.allSettled(tasks);
 }
 function stop(){
   [...subscriptions].forEach(unsubscribe=>{try{unsubscribe()}catch(_){}});
@@ -108,6 +136,7 @@ function stop(){
 }
 
 bridgeLegacy();
-global.AppStudyEvents=Object.freeze({schemaVersion:SCHEMA_VERSION,EVENTS,legacyBridges:{...LEGACY_BRIDGES},emit,on,once,getSnapshot,getDiagnostics,stop});
+global.AppStudyEvents=Object.freeze({schemaVersion:SCHEMA_VERSION,EVENTS,legacyBridges:{...LEGACY_BRIDGES},emit,on,once,getSnapshot,getDiagnostics,bootstrapHardening,stop});
 global.dispatchEvent?.(new CustomEvent('study:events-ready',{detail:{schemaVersion:SCHEMA_VERSION}}));
+bootstrapHardening();
 })(window);
