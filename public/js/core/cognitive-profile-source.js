@@ -5,6 +5,8 @@ if(global.AppCognitiveDataSource)return;
 let editalIndex=null;
 let editalIndexBuilds=0;
 let editalIndexLookups=0;
+let topicIndex=new Map();
+let topicIndexBuilds=0;
 const normalizeKey=(materia,assunto)=>`${String(materia||'').trim()}::${String(assunto||'').trim()}`.toLowerCase();
 
 function safeCurrentUserId(){
@@ -91,6 +93,24 @@ function priorityForTopic(materia,assunto){
   };
 }
 
+function buildTopicIndex(topics){
+  const next=new Map();
+  if(topics&&typeof topics==='object')Object.values(topics).filter(Boolean).forEach(state=>{
+    const key=String(state?.key||normalizeKey(state?.materia,state?.assunto)).toLowerCase();
+    if(key&&!next.has(key))next.set(key,state);
+  });
+  topicIndex=next;
+  topicIndexBuilds+=1;
+  return topicIndex;
+}
+function topicSnapshot(context={}){
+  const key=String(context.topicId||normalizeKey(context.materia,context.assunto)).toLowerCase();
+  const state=topicIndex.get(key);
+  if(!state)return null;
+  const priority=priorityForTopic(state?.materia,state?.assunto);
+  return {materia:String(state?.materia||''),assunto:String(state?.assunto||''),retention:retentionForState(state),questionAccuracy:Number.isFinite(Number(state?.questionStats?.averageAccuracy))?Number(state.questionStats.averageAccuracy):state?.questionStats?.lastAccuracy,editalPriority:priority.editalPriority,topicPriority:priority.topicPriority,state};
+}
+
 function snapshot(){
   // Um único O(n) por snapshot substitui N buscas lineares durante o rebuild.
   buildEditalIndex(safeEdital());
@@ -100,6 +120,7 @@ function snapshot(){
   const contestMeta=metadata?.[contest]||{};
   const sessions=Array.isArray(contestMeta?.studySessions)?contestMeta.studySessions:[];
   const topics=contestMeta?.retentionEngine?.topics;
+  buildTopicIndex(topics);
   const rows=topics&&typeof topics==='object'
     ?Object.values(topics).filter(Boolean).map(state=>{
       const priority=priorityForTopic(state?.materia,state?.assunto);
@@ -119,5 +140,5 @@ function snapshot(){
   return Object.freeze({userId,contest,rows,sessions});
 }
 
-global.AppCognitiveDataSource=Object.freeze({snapshot,priorityForTopic,findEditalItem,buildEditalIndex,getEditalIndex,invalidateEditalIndex,indexDiagnostics:()=>Object.freeze({builds:editalIndexBuilds,lookups:editalIndexLookups,size:editalIndex?.byTopic?.size||0})});
+global.AppCognitiveDataSource=Object.freeze({snapshot,topicSnapshot,buildTopicIndex,priorityForTopic,findEditalItem,buildEditalIndex,getEditalIndex,invalidateEditalIndex,indexDiagnostics:()=>Object.freeze({builds:editalIndexBuilds,lookups:editalIndexLookups,size:editalIndex?.byTopic?.size||0,topicBuilds:topicIndexBuilds,topicSize:topicIndex.size})});
 })(window);

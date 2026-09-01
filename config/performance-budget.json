@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "budgets": {
+    "warmProfileStorageMisses": 0,
+    "singleTopicCandidateScans": 0,
+    "stableTopicPredictionComputations": 1,
+    "stableProfilePredictionComputations": 1,
+    "singleTopicSourceCount": 1
+  },
+  "contracts": {
+    "layoutMutation": false,
+    "importedOrderMutation": false,
+    "pedagogicalFormulaMutation": false,
+    "incrementalAggregates": "eventual-safe-reconciliation"
+  }
+}

@@ -7,6 +7,8 @@ const STORAGE_PREFIX='student_cognitive_profile_v1';
 const profileCache=new Map();
 let cacheHits=0;
 let cacheMisses=0;
+let fullRebuilds=0;
+let incrementalPatches=0;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
 const safe=(value,max=240)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const mean=values=>{
@@ -245,6 +247,8 @@ function buildProfile(input={}){
     contest:safe(input.contest||previous.contest||'Concurso Geral',180),
     createdAt:previous.createdAt||new Date().toISOString(),
     updatedAt:new Date().toISOString(),
+    revision:Math.max(0,Number(previous.revision)||0)+1,
+    incremental:null,
     priorityContract:Object.freeze({
       editalPriority:'immutable-imported-order',
       topicPriority:'immutable-imported-order',
@@ -274,7 +278,8 @@ function buildProfile(input={}){
     subjects,
     recurringErrors:Array.isArray(previous.recurringErrors)?previous.recurringErrors:[],
     methodEffectiveness:normalizeMethodEffectiveness(input.methodEffectiveness||previous.methodEffectiveness),
-    topicState:Object.fromEntries(rows.map(row=>[row.key,{
+    topicState:Object.fromEntries(rows.map((row,canonicalIndex)=>[row.key,{
+      canonicalIndex,
       materia:row.materia,
       assunto:row.assunto,
       retention:row.retention,
@@ -324,7 +329,32 @@ function write(profile){
   }catch(_){return false}
 }
 
+function patchTopic(input={}){
+  const userId=input.userId||global.currentUser?.id||'guest';
+  const contest=input.contest||global.currentConcurso||'Concurso Geral';
+  const previous=peek(userId,contest)||read(userId,contest);
+  if(!previous||!input.row)return null;
+  const row=normalizeRow(input.row);
+  const previousTopic=previous.topicState?.[row.key]||null;
+  const canonicalIndex=Number.isFinite(Number(previousTopic?.canonicalIndex))?Number(previousTopic.canonicalIndex):Object.keys(previous.topicState||{}).indexOf(row.key);
+  const nextTopic={
+    canonicalIndex:canonicalIndex>=0?canonicalIndex:Object.keys(previous.topicState||{}).length,
+    materia:row.materia,assunto:row.assunto,retention:row.retention,accuracy:row.accuracy,confidence:row.confidence,
+    lapseCount:row.lapseCount,reviewCount:row.reviewCount,sessionCount:row.sessionCount,totalMinutes:row.totalMinutes,
+    difficulty:row.difficulty,lastRating:row.lastRating,lastStudyAt:row.lastStudyAt,
+    editalPriority:row.editalPriority,topicPriority:row.topicPriority,
+    domainRisk:estimateTopicDomainRisk(row,previousTopic)
+  };
+  const profile={...previous,updatedAt:new Date().toISOString(),revision:Math.max(0,Number(previous.revision)||0)+1,topicState:{...(previous.topicState||{}),[row.key]:nextTopic},incremental:{metricsStale:true,dirtyTopics:[row.key]}};
+  incrementalPatches+=1;
+  write(profile);
+  return profile;
+}
+
+function performanceDiagnostics(){return Object.freeze({...cacheDiagnostics(),fullRebuilds,incrementalPatches})}
+
 function refresh(input={}){
+  fullRebuilds+=1;
   const userId=input.userId||global.currentUser?.id||'guest';
   const contest=input.contest||global.currentConcurso||'Concurso Geral';
   const previous=read(userId,contest);
@@ -352,6 +382,8 @@ global.AppCognitiveProfile=Object.freeze({
   peek,
   invalidateCache,
   cacheDiagnostics,
+  performanceDiagnostics,
+  patchTopic,
   write,
   refresh,
   refreshFromGlobals

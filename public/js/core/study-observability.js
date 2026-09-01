@@ -73,6 +73,7 @@ function getDiagnostics(){
     guidanceSources:Object.freeze({...guidanceSources}),
     longTasks:Object.freeze({count:longTaskCount,durationMs:Math.round(longTaskDurationMs)}),
     eventBus,
+    performance:Object.freeze({cognitiveProfile:global.AppCognitiveProfile?.performanceDiagnostics?.()||null,editalIndex:global.AppCognitiveDataSource?.indexDiagnostics?.()||null,predictionCache:global.AppPredictiveAdaptiveTutor?.cacheDiagnostics?.()||null,studyOptimization:global.AppStudyOptimization?.performanceDiagnostics?.()||null}),
     history:[...history]
   });
 }

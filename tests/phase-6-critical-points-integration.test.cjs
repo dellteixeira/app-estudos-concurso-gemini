@@ -21,7 +21,8 @@ test('Critical Points consumes Phase 6A domain risk without adding visible marku
 });
 
 test('Critical Points keeps Phase 6B optimization and lets Phase 6C refine the intervention',()=>{
-  assert.match(critical,/AppStudyOptimization\?\.plan\?global\.AppStudyOptimization\.plan\(30,\{profile,source:'critical-points'\}\):null/);
+  assert.match(critical,/AppStudyOptimization\?\.forTopic\?global\.AppStudyOptimization\.forTopic\(topicId,30,\{profile,source:'critical-points'\}\):null/);
+  assert.doesNotMatch(critical,/AppStudyOptimization\?\.plan\?global\.AppStudyOptimization\.plan\(30,\{profile,source:'critical-points'\}\):null/);
   assert.match(critical,/AppPredictiveAdaptiveTutor\?\.resolve/);
   assert.match(critical,/const tutorAction=predictive\?\.tutor\?\.action\|\|block\.method/);
   assert.match(critical,/surface:'critical-points'/);

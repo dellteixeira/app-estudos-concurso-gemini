@@ -212,6 +212,35 @@ function scheduleRefresh(options={}){
   refreshTimer=global.setTimeout(()=>refresh(options),Math.max(0,Number(options.delay)||REFRESH_DELAY_MS));
 }
 
+function topicHintFromArgs(args=[]){
+  for(const arg of args){
+    if(!arg||typeof arg!=='object')continue;
+    const materia=arg.materia||arg.subject;
+    const assunto=arg.assunto||arg.topic;
+    const topicId=arg.topicId||arg.topicKey||arg.key;
+    if(topicId||(materia&&assunto))return {topicId,materia,assunto};
+  }
+  return null;
+}
+function scheduleAfterMutation(args=[]){
+  const hint=topicHintFromArgs(args);
+  if(hint&&global.AppCognitiveProfile?.patchTopic&&global.AppCognitiveDataSource?.topicSnapshot){
+    global.setTimeout(()=>{
+      try{
+        const row=global.AppCognitiveDataSource.topicSnapshot(hint);
+        if(row){
+          const source=readSourceSnapshot();
+          const profile=global.AppCognitiveProfile.patchTopic({userId:source?.userId||resolveUserId(),contest:source?.contest||resolveContest(),row});
+          global.dispatchEvent(new CustomEvent('app:cognitive-profile-updated',{detail:{userId:profile?.userId,contest:profile?.contest,updatedAt:profile?.updatedAt,revision:profile?.revision,incremental:true}}));
+        }
+      }catch(_){}
+      scheduleRefresh({force:false,delay:420});
+    },0);
+    return;
+  }
+  scheduleRefresh({force:false});
+}
+
 function wrapFunction(name){
   const original=global[name];
   if(typeof original!=='function'||original[WRAPPED])return false;
@@ -219,11 +248,11 @@ function wrapFunction(name){
     const result=original.apply(this,args);
     if(result&&typeof result.then==='function'){
       return result.then(value=>{
-        scheduleRefresh({force:false});
+        scheduleAfterMutation(args);
         return value;
       });
     }
-    scheduleRefresh({force:false});
+    scheduleAfterMutation(args);
     return result;
   };
   Object.defineProperty(wrapped,WRAPPED,{value:true});
@@ -280,6 +309,8 @@ global.AppCognitiveProfileRuntime=Object.freeze({
   resolveContest,
   buildRows,
   priorityForTopic,
+  topicHintFromArgs,
+  scheduleAfterMutation,
   resolveInputSnapshot,
   fingerprintInput,
   readMethodEffectiveness,
