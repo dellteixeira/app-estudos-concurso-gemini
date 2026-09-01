@@ -2,7 +2,7 @@
 'use strict';
 if(global.CriticalPointActions)return;
 
-const VERSION='1.3.0';
+const VERSION='1.3.1';
 const SNOOZE_HOURS=24;
 const ENHANCED_CLASS='critical-actions-enabled';
 let observer=null;
@@ -303,7 +303,10 @@ function boot(){
   observer=new MutationObserver(()=>scheduleEnhance());
   observer.observe(document.documentElement,{childList:true,subtree:true});
   global.addEventListener('learning-advisor:snooze-changed',rerenderDiagnostics);
-  global.addEventListener('app:cognitive-profile-updated',rerenderDiagnostics);
+  // Cognitive-profile updates can fire frequently while the app reconciles session data.
+  // They are intentionally not wired to a full diagnostics rerender: doing so causes a
+  // render -> MutationObserver -> enhance loop that visibly shakes the entire dashboard.
+  // The latest cognitive profile is still read whenever diagnostics/cards render normally.
   [120,350,900,1800].forEach(delay=>setTimeout(enhanceAll,delay));
 }
 
