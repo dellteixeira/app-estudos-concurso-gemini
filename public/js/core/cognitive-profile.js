@@ -74,6 +74,106 @@ function normalizeRow(row){
   };
 }
 
+function priorityWeight(row){
+  const value=nullableNumber(row?.topicPriority??row?.editalPriority);
+  if(value==null)return 1;
+  const rounded=Math.round(value);
+  return clamp(5-rounded,1,4);
+}
+
+function evidenceLevel(row){
+  const samples=Math.max(0,row.sessionCount)+Math.max(0,row.reviewCount)+(row.accuracy!=null?1:0);
+  if(samples>=6)return 'high';
+  if(samples>=3)return 'medium';
+  return 'low';
+}
+
+function topicTrend(masteryScore,previousTopic){
+  const previous=Number(previousTopic?.domainRisk?.masteryScore);
+  if(!Number.isFinite(previous))return 'insufficient_evidence';
+  const delta=masteryScore-previous;
+  if(delta>=4)return 'improving';
+  if(delta<=-4)return 'declining';
+  return 'stable';
+}
+
+function estimateTopicDomainRisk(row,previousTopic=null){
+  const retention=row.retention??50;
+  const accuracy=row.accuracy??retention;
+  const confidencePct=clamp(row.confidence*100,0,100);
+  const evidenceScore=clamp(row.sessionCount*16+row.reviewCount*10+(row.accuracy!=null?18:0),0,100);
+  const lapsePenalty=Math.min(20,row.lapseCount*3.25);
+  const difficultyPenalty=Math.max(0,row.difficulty-5)*1.6;
+  const masteryScore=Math.round(clamp(
+    retention*0.46+accuracy*0.38+confidencePct*0.06+evidenceScore*0.10-lapsePenalty-difficultyPenalty,
+    0,100
+  ));
+
+  // Projeção conservadora de retenção em 7 dias. É uma estimativa cognitiva,
+  // não uma alteração do valor de retenção armazenado nem da prioridade importada.
+  const decayRate=clamp(
+    0.010+row.difficulty*0.0014+row.lapseCount*0.0012-Math.min(0.006,row.reviewCount*0.0007),
+    0.008,0.035
+  );
+  const predictedRetention7d=Math.round(clamp(retention*Math.exp(-decayRate*7),0,100));
+  const uncertainty=evidenceLevel(row)==='low'?9:evidenceLevel(row)==='medium'?4:0;
+  const applicationGap=Math.max(0,retention-accuracy);
+  const forgettingRisk=Math.round(clamp(
+    (100-predictedRetention7d)*0.56+lapsePenalty+Math.max(0,65-accuracy)*0.24+applicationGap*0.10+uncertainty,
+    0,100
+  ));
+  const riskBand=forgettingRisk>=65?'high':forgettingRisk>=40?'medium':'low';
+
+  return Object.freeze({
+    masteryScore,
+    predictedRetention7d,
+    forgettingRisk,
+    riskBand,
+    evidenceLevel:evidenceLevel(row),
+    trend:topicTrend(masteryScore,previousTopic),
+    priorityWeight:priorityWeight(row)
+  });
+}
+
+function aggregateDomainRisk(rows,previousTopicState={}){
+  if(!rows.length)return {
+    weightedCoverage:0,
+    weightedMastery:0,
+    masteredTopics:0,
+    atRiskTopics:0,
+    highRiskTopics:0,
+    mediumRiskTopics:0
+  };
+  let totalWeight=0;
+  let coveredWeight=0;
+  let weightedMasterySum=0;
+  let masteredTopics=0;
+  let atRiskTopics=0;
+  let highRiskTopics=0;
+  let mediumRiskTopics=0;
+  rows.forEach(row=>{
+    const domain=estimateTopicDomainRisk(row,previousTopicState?.[row.key]);
+    const weight=domain.priorityWeight;
+    totalWeight+=weight;
+    weightedMasterySum+=domain.masteryScore*weight;
+    if(domain.masteryScore>=70){
+      masteredTopics+=1;
+      coveredWeight+=weight;
+    }
+    if(domain.riskBand!=='low')atRiskTopics+=1;
+    if(domain.riskBand==='high')highRiskTopics+=1;
+    if(domain.riskBand==='medium')mediumRiskTopics+=1;
+  });
+  return {
+    weightedCoverage:Math.round(totalWeight?coveredWeight/totalWeight*100:0),
+    weightedMastery:Math.round(totalWeight?weightedMasterySum/totalWeight:0),
+    masteredTopics,
+    atRiskTopics,
+    highRiskTopics,
+    mediumRiskTopics
+  };
+}
+
 function aggregateSubjects(rows){
   const map=new Map();
   rows.forEach(row=>{
@@ -133,6 +233,7 @@ function buildProfile(input={}){
   const forgettingRisk=Math.round(clamp((100-(avgRetention??75))*0.7+Math.min(30,totalLapses*2.5),0,100));
   const strongSubjects=subjects.slice(0,3).filter(subject=>subject.masteryScore>=65);
   const weakSubjects=[...subjects].reverse().slice(0,5).filter(subject=>subject.masteryScore<70);
+  const domainAggregate=aggregateDomainRisk(rows,previous.topicState||{});
 
   return {
     schemaVersion:SCHEMA_VERSION,
@@ -156,7 +257,13 @@ function buildProfile(input={}){
       avgSessionMinutes:totalSessions?Math.round(totalMinutes/totalSessions):null,
       totalObservedTopics:rows.length,
       totalStudyMinutes:Math.round(totalMinutes),
-      totalLapses
+      totalLapses,
+      weightedCoverage:domainAggregate.weightedCoverage,
+      weightedMastery:domainAggregate.weightedMastery,
+      masteredTopics:domainAggregate.masteredTopics,
+      atRiskTopics:domainAggregate.atRiskTopics,
+      highRiskTopics:domainAggregate.highRiskTopics,
+      mediumRiskTopics:domainAggregate.mediumRiskTopics
     },
     strengths:strongSubjects,
     weaknesses:weakSubjects,
@@ -177,7 +284,8 @@ function buildProfile(input={}){
       lastRating:row.lastRating,
       lastStudyAt:row.lastStudyAt,
       editalPriority:row.editalPriority,
-      topicPriority:row.topicPriority
+      topicPriority:row.topicPriority,
+      domainRisk:estimateTopicDomainRisk(row,previous.topicState?.[row.key])
     }]))
   };
 }
@@ -218,6 +326,8 @@ global.AppCognitiveProfile=Object.freeze({
   schemaVersion:SCHEMA_VERSION,
   scopeKey,
   toPercent,
+  estimateTopicDomainRisk,
+  aggregateDomainRisk,
   buildProfile,
   read,
   write,

@@ -12,6 +12,12 @@ function loadSource() {
   vm.runInContext(`
     let currentUser = { id: 'user-lexical' };
     let currentConcurso = 'TJ-CE';
+    let editalItems = [{
+      materia: 'Português',
+      assunto: 'Pontuação',
+      prioridade: 1,
+      assunto_prioridade: 2
+    }];
     function getConcursosMetadata() {
       return {
         'TJ-CE': {
@@ -44,6 +50,16 @@ test('snapshot reads authenticated lexical context without exposing scheduler st
   assert.equal(snapshot.rows.length, 1);
   assert.equal(snapshot.rows[0].retention, .84);
   assert.equal(snapshot.rows[0].questionAccuracy, 76);
+  assert.equal(snapshot.rows[0].editalPriority, 1);
+  assert.equal(snapshot.rows[0].topicPriority, 2);
   assert.equal('schedule' in snapshot, false);
   assert.equal('calendar' in snapshot, false);
+});
+
+test('datasource transporta a prioridade, mas não expõe API para mutá-la', () => {
+  const api = loadSource();
+  const priority = api.priorityForTopic('Português', 'Pontuação');
+  assert.deepEqual({ ...priority }, { editalPriority: 1, topicPriority: 2 });
+  assert.equal('setPriority' in api, false);
+  assert.equal('reorder' in api, false);
 });
