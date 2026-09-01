@@ -2,7 +2,8 @@
 'use strict';
 if(global.AppStudyNowCommandCenter)return;
 
-const VERSION='1.0.0';
+const VERSION='1.0.1';
+const UI_ENABLED=false;
 const clean=(value,max=500)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
 let installed=false;
@@ -70,7 +71,12 @@ function latestRecommendation(){
   }catch(_){return null}
 }
 
+function removePanel(){
+  try{document.getElementById('studyNowCommandCenter')?.remove?.()}catch(_){/* no-op */}
+}
+
 function ensureStyles(){
+  if(!UI_ENABLED)return;
   if(document.querySelector('style[data-study-now-command-center]'))return;
   const style=document.createElement('style');
   style.dataset.studyNowCommandCenter='1';
@@ -103,6 +109,7 @@ function findHost(){
 }
 
 function ensurePanel(){
+  if(!UI_ENABLED){removePanel();return null}
   let panel=document.getElementById('studyNowCommandCenter');
   if(panel)return panel;
   ensureStyles();
@@ -127,8 +134,10 @@ function appendChip(container,text){
 }
 
 function render(recommendation){
-  const panel=ensurePanel();
   currentView=buildViewModel(recommendation);
+  if(!UI_ENABLED){removePanel();return currentView}
+  const panel=ensurePanel();
+  if(!panel)return currentView;
   const topic=panel.querySelector('[data-sn-topic]');
   const meta=panel.querySelector('[data-sn-meta]');
   const reasons=panel.querySelector('[data-sn-reasons]');
@@ -199,13 +208,13 @@ function openTutor(){
 function install(){
   if(installed)return refresh();
   installed=true;
-  ensurePanel();
+  if(UI_ENABLED)ensurePanel();else removePanel();
   global.addEventListener?.('app:next-best-study-action',event=>render(event?.detail||null));
   global.addEventListener?.('app:cognitive-profile-updated',()=>refresh());
   global.addEventListener?.('app:exam-board-intelligence-updated',()=>refresh());
   return refresh();
 }
 
-global.AppStudyNowCommandCenter=Object.freeze({version:VERSION,scope,buildViewModel,latestRecommendation,render,refresh,startStudy,openTutor,install,current:()=>currentView});
+global.AppStudyNowCommandCenter=Object.freeze({version:VERSION,uiEnabled:UI_ENABLED,scope,buildViewModel,latestRecommendation,render,refresh,startStudy,openTutor,install,current:()=>currentView});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })(window);
