@@ -84,18 +84,42 @@ function calculateRetention(state){
   return Number.isFinite(fallback)?fallback:null;
 }
 
+function editalItems(){
+  try{
+    if(Array.isArray(global.editalItems))return global.editalItems;
+    if(Array.isArray(global.allEditalItems))return global.allEditalItems;
+    return global.AppState?.getEdital?.({all:true})||[];
+  }catch(_){return []}
+}
+
+function priorityForTopic(materia,assunto){
+  const item=editalItems().find(candidate=>String(candidate?.materia||'').trim()===String(materia||'').trim()&&String(candidate?.assunto||'').trim()===String(assunto||'').trim());
+  if(!item)return {editalPriority:null,topicPriority:null};
+  const editalPriority=Number(item.prioridade);
+  const topicPriority=Number(item.assunto_prioridade);
+  return {
+    editalPriority:Number.isFinite(editalPriority)?editalPriority:null,
+    topicPriority:Number.isFinite(topicPriority)?topicPriority:null
+  };
+}
+
 function buildRows(contestMeta){
   const topics=contestMeta?.retentionEngine?.topics;
   if(!topics||typeof topics!=='object')return [];
-  return Object.values(topics).filter(Boolean).map(state=>({
-    materia:String(state?.materia||''),
-    assunto:String(state?.assunto||''),
-    retention:calculateRetention(state),
-    questionAccuracy:Number.isFinite(Number(state?.questionStats?.averageAccuracy))
-      ?Number(state.questionStats.averageAccuracy)
-      :state?.questionStats?.lastAccuracy,
-    state
-  }));
+  return Object.values(topics).filter(Boolean).map(state=>{
+    const priority=priorityForTopic(state?.materia,state?.assunto);
+    return {
+      materia:String(state?.materia||''),
+      assunto:String(state?.assunto||''),
+      retention:calculateRetention(state),
+      questionAccuracy:Number.isFinite(Number(state?.questionStats?.averageAccuracy))
+        ?Number(state.questionStats.averageAccuracy)
+        :state?.questionStats?.lastAccuracy,
+      editalPriority:priority.editalPriority,
+      topicPriority:priority.topicPriority,
+      state
+    };
+  });
 }
 
 function resolveInputSnapshot(){
@@ -120,15 +144,27 @@ function resolveInputSnapshot(){
   };
 }
 
+function hashText(text){
+  let hash=2166136261;
+  for(let index=0;index<text.length;index++){
+    hash^=text.charCodeAt(index);
+    hash=Math.imul(hash,16777619);
+  }
+  return (hash>>>0).toString(36);
+}
+
 function fingerprintInput(userId,contest,rows,sessions){
-  const lastSession=sessions[sessions.length-1];
-  const lastRow=rows[rows.length-1];
-  return [
-    userId,contest,rows.length,sessions.length,
-    lastSession?.id||'',lastSession?.createdAt||'',
-    lastRow?.state?.updatedAt||'',lastRow?.state?.questionStats?.lastAt||'',
-    lastRow?.retention??''
-  ].join('|');
+  const compactRows=rows.map(row=>[
+    row?.state?.key||`${row?.materia||''}::${row?.assunto||''}`,
+    row?.state?.updatedAt||'',row?.state?.lastStudyAt||'',row?.state?.questionStats?.lastAt||'',
+    row?.retention??'',row?.questionAccuracy??'',row?.state?.lapseCount??'',row?.state?.reviewCount??'',
+    row?.state?.sessionCount??'',row?.state?.totalMinutes??'',row?.editalPriority??'',row?.topicPriority??''
+  ]);
+  const compactSessions=sessions.map(session=>[
+    session?.id||'',session?.createdAt||session?.dateKey||'',session?.minutes??session?.durationMinutes??'',
+    session?.materia||'',session?.assunto||'',session?.activityType||''
+  ]);
+  return `${userId}|${contest}|${hashText(JSON.stringify([compactRows,compactSessions]))}`;
 }
 
 function readMethodEffectiveness(userId,contest){
@@ -172,18 +208,18 @@ function scheduleRefresh(options={}){
   refreshTimer=global.setTimeout(()=>refresh(options),Math.max(0,Number(options.delay)||REFRESH_DELAY_MS));
 }
 
-function wrapFunction(name,{after=true}={}){
+function wrapFunction(name){
   const original=global[name];
   if(typeof original!=='function'||original[WRAPPED])return false;
   const wrapped=function(...args){
     const result=original.apply(this,args);
     if(result&&typeof result.then==='function'){
       return result.then(value=>{
-        if(after)scheduleRefresh({force:true});
+        scheduleRefresh({force:false});
         return value;
       });
     }
-    if(after)scheduleRefresh({force:true});
+    scheduleRefresh({force:false});
     return result;
   };
   Object.defineProperty(wrapped,WRAPPED,{value:true});
@@ -193,6 +229,8 @@ function wrapFunction(name,{after=true}={}){
 }
 
 function installHooks(){
+  // Somente mutações/fontes de dados podem invalidar o Student Model.
+  // Funções puramente de renderização ficam explicitamente fora deste contrato.
   const names=[
     'loadData',
     'syncAllWithSupabase',
@@ -201,7 +239,6 @@ function installHooks(){
     'submitQuestionPerformance',
     'submitAdaptiveReviewFeedback',
     'rebuildRetentionEngineForContest',
-    'renderRetentionDiagnostics',
     'filterDataByConcurso'
   ];
   names.forEach(name=>wrapFunction(name));
@@ -209,14 +246,14 @@ function installHooks(){
   const selector=document.getElementById('concursoSelect');
   if(selector&&!selector.dataset.cognitiveProfileBound){
     selector.dataset.cognitiveProfileBound='1';
-    selector.addEventListener('change',()=>scheduleRefresh({force:true}),{passive:true});
+    selector.addEventListener('change',()=>scheduleRefresh({force:false}),{passive:true});
   }
 
   if(!installed){
     global.addEventListener('storage',event=>{
-      if(String(event?.key||'').startsWith('concursos_metadata_'))scheduleRefresh({force:true});
+      if(String(event?.key||'').startsWith('concursos_metadata_'))scheduleRefresh({force:false});
     });
-    global.addEventListener('app:intervention-effectiveness-event',()=>scheduleRefresh({force:true}));
+    global.addEventListener('app:intervention-effectiveness-event',()=>scheduleRefresh({force:false}));
     global.addEventListener('pageshow',()=>scheduleRefresh({force:false}),{passive:true});
     document.addEventListener('visibilitychange',()=>{
       if(!document.hidden)scheduleRefresh({force:false});
@@ -238,7 +275,9 @@ global.AppCognitiveProfileRuntime=Object.freeze({
   resolveUserId,
   resolveContest,
   buildRows,
+  priorityForTopic,
   resolveInputSnapshot,
+  fingerprintInput,
   readMethodEffectiveness,
   applyErrorIntelligence,
   refresh,

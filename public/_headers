@@ -194,3 +194,18 @@
 
 /js/core/study-now-command-center.js
   Cache-Control: no-cache, no-store, must-revalidate
+
+/js/core/study-events.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/core/study-guidance-engine.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/core/offline-sync-coordinator.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/core/study-observability.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/css/responsive-polish-v10.64.28.css
+  Cache-Control: public, max-age=31536000, immutable

@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppStudyNowCommandCenter)return;
 
-const VERSION='1.0.1';
+const VERSION='1.1.0';
 const UI_ENABLED=false;
 const clean=(value,max=500)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
@@ -44,6 +44,8 @@ function buildViewModel(recommendation){
     materia:clean(recommendation.materia,180),
     assunto:clean(recommendation.assunto,400),
     priorityScore:clamp(recommendation.priorityScore,0,100),
+    editalPriority:Number.isFinite(Number(recommendation.editalPriority))?Number(recommendation.editalPriority):null,
+    topicPriority:Number.isFinite(Number(recommendation.topicPriority))?Number(recommendation.topicPriority):null,
     method:clean(recommendation.method,80),
     methodLabel:clean(recommendation.methodLabel||recommendation.method,120),
     suggestedMinutes:clamp(recommendation.suggestedMinutes,5,180),
@@ -182,9 +184,10 @@ function render(recommendation){
 }
 
 function refresh(){
+  if(!UI_ENABLED)return currentView;
   try{
     const current=scope();
-    const recommendation=global.AppNextBestStudyAction?.refreshFromProfile?.(current.userId,current.contest)||latestRecommendation();
+    const recommendation=global.AppNextBestStudyAction?.latest?.()||global.AppNextBestStudyAction?.refreshFromProfile?.(current.userId,current.contest)||null;
     return render(recommendation);
   }catch(_){return render(null)}
 }
@@ -206,11 +209,14 @@ function openTutor(){
 }
 
 function install(){
-  if(installed)return refresh();
+  if(installed)return currentView;
   installed=true;
-  if(UI_ENABLED)ensurePanel();else removePanel();
+  if(!UI_ENABLED){
+    removePanel();
+    return null;
+  }
+  ensurePanel();
   global.addEventListener?.('app:next-best-study-action',event=>render(event?.detail||null));
-  global.addEventListener?.('app:cognitive-profile-updated',()=>refresh());
   global.addEventListener?.('app:exam-board-intelligence-updated',()=>refresh());
   return refresh();
 }

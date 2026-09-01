@@ -4,7 +4,7 @@ if(global.AppAssetLoader)return;
 
 const registry=new Map();
 const featureRegistry=new Map();
-const DEFAULT_VERSION=String(global.APP_VERSION||'10.64.22');
+const DEFAULT_VERSION=String(global.APP_VERSION||'10.64.28');
 
 function normalizeUrl(input){
   return new URL(String(input),global.location?.href||'https://estudoadaptativo.local/');

@@ -290,6 +290,31 @@
         else writeState({ ...state, status:navigator.onLine ? 'synced' : 'idle', pending:0, attempt:0, lastError:null, nextRetryAt:null, online:Boolean(navigator.onLine) }, reason);
     }
 
+    function loadStudyArchitectureScript(src, marker) {
+        return new Promise((resolve, reject) => {
+            const existing = document.querySelector(`script[data-study-architecture="${marker}"]`);
+            if (existing) {
+                if (existing.dataset.loaded === '1') return resolve(existing);
+                existing.addEventListener('load', () => resolve(existing), { once:true });
+                existing.addEventListener('error', reject, { once:true });
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = false;
+            script.dataset.studyArchitecture = marker;
+            script.onload = () => { script.dataset.loaded = '1'; resolve(script); };
+            script.onerror = reject;
+            (document.head || document.documentElement).appendChild(script);
+        });
+    }
+
+    async function loadStudyArchitecture() {
+        if (!global.AppStudyEvents) await loadStudyArchitectureScript('./js/core/study-events.js?v=10.64.28', 'events');
+        if (!global.AppStudyGuidance) await loadStudyArchitectureScript('./js/core/study-guidance-engine.js?v=10.64.28', 'guidance');
+        return Boolean(global.AppStudyEvents && global.AppStudyGuidance);
+    }
+
     global.addEventListener('online', () => {
         writeState({ ...readState(), online:true, pending:pendingCount() }, 'online:event');
         reconcileQueueState('online');
@@ -317,8 +342,10 @@
         reportConflict,
         resolveConflict,
         subscribe,
+        loadStudyArchitecture,
         stop() { clearRetry(); if (pollTimer) clearInterval(pollTimer); pollTimer = null; }
     });
 
     global.dispatchEvent(new CustomEvent('syncengine:ready', { detail:global.SyncEngine.getState() }));
+    loadStudyArchitecture().catch(error => console.warn('Arquitetura de estudo resiliente indisponível; runtime legado preservado.', error));
 })(window);
