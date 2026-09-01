@@ -25,6 +25,10 @@ function getTopicKey(item,row){
 }
 function findItem(row){
   const key=getTopicKey(null,row);
+  try{
+    const indexed=global.AppCognitiveDataSource?.findEditalItem?.({topicId:key,materia:row?.state?.materia,assunto:row?.state?.assunto});
+    if(indexed)return indexed;
+  }catch(_){}
   return getItems().find(item=>{
     try{return typeof getStudyTopicKey==='function'?getStudyTopicKey(item?.materia,item?.assunto)===key:false}catch(_){return false}
   })||getItems().find(item=>item?.materia===row?.state?.materia&&item?.assunto===row?.state?.assunto)||null;
@@ -33,7 +37,7 @@ function getStudentModel(){
   try{
     const userId=global.currentUser?.id||'guest';
     const contest=global.currentConcurso||'Concurso Geral';
-    return global.AppCognitiveProfile?.read?.(userId,contest)||null;
+    return global.AppCognitiveProfile?.peek?.(userId,contest)||global.AppCognitiveProfile?.read?.(userId,contest)||null;
   }catch(_){return null}
 }
 function getStudentTopicState(row,item){
@@ -90,8 +94,8 @@ function overdueRisk(row){
 function persistentRisk(row,item){
   try{return clamp(global.AppLearningAdvisor?.computeLearningFriction?.(row,item)?.score||0,0,100)*0.15}catch(_){return 0}
 }
-function computeGlobalRisk(row,item){
-  const modeledRow=enrichRowFromStudentModel(row,item);
+function computeGlobalRisk(row,item,modeledRowOverride=null){
+  const modeledRow=modeledRowOverride||enrichRowFromStudentModel(row,item);
   const retention=clamp(modeledRow?.retention??modeledRow?.state?.retention??100,0,100);
   const rawAccuracy=Number(modeledRow?.questionAccuracy??modeledRow?.state?.questionStats?.lastAccuracy);
   const accuracy=Number.isFinite(rawAccuracy)?clamp(rawAccuracy,0,100):null;
@@ -133,7 +137,7 @@ function enhanceCard(card){
     return;
   }
   const modeledRow=enrichRowFromStudentModel(row,item);
-  const risk=computeGlobalRisk(row,item);
+  const risk=computeGlobalRisk(row,item,modeledRow);
   const article=document.createElement('article');
   article.className=`${card.className} ${ENHANCED_CLASS}`.replace(/\brisk-(?:high|medium|low)\b/g,'').replace(/\s+/g,' ').trim()+` risk-${risk.level}`;
   article.dataset.reviewIndex=String(index);

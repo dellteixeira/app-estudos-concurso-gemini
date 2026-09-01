@@ -4,6 +4,9 @@ if(global.AppCognitiveProfile)return;
 
 const SCHEMA_VERSION=1;
 const STORAGE_PREFIX='student_cognitive_profile_v1';
+const profileCache=new Map();
+let cacheHits=0;
+let cacheMisses=0;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
 const safe=(value,max=240)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const mean=values=>{
@@ -135,7 +138,7 @@ function estimateTopicDomainRisk(row,previousTopic=null){
   });
 }
 
-function aggregateDomainRisk(rows,previousTopicState={}){
+function aggregateDomainRisk(rows,previousTopicState={},precomputed=null){
   if(!rows.length)return {
     weightedCoverage:0,
     weightedMastery:0,
@@ -152,7 +155,7 @@ function aggregateDomainRisk(rows,previousTopicState={}){
   let highRiskTopics=0;
   let mediumRiskTopics=0;
   rows.forEach(row=>{
-    const domain=estimateTopicDomainRisk(row,previousTopicState?.[row.key]);
+    const domain=precomputed?.[row.key]||estimateTopicDomainRisk(row,previousTopicState?.[row.key]);
     const weight=domain.priorityWeight;
     totalWeight+=weight;
     weightedMasterySum+=domain.masteryScore*weight;
@@ -233,7 +236,8 @@ function buildProfile(input={}){
   const forgettingRisk=Math.round(clamp((100-(avgRetention??75))*0.7+Math.min(30,totalLapses*2.5),0,100));
   const strongSubjects=subjects.slice(0,3).filter(subject=>subject.masteryScore>=65);
   const weakSubjects=[...subjects].reverse().slice(0,5).filter(subject=>subject.masteryScore<70);
-  const domainAggregate=aggregateDomainRisk(rows,previous.topicState||{});
+  const domainByKey=Object.fromEntries(rows.map(row=>[row.key,estimateTopicDomainRisk(row,previous.topicState?.[row.key])]));
+  const domainAggregate=aggregateDomainRisk(rows,previous.topicState||{},domainByKey);
 
   return {
     schemaVersion:SCHEMA_VERSION,
@@ -285,22 +289,37 @@ function buildProfile(input={}){
       lastStudyAt:row.lastStudyAt,
       editalPriority:row.editalPriority,
       topicPriority:row.topicPriority,
-      domainRisk:estimateTopicDomainRisk(row,previous.topicState?.[row.key])
+      domainRisk:domainByKey[row.key]
     }]))
   };
 }
 
 function read(userId,contest){
+  const key=scopeKey(userId,contest);
+  if(profileCache.has(key)){cacheHits+=1;return profileCache.get(key)}
+  cacheMisses+=1;
   try{
-    const parsed=JSON.parse(global.localStorage?.getItem(scopeKey(userId,contest))||'null');
-    return parsed&&parsed.schemaVersion===SCHEMA_VERSION?parsed:null;
+    const parsed=JSON.parse(global.localStorage?.getItem(key)||'null');
+    const profile=parsed&&parsed.schemaVersion===SCHEMA_VERSION?parsed:null;
+    if(profile)profileCache.set(key,profile);
+    return profile;
   }catch(_){return null}
 }
 
+function peek(userId,contest){return profileCache.get(scopeKey(userId,contest))||null}
+function invalidateCache(userId,contest){
+  if(userId!=null||contest!=null)return profileCache.delete(scopeKey(userId||'guest',contest||'Concurso Geral'));
+  profileCache.clear();
+  return true;
+}
+function cacheDiagnostics(){return Object.freeze({entries:profileCache.size,hits:cacheHits,misses:cacheMisses})}
+
 function write(profile){
   if(!profile)return false;
+  const key=scopeKey(profile.userId,profile.contest);
+  profileCache.set(key,profile);
   try{
-    global.localStorage?.setItem(scopeKey(profile.userId,profile.contest),JSON.stringify(profile));
+    global.localStorage?.setItem(key,JSON.stringify(profile));
     return true;
   }catch(_){return false}
 }
@@ -330,6 +349,9 @@ global.AppCognitiveProfile=Object.freeze({
   aggregateDomainRisk,
   buildProfile,
   read,
+  peek,
+  invalidateCache,
+  cacheDiagnostics,
   write,
   refresh,
   refreshFromGlobals

@@ -2,6 +2,11 @@
 'use strict';
 if(global.AppCognitiveDataSource)return;
 
+let editalIndex=null;
+let editalIndexBuilds=0;
+let editalIndexLookups=0;
+const normalizeKey=(materia,assunto)=>`${String(materia||'').trim()}::${String(assunto||'').trim()}`.toLowerCase();
+
 function safeCurrentUserId(){
   try{return String(currentUser?.id||'')}catch(_){return ''}
 }
@@ -36,11 +41,47 @@ function retentionForState(state){
   return Number.isFinite(fallback)?fallback:null;
 }
 
+function buildEditalIndex(items=safeEdital()){
+  const byTopic=new Map();
+  const byMateria=new Map();
+  (Array.isArray(items)?items:[]).forEach((item,canonicalIndex)=>{
+    const materia=String(item?.materia||'').trim();
+    const assunto=String(item?.assunto||'').trim();
+    const key=normalizeKey(materia,assunto);
+    if(key!=='::'&&!byTopic.has(key))byTopic.set(key,{item,canonicalIndex});
+    const materiaKey=materia.toLowerCase();
+    if(materiaKey){
+      const list=byMateria.get(materiaKey)||[];
+      list.push({item,canonicalIndex});
+      byMateria.set(materiaKey,list);
+    }
+  });
+  editalIndex={items,byTopic,byMateria};
+  editalIndexBuilds+=1;
+  return editalIndex;
+}
+
+function getEditalIndex(){return editalIndex||buildEditalIndex()}
+function invalidateEditalIndex(){editalIndex=null}
+function findEditalItem(context={}){
+  const index=getEditalIndex();
+  editalIndexLookups+=1;
+  const topicId=String(context.topicId||'').trim().toLowerCase();
+  if(topicId){
+    const direct=index.byTopic.get(topicId);
+    if(direct)return direct.item;
+  }
+  const materia=String(context.materia||'').trim();
+  const assunto=String(context.assunto||'').trim();
+  if(materia||assunto){
+    const direct=index.byTopic.get(normalizeKey(materia,assunto));
+    if(direct)return direct.item;
+  }
+  return null;
+}
+
 function priorityForTopic(materia,assunto){
-  const item=safeEdital().find(candidate=>
-    String(candidate?.materia||'').trim()===String(materia||'').trim()&&
-    String(candidate?.assunto||'').trim()===String(assunto||'').trim()
-  );
+  const item=findEditalItem({materia,assunto});
   if(!item)return {editalPriority:null,topicPriority:null};
   const editalPriority=Number(item.prioridade);
   const topicPriority=Number(item.assunto_prioridade);
@@ -51,6 +92,8 @@ function priorityForTopic(materia,assunto){
 }
 
 function snapshot(){
+  // Um único O(n) por snapshot substitui N buscas lineares durante o rebuild.
+  buildEditalIndex(safeEdital());
   const userId=safeCurrentUserId();
   const contest=safeCurrentContest();
   const metadata=safeMetadata();
@@ -76,5 +119,5 @@ function snapshot(){
   return Object.freeze({userId,contest,rows,sessions});
 }
 
-global.AppCognitiveDataSource=Object.freeze({snapshot,priorityForTopic});
+global.AppCognitiveDataSource=Object.freeze({snapshot,priorityForTopic,findEditalItem,buildEditalIndex,getEditalIndex,invalidateEditalIndex,indexDiagnostics:()=>Object.freeze({builds:editalIndexBuilds,lookups:editalIndexLookups,size:editalIndex?.byTopic?.size||0})});
 })(window);

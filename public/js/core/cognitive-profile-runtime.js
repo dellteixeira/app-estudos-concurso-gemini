@@ -93,6 +93,10 @@ function editalItems(){
 }
 
 function priorityForTopic(materia,assunto){
+  try{
+    const indexed=global.AppCognitiveDataSource?.priorityForTopic?.(materia,assunto);
+    if(indexed)return indexed;
+  }catch(_){}
   const item=editalItems().find(candidate=>String(candidate?.materia||'').trim()===String(materia||'').trim()&&String(candidate?.assunto||'').trim()===String(assunto||'').trim());
   if(!item)return {editalPriority:null,topicPriority:null};
   const editalPriority=Number(item.prioridade);
