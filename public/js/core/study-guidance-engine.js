@@ -39,6 +39,10 @@ function readEdital(){
   return [];
 }
 function findEditalItem(context={}){
+  try{
+    const indexed=global.AppCognitiveDataSource?.findEditalItem?.(context);
+    if(indexed)return indexed;
+  }catch(_){}
   const items=readEdital();
   const requestedId=clean(context.topicId,640).toLowerCase();
   const requestedMateria=clean(context.materia,180).toLowerCase();
