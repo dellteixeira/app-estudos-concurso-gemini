@@ -72,6 +72,7 @@ function enrichRowFromStudentModel(row,item){
         confidence:Number.isFinite(Number(topic.confidence))?Number(topic.confidence):questionStats.confidence
       }
     },
+    domainRisk:topic.domainRisk||null,
     studentModelSource:'cognitive-profile'
   };
 }
@@ -99,14 +100,17 @@ function computeGlobalRisk(row,item){
   const overdueComponent=overdueRisk(row);
   const persistenceComponent=persistentRisk(modeledRow,item);
   const priorityComponent=priorityRisk(item);
-  const raw=Math.round(retentionComponent+questionsComponent+overdueComponent+persistenceComponent+priorityComponent);
+  const domainRiskValue=Number(modeledRow?.domainRisk?.forgettingRisk);
+  const domainComponent=Number.isFinite(domainRiskValue)?clamp(domainRiskValue,0,100)*0.20:0;
+  const raw=Math.round(retentionComponent+questionsComponent+overdueComponent+persistenceComponent+priorityComponent+domainComponent);
   const score=clamp(Math.max(35,raw),0,100);
   return {
     score,
     level:score>=70?'high':score>=50?'medium':'low',
     label:score>=70?'Alto':score>=50?'Médio':'Baixo',
     source:modeledRow?.studentModelSource||'retention-diagnostics',
-    components:{retention:retentionComponent,questions:questionsComponent,overdue:overdueComponent,persistence:persistenceComponent,priority:priorityComponent}
+    phase6:{masteryScore:modeledRow?.domainRisk?.masteryScore??null,predictedRetention7d:modeledRow?.domainRisk?.predictedRetention7d??null,forgettingRisk:modeledRow?.domainRisk?.forgettingRisk??null,trend:modeledRow?.domainRisk?.trend||null},
+    components:{retention:retentionComponent,questions:questionsComponent,overdue:overdueComponent,persistence:persistenceComponent,priority:priorityComponent,domainRisk:domainComponent}
   };
 }
 function retentionText(row){return `${Math.round(clamp(row?.retention??row?.state?.retention??0,0,100))}%`}
@@ -135,6 +139,9 @@ function enhanceCard(card){
   article.dataset.reviewIndex=String(index);
   article.dataset.topicId=topicId;
   article.dataset.riskSource=risk.source;
+  if(risk.phase6?.masteryScore!=null)article.dataset.phase6Mastery=String(risk.phase6.masteryScore);
+  if(risk.phase6?.predictedRetention7d!=null)article.dataset.phase6PredictedRetention7d=String(risk.phase6.predictedRetention7d);
+  if(risk.phase6?.forgettingRisk!=null)article.dataset.phase6ForgettingRisk=String(risk.phase6.forgettingRisk);
   article.setAttribute('aria-label',`Ponto crítico: ${modeledRow.state.materia||'Matéria'} — ${modeledRow.state.assunto||'Assunto'}. Risco global ${risk.score} de 100. Retenção ${retentionText(modeledRow)}. Questões ${accuracyText(modeledRow)}.`);
   article.innerHTML=card.innerHTML;
 
@@ -193,7 +200,18 @@ function scheduleEnhance(delay=0){
 }
 function openStudy(index){
   try{
-    if(typeof openLayeredReviewModal==='function')openLayeredReviewModal(Number(index));
+    const numericIndex=Number(index);
+    const row=findRow(numericIndex);
+    const item=row?findItem(row):null;
+    const topicId=row?getTopicKey(item,row):null;
+    const profile=getStudentModel();
+    const optimized=profile&&global.AppStudyOptimization?.plan?global.AppStudyOptimization.plan(30,{profile,source:'critical-points'}):null;
+    const block=optimized?.blocks?.find?.(candidate=>candidate.topicId===topicId)||null;
+    if(block){
+      const guidance=global.AppStudyGuidance?.guideSync?.({topicId:block.topicId,materia:block.materia,assunto:block.assunto,availableMinutes:block.minutes,surface:'critical-points',preferredAction:block.method});
+      global.dispatchEvent?.(new CustomEvent('critical-points:phase6-prepared',{detail:{topicId,method:block.method,minutes:block.minutes,expectedGain:block.expectedGain,optimizationScore:block.optimizationScore,guidance:guidance||null,importedOrderMutation:false}}));
+    }
+    if(typeof openLayeredReviewModal==='function')openLayeredReviewModal(numericIndex);
   }catch(_){global.appNotice?.('Não foi possível abrir a intervenção deste ponto crítico agora.',{title:'Pontos críticos'})}
 }
 function rerenderDiagnostics(){

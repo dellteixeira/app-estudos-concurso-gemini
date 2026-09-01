@@ -1,5 +1,5 @@
 {
-  "version": "10.64.33",
+  "version": "10.64.34",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -11,7 +11,7 @@
     "/css/dashboard.css",
     "/css/features.css",
     "/css/responsive-system.css",
-    "/css/responsive-polish-v10.64.33.css",
+    "/css/responsive-polish-v10.64.34.css",
     "/css/canonical-ui.css",
     "/css/pdf-library.css",
     "/css/pdf-reader.css",
@@ -65,7 +65,10 @@
     "/js/core/intervention-effectiveness.js",
     "/js/core/error-intelligence.js",
     "/js/core/cognitive-profile-runtime.js",
-    "/js/core/domain-risk-dashboard.js"
+    "/js/core/domain-risk-dashboard.js",
+    "/js/core/study-optimization-engine.js",
+    "/js/core/study-optimization-dashboard.js",
+    "/css/study-optimization.css"
   ],
   "optionalOfflineAssets": [
     "/js/performance-loader.js",
@@ -181,7 +184,10 @@
     "/js/core/intervention-effectiveness.js",
     "/js/core/error-intelligence.js",
     "/js/core/cognitive-profile-runtime.js",
-    "/js/core/domain-risk-dashboard.js"
+    "/js/core/domain-risk-dashboard.js",
+    "/js/core/study-optimization-engine.js",
+    "/js/core/study-optimization-dashboard.js",
+    "/css/study-optimization.css"
   ],
   "workerNoStorePaths": [
     "/",
@@ -255,7 +261,10 @@
     "/js/core/intervention-effectiveness.js",
     "/js/core/error-intelligence.js",
     "/js/core/cognitive-profile-runtime.js",
-    "/js/core/domain-risk-dashboard.js"
+    "/js/core/domain-risk-dashboard.js",
+    "/js/core/study-optimization-engine.js",
+    "/js/core/study-optimization-dashboard.js",
+    "/css/study-optimization.css"
   ],
   "headersNoStorePaths": [
     "/",
@@ -329,7 +338,10 @@
     "/js/core/intervention-effectiveness.js",
     "/js/core/error-intelligence.js",
     "/js/core/cognitive-profile-runtime.js",
-    "/js/core/domain-risk-dashboard.js"
+    "/js/core/domain-risk-dashboard.js",
+    "/js/core/study-optimization-engine.js",
+    "/js/core/study-optimization-dashboard.js",
+    "/css/study-optimization.css"
   ],
   "headersRevalidatePaths": [
     "/manifest.json"

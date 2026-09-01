@@ -242,3 +242,15 @@
 
 /css/responsive-polish-v10.64.33.css
   Cache-Control: public, max-age=31536000, immutable
+
+/js/core/study-optimization-engine.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/core/study-optimization-dashboard.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/css/study-optimization.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/css/responsive-polish-v10.64.34.css
+  Cache-Control: public, max-age=31536000, immutable
