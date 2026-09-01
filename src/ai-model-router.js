@@ -6,13 +6,19 @@ const TASK_PROFILES={
 const TIER_ORDER={fast:0,standard:1,reasoning:2};
 const clean=(value,max=240)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const clampTier=(tier,maxTier)=>TIER_ORDER[tier]<=TIER_ORDER[maxTier]?tier:maxTier;
+const readConfiguredModel=(env,key)=>{
+  if(!env||(typeof env!=='object'&&typeof env!=='function'))return'';
+  let value='';
+  try{value=Reflect.get(env,key)}catch(_){value=''}
+  return clean(value,120);
+};
 
-function configuredModels(env={}){
-  const primary=clean(env.GEMINI_PRIMARY_MODEL||DEFAULT_PRIMARY_MODEL,120)||DEFAULT_PRIMARY_MODEL;
+export function resolveConfiguredModels(env={}){
+  const primary=readConfiguredModel(env,'GEMINI_PRIMARY_MODEL')||DEFAULT_PRIMARY_MODEL;
   return {
-    fast:clean(env.GEMINI_FAST_MODEL,120)||primary,
-    standard:clean(env.GEMINI_STANDARD_MODEL,120)||primary,
-    reasoning:clean(env.GEMINI_REASONING_MODEL,120)||primary,
+    fast:readConfiguredModel(env,'GEMINI_FAST_MODEL')||primary,
+    standard:readConfiguredModel(env,'GEMINI_STANDARD_MODEL')||primary,
+    reasoning:readConfiguredModel(env,'GEMINI_REASONING_MODEL')||primary,
     primary
   };
 }
@@ -36,7 +42,7 @@ function contextualComplexity(question,context={}){
 
 export function routeAiModel(env,task,input={}){
   const profile=TASK_PROFILES[task]||{defaultTier:'standard',maxTier:'standard'};
-  const models=configuredModels(env);
+  const models=resolveConfiguredModels(env);
   let tier=profile.defaultTier;
   let reason='default-task-profile';
   let risk='normal';
@@ -58,7 +64,7 @@ export function routeAiModel(env,task,input={}){
   const model=models[tier]||models.primary;
   const configuredAlternative=model!==models.primary;
   return {
-    routerVersion:'1.0.0',task,tier,model,reason,risk,
+    routerVersion:'1.0.1',task,tier,model,reason,risk,
     configuredAlternative,
     fallbackModel:models.primary,
     authority:'retention-engine',
