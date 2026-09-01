@@ -29,10 +29,12 @@ jobs:
 
           const corePath = 'public/js/app-core.js';
           let core = fs.readFileSync(corePath, 'utf8');
-          const oldBlock = `                                <span class="anki-folder-count">\${matData.total} cartões</span>\n                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('\${safeMatHandler}'), '')" title="Abrir caixa desta matéria">Abrir Caixa</button>\n                                <span>\${isOpen ? 'Fechar' : 'Abrir'}</span>`;
-          const newBlock = `                                <span class="anki-folder-count">\${matData.total} cartões</span>\n                                <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('\${safeMatHandler}'), '')" title="Abrir caixa desta matéria" aria-label="Abrir caixa de \${escapeHtml(matName)}">Abrir Caixa</button>`;
-          if (!core.includes(oldBlock)) throw new Error('flashcard action block anchor not found');
-          core = core.replace(oldBlock, newBlock);
+          const oldButton = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria">Abrir Caixa</button>`;
+          const newButton = `<button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria" aria-label="Abrir caixa de ${escapeHtml(matName)}">Abrir Caixa</button>`;
+          const redundant = `<span>${isOpen ? 'Fechar' : 'Abrir'}</span>`;
+          if (!core.includes(oldButton)) throw new Error('flashcard open button anchor not found');
+          if (!core.includes(redundant)) throw new Error('redundant flashcard open label anchor not found');
+          core = core.replace(oldButton, newButton).replace(redundant, '');
           fs.writeFileSync(corePath, core);
 
           const cssPath = 'public/css/base.css';
@@ -66,6 +68,7 @@ jobs:
 
           const oldResponsive = `public/css/responsive-polish-v${oldVersion}.css`;
           const newResponsive = `public/css/responsive-polish-v${nextVersion}.css`;
+          if (!fs.existsSync(oldResponsive)) throw new Error(`missing source CSS: ${oldResponsive}`);
           fs.copyFileSync(oldResponsive, newResponsive);
 
           const headersPath = 'public/_headers';
