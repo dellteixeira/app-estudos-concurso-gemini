@@ -55,7 +55,17 @@ test('alternativas são limitadas a três e sanitizadas',()=>{
   assert.equal(model.alternatives[0].topicId,'t0');
 });
 
-test('painel expõe ações visíveis e integra Tutor Contextual',()=>{
+test('superfície Prioridade cognitiva fica oculta por padrão sem remover o motor',()=>{
+  const api=loadModule();
+  assert.equal(api.uiEnabled,false);
+  assert.equal(typeof api.buildViewModel,'function');
+  assert.equal(typeof api.refresh,'function');
+  assert.equal(typeof api.current,'function');
+  assert.match(source,/const UI_ENABLED=false/);
+  assert.match(source,/if\(!UI_ENABLED\)\{removePanel\(\);return currentView\}/);
+});
+
+test('painel preserva ações para futura reativação e integra Tutor Contextual',()=>{
   assert.match(source,/O que estudar agora\?/);
   assert.match(source,/Estudar agora/);
   assert.match(source,/Perguntar ao Tutor/);
