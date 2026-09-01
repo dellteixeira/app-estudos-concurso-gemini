@@ -29,9 +29,9 @@ jobs:
 
           const corePath = 'public/js/app-core.js';
           let core = fs.readFileSync(corePath, 'utf8');
-          const oldButton = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria">Abrir Caixa</button>`;
-          const newButton = `<button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria" aria-label="Abrir caixa de ${escapeHtml(matName)}">Abrir Caixa</button>`;
-          const redundant = `<span>${isOpen ? 'Fechar' : 'Abrir'}</span>`;
+          const oldButton = "<button class=\"btn btn-primary btn-sm\" onclick=\"event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')\" title=\"Abrir caixa desta matéria\">Abrir Caixa</button>";
+          const newButton = "<button type=\"button\" class=\"btn btn-primary btn-sm\" onclick=\"event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')\" title=\"Abrir caixa desta matéria\" aria-label=\"Abrir caixa de ${escapeHtml(matName)}\">Abrir Caixa</button>";
+          const redundant = "<span>${isOpen ? 'Fechar' : 'Abrir'}</span>";
           if (!core.includes(oldButton)) throw new Error('flashcard open button anchor not found');
           if (!core.includes(redundant)) throw new Error('redundant flashcard open label anchor not found');
           core = core.replace(oldButton, newButton).replace(redundant, '');
