@@ -1,0 +1,83 @@
+name: Prepare Render Loop Release
+
+on:
+  push:
+    branches:
+      - fix/dashboard-render-loop-v1
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.2'
+      - name: Synchronize canonical release 10.64.27
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          OLD='10.64.26'
+          NEW='10.64.27'
+
+          replacements = {
+              'package.json': [(f'"version": "{OLD}"', f'"version": "{NEW}"')],
+              'public/version.json': [(f'"version": "{OLD}"', f'"version": "{NEW}"')],
+              'config/app-assets.json': [(OLD, NEW)],
+              'public/sw.js': [(OLD, NEW)],
+              'src/index.js': [(OLD, NEW)],
+              'public/js/app-pwa.js': [(OLD, NEW)],
+              'public/js/ui/navigation.js': [(OLD, NEW)],
+              'public/index.html': [(OLD, NEW)],
+              'android/app/build.gradle': [
+                  ('versionCode 106428', 'versionCode 106429'),
+                  (f'versionName "{OLD}-mobile.1"', f'versionName "{NEW}-mobile.1"')
+              ],
+          }
+
+          for rel, pairs in replacements.items():
+              path=Path(rel)
+              text=path.read_text(encoding='utf-8')
+              original=text
+              for old,new in pairs:
+                  text=text.replace(old,new)
+              if text==original:
+                  raise SystemExit(f'Nenhuma alteração aplicada em {rel}')
+              path.write_text(text,encoding='utf-8')
+
+          contract=Path('config/release-contract.json')
+          data=json.loads(contract.read_text(encoding='utf-8'))
+          data['version']=NEW
+          data['android']['versionCode']=106429
+          contract.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          src=Path(f'public/css/responsive-polish-v{OLD}.css')
+          dst=Path(f'public/css/responsive-polish-v{NEW}.css')
+          if not src.exists():
+              raise SystemExit(f'CSS base ausente: {src}')
+          dst.write_text(src.read_text(encoding='utf-8').replace(OLD,NEW),encoding='utf-8')
+          PY
+          node scripts/release-contract.mjs check
+      - name: Commit canonical bump
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json public/version.json config/app-assets.json config/release-contract.json public/sw.js src/index.js public/js/app-pwa.js public/js/ui/navigation.js public/index.html android/app/build.gradle public/css/responsive-polish-v10.64.27.css
+          if git diff --cached --quiet; then
+            echo 'Release já sincronizada.'
+            exit 0
+          fi
+          git commit -m 'chore(release): preparar v10.64.27'
+          git push origin HEAD:fix/dashboard-render-loop-v1
