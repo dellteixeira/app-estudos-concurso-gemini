@@ -1,8 +1,8 @@
 {
-  "version": "10.64.31",
+  "version": "10.64.32",
   "android": {
     "revision": 1,
-    "versionCode": 106433,
+    "versionCode": 106434,
     "package": "com.estudoadaptativo.app"
   }
 }

@@ -218,3 +218,6 @@
 
 /css/responsive-polish-v10.64.31.css
   Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.32.css
+  Cache-Control: public, max-age=31536000, immutable
