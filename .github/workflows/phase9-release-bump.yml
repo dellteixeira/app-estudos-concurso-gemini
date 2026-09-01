@@ -41,7 +41,16 @@ jobs:
           if(!fs.existsSync(from))throw new Error(`CSS base ausente: ${from}`);
           fs.copyFileSync(from,to);
 
+          const indexPath='public/index.html';
+          let index=fs.readFileSync(indexPath,'utf8');
+          const responsivePattern=/\.\/css\/responsive-polish-v\d+\.\d+\.\d+\.css/g;
+          const responsiveRef=`./css/responsive-polish-v${newVersion}.css`;
+          if(!responsivePattern.test(index))throw new Error('Referência responsive-polish ausente em public/index.html');
+          index=index.replace(responsivePattern,responsiveRef);
+          fs.writeFileSync(indexPath,index);
+
           const asset='/js/core/study-now-command-center.js';
+          const responsiveAsset=`/css/responsive-polish-v${newVersion}.css`;
           const manifestPath='config/app-assets.json';
           const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
           manifest.version=newVersion;
@@ -49,6 +58,10 @@ jobs:
             if(!Array.isArray(manifest[key]))throw new Error(`Contrato de assets sem ${key}`);
             if(!manifest[key].includes(asset))manifest[key].push(asset);
           }
+          manifest.criticalAppShell=manifest.criticalAppShell.map((item)=>
+            /^\/css\/responsive-polish-v\d+\.\d+\.\d+\.css$/.test(item) ? responsiveAsset : item
+          );
+          if(!manifest.criticalAppShell.includes(responsiveAsset))manifest.criticalAppShell.push(responsiveAsset);
           fs.writeFileSync(manifestPath,JSON.stringify(manifest,null,2)+'\n');
 
           const navPath='public/js/ui/navigation.js';
@@ -121,7 +134,7 @@ jobs:
           rm .github/workflows/phase9-release-bump.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add package.json config/release-contract.json config/app-assets.json public/version.json public/sw.js public/js/app-pwa.js public/js/ui/navigation.js src/index.js src/worker.js public/_headers android/app/build.gradle public/css/responsive-polish-v10.64.25.css .github/workflows/phase9-release-bump.yml
+          git add package.json config/release-contract.json config/app-assets.json public/index.html public/version.json public/sw.js public/js/app-pwa.js public/js/ui/navigation.js src/index.js src/worker.js public/_headers android/app/build.gradle public/css/responsive-polish-v10.64.25.css .github/workflows/phase9-release-bump.yml
           if [ -f package-lock.json ]; then git add package-lock.json; fi
           git commit -m "chore(release): bump fase 9 para 10.64.25"
           git push origin HEAD:feat/study-now-command-center-v1
