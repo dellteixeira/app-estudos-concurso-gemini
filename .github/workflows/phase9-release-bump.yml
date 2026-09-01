@@ -62,10 +62,17 @@ jobs:
 
           const swPath='public/sw.js';
           let sw=fs.readFileSync(swPath,'utf8');
-          if(!sw.includes("'./js/core/study-now-command-center.js'")){
-            const target="'./js/core/contextual-ai-tutor.js'";
-            if(!sw.includes(target))throw new Error('Âncora contextual-ai-tutor ausente no Service Worker');
-            sw=sw.split(target).join(`${target}, './js/core/study-now-command-center.js'`);
+          const criticalAsset="'./js/core/study-now-command-center.js'";
+          const criticalAnchor="'./js/core/contextual-ai-tutor.js'";
+          if(!sw.includes(criticalAsset)){
+            if(!sw.includes(criticalAnchor))throw new Error('Âncora contextual-ai-tutor ausente no precache do Service Worker');
+            sw=sw.replace(criticalAnchor,`${criticalAnchor}, ${criticalAsset}`);
+          }
+          const networkAsset="'/js/core/study-now-command-center.js'";
+          const networkAnchor="'/js/core/contextual-ai-tutor.js'";
+          if(!sw.includes(networkAsset)){
+            if(!sw.includes(networkAnchor))throw new Error('Âncora contextual-ai-tutor ausente no network-first do Service Worker');
+            sw=sw.replace(networkAnchor,`${networkAnchor}, ${networkAsset}`);
           }
           fs.writeFileSync(swPath,sw);
 
