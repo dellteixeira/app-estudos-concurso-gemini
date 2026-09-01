@@ -53,8 +53,9 @@ if (assetManifest.version !== version) fail(`manifesto de assets=${assetManifest
 else ok('manifesto de assets sincronizado com a release');
 
 const expectedRootName = `ESTUDO_ADAPTATIVO_INTELIGENTE_V${version.replace(/\./g, '_')}`;
-if (!process.env.AUDIT_ALLOW_ANY_ROOT && path.basename(root) !== expectedRootName) fail(`pasta raiz=${path.basename(root)} diverge do esperado=${expectedRootName}`);
-else ok(process.env.AUDIT_ALLOW_ANY_ROOT ? 'nome da pasta raiz liberado para CI' : 'nome da pasta raiz sincronizado');
+const rootNameCheckDisabled = process.env.AUDIT_ALLOW_ANY_ROOT === '1' || process.env.AUDIT_ALLOW_ANY_ROOT === 'true' || process.env.GITHUB_ACTIONS === 'true';
+if (!rootNameCheckDisabled && path.basename(root) !== expectedRootName) fail(`pasta raiz=${path.basename(root)} diverge do esperado=${expectedRootName}`);
+else ok(rootNameCheckDisabled ? 'nome da pasta raiz ignorado em ambiente de CI' : 'nome da pasta raiz sincronizado');
 
 const html = read('public/index.html');
 const ALL_APP_JS_FILES = discoverFiles('public/js', rel => rel.endsWith('.js'));
