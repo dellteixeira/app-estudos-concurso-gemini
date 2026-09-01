@@ -22,6 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "Retry after AI router config isolation"
           node <<'NODE'
           const fs=require('fs');
           const oldVersion='10.64.23';
