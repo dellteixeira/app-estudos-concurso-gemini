@@ -1,4 +1,5 @@
-const GEMINI_MODEL='gemini-3.6-flash';
+import { routeAiModel, modelEndpoint } from './ai-model-router.js';
+
 const MAX_BODY_BYTES=32*1024;
 const TIMEOUT_MS=10000;
 const clean=(value,max=500)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
@@ -48,16 +49,24 @@ function parseGemini(payload){
   }
   return'';
 }
-async function runGemini(env,question,context){
+async function runGeminiModel(env,question,context,model){
   if(!env.GEMINI_API_KEY)throw new Error('GEMINI_API_KEY não configurada');
   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),TIMEOUT_MS);
   const system=`Você é o Tutor Contextual do Estudo Adaptativo. Use somente o contexto JSON fornecido e conhecimento geral estável necessário para explicar o assunto solicitado. Não invente métricas, histórico de banca, jurisprudência, lei, estatística, fonte ou dado pessoal. Se o usuário pedir fato atual, jurisprudência específica, literalidade legal ou informação que não esteja no contexto, diga que o contexto não é suficiente e peça fonte/consulta apropriada em vez de inventar. O Retention Engine é a autoridade sobre prioridade e cronograma: você nunca agenda, remarca, altera retenção, prioridade ou datas. Explique de modo didático, destaque o padrão de erro medido quando existir e proponha no máximo uma microintervenção compatível com o nextBestAction e methodEvidence. Não diagnostique condições médicas ou psicológicas. Responda em português do Brasil, de forma objetiva.`;
   const body={systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:`Pergunta: ${question}\nContexto medido pelo app:\n${JSON.stringify(context)}`}]}],generationConfig:{temperature:.2,maxOutputTokens:1200}};
   try{
-    const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`,{method:'POST',signal:controller.signal,headers:{'content-type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify(body)});
+    const response=await fetch(modelEndpoint(model),{method:'POST',signal:controller.signal,headers:{'content-type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify(body)});
     if(!response.ok)throw new Error(`Gemini HTTP ${response.status}`);
     const answer=parseGemini(await response.json());if(!answer)throw new Error('Resposta Gemini vazia');return answer;
   }finally{clearTimeout(timeout)}
+}
+async function runRoutedGemini(env,question,context,route){
+  try{return {answer:await runGeminiModel(env,question,context,route.model),model:route.model,modelFallback:false}}
+  catch(error){
+    if(route.model===route.fallbackModel)throw error;
+    console.warn('Contextual Tutor model fallback:',error?.message||error);
+    return {answer:await runGeminiModel(env,question,context,route.fallbackModel),model:route.fallbackModel,modelFallback:true};
+  }
 }
 export async function handleContextualTutor(request,env){
   if(request.method!=='POST')return json({error:'Método não permitido.'},405);
@@ -66,7 +75,8 @@ export async function handleContextualTutor(request,env){
   const declared=Number(request.headers.get('content-length')||0);if(declared>MAX_BODY_BYTES)return json({error:'Requisição excede o limite de segurança.'},413);
   let body;try{const raw=await request.text();if(new TextEncoder().encode(raw).byteLength>MAX_BODY_BYTES)return json({error:'Requisição excede o limite de segurança.'},413);body=JSON.parse(raw)}catch(_){return json({error:'Corpo JSON inválido.'},400)}
   const question=clean(body?.question,1200),context=sanitizeContext(body?.context);if(!question||!context)return json({error:'Pergunta ou contexto inválido.'},422);
-  let answer,aiUsed=false;
-  try{answer=await runGemini(env,question,context);aiUsed=true}catch(error){console.warn('Contextual Tutor fallback:',error?.message||error);answer=fallbackAnswer(question,context)}
-  return json({tutorVersion:'1.0.0',tutorRole:'advisory',authority:'retention-engine',autoSchedule:false,provider:aiUsed?'gemini':'local-deterministic',model:aiUsed?GEMINI_MODEL:'local',aiUsed,answer,contextAccepted:true});
+  const routing=routeAiModel(env,'contextual_tutor',{question,context});
+  let answer,aiUsed=false,usedModel='local',modelFallback=false;
+  try{const result=await runRoutedGemini(env,question,context,routing);answer=result.answer;usedModel=result.model;modelFallback=result.modelFallback;aiUsed=true}catch(error){console.warn('Contextual Tutor fallback:',error?.message||error);answer=fallbackAnswer(question,context)}
+  return json({tutorVersion:'1.1.0',tutorRole:'advisory',authority:'retention-engine',autoSchedule:false,provider:aiUsed?'gemini':'local-deterministic',model:aiUsed?usedModel:'local',aiUsed,modelFallback,route:{tier:routing.tier,reason:routing.reason,risk:routing.risk,routerVersion:routing.routerVersion},answer,contextAccepted:true});
 }
