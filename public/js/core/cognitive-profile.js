@@ -18,6 +18,12 @@ function toPercent(value){
   return clamp(normalized,0,100);
 }
 
+function nullableNumber(value){
+  if(value==null||value==='')return null;
+  const numeric=Number(value);
+  return Number.isFinite(numeric)?numeric:null;
+}
+
 function topicKey(materia,assunto){
   return `${safe(materia,180)}::${safe(assunto,400)}`.toLowerCase();
 }
@@ -60,7 +66,11 @@ function normalizeRow(row){
     totalMinutes:Math.max(0,Number(state.totalMinutes)||0),
     difficulty:clamp(state.difficulty||5,1,10),
     lastRating:safe(state.lastRating,40),
-    lastStudyAt:safe(state.lastStudyAt||state.lastSessionAt||'',60)
+    lastStudyAt:safe(state.lastStudyAt||state.lastSessionAt||'',60),
+    // Contrato Fase 0: prioridade editorial/estratégica é apenas transportada.
+    // Ela não é recalculada nem sobrescrita pelo Student Model.
+    editalPriority:nullableNumber(row?.editalPriority),
+    topicPriority:nullableNumber(row?.topicPriority)
   };
 }
 
@@ -130,6 +140,12 @@ function buildProfile(input={}){
     contest:safe(input.contest||previous.contest||'Concurso Geral',180),
     createdAt:previous.createdAt||new Date().toISOString(),
     updatedAt:new Date().toISOString(),
+    priorityContract:Object.freeze({
+      editalPriority:'immutable-imported-order',
+      topicPriority:'immutable-imported-order',
+      learnerUrgency:'dynamic-cognitive-signal',
+      recommendationScore:'contextual-recommendation-only'
+    }),
     metrics:{
       learningVelocity:estimateLearningVelocity(rows),
       avgRetention:avgRetention==null?null:Math.round(avgRetention),
@@ -159,7 +175,9 @@ function buildProfile(input={}){
       totalMinutes:row.totalMinutes,
       difficulty:row.difficulty,
       lastRating:row.lastRating,
-      lastStudyAt:row.lastStudyAt
+      lastStudyAt:row.lastStudyAt,
+      editalPriority:row.editalPriority,
+      topicPriority:row.topicPriority
     }]))
   };
 }
