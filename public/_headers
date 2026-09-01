@@ -194,3 +194,6 @@
 
 /js/core/study-now-command-center.js
   Cache-Control: no-cache, no-store, must-revalidate
+
+/css/responsive-polish-v10.64.28.css
+  Cache-Control: public, max-age=31536000, immutable
