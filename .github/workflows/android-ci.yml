@@ -132,22 +132,47 @@ jobs:
         run: |
           set -euo pipefail
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          ACTIVITY="$APP_PACKAGE/.MainActivity"
           test -s "$APK"
           adb install -r "$APK" >/dev/null
           adb logcat -c
           adb shell am force-stop "$APP_PACKAGE"
-          adb shell monkey -p "$APP_PACKAGE" -c android.intent.category.LAUNCHER 1 >/dev/null
+
+          set +e
+          adb shell am start -W -n "$ACTIVITY" > android-ci-launch.txt 2>&1
+          START_STATUS=$?
+          set -e
           sleep 8
-          PID="$(adb shell pidof "$APP_PACKAGE" | tr -d '\r')"
-          test -n "$PID"
-          adb shell dumpsys activity activities > android-ci-activity.txt
-          grep -q "$APP_PACKAGE" android-ci-activity.txt
-          adb exec-out screencap -p > android-ci-screen.png
-          adb logcat -d > android-ci-logcat.txt
-          if grep -A10 'FATAL EXCEPTION' android-ci-logcat.txt | grep -q "$APP_PACKAGE"; then
-            echo 'Crash detectado no APK Android de validação.' >&2
+
+          adb shell dumpsys activity activities > android-ci-activity.txt 2>&1 || true
+          adb logcat -d > android-ci-logcat.txt 2>&1 || true
+          adb exec-out screencap -p > android-ci-screen.png 2>/dev/null || true
+          PID="$(adb shell pidof "$APP_PACKAGE" 2>/dev/null | tr -d '\r' || true)"
+
+          if [ "$START_STATUS" -ne 0 ]; then
+            echo "Falha ao iniciar explicitamente $ACTIVITY." >&2
+            cat android-ci-launch.txt >&2 || true
+            tail -n 160 android-ci-logcat.txt >&2 || true
             exit 1
           fi
+          if [ -z "$PID" ]; then
+            echo "Processo $APP_PACKAGE não permaneceu ativo após a inicialização." >&2
+            cat android-ci-launch.txt >&2 || true
+            tail -n 160 android-ci-logcat.txt >&2 || true
+            exit 1
+          fi
+          if ! grep -q "$APP_PACKAGE" android-ci-activity.txt; then
+            echo "Atividade de $APP_PACKAGE não encontrada no dumpsys." >&2
+            cat android-ci-launch.txt >&2 || true
+            tail -n 160 android-ci-logcat.txt >&2 || true
+            exit 1
+          fi
+          if grep -A10 'FATAL EXCEPTION' android-ci-logcat.txt | grep -q "$APP_PACKAGE"; then
+            echo 'Crash detectado no APK Android de validação.' >&2
+            tail -n 160 android-ci-logcat.txt >&2 || true
+            exit 1
+          fi
+          echo "Android runtime OK: package=$APP_PACKAGE activity=$ACTIVITY pid=$PID"
 
       - name: Upload debug APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -164,6 +189,7 @@ jobs:
           name: EstudoAdaptativo-v${{ steps.release_contract.outputs.android_version_name }}-android-ci-diagnostics
           path: |
             android-ci-emulator.log
+            android-ci-launch.txt
             android-ci-activity.txt
             android-ci-logcat.txt
             android-ci-screen.png
