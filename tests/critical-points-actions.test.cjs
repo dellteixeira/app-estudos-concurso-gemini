@@ -29,13 +29,13 @@ test('risco global preserva pesos e usa Student Model como fonte canônica quand
   assert.match(client,/Math\.max\(35,raw\)/);
 });
 
-test('Pontos Críticos consome Perfil Cognitivo como Student Model interno',()=>{
+test('Pontos Críticos consome Perfil Cognitivo como Student Model interno sem rerender de alta frequência',()=>{
   assert.match(client,/AppCognitiveProfile\?\.read/);
   assert.match(client,/function getStudentTopicState/);
   assert.match(client,/function enrichRowFromStudentModel/);
   assert.match(client,/studentModelSource:'cognitive-profile'/);
   assert.match(client,/dataset\.riskSource/);
-  assert.match(client,/app:cognitive-profile-updated/);
+  assert.doesNotMatch(client,/addEventListener\(['"]app:cognitive-profile-updated['"],\s*rerenderDiagnostics\)/);
 });
 
 test('cartão explicita retenção, score e oferece estudar ou adiar 24h',()=>{
