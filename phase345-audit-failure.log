@@ -1,0 +1,13 @@
+CSS ownership audit — compatibilidade legada detectada:
+  - base.css: dívida legada congelada em #app-dashboard, .study-overview-grid, .grid-top, header.modern-header, .header-nav-tabs
+  - dashboard.css: dívida legada congelada em #app-dashboard, .study-overview-grid, .grid-top, header.modern-header, .header-nav-tabs
+  - features.css: dívida legada congelada em #app-dashboard, .study-overview-grid, .grid-top, header.modern-header, .header-nav-tabs
+CSS ownership audit OK: camada transversal canônica preservada, seletores aposentados ausentes e CSS especializado permanece autoritativo.
+OK  manifesto de assets sincronizado com 10.64.28
+OK  entrypoint Cloudflare efetivo auditado: src/worker.js + src/index.js
+OK  Service Worker critical shell governado pelo manifesto canônico
+OK  Service Worker optional offline governado pelo manifesto canônico
+OK  Service Worker network-first governado pelo manifesto canônico
+ERRO Cloudflare Worker no-store diverge do manifesto; faltando: /js/core/offline-sync-coordinator.js, /js/core/study-events.js, /js/core/study-guidance-engine.js, /js/core/study-observability.js
+ERRO _headers no-store diverge do manifesto; faltando: /js/core/offline-sync-coordinator.js, /js/core/study-events.js, /js/core/study-guidance-engine.js, /js/core/study-observability.js
+OK  _headers revalidate governado pelo manifesto canônico
