@@ -1,0 +1,106 @@
+name: Phase 9 Release Bump
+on:
+  push:
+    branches:
+      - feat/study-now-command-center-v1
+    paths:
+      - .github/workflows/phase9-release-bump.yml
+permissions:
+  contents: write
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/study-now-command-center-v1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+      - name: Prepare canonical 10.64.25 workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const oldVersion='10.64.24';
+          const newVersion='10.64.25';
+          const runtimeFiles=['package.json','config/release-contract.json','public/version.json','public/sw.js','public/js/app-pwa.js','public/js/ui/navigation.js','src/index.js','android/app/build.gradle'];
+          if(fs.existsSync('package-lock.json'))runtimeFiles.push('package-lock.json');
+          for(const file of runtimeFiles){
+            let text=fs.readFileSync(file,'utf8');
+            if(text.includes(oldVersion))text=text.split(oldVersion).join(newVersion);
+            if(file==='config/release-contract.json')text=text.replace('"versionCode": 106426','"versionCode": 106427');
+            if(file==='android/app/build.gradle')text=text.replace(/versionCode\s+106426/,'versionCode 106427');
+            fs.writeFileSync(file,text);
+          }
+
+          const from=`public/css/responsive-polish-v${oldVersion}.css`;
+          const to=`public/css/responsive-polish-v${newVersion}.css`;
+          if(!fs.existsSync(from))throw new Error(`CSS base ausente: ${from}`);
+          fs.copyFileSync(from,to);
+
+          const asset='/js/core/study-now-command-center.js';
+          const manifestPath='config/app-assets.json';
+          const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
+          manifest.version=newVersion;
+          for(const key of ['criticalAppShell','networkFirstPaths','workerNoStorePaths','headersNoStorePaths']){
+            if(!Array.isArray(manifest[key]))throw new Error(`Contrato de assets sem ${key}`);
+            if(!manifest[key].includes(asset))manifest[key].push(asset);
+          }
+          fs.writeFileSync(manifestPath,JSON.stringify(manifest,null,2)+'\n');
+
+          const navPath='public/js/ui/navigation.js';
+          let nav=fs.readFileSync(navPath,'utf8');
+          if(!nav.includes('AppStudyNowCommandCenter')){
+            const anchor="            if (!global.AppContextualAiTutor) {\n                await loader.loadScript('./js/core/contextual-ai-tutor.js', { async: false });\n            }\n";
+            if(!nav.includes(anchor))throw new Error('Âncora do Tutor Contextual não encontrada em navigation.js');
+            nav=nav.replace(anchor,anchor+"            if (!global.AppStudyNowCommandCenter) {\n                await loader.loadScript('./js/core/study-now-command-center.js', { async: false });\n            }\n");
+          }
+          fs.writeFileSync(navPath,nav);
+
+          const swPath='public/sw.js';
+          let sw=fs.readFileSync(swPath,'utf8');
+          if(!sw.includes("'./js/core/study-now-command-center.js'")){
+            const target="'./js/core/contextual-ai-tutor.js'";
+            if(!sw.includes(target))throw new Error('Âncora contextual-ai-tutor ausente no Service Worker');
+            sw=sw.split(target).join(`${target}, './js/core/study-now-command-center.js'`);
+          }
+          fs.writeFileSync(swPath,sw);
+
+          const workerPath='src/worker.js';
+          let worker=fs.readFileSync(workerPath,'utf8');
+          if(!worker.includes("'/js/core/study-now-command-center.js'")){
+            const target="  '/js/core/contextual-ai-tutor.js',";
+            if(!worker.includes(target))throw new Error('Âncora contextual-ai-tutor ausente no Worker');
+            worker=worker.replace(target,`${target}\n  '/js/core/study-now-command-center.js',`);
+          }
+          fs.writeFileSync(workerPath,worker);
+
+          const headersPath='public/_headers';
+          let headers=fs.readFileSync(headersPath,'utf8');
+          if(!headers.includes('/js/core/study-now-command-center.js')){
+            headers += '\n/js/core/study-now-command-center.js\n  Cache-Control: no-cache, no-store, must-revalidate\n';
+          }
+          fs.writeFileSync(headersPath,headers);
+          NODE
+      - name: Validate release contract
+        run: node scripts/release-contract.mjs check
+      - name: Validate Phase 9 module
+        run: |
+          node --check public/js/core/study-now-command-center.js
+          node --test tests/study-now-command-center.test.cjs
+      - name: Run complete checks
+        run: npm run check
+      - name: Commit bump and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/phase9-release-bump.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add package.json config/release-contract.json config/app-assets.json public/version.json public/sw.js public/js/app-pwa.js public/js/ui/navigation.js src/index.js src/worker.js public/_headers android/app/build.gradle public/css/responsive-polish-v10.64.25.css .github/workflows/phase9-release-bump.yml
+          if [ -f package-lock.json ]; then git add package-lock.json; fi
+          git commit -m "chore(release): bump fase 9 para 10.64.25"
+          git push origin HEAD:feat/study-now-command-center-v1
