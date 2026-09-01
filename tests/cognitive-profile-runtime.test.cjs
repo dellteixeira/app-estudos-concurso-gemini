@@ -61,6 +61,9 @@ function createRuntime() {
   const window = {
     document,
     localStorage,
+    editalItems: [
+      { materia: 'Português', assunto: 'Pontuação', prioridade: 1, assunto_prioridade: 7 }
+    ],
     atob(value) { return Buffer.from(value, 'base64').toString('utf8'); },
     setTimeout(fn) { fn(); return 1; },
     clearTimeout() {},
@@ -82,7 +85,8 @@ function createRuntime() {
     recordStudyMinutesForContext() {},
     submitQuestionPerformance() {},
     submitAdaptiveReviewFeedback() {},
-    rebuildRetentionEngineForContest() {}
+    rebuildRetentionEngineForContest() {},
+    renderRetentionDiagnostics() {}
   };
   window.window = window;
 
@@ -109,6 +113,13 @@ test('buildRows uses live retention and question performance from retention engi
   assert.equal(rows[0].state.lapseCount, 1);
 });
 
+test('buildRows transports imported edital priorities without recalculating them', () => {
+  const runtime = createRuntime();
+  const rows = runtime.window.AppCognitiveProfileRuntime.buildRows(runtime.contestMeta);
+  assert.equal(rows[0].editalPriority, 1);
+  assert.equal(rows[0].topicPriority, 7);
+});
+
 test('refresh scopes cognitive snapshot to authenticated user and selected contest', () => {
   const runtime = createRuntime();
   runtime.localStorage.setItem('sb-project-auth-token', JSON.stringify({ user: { id: 'user-abc' } }));
@@ -124,9 +135,30 @@ test('refresh scopes cognitive snapshot to authenticated user and selected conte
 test('runtime wraps study mutations without changing their return values', async () => {
   const runtime = createRuntime();
   runtime.localStorage.setItem('sb-project-auth-token', JSON.stringify({ user: { id: 'user-wrap' } }));
-  runtime.window.recordStudyMinutesForContext = async () => ({ id: 'kept-result' });
+  runtime.window.recordStudyMinutesForContext = async () => {
+    runtime.contestMeta.retentionEngine.topics['Português - Pontuação'].totalMinutes += 10;
+    return { id: 'kept-result' };
+  };
   runtime.window.AppCognitiveProfileRuntime.installHooks();
   const result = await runtime.window.recordStudyMinutesForContext();
   assert.deepEqual(result, { id: 'kept-result' });
   assert.ok(runtime.getRefreshInput(), 'profile should refresh after a completed study mutation');
+});
+
+test('renderRetentionDiagnostics is never monkey-patched as a cognitive mutation', () => {
+  const runtime = createRuntime();
+  const original = runtime.window.renderRetentionDiagnostics;
+  runtime.window.AppCognitiveProfileRuntime.installHooks();
+  assert.equal(runtime.window.renderRetentionDiagnostics, original);
+  assert.doesNotMatch(source, /'renderRetentionDiagnostics'\s*,/);
+});
+
+test('fingerprint changes when any tracked topic changes, not only the last row', () => {
+  const runtime = createRuntime();
+  const api = runtime.window.AppCognitiveProfileRuntime;
+  const rows = api.buildRows(runtime.contestMeta);
+  const first = api.fingerprintInput('u', 'TJ-CE', rows, runtime.contestMeta.studySessions);
+  rows[0].state.reviewCount += 1;
+  const second = api.fingerprintInput('u', 'TJ-CE', rows, runtime.contestMeta.studySessions);
+  assert.notEqual(first, second);
 });
