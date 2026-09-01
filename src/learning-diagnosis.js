@@ -1,4 +1,5 @@
-const GEMINI_MODEL='gemini-3.6-flash';
+import { routeAiModel, modelEndpoint } from './ai-model-router.js';
+
 const MAX_TOPICS=5;
 const MAX_BODY_BYTES=32*1024;
 const TIMEOUT_MS=10000;
@@ -60,30 +61,21 @@ const ACTION_METHODS={
 
 function actionScores(topic){
   const m=topic.metrics;
-  const scores={
-    active_recall:26,
-    short_review:22,
-    questions:20,
-    focused_restudy:20
-  };
+  const scores={active_recall:26,short_review:22,questions:20,focused_restudy:20};
   if(m.sessionCount>=2)scores.active_recall+=14;
   if(m.retention>=45&&m.retention<82)scores.active_recall+=14;
   if(m.reviewCount>=2)scores.active_recall+=6;
-
   if(m.retention<68)scores.short_review+=18;
   if(m.sessionCount<=2)scores.short_review+=10;
   if(!m.forgot)scores.short_review+=4;
-
   if(m.accuracy!=null)scores.questions+=(100-m.accuracy)*0.34;
   if(m.acquired)scores.questions+=8;
   if(m.confidence>=.2&&m.accuracy!=null&&m.accuracy<60)scores.questions+=8;
-
   if(m.forgot)scores.focused_restudy+=22;
   if(m.retention<45)scores.focused_restudy+=18;
   if(m.reviewCount>=2&&m.retention<65)scores.focused_restudy+=10;
   if(!m.acquired)scores.focused_restudy+=12;
   if(m.lapseCount>=2)scores.focused_restudy+=8;
-
   const now=Date.now();
   topic.recommendationHistory.forEach((entry,index,history)=>{
     const age=Date.parse(entry.at);
@@ -110,10 +102,7 @@ function deterministicIntervention(topic){
   const ranked=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
   const lastAction=topic.recommendationHistory.at(-1)?.action||'';
   let selected=ranked[0]?.[0]||'active_recall';
-  if(lastAction&&selected===lastAction){
-    const alternate=ranked.find(([action])=>action!==lastAction);
-    if(alternate)selected=alternate[0];
-  }
+  if(lastAction&&selected===lastAction){const alternate=ranked.find(([action])=>action!==lastAction);if(alternate)selected=alternate[0]}
   const preset=ACTION_METHODS[selected]||ACTION_METHODS.active_recall;
   const m=topic.metrics;
   const diagnosisType=diagnosisForAction(topic,selected);
@@ -128,15 +117,7 @@ function validateIntervention(raw,topic){
   const lastAction=topic.recommendationHistory.at(-1)?.action||'';
   const aiAction=SELECTOR_ACTIONS.has(raw.recommendedAction)?raw.recommendedAction:fallback.recommendedAction;
   if(lastAction&&aiAction===lastAction)return fallback;
-  return {
-    topicId:topic.topicId,
-    diagnosisType:DIAGNOSIS_TYPES.has(raw.diagnosisType)?raw.diagnosisType:fallback.diagnosisType,
-    severity:SEVERITIES.has(raw.severity)?raw.severity:fallback.severity,
-    recommendedAction:aiAction,
-    suggestedMinutes:Math.round(clamp(raw.suggestedMinutes,5,45)||fallback.suggestedMinutes),
-    method:clean(raw.method,360)||fallback.method,
-    rationale:clean(raw.rationale,420)||fallback.rationale
-  };
+  return {topicId:topic.topicId,diagnosisType:DIAGNOSIS_TYPES.has(raw.diagnosisType)?raw.diagnosisType:fallback.diagnosisType,severity:SEVERITIES.has(raw.severity)?raw.severity:fallback.severity,recommendedAction:aiAction,suggestedMinutes:Math.round(clamp(raw.suggestedMinutes,5,45)||fallback.suggestedMinutes),method:clean(raw.method,360)||fallback.method,rationale:clean(raw.rationale,420)||fallback.rationale};
 }
 
 function parseGemini(payload){
@@ -149,19 +130,27 @@ function parseGemini(payload){
   return null;
 }
 
-async function runGemini(env,contest,topics){
+async function runGeminiModel(env,contest,topics,model){
   if(!env.GEMINI_API_KEY)throw new Error('GEMINI_API_KEY não configurada');
   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),TIMEOUT_MS);
-  const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
   const system=`Você é o seletor pedagógico auxiliar do Estudo Adaptativo Inteligente. O Retention Engine determinístico continua sendo a autoridade sobre risco, prioridade e cronograma. A IA NÃO controla o cronograma. Para cada tópico, escolha exatamente UM entre quatro métodos existentes: active_recall, short_review, questions ou focused_restudy. Use retenção, desempenho em questões, lapsos, esforço, aquisição e recommendationHistory. NÃO repita o método mais recente do histórico quando houver alternativa pedagogicamente adequada. A recomendação já exibida conta como histórico mesmo que o usuário não tenha iniciado a sessão. Você NÃO cria assuntos, NÃO altera prioridades, NÃO agenda revisões e NÃO diagnostica condições médicas. Retorne apenas JSON no schema solicitado.`;
   const body={systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:`Concurso: ${clean(contest,180)||'não informado'}\nTópicos já selecionados pelo Retention Engine:\n${JSON.stringify(topics)}\n\nEscolha a intervenção com maior utilidade provável, levando em conta explicitamente o histórico de recomendações. Não modifique topicId.`}]}],generationConfig:{temperature:.25,maxOutputTokens:2200,responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{interventions:{type:'ARRAY',items:{type:'OBJECT',properties:{topicId:{type:'STRING'},diagnosisType:{type:'STRING',enum:[...DIAGNOSIS_TYPES]},severity:{type:'STRING',enum:[...SEVERITIES]},recommendedAction:{type:'STRING',enum:[...SELECTOR_ACTIONS]},suggestedMinutes:{type:'INTEGER',minimum:5,maximum:45},method:{type:'STRING'},rationale:{type:'STRING'}},required:['topicId','diagnosisType','severity','recommendedAction','suggestedMinutes','method','rationale']}}},required:['interventions']},thinkingConfig:{thinkingLevel:'LOW'}}};
   try{
-    const response=await fetch(endpoint,{method:'POST',signal:controller.signal,headers:{'content-type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify(body)});
+    const response=await fetch(modelEndpoint(model),{method:'POST',signal:controller.signal,headers:{'content-type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},body:JSON.stringify(body)});
     if(!response.ok)throw new Error(`Gemini HTTP ${response.status}`);
     const parsed=parseGemini(await response.json());
     if(!parsed||!Array.isArray(parsed.interventions))throw new Error('Resposta Gemini inválida');
     return parsed.interventions;
   }finally{clearTimeout(timeout)}
+}
+
+async function runRoutedGemini(env,contest,topics,route){
+  try{return {interventions:await runGeminiModel(env,contest,topics,route.model),model:route.model,modelFallback:false}}
+  catch(error){
+    if(route.model===route.fallbackModel)throw error;
+    console.warn('Learning Advisor model fallback:',error?.message||error);
+    return {interventions:await runGeminiModel(env,contest,topics,route.fallbackModel),model:route.fallbackModel,modelFallback:true};
+  }
 }
 
 export async function handleLearningDiagnosis(request,env){
@@ -174,12 +163,13 @@ export async function handleLearningDiagnosis(request,env){
   const topics=(Array.isArray(body?.topics)?body.topics:[]).slice(0,MAX_TOPICS).map(sanitizeTopic).filter(Boolean);
   if(!topics.length)return responseJson({error:'Nenhum ponto crítico válido foi enviado.'},422);
   const fallback=topics.map(deterministicIntervention);
-  let interventions=fallback,aiUsed=false;
+  const routing=routeAiModel(env,'learning_diagnosis',{topics});
+  let interventions=fallback,aiUsed=false,usedModel='local',modelFallback=false;
   try{
-    const raw=await runGemini(env,body?.contest,topics);
-    const byId=new Map(raw.map(item=>[clean(item?.topicId,600),item]));
+    const result=await runRoutedGemini(env,body?.contest,topics,routing);
+    const byId=new Map(result.interventions.map(item=>[clean(item?.topicId,600),item]));
     interventions=topics.map(topic=>validateIntervention(byId.get(topic.topicId),topic));
-    aiUsed=true;
+    usedModel=result.model;modelFallback=result.modelFallback;aiUsed=true;
   }catch(error){console.warn('Learning Advisor Gemini fallback:',error?.message||error)}
-  return responseJson({advisorVersion:'1.2.0',advisorRole:'auxiliary',authority:'retention-engine',autoSchedule:false,provider:aiUsed?'gemini':'local-deterministic',model:aiUsed?GEMINI_MODEL:'local',aiUsed,antiRepeat:true,interventions});
+  return responseJson({advisorVersion:'1.3.0',advisorRole:'auxiliary',authority:'retention-engine',autoSchedule:false,provider:aiUsed?'gemini':'local-deterministic',model:aiUsed?usedModel:'local',aiUsed,modelFallback,route:{tier:routing.tier,reason:routing.reason,risk:routing.risk,routerVersion:routing.routerVersion},antiRepeat:true,interventions});
 }
