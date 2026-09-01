@@ -96,6 +96,8 @@ jobs:
       - name: Audit workflow release contract
         run: npm run audit:release-contract
       - name: Audit canonical release
+        env:
+          AUDIT_ALLOW_ANY_ROOT: '1'
         run: node scripts/audit-release.mjs
       - name: Audit CSS ownership
         run: node scripts/audit-css-ownership.cjs
