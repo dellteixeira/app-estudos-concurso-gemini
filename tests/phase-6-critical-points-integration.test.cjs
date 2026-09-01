@@ -20,10 +20,12 @@ test('Critical Points consumes Phase 6A domain risk without adding visible marku
   assert.doesNotMatch(critical,/Fase 6A|Fase 6B|Student Model|Study Optimizer/);
 });
 
-test('Critical Points prepares Phase 6B optimization before existing layered review',()=>{
+test('Critical Points keeps Phase 6B optimization and lets Phase 6C refine the intervention',()=>{
   assert.match(critical,/AppStudyOptimization\?\.plan\?global\.AppStudyOptimization\.plan\(30,\{profile,source:'critical-points'\}\):null/);
+  assert.match(critical,/AppPredictiveAdaptiveTutor\?\.resolve/);
+  assert.match(critical,/const tutorAction=predictive\?\.tutor\?\.action\|\|block\.method/);
   assert.match(critical,/surface:'critical-points'/);
-  assert.match(critical,/preferredAction:block\.method/);
+  assert.match(critical,/preferredAction:tutorAction/);
   assert.match(critical,/critical-points:phase6-prepared/);
   assert.match(critical,/importedOrderMutation:false/);
   assert.match(critical,/openLayeredReviewModal\(numericIndex\)/);

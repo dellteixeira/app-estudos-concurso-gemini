@@ -94,7 +94,10 @@ function normalizeRecommendation(recommendation,source='local_engine'){
     errorLabel:clean(recommendation.errorLabel,140)||null,
     fallbackReason:recommendation.fallbackReason?clean(recommendation.fallbackReason,240):null,
     aiUsed:Boolean(recommendation.aiUsed),
-    provider:recommendation.provider?clean(recommendation.provider,120):null
+    provider:recommendation.provider?clean(recommendation.provider,120):null,
+    prediction:recommendation.prediction||null,
+    predictiveTutor:recommendation.predictiveTutor||null,
+    goalProbability:finite(recommendation.goalProbability)
   };
 }
 function cognitiveRecommendation(context={}){
@@ -146,6 +149,30 @@ function advisorEnrichment(guidance){
     },guidance.source);
   }catch(_){return guidance}
 }
+function predictiveEnrichment(guidance,context={}){
+  if(!guidance||!global.AppPredictiveAdaptiveTutor)return guidance;
+  const profile=readProfile(context);
+  if(!profile)return guidance;
+  const id=clean(context.topicId||guidance.topicId,640).toLowerCase();
+  const state=id?profile.topicState?.[id]||null:null;
+  if(!state)return guidance;
+  try{
+    const decision=global.AppPredictiveAdaptiveTutor.tutorDecision(state,{...context,preferredAction:guidance.action,availableMinutes:context.availableMinutes||guidance.suggestedMinutes});
+    const goal=global.AppPredictiveAdaptiveTutor.probabilityOfGoal?.(profile,context.target||70)||null;
+    return normalizeRecommendation({
+      ...guidance,
+      action:decision.action||guidance.action,
+      actionLabel:decision.action||guidance.actionLabel,
+      suggestedMinutes:decision.suggestedMinutes||guidance.suggestedMinutes,
+      confidence:Math.round((Number(guidance.confidence)||50)*0.55+(Number(decision.confidence)||50)*0.45),
+      reasons:[decision.reason,...(guidance.reasons||[])],
+      authority:'predictive-adaptive-tutor',
+      prediction:decision.prediction||null,
+      predictiveTutor:{action:decision.action,suggestedMinutes:decision.suggestedMinutes,reason:decision.reason,confidence:decision.confidence,importedOrderMutation:false},
+      goalProbability:goal?.probability??null
+    },guidance.source);
+  }catch(_){return guidance}
+}
 function editalBaseline(context={}){
   const item=findEditalItem(context);
   if(!item)return null;
@@ -184,7 +211,8 @@ function contextualFallback(context={}){
   },'context_fallback');
 }
 function local(context={}){
-  return advisorEnrichment(cognitiveRecommendation(context))||editalBaseline(context)||contextualFallback(context);
+  const baseline=advisorEnrichment(cognitiveRecommendation(context))||editalBaseline(context)||contextualFallback(context);
+  return predictiveEnrichment(baseline,context);
 }
 function registerAiProvider(name,provider,options={}){
   if(typeof provider!=='function')throw new TypeError('AI provider must be a function');
@@ -244,6 +272,6 @@ function diagnostics(){
   return Object.freeze({schemaVersion:SCHEMA_VERSION,registeredProviders:[...providers.keys()],requests:requestSequence,lastSource:lastGuidance?.source||null,lastFallbackReason:lastGuidance?.fallbackReason||null});
 }
 
-global.AppStudyGuidance=Object.freeze({schemaVersion:SCHEMA_VERSION,local,guide,guideSync,registerAiProvider,normalizeRecommendation,findEditalItem,editalBaseline,diagnostics,last:()=>lastGuidance});
+global.AppStudyGuidance=Object.freeze({schemaVersion:SCHEMA_VERSION,local,guide,guideSync,registerAiProvider,normalizeRecommendation,findEditalItem,editalBaseline,predictiveEnrichment,diagnostics,last:()=>lastGuidance});
 global.dispatchEvent?.(new CustomEvent('study:guidance-ready',{detail:{schemaVersion:SCHEMA_VERSION}}));
 })(window);

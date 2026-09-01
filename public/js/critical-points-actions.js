@@ -207,9 +207,12 @@ function openStudy(index){
     const profile=getStudentModel();
     const optimized=profile&&global.AppStudyOptimization?.plan?global.AppStudyOptimization.plan(30,{profile,source:'critical-points'}):null;
     const block=optimized?.blocks?.find?.(candidate=>candidate.topicId===topicId)||null;
+    const predictive=profile&&topicId&&global.AppPredictiveAdaptiveTutor?.resolve?global.AppPredictiveAdaptiveTutor.resolve({profile,topicId,target:70,preferredAction:block?.method,availableMinutes:block?.minutes||30}):null;
     if(block){
-      const guidance=global.AppStudyGuidance?.guideSync?.({topicId:block.topicId,materia:block.materia,assunto:block.assunto,availableMinutes:block.minutes,surface:'critical-points',preferredAction:block.method});
-      global.dispatchEvent?.(new CustomEvent('critical-points:phase6-prepared',{detail:{topicId,method:block.method,minutes:block.minutes,expectedGain:block.expectedGain,optimizationScore:block.optimizationScore,guidance:guidance||null,importedOrderMutation:false}}));
+      const tutorAction=predictive?.tutor?.action||block.method;
+      const tutorMinutes=predictive?.tutor?.suggestedMinutes||block.minutes;
+      const guidance=global.AppStudyGuidance?.guideSync?.({topicId:block.topicId,materia:block.materia,assunto:block.assunto,availableMinutes:tutorMinutes,surface:'critical-points',preferredAction:tutorAction,target:70});
+      global.dispatchEvent?.(new CustomEvent('critical-points:phase6-prepared',{detail:{topicId,method:tutorAction,minutes:tutorMinutes,expectedGain:block.expectedGain,optimizationScore:block.optimizationScore,predictedPerformance:predictive?.tutor?.prediction?.expectedPerformance??null,goalProbability:predictive?.goal?.probability??null,guidance:guidance||null,importedOrderMutation:false}}));
     }
     if(typeof openLayeredReviewModal==='function')openLayeredReviewModal(numericIndex);
   }catch(_){global.appNotice?.('Não foi possível abrir a intervenção deste ponto crítico agora.',{title:'Pontos críticos'})}
