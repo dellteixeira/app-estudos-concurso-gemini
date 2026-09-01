@@ -62,7 +62,6 @@ jobs:
           const releaseScoped = [
             'src/index.js',
             'public/sw.js',
-            'android/app/build.gradle',
             'public/index.html',
             'public/js/app-pwa.js',
             'public/js/ui/navigation.js'
@@ -72,6 +71,12 @@ jobs:
             const source = fs.readFileSync(path, 'utf8');
             fs.writeFileSync(path, source.replaceAll(oldVersion, nextVersion));
           }
+
+          const gradlePath = 'android/app/build.gradle';
+          let gradle = fs.readFileSync(gradlePath, 'utf8');
+          gradle = gradle.replace(/versionCode\s+\d+/, 'versionCode 106430');
+          gradle = gradle.replace(/versionName\s+"[^"]+"/, `versionName "${nextVersion}-mobile.1"`);
+          fs.writeFileSync(gradlePath, gradle);
 
           const appStatePath = 'public/js/app-state.js';
           const appState = fs.readFileSync(appStatePath, 'utf8');
