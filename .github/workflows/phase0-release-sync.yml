@@ -78,9 +78,9 @@ jobs:
           gradle = gradle.replace(/versionName\s+"[^"]+"/, `versionName "${nextVersion}-mobile.1"`);
           fs.writeFileSync(gradlePath, gradle);
 
-          const appStatePath = 'public/js/app-state.js';
-          const appState = fs.readFileSync(appStatePath, 'utf8');
-          fs.writeFileSync(appStatePath, appState.replaceAll('?v=10.56.0', `?v=${nextVersion}`));
+          // The offline-sync extension URLs intentionally remain pinned to their rollout
+          // release (v10.56.0). Their tests protect both the load order and that rollout
+          // identity, so the Phase 0 release synchronizer must not rewrite app-state.js.
 
           const headersPath = 'public/_headers';
           let headers = fs.readFileSync(headersPath, 'utf8');
@@ -104,7 +104,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json config/release-contract.json config/app-assets.json public/version.json src/index.js public/sw.js android/app/build.gradle public/index.html public/js/app-pwa.js public/js/ui/navigation.js public/js/app-state.js public/_headers public/css/responsive-polish-v10.64.28.css
+          git add package.json package-lock.json config/release-contract.json config/app-assets.json public/version.json src/index.js public/sw.js android/app/build.gradle public/index.html public/js/app-pwa.js public/js/ui/navigation.js public/_headers public/css/responsive-polish-v10.64.28.css
           git commit -m "chore(release): preparar v10.64.28 e consolidar assets"
           git push origin HEAD:refactor/phase-0-architecture
 
