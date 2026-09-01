@@ -37,6 +37,20 @@ test('buildProfile aggregates cognitive metrics without changing schedule state'
   assert.equal('schedule' in profile,false);
 });
 
+test('imported edital priority is transported as immutable metadata',()=>{
+  const api=loadModule();
+  const profile=api.buildProfile({
+    userId:'u-priority',contest:'TJ',
+    rows:[{materia:'Português',assunto:'Pontuação',retention:35,questionAccuracy:40,editalPriority:1,topicPriority:9,state:{sessionCount:1,totalMinutes:20}}]
+  });
+  const topic=profile.topicState['português::pontuação'];
+  assert.equal(topic.editalPriority,1);
+  assert.equal(topic.topicPriority,9);
+  assert.equal(profile.priorityContract.editalPriority,'immutable-imported-order');
+  assert.equal(profile.priorityContract.learnerUrgency,'dynamic-cognitive-signal');
+  assert.equal(profile.priorityContract.recommendationScore,'contextual-recommendation-only');
+});
+
 test('fractional retention and accuracy are normalized to percentage scale',()=>{
   const api=loadModule();
   const profile=api.buildProfile({
