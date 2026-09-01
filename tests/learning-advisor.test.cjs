@@ -10,6 +10,7 @@ const escapeRegex=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const client=read('public/js/learning-advisor.js');
 const css=read('public/css/learning-advisor.css');
 const server=read('src/learning-diagnosis.js');
+const router=read('src/ai-model-router.js');
 const wrapper=read('src/worker.js');
 const wrangler=read('wrangler.jsonc');
 const pwa=read('public/js/app-pwa.js');
@@ -18,7 +19,7 @@ const manifest=read('config/app-assets.json');
 const headers=read('public/_headers');
 
 test('advisor e endpoint possuem sintaxe JavaScript válida',()=>{
-  for(const file of ['public/js/learning-advisor.js','src/learning-diagnosis.js','src/worker.js']){
+  for(const file of ['public/js/learning-advisor.js','src/learning-diagnosis.js','src/ai-model-router.js','src/worker.js']){
     const r=cp.spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
     assert.equal(r.status,0,r.stderr||r.stdout);
   }
@@ -78,8 +79,16 @@ test('modal contextual é responsivo e preserva contrato global de texto',()=>{
   assert.match(css,/word-break:normal/);
 });
 
-test('endpoint usa Gemini com autenticação, rate limit, schema fechado e fallback local',()=>{
-  assert.match(server,/GEMINI_MODEL='gemini-3\.6-flash'/);
+test('endpoint usa roteador Gemini com autenticação, rate limit, schema fechado e fallback local',()=>{
+  assert.match(server,/routeAiModel/);
+  assert.match(server,/modelEndpoint/);
+  assert.match(server,/fallbackModel/);
+  assert.match(router,/DEFAULT_PRIMARY_MODEL='gemini-3\.6-flash'/);
+  assert.match(router,/GEMINI_FAST_MODEL/);
+  assert.match(router,/GEMINI_STANDARD_MODEL/);
+  assert.match(router,/GEMINI_REASONING_MODEL/);
+  assert.match(router,/authority:'retention-engine'/);
+  assert.match(router,/autoSchedule:false/);
   assert.match(server,/authenticate\(request,env\)/);
   assert.match(server,/AI_RATE_LIMITER/);
   assert.match(server,/learning-diagnosis/);
