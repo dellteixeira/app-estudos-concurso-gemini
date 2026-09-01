@@ -60,6 +60,12 @@ function chooseMethod(profile,error,state={}){
   return ranked[0]||{method:'short_review',score:50,history:null};
 }
 
+function boardSignalForTopic(profile,state={}){
+  try{
+    return global.AppExamBoardIntelligence?.signalForTopic?.(profile?.contest,state?.materia,state?.assunto)||null;
+  }catch(_){return null;}
+}
+
 function scoreTopic(profile,topicId,state={},now=Date.now()){
   const retention=finite(state.retention);
   const accuracy=finite(state.accuracy);
@@ -69,6 +75,7 @@ function scoreTopic(profile,topicId,state={},now=Date.now()){
   const difficulty=clamp(state.difficulty||5,1,10);
   const ageDays=daysSince(state.lastStudyAt,now);
   const error=errorForTopic(profile,topicId);
+  const boardSignal=boardSignalForTopic(profile,state);
 
   const retentionRisk=retention==null?18:clamp((75-retention)*1.15,0,42);
   const accuracyRisk=accuracy==null?10:clamp((70-accuracy)*1.05,0,34);
@@ -78,7 +85,10 @@ function scoreTopic(profile,topicId,state={},now=Date.now()){
   const neglectRisk=ageDays==null?0:clamp((ageDays-3)*1.6,0,16);
   const confidenceMismatch=confidence!=null&&accuracy!=null&&confidence>=.75&&accuracy<65?8:0;
   const overreviewPenalty=reviewCount>=8&&retention!=null&&retention>=80&&accuracy!=null&&accuracy>=80?10:0;
-  const total=Math.round(clamp(retentionRisk+accuracyRisk+errorRisk+lapseRisk+difficultyRisk+neglectRisk+confidenceMismatch-overreviewPenalty,0,100));
+  const boardRisk=boardSignal
+    ? clamp((Number(boardSignal.priority)||0)*.18*((Number(boardSignal.confidence)||0)/100),0,18)
+    : 0;
+  const total=Math.round(clamp(retentionRisk+accuracyRisk+errorRisk+lapseRisk+difficultyRisk+neglectRisk+confidenceMismatch+boardRisk-overreviewPenalty,0,100));
 
   const factors=[];
   if(retentionRisk>=12)factors.push(`retenção ${Math.round(retention??0)}%`);
@@ -87,6 +97,9 @@ function scoreTopic(profile,topicId,state={},now=Date.now()){
   if(lapseCount>0)factors.push(`${lapseCount} lapso${lapseCount===1?'':'s'}`);
   if(ageDays!=null&&ageDays>=5)factors.push(`${Math.round(ageDays)} dias sem estudo`);
   if(confidenceMismatch)factors.push('confiança acima do desempenho');
+  if(boardRisk>=3&&boardSignal){
+    factors.push(`incidência ${boardSignal.board}: ${Math.round(boardSignal.priority)}% (conf. ${Math.round(boardSignal.confidence)}%)`);
+  }
 
   const method=chooseMethod(profile,error,state);
   return {
@@ -99,8 +112,17 @@ function scoreTopic(profile,topicId,state={},now=Date.now()){
     methodEvidence:method.history,
     errorType:error?.type||null,
     errorLabel:error?.label||null,
+    boardEvidence:boardSignal?{
+      board:safe(boardSignal.board,120),
+      priority:Math.round(Number(boardSignal.priority)||0),
+      confidence:Math.round(Number(boardSignal.confidence)||0),
+      questions:Math.max(0,Number(boardSignal.questions)||0),
+      years:Math.max(0,Number(boardSignal.years)||0),
+      source:boardSignal.source||null,
+      asOf:boardSignal.asOf||null
+    }:null,
     factors,
-    metrics:{retention,accuracy,confidence,lapseCount,reviewCount,difficulty,daysSinceStudy:ageDays==null?null:Number(ageDays.toFixed(1))}
+    metrics:{retention,accuracy,confidence,lapseCount,reviewCount,difficulty,daysSinceStudy:ageDays==null?null:Number(ageDays.toFixed(1)),boardPriority:boardSignal?Math.round(Number(boardSignal.priority)||0):null,boardConfidence:boardSignal?Math.round(Number(boardSignal.confidence)||0):null}
   };
 }
 
@@ -121,7 +143,7 @@ function recommend(profile={},options={}){
     .sort((a,b)=>b.score-a.score||a.materia.localeCompare(b.materia)||a.assunto.localeCompare(b.assunto));
   if(!ranked.length)return null;
   const best=ranked[0];
-  const alternatives=ranked.slice(1,4).map(item=>({topicId:item.topicId,materia:item.materia,assunto:item.assunto,score:item.score,method:item.method,methodLabel:item.methodLabel}));
+  const alternatives=ranked.slice(1,4).map(item=>({topicId:item.topicId,materia:item.materia,assunto:item.assunto,score:item.score,method:item.method,methodLabel:item.methodLabel,boardEvidence:item.boardEvidence}));
   return {
     schemaVersion:SCHEMA_VERSION,
     generatedAt:new Date(options.now||Date.now()).toISOString(),
@@ -137,6 +159,7 @@ function recommend(profile={},options={}){
     reasons:best.factors.length?best.factors:['prioridade cognitiva relativa mais alta'],
     metrics:best.metrics,
     methodEvidence:best.methodEvidence,
+    boardEvidence:best.boardEvidence,
     errorType:best.errorType,
     errorLabel:best.errorLabel,
     alternatives
@@ -168,6 +191,7 @@ global.AppNextBestStudyAction=Object.freeze({
   methodLabels:{...METHOD_LABELS},
   scoreTopic,
   chooseMethod,
+  boardSignalForTopic,
   suggestedMinutes,
   recommend,
   refreshFromProfile,

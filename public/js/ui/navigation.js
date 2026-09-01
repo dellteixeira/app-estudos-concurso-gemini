@@ -1,7 +1,7 @@
 (function (global) {
     'use strict';
 
-    const CORE_VERSION = '10.64.21';
+    const CORE_VERSION = '10.64.22';
     let coreRuntimePromise = null;
 
     function ensureCanonicalUiStyle() {
@@ -15,7 +15,7 @@
         if (!document.querySelector('link[data-responsive-polish]')) {
             const polish = document.createElement('link');
             polish.rel = 'stylesheet';
-            polish.href = './css/responsive-polish-v10.64.21.css?v=10.64.21';
+            polish.href = './css/responsive-polish-v10.64.22.css?v=10.64.22';
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
         }
@@ -81,6 +81,9 @@
             }
             if (!global.AppErrorIntelligence) {
                 await loader.loadScript('./js/core/error-intelligence.js', { async: false });
+            }
+            if (!global.AppExamBoardIntelligence) {
+                await loader.loadScript('./js/core/exam-board-intelligence.js', { async: false });
             }
             if (!global.AppNextBestStudyAction) {
                 await loader.loadScript('./js/core/next-best-study-action.js', { async: false });
