@@ -1,0 +1,153 @@
+name: Apply Mobile Layout Release
+
+on:
+  push:
+    branches: [ops/apply-mobile-layout-release-10.64.32]
+
+permissions:
+  contents: write
+
+jobs:
+  apply-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: fix/mobile-layout-harmony
+          fetch-depth: 0
+
+      - name: Apply release 10.64.32
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git show origin/main:public/css/responsive-polish-v10.64.31.css > /tmp/responsive-base.css
+          cp /tmp/responsive-base.css public/css/responsive-polish-v10.64.31.css
+          cp /tmp/responsive-base.css public/css/responsive-polish-v10.64.32.css
+          cat >> public/css/responsive-polish-v10.64.32.css <<'CSS'
+
+          /* V10.64.32 — correções exclusivamente mobile para retenção, cronograma e ações de flashcards. */
+          @media (max-width: 700px) {
+              #retentionDiagnosticPanel .rd-metrics-v1077 {
+                  display: grid !important;
+                  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                  grid-template-rows: none !important;
+                  grid-auto-rows: minmax(164px, auto) !important;
+                  align-items: stretch !important;
+                  gap: 12px !important;
+                  height: auto !important;
+                  min-height: 0 !important;
+                  overflow: visible !important;
+              }
+              #retentionDiagnosticPanel .rd-metric-card-v1077 {
+                  position: relative !important;
+                  inset: auto !important;
+                  transform: none !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  grid-template-rows: minmax(40px, auto) minmax(58px, 1fr) 5px !important;
+                  row-gap: 7px !important;
+                  min-height: 164px !important;
+                  padding: 14px 8px 10px !important;
+                  margin: 0 !important;
+                  align-self: stretch !important;
+              }
+              #calendarWorkspace .calendar-primary-actions {
+                  display: grid !important;
+                  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                  align-items: stretch !important;
+                  gap: 10px !important;
+                  width: 100% !important;
+              }
+              #calendarWorkspace .calendar-primary-actions > .btn {
+                  width: 100% !important;
+                  min-width: 0 !important;
+                  min-height: 46px !important;
+                  justify-content: center !important;
+                  text-align: center !important;
+                  white-space: normal !important;
+                  line-height: 1.15 !important;
+                  padding-inline: 10px !important;
+              }
+              #flashcardsWorkspace .flashcard-anki-actions {
+                  display: grid !important;
+                  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                  align-items: stretch !important;
+                  gap: 10px !important;
+                  width: 100% !important;
+              }
+              #flashcardsWorkspace .flashcard-anki-actions > .btn {
+                  width: 100% !important;
+                  min-width: 0 !important;
+                  min-height: 44px !important;
+                  justify-content: center !important;
+                  text-align: center !important;
+                  white-space: normal !important;
+                  line-height: 1.15 !important;
+                  padding-inline: 9px !important;
+              }
+              #flashcardsWorkspace #btnResetFcFilter {
+                  grid-column: 1 / -1 !important;
+              }
+          }
+          CSS
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          old = '10.64.31'
+          new = '10.64.32'
+          paths = [
+              'package.json',
+              'package-lock.json',
+              'public/version.json',
+              'config/app-assets.json',
+              'src/index.js',
+              'public/sw.js',
+              'public/index.html',
+              'public/js/app-pwa.js',
+              'public/js/ui/navigation.js',
+              'tests/mobile-layout-harmony.test.cjs',
+          ]
+          for item in paths:
+              p = Path(item)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'{old} ausente em {item}')
+              p.write_text(text.replace(old, new), encoding='utf-8')
+
+          contract_path = Path('config/release-contract.json')
+          contract = json.loads(contract_path.read_text(encoding='utf-8'))
+          contract['version'] = new
+          contract['android']['versionCode'] = 106434
+          contract_path.write_text(json.dumps(contract, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          gradle = Path('android/app/build.gradle')
+          text = gradle.read_text(encoding='utf-8')
+          text = text.replace('versionCode 106433', 'versionCode 106434')
+          text = text.replace('versionName "10.64.31-mobile.1"', 'versionName "10.64.32-mobile.1"')
+          gradle.write_text(text, encoding='utf-8')
+
+          headers = Path('public/_headers')
+          text = headers.read_text(encoding='utf-8').rstrip()
+          block = '\n\n/css/responsive-polish-v10.64.32.css\n  Cache-Control: public, max-age=31536000, immutable\n'
+          if '/css/responsive-polish-v10.64.32.css' not in text:
+              text += block
+          headers.write_text(text + ('' if text.endswith('\n') else '\n'), encoding='utf-8')
+          PY
+
+          node scripts/release-contract.mjs check
+          node --test tests/mobile-layout-harmony.test.cjs
+
+      - name: Commit target branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(release): preparar 10.64.32"
+          git push origin HEAD:fix/mobile-layout-harmony
