@@ -26,7 +26,7 @@ jobs:
           const fs=require('fs');
           const oldVersion='10.64.23';
           const newVersion='10.64.24';
-          const files=['package.json','config/release-contract.json','config/app-assets.json','public/version.json','public/sw.js','public/js/app-pwa.js','src/index.js','android/app/build.gradle'];
+          const files=['package.json','config/release-contract.json','config/app-assets.json','public/version.json','public/sw.js','public/js/app-pwa.js','public/js/ui/navigation.js','src/index.js','android/app/build.gradle'];
           for(const file of files){
             let text=fs.readFileSync(file,'utf8');
             if(!text.includes(oldVersion))throw new Error(`${file} não contém ${oldVersion}`);
@@ -43,7 +43,7 @@ jobs:
       - name: Validate release contract
         run: node scripts/release-contract.mjs check
       - name: Validate AI model router
-        run: node --test tests/ai-model-router.test.cjs
+        run: node --test tests/ai-model-router.test.cjs tests/learning-advisor.test.cjs tests/v10-64-17-responsive-polish.test.cjs
       - name: Run complete test suite
         run: npm test
       - name: Commit bump and remove one-shot workflow
@@ -53,6 +53,6 @@ jobs:
           rm .github/workflows/phase8-release-bump.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add package.json config/release-contract.json config/app-assets.json public/version.json public/sw.js public/js/app-pwa.js src/index.js android/app/build.gradle public/css/responsive-polish-v10.64.24.css .github/workflows/phase8-release-bump.yml
+          git add package.json config/release-contract.json config/app-assets.json public/version.json public/sw.js public/js/app-pwa.js public/js/ui/navigation.js src/index.js android/app/build.gradle public/css/responsive-polish-v10.64.24.css .github/workflows/phase8-release-bump.yml
           git commit -m "chore(release): bump fase 8 para 10.64.24"
           git push origin HEAD:feat/intelligent-model-routing-v1
