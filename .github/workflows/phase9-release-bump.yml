@@ -91,8 +91,20 @@ jobs:
         run: |
           node --check public/js/core/study-now-command-center.js
           node --test tests/study-now-command-center.test.cjs
-      - name: Run complete checks
-        run: npm run check
+      - name: Run unit tests
+        run: npm test
+      - name: Audit workflow release contract
+        run: npm run audit:release-contract
+      - name: Audit canonical release
+        run: node scripts/audit-release.mjs
+      - name: Audit CSS ownership
+        run: node scripts/audit-css-ownership.cjs
+      - name: Audit asset manifest
+        run: node scripts/audit-asset-manifest.mjs
+      - name: Audit inline CSP
+        run: node scripts/audit-inline-csp.mjs
+      - name: Audit toolchain pins
+        run: node scripts/audit-toolchain-pins.mjs
       - name: Commit bump and remove one-shot workflow
         shell: bash
         run: |
