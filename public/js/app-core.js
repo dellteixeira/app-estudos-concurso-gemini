@@ -3478,8 +3478,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             </div>
                             <div class="anki-folder-actions">
                                 <span class="anki-folder-count">${matData.total} cartões</span>
-                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria">Abrir Caixa</button>
-                                <span>${isOpen ? 'Fechar' : 'Abrir'}</span>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), '')" title="Abrir caixa desta matéria" aria-label="Abrir caixa de ${escapeHtml(matName)}">Abrir Caixa</button>
+                                
                             </div>
                         </div>
                         ${isOpen ? `<div class="anki-subfolder-list">${subfoldersHtml}</div>` : ''}
