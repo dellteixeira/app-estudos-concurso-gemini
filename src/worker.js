@@ -9,6 +9,7 @@ const EXTENDED_NO_STORE_PATHS = new Set([
   '/js/core/edital-integrity.js',
   '/js/core/exam-board-intelligence.js',
   '/js/core/contextual-ai-tutor.js',
+  '/js/core/study-now-command-center.js',
   '/js/core/offline-outbox-store.js',
   '/js/core/offline-sync-shadow.js',
   '/js/core/offline-sync-metadata-shadow.js',
