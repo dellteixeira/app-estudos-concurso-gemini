@@ -2,7 +2,7 @@
 'use strict';
 if(global.CriticalPointActions)return;
 
-const VERSION='1.2.0';
+const VERSION='1.3.0';
 const SNOOZE_HOURS=24;
 const ENHANCED_CLASS='critical-actions-enabled';
 let observer=null;
@@ -29,6 +29,52 @@ function findItem(row){
     try{return typeof getStudyTopicKey==='function'?getStudyTopicKey(item?.materia,item?.assunto)===key:false}catch(_){return false}
   })||getItems().find(item=>item?.materia===row?.state?.materia&&item?.assunto===row?.state?.assunto)||null;
 }
+function getStudentModel(){
+  try{
+    const userId=global.currentUser?.id||'guest';
+    const contest=global.currentConcurso||'Concurso Geral';
+    return global.AppCognitiveProfile?.read?.(userId,contest)||null;
+  }catch(_){return null}
+}
+function getStudentTopicState(row,item){
+  const model=getStudentModel();
+  const key=getTopicKey(item,row).toLowerCase();
+  const direct=model?.topicState?.[key];
+  if(direct)return direct;
+  const materia=String(item?.materia||row?.state?.materia||row?.materia||'').trim();
+  const assunto=String(item?.assunto||row?.state?.assunto||row?.assunto||'').trim();
+  const fallback=`${materia}::${assunto}`.toLowerCase();
+  return model?.topicState?.[fallback]||null;
+}
+function enrichRowFromStudentModel(row,item){
+  const topic=getStudentTopicState(row,item);
+  if(!topic)return row;
+  const state=row?.state||{};
+  const questionStats=state.questionStats||{};
+  return {
+    ...row,
+    retention:Number.isFinite(Number(topic.retention))?Number(topic.retention):row?.retention,
+    questionAccuracy:Number.isFinite(Number(topic.accuracy))?Number(topic.accuracy):row?.questionAccuracy,
+    state:{
+      ...state,
+      retention:Number.isFinite(Number(topic.retention))?Number(topic.retention):state.retention,
+      lapseCount:Number.isFinite(Number(topic.lapseCount))?Number(topic.lapseCount):state.lapseCount,
+      reviewCount:Number.isFinite(Number(topic.reviewCount))?Number(topic.reviewCount):state.reviewCount,
+      sessionCount:Number.isFinite(Number(topic.sessionCount))?Number(topic.sessionCount):state.sessionCount,
+      totalMinutes:Number.isFinite(Number(topic.totalMinutes))?Number(topic.totalMinutes):state.totalMinutes,
+      difficulty:Number.isFinite(Number(topic.difficulty))?Number(topic.difficulty):state.difficulty,
+      lastRating:topic.lastRating||state.lastRating,
+      lastStudyAt:topic.lastStudyAt||state.lastStudyAt,
+      questionStats:{
+        ...questionStats,
+        lastAccuracy:Number.isFinite(Number(topic.accuracy))?Number(topic.accuracy):questionStats.lastAccuracy,
+        averageAccuracy:Number.isFinite(Number(topic.accuracy))?Number(topic.accuracy):questionStats.averageAccuracy,
+        confidence:Number.isFinite(Number(topic.confidence))?Number(topic.confidence):questionStats.confidence
+      }
+    },
+    studentModelSource:'cognitive-profile'
+  };
+}
 function priorityRisk(item){
   const priority=clamp(item?.prioridade||2,1,4);
   return ((5-priority)/4)*10;
@@ -44,13 +90,14 @@ function persistentRisk(row,item){
   try{return clamp(global.AppLearningAdvisor?.computeLearningFriction?.(row,item)?.score||0,0,100)*0.15}catch(_){return 0}
 }
 function computeGlobalRisk(row,item){
-  const retention=clamp(row?.retention??row?.state?.retention??100,0,100);
-  const rawAccuracy=Number(row?.questionAccuracy??row?.state?.questionStats?.lastAccuracy);
+  const modeledRow=enrichRowFromStudentModel(row,item);
+  const retention=clamp(modeledRow?.retention??modeledRow?.state?.retention??100,0,100);
+  const rawAccuracy=Number(modeledRow?.questionAccuracy??modeledRow?.state?.questionStats?.lastAccuracy);
   const accuracy=Number.isFinite(rawAccuracy)?clamp(rawAccuracy,0,100):null;
   const retentionComponent=(100-retention)*0.30;
   const questionsComponent=accuracy==null?0:(100-accuracy)*0.25;
   const overdueComponent=overdueRisk(row);
-  const persistenceComponent=persistentRisk(row,item);
+  const persistenceComponent=persistentRisk(modeledRow,item);
   const priorityComponent=priorityRisk(item);
   const raw=Math.round(retentionComponent+questionsComponent+overdueComponent+persistenceComponent+priorityComponent);
   const score=clamp(Math.max(35,raw),0,100);
@@ -58,6 +105,7 @@ function computeGlobalRisk(row,item){
     score,
     level:score>=70?'high':score>=50?'medium':'low',
     label:score>=70?'Alto':score>=50?'Médio':'Baixo',
+    source:modeledRow?.studentModelSource||'retention-diagnostics',
     components:{retention:retentionComponent,questions:questionsComponent,overdue:overdueComponent,persistence:persistenceComponent,priority:priorityComponent}
   };
 }
@@ -80,12 +128,14 @@ function enhanceCard(card){
     card.remove();
     return;
   }
+  const modeledRow=enrichRowFromStudentModel(row,item);
   const risk=computeGlobalRisk(row,item);
   const article=document.createElement('article');
   article.className=`${card.className} ${ENHANCED_CLASS}`.replace(/\brisk-(?:high|medium|low)\b/g,'').replace(/\s+/g,' ').trim()+` risk-${risk.level}`;
   article.dataset.reviewIndex=String(index);
   article.dataset.topicId=topicId;
-  article.setAttribute('aria-label',`Ponto crítico: ${row.state.materia||'Matéria'} — ${row.state.assunto||'Assunto'}. Risco global ${risk.score} de 100. Retenção ${retentionText(row)}. Questões ${accuracyText(row)}.`);
+  article.dataset.riskSource=risk.source;
+  article.setAttribute('aria-label',`Ponto crítico: ${modeledRow.state.materia||'Matéria'} — ${modeledRow.state.assunto||'Assunto'}. Risco global ${risk.score} de 100. Retenção ${retentionText(modeledRow)}. Questões ${accuracyText(modeledRow)}.`);
   article.innerHTML=card.innerHTML;
 
   const badge=article.querySelector('.retention-risk-badge');
@@ -96,7 +146,7 @@ function enhanceCard(card){
     badge.title=`Risco global ${risk.score}/100`;
   }
   const value=article.querySelector('.retention-risk-value');
-  if(value)value.innerHTML=`<span class="critical-retention-caption">Retenção</span><strong>${retentionText(row)}</strong>`;
+  if(value)value.innerHTML=`<span class="critical-retention-caption">Retenção</span><strong>${retentionText(modeledRow)}</strong>`;
   const meta=article.querySelector('.retention-risk-meta');
   if(meta){
     const original=meta.textContent?.trim();
@@ -129,7 +179,7 @@ function enhanceCard(card){
   ai.textContent='Consultar IA';
   controls.append(study,ai,snoozeButton,note);
   article.appendChild(controls);
-  if(progress)progress.setAttribute('title',`Retenção ${retentionText(row)}`);
+  if(progress)progress.setAttribute('title',`Retenção ${retentionText(modeledRow)}`);
   card.replaceWith(article);
 }
 
@@ -217,7 +267,7 @@ function openModernRetentionMetric(kind){
   const footer=overlay.querySelector('#learningAdvisorFooter');
   if(title)title.textContent=config.title;
   if(subtitle)subtitle.textContent=config.subtitle;
-  if(body)body.innerHTML=rows.length?`<div class="learning-risk-list">${rows.map(row=>renderModernMetricCard(row,kind)).join('')}</div>`:'<div class="learning-advisor-empty">Nenhum conteúdo nesta categoria no momento.</div>';
+  if(body)body.innerHTML=rows.length?`<div class="learning-risk-list">${rows.map(row=>renderModernMetricCard(enrichRowFromStudentModel(row,findItem(row)),kind)).join('')}</div>`:'<div class="learning-advisor-empty">Nenhum conteúdo nesta categoria no momento.</div>';
   if(footer){
     const candidates=global.AppLearningAdvisor.collectCandidates?.()||[];
     footer.innerHTML=`<div class="learning-advisor-footer-copy"><strong>IA auxiliar</strong><span>${kind==='overdue'?'A IA considera retenção, atraso, desempenho e histórico de recomendações para orientar a retomada.':'A IA pode ajudar a interpretar os sinais de domínio e a manter a aprendizagem sem revisões desnecessárias.'}</span></div><button id="learningAdvisorMetricAnalyze" class="btn btn-secondary" type="button" ${candidates.length?'':'disabled'}>Analisar dificuldades com IA</button>`;
@@ -253,9 +303,10 @@ function boot(){
   observer=new MutationObserver(()=>scheduleEnhance());
   observer.observe(document.documentElement,{childList:true,subtree:true});
   global.addEventListener('learning-advisor:snooze-changed',rerenderDiagnostics);
+  global.addEventListener('app:cognitive-profile-updated',rerenderDiagnostics);
   [120,350,900,1800].forEach(delay=>setTimeout(enhanceAll,delay));
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-global.CriticalPointActions=Object.freeze({VERSION,computeGlobalRisk,enhanceAll,snooze,openModernRetentionMetric});
+global.CriticalPointActions=Object.freeze({VERSION,getStudentModel,getStudentTopicState,enrichRowFromStudentModel,computeGlobalRisk,enhanceAll,snooze,openModernRetentionMetric});
 })(window);
