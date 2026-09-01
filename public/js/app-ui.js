@@ -278,7 +278,26 @@
                 { layer:3, label:'Questões', minutes:20, description:'Resolva uma bateria curta e registre total de questões e acertos.' },
                 { layer:4, label:reinforceWithVideo?'Vídeoaula de reforço':'Reestudo de teoria', minutes:30, activityType:reinforceWithVideo?'videoaula':'teoria', description:reinforceWithVideo?'Use uma explicação em vídeo para reconstruir o ponto que apresentou baixa retenção ou baixo desempenho.':'Reconstrua o conteúdo quando a retenção ou o desempenho indicarem perda relevante.' }
             ];
-            return { recommendedLayer, reason, retention, accuracy, layers };
+            const topicId = getStudyTopicKey(item?.materia,item?.assunto);
+            const interventionEvents = currentUser?.id && window.AppInterventionEffectiveness?.readEvents
+                ? window.AppInterventionEffectiveness.readEvents(currentUser.id,currentConcurso)
+                : [];
+            const adaptive = window.AppInterventionEffectiveness?.resolveLayeredReview?.({
+                userId:currentUser?.id,
+                contest:currentConcurso,
+                topicId,
+                baseLayer:recommendedLayer,
+                baseReason:reason,
+                retention,
+                accuracy,
+                events:interventionEvents
+            });
+            if(adaptive){
+                recommendedLayer=adaptive.recommendedLayer;
+                reason=adaptive.reason;
+                layers.forEach(layer=>{ layer.historyStatus=adaptive.statuses?.[layer.layer]?.state||''; });
+            }
+            return { recommendedLayer, reason, retention, accuracy, layers, interventionHistory:adaptive?.summary||null };
         }
 
         function openLayeredReviewModal(index) {
@@ -295,7 +314,7 @@
             if(topic) topic.textContent=`${item.materia} — ${item.assunto}`;
             const perf = plan.accuracy == null ? '' : ` · Questões ${Math.round(plan.accuracy)}%`;
             if(meta) meta.textContent=`Retenção ${Math.round(plan.retention)}%${perf}. ${plan.reason}`;
-            if(steps) steps.innerHTML=plan.layers.map(layer=>`<div class="layered-review-step ${layer.layer===plan.recommendedLayer?'recommended':''}"><div class="layered-review-number">${layer.layer}</div><div class="layered-review-content"><strong>${escapeHtml(layer.label)}${layer.layer===plan.recommendedLayer?' · recomendada':''}</strong><span>${escapeHtml(layer.description)} · ${layer.minutes} min sugeridos</span></div><button class="btn btn-secondary btn-sm" type="button" data-dynamic-action="start-layered-review" data-layer="${layer.layer}">Iniciar</button></div>`).join('');
+            if(steps) steps.innerHTML=plan.layers.map(layer=>`<div class="layered-review-step ${layer.layer===plan.recommendedLayer?'recommended':''}"><div class="layered-review-number">${layer.layer}</div><div class="layered-review-content"><strong>${escapeHtml(layer.label)}${layer.layer===plan.recommendedLayer?' · recomendada':''}${layer.historyStatus==='validated'?' · ✓ validada com evidência':layer.historyStatus==='started'?' · iniciada recentemente':''}</strong><span>${escapeHtml(layer.description)} · ${layer.minutes} min sugeridos</span></div><button class="btn btn-secondary btn-sm" type="button" data-dynamic-action="start-layered-review" data-layer="${layer.layer}">Iniciar</button></div>`).join('');
             const modal=document.getElementById('modalLayeredReview'); setVisualState(modal, true);
         }
 
@@ -314,6 +333,32 @@
             const item=pending.item;
             const def=pending.plan.layers.find(x=>x.layer===Number(layer)); if(!def) return;
             const base={kind:'study',materia:item.materia,assunto:item.assunto,itemId:item.id,isRevision:true,minutes:def.minutes,source:'layered_review',layer:Number(layer)};
+            const interventionMethod=window.AppInterventionEffectiveness?.methodForLayer?.(Number(layer));
+            if(interventionMethod){
+                const state=pending.row?.state||{};
+                window.AppInterventionEffectiveness?.start?.({
+                    userId:currentUser?.id,
+                    contest:currentConcurso,
+                    topicId:getStudyTopicKey(item.materia,item.assunto),
+                    materia:item.materia,
+                    assunto:item.assunto,
+                    method:interventionMethod,
+                    source:'layered-review',
+                    suggestedMinutes:def.minutes,
+                    recommended:Number(layer)===pending.plan.recommendedLayer,
+                    baseline:{
+                        retention:pending.plan.retention,
+                        accuracy:pending.plan.accuracy,
+                        confidence:state?.questionStats?.confidence,
+                        lapseCount:state?.lapseCount,
+                        reviewCount:state?.reviewCount,
+                        sessionCount:state?.sessionCount,
+                        totalMinutes:state?.totalMinutes,
+                        lastStudyAt:state?.lastStudyAt
+                    }
+                });
+                try{window.dispatchEvent(new CustomEvent('layered-review:intervention-started',{detail:{topicId:getStudyTopicKey(item.materia,item.assunto),method:interventionMethod,layer:Number(layer),recommended:Number(layer)===pending.plan.recommendedLayer}}));}catch(_){}
+            }
             const modal=document.getElementById('modalLayeredReview'); setVisualState(modal, false);
             pendingLayeredReview=null;
             if(Number(layer)===1) return openActiveRecallGuide({...base,activityType:'revisao_ativa',method:'revisao_ativa',methodLabel:'Recuperação mental',recoveryMethod:'revisao_ativa'});

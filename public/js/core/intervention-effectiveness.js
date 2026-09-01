@@ -18,6 +18,9 @@ const METHOD_LABELS=Object.freeze({
 });
 const WINDOWS=Object.freeze({immediate:0,h24:20*60*60*1000,d7:6*24*60*60*1000});
 const WINDOW_ORDER=['immediate','h24','d7'];
+const LAYER_METHODS=Object.freeze({1:'active_recall',2:'short_review',3:'questions',4:'focused_restudy'});
+const LAYER_COOLDOWN_MS=24*60*60*1000;
+const LAYER_REPEAT_WINDOW_MS=7*24*60*60*1000;
 
 const safe=(value,max=300)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
@@ -231,6 +234,128 @@ function aggregate(userId,contest){
   return result;
 }
 
+function methodForLayer(layer){
+  return LAYER_METHODS[Number(layer)]||'';
+}
+
+function layerForMethod(method){
+  const found=Object.entries(LAYER_METHODS).find(([,value])=>value===method);
+  return found?Number(found[0]):null;
+}
+
+function latestObservationFor(events,interventionId){
+  const matches=(Array.isArray(events)?events:[]).filter(event=>event?.type==='observed'&&event?.interventionId===interventionId);
+  return matches.sort((a,b)=>(Date.parse(a?.at)||0)-(Date.parse(b?.at)||0)).at(-1)||null;
+}
+
+function isPositiveObservation(observation){
+  if(!observation)return false;
+  const retention=finite(observation?.gain?.retention);
+  const accuracy=finite(observation?.gain?.accuracy);
+  const confidence=finite(observation?.gain?.confidence);
+  return (retention!=null&&retention>=8)||(accuracy!=null&&accuracy>=8)||(confidence!=null&&confidence>=0.1);
+}
+
+function nextLayerAfter(layer,accuracy){
+  const current=Number(layer)||1;
+  if(current===1)return 2;
+  if(current===2)return 3;
+  if(current===3)return finite(accuracy)!=null&&Number(accuracy)<60?4:1;
+  if(current===4)return 3;
+  return 1;
+}
+
+function summarizeLayeredTopic(input={}){
+  const context=getProfileContext();
+  const userId=safe(input.userId||context.userId,120);
+  const contest=safe(input.contest||context.contest||'Concurso Geral',180);
+  const topicId=safe(input.topicId,640);
+  const now=Number(input.now)||Date.now();
+  const cooldownMs=Math.max(0,Number(input.cooldownMs)||LAYER_COOLDOWN_MS);
+  const events=Array.isArray(input.events)?input.events:readEvents(userId,contest);
+  const starts=events
+    .filter(event=>event?.type==='started'&&event?.topicId===topicId&&layerForMethod(event?.method))
+    .sort((a,b)=>(Date.parse(a?.at)||0)-(Date.parse(b?.at)||0));
+  const recentStarts=starts.filter(event=>{
+    const at=Date.parse(event?.at)||0;
+    return at>0&&now-at>=0&&now-at<=cooldownMs;
+  });
+  const statuses={};
+  for(const [layerText,method] of Object.entries(LAYER_METHODS)){
+    const layer=Number(layerText);
+    const latest=starts.filter(event=>event.method===method).at(-1)||null;
+    if(!latest)continue;
+    const observation=latestObservationFor(events,latest.interventionId);
+    const age=now-(Date.parse(latest.at)||0);
+    if(observation){
+      statuses[layer]={state:'validated',startedAt:latest.at,observedAt:observation.at,positive:isPositiveObservation(observation)};
+    }else if(age>=0&&age<=cooldownMs){
+      statuses[layer]={state:'started',startedAt:latest.at,observedAt:null,positive:false};
+    }
+  }
+  return {events,starts,recentStarts,statuses,latestStart:starts.at(-1)||null};
+}
+
+function resolveLayeredReview(input={}){
+  const baseLayer=clamp(Math.round(Number(input.baseLayer)||1),1,4);
+  const retention=finite(input.retention);
+  const accuracy=finite(input.accuracy);
+  const now=Number(input.now)||Date.now();
+  const summary=summarizeLayeredTopic({...input,now});
+  let recommendedLayer=baseLayer;
+  let reason=safe(input.baseReason||'',500)||'Recomendação calculada pelo estado atual do assunto.';
+  const baseMethod=methodForLayer(baseLayer);
+  const sameBaseRecent=[...summary.recentStarts].reverse().find(event=>event.method===baseMethod)||null;
+
+  if(sameBaseRecent){
+    recommendedLayer=nextLayerAfter(baseLayer,accuracy);
+    if(baseLayer===2&&accuracy!=null&&accuracy<75){
+      reason='A revisão curta já foi iniciada recentemente. Como o desempenho em questões ainda está abaixo do alvo, valide agora a aplicação prática por questões.';
+    }else if(baseLayer===3&&accuracy!=null&&accuracy<60){
+      reason='Uma bateria de questões já foi iniciada recentemente e o desempenho continua baixo. Escale para reestudo direcionado antes de testar novamente.';
+    }else if(baseLayer===4){
+      reason='O reestudo já foi iniciado recentemente. A próxima ação deve validar a recuperação do conteúdo por questões.';
+    }else{
+      reason='Esta intervenção já foi iniciada recentemente. O app avançou para a próxima estratégia para evitar repetição sem nova evidência.';
+    }
+  }
+
+  const latestRecent=summary.recentStarts.at(-1)||null;
+  if(!sameBaseRecent&&latestRecent){
+    const latestLayer=layerForMethod(latestRecent.method);
+    if(latestLayer===2&&accuracy!=null&&accuracy<75){
+      recommendedLayer=3;
+      reason='A revisão curta já foi tentada recentemente. O próximo passo é medir aplicação e discriminação do conteúdo por questões.';
+    }else if(latestLayer===3&&accuracy!=null&&accuracy<60){
+      recommendedLayer=4;
+      reason='As questões recentes ainda indicam dificuldade relevante. Faça reestudo direcionado antes de uma nova validação.';
+    }else if(latestLayer===4){
+      recommendedLayer=3;
+      reason='Após o reestudo recente, valide o ganho com uma bateria curta de questões.';
+    }else if(latestLayer===1&&baseLayer===1){
+      recommendedLayer=2;
+      reason='A recuperação mental já foi tentada recentemente. Avance para uma revisão curta e dirigida.';
+    }
+  }
+
+  const repeatCutoff=now-(Math.max(0,Number(input.repeatWindowMs)||LAYER_REPEAT_WINDOW_MS));
+  const baseStarts=summary.starts.filter(event=>event.method===baseMethod&&(Date.parse(event.at)||0)>=repeatCutoff);
+  if(baseStarts.length>=2){
+    const positive=baseStarts.some(started=>isPositiveObservation(latestObservationFor(summary.events,started.interventionId)));
+    if(!positive&&recommendedLayer===baseLayer){
+      recommendedLayer=nextLayerAfter(baseLayer,accuracy);
+      reason='A mesma estratégia foi tentada duas vezes recentemente sem melhora objetiva registrada. O app mudou a intervenção para evitar repetição improdutiva.';
+    }
+  }
+
+  if(retention!=null&&retention>=85&&accuracy!=null&&accuracy<75&&summary.recentStarts.some(event=>event.method==='short_review')){
+    recommendedLayer=3;
+    reason='A retenção está preservada, mas o desempenho em questões ainda está abaixo do alvo. Priorize validação prática em vez de repetir revisão curta.';
+  }
+
+  return {recommendedLayer,reason,statuses:summary.statuses,summary,cooldownMs:Math.max(0,Number(input.cooldownMs)||LAYER_COOLDOWN_MS)};
+}
+
 function methodFromRecommendedCard(card){
   const text=safe(card?.querySelector?.('.learning-advisor-action strong')?.textContent,180).toLowerCase();
   if(!text)return '';
@@ -292,6 +417,12 @@ global.AppInterventionEffectiveness=Object.freeze({
   dueWindow,
   scoreObservation,
   recentEquivalentStart,
+  methodForLayer,
+  layerForMethod,
+  latestObservationFor,
+  isPositiveObservation,
+  summarizeLayeredTopic,
+  resolveLayeredReview,
   methodFromRecommendedCard,
   handleAdvisorActionClick
 });
