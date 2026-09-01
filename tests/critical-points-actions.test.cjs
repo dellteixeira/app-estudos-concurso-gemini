@@ -18,14 +18,24 @@ test('módulo de ações dos pontos críticos possui sintaxe válida',()=>{
   assert.equal(result.status,0,result.stderr||result.stdout);
 });
 
-test('risco global combina retenção, questões, atraso, persistência e prioridade',()=>{
+test('risco global preserva pesos e usa Student Model como fonte canônica quando disponível',()=>{
+  assert.match(client,/const modeledRow=enrichRowFromStudentModel\(row,item\)/);
   assert.match(client,/retentionComponent=\(100-retention\)\*0\.30/);
   assert.match(client,/questionsComponent=accuracy==null\?0:\(100-accuracy\)\*0\.25/);
   assert.match(client,/overdueComponent=overdueRisk\(row\)/);
-  assert.match(client,/persistenceComponent=persistentRisk\(row,item\)/);
+  assert.match(client,/persistenceComponent=persistentRisk\(modeledRow,item\)/);
   assert.match(client,/priorityComponent=priorityRisk\(item\)/);
   assert.match(client,/score>=70\?'high':score>=50\?'medium':'low'/);
   assert.match(client,/Math\.max\(35,raw\)/);
+});
+
+test('Pontos Críticos consome Perfil Cognitivo como Student Model interno',()=>{
+  assert.match(client,/AppCognitiveProfile\?\.read/);
+  assert.match(client,/function getStudentTopicState/);
+  assert.match(client,/function enrichRowFromStudentModel/);
+  assert.match(client,/studentModelSource:'cognitive-profile'/);
+  assert.match(client,/dataset\.riskSource/);
+  assert.match(client,/app:cognitive-profile-updated/);
 });
 
 test('cartão explicita retenção, score e oferece estudar ou adiar 24h',()=>{
