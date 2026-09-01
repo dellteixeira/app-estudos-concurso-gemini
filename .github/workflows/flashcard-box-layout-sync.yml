@@ -40,7 +40,7 @@ jobs:
           const cssPath = 'public/css/base.css';
           let css = fs.readFileSync(cssPath, 'utf8');
           const oldCss = '.anki-folder-actions{display:flex;align-items:center;gap:10px}';
-          const newCss = '.anki-folder-actions{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:10px;justify-content:flex-end}.anki-folder-actions .anki-folder-count,.anki-folder-actions .btn{flex:0 0 auto;white-space:nowrap}';
+          const newCss = '.anki-folder-actions{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:10px;justify-content:flex-end;}.anki-folder-actions .anki-folder-count,.anki-folder-actions .btn{flex:0 0 auto;white-space:nowrap;}';
           if (!css.includes(oldCss)) throw new Error('anki-folder-actions CSS anchor not found');
           css = css.replace(oldCss, newCss);
           fs.writeFileSync(cssPath, css);
