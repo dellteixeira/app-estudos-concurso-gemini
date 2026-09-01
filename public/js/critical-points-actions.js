@@ -209,8 +209,8 @@ function openStudy(index){
     const item=row?findItem(row):null;
     const topicId=row?getTopicKey(item,row):null;
     const profile=getStudentModel();
-    const optimized=profile&&global.AppStudyOptimization?.plan?global.AppStudyOptimization.plan(30,{profile,source:'critical-points'}):null;
-    const block=optimized?.blocks?.find?.(candidate=>candidate.topicId===topicId)||null;
+    const optimized=profile&&topicId&&global.AppStudyOptimization?.forTopic?global.AppStudyOptimization.forTopic(topicId,30,{profile,source:'critical-points'}):null;
+    const block=optimized?.block||null;
     const predictive=profile&&topicId&&global.AppPredictiveAdaptiveTutor?.resolve?global.AppPredictiveAdaptiveTutor.resolve({profile,topicId,target:70,preferredAction:block?.method,availableMinutes:block?.minutes||30}):null;
     if(block){
       const tutorAction=predictive?.tutor?.action||block.method;

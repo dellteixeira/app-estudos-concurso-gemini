@@ -6,6 +6,9 @@ const SCHEMA_VERSION=1;
 const SUPPORTED_WINDOWS=Object.freeze([30,60,90]);
 const MIN_BLOCK_MINUTES=10;
 const MAX_BLOCK_MINUTES=35;
+let globalPlans=0;
+let topicPlans=0;
+let candidateScans=0;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
 const clean=(value,max=320)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const finite=value=>Number.isFinite(Number(value))?Number(value):null;
@@ -77,7 +80,9 @@ function expectedGain(state={},minutes=25){
 
 function buildCandidates(profile){
   const topicState=profile?.topicState&&typeof profile.topicState==='object'?profile.topicState:{};
-  return Object.entries(topicState).map(([topicId,state],canonicalIndex)=>{
+  const entries=Object.entries(topicState);
+  candidateScans+=entries.length;
+  return entries.map(([topicId,state],canonicalIndex)=>{
     const method=chooseMethod(state);
     const score=candidateScore(state);
     return {
@@ -122,6 +127,7 @@ function reasonFor(candidate){
 }
 
 function optimize(profile,availableMinutes=60,options={}){
+  globalPlans+=1;
   const budget=SUPPORTED_WINDOWS.includes(Number(availableMinutes))?Number(availableMinutes):clamp(Math.round(Number(availableMinutes)||60),20,180);
   const candidates=buildCandidates(profile);
   const ranked=[...candidates].sort((a,b)=>b.optimizationScore-a.optimizationScore||a.canonicalIndex-b.canonicalIndex);
@@ -182,6 +188,26 @@ function optimize(profile,availableMinutes=60,options={}){
   return result;
 }
 
+function forTopic(topicId,availableMinutes=30,context={}){
+  topicPlans+=1;
+  const profile=context.profile||readProfile(context);
+  const id=clean(topicId,640).toLowerCase();
+  const state=profile?.topicState?.[id]||null;
+  if(!state)return null;
+  const method=chooseMethod(state);
+  const candidate={
+    topicId:id,canonicalIndex:Number.isFinite(Number(state.canonicalIndex))?Number(state.canonicalIndex):-1,
+    materia:clean(state.materia,180),assunto:clean(state.assunto,400),method:method.method,methodLabel:method.label,
+    optimizationScore:candidateScore(state),masteryScore:finite(state.domainRisk?.masteryScore),forgettingRisk:finite(state.domainRisk?.forgettingRisk),
+    predictedRetention7d:finite(state.domainRisk?.predictedRetention7d),evidenceLevel:clean(state.domainRisk?.evidenceLevel,40)||'low',trend:clean(state.domainRisk?.trend,60)||'insufficient_evidence',
+    editalPriority:finite(state.editalPriority),topicPriority:finite(state.topicPriority),retention:finite(state.retention),accuracy:finite(state.accuracy),lapseCount:Math.max(0,Number(state.lapseCount)||0)
+  };
+  const budget=clamp(Math.round(Number(availableMinutes)||30),10,45);
+  const minutes=blockMinutesFor(candidate,budget);
+  return Object.freeze({schemaVersion:SCHEMA_VERSION,topicId:id,block:Object.freeze({sequence:1,topicId:id,materia:candidate.materia,assunto:candidate.assunto,method:candidate.method,methodLabel:candidate.methodLabel,minutes,expectedGain:expectedGain(candidate,minutes),optimizationScore:candidate.optimizationScore,reasons:reasonFor(candidate),canonicalIndex:candidate.canonicalIndex,editalPriority:candidate.editalPriority,topicPriority:candidate.topicPriority}),sourceTopicCount:1,priorityContract:Object.freeze({importedOrderMutation:false,planOrdering:'single-topic-fast-path'})});
+}
+function performanceDiagnostics(){return Object.freeze({globalPlans,topicPlans,candidateScans})}
+
 function plan(availableMinutes=60,context={}){
   const profile=context.profile||readProfile(context);
   if(!profile)return optimize({topicState:{}},availableMinutes,context);
@@ -201,6 +227,8 @@ global.AppStudyOptimization=Object.freeze({
   expectedGain,
   buildCandidates,
   optimize,
+  forTopic,
+  performanceDiagnostics,
   plan,
   presets
 });

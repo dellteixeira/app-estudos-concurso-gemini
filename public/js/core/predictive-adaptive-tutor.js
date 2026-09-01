@@ -3,6 +3,12 @@
 if(global.AppPredictiveAdaptiveTutor)return;
 
 const SCHEMA_VERSION=1;
+const topicPredictionCache=new WeakMap();
+const profilePredictionCache=new WeakMap();
+let topicCacheHits=0;
+let topicComputations=0;
+let profileCacheHits=0;
+let profileComputations=0;
 const clamp=(value,min=0,max=100)=>Math.max(min,Math.min(max,Number(value)||0));
 const finite=value=>Number.isFinite(Number(value))?Number(value):null;
 const clean=(value,max=360)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
@@ -11,6 +17,8 @@ function evidenceFactor(level){return level==='high'?1:level==='medium'?0.86:0.6
 function trendFactor(trend){return trend==='improving'?8:trend==='declining'?-10:trend==='stable'?2:0}
 
 function predictTopic(state={}){
+  if(state&&typeof state==='object'&&topicPredictionCache.has(state)){topicCacheHits+=1;return topicPredictionCache.get(state)}
+  topicComputations+=1;
   const domain=state.domainRisk||{};
   const mastery=finite(domain.masteryScore)??50;
   const retention=finite(state.retention)??finite(domain.predictedRetention7d)??50;
@@ -38,7 +46,7 @@ function predictTopic(state={}){
   const lowerBound=clamp(expectedPerformance-uncertainty);
   const upperBound=clamp(expectedPerformance+uncertainty);
 
-  return Object.freeze({
+  const result=Object.freeze({
     expectedPerformance:Number(expectedPerformance.toFixed(1)),
     lowerBound:Number(lowerBound.toFixed(1)),
     upperBound:Number(upperBound.toFixed(1)),
@@ -48,9 +56,13 @@ function predictTopic(state={}){
     applicationGap:Number(applicationGap.toFixed(1)),
     forgettingRisk:Number(forgettingRisk.toFixed(1))
   });
+  if(state&&typeof state==='object')topicPredictionCache.set(state,result);
+  return result;
 }
 
 function predictProfile(profile={}){
+  if(profile&&typeof profile==='object'&&profilePredictionCache.has(profile)){profileCacheHits+=1;return profilePredictionCache.get(profile)}
+  profileComputations+=1;
   const entries=Object.entries(profile.topicState||{}).map(([topicId,state],canonicalIndex)=>({topicId,state,canonicalIndex,prediction:predictTopic(state)}));
   if(!entries.length)return Object.freeze({expectedPerformance:0,lowerBound:0,upperBound:0,confidence:0,topics:Object.freeze([])});
   let weightTotal=0;
@@ -69,13 +81,15 @@ function predictProfile(profile={}){
   const lowerBound=lower/weightTotal;
   const upperBound=upper/weightTotal;
   const confidence=clamp(100-(upperBound-lowerBound));
-  return Object.freeze({
+  const result=Object.freeze({
     expectedPerformance:Number(expectedPerformance.toFixed(1)),
     lowerBound:Number(lowerBound.toFixed(1)),
     upperBound:Number(upperBound.toFixed(1)),
     confidence:Number(confidence.toFixed(1)),
     topics:Object.freeze(entries.map(entry=>Object.freeze({topicId:entry.topicId,canonicalIndex:entry.canonicalIndex,materia:clean(entry.state.materia,180),assunto:clean(entry.state.assunto,360),...entry.prediction})))
   });
+  if(profile&&typeof profile==='object')profilePredictionCache.set(profile,result);
+  return result;
 }
 
 function probabilityOfGoal(profile={},target=70){
@@ -137,6 +151,7 @@ function resolve(context={}){
   return result;
 }
 
-global.AppPredictiveAdaptiveTutor=Object.freeze({schemaVersion:SCHEMA_VERSION,predictTopic,predictProfile,probabilityOfGoal,tutorDecision,resolve});
+function cacheDiagnostics(){return Object.freeze({topicCacheHits,topicComputations,profileCacheHits,profileComputations})}
+global.AppPredictiveAdaptiveTutor=Object.freeze({schemaVersion:SCHEMA_VERSION,predictTopic,predictProfile,probabilityOfGoal,tutorDecision,resolve,cacheDiagnostics});
 global.dispatchEvent?.(new CustomEvent('study:predictive-tutor-ready',{detail:{schemaVersion:SCHEMA_VERSION}}));
 })(window);
