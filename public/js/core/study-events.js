@@ -9,6 +9,7 @@ const EVENTS=Object.freeze({
   TOPIC_UPDATED:'study:topic-updated',
   CONTEST_CHANGED:'study:contest-changed',
   COGNITIVE_UPDATED:'study:cognitive-updated',
+  DOMAIN_RISK_UPDATED:'study:domain-risk-updated',
   RECOMMENDATION_UPDATED:'study:recommendation-updated',
   BOARD_UPDATED:'study:board-updated',
   INTERVENTION_EFFECTIVENESS_UPDATED:'study:intervention-effectiveness-updated',
@@ -19,6 +20,7 @@ const EVENTS=Object.freeze({
 const LEGACY_BRIDGES=Object.freeze({
   'appstate:changed':EVENTS.STATE_CHANGED,
   'app:cognitive-profile-updated':EVENTS.COGNITIVE_UPDATED,
+  'app:domain-risk-updated':EVENTS.DOMAIN_RISK_UPDATED,
   'app:next-best-study-action':EVENTS.RECOMMENDATION_UPDATED,
   'app:exam-board-intelligence-updated':EVENTS.BOARD_UPDATED,
   'app:intervention-effectiveness-event':EVENTS.INTERVENTION_EFFECTIVENESS_UPDATED,
