@@ -1,0 +1,126 @@
+name: Phase 3-4-5 Hardening Sync
+
+on:
+  push:
+    branches: [refactor/phase-3-4-5-platform-hardening]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/phase-3-4-5-platform-hardening
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Synchronize PWA and Worker hardening
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          new_paths = [
+            '/js/core/study-events.js',
+            '/js/core/study-guidance-engine.js',
+            '/js/core/offline-sync-coordinator.js',
+            '/js/core/study-observability.js',
+          ]
+          manifest_path = Path('config/app-assets.json')
+          manifest = json.loads(manifest_path.read_text())
+          for key in ['criticalAppShell','networkFirstPaths','workerNoStorePaths','headersNoStorePaths']:
+              values = manifest.setdefault(key, [])
+              for item in new_paths:
+                  if item not in values:
+                      values.append(item)
+          critical = manifest['criticalAppShell']
+          disabled = '/js/core/study-now-command-center.js'
+          manifest['criticalAppShell'] = [item for item in critical if item != disabled]
+          optional = manifest.setdefault('optionalOfflineAssets', [])
+          if disabled not in optional:
+              optional.append(disabled)
+          for key, values in list(manifest.items()):
+              if isinstance(values, list):
+                  manifest[key] = list(dict.fromkeys(values))
+          manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
+
+          sw_path = Path('public/sw.js')
+          sw = sw_path.read_text()
+          old = "'./js/core/edital-integrity.js', './js/core/exam-board-intelligence.js', './js/core/contextual-ai-tutor.js', './js/core/study-now-command-center.js', './js/core/local-backup-store.js'"
+          new = "'./js/core/edital-integrity.js', './js/core/exam-board-intelligence.js', './js/core/contextual-ai-tutor.js', './js/core/study-events.js', './js/core/study-guidance-engine.js', './js/core/offline-sync-coordinator.js', './js/core/study-observability.js', './js/core/local-backup-store.js'"
+          if old not in sw:
+              raise SystemExit('anchor critical shell not found in sw.js')
+          sw = sw.replace(old, new, 1)
+          optional_anchor = "const OPTIONAL_OFFLINE_ASSETS = [\n  "
+          if optional_anchor not in sw:
+              raise SystemExit('optional asset anchor not found in sw.js')
+          sw = sw.replace(optional_anchor, optional_anchor + "'./js/core/study-now-command-center.js', ", 1)
+          core_anchor = "'/js/core/edital-integrity.js', '/js/core/exam-board-intelligence.js', '/js/core/contextual-ai-tutor.js', '/js/core/study-now-command-center.js', '/js/core/local-backup-store.js'"
+          core_new = "'/js/core/edital-integrity.js', '/js/core/exam-board-intelligence.js', '/js/core/contextual-ai-tutor.js', '/js/core/study-now-command-center.js', '/js/core/study-events.js', '/js/core/study-guidance-engine.js', '/js/core/offline-sync-coordinator.js', '/js/core/study-observability.js', '/js/core/local-backup-store.js'"
+          if core_anchor not in sw:
+              raise SystemExit('core path anchor not found in sw.js')
+          sw = sw.replace(core_anchor, core_new, 1)
+          sw_path.write_text(sw)
+
+          worker_path = Path('src/index.js')
+          worker = worker_path.read_text()
+          old_worker = '''    if (request.method === "GET" && CORE_NO_STORE_PATHS.has(url.pathname)) {
+                const assetResponse = await env.ASSETS.fetch(request);
+                const headers = new Headers(assetResponse.headers);
+                headers.set("cache-control", "no-cache, no-store, must-revalidate");
+                headers.set("pragma", "no-cache");
+                headers.set("expires", "0");
+                headers.set("x-app-version", APP_VERSION);
+                return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
+              }
+          '''.replace('              ','')
+          new_worker = '''    if (request.method === "GET" && url.searchParams.get("v") === APP_VERSION && /\\.(?:js|css)$/.test(url.pathname)) {
+                const assetResponse = await env.ASSETS.fetch(request);
+                const headers = new Headers(assetResponse.headers);
+                headers.set("cache-control", "public, max-age=31536000, immutable");
+                headers.set("x-app-version", APP_VERSION);
+                return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
+              }
+
+              if (request.method === "GET" && CORE_NO_STORE_PATHS.has(url.pathname)) {
+                const assetResponse = await env.ASSETS.fetch(request);
+                const headers = new Headers(assetResponse.headers);
+                headers.set("cache-control", "no-cache, no-store, must-revalidate");
+                headers.set("pragma", "no-cache");
+                headers.set("expires", "0");
+                headers.set("x-app-version", APP_VERSION);
+                return new Response(assetResponse.body, { status:assetResponse.status, statusText:assetResponse.statusText, headers });
+              }
+          '''.replace('              ','')
+          if old_worker not in worker:
+              raise SystemExit('worker cache anchor not found')
+          worker = worker.replace(old_worker, new_worker, 1)
+          worker_path.write_text(worker)
+      - name: Validate contracts and tests
+        run: |
+          node --check public/js/core/offline-sync-coordinator.js
+          node --check public/js/core/study-observability.js
+          node --check public/js/core/study-events.js
+          node --check src/index.js
+          npm test
+          npm run audit
+      - name: Commit synchronized hardening
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add config/app-assets.json public/sw.js src/index.js
+          if ! git diff --cached --quiet; then
+            git commit -m "perf(platform): sincronizar cache e shell das fases 3-5"
+            git push origin HEAD:refactor/phase-3-4-5-platform-hardening
+          fi
+      - name: Remove temporary workflow
+        run: |
+          git pull --rebase origin refactor/phase-3-4-5-platform-hardening
+          git rm .github/workflows/phase345-hardening-sync.yml
+          git commit -m "chore(ci): remover sincronizador temporário das fases 3-5"
+          git push origin HEAD:refactor/phase-3-4-5-platform-hardening
