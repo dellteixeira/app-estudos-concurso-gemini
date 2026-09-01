@@ -188,3 +188,6 @@
 
 /capacitor-runtime.js
   Cache-Control: no-cache, no-store, must-revalidate
+
+/js/core/contextual-ai-tutor.js
+  Cache-Control: no-cache, no-store, must-revalidate

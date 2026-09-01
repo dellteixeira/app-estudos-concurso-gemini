@@ -1,5 +1,6 @@
 import app from './index.js';
 import { handleLearningDiagnosis } from './learning-diagnosis.js';
+import { handleContextualTutor } from './contextual-tutor.js';
 
 const EXTENDED_NO_STORE_PATHS = new Set([
   '/css/learning-advisor.css',
@@ -7,6 +8,7 @@ const EXTENDED_NO_STORE_PATHS = new Set([
   '/js/learning-advisor.js',
   '/js/core/edital-integrity.js',
   '/js/core/exam-board-intelligence.js',
+  '/js/core/contextual-ai-tutor.js',
   '/js/core/offline-outbox-store.js',
   '/js/core/offline-sync-shadow.js',
   '/js/core/offline-sync-metadata-shadow.js',
@@ -40,6 +42,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === '/api/ai/learning-diagnosis') return handleLearningDiagnosis(request, env);
+    if (url.pathname === '/api/ai/contextual-tutor') return handleContextualTutor(request, env);
     if (request.method === 'GET' && EXTENDED_NO_STORE_PATHS.has(url.pathname)) return withNoStore(await env.ASSETS.fetch(request));
     return app.fetch(request, env, ctx);
   }
