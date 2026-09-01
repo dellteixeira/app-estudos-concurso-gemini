@@ -1,7 +1,7 @@
 {
   "name": "estudo-adaptativo-inteligente",
   "private": true,
-  "version": "10.64.24",
+  "version": "10.64.25",
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "test:browser": "playwright test -c playwright.config.cjs",

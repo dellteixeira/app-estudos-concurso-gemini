@@ -1,7 +1,7 @@
 (function (global) {
     'use strict';
 
-    const CORE_VERSION = '10.64.24';
+    const CORE_VERSION = '10.64.25';
     let coreRuntimePromise = null;
 
     function ensureCanonicalUiStyle() {
@@ -15,7 +15,7 @@
         if (!document.querySelector('link[data-responsive-polish]')) {
             const polish = document.createElement('link');
             polish.rel = 'stylesheet';
-            polish.href = './css/responsive-polish-v10.64.24.css?v=10.64.24';
+            polish.href = './css/responsive-polish-v10.64.25.css?v=10.64.25';
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
         }
@@ -90,6 +90,9 @@
             }
             if (!global.AppContextualAiTutor) {
                 await loader.loadScript('./js/core/contextual-ai-tutor.js', { async: false });
+            }
+            if (!global.AppStudyNowCommandCenter) {
+                await loader.loadScript('./js/core/study-now-command-center.js', { async: false });
             }
             if (!global.AppCognitiveProfileRuntime) {
                 await loader.loadScript('./js/core/cognitive-profile-runtime.js', { async: false });

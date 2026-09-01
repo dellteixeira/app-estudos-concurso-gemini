@@ -1,5 +1,5 @@
 {
-  "version": "10.64.24",
+  "version": "10.64.25",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -11,7 +11,7 @@
     "/css/dashboard.css",
     "/css/features.css",
     "/css/responsive-system.css",
-    "/css/responsive-polish-v10.64.24.css",
+    "/css/responsive-polish-v10.64.25.css",
     "/css/canonical-ui.css",
     "/css/pdf-library.css",
     "/css/pdf-reader.css",
@@ -55,7 +55,8 @@
     "/js/app-state.js",
     "/js/sync-engine.js",
     "/js/core/exam-board-intelligence.js",
-    "/js/core/contextual-ai-tutor.js"
+    "/js/core/contextual-ai-tutor.js",
+    "/js/core/study-now-command-center.js"
   ],
   "optionalOfflineAssets": [
     "/js/performance-loader.js",
@@ -159,7 +160,8 @@
     "/js/app-state.js",
     "/js/sync-engine.js",
     "/js/core/exam-board-intelligence.js",
-    "/js/core/contextual-ai-tutor.js"
+    "/js/core/contextual-ai-tutor.js",
+    "/js/core/study-now-command-center.js"
   ],
   "workerNoStorePaths": [
     "/",
@@ -222,7 +224,8 @@
     "/js/app-state.js",
     "/js/sync-engine.js",
     "/js/core/exam-board-intelligence.js",
-    "/js/core/contextual-ai-tutor.js"
+    "/js/core/contextual-ai-tutor.js",
+    "/js/core/study-now-command-center.js"
   ],
   "headersNoStorePaths": [
     "/",
@@ -285,7 +288,8 @@
     "/js/app-state.js",
     "/js/sync-engine.js",
     "/js/core/exam-board-intelligence.js",
-    "/js/core/contextual-ai-tutor.js"
+    "/js/core/contextual-ai-tutor.js",
+    "/js/core/study-now-command-center.js"
   ],
   "headersRevalidatePaths": [
     "/manifest.json"
