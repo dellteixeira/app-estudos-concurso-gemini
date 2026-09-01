@@ -1,5 +1,5 @@
 {
-  "version": "10.64.34",
+  "version": "10.64.35",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -11,7 +11,7 @@
     "/css/dashboard.css",
     "/css/features.css",
     "/css/responsive-system.css",
-    "/css/responsive-polish-v10.64.34.css",
+    "/css/responsive-polish-v10.64.35.css",
     "/css/canonical-ui.css",
     "/css/pdf-library.css",
     "/css/pdf-reader.css",
@@ -67,6 +67,7 @@
     "/js/core/cognitive-profile-runtime.js",
     "/js/core/domain-risk-dashboard.js",
     "/js/core/study-optimization-engine.js",
+    "/js/core/predictive-adaptive-tutor.js",
     "/js/core/study-optimization-dashboard.js",
     "/css/study-optimization.css"
   ],
@@ -186,6 +187,7 @@
     "/js/core/cognitive-profile-runtime.js",
     "/js/core/domain-risk-dashboard.js",
     "/js/core/study-optimization-engine.js",
+    "/js/core/predictive-adaptive-tutor.js",
     "/js/core/study-optimization-dashboard.js",
     "/css/study-optimization.css"
   ],
@@ -263,6 +265,7 @@
     "/js/core/cognitive-profile-runtime.js",
     "/js/core/domain-risk-dashboard.js",
     "/js/core/study-optimization-engine.js",
+    "/js/core/predictive-adaptive-tutor.js",
     "/js/core/study-optimization-dashboard.js",
     "/css/study-optimization.css"
   ],
@@ -340,6 +343,7 @@
     "/js/core/cognitive-profile-runtime.js",
     "/js/core/domain-risk-dashboard.js",
     "/js/core/study-optimization-engine.js",
+    "/js/core/predictive-adaptive-tutor.js",
     "/js/core/study-optimization-dashboard.js",
     "/css/study-optimization.css"
   ],
