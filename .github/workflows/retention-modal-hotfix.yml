@@ -1,0 +1,160 @@
+name: Retention Modal Hotfix
+
+on:
+  push:
+    branches:
+      - fix/retention-modal-unification-v1
+
+permissions:
+  contents: write
+
+jobs:
+  apply-hotfix:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.23.2
+
+      - name: Apply deterministic retention modal hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release-version.mjs 10.64.27
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, re, shutil
+
+          old = '10.64.26'
+          new = '10.64.27'
+          root = Path('.')
+
+          # Canonical release contract.
+          contract_path = root / 'config/release-contract.json'
+          contract = json.loads(contract_path.read_text())
+          contract['version'] = new
+          contract.setdefault('android', {})['versionCode'] = 106429
+          contract_path.write_text(json.dumps(contract, indent=2, ensure_ascii=False) + '\n')
+
+          # Canonical asset manifest + responsive delta copy.
+          assets_path = root / 'config/app-assets.json'
+          assets = json.loads(assets_path.read_text())
+          assets['version'] = new
+          def replace_version(value):
+              return value.replace(f'responsive-polish-v{old}.css', f'responsive-polish-v{new}.css') if isinstance(value, str) else value
+          for key, value in list(assets.items()):
+              if isinstance(value, list):
+                  assets[key] = [replace_version(v) for v in value]
+          assets_path.write_text(json.dumps(assets, indent=2, ensure_ascii=False) + '\n')
+
+          old_css = root / f'public/css/responsive-polish-v{old}.css'
+          new_css = root / f'public/css/responsive-polish-v{new}.css'
+          if not new_css.exists():
+              shutil.copyfile(old_css, new_css)
+
+          # Deterministic script ordering: app-core -> Learning Advisor -> interceptor -> app-ui.
+          index_path = root / 'public/index.html'
+          index = index_path.read_text()
+          index = index.replace(f'responsive-polish-v{old}.css', f'responsive-polish-v{new}.css')
+          style_anchor = f'    <link rel="stylesheet" href="./css/responsive-polish-v{new}.css">'
+          advisor_style = '    <link rel="stylesheet" href="./css/learning-advisor.css" data-learning-advisor-style="1">'
+          if advisor_style not in index:
+              if style_anchor not in index:
+                  raise SystemExit('responsive style anchor not found')
+              index = index.replace(style_anchor, style_anchor + '\n' + advisor_style, 1)
+
+          core_anchor = '    <script src="./js/app-core.js" defer></script>'
+          static_scripts = (
+              '    <script src="./js/learning-advisor.js?v=' + new + '" defer data-learning-advisor="1"></script>\n'
+              '    <script src="./js/critical-points-actions.js?v=' + new + '" defer data-critical-point-actions="1"></script>'
+          )
+          if 'data-learning-advisor="1"' not in index:
+              if core_anchor not in index:
+                  raise SystemExit('app-core script anchor not found')
+              index = index.replace(core_anchor, core_anchor + '\n' + static_scripts, 1)
+          index_path.write_text(index)
+
+          # Runtime loader remains a fallback, but now sees the deterministic static tags and does not duplicate them.
+          pwa_path = root / 'public/js/app-pwa.js'
+          pwa = pwa_path.read_text().replace(old, new)
+          pwa_path.write_text(pwa)
+
+          # Worker/runtime current-version literals not covered by release-version.mjs.
+          for rel in ['src/worker.js', 'package-lock.json']:
+              path = root / rel
+              if path.exists():
+                  path.write_text(path.read_text().replace(old, new))
+
+          # Android contract.
+          for path in list((root / 'android').rglob('*.gradle')) + list((root / 'android').rglob('*.kts')):
+              text = path.read_text()
+              text = text.replace('versionCode 106428', 'versionCode 106429')
+              text = text.replace('versionCode = 106428', 'versionCode = 106429')
+              text = text.replace(f'versionName "{old}-mobile.1"', f'versionName "{new}-mobile.1"')
+              text = text.replace(f'versionName = "{old}-mobile.1"', f'versionName = "{new}-mobile.1"')
+              path.write_text(text)
+
+          # Regression test: legacy metric cards must enter the modern shared dialog without a loader race.
+          test_path = root / 'tests/retention-metric-deterministic-loader.test.cjs'
+          test_path.write_text(r'''const fs = require('node:fs');
+          const path = require('node:path');
+          const test = require('node:test');
+          const assert = require('node:assert/strict');
+
+          const root = path.join(__dirname, '..');
+          const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+          const critical = fs.readFileSync(path.join(root, 'public/js/critical-points-actions.js'), 'utf8');
+          const advisor = fs.readFileSync(path.join(root, 'public/js/learning-advisor.js'), 'utf8');
+
+          test('Learning Advisor and retention interceptor load deterministically before app-ui', () => {
+            const core = html.indexOf('./js/app-core.js');
+            const advisorPos = html.indexOf('./js/learning-advisor.js');
+            const criticalPos = html.indexOf('./js/critical-points-actions.js');
+            const ui = html.indexOf('./js/app-ui.js');
+            assert.ok(core >= 0 && advisorPos > core && criticalPos > advisorPos && ui > criticalPos);
+            assert.match(html, /data-learning-advisor="1"/);
+            assert.match(html, /data-critical-point-actions="1"/);
+          });
+
+          test('overdue and mastered clicks are intercepted in capture phase before legacy modal action', () => {
+            assert.match(critical, /document\.addEventListener\('click',onMetricClick,true\)/);
+            assert.match(critical, /kind!==['"]overdue['"]&&kind!==['"]mastered['"]/);
+            assert.match(critical, /event\.stopImmediatePropagation\(\)/);
+            assert.match(critical, /openModernRetentionMetric\(kind\)/);
+          });
+
+          test('shared modern dialog closes with X, backdrop and Escape', () => {
+            assert.match(advisor, /id=\\?"learningAdvisorClose\\?"/);
+            assert.match(advisor, /event\.target===overlay\)closeDialog\(\)/);
+            assert.match(advisor, /event\.key===['"]Escape['"][\s\S]*closeDialog\(\)/);
+          });
+          ''')
+          PY
+
+      - name: Validate hotfix and release contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/retention-metric-modern-dialog.test.cjs tests/retention-metric-deterministic-loader.test.cjs
+          npm test
+          node scripts/audit-release.mjs
+          node scripts/audit-asset-manifest.mjs
+          node scripts/audit-inline-csp.mjs
+          node scripts/audit-toolchain-pins.mjs
+
+      - name: Commit validated hotfix and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/retention-modal-hotfix.yml
+          git add config/release-contract.json config/app-assets.json package.json package-lock.json public/version.json public/sw.js src/index.js src/worker.js public/index.html public/js/app-pwa.js public/css/responsive-polish-v10.64.27.css tests/retention-metric-deterministic-loader.test.cjs android || true
+          git commit -m "fix(ui): unificar modais de retenção e diagnóstico"
+          git push origin HEAD:fix/retention-modal-unification-v1
