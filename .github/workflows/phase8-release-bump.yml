@@ -18,11 +18,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.23.2
-      - name: Apply canonical 10.64.24 bump
+      - name: Prepare canonical 10.64.24 workspace
         shell: bash
         run: |
           set -euo pipefail
-          echo "Retry after AI router config isolation"
           node <<'NODE'
           const fs=require('fs');
           const oldVersion='10.64.23';
@@ -41,8 +40,12 @@ jobs:
           if(!fs.existsSync(from))throw new Error(`CSS base ausente: ${from}`);
           fs.copyFileSync(from,to);
           NODE
-          node scripts/release-contract.mjs check
-          npm test
+      - name: Validate release contract
+        run: node scripts/release-contract.mjs check
+      - name: Validate AI model router
+        run: node --test tests/ai-model-router.test.cjs
+      - name: Run complete test suite
+        run: npm test
       - name: Commit bump and remove one-shot workflow
         shell: bash
         run: |
