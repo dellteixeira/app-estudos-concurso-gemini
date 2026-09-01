@@ -39,6 +39,7 @@ function check() {
   assert(/^[a-zA-Z][a-zA-Z0-9_.]+$/.test(appPackage), `android.package inválido: ${appPackage || '(vazio)'}`);
 
   const pkg = JSON.parse(read('package.json'));
+  const lock = JSON.parse(read('package-lock.json'));
   const publicVersion = JSON.parse(read('public/version.json'));
   const assets = JSON.parse(read('config/app-assets.json'));
   const workerVersion = read('src/index.js').match(/const APP_VERSION = "([^"]+)"/)?.[1] || '';
@@ -46,6 +47,8 @@ function check() {
   const gradle = parseGradle();
 
   assert(pkg.version === version, `package.json=${pkg.version} diverge do contrato=${version}`);
+  assert(lock.version === version, `package-lock.json=${lock.version} diverge do contrato=${version}`);
+  assert(lock.packages?.['']?.version === version, `package-lock root=${lock.packages?.['']?.version} diverge do contrato=${version}`);
   assert(publicVersion.version === version, `public/version.json=${publicVersion.version} diverge do contrato=${version}`);
   assert(assets.version === version, `config/app-assets.json=${assets.version} diverge do contrato=${version}`);
   assert(workerVersion === version, `src/index.js=${workerVersion} diverge do contrato=${version}`);
