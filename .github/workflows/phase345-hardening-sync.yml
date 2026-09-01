@@ -101,14 +101,18 @@ jobs:
               raise SystemExit('worker cache anchor not found')
           worker = worker.replace(old_worker, new_worker, 1)
           worker_path.write_text(worker)
-      - name: Validate contracts and tests
+      - name: Syntax checks
         run: |
           node --check public/js/core/offline-sync-coordinator.js
           node --check public/js/core/study-observability.js
           node --check public/js/core/study-events.js
           node --check src/index.js
-          npm test
-          npm run audit
+      - name: New hardening tests
+        run: node --test tests/phase-3-4-5-platform-hardening.test.cjs
+      - name: Full unit suite
+        run: npm test
+      - name: Structural audit
+        run: npm run audit
       - name: Commit synchronized hardening
         run: |
           git config user.name github-actions[bot]
