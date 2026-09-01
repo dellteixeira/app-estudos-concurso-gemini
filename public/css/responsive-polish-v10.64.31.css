@@ -89,11 +89,30 @@
 }
 
 @media (max-width: 700px) {
+    #retentionDiagnosticPanel .rd-metrics-v1077 {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-rows: none !important;
+        grid-auto-rows: minmax(164px, auto) !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
     #retentionDiagnosticPanel .rd-metric-card-v1077 {
+        position: relative !important;
+        inset: auto !important;
+        transform: none !important;
+        width: 100% !important;
+        height: auto !important;
         grid-template-rows: minmax(40px, auto) minmax(58px, 1fr) 5px !important;
         row-gap: 7px !important;
         min-height: 164px !important;
         padding: 14px 8px 10px !important;
+        margin: 0 !important;
+        align-self: stretch !important;
     }
 
     #retentionDiagnosticPanel .rd-metric-label-v1077 {
@@ -104,5 +123,47 @@
         line-height: 1.1 !important;
         letter-spacing: 0 !important;
         padding-inline: 1px !important;
+    }
+
+    #calendarWorkspace .calendar-primary-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    #calendarWorkspace .calendar-primary-actions > .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 46px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: normal !important;
+        line-height: 1.15 !important;
+        padding-inline: 10px !important;
+    }
+
+    #flashcardsWorkspace .flashcard-anki-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    #flashcardsWorkspace .flashcard-anki-actions > .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 44px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: normal !important;
+        line-height: 1.15 !important;
+        padding-inline: 9px !important;
+    }
+
+    #flashcardsWorkspace #btnResetFcFilter {
+        grid-column: 1 / -1 !important;
     }
 }
