@@ -15,9 +15,21 @@ test('cognitive profile updates do not trigger a full retention diagnostics rere
 });
 
 test('MutationObserver only schedules enhancement of newly rendered cards', () => {
-  assert.match(critical, /new MutationObserver\(\(\)=>scheduleEnhance\(\)\)/);
-  assert.match(critical, /function scheduleEnhance\(delay=0\)[\s\S]*setTimeout\(enhanceAll,delay\)/);
-  assert.doesNotMatch(critical, /new MutationObserver\([\s\S]{0,160}rerenderDiagnostics/);
+  assert.match(
+    critical,
+    /new MutationObserver\(\(\)=>scheduleEnhance\(\)\)/,
+    'MutationObserver must only schedule card enhancement'
+  );
+  assert.match(
+    critical,
+    /function scheduleEnhance\(delay=0\)[\s\S]*setTimeout\(enhanceAll,delay\)/,
+    'scheduled mutations must converge on enhanceAll'
+  );
+  assert.doesNotMatch(
+    critical,
+    /new MutationObserver\(\(\)=>rerenderDiagnostics\(\)\)/,
+    'MutationObserver must never trigger a full diagnostics rerender'
+  );
 });
 
 test('explicit snooze remains allowed to rerender diagnostics', () => {
