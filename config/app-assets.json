@@ -1,5 +1,5 @@
 {
-  "version": "10.64.22",
+  "version": "10.64.23",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -11,7 +11,7 @@
     "/css/dashboard.css",
     "/css/features.css",
     "/css/responsive-system.css",
-    "/css/responsive-polish-v10.64.22.css",
+    "/css/responsive-polish-v10.64.23.css",
     "/css/canonical-ui.css",
     "/css/pdf-library.css",
     "/css/pdf-reader.css",
@@ -54,7 +54,8 @@
     "/icon-512.png",
     "/js/app-state.js",
     "/js/sync-engine.js",
-    "/js/core/exam-board-intelligence.js"
+    "/js/core/exam-board-intelligence.js",
+    "/js/core/contextual-ai-tutor.js"
   ],
   "optionalOfflineAssets": [
     "/js/performance-loader.js",
@@ -157,7 +158,8 @@
     "/js/app-pwa.js",
     "/js/app-state.js",
     "/js/sync-engine.js",
-    "/js/core/exam-board-intelligence.js"
+    "/js/core/exam-board-intelligence.js",
+    "/js/core/contextual-ai-tutor.js"
   ],
   "workerNoStorePaths": [
     "/",
@@ -219,7 +221,8 @@
     "/js/app-pwa.js",
     "/js/app-state.js",
     "/js/sync-engine.js",
-    "/js/core/exam-board-intelligence.js"
+    "/js/core/exam-board-intelligence.js",
+    "/js/core/contextual-ai-tutor.js"
   ],
   "headersNoStorePaths": [
     "/",
@@ -281,7 +284,8 @@
     "/js/pdf/pdf-reader.js",
     "/js/app-state.js",
     "/js/sync-engine.js",
-    "/js/core/exam-board-intelligence.js"
+    "/js/core/exam-board-intelligence.js",
+    "/js/core/contextual-ai-tutor.js"
   ],
   "headersRevalidatePaths": [
     "/manifest.json"

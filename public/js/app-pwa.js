@@ -219,7 +219,7 @@
             if (document.querySelector('link[data-responsive-release-delta]')) return;
             const style = document.createElement('link');
             style.rel = 'stylesheet';
-            style.href = './css/responsive-polish-v10.64.22.css?v=10.64.22';
+            style.href = './css/responsive-polish-v10.64.23.css?v=10.64.23';
             style.dataset.responsiveReleaseDelta = '1';
             document.head.appendChild(style);
         })();
