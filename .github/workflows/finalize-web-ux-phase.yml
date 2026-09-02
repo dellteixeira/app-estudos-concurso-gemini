@@ -24,6 +24,7 @@ jobs:
           set -euo pipefail
           node <<'NODE'
           const fs = require('fs');
+
           const uxPath = 'public/js/ui/study-ux-phase.js';
           let ux = fs.readFileSync(uxPath, 'utf8');
           ux = ux.replace("const questions=recommendation?.method==='questions'?1:(risk?risk:'—');", "const questions=recommendation?.method==='questions'?1:'—';");
@@ -42,13 +43,26 @@ jobs:
             '/js/ui/study-ux-phase.js',
             '/js/ui/today-best-action.js'
           ];
-          const target = Array.isArray(manifest.criticalAppShell) ? manifest.criticalAppShell : (manifest.criticalAppShell = []);
-          for (const asset of additions) if (!target.includes(asset)) target.push(asset);
+          const optional = Array.isArray(manifest.optionalOfflineAssets) ? manifest.optionalOfflineAssets : (manifest.optionalOfflineAssets = []);
+          for (const asset of additions) if (!optional.includes(asset)) optional.push(asset);
           fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+          const indexPath = 'public/index.html';
+          let index = fs.readFileSync(indexPath, 'utf8');
+          index = index.replace('./css/responsive-polish-v10.64.42.css', './css/responsive-polish-v10.64.43.css?v=10.64.43');
+          fs.writeFileSync(indexPath, index);
+
+          const swPath = 'public/sw.js';
+          let sw = fs.readFileSync(swPath, 'utf8');
+          const marker = "  './js/core/study-now-command-center.js', './js/performance-loader.js'";
+          const replacement = "  './js/ui/study-ux-phase.js', './js/ui/today-best-action.js', './css/study-ux-phase.css', './css/today-best-action.css',\n  './js/core/study-now-command-center.js', './js/performance-loader.js'";
+          if (!sw.includes("'./js/ui/study-ux-phase.js'")) sw = sw.replace(marker, replacement);
+          fs.writeFileSync(swPath, sw);
           NODE
 
           node --check public/js/ui/study-ux-phase.js
           node --check public/js/ui/today-best-action.js
+          node --check public/sw.js
           node scripts/audit-asset-manifest.mjs
 
       - name: Remove temporary workflow and commit
@@ -58,6 +72,6 @@ jobs:
           git rm .github/workflows/finalize-web-ux-phase.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/js/ui/study-ux-phase.js config/app-assets.json
+          git add public/js/ui/study-ux-phase.js config/app-assets.json public/index.html public/sw.js
           git commit -m 'fix(web): endurecer agenda e cache offline da fase UX'
           git push origin HEAD:feat/web-ux-hoje-retencao-edital-cronograma
