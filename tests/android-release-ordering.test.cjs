@@ -30,6 +30,13 @@ test('Backfill manual exige tag canônica explícita', () => {
   assert.match(workflow, /release_tag:[\s\S]*type:\s*string/);
 });
 
+test('Mismatch de tag em workflow automático é no-op, mas manual continua estrito', () => {
+  assert.match(workflow, /if \[ "\$GITHUB_EVENT_NAME" = "workflow_run" \]; then/);
+  assert.match(workflow, /Nenhum asset será publicado porque não houve nova versão canônica/);
+  assert.match(workflow, /echo "::error::Tag canônica \$RELEASE_TAG aponta para \$tag_sha, mas o APK foi construído de \$current_sha\."/);
+  assert.match(workflow, /if \[ "\$tag_sha" != "\$current_sha" \]; then[\s\S]*workflow_run[\s\S]*exit 0[\s\S]*::error::Tag canônica[\s\S]*exit 1/);
+});
+
 test('Manifesto registra o SHA realmente construído', () => {
   assert.match(workflow, /SOURCE_COMMIT="\$\(git rev-parse HEAD\)"/);
   assert.match(workflow, /"sourceCommit": "\$\{SOURCE_COMMIT\}"/);
