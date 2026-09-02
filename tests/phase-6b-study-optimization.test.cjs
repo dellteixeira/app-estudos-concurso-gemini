@@ -5,6 +5,7 @@ const vm=require('node:vm');
 const path=require('node:path');
 
 function load(){
+  const assessmentCode=fs.readFileSync(path.join(process.cwd(),'public/js/core/topic-assessment.js'),'utf8');
   const code=fs.readFileSync(path.join(process.cwd(),'public/js/core/study-optimization-engine.js'),'utf8');
   const events=[];
   const window={
@@ -13,6 +14,7 @@ function load(){
     CustomEvent:function(name,options){this.type=name;this.detail=options?.detail}
   };
   const context=vm.createContext({window,CustomEvent:window.CustomEvent,console,setTimeout,clearTimeout});
+  vm.runInContext(assessmentCode,context,{filename:'topic-assessment.js'});
   vm.runInContext(code,context,{filename:'study-optimization-engine.js'});
   return {engine:window.AppStudyOptimization,events};
 }

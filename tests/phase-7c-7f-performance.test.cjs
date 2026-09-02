@@ -17,6 +17,10 @@ function runBrowserModule(path,extras={}){
   };
   window.window=window;
   const context=vm.createContext({window,globalThis:window,CustomEvent:window.CustomEvent,setTimeout,clearTimeout,console,Date,Math,Object,Array,Map,WeakMap,JSON,Number,String,Boolean,RegExp});
+  if(path==='public/js/core/predictive-adaptive-tutor.js'||path==='public/js/core/study-optimization-engine.js'){
+    const assessmentCode=fs.readFileSync('public/js/core/topic-assessment.js','utf8');
+    vm.runInContext(assessmentCode,context,{filename:'public/js/core/topic-assessment.js'});
+  }
   vm.runInContext(code,context,{filename:path});
   return {window,events};
 }

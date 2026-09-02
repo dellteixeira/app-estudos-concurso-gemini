@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 
+const assessmentSource=fs.readFileSync('public/js/core/topic-assessment.js','utf8');
 const source=fs.readFileSync('public/js/core/predictive-adaptive-tutor.js','utf8');
 
 function boot(){
@@ -18,7 +19,8 @@ function boot(){
   };
   window.window=window;
   const context=vm.createContext({window,console,CustomEvent:window.CustomEvent});
-  vm.runInContext(source,context);
+  vm.runInContext(assessmentSource,context,{filename:'topic-assessment.js'});
+  vm.runInContext(source,context,{filename:'predictive-adaptive-tutor.js'});
   return{window,events};
 }
 

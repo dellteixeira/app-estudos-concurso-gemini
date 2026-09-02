@@ -4,6 +4,7 @@ if(global.AppTopicAssessment)return;
 
 const SCHEMA_VERSION=1;
 const MAX_ATTENTION=6;
+const PRIORITY_CONTRACT=Object.freeze({importedOrderMutation:false,editalPriority:'canonical-imported-order',topicPriority:'canonical-imported-order',learnerUrgency:'dynamic-context-only',recommendationScore:'dynamic-context-only'});
 const clamp=(value,min=0,max=100)=>Math.max(min,Math.min(max,Number(value)||0));
 const finite=value=>value==null||value===''?null:(Number.isFinite(Number(value))?Number(value):null);
 const clean=(value,max=480)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
@@ -146,8 +147,7 @@ function findTopicInsight(materia,assunto,profile=resolveProfile()){
   return found?Object.freeze({key:found.key,...found.topic,domainRisk:found.domain}):null;
 }
 
-const API=Object.freeze({schemaVersion:SCHEMA_VERSION,normalizeTopicState,prioritySignal,optimizationScore,chooseOptimizationMethod,expectedGain,assessTopic,topicEntries,getAttentionQueue,buildViewModel,resolveProfile,findTopicInsight});
+const API=Object.freeze({schemaVersion:SCHEMA_VERSION,priorityContract:PRIORITY_CONTRACT,normalizeTopicState,prioritySignal,optimizationScore,chooseOptimizationMethod,expectedGain,assessTopic,topicEntries,getAttentionQueue,buildViewModel,resolveProfile,findTopicInsight});
 global.AppTopicAssessment=API;
-global.AppDomainRiskDashboard=Object.freeze({schemaVersion:SCHEMA_VERSION,buildViewModel,getAttentionQueue,findTopicInsight,resolveProfile,render:()=>null,scheduleRender:()=>null,headless:true});
 if(typeof global.CustomEvent==='function')global.dispatchEvent?.(new global.CustomEvent('study:topic-assessment-ready',{detail:{schemaVersion:SCHEMA_VERSION,headless:true}}));
 })(window);
