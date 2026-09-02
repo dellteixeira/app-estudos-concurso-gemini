@@ -33,14 +33,18 @@ test('Fase 3: asset loader usa a release canônica atual',()=>{
   assert.doesNotMatch(source,/10\.64\.22/);
 });
 
-test('Fase 4: coordenador preserva rollout histórico e centraliza sequência',()=>{
+test('Fase 4: coordenador preserva cadeia histórica e usa assets canônicos sem hardcode',()=>{
   const source=read('public/js/core/offline-sync-coordinator.js');
-  assert.match(source,/const ROLLOUT_VERSION='10\.56\.0'/);
+  assert.match(source,/const ASSET_STRATEGY='canonical-no-store'/);
+  assert.doesNotMatch(source,/ROLLOUT_VERSION/,'o coordenador não deve carregar uma versão histórica hardcoded');
+  assert.doesNotMatch(source,/\?v=/,'módulos offline devem usar o caminho canônico sem query-string de release');
+  assert.match(source,/path:`\.\/js\/core\/\$\{file\}`/,'cada módulo deve resolver pelo caminho canônico');
   const modules=[...source.matchAll(/\['(Offline[^']+)'\s*,\s*'([^']+)'\s*,\s*'([^']+\.js)'\]/g)];
   assert.equal(modules.length,19,'a cadeia histórica deve permanecer completa nesta etapa de consolidação');
   assert.equal(new Set(modules.map(match=>match[1])).size,19,'cada autoridade offline deve aparecer uma única vez');
   assert.match(source,/if\(installed&&!options\.force\)return getDiagnostics\(\)/);
   assert.match(source,/if\(installPromise\)return installPromise/);
+  assert.match(source,/assetStrategy:ASSET_STRATEGY/,'diagnósticos devem declarar explicitamente a estratégia canônica');
 });
 
 test('Fase 5: barramento contabiliza eventos deduplicados sem reemitir',()=>{
