@@ -23,6 +23,7 @@ jobs:
           node scripts/tmp-phase8c-patch-runner.mjs
           node scripts/tmp-phase8c-consolidate.mjs
           node scripts/tmp-phase8c-fix-tests.mjs
+          node scripts/tmp-phase8c-sync-surfaces.mjs
       - name: Validate JSON and syntax
         run: |
           node -e "JSON.parse(require('fs').readFileSync('config/app-assets.json','utf8'))"
@@ -57,7 +58,7 @@ jobs:
           git push origin HEAD:refactor/phase-8c-consolidation
       - name: Remove temporary artifacts
         if: success()
-        run: rm -f scripts/tmp-phase8c-consolidate.mjs scripts/tmp-phase8c-fix-tests.mjs scripts/tmp-phase8c-patch-runner.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log phase8c-audit.log
+        run: rm -f scripts/tmp-phase8c-consolidate.mjs scripts/tmp-phase8c-fix-tests.mjs scripts/tmp-phase8c-patch-runner.mjs scripts/tmp-phase8c-sync-surfaces.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log phase8c-audit.log
       - name: Commit Phase 8C
         if: success()
         run: |
