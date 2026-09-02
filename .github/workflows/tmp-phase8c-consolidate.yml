@@ -43,18 +43,21 @@ jobs:
       - name: Full tests
         run: npm test
       - name: Structural audit
-        run: npm run audit
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run audit 2>&1 | tee phase8c-audit.log
       - name: Persist diagnostics on failure
         if: failure()
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add phase8c-focused.log
-          git diff --cached --quiet || git commit -m "chore(tmp): capture Phase 8C test failure"
+          git add phase8c-focused.log phase8c-audit.log
+          git diff --cached --quiet || git commit -m "chore(tmp): capture Phase 8C validation failure"
           git push origin HEAD:refactor/phase-8c-consolidation
       - name: Remove temporary artifacts
         if: success()
-        run: rm -f scripts/tmp-phase8c-consolidate.mjs scripts/tmp-phase8c-fix-tests.mjs scripts/tmp-phase8c-patch-runner.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log
+        run: rm -f scripts/tmp-phase8c-consolidate.mjs scripts/tmp-phase8c-fix-tests.mjs scripts/tmp-phase8c-patch-runner.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log phase8c-audit.log
       - name: Commit Phase 8C
         if: success()
         run: |
