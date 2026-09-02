@@ -149,5 +149,5 @@ function findTopicInsight(materia,assunto,profile=resolveProfile()){
 const API=Object.freeze({schemaVersion:SCHEMA_VERSION,normalizeTopicState,prioritySignal,optimizationScore,chooseOptimizationMethod,expectedGain,assessTopic,topicEntries,getAttentionQueue,buildViewModel,resolveProfile,findTopicInsight});
 global.AppTopicAssessment=API;
 global.AppDomainRiskDashboard=Object.freeze({schemaVersion:SCHEMA_VERSION,buildViewModel,getAttentionQueue,findTopicInsight,resolveProfile,render:()=>null,scheduleRender:()=>null,headless:true});
-global.dispatchEvent?.(new CustomEvent('study:topic-assessment-ready',{detail:{schemaVersion:SCHEMA_VERSION,headless:true}}));
+if(typeof global.CustomEvent==='function')global.dispatchEvent?.(new global.CustomEvent('study:topic-assessment-ready',{detail:{schemaVersion:SCHEMA_VERSION,headless:true}}));
 })(window);
