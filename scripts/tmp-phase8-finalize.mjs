@@ -27,6 +27,8 @@ for (const rel of [
   'public/version.json',
   'config/app-assets.json',
   'public/index.html',
+  'public/js/app-pwa.js',
+  'public/js/ui/navigation.js',
   'src/index.js',
   'public/sw.js'
 ]) {
@@ -53,6 +55,9 @@ for (const rel of [
   'package-lock.json',
   'public/version.json',
   'config/app-assets.json',
+  'public/index.html',
+  'public/js/app-pwa.js',
+  'public/js/ui/navigation.js',
   'src/index.js',
   'public/sw.js',
   'android/app/build.gradle'
