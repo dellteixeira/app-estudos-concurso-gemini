@@ -1,0 +1,63 @@
+name: Finalize Web UX Phase
+
+on:
+  push:
+    branches:
+      - feat/web-ux-hoje-retencao-edital-cronograma
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: feat/web-ux-hoje-retencao-edital-cronograma
+
+      - name: Harden derived UX and offline assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const uxPath = 'public/js/ui/study-ux-phase.js';
+          let ux = fs.readFileSync(uxPath, 'utf8');
+          ux = ux.replace("const questions=recommendation?.method==='questions'?1:(risk?risk:'—');", "const questions=recommendation?.method==='questions'?1:'—';");
+          ux = ux.replace(
+            "function dayNumber(cell){const raw=(cell.querySelector('[class*=\"day-number\"], [class*=\"date\"]')?.textContent||cell.textContent||'').trim();const m=raw.match(/\\b([1-9]|[12]\\d|3[01])\\b/);return m?Number(m[1]):null;}\nfunction currentDayCell(){const today=new Date();return calendarCells().find(cell=>dayNumber(cell)===today.getDate()&&!cell.classList.contains('other-month'))||null;}",
+            "function dayNumber(cell){const raw=(cell.querySelector('[class*=\"day-number\"], [class*=\"date\"]')?.textContent||cell.textContent||'').trim();const m=raw.match(/\\b([1-9]|[12]\\d|3[01])\\b/);return m?Number(m[1]):null;}\nfunction dateKey(date){const year=date.getFullYear();const month=String(date.getMonth()+1).padStart(2,'0');const day=String(date.getDate()).padStart(2,'0');return `${year}-${month}-${day}`;}\nfunction cellForDate(date){return $(`#monthCalendarGrid [data-date-key=\"${dateKey(date)}\"]`)||null;}\nfunction currentDayCell(){return cellForDate(new Date());}"
+          );
+          ux = ux.replace("const cell=calendarCells().find(item=>dayNumber(item)===date.getDate()&&!item.classList.contains('other-month'));", "const cell=cellForDate(date);");
+          fs.writeFileSync(uxPath, ux);
+
+          const manifestPath = 'config/app-assets.json';
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const additions = [
+            '/css/study-ux-phase.css',
+            '/css/today-best-action.css',
+            '/js/ui/study-ux-phase.js',
+            '/js/ui/today-best-action.js'
+          ];
+          const target = Array.isArray(manifest.criticalAppShell) ? manifest.criticalAppShell : (manifest.criticalAppShell = []);
+          for (const asset of additions) if (!target.includes(asset)) target.push(asset);
+          fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+          NODE
+
+          node --check public/js/ui/study-ux-phase.js
+          node --check public/js/ui/today-best-action.js
+          node scripts/audit-asset-manifest.mjs
+
+      - name: Remove temporary workflow and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/finalize-web-ux-phase.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/js/ui/study-ux-phase.js config/app-assets.json
+          git commit -m 'fix(web): endurecer agenda e cache offline da fase UX'
+          git push origin HEAD:feat/web-ux-hoje-retencao-edital-cronograma
