@@ -95,7 +95,11 @@
     "/vendor/pdf.min.js",
     "/vendor/pdf_viewer.min.css",
     "/vendor/pdf.worker.min.js",
-    "/js/core/study-now-command-center.js"
+    "/js/core/study-now-command-center.js",
+    "/css/study-ux-phase.css",
+    "/css/today-best-action.css",
+    "/js/ui/study-ux-phase.js",
+    "/js/ui/today-best-action.js"
   ],
   "networkFirstPaths": [
     "/pwa-update.js",

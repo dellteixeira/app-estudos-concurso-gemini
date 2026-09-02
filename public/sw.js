@@ -13,6 +13,7 @@ const CRITICAL_APP_SHELL = [
 ];
 
 const OPTIONAL_OFFLINE_ASSETS = [
+  './js/ui/study-ux-phase.js', './js/ui/today-best-action.js', './css/study-ux-phase.css', './css/today-best-action.css',
   './js/core/study-now-command-center.js', './js/performance-loader.js', './js/performance-metrics.js', './js/notes-import-export.js', './js/notes-export-rich.js', './js/study-performance-report.js',
   './js/pdf/pdf-core.js', './js/pdf/pdf-workspaces.js', './js/pdf/pdf-links.js', './js/pdf/pdf-library.js', './js/pdf/pdf-library-ordering.js', './js/pdf/pdf-upload.js', './js/pdf/pdf-annotations.js', './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js', './js/pdf/pdf-library-opfs-adapter.js', './js/pdf/pdf-library-layout-fix.js', './js/pdf/pdf-device-storage.js', './js/pdf/offline-pdf-store.js', './js/pdf/pdf-offline-library-manager.js', './js/pdf/pdf-offline-integrity.js', './js/pdf/pdf-offline-library-ui.js', './css/pdf-mobile-card-actions.css', './vendor/pdf.min.js', './vendor/pdf_viewer.min.css', './vendor/pdf.worker.min.js'
 ];

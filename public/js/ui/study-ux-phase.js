@@ -92,7 +92,7 @@ function refreshToday(){
   const overdue=Number(text('#retentionDiagOverdue','0').replace(/\D/g,''))||0;
   const risk=Number(text('#retentionDiagRisk','0').replace(/\D/g,''))||0;
   const recommendation=global.AppStudyNowCommandCenter?.current?.()||global.AppStudyNowCommandCenter?.latestRecommendation?.();
-  const questions=recommendation?.method==='questions'?1:(risk?risk:'—');
+  const questions=recommendation?.method==='questions'?1:'—';
   const flashcards=countFlashcards()??'—';
   const values={
     '[data-today-overdue]':overdue,
@@ -226,7 +226,9 @@ function ensureCalendarViews(){
 
 function calendarCells(){return $$('#monthCalendarGrid > *').filter(cell=>cell.textContent?.trim());}
 function dayNumber(cell){const raw=(cell.querySelector('[class*="day-number"], [class*="date"]')?.textContent||cell.textContent||'').trim();const m=raw.match(/\b([1-9]|[12]\d|3[01])\b/);return m?Number(m[1]):null;}
-function currentDayCell(){const today=new Date();return calendarCells().find(cell=>dayNumber(cell)===today.getDate()&&!cell.classList.contains('other-month'))||null;}
+function dateKey(date){const year=date.getFullYear();const month=String(date.getMonth()+1).padStart(2,'0');const day=String(date.getDate()).padStart(2,'0');return `${year}-${month}-${day}`;}
+function cellForDate(date){return $(`#monthCalendarGrid [data-date-key="${dateKey(date)}"]`)||null;}
+function currentDayCell(){return cellForDate(new Date());}
 
 function taskNodes(cell){
   if(!cell)return[];
@@ -272,7 +274,7 @@ function refreshCalendarDerivedViews(){
     const now=new Date();const day=now.getDay();const start=new Date(now);start.setDate(now.getDate()-day);
     for(let offset=0;offset<7;offset++){
       const date=new Date(start);date.setDate(start.getDate()+offset);
-      const cell=calendarCells().find(item=>dayNumber(item)===date.getDate()&&!item.classList.contains('other-month'));
+      const cell=cellForDate(date);
       const card=document.createElement('section');card.className='calendar-week-day';
       card.innerHTML=`<span>${new Intl.DateTimeFormat('pt-BR',{weekday:'short'}).format(date)}</span><strong>${date.getDate()}</strong><small></small>`;
       const count=taskNodes(cell).length;card.querySelector('small').textContent=count?`${count} atividade${count>1?'s':''}`:'Livre';
