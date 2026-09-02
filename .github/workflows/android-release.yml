@@ -1,24 +1,10 @@
 name: Android Release
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'android/**'
-      - 'android/mobile/**'
-      - 'capacitor.config.json'
-      - 'config/release-contract.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'public/**'
-      - 'src/**'
-      - 'scripts/release-contract.mjs'
-      - 'scripts/prepare-android-assets.mjs'
-      - 'scripts/migrate-android-phase1b.mjs'
-      - 'scripts/apply-android-mobile-hotfix.mjs'
-      - 'tests/**'
-      - '.github/workflows/android-release.yml'
+  workflow_run:
+    workflows: ["Canonical GitHub Release"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -30,6 +16,10 @@ concurrency:
 
 jobs:
   signed-runtime-distribution:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     env:
@@ -37,9 +27,10 @@ jobs:
       ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
 
     steps:
-      - name: Checkout
+      - name: Checkout canonical release revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -277,7 +268,6 @@ jobs:
           retention-days: 30
 
       - name: Publish permanent APK assets to canonical GitHub Release
-        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -285,16 +275,20 @@ jobs:
           set -euo pipefail
           OUT="dist/android/direct"
           FINAL="EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-release.apk"
-          release_ready=0
-          for attempt in {1..20}; do
-            if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-              release_ready=1
-              break
-            fi
-            echo "Aguardando release canônica $RELEASE_TAG... tentativa $attempt/20"
-            sleep 15
-          done
-          test "$release_ready" -eq 1
+
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Release canônica $RELEASE_TAG ausente. Android Release só pode publicar após Canonical GitHub Release concluir com sucesso."
+            exit 1
+          fi
+
+          git fetch --tags --force
+          tag_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
+          current_sha="$(git rev-parse HEAD)"
+          if [ "$tag_sha" != "$current_sha" ]; then
+            echo "::error::Tag canônica $RELEASE_TAG aponta para $tag_sha, mas o APK foi construído de $current_sha."
+            exit 1
+          fi
+
           existing_assets="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')"
           if printf '%s\n' "$existing_assets" | grep -Fxq "$FINAL"; then
             echo "Asset permanente $FINAL já existe; mantendo o binário publicado sem substituição."
