@@ -11,11 +11,8 @@ const clean=(value,max=360)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,
 const assessment=()=>global.AppTopicAssessment||null;
 function evidenceFactor(level){return level==='high'?1:level==='medium'?0.86:0.68}
 function trendFactor(trend){return trend==='improving'?8:trend==='declining'?-10:trend==='stable'?2:0}
-function signals(state={}){
-  const shared=assessment()?.normalizeTopicState?.(state);if(shared)return shared;
-  const domain=state.domainRisk||{},retention=finite(state.retention)??finite(domain.predictedRetention7d)??50,accuracy=finite(state.accuracy)??retention;
-  return {mastery:finite(domain.masteryScore)??50,retention,predictedRetention7d:finite(domain.predictedRetention7d)??retention,accuracy,confidence:finite(state.confidence)??50,forgettingRisk:finite(domain.forgettingRisk)??50,evidenceLevel:clean(domain.evidenceLevel,32)||'low',trend:clean(domain.trend,48)||'insufficient_evidence',applicationGap:Math.max(0,retention-accuracy),lapseCount:Math.max(0,Number(state.lapseCount)||0),topicPriority:finite(state.topicPriority),editalPriority:finite(state.editalPriority)};
-}
+function requireAssessment(){const api=assessment();if(!api?.normalizeTopicState)throw new Error('AppTopicAssessment is required before AppPredictiveAdaptiveTutor');return api}
+function signals(state={}){return requireAssessment().normalizeTopicState(state)}
 function predictTopic(state={}){
   if(state&&typeof state==='object'&&topicPredictionCache.has(state)){topicCacheHits+=1;return topicPredictionCache.get(state)}
   topicComputations+=1;const s=signals(state),evidence=evidenceFactor(s.evidenceLevel),trend=trendFactor(s.trend),lapsePenalty=Math.min(14,s.lapseCount*2.5);
@@ -44,5 +41,5 @@ function readProfile(context={}){const userId=clean(context.userId||global.curre
 function resolve(context={}){const profile=context.profile||readProfile(context);if(!profile)return null;const goal=probabilityOfGoal(profile,context.target||70),topicId=clean(context.topicId,640).toLowerCase(),state=topicId?profile.topicState?.[topicId]||null:null,tutor=state?tutorDecision(state,context):null,result=Object.freeze({schemaVersion:SCHEMA_VERSION,goal,tutor,generatedAt:new Date().toISOString(),priorityContract:Object.freeze({importedOrderMutation:false,predictionOnly:true})});try{global.AppStudyEvents?.emit?.('study:prediction-resolved',{target:goal.target,probability:goal.probability,expectedPerformance:goal.expectedPerformance,topicId:topicId||null,action:tutor?.action||null},{source:'predictive-adaptive-tutor'})}catch(_){}return result}
 function cacheDiagnostics(){return Object.freeze({topicCacheHits,topicComputations,profileCacheHits,profileComputations})}
 global.AppPredictiveAdaptiveTutor=Object.freeze({schemaVersion:SCHEMA_VERSION,predictTopic,predictProfile,probabilityOfGoal,tutorDecision,resolve,cacheDiagnostics});
-global.dispatchEvent?.(new CustomEvent('study:predictive-tutor-ready',{detail:{schemaVersion:SCHEMA_VERSION,topicAssessment:Boolean(assessment())}}));
+if(typeof global.CustomEvent==='function')global.dispatchEvent?.(new global.CustomEvent('study:predictive-tutor-ready',{detail:{schemaVersion:SCHEMA_VERSION,topicAssessment:true}}));
 })(window);

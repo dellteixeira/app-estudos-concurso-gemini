@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 function loadModule({boardSignal=null}={}){
+  const assessmentSource=fs.readFileSync('public/js/core/topic-assessment.js','utf8');
   const source=fs.readFileSync('public/js/core/next-best-study-action.js','utf8');
   const listeners=new Map();
   const window={
@@ -14,7 +15,9 @@ function loadModule({boardSignal=null}={}){
   };
   window.window=window;
   class CustomEvent{constructor(type,init){this.type=type;this.detail=init?.detail;}}
-  vm.runInNewContext(source,{window,CustomEvent,Date,Math,Number,String,Object,Array,JSON,console});
+  const context={window,CustomEvent,Date,Math,Number,String,Object,Array,JSON,console};
+  vm.runInNewContext(assessmentSource,context);
+  vm.runInNewContext(source,context);
   return window.AppNextBestStudyAction;
 }
 
