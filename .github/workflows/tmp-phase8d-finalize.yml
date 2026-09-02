@@ -19,7 +19,9 @@ jobs:
           node-version: 22.23.2
           cache: npm
       - name: Apply Phase 8D final consolidation
-        run: node scripts/tmp-phase8d-finalize.mjs
+        run: |
+          node scripts/tmp-phase8d-finalize.mjs
+          node scripts/tmp-phase8d-fix-legacy-tests.mjs
       - name: Validate syntax and release contract
         run: |
           node --check public/js/core/topic-assessment.js
@@ -31,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Focused Phase 8D tests
-        run: node --test tests/phase-8d-final-consolidation.test.cjs tests/phase-8c-consolidation.test.cjs tests/phase-8a-8b-consolidation.test.cjs
+        run: node --test tests/phase-8d-final-consolidation.test.cjs tests/phase-8c-consolidation.test.cjs tests/phase-8a-8b-consolidation.test.cjs tests/next-best-study-action.test.cjs tests/phase-6b-study-optimization.test.cjs tests/phase-6c-predictive-adaptive-tutor.test.cjs tests/phase-7c-7f-performance.test.cjs
       - name: Full test suite
         shell: bash
         run: |
@@ -45,11 +47,11 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add phase8d-full.log
-          git diff --cached --quiet || git commit -m "chore(tmp): capture Phase 8D full-suite failure"
+          git diff --cached --quiet || git commit -m "chore(tmp): capture Phase 8D validation failure"
           git push origin HEAD:refactor/phase-8d-consolidation
       - name: Remove temporary artifacts
         if: success()
-        run: rm -f scripts/tmp-phase8d-finalize.mjs .github/workflows/tmp-phase8d-finalize.yml phase8d-full.log
+        run: rm -f scripts/tmp-phase8d-finalize.mjs scripts/tmp-phase8d-fix-legacy-tests.mjs .github/workflows/tmp-phase8d-finalize.yml phase8d-full.log
       - name: Commit final Phase 8D
         if: success()
         run: |
