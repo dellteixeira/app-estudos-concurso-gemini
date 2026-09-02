@@ -1,78 +1,124 @@
-(function installDomainRiskDashboard(global){
+(function installTopicAssessment(global){
 'use strict';
-if(global.AppDomainRiskDashboard)return;
+if(global.AppTopicAssessment)return;
 
 const SCHEMA_VERSION=1;
 const MAX_ATTENTION=6;
-let lastFingerprint='';
-let retryTimer=null;
-
 const clamp=(value,min=0,max=100)=>Math.max(min,Math.min(max,Number(value)||0));
-const pct=value=>Number.isFinite(Number(value))?`${Math.round(Number(value))}%`:'—';
-const safe=value=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim();
-const escapeHtml=value=>safe(value).replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':'&quot;'}[char]));
+const finite=value=>value==null||value===''?null:(Number.isFinite(Number(value))?Number(value):null);
+const clean=(value,max=480)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 
-function sourceSnapshot(){
-  try{return global.AppCognitiveDataSource?.snapshot?.()||null}catch(_){return null}
+function normalizeTopicState(state={}){
+  const domain=state.domainRisk||{};
+  const retention=finite(state.retention)??finite(state.predictedRetention7d)??finite(domain.predictedRetention7d)??50;
+  const accuracy=finite(state.accuracy)??retention;
+  const mastery=finite(state.masteryScore)??finite(domain.masteryScore)??Math.round((retention+accuracy)/2);
+  const predictedRetention7d=finite(state.predictedRetention7d)??finite(domain.predictedRetention7d)??retention;
+  const forgettingRisk=finite(state.forgettingRisk)??finite(domain.forgettingRisk)??clamp(100-predictedRetention7d);
+  const confidence=finite(state.confidence);
+  const lapseCount=Math.max(0,Number(state.lapseCount)||0);
+  const reviewCount=Math.max(0,Number(state.reviewCount)||0);
+  const difficulty=clamp(state.difficulty||5,1,10);
+  const editalPriority=finite(state.editalPriority);
+  const topicPriority=finite(state.topicPriority);
+  const applicationGap=Math.max(0,retention-accuracy);
+  return Object.freeze({
+    materia:clean(state.materia||state.subject,180),
+    assunto:clean(state.assunto||state.topic,400),
+    retention,accuracy,mastery,predictedRetention7d,forgettingRisk,confidence,
+    lapseCount,reviewCount,difficulty,applicationGap,
+    evidenceLevel:clean(state.evidenceLevel||domain.evidenceLevel,40)||'low',
+    trend:clean(state.trend||domain.trend,60)||'insufficient_evidence',
+    riskBand:clean(state.riskBand||domain.riskBand,40)||'low',
+    priorityWeight:Math.max(1,finite(state.priorityWeight)??finite(domain.priorityWeight)??1),
+    editalPriority,topicPriority,
+    lastStudyAt:clean(state.lastStudyAt,80),
+    lastRating:clean(state.lastRating,40),
+    sessionCount:Math.max(0,Number(state.sessionCount)||0),
+    totalMinutes:Math.max(0,Number(state.totalMinutes)||0)
+  });
 }
 
-function resolveProfile(){
-  const source=sourceSnapshot();
-  if(!source?.userId)return null;
-  try{return global.AppCognitiveProfile?.read?.(source.userId,source.contest)||global.AppCognitiveProfileRuntime?.refresh?.({force:false})||null}catch(_){return null}
+function prioritySignal(state={}){
+  const signals=normalizeTopicState(state);
+  const imported=signals.topicPriority??signals.editalPriority;
+  if(imported==null)return 50;
+  return clamp(100-(Math.max(1,Math.round(imported))-1)*18,28,100);
+}
+
+function optimizationScore(state={}){
+  const s=normalizeTopicState(state);
+  const trendBoost=s.trend==='declining'?100:s.trend==='improving'?20:50;
+  return Math.round(clamp(
+    s.forgettingRisk*0.30+
+    (100-s.mastery)*0.24+
+    (100-s.predictedRetention7d)*0.14+
+    (100-s.accuracy)*0.12+
+    prioritySignal(state)*0.10+
+    trendBoost*0.06+
+    s.applicationGap*0.04,
+    0,100
+  ));
+}
+
+function chooseOptimizationMethod(state={}){
+  const s=normalizeTopicState(state);
+  if(s.mastery<42||s.lapseCount>=4)return Object.freeze({method:'focused_restudy',label:'Reestudo direcionado'});
+  if(s.retention>=70&&(s.accuracy<65||s.applicationGap>=18))return Object.freeze({method:'questions',label:'Questões de validação'});
+  if(s.retention<55)return Object.freeze({method:'active_recall',label:'Recuperação ativa'});
+  if(s.retention<70)return Object.freeze({method:'short_review',label:'Revisão curta'});
+  if(s.accuracy<75)return Object.freeze({method:'questions',label:'Questões comentadas'});
+  return Object.freeze({method:'questions',label:'Questões de manutenção'});
+}
+
+function expectedGain(state={},minutes=25){
+  const s=normalizeTopicState(state);
+  const evidence=s.evidenceLevel==='high'?1:s.evidenceLevel==='medium'?0.86:0.72;
+  const opportunity=clamp((100-s.mastery)*0.62+s.forgettingRisk*0.38,0,100);
+  const timeFactor=1-Math.exp(-Math.max(0,Number(minutes)||0)/28);
+  return Number(clamp(opportunity*timeFactor*0.34*evidence,0,25).toFixed(1));
+}
+
+function assessTopic(profile={},topicId,stateOverride=null){
+  const id=clean(topicId,640).toLowerCase();
+  const state=stateOverride||profile?.topicState?.[id]||null;
+  if(!state)return null;
+  const signals=normalizeTopicState(state);
+  return Object.freeze({
+    schemaVersion:SCHEMA_VERSION,
+    topicId:id,
+    ...signals,
+    optimizationScore:optimizationScore(state),
+    optimizationMethod:chooseOptimizationMethod(state),
+    importedOrderMutation:false
+  });
 }
 
 function topicEntries(profile){
   return Object.entries(profile?.topicState||{}).map(([key,topic],index)=>({key,index,topic,domain:topic?.domainRisk||null}));
 }
-
 function weightedAverage(entries,field){
-  let total=0;
-  let weighted=0;
-  entries.forEach(entry=>{
-    const value=Number(entry.domain?.[field]);
-    if(!Number.isFinite(value))return;
-    const weight=Math.max(1,Number(entry.domain?.priorityWeight)||1);
-    total+=weight;
-    weighted+=value*weight;
-  });
+  let total=0,weighted=0;
+  for(const entry of entries){
+    const value=finite(entry.domain?.[field]);
+    if(value==null)continue;
+    const weight=Math.max(1,finite(entry.domain?.priorityWeight)??1);
+    total+=weight;weighted+=value*weight;
+  }
   return total?Math.round(weighted/total):null;
 }
-
 function evidenceCoverage(entries){
   if(!entries.length)return 0;
-  const supported=entries.filter(entry=>['medium','high'].includes(entry.domain?.evidenceLevel)).length;
-  return Math.round(supported/entries.length*100);
+  return Math.round(entries.filter(entry=>['medium','high'].includes(entry.domain?.evidenceLevel)).length/entries.length*100);
 }
-
-function riskLabel(value){
-  return value==='high'?'Alto':value==='medium'?'Médio':'Baixo';
-}
-function evidenceLabel(value){
-  return value==='high'?'evidência alta':value==='medium'?'evidência média':'evidência inicial';
-}
-function trendLabel(value){
-  return value==='improving'?'↑ melhorando':value==='declining'?'↓ caindo':value==='stable'?'→ estável':'• aprendendo padrão';
-}
-
 function getAttentionQueue(profile,limit=MAX_ATTENTION){
-  const entries=topicEntries(profile);
-  return entries
+  return topicEntries(profile)
     .filter(entry=>entry.domain&&entry.domain.riskBand!=='low')
-    .slice()
-    .sort((a,b)=>{
-      const risk=Number(b.domain.forgettingRisk)-Number(a.domain.forgettingRisk);
-      if(risk)return risk;
-      const mastery=Number(a.domain.masteryScore)-Number(b.domain.masteryScore);
-      if(mastery)return mastery;
-      return a.index-b.index;
-    })
+    .sort((a,b)=>Number(b.domain.forgettingRisk)-Number(a.domain.forgettingRisk)||Number(a.domain.masteryScore)-Number(b.domain.masteryScore)||a.index-b.index)
     .slice(0,Math.max(1,Number(limit)||MAX_ATTENTION));
 }
-
 function buildViewModel(profile){
   const entries=topicEntries(profile);
-  const attention=getAttentionQueue(profile);
   return Object.freeze({
     schemaVersion:SCHEMA_VERSION,
     observedTopics:entries.length,
@@ -83,129 +129,25 @@ function buildViewModel(profile){
     highRiskTopics:Number(profile?.metrics?.highRiskTopics)||0,
     mediumRiskTopics:Number(profile?.metrics?.mediumRiskTopics)||0,
     atRiskTopics:Number(profile?.metrics?.atRiskTopics)||0,
-    attention
+    attention:getAttentionQueue(profile)
   });
 }
-
-function setText(id,value){
-  const element=document.getElementById(id);
-  if(element)element.textContent=value;
-}
-function setProgress(id,value){
-  const element=document.getElementById(id);
-  if(!element)return;
-  element.max=100;
-  element.value=clamp(value);
-}
-
-function renderAttention(viewModel){
-  const list=document.getElementById('phase6aAttentionList');
-  if(!list)return;
-  if(!viewModel.observedTopics){
-    list.innerHTML='<div class="domain-risk-empty">Os indicadores aparecerão conforme houver sessões, revisões e questões registradas.</div>';
-    return;
-  }
-  if(!viewModel.attention.length){
-    list.innerHTML='<div class="domain-risk-empty domain-risk-empty-success">Nenhum assunto apresenta risco cognitivo relevante neste momento.</div>';
-    return;
-  }
-  list.innerHTML=viewModel.attention.map(entry=>{
-    const topic=entry.topic||{};
-    const domain=entry.domain||{};
-    return `<article class="domain-risk-topic risk-${escapeHtml(domain.riskBand)}" data-topic-key="${escapeHtml(entry.key)}">
-      <div class="domain-risk-topic-head">
-        <div><strong>${escapeHtml(topic.materia)} — ${escapeHtml(topic.assunto)}</strong><span>${escapeHtml(trendLabel(domain.trend))} · ${escapeHtml(evidenceLabel(domain.evidenceLevel))}</span></div>
-        <span class="domain-risk-topic-badge ${escapeHtml(domain.riskBand)}">${escapeHtml(riskLabel(domain.riskBand))}</span>
-      </div>
-      <div class="domain-risk-topic-metrics">
-        <span><b>${pct(domain.masteryScore)}</b> domínio</span>
-        <span><b>${pct(domain.predictedRetention7d)}</b> retenção em 7d</span>
-        <span><b>${pct(domain.forgettingRisk)}</b> risco</span>
-      </div>
-    </article>`;
-  }).join('');
-}
-
-function emitUpdate(profile,viewModel){
-  const fingerprint=JSON.stringify([
-    profile?.userId,profile?.contest,profile?.updatedAt,
-    viewModel.weightedMastery,viewModel.weightedCoverage,viewModel.predictedRetention7d,
-    viewModel.highRiskTopics,viewModel.mediumRiskTopics
-  ]);
-  if(fingerprint===lastFingerprint)return;
-  lastFingerprint=fingerprint;
+function resolveProfile(){
   try{
-    global.dispatchEvent(new CustomEvent('app:domain-risk-updated',{detail:{
-      userId:profile?.userId||null,
-      contest:profile?.contest||null,
-      weightedMastery:viewModel.weightedMastery,
-      weightedCoverage:viewModel.weightedCoverage,
-      predictedRetention7d:viewModel.predictedRetention7d,
-      evidenceCoverage:viewModel.evidenceCoverage,
-      highRiskTopics:viewModel.highRiskTopics,
-      mediumRiskTopics:viewModel.mediumRiskTopics,
-      atRiskTopics:viewModel.atRiskTopics
-    }}));
-  }catch(_){}
+    const source=global.AppCognitiveDataSource?.snapshot?.()||null;
+    if(!source?.userId)return null;
+    return global.AppCognitiveProfile?.peek?.(source.userId,source.contest)||global.AppCognitiveProfile?.read?.(source.userId,source.contest)||null;
+  }catch(_){return null}
 }
-
-function render(profile=resolveProfile()){
-  const panel=document.getElementById('phase6aDomainRiskPanel');
-  if(!panel)return null;
-  if(!profile){
-    setText('phase6aWeightedMastery','—');
-    setText('phase6aWeightedCoverage','—');
-    setText('phase6aPredictedRetention','—');
-    setText('phase6aHighRisk','0');
-    ['phase6aWeightedMasteryProgress','phase6aWeightedCoverageProgress','phase6aPredictedRetentionProgress','phase6aEvidenceProgress'].forEach(id=>setProgress(id,0));
-    renderAttention({observedTopics:0,attention:[]});
-    return null;
-  }
-  const viewModel=buildViewModel(profile);
-  setText('phase6aWeightedMastery',pct(viewModel.weightedMastery));
-  setText('phase6aWeightedCoverage',pct(viewModel.weightedCoverage));
-  setText('phase6aPredictedRetention',pct(viewModel.predictedRetention7d));
-  setText('phase6aHighRisk',String(viewModel.highRiskTopics));
-  setText('phase6aEvidenceLabel',`${viewModel.evidenceCoverage}% dos assuntos com evidência média/alta`);
-  setProgress('phase6aWeightedMasteryProgress',viewModel.weightedMastery);
-  setProgress('phase6aWeightedCoverageProgress',viewModel.weightedCoverage);
-  setProgress('phase6aPredictedRetentionProgress',viewModel.predictedRetention7d||0);
-  setProgress('phase6aEvidenceProgress',viewModel.evidenceCoverage);
-  renderAttention(viewModel);
-  emitUpdate(profile,viewModel);
-  return viewModel;
-}
-
 function findTopicInsight(materia,assunto,profile=resolveProfile()){
-  const mat=safe(materia).toLowerCase();
-  const topic=safe(assunto).toLowerCase();
-  const found=topicEntries(profile).find(entry=>safe(entry.topic?.materia).toLowerCase()===mat&&safe(entry.topic?.assunto).toLowerCase()===topic);
+  const mat=clean(materia,180).toLowerCase();
+  const topic=clean(assunto,400).toLowerCase();
+  const found=topicEntries(profile).find(entry=>clean(entry.topic?.materia,180).toLowerCase()===mat&&clean(entry.topic?.assunto,400).toLowerCase()===topic);
   return found?Object.freeze({key:found.key,...found.topic,domainRisk:found.domain}):null;
 }
 
-function scheduleRender(delay=80){
-  global.clearTimeout(retryTimer);
-  retryTimer=global.setTimeout(()=>render(),Math.max(0,Number(delay)||0));
-}
-
-function bootstrap(){
-  render();
-  global.addEventListener?.('app:cognitive-profile-updated',()=>scheduleRender(40));
-  global.addEventListener?.('appstate:changed',()=>scheduleRender(80));
-  global.addEventListener?.('pageshow',()=>scheduleRender(80),{passive:true});
-  global.addEventListener?.('study:contest-changed',()=>scheduleRender(80));
-}
-
-global.AppDomainRiskDashboard=Object.freeze({
-  schemaVersion:SCHEMA_VERSION,
-  buildViewModel,
-  getAttentionQueue,
-  findTopicInsight,
-  resolveProfile,
-  render,
-  scheduleRender
-});
-
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootstrap,{once:true});
-else bootstrap();
+const API=Object.freeze({schemaVersion:SCHEMA_VERSION,normalizeTopicState,prioritySignal,optimizationScore,chooseOptimizationMethod,expectedGain,assessTopic,topicEntries,getAttentionQueue,buildViewModel,resolveProfile,findTopicInsight});
+global.AppTopicAssessment=API;
+global.AppDomainRiskDashboard=Object.freeze({schemaVersion:SCHEMA_VERSION,buildViewModel,getAttentionQueue,findTopicInsight,resolveProfile,render:()=>null,scheduleRender:()=>null,headless:true});
+if(typeof global.CustomEvent==='function')global.dispatchEvent?.(new global.CustomEvent('study:topic-assessment-ready',{detail:{schemaVersion:SCHEMA_VERSION,headless:true}}));
 })(window);

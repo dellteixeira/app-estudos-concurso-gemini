@@ -6,10 +6,12 @@ const critical=fs.readFileSync('public/js/critical-points-actions.js','utf8');
 const dashboard=fs.readFileSync('public/js/core/study-optimization-dashboard.js','utf8');
 const css=fs.readFileSync('public/css/study-optimization.css','utf8');
 
-test('standalone Phase 6 dashboards stay hidden',()=>{
+test('standalone Phase 6 dashboards stay hidden behind a headless compatibility facade',()=>{
   assert.match(css,/#phase6aDomainRiskPanel,#phase6bStudyOptimizationPanel\{display:none!important;\}/);
-  assert.match(dashboard,/const UI_ENABLED=false;/);
-  assert.match(dashboard,/function ensurePanel\(\)\{\n  if\(!UI_ENABLED\)return null;/);
+  assert.match(dashboard,/disabled:true/);
+  assert.match(dashboard,/headless:true/);
+  assert.match(dashboard,/init:\(\)=>false/);
+  assert.doesNotMatch(dashboard,/buildPlan\(/);
 });
 
 test('Critical Points consumes Phase 6A domain risk without adding visible markup',()=>{
