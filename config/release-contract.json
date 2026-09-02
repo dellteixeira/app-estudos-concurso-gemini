@@ -1,6 +1,8 @@
 {
-  "version": "10.64.37",
-  "versionCode": 106439,
-  "tag": "v10.64.37",
-  "responsivePolishAsset": "responsive-polish-v10.64.37.css"
+  "version": "10.64.38",
+  "android": {
+    "revision": 1,
+    "versionCode": 106440,
+    "package": "com.estudoadaptativo.app"
+  }
 }
