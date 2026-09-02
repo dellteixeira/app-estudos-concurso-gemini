@@ -17,10 +17,23 @@ test('Android Release só executa após Canonical GitHub Release', () => {
 });
 
 test('Android Release constrói a revisão canônica verificada', () => {
-  assert.match(workflow, /ref: \$\{\{ github\.event_name == 'workflow_run' && github\.event\.workflow_run\.head_sha \|\| 'main' \}\}/);
+  assert.match(workflow, /ref: \$\{\{ github\.event_name == 'workflow_run' && github\.event\.workflow_run\.head_sha \|\| inputs\.release_tag \}\}/);
+  assert.doesNotMatch(workflow, /\|\| 'main'/);
   assert.match(workflow, /tag_sha="\$\(git rev-list -n 1 "\$RELEASE_TAG"\)"/);
   assert.match(workflow, /current_sha="\$\(git rev-parse HEAD\)"/);
   assert.match(workflow, /if \[ "\$tag_sha" != "\$current_sha" \]; then/);
+});
+
+test('Backfill manual exige tag canônica explícita', () => {
+  assert.match(workflow, /workflow_dispatch:\s*\n\s+inputs:\s*\n\s+release_tag:/);
+  assert.match(workflow, /release_tag:[\s\S]*required:\s*true/);
+  assert.match(workflow, /release_tag:[\s\S]*type:\s*string/);
+});
+
+test('Manifesto registra o SHA realmente construído', () => {
+  assert.match(workflow, /SOURCE_COMMIT="\$\(git rev-parse HEAD\)"/);
+  assert.match(workflow, /"sourceCommit": "\$\{SOURCE_COMMIT\}"/);
+  assert.doesNotMatch(workflow, /"sourceCommit": "\$\{GITHUB_SHA\}"/);
 });
 
 test('Android Release não usa polling temporal para aguardar release', () => {

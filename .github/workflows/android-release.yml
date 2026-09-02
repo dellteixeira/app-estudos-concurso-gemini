@@ -6,6 +6,11 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tag canônica existente para backfill (ex.: v10.64.41)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -30,7 +35,7 @@ jobs:
       - name: Checkout canonical release revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.release_tag }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -211,6 +216,7 @@ jobs:
           OUT="dist/android/direct"
           mkdir -p "$OUT"
           FINAL="EstudoAdaptativo-v${ANDROID_VERSION_NAME}-android-release.apk"
+          SOURCE_COMMIT="$(git rev-parse HEAD)"
           cp android/app/build/outputs/apk/release/app-release.apk "$OUT/$FINAL"
           sha256sum "$OUT/$FINAL" | tee "$OUT/SHA256SUMS.txt"
           cp android-release-signature.txt "$OUT/android-release-signature.txt"
@@ -237,7 +243,7 @@ jobs:
             "format": "APK",
             "signed": true,
             "aabProduced": false,
-            "sourceCommit": "${GITHUB_SHA}",
+            "sourceCommit": "${SOURCE_COMMIT}",
             "workflowRun": "${GITHUB_RUN_ID}",
             "permanentReleaseTag": "${RELEASE_TAG}"
           }
