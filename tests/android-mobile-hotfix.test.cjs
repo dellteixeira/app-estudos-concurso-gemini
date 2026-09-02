@@ -31,6 +31,14 @@ test('retention metric icons are removed on web and mobile while titles stay com
   assert.match(sharedCss, /@media \(max-width: 700px\)[\s\S]*\.rd-metric-label-v1077[\s\S]*font-size:\s*clamp\(\.74rem,\s*3\.1vw,\s*\.84rem\)\s*!important/);
 });
 
+test('retention cards and actions stay optically centered on Android mobile', () => {
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077\s*\{[\s\S]*justify-items:\s*center\s*!important[\s\S]*text-align:\s*center\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-label-v1077,[\s\S]*\.rd-metric-card-v1077 > strong[\s\S]*justify-self:\s*center\s*!important[\s\S]*text-align:\s*center\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.rd-metric-card-v1077 > strong\s*\{[\s\S]*display:\s*flex\s*!important[\s\S]*justify-content:\s*center\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.retention-diagnostic-tools\s*\{[\s\S]*align-items:\s*center\s*!important[\s\S]*justify-content:\s*center\s*!important/);
+  assert.match(css, /#retentionDiagnosticPanel \.retention-study-now-v1072,[\s\S]*\.retention-export-btn[\s\S]*width:\s*min\(100%, 420px\)\s*!important[\s\S]*margin-inline:\s*auto\s*!important[\s\S]*text-align:\s*center\s*!important/);
+});
+
 test('library list mode has a distinct compact grid on mobile', () => {
   assert.match(css, /#pdfLibraryGrid\.pdf-library-grid\.pdf-library-list-view \.pdf-library-card\s*\{[\s\S]*display:\s*grid\s*!important/);
   assert.match(css, /grid-template-areas:[\s\S]*"title actions"/);
