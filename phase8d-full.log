@@ -1,0 +1,5282 @@
+
+> estudo-adaptativo-inteligente@10.64.40 test
+> node --test tests/*.test.cjs
+
+TAP version 13
+# Subtest: módulo adaptativo possui sintaxe JavaScript válida
+ok 1 - módulo adaptativo possui sintaxe JavaScript válida
+  ---
+  duration_ms: 40.486561
+  type: 'test'
+  ...
+# Subtest: separa necessidade cognitiva de revisão vencida no cronograma
+ok 2 - separa necessidade cognitiva de revisão vencida no cronograma
+  ---
+  duration_ms: 0.438858
+  type: 'test'
+  ...
+# Subtest: cronograma futuro pode prevalecer sobre nextReviewAt cognitivo sem apagar o sinal do cérebro
+ok 3 - cronograma futuro pode prevalecer sobre nextReviewAt cognitivo sem apagar o sinal do cérebro
+  ---
+  duration_ms: 0.28394
+  type: 'test'
+  ...
+# Subtest: assunto pendente futuro não entra no diagnóstico antes do início real do novo ciclo
+ok 4 - assunto pendente futuro não entra no diagnóstico antes do início real do novo ciclo
+  ---
+  duration_ms: 0.187026
+  type: 'test'
+  ...
+# Subtest: risco cognitivo é preservado mesmo sem revisão agendada vencida
+ok 5 - risco cognitivo é preservado mesmo sem revisão agendada vencida
+  ---
+  duration_ms: 0.286062
+  type: 'test'
+  ...
+# Subtest: itens antigos pendentes redistribuídos são removidos do passado sem apagar concluídos
+ok 6 - itens antigos pendentes redistribuídos são removidos do passado sem apagar concluídos
+  ---
+  duration_ms: 0.183941
+  type: 'test'
+  ...
+# Subtest: geração, reorganização e limpeza passam pela mesma reconciliação de mutação
+ok 7 - geração, reorganização e limpeza passam pela mesma reconciliação de mutação
+  ---
+  duration_ms: 0.181538
+  type: 'test'
+  ...
+# Subtest: reconciliação atualiza calendário, diagnóstico, overview e IA contextual
+ok 8 - reconciliação atualiza calendário, diagnóstico, overview e IA contextual
+  ---
+  duration_ms: 0.155149
+  type: 'test'
+  ...
+# Subtest: reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca PDF
+ok 9 - reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca PDF
+  ---
+  duration_ms: 0.581138
+  type: 'test'
+  ...
+# Subtest: reconciliação faz parte do app shell offline
+ok 10 - reconciliação faz parte do app shell offline
+  ---
+  duration_ms: 0.532727
+  type: 'test'
+  ...
+# (node:2196) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/src/ai-model-router.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: configuração explícita preserva modelos primário e fast
+ok 11 - configuração explícita preserva modelos primário e fast
+  ---
+  duration_ms: 1.722804
+  type: 'test'
+  ...
+# Subtest: diagnóstico curto usa tier fast e mantém autoridade determinística
+ok 12 - diagnóstico curto usa tier fast e mantém autoridade determinística
+  ---
+  duration_ms: 0.41343
+  type: 'test'
+  ...
+# Subtest: diagnóstico com vários tópicos de alta fricção sobe no máximo para standard
+ok 13 - diagnóstico com vários tópicos de alta fricção sobe no máximo para standard
+  ---
+  duration_ms: 0.368974
+  type: 'test'
+  ...
+# Subtest: pergunta simples do Tutor pode usar fast
+ok 14 - pergunta simples do Tutor pode usar fast
+  ---
+  duration_ms: 1.077231
+  type: 'test'
+  ...
+# Subtest: pergunta contextual complexa e sensível a fonte pode usar reasoning
+ok 15 - pergunta contextual complexa e sensível a fonte pode usar reasoning
+  ---
+  duration_ms: 0.477696
+  type: 'test'
+  ...
+# Subtest: sem modelos alternativos todos os tiers recaem no modelo primário configurado
+ok 16 - sem modelos alternativos todos os tiers recaem no modelo primário configurado
+  ---
+  duration_ms: 0.229669
+  type: 'test'
+  ...
+# Subtest: endpoint codifica o nome do modelo
+ok 17 - endpoint codifica o nome do modelo
+  ---
+  duration_ms: 0.527118
+  type: 'test'
+  ...
+# Subtest: Tutor e Learning Advisor usam o roteador e preservam fallback local
+ok 18 - Tutor e Learning Advisor usam o roteador e preservam fallback local
+  ---
+  duration_ms: 0.437086
+  type: 'test'
+  ...
+# Subtest: calendar mobile hotfix preserves seven columns and two-digit days
+ok 19 - calendar mobile hotfix preserves seven columns and two-digit days
+  ---
+  duration_ms: 1.328752
+  type: 'test'
+  ...
+# Subtest: retention metric icons are removed on web and mobile while titles stay compact and readable
+ok 20 - retention metric icons are removed on web and mobile while titles stay compact and readable
+  ---
+  duration_ms: 0.51467
+  type: 'test'
+  ...
+# Subtest: library list mode has a distinct compact grid on mobile
+ok 21 - library list mode has a distinct compact grid on mobile
+  ---
+  duration_ms: 0.331078
+  type: 'test'
+  ...
+# Subtest: native hotfix is sourced outside public and injected only during Android build
+ok 22 - native hotfix is sourced outside public and injected only during Android build
+  ---
+  duration_ms: 0.247726
+  type: 'test'
+  ...
+# Subtest: native hotfix injects canonical web logo into Android launcher
+ok 23 - native hotfix injects canonical web logo into Android launcher
+  ---
+  duration_ms: 0.17617
+  type: 'test'
+  ...
+# Subtest: APK identity follows the canonical release contract
+ok 24 - APK identity follows the canonical release contract
+  ---
+  duration_ms: 1.607243
+  type: 'test'
+  ...
+# Subtest: versionedUrl appends current app version
+ok 25 - versionedUrl appends current app version
+  ---
+  duration_ms: 6.041761
+  type: 'test'
+  ...
+# Subtest: loadScript deduplicates the same versioned asset
+ok 26 - loadScript deduplicates the same versioned asset
+  ---
+  duration_ms: 3.707845
+  type: 'test'
+  ...
+# Subtest: versioned request reuses an already loaded legacy script with the same pathname
+ok 27 - versioned request reuses an already loaded legacy script with the same pathname
+  ---
+  duration_ms: 3.413049
+  type: 'test'
+  ...
+# Subtest: core features are registered for chart and PDF lazy loading
+ok 28 - core features are registered for chart and PDF lazy loading
+  ---
+  duration_ms: 5.232046
+  type: 'test'
+  ...
+# Subtest: tela de autenticação exibe logo centralizada e responsiva
+ok 29 - tela de autenticação exibe logo centralizada e responsiva
+  ---
+  duration_ms: 5.541593
+  type: 'test'
+  ...
+# Encrypted external backup security contract OK
+# Subtest: tests/backup-security.test.cjs
+ok 6 - tests/backup-security.test.cjs
+  ---
+  duration_ms: 45.28854
+  type: 'test'
+  ...
+# Subtest: Cronograma mostra Matérias Atrasadas sem tabs de período
+ok 31 - Cronograma mostra Matérias Atrasadas sem tabs de período
+  ---
+  duration_ms: 1.562542
+  type: 'test'
+  ...
+# Subtest: código não mantém estado, função, handlers ou export das abas removidas
+ok 32 - código não mantém estado, função, handlers ou export das abas removidas
+  ---
+  duration_ms: 0.845572
+  type: 'test'
+  ...
+# Subtest: painel renderiza exclusivamente grupos vencidos
+ok 33 - painel renderiza exclusivamente grupos vencidos
+  ---
+  duration_ms: 0.407914
+  type: 'test'
+  ...
+# Subtest: deploy do Cloudflare só ocorre após Quality Check verde da main ou execução manual
+ok 34 - deploy do Cloudflare só ocorre após Quality Check verde da main ou execução manual
+  ---
+  duration_ms: 1.32425
+  type: 'test'
+  ...
+# Subtest: workflow publica exatamente a revisão validada com Wrangler pinado
+ok 35 - workflow publica exatamente a revisão validada com Wrangler pinado
+  ---
+  duration_ms: 0.268507
+  type: 'test'
+  ...
+# Subtest: workflow injeta e valida identidade exata de versão SHA e build em produção
+ok 36 - workflow injeta e valida identidade exata de versão SHA e build em produção
+  ---
+  duration_ms: 0.199395
+  type: 'test'
+  ...
+# Subtest: deploys antigos são cancelados quando uma revisão mais nova precisa ser publicada
+ok 37 - deploys antigos são cancelados quando uma revisão mais nova precisa ser publicada
+  ---
+  duration_ms: 0.140257
+  type: 'test'
+  ...
+# Subtest: resolve authenticated user from Supabase persisted session without global currentUser
+ok 38 - resolve authenticated user from Supabase persisted session without global currentUser
+  ---
+  duration_ms: 6.913883
+  type: 'test'
+  ...
+# Subtest: buildRows uses live retention and question performance from retention engine
+ok 39 - buildRows uses live retention and question performance from retention engine
+  ---
+  duration_ms: 1.050986
+  type: 'test'
+  ...
+# Subtest: buildRows transports imported edital priorities without recalculating them
+ok 40 - buildRows transports imported edital priorities without recalculating them
+  ---
+  duration_ms: 4.299633
+  type: 'test'
+  ...
+# Subtest: refresh scopes cognitive snapshot to authenticated user and selected contest
+ok 41 - refresh scopes cognitive snapshot to authenticated user and selected contest
+  ---
+  duration_ms: 3.699646
+  type: 'test'
+  ...
+# Subtest: runtime wraps study mutations without changing their return values
+ok 42 - runtime wraps study mutations without changing their return values
+  ---
+  duration_ms: 4.541422
+  type: 'test'
+  ...
+# Subtest: renderRetentionDiagnostics is never monkey-patched as a cognitive mutation
+ok 43 - renderRetentionDiagnostics is never monkey-patched as a cognitive mutation
+  ---
+  duration_ms: 1.291041
+  type: 'test'
+  ...
+# Subtest: fingerprint changes when any tracked topic changes, not only the last row
+ok 44 - fingerprint changes when any tracked topic changes, not only the last row
+  ---
+  duration_ms: 3.971378
+  type: 'test'
+  ...
+# Subtest: snapshot reads authenticated lexical context without exposing scheduler state
+ok 45 - snapshot reads authenticated lexical context without exposing scheduler state
+  ---
+  duration_ms: 3.247907
+  type: 'test'
+  ...
+# Subtest: datasource transporta a prioridade, mas não expõe API para mutá-la
+ok 46 - datasource transporta a prioridade, mas não expõe API para mutá-la
+  ---
+  duration_ms: 1.673417
+  type: 'test'
+  ...
+# Subtest: buildProfile aggregates cognitive metrics without changing schedule state
+ok 47 - buildProfile aggregates cognitive metrics without changing schedule state
+  ---
+  duration_ms: 4.83094
+  type: 'test'
+  ...
+# Subtest: imported edital priority is transported as immutable metadata
+ok 48 - imported edital priority is transported as immutable metadata
+  ---
+  duration_ms: 1.355737
+  type: 'test'
+  ...
+# Subtest: fractional retention and accuracy are normalized to percentage scale
+ok 49 - fractional retention and accuracy are normalized to percentage scale
+  ---
+  duration_ms: 2.929946
+  type: 'test'
+  ...
+# Subtest: current intervention effectiveness aggregate is accepted by profile build
+ok 50 - current intervention effectiveness aggregate is accepted by profile build
+  ---
+  duration_ms: 1.312102
+  type: 'test'
+  ...
+# Subtest: refresh persists profile scoped by user and contest
+ok 51 - refresh persists profile scoped by user and contest
+  ---
+  duration_ms: 1.895836
+  type: 'test'
+  ...
+# Subtest: menu compacto substitui a barra horizontal sem duplicar handlers
+ok 52 - menu compacto substitui a barra horizontal sem duplicar handlers
+  ---
+  duration_ms: 2.053249
+  type: 'test'
+  ...
+# Subtest: ordem do menu termina com Conta, tema e Sair
+ok 53 - ordem do menu termina com Conta, tema e Sair
+  ---
+  duration_ms: 0.401615
+  type: 'test'
+  ...
+# Subtest: menu fecha por clique externo, seleção e Escape com aria sincronizado
+ok 54 - menu fecha por clique externo, seleção e Escape com aria sincronizado
+  ---
+  duration_ms: 0.362647
+  type: 'test'
+  ...
+# Subtest: dropdown é ancorado ao hambúrguer, responsivo e suporta tema claro
+ok 55 - dropdown é ancorado ao hambúrguer, responsivo e suporta tema claro
+  ---
+  duration_ms: 0.450747
+  type: 'test'
+  ...
+# Subtest: Tutor contextual monta pacote com contratos reais das engines
+ok 56 - Tutor contextual monta pacote com contratos reais das engines
+  ---
+  duration_ms: 4.056013
+  type: 'test'
+  ...
+# Subtest: Tutor não expõe API de mutação de agenda
+ok 57 - Tutor não expõe API de mutação de agenda
+  ---
+  duration_ms: 0.397408
+  type: 'test'
+  ...
+# Subtest: Backend autentica, limita contexto e declara autoridade determinística
+ok 58 - Backend autentica, limita contexto e declara autoridade determinística
+  ---
+  duration_ms: 0.176291
+  type: 'test'
+  ...
+# Subtest: Worker publica rota contextual separada do diagnóstico
+ok 59 - Worker publica rota contextual separada do diagnóstico
+  ---
+  duration_ms: 0.23704
+  type: 'test'
+  ...
+# Subtest: phase 3 extracted backup store has valid syntax and stable API
+ok 60 - phase 3 extracted backup store has valid syntax and stable API
+  ---
+  duration_ms: 35.881477
+  type: 'test'
+  ...
+# Subtest: app-core delegates extracted backup responsibilities instead of owning persistence
+ok 61 - app-core delegates extracted backup responsibilities instead of owning persistence
+  ---
+  duration_ms: 0.473441
+  type: 'test'
+  ...
+# Subtest: extracted module loads before app-core and is governed by every production cache layer
+ok 62 - extracted module loads before app-core and is governed by every production cache layer
+  ---
+  duration_ms: 0.469455
+  type: 'test'
+  ...
+# Subtest: phase 4 critical e2e covers real app shell, AppState, SyncEngine and offline transition
+ok 63 - phase 4 critical e2e covers real app shell, AppState, SyncEngine and offline transition
+  ---
+  duration_ms: 0.20311
+  type: 'test'
+  ...
+# Subtest: release identity is synchronized with canonical package version
+ok 64 - release identity is synchronized with canonical package version
+  ---
+  duration_ms: 0.381465
+  type: 'test'
+  ...
+# Subtest: pontos críticos mantêm três ações na mesma linha
+ok 65 - pontos críticos mantêm três ações na mesma linha
+  ---
+  duration_ms: 1.390128
+  type: 'test'
+  ...
+# Subtest: release do ajuste visual permanece na linha canônica 10.64.x
+ok 66 - release do ajuste visual permanece na linha canônica 10.64.x
+  ---
+  duration_ms: 0.213586
+  type: 'test'
+  ...
+# Subtest: botões dos pontos críticos cabem sem sobreposição
+ok 67 - botões dos pontos críticos cabem sem sobreposição
+  ---
+  duration_ms: 1.437958
+  type: 'test'
+  ...
+# Subtest: release do ajuste permanece na linha canônica 10.64.x
+ok 68 - release do ajuste permanece na linha canônica 10.64.x
+  ---
+  duration_ms: 0.209951
+  type: 'test'
+  ...
+# Subtest: ações críticas são filhas diretas do card e não da coluna de texto
+ok 69 - ações críticas são filhas diretas do card e não da coluna de texto
+  ---
+  duration_ms: 1.357739
+  type: 'test'
+  ...
+# Subtest: grupo de ações atravessa a coluna de conteúdo até o fim do card
+ok 70 - grupo de ações atravessa a coluna de conteúdo até o fim do card
+  ---
+  duration_ms: 0.288066
+  type: 'test'
+  ...
+# Subtest: release canônica não regride abaixo da correção estrutural 10.64.15
+ok 71 - release canônica não regride abaixo da correção estrutural 10.64.15
+  ---
+  duration_ms: 0.273044
+  type: 'test'
+  ...
+# Subtest: botões de pontos críticos não quebram seus rótulos
+ok 72 - botões de pontos críticos não quebram seus rótulos
+  ---
+  duration_ms: 1.402035
+  type: 'test'
+  ...
+# Subtest: correção permanece na linha canônica 10.64.x
+ok 73 - correção permanece na linha canônica 10.64.x
+  ---
+  duration_ms: 0.212925
+  type: 'test'
+  ...
+# Subtest: módulo de ações dos pontos críticos possui sintaxe válida
+ok 74 - módulo de ações dos pontos críticos possui sintaxe válida
+  ---
+  duration_ms: 38.426293
+  type: 'test'
+  ...
+# Subtest: risco global preserva pesos e usa Student Model como fonte canônica quando disponível
+ok 75 - risco global preserva pesos e usa Student Model como fonte canônica quando disponível
+  ---
+  duration_ms: 0.390929
+  type: 'test'
+  ...
+# Subtest: Pontos Críticos consome Perfil Cognitivo como Student Model interno sem rerender de alta frequência
+ok 76 - Pontos Críticos consome Perfil Cognitivo como Student Model interno sem rerender de alta frequência
+  ---
+  duration_ms: 0.397849
+  type: 'test'
+  ...
+# Subtest: cartão explicita retenção, score e oferece estudar ou adiar 24h
+ok 77 - cartão explicita retenção, score e oferece estudar ou adiar 24h
+  ---
+  duration_ms: 0.299263
+  type: 'test'
+  ...
+# Subtest: adiamento usa o mesmo snooze de 24h do Learning Advisor e força novo diagnóstico
+ok 78 - adiamento usa o mesmo snooze de 24h do Learning Advisor e força novo diagnóstico
+  ---
+  duration_ms: 0.184052
+  type: 'test'
+  ...
+# Subtest: novo módulo integra núcleo PWA e manifesto offline da versão canônica
+ok 79 - novo módulo integra núcleo PWA e manifesto offline da versão canônica
+  ---
+  duration_ms: 0.438178
+  type: 'test'
+  ...
+# Subtest: cognitive profile updates do not trigger a full retention diagnostics rerender loop
+ok 80 - cognitive profile updates do not trigger a full retention diagnostics rerender loop
+  ---
+  duration_ms: 1.359151
+  type: 'test'
+  ...
+# Subtest: MutationObserver only schedules enhancement of newly rendered cards
+ok 81 - MutationObserver only schedules enhancement of newly rendered cards
+  ---
+  duration_ms: 0.276449
+  type: 'test'
+  ...
+# Subtest: explicit snooze remains allowed to rerender diagnostics
+ok 82 - explicit snooze remains allowed to rerender diagnostics
+  ---
+  duration_ms: 0.272573
+  type: 'test'
+  ...
+# Subtest: Fase 5 mantém uma única camada canônica de UI
+ok 83 - Fase 5 mantém uma única camada canônica de UI
+  ---
+  duration_ms: 1.879291
+  type: 'test'
+  ...
+# Subtest: phase 4 CSS ownership audit passes
+ok 84 - phase 4 CSS ownership audit passes
+  ---
+  duration_ms: 45.398172
+  type: 'test'
+  ...
+# Subtest: exclusão granular seleciona somente o assunto escolhido
+ok 85 - exclusão granular seleciona somente o assunto escolhido
+  ---
+  duration_ms: 1.649441
+  type: 'test'
+  ...
+# Subtest: exclusão granular não remove assunto homônimo de outra matéria
+ok 86 - exclusão granular não remove assunto homônimo de outra matéria
+  ---
+  duration_ms: 0.216069
+  type: 'test'
+  ...
+# Exact production deploy identity contract OK
+# Subtest: tests/deploy-identity.test.cjs
+ok 24 - tests/deploy-identity.test.cjs
+  ---
+  duration_ms: 39.976127
+  type: 'test'
+  ...
+# Subtest: Edital usa um único botão alternável para expandir e recolher guias
+ok 88 - Edital usa um único botão alternável para expandir e recolher guias
+  ---
+  duration_ms: 6.494232
+  type: 'test'
+  ...
+# Subtest: normaliza assunto ignorando caixa, acentos e espaços excedentes
+ok 89 - normaliza assunto ignorando caixa, acentos e espaços excedentes
+  ---
+  duration_ms: 2.588902
+  type: 'test'
+  ...
+# Subtest: chave semântica inclui concurso, matéria e assunto
+ok 90 - chave semântica inclui concurso, matéria e assunto
+  ---
+  duration_ms: 1.140669
+  type: 'test'
+  ...
+# Subtest: dedupe preserva primeiro id e funde todo o progresso sem perder marcações
+ok 91 - dedupe preserva primeiro id e funde todo o progresso sem perder marcações
+  ---
+  duration_ms: 2.106077
+  type: 'test'
+  ...
+# Subtest: findDuplicate bloqueia novo UUID para o mesmo tópico e permite editar o próprio item
+ok 92 - findDuplicate bloqueia novo UUID para o mesmo tópico e permite editar o próprio item
+  ---
+  duration_ms: 2.12787
+  type: 'test'
+  ...
+# Subtest: migração cria proteção única semântica no Supabase
+ok 93 - migração cria proteção única semântica no Supabase
+  ---
+  duration_ms: 0.643583
+  type: 'test'
+  ...
+# Subtest: navigation loads Error Intelligence before cognitive runtime
+ok 94 - navigation loads Error Intelligence before cognitive runtime
+  ---
+  duration_ms: 1.326173
+  type: 'test'
+  ...
+# Subtest: cognitive runtime persists recurringErrors without schedule mutation
+ok 95 - cognitive runtime persists recurringErrors without schedule mutation
+  ---
+  duration_ms: 0.429045
+  type: 'test'
+  ...
+# Subtest: classifies false mastery when retention is high but application is weak
+ok 96 - classifies false mastery when retention is high but application is weak
+  ---
+  duration_ms: 2.88544
+  type: 'test'
+  ...
+# Subtest: classifies forgetting from low retention with lapses
+ok 97 - classifies forgetting from low retention with lapses
+  ---
+  duration_ms: 1.028012
+  type: 'test'
+  ...
+# Subtest: detects overconfidence and persistent difficulty deterministically
+ok 98 - detects overconfidence and persistent difficulty deterministically
+  ---
+  duration_ms: 1.214778
+  type: 'test'
+  ...
+# Subtest: analyzeProfile sorts recurring errors by severity and aggregates patterns
+ok 99 - analyzeProfile sorts recurring errors by severity and aggregates patterns
+  ---
+  duration_ms: 2.615701
+  type: 'test'
+  ...
+# Subtest: engine is analytical only and exposes no scheduling mutation API
+ok 100 - engine is analytical only and exposes no scheduling mutation API
+  ---
+  duration_ms: 0.958558
+  type: 'test'
+  ...
+# Subtest: normalizes known board aliases without inventing a board
+ok 101 - normalizes known board aliases without inventing a board
+  ---
+  duration_ms: 2.889216
+  type: 'test'
+  ...
+# Subtest: requires identifiable provenance before accepting historical incidence
+ok 102 - requires identifiable provenance before accepting historical incidence
+  ---
+  duration_ms: 1.622732
+  type: 'test'
+  ...
+# Subtest: persists board evidence by contest and exposes auditable topic signal
+ok 103 - persists board evidence by contest and exposes auditable topic signal
+  ---
+  duration_ms: 1.934233
+  type: 'test'
+  ...
+# Subtest: keeps contests isolated and returns null when no evidence exists
+ok 104 - keeps contests isolated and returns null when no evidence exists
+  ---
+  duration_ms: 2.246345
+  type: 'test'
+  ...
+# Subtest: flashcard folder keeps only the card count in the action row
+ok 105 - flashcard folder keeps only the card count in the action row
+  ---
+  duration_ms: 1.855646
+  type: 'test'
+  ...
+# Subtest: flashcard folder header remains the control that opens and closes the box
+ok 106 - flashcard folder header remains the control that opens and closes the box
+  ---
+  duration_ms: 0.215409
+  type: 'test'
+  ...
+# Subtest: prompt do Gemini exige aderência lexical e literalidade jurídica
+ok 107 - prompt do Gemini exige aderência lexical e literalidade jurídica
+  ---
+  duration_ms: 1.379281
+  type: 'test'
+  ...
+# Subtest: retry de grounding é curto e exclusivo de answer-not-grounded
+ok 108 - retry de grounding é curto e exclusivo de answer-not-grounded
+  ---
+  duration_ms: 0.214007
+  type: 'test'
+  ...
+# Subtest: hedge antecipado de 4,5s é preservado para não regredir latência
+ok 109 - hedge antecipado de 4,5s é preservado para não regredir latência
+  ---
+  duration_ms: 0.263811
+  type: 'test'
+  ...
+# Subtest: Gemini recebe retry de grounding dentro da tentativa primária
+ok 110 - Gemini recebe retry de grounding dentro da tentativa primária
+  ---
+  duration_ms: 1.615752
+  type: 'test'
+  ...
+# Subtest: validador determinístico não é relaxado
+ok 111 - validador determinístico não é relaxado
+  ---
+  duration_ms: 0.241998
+  type: 'test'
+  ...
+# Subtest: retry usa prompt e orçamento específicos e telemetria explícita
+ok 112 - retry usa prompt e orçamento específicos e telemetria explícita
+  ---
+  duration_ms: 0.210942
+  type: 'test'
+  ...
+# Subtest: backup Supabase preserva banco e está preparado para Storage privado
+ok 113 - backup Supabase preserva banco e está preparado para Storage privado
+  ---
+  duration_ms: 1.144644
+  type: 'test'
+  ...
+# Subtest: baseline não inventa schema remoto e possui capturador verificável
+ok 114 - baseline não inventa schema remoto e possui capturador verificável
+  ---
+  duration_ms: 1.090765
+  type: 'test'
+  ...
+# Subtest: RPC versionada de exclusão usa auth.uid e cobre tabelas conhecidas
+ok 115 - RPC versionada de exclusão usa auth.uid e cobre tabelas conhecidas
+  ---
+  duration_ms: 0.440371
+  type: 'test'
+  ...
+# Subtest: exclusão de conta prepara limpeza do bucket study-pdfs antes do auth.users
+ok 116 - exclusão de conta prepara limpeza do bucket study-pdfs antes do auth.users
+  ---
+  duration_ms: 0.33807
+  type: 'test'
+  ...
+# Subtest: cabeçalho deixa sincronização fora da barra de concurso
+ok 117 - cabeçalho deixa sincronização fora da barra de concurso
+  ---
+  duration_ms: 2.113428
+  type: 'test'
+  ...
+# Subtest: pipeline Supabase valida migrations em PR e aplica somente após merge na main
+ok 118 - pipeline Supabase valida migrations em PR e aplica somente após merge na main
+  ---
+  duration_ms: 0.535623
+  type: 'test'
+  ...
+# Subtest: index não contém handlers de evento inline
+ok 119 - index não contém handlers de evento inline
+  ---
+  duration_ms: 2.368666
+  type: 'test'
+  ...
+# Subtest: app-ui não gera handlers de evento inline dinamicamente
+ok 120 - app-ui não gera handlers de evento inline dinamicamente
+  ---
+  duration_ms: 0.600379
+  type: 'test'
+  ...
+# Subtest: handlers dinâmicos usam delegação por data-*
+ok 121 - handlers dinâmicos usam delegação por data-*
+  ---
+  duration_ms: 1.94548
+  type: 'test'
+  ...
+# Subtest: handlers complexos usam adapters externos sem execução dinâmica
+ok 122 - handlers complexos usam adapters externos sem execução dinâmica
+  ---
+  duration_ms: 0.696842
+  type: 'test'
+  ...
+# Subtest: navegação desktop usa data-tab sem inspecionar onclick
+ok 123 - navegação desktop usa data-tab sem inspecionar onclick
+  ---
+  duration_ms: 1.819353
+  type: 'test'
+  ...
+# Subtest: budget CSP de handlers estáticos é zero
+ok 124 - budget CSP de handlers estáticos é zero
+  ---
+  duration_ms: 0.241898
+  type: 'test'
+  ...
+# Subtest: batch4 keeps historical 75 to 68 contract while later batches may reduce further
+ok 125 - batch4 keeps historical 75 to 68 contract while later batches may reduce further
+  ---
+  duration_ms: 2.220806
+  type: 'test'
+  ...
+# Subtest: batch4 static targets use semantic classes instead of style attributes
+ok 126 - batch4 static targets use semantic classes instead of style attributes
+  ---
+  duration_ms: 1.435575
+  type: 'test'
+  ...
+# Subtest: batch4 CSS preserves migrated presentation
+ok 127 - batch4 CSS preserves migrated presentation
+  ---
+  duration_ms: 2.15517
+  type: 'test'
+  ...
+# Subtest: batch5 keeps inline-style debt at or below 44
+ok 128 - batch5 keeps inline-style debt at or below 44
+  ---
+  duration_ms: 2.160548
+  type: 'test'
+  ...
+# Subtest: batch5 auxiliary targets use semantic classes
+ok 129 - batch5 auxiliary targets use semantic classes
+  ---
+  duration_ms: 1.942115
+  type: 'test'
+  ...
+# Subtest: batch5 migrated component CSS preserves presentation
+ok 130 - batch5 migrated component CSS preserves presentation
+  ---
+  duration_ms: 1.905571
+  type: 'test'
+  ...
+# Subtest: batch6 reduces fixed inline layout budget
+ok 131 - batch6 reduces fixed inline layout budget
+  ---
+  duration_ms: 2.293764
+  type: 'test'
+  ...
+# Subtest: batch6 generated layout classes are present
+ok 132 - batch6 generated layout classes are present
+  ---
+  duration_ms: 1.487061
+  type: 'test'
+  ...
+# Subtest: batch6 leaves runtime-hidden and PDF reader styles untouched
+ok 133 - batch6 leaves runtime-hidden and PDF reader styles untouched
+  ---
+  duration_ms: 1.105276
+  type: 'test'
+  ...
+# Subtest: HTML source has zero inline style attributes
+ok 134 - HTML source has zero inline style attributes
+  ---
+  duration_ms: 5.129753
+  type: 'test'
+  ...
+# Subtest: remaining visibility states use semantic hidden state
+ok 135 - remaining visibility states use semantic hidden state
+  ---
+  duration_ms: 9.780846
+  type: 'test'
+  ...
+# Subtest: Pomodoro progress is class-based and does not write style properties
+ok 136 - Pomodoro progress is class-based and does not write style properties
+  ---
+  duration_ms: 7.248248
+  type: 'test'
+  ...
+# Subtest: state-style batch keeps historical 85 to 82 contract while later batches may reduce further
+ok 137 - state-style batch keeps historical 85 to 82 contract while later batches may reduce further
+  ---
+  duration_ms: 2.235408
+  type: 'test'
+  ...
+# Subtest: permanently hidden file inputs use native hidden attribute
+ok 138 - permanently hidden file inputs use native hidden attribute
+  ---
+  duration_ms: 1.442325
+  type: 'test'
+  ...
+# Subtest: state-style batch does not reintroduce inline event handlers
+ok 139 - state-style batch does not reintroduce inline event handlers
+  ---
+  duration_ms: 1.568041
+  type: 'test'
+  ...
+# Subtest: inline style budget only permits state/dynamic styles after static migration
+ok 140 - inline style budget only permits state/dynamic styles after static migration
+  ---
+  duration_ms: 3.397679
+  type: 'test'
+  ...
+# Subtest: safe presentation-only inline styles are not reintroduced
+ok 141 - safe presentation-only inline styles are not reintroduced
+  ---
+  duration_ms: 1.012629
+  type: 'test'
+  ...
+# Subtest: intervention history is append-only and deduplicates rapid repeated starts
+ok 142 - intervention history is append-only and deduplicates rapid repeated starts
+  ---
+  duration_ms: 4.441984
+  type: 'test'
+  ...
+# Subtest: observeDue appends immediate, 24h and 7d observations without overwriting the start
+ok 143 - observeDue appends immediate, 24h and 7d observations without overwriting the start
+  ---
+  duration_ms: 2.260275
+  type: 'test'
+  ...
+# Subtest: aggregate calculates retention gains and method score by intervention method
+ok 144 - aggregate calculates retention gains and method score by intervention method
+  ---
+  duration_ms: 2.000652
+  type: 'test'
+  ...
+# Subtest: dueWindow requires new study evidence for immediate observation
+ok 145 - dueWindow requires new study evidence for immediate observation
+  ---
+  duration_ms: 1.228379
+  type: 'test'
+  ...
+# Subtest: revisão curta aceita recentemente avança para questões em vez de repetir
+ok 146 - revisão curta aceita recentemente avança para questões em vez de repetir
+  ---
+  duration_ms: 4.232834
+  type: 'test'
+  ...
+# Subtest: observação posterior marca camada como validada com evidência
+ok 147 - observação posterior marca camada como validada com evidência
+  ---
+  duration_ms: 1.224432
+  type: 'test'
+  ...
+# Subtest: questões recentes com desempenho ainda baixo escalam para reestudo
+ok 148 - questões recentes com desempenho ainda baixo escalam para reestudo
+  ---
+  duration_ms: 2.568952
+  type: 'test'
+  ...
+# Subtest: reestudo recente é seguido por questões de validação
+ok 149 - reestudo recente é seguido por questões de validação
+  ---
+  duration_ms: 1.315968
+  type: 'test'
+  ...
+# Subtest: uma única intervenção fora do cooldown pode voltar a ser recomendada
+ok 150 - uma única intervenção fora do cooldown pode voltar a ser recomendada
+  ---
+  duration_ms: 1.152857
+  type: 'test'
+  ...
+# Subtest: duas tentativas recentes sem melhora forçam mudança de estratégia mesmo após cooldown
+ok 151 - duas tentativas recentes sem melhora forçam mudança de estratégia mesmo após cooldown
+  ---
+  duration_ms: 1.400884
+  type: 'test'
+  ...
+# Subtest: app-ui integra política adaptativa e registra a intervenção iniciada
+ok 152 - app-ui integra política adaptativa e registra a intervenção iniciada
+  ---
+  duration_ms: 0.566568
+  type: 'test'
+  ...
+# Subtest: learning advisor persists recommendation history when advice is displayed
+ok 153 - learning advisor persists recommendation history when advice is displayed
+  ---
+  duration_ms: 1.367094
+  type: 'test'
+  ...
+# Subtest: learning advisor supports 24h postpone without studying
+ok 154 - learning advisor supports 24h postpone without studying
+  ---
+  duration_ms: 0.31785
+  type: 'test'
+  ...
+# Subtest: AI recommendation is authoritative for the recommended local layer
+ok 155 - AI recommendation is authoritative for the recommended local layer
+  ---
+  duration_ms: 0.195189
+  type: 'test'
+  ...
+# Subtest: backend selector is constrained to the four layered interventions
+ok 156 - backend selector is constrained to the four layered interventions
+  ---
+  duration_ms: 0.208498
+  type: 'test'
+  ...
+# Subtest: backend penalizes and blocks immediate recommendation repetition
+ok 157 - backend penalizes and blocks immediate recommendation repetition
+  ---
+  duration_ms: 0.180117
+  type: 'test'
+  ...
+# Subtest: advisor e endpoint possuem sintaxe JavaScript válida
+ok 158 - advisor e endpoint possuem sintaxe JavaScript válida
+  ---
+  duration_ms: 147.732853
+  type: 'test'
+  ...
+# Subtest: motor local calcula dificuldade persistente e limita triagem antes da IA
+ok 159 - motor local calcula dificuldade persistente e limita triagem antes da IA
+  ---
+  duration_ms: 0.56102
+  type: 'test'
+  ...
+# Subtest: IA passa a ser contextual de Assuntos em risco, sem faixa permanente no dashboard
+ok 160 - IA passa a ser contextual de Assuntos em risco, sem faixa permanente no dashboard
+  ---
+  duration_ms: 0.411889
+  type: 'test'
+  ...
+# Subtest: janela de risco diferencia revisão agendada vencida de necessidade cognitiva
+ok 161 - janela de risco diferencia revisão agendada vencida de necessidade cognitiva
+  ---
+  duration_ms: 0.264331
+  type: 'test'
+  ...
+# Subtest: IA é explicitamente auxiliar e não agenda automaticamente
+ok 162 - IA é explicitamente auxiliar e não agenda automaticamente
+  ---
+  duration_ms: 0.266785
+  type: 'test'
+  ...
+# Subtest: modal contextual é responsivo e preserva contrato global de texto
+ok 163 - modal contextual é responsivo e preserva contrato global de texto
+  ---
+  duration_ms: 0.202169
+  type: 'test'
+  ...
+# Subtest: endpoint usa roteador Gemini com autenticação, rate limit, schema fechado e fallback local
+ok 164 - endpoint usa roteador Gemini com autenticação, rate limit, schema fechado e fallback local
+  ---
+  duration_ms: 0.268707
+  type: 'test'
+  ...
+# Subtest: wrapper isola nova rota e preserva Worker existente
+ok 165 - wrapper isola nova rota e preserva Worker existente
+  ---
+  duration_ms: 0.146336
+  type: 'test'
+  ...
+# Subtest: advisor faz parte do núcleo PWA e usa política anti-cache
+ok 166 - advisor faz parte do núcleo PWA e usa política anti-cache
+  ---
+  duration_ms: 0.624524
+  type: 'test'
+  ...
+# Subtest: backend expõe diagnóstico autenticado com fallback local
+ok 167 - backend expõe diagnóstico autenticado com fallback local
+  ---
+  duration_ms: 1.431649
+  type: 'test'
+  ...
+# Subtest: advisor possui fallback local real, análise individual e escolha manual
+ok 168 - advisor possui fallback local real, análise individual e escolha manual
+  ---
+  duration_ms: 0.288457
+  type: 'test'
+  ...
+# Subtest: ponto crítico oferece Consultar IA junto com estudar e adiar
+ok 169 - ponto crítico oferece Consultar IA junto com estudar e adiar
+  ---
+  duration_ms: 0.22921
+  type: 'test'
+  ...
+# Subtest: versão e assets permanecem sincronizados
+ok 170 - versão e assets permanecem sincronizados
+  ---
+  duration_ms: 0.435644
+  type: 'test'
+  ...
+# Subtest: Ordenar fica antes de Cards e Lista na barra superior
+ok 171 - Ordenar fica antes de Cards e Lista na barra superior
+  ---
+  duration_ms: 1.328026
+  type: 'test'
+  ...
+# Subtest: ações da Biblioteca usam três colunas iguais
+ok 172 - ações da Biblioteca usam três colunas iguais
+  ---
+  duration_ms: 0.208759
+  type: 'test'
+  ...
+# Subtest: filtros restantes distribuem igualmente a largura
+ok 173 - filtros restantes distribuem igualmente a largura
+  ---
+  duration_ms: 0.246906
+  type: 'test'
+  ...
+# Subtest: Enviar e Cancelar fila permanecem sem Pausar
+ok 174 - Enviar e Cancelar fila permanecem sem Pausar
+  ---
+  duration_ms: 0.251102
+  type: 'test'
+  ...
+# Subtest: Biblioteca usa somente o hook oficial de ativação da guia
+ok 175 - Biblioteca usa somente o hook oficial de ativação da guia
+  ---
+  duration_ms: 1.618585
+  type: 'test'
+  ...
+# Subtest: reabrir Biblioteca sempre volta ao acervo global e recarrega documentos
+ok 176 - reabrir Biblioteca sempre volta ao acervo global e recarrega documentos
+  ---
+  duration_ms: 0.472229
+  type: 'test'
+  ...
+# Subtest: Biblioteca atualiza automaticamente ao ativar a guia e não expõe botão manual
+ok 177 - Biblioteca atualiza automaticamente ao ativar a guia e não expõe botão manual
+  ---
+  duration_ms: 3.371981
+  type: 'test'
+  ...
+# Subtest: Selecionar fica imediatamente antes de Enviar na Biblioteca Offline
+ok 178 - Selecionar fica imediatamente antes de Enviar na Biblioteca Offline
+  ---
+  duration_ms: 1.491147
+  type: 'test'
+  ...
+# Subtest: Biblioteca remove o filtro Todos os assuntos e seu handler visual
+ok 179 - Biblioteca remove o filtro Todos os assuntos e seu handler visual
+  ---
+  duration_ms: 0.336769
+  type: 'test'
+  ...
+# Subtest: ações e filtros restantes usam três posições harmônicas
+ok 180 - ações e filtros restantes usam três posições harmônicas
+  ---
+  duration_ms: 0.284501
+  type: 'test'
+  ...
+# Subtest: Biblioteca Offline não expõe limite nem pausa manual
+ok 181 - Biblioteca Offline não expõe limite nem pausa manual
+  ---
+  duration_ms: 0.221988
+  type: 'test'
+  ...
+# Subtest: política offline fica sem limite artificial e ação principal chama Enviar
+ok 182 - política offline fica sem limite artificial e ação principal chama Enviar
+  ---
+  duration_ms: 0.233506
+  type: 'test'
+  ...
+# Subtest: painel offline fica fora da barra de filtros
+ok 183 - painel offline fica fora da barra de filtros
+  ---
+  duration_ms: 1.289258
+  type: 'test'
+  ...
+# Subtest: desktop usa três ações e três filtros harmônicos
+ok 184 - desktop usa três ações e três filtros harmônicos
+  ---
+  duration_ms: 0.253174
+  type: 'test'
+  ...
+# Subtest: controles offline restantes ficam em uma linha
+ok 185 - controles offline restantes ficam em uma linha
+  ---
+  duration_ms: 0.163332
+  type: 'test'
+  ...
+# Subtest: layout não mantém linha própria obsoleta para Selecionar
+ok 186 - layout não mantém linha própria obsoleta para Selecionar
+  ---
+  duration_ms: 0.152556
+  type: 'test'
+  ...
+# Subtest: tablet e mobile preservam rolagem e alvos de toque
+ok 187 - tablet e mobile preservam rolagem e alvos de toque
+  ---
+  duration_ms: 0.162891
+  type: 'test'
+  ...
+# Subtest: adapter carrega a correção de layout
+ok 188 - adapter carrega a correção de layout
+  ---
+  duration_ms: 0.154259
+  type: 'test'
+  ...
+# Subtest: v10.24 biblioteca e reader
+ok 189 - v10.24 biblioteca e reader
+  ---
+  duration_ms: 4.063354
+  type: 'test'
+  ...
+# Subtest: controles Workspace continuam ausentes do cabeçalho
+ok 190 - controles Workspace continuam ausentes do cabeçalho
+  ---
+  duration_ms: 2.786144
+  type: 'test'
+  ...
+# Subtest: filtro visual de Assunto foi removido sem afetar upload e vínculo
+ok 191 - filtro visual de Assunto foi removido sem afetar upload e vínculo
+  ---
+  duration_ms: 0.284531
+  type: 'test'
+  ...
+# Subtest: barra de ações e filtros usam três posições
+ok 192 - barra de ações e filtros usam três posições
+  ---
+  duration_ms: 0.242869
+  type: 'test'
+  ...
+# Subtest: Selecionar saiu do cabeçalho e fica na barra offline antes de Enviar
+ok 193 - Selecionar saiu do cabeçalho e fica na barra offline antes de Enviar
+  ---
+  duration_ms: 0.199235
+  type: 'test'
+  ...
+# Subtest: questões não valem metade do progresso com um único registro
+ok 194 - questões não valem metade do progresso com um único registro
+  ---
+  duration_ms: 1.093468
+  type: 'test'
+  ...
+# Subtest: volume e desempenho elevam progressivamente a contribuição
+ok 195 - volume e desempenho elevam progressivamente a contribuição
+  ---
+  duration_ms: 0.244041
+  type: 'test'
+  ...
+# Subtest: checkbox legado mantém contribuição mínima e não domínio artificial
+ok 196 - checkbox legado mantém contribuição mínima e não domínio artificial
+  ---
+  duration_ms: 0.156922
+  type: 'test'
+  ...
+# Subtest: minutos usam a primeira duração válida e arredondam corretamente
+ok 197 - minutos usam a primeira duração válida e arredondam corretamente
+  ---
+  duration_ms: 0.858951
+  type: 'test'
+  ...
+# Subtest: total permanente soma somente minutos válidos de studySessions
+ok 198 - total permanente soma somente minutos válidos de studySessions
+  ---
+  duration_ms: 0.261177
+  type: 'test'
+  ...
+# Subtest: mobile retention metrics use a non-overlapping 2x2 grid
+ok 199 - mobile retention metrics use a non-overlapping 2x2 grid
+  ---
+  duration_ms: 1.136723
+  type: 'test'
+  ...
+# Subtest: mobile calendar actions are aligned as two rows of two buttons
+ok 200 - mobile calendar actions are aligned as two rows of two buttons
+  ---
+  duration_ms: 0.853974
+  type: 'test'
+  ...
+# Subtest: mobile flashcard actions keep export import together and reset full width
+ok 201 - mobile flashcard actions keep export import together and reset full width
+  ---
+  duration_ms: 0.54743
+  type: 'test'
+  ...
+# Subtest: mobile library contains cards and exposes horizontal rails
+ok 202 - mobile library contains cards and exposes horizontal rails
+  ---
+  duration_ms: 26.581202
+  type: 'test'
+  ...
+# Subtest: mobile edital keeps delete actions side by side and sync compact
+ok 203 - mobile edital keeps delete actions side by side and sync compact
+  ---
+  duration_ms: 24.861376
+  type: 'test'
+  ...
+# Subtest: mobile helper não reintroduz a action-bar aposentada nem sobrescreve o menu compacto
+ok 204 - mobile helper não reintroduz a action-bar aposentada nem sobrescreve o menu compacto
+  ---
+  duration_ms: 0.314275
+  type: 'test'
+  ...
+# Subtest: recommend selects the topic with the highest cognitive priority
+not ok 205 - recommend selects the topic with the highest cognitive priority
+  ---
+  duration_ms: 2.394804
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/next-best-study-action.test.cjs:21:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppNextBestStudyAction'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:13:107)
+    normalized (evalmachine.<anonymous>:14:38)
+    scoreTopic (evalmachine.<anonymous>:19:70)
+    evalmachine.<anonymous>:21:197
+    Array.map (<anonymous>)
+    Object.recommend (evalmachine.<anonymous>:21:174)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/next-best-study-action.test.cjs:32:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+  ...
+# Subtest: chooseMethod uses proven personal method effectiveness when samples are sufficient
+not ok 206 - chooseMethod uses proven personal method effectiveness when samples are sufficient
+  ---
+  duration_ms: 0.802237
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/next-best-study-action.test.cjs:39:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppNextBestStudyAction'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:13:107)
+    normalized (evalmachine.<anonymous>:14:38)
+    Object.chooseMethod (evalmachine.<anonymous>:17:55)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/next-best-study-action.test.cjs:46:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: suggestedMinutes reduces session size under high fatigue
+ok 207 - suggestedMinutes reduces session size under high fatigue
+  ---
+  duration_ms: 0.839342
+  type: 'test'
+  ...
+# Subtest: recommend exposes alternatives without mutating schedule state
+not ok 208 - recommend exposes alternatives without mutating schedule state
+  ---
+  duration_ms: 1.557155
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/next-best-study-action.test.cjs:58:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppNextBestStudyAction'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:13:107)
+    normalized (evalmachine.<anonymous>:14:38)
+    scoreTopic (evalmachine.<anonymous>:19:70)
+    evalmachine.<anonymous>:21:197
+    Array.map (<anonymous>)
+    Object.recommend (evalmachine.<anonymous>:21:174)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/next-best-study-action.test.cjs:65:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+  ...
+# Subtest: board evidence can break a near cognitive tie but remains bounded and auditable
+not ok 209 - board evidence can break a near cognitive tie but remains bounded and auditable
+  ---
+  duration_ms: 0.78384
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/next-best-study-action.test.cjs:71:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppNextBestStudyAction'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:13:107)
+    normalized (evalmachine.<anonymous>:14:38)
+    scoreTopic (evalmachine.<anonymous>:19:70)
+    evalmachine.<anonymous>:21:197
+    Array.map (<anonymous>)
+    Object.recommend (evalmachine.<anonymous>:21:174)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/next-best-study-action.test.cjs:80:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+  ...
+# Subtest: navigation loads next best study action after Error Intelligence and before cognitive runtime
+ok 210 - navigation loads next best study action after Error Intelligence and before cognitive runtime
+  ---
+  duration_ms: 1.069363
+  type: 'test'
+  ...
+# Subtest: recommendation engine stays advisory and does not reference scheduler mutations
+ok 211 - recommendation engine stays advisory and does not reference scheduler mutations
+  ---
+  duration_ms: 0.434323
+  type: 'test'
+  ...
+# Subtest: anotações oferece Importar e Exportar ao lado de Incluir Nota
+ok 212 - anotações oferece Importar e Exportar ao lado de Incluir Nota
+  ---
+  duration_ms: 1.050174
+  type: 'test'
+  ...
+# Subtest: exportação é restrita à matéria selecionada e gera PDF
+ok 213 - exportação é restrita à matéria selecionada e gera PDF
+  ---
+  duration_ms: 0.170893
+  type: 'test'
+  ...
+# Subtest: importação cobre formatos de Windows, macOS e Linux
+ok 214 - importação cobre formatos de Windows, macOS e Linux
+  ---
+  duration_ms: 0.279063
+  type: 'test'
+  ...
+# Subtest: arquivos importados viram structuredNotes da matéria ativa
+ok 215 - arquivos importados viram structuredNotes da matéria ativa
+  ---
+  duration_ms: 0.146897
+  type: 'test'
+  ...
+# Subtest: módulo é carregado pelo PWA e armazenado no app shell
+ok 216 - módulo é carregado pelo PWA e armazenado no app shell
+  ---
+  duration_ms: 0.138535
+  type: 'test'
+  ...
+# Subtest: exportação de anotações usa documento HTML UTF-8 de alta fidelidade
+ok 217 - exportação de anotações usa documento HTML UTF-8 de alta fidelidade
+  ---
+  duration_ms: 1.093739
+  type: 'test'
+  ...
+# Subtest: caracteres especiais e símbolos não passam pela conversão WinAnsi no caminho principal
+ok 218 - caracteres especiais e símbolos não passam pela conversão WinAnsi no caminho principal
+  ---
+  duration_ms: 0.247376
+  type: 'test'
+  ...
+# Subtest: imagens figuras tabelas e SVG são preservados no layout de impressão
+ok 219 - imagens figuras tabelas e SVG são preservados no layout de impressão
+  ---
+  duration_ms: 0.230772
+  type: 'test'
+  ...
+# Subtest: HTML imprimível remove elementos e atributos executáveis sem destruir formatação rica
+ok 220 - HTML imprimível remove elementos e atributos executáveis sem destruir formatação rica
+  ---
+  duration_ms: 0.264471
+  type: 'test'
+  ...
+# Subtest: impressão usa A4 e aguarda fontes e imagens antes de abrir o diálogo PDF
+ok 221 - impressão usa A4 e aguarda fontes e imagens antes de abrir o diálogo PDF
+  ---
+  duration_ms: 0.169251
+  type: 'test'
+  ...
+# Subtest: exportador rico interpreta estrutura e formatação das notas
+ok 222 - exportador rico interpreta estrutura e formatação das notas
+  ---
+  duration_ms: 0.933191
+  type: 'test'
+  ...
+# Subtest: preserva estilos inline usados pelo editor rico
+ok 223 - preserva estilos inline usados pelo editor rico
+  ---
+  duration_ms: 0.218103
+  type: 'test'
+  ...
+# Subtest: normaliza blocos vazios sem criar espaçamentos exagerados
+ok 224 - normaliza blocos vazios sem criar espaçamentos exagerados
+  ---
+  duration_ms: 0.13543
+  type: 'test'
+  ...
+# Subtest: tokenização mantém espaços junto ao texto e evita palavras coladas
+ok 225 - tokenização mantém espaços junto ao texto e evita palavras coladas
+  ---
+  duration_ms: 0.237462
+  type: 'test'
+  ...
+# Subtest: PDF possui fontes regular, negrito, itálico e negrito-itálico
+ok 226 - PDF possui fontes regular, negrito, itálico e negrito-itálico
+  ---
+  duration_ms: 0.158815
+  type: 'test'
+  ...
+# Subtest: layout exportado usa hierarquia empresarial e paginação
+ok 227 - layout exportado usa hierarquia empresarial e paginação
+  ---
+  duration_ms: 0.15591
+  type: 'test'
+  ...
+# Subtest: matéria selecionada é persistida por usuário e concurso
+ok 228 - matéria selecionada é persistida por usuário e concurso
+  ---
+  duration_ms: 0.228729
+  type: 'test'
+  ...
+# Subtest: renderizador rico substitui somente o botão Exportar e mantém fallback
+ok 229 - renderizador rico substitui somente o botão Exportar e mantém fallback
+  ---
+  duration_ms: 0.148049
+  type: 'test'
+  ...
+# Subtest: PWA armazena o renderizador rico no app shell
+ok 230 - PWA armazena o renderizador rico no app shell
+  ---
+  duration_ms: 0.326844
+  type: 'test'
+  ...
+# Subtest: módulo da outbox possui sintaxe JavaScript válida
+ok 231 - módulo da outbox possui sintaxe JavaScript válida
+  ---
+  duration_ms: 26.074111
+  type: 'test'
+  ...
+# Subtest: fundação usa IndexedDB com fallback persistente e identidade estável do dispositivo
+ok 232 - fundação usa IndexedDB com fallback persistente e identidade estável do dispositivo
+  ---
+  duration_ms: 0.462935
+  type: 'test'
+  ...
+# Subtest: fallback local preserva idempotência e ciclo de status sem tocar no sync legado
+ok 233 - fallback local preserva idempotência e ciclo de status sem tocar no sync legado
+  ---
+  duration_ms: 4.024086
+  type: 'test'
+  ...
+# Subtest: outbox rejeita operações sem usuário autenticado ou identidade de entidade
+ok 234 - outbox rejeita operações sem usuário autenticado ou identidade de entidade
+  ---
+  duration_ms: 1.173346
+  type: 'test'
+  ...
+# Subtest: esta fase não substitui pending_sync nem intercepta syncAllWithSupabase
+ok 235 - esta fase não substitui pending_sync nem intercepta syncAllWithSupabase
+  ---
+  duration_ms: 0.289809
+  type: 'test'
+  ...
+# Subtest: Fase 9 permanece promovida na linha canônica 10.64.x
+ok 236 - Fase 9 permanece promovida na linha canônica 10.64.x
+  ---
+  duration_ms: 1.058487
+  type: 'test'
+  ...
+# Subtest: Fase 9 não aceita falso sucesso quando backend offline está ausente
+ok 237 - Fase 9 não aceita falso sucesso quando backend offline está ausente
+  ---
+  duration_ms: 0.20288
+  type: 'test'
+  ...
+# Subtest: persistência continua aceitando somente backends que confirmam stored
+ok 238 - persistência continua aceitando somente backends que confirmam stored
+  ---
+  duration_ms: 0.192405
+  type: 'test'
+  ...
+# Subtest: Fase 5 permanece na linha canônica 10.64.x
+ok 239 - Fase 5 permanece na linha canônica 10.64.x
+  ---
+  duration_ms: 1.057151
+  type: 'test'
+  ...
+# Subtest: workers concorrentes mantêm documento ativo em escopo local
+ok 240 - workers concorrentes mantêm documento ativo em escopo local
+  ---
+  duration_ms: 0.232944
+  type: 'test'
+  ...
+# Subtest: Cancelar fila aborta downloads em voo e não os contabiliza como falha
+ok 241 - Cancelar fila aborta downloads em voo e não os contabiliza como falha
+  ---
+  duration_ms: 0.240165
+  type: 'test'
+  ...
+# Subtest: blob cancelado não é persistido depois do cancelamento da execução
+ok 242 - blob cancelado não é persistido depois do cancelamento da execução
+  ---
+  duration_ms: 0.222489
+  type: 'test'
+  ...
+# Subtest: Biblioteca Offline encerra bootstrap quando o manager não chega
+ok 243 - Biblioteca Offline encerra bootstrap quando o manager não chega
+  ---
+  duration_ms: 1.126453
+  type: 'test'
+  ...
+# Subtest: inicialização usa sinal de prontidão e não engole falhas críticas
+ok 244 - inicialização usa sinal de prontidão e não engole falhas críticas
+  ---
+  duration_ms: 0.250971
+  type: 'test'
+  ...
+# Subtest: Fase 7 aceita patches da linha canônica 10.64.x
+ok 245 - Fase 7 aceita patches da linha canônica 10.64.x
+  ---
+  duration_ms: 1.058523
+  type: 'test'
+  ...
+# Subtest: worker encerra imediatamente quando encontra pausa de política
+ok 246 - worker encerra imediatamente quando encontra pausa de política
+  ---
+  duration_ms: 0.214126
+  type: 'test'
+  ...
+# Subtest: pausa por offline ou rede não permitida encerra o worker
+ok 247 - pausa por offline ou rede não permitida encerra o worker
+  ---
+  duration_ms: 0.264431
+  type: 'test'
+  ...
+# Subtest: start libera running após todos os workers encerrarem para permitir retomada
+ok 248 - start libera running após todos os workers encerrarem para permitir retomada
+  ---
+  duration_ms: 0.212263
+  type: 'test'
+  ...
+# Subtest: phase 2 adapter delegates PDF persistence to OfflinePdfStore
+ok 249 - phase 2 adapter delegates PDF persistence to OfflinePdfStore
+  ---
+  duration_ms: 1.077821
+  type: 'test'
+  ...
+# Subtest: legacy blob is only cleaned after a durable migrated copy exists
+ok 250 - legacy blob is only cleaned after a durable migrated copy exists
+  ---
+  duration_ms: 0.146336
+  type: 'test'
+  ...
+# Subtest: PDF library bridge wraps download and deletion without changing Reader API
+ok 251 - PDF library bridge wraps download and deletion without changing Reader API
+  ---
+  duration_ms: 0.194006
+  type: 'test'
+  ...
+# Subtest: mobile-capable storage keeps OPFS preferred with IndexedDB fallback
+ok 252 - mobile-capable storage keeps OPFS preferred with IndexedDB fallback
+  ---
+  duration_ms: 0.125406
+  type: 'test'
+  ...
+# Subtest: fase 3 oferece exatamente os três modos gerenciados em um botão cíclico
+ok 253 - fase 3 oferece exatamente os três modos gerenciados em um botão cíclico
+  ---
+  duration_ms: 0.948822
+  type: 'test'
+  ...
+# Subtest: mobile usa concorrência unitária e armazenamento sem limite artificial do app
+ok 254 - mobile usa concorrência unitária e armazenamento sem limite artificial do app
+  ---
+  duration_ms: 0.202138
+  type: 'test'
+  ...
+# Subtest: modo opened não inicia download em massa
+ok 255 - modo opened não inicia download em massa
+  ---
+  duration_ms: 0.183411
+  type: 'test'
+  ...
+# Subtest: downloads passam pela API integrada da biblioteca
+ok 256 - downloads passam pela API integrada da biblioteca
+  ---
+  duration_ms: 0.126287
+  type: 'test'
+  ...
+# Subtest: adapter carrega manager e interface somente depois da integração OPFS
+ok 257 - adapter carrega manager e interface somente depois da integração OPFS
+  ---
+  duration_ms: 0.123152
+  type: 'test'
+  ...
+# Subtest: toolbar offline mantém todos os controles em uma única linha horizontal
+ok 258 - toolbar offline mantém todos os controles em uma única linha horizontal
+  ---
+  duration_ms: 1.125642
+  type: 'test'
+  ...
+# Subtest: Somente Wi-Fi distingue detecção suportada de navegador sem Network Information API
+ok 259 - Somente Wi-Fi distingue detecção suportada de navegador sem Network Information API
+  ---
+  duration_ms: 0.176441
+  type: 'test'
+  ...
+# Subtest: phase 4 exposes canonical offline integrity states
+ok 260 - phase 4 exposes canonical offline integrity states
+  ---
+  duration_ms: 0.990643
+  type: 'test'
+  ...
+# Subtest: phase 4 performs SHA-256 validation with Web Crypto
+ok 261 - phase 4 performs SHA-256 validation with Web Crypto
+  ---
+  duration_ms: 0.193606
+  type: 'test'
+  ...
+# Subtest: phase 4 remains mobile-first for very large PDFs
+ok 262 - phase 4 remains mobile-first for very large PDFs
+  ---
+  duration_ms: 0.138474
+  type: 'test'
+  ...
+# Subtest: LRU cleanup protects favorites and full-library policy
+ok 263 - LRU cleanup protects favorites and full-library policy
+  ---
+  duration_ms: 0.184913
+  type: 'test'
+  ...
+# Subtest: storage pressure has conservative cleanup thresholds
+ok 264 - storage pressure has conservative cleanup thresholds
+  ---
+  duration_ms: 0.119606
+  type: 'test'
+  ...
+# Subtest: integrity layer is loaded by the managed offline adapter
+ok 265 - integrity layer is loaded by the managed offline adapter
+  ---
+  duration_ms: 0.104945
+  type: 'test'
+  ...
+# Subtest: Fase 8 permanece na linha canônica 10.64.x com identidade pública sincronizada
+ok 266 - Fase 8 permanece na linha canônica 10.64.x com identidade pública sincronizada
+  ---
+  duration_ms: 0.950193
+  type: 'test'
+  ...
+# Subtest: persistência valida o tamanho real do blob antes de gravar
+ok 267 - persistência valida o tamanho real do blob antes de gravar
+  ---
+  duration_ms: 0.251351
+  type: 'test'
+  ...
+# Subtest: orçamento da execução é inicializado pelo preflight e consumido pelo tamanho real
+ok 268 - orçamento da execução é inicializado pelo preflight e consumido pelo tamanho real
+  ---
+  duration_ms: 0.127589
+  type: 'test'
+  ...
+# Subtest: gravações concorrentes passam por gate serializado de orçamento
+ok 269 - gravações concorrentes passam por gate serializado de orçamento
+  ---
+  duration_ms: 0.150312
+  type: 'test'
+  ...
+# Subtest: downloadOne usa a proteção pós-download em vez de persistir diretamente
+ok 270 - downloadOne usa a proteção pós-download em vez de persistir diretamente
+  ---
+  duration_ms: 0.214947
+  type: 'test'
+  ...
+# Subtest: Fase 6 permanece na linha canônica 10.64.x
+ok 271 - Fase 6 permanece na linha canônica 10.64.x
+  ---
+  duration_ms: 1.095328
+  type: 'test'
+  ...
+# Subtest: fila pausada observa mudança do tipo de conexão
+ok 272 - fila pausada observa mudança do tipo de conexão
+  ---
+  duration_ms: 0.152625
+  type: 'test'
+  ...
+# Subtest: desativar Somente Wi-Fi agenda retomada quando a fila está pausada
+ok 273 - desativar Somente Wi-Fi agenda retomada quando a fila está pausada
+  ---
+  duration_ms: 0.138805
+  type: 'test'
+  ...
+# Subtest: retomada revalida online e política de rede antes de reiniciar
+ok 274 - retomada revalida online e política de rede antes de reiniciar
+  ---
+  duration_ms: 0.160517
+  type: 'test'
+  ...
+# Subtest: cancelamento remove retomada pendente
+ok 275 - cancelamento remove retomada pendente
+  ---
+  duration_ms: 0.205183
+  type: 'test'
+  ...
+# Subtest: expõe API estável mesmo sem OPFS ou IndexedDB
+ok 276 - expõe API estável mesmo sem OPFS ou IndexedDB
+  ---
+  duration_ms: 2.145669
+  type: 'test'
+  ...
+# Subtest: detecta OPFS e consulta quota sem pedir persistência automaticamente
+ok 277 - detecta OPFS e consulta quota sem pedir persistência automaticamente
+  ---
+  duration_ms: 0.963442
+  type: 'test'
+  ...
+# Autoridade da outbox falhou; sincronização legada reassumirá o restante: Error: falha canário
+#     at Object.upsert (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-authority.test.cjs:59:45)
+#     at factory (offline-sync-authority.js:232:49)
+#     at runSupabaseRequest (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-authority.test.cjs:54:33)
+#     at runRemoteUpsert (offline-sync-authority.js:233:69)
+#     at flushAuthorizedEditalUpserts (offline-sync-authority.js:314:19)
+#     at async offline-sync-authority.js:354:15
+#     at async TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-authority.test.cjs:142:3)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Subtest: autoridade nasce opt-in e bloqueia ativação sem histórico de paridade suficiente
+ok 278 - autoridade nasce opt-in e bloqueia ativação sem histórico de paridade suficiente
+  ---
+  duration_ms: 6.295507
+  type: 'test'
+  ...
+# Subtest: canário habilita somente após 8 amostras saudáveis e envia apenas edital upsert
+ok 279 - canário habilita somente após 8 amostras saudáveis e envia apenas edital upsert
+  ---
+  duration_ms: 6.695036
+  type: 'test'
+  ...
+# Subtest: falha remota abre circuito, desliga opt-in e entrega pendência intacta ao legado
+ok 280 - falha remota abre circuito, desliga opt-in e entrega pendência intacta ao legado
+  ---
+  duration_ms: 4.074467
+  type: 'test'
+  ...
+# Subtest: kill switch força caminho legado e encerra sessão canário
+ok 281 - kill switch força caminho legado e encerra sessão canário
+  ---
+  duration_ms: 3.049644
+  type: 'test'
+  ...
+# Subtest: mudança concorrente durante envio não é apagada pela confirmação da versão antiga
+ok 282 - mudança concorrente durante envio não é apagada pela confirmação da versão antiga
+  ---
+  duration_ms: 4.508718
+  type: 'test'
+  ...
+# Subtest: operação synced é reaproveitada idempotentemente sem segundo write remoto
+ok 283 - operação synced é reaproveitada idempotentemente sem segundo write remoto
+  ---
+  duration_ms: 4.254223
+  type: 'test'
+  ...
+# Subtest: orçamento limita canário a 3 batches ou 50 itens e desliga automaticamente
+ok 284 - orçamento limita canário a 3 batches ou 50 itens e desliga automaticamente
+  ---
+  duration_ms: 39.856097
+  type: 'test'
+  ...
+# Subtest: AppState carrega autoridade depois de outbox e shadow na release v10.56.0
+ok 285 - AppState carrega autoridade depois de outbox e shadow na release v10.56.0
+  ---
+  duration_ms: 0.162831
+  type: 'test'
+  ...
+# Subtest: guardrails são locais, bounded e o escopo remoto continua estritamente edital upsert
+ok 286 - guardrails são locais, bounded e o escopo remoto continua estritamente edital upsert
+  ---
+  duration_ms: 0.568039
+  type: 'test'
+  ...
+# Autoridade de exclusão da outbox falhou; sincronização legada reassumirá o restante: Error: falha delete canário
+#     at Object.eq (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-delete-authority.test.cjs:67:53)
+#     at factory (offline-sync-delete-authority.js:211:72)
+#     at runSupabaseRequest (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-delete-authority.test.cjs:58:33)
+#     at runRemoteDelete (offline-sync-delete-authority.js:212:69)
+#     at flushAuthorizedEditalDeletes (offline-sync-delete-authority.js:289:19)
+#     at async offline-sync-delete-authority.js:339:15
+#     at async TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-delete-authority.test.cjs:141:3)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Subtest: delete authority nasce desligada e exige 8 amostras próprias de paridade
+ok 287 - delete authority nasce desligada e exige 8 amostras próprias de paridade
+  ---
+  duration_ms: 5.889457
+  type: 'test'
+  ...
+# Subtest: canário de delete usa filtro id + user_id e remove somente deletes confirmados antes do legado
+ok 288 - canário de delete usa filtro id + user_id e remove somente deletes confirmados antes do legado
+  ---
+  duration_ms: 5.455526
+  type: 'test'
+  ...
+# Subtest: falha remota abre circuito e entrega delete intacto ao legado
+ok 289 - falha remota abre circuito e entrega delete intacto ao legado
+  ---
+  duration_ms: 4.721342
+  type: 'test'
+  ...
+# Subtest: delete synced é idempotente e não gera segundo delete remoto
+ok 290 - delete synced é idempotente e não gera segundo delete remoto
+  ---
+  duration_ms: 3.634548
+  type: 'test'
+  ...
+# Subtest: upsert concorrente durante delete remoto não é apagado da fila legada
+ok 291 - upsert concorrente durante delete remoto não é apagado da fila legada
+  ---
+  duration_ms: 3.275547
+  type: 'test'
+  ...
+# Subtest: orçamento do delete é separado e encerra em no máximo 2 batches ou 20 itens
+ok 292 - orçamento do delete é separado e encerra em no máximo 2 batches ou 20 itens
+  ---
+  duration_ms: 9.363458
+  type: 'test'
+  ...
+# Subtest: kill switch global desliga delete canário e preserva caminho legado
+ok 293 - kill switch global desliga delete canário e preserva caminho legado
+  ---
+  duration_ms: 1.962197
+  type: 'test'
+  ...
+# Subtest: módulo remoto permanece estritamente limitado a DELETE edital com user_id e fallback
+ok 294 - módulo remoto permanece estritamente limitado a DELETE edital com user_id e fallback
+  ---
+  duration_ms: 0.326622
+  type: 'test'
+  ...
+# Subtest: graduação nasce desligada e exige elegibilidade conjunta
+ok 295 - graduação nasce desligada e exige elegibilidade conjunta
+  ---
+  duration_ms: 3.175489
+  type: 'test'
+  ...
+# Subtest: ativação conjunta é atômica e habilita upsert + delete somente quando ambos aceitam
+ok 296 - ativação conjunta é atômica e habilita upsert + delete somente quando ambos aceitam
+  ---
+  duration_ms: 1.901288
+  type: 'test'
+  ...
+# Subtest: falha ao ativar segundo filho reverte o primeiro e mantém legado como autoridade
+ok 297 - falha ao ativar segundo filho reverte o primeiro e mantém legado como autoridade
+  ---
+  duration_ms: 0.935602
+  type: 'test'
+  ...
+# Subtest: fallback/circuito de qualquer autoridade derruba o par inteiro
+ok 298 - fallback/circuito de qualquer autoridade derruba o par inteiro
+  ---
+  duration_ms: 1.044823
+  type: 'test'
+  ...
+# Subtest: encerramento por orçamento de um canário desliga também o outro
+ok 299 - encerramento por orçamento de um canário desliga também o outro
+  ---
+  duration_ms: 0.889233
+  type: 'test'
+  ...
+# Subtest: kill switch compartilhado derruba a graduação e os dois filhos
+ok 300 - kill switch compartilhado derruba a graduação e os dois filhos
+  ---
+  duration_ms: 0.853961
+  type: 'test'
+  ...
+# Subtest: coordenador não possui caminho remoto próprio
+ok 301 - coordenador não possui caminho remoto próprio
+  ---
+  duration_ms: 0.456604
+  type: 'test'
+  ...
+# Subtest: AppState carrega graduação depois das duas autoridades e expõe diagnóstico
+ok 302 - AppState carrega graduação depois das duas autoridades e expõe diagnóstico
+  ---
+  duration_ms: 0.197742
+  type: 'test'
+  ...
+# Subtest: coordenador integra o núcleo offline e contratos de cache
+ok 303 - coordenador integra o núcleo offline e contratos de cache
+  ---
+  duration_ms: 0.313162
+  type: 'test'
+  ...
+# Autoridade de metadados falhou; sincronização legada reassumirá a pendência: Error: remote read failed
+#     at TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-metadata-authority.test.cjs:144:36)
+#     at Test.runInAsyncScope (node:async_hooks:214:14)
+#     at Test.run (node:internal/test_runner/test:1047:25)
+#     at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+#     at Test.postRun (node:internal/test_runner/test:1173:19)
+#     at Test.run (node:internal/test_runner/test:1101:12)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Autoridade de metadados falhou; sincronização legada reassumirá a pendência: Error: remote write failed
+#     at TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/offline-sync-metadata-authority.test.cjs:156:37)
+#     at Test.runInAsyncScope (node:async_hooks:214:14)
+#     at Test.run (node:internal/test_runner/test:1047:25)
+#     at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+#     at Test.postRun (node:internal/test_runner/test:1173:19)
+#     at Test.run (node:internal/test_runner/test:1101:12)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Subtest: autoridade de metadata nasce opt-in e exige 8 amostras shadow saudáveis
+ok 304 - autoridade de metadata nasce opt-in e exige 8 amostras shadow saudáveis
+  ---
+  duration_ms: 3.383697
+  type: 'test'
+  ...
+# Subtest: canário lê remoto, preserva histórico e grava somente concursos_metadata
+ok 305 - canário lê remoto, preserva histórico e grava somente concursos_metadata
+  ---
+  duration_ms: 3.481051
+  type: 'test'
+  ...
+# Subtest: falha na leitura remota abre circuito e entrega pendência intacta ao legado
+ok 306 - falha na leitura remota abre circuito e entrega pendência intacta ao legado
+  ---
+  duration_ms: 2.387045
+  type: 'test'
+  ...
+# Subtest: falha no upsert abre circuito e legado reassume sem apagar metadataDirty
+ok 307 - falha no upsert abre circuito e legado reassume sem apagar metadataDirty
+  ---
+  duration_ms: 2.082725
+  type: 'test'
+  ...
+# Subtest: revisão concorrente nunca é limpa pela confirmação de uma versão anterior
+ok 308 - revisão concorrente nunca é limpa pela confirmação de uma versão anterior
+  ---
+  duration_ms: 1.810734
+  type: 'test'
+  ...
+# Subtest: kill switch compartilhado impede autoridade e mantém caminho legado
+ok 309 - kill switch compartilhado impede autoridade e mantém caminho legado
+  ---
+  duration_ms: 0.990973
+  type: 'test'
+  ...
+# Subtest: orçamento é estritamente um write remoto por sessão canário
+ok 310 - orçamento é estritamente um write remoto por sessão canário
+  ---
+  duration_ms: 1.285549
+  type: 'test'
+  ...
+# Subtest: módulo remoto é limitado a user_settings concursos_metadata e não toca outros domínios
+ok 311 - módulo remoto é limitado a user_settings concursos_metadata e não toca outros domínios
+  ---
+  duration_ms: 0.256699
+  type: 'test'
+  ...
+# Subtest: AppState carrega metadata authority entre shadow e autoridades do edital
+ok 312 - AppState carrega metadata authority entre shadow e autoridades do edital
+  ---
+  duration_ms: 0.352811
+  type: 'test'
+  ...
+# Subtest: metadata authority integra app shell, network-first e no-store
+ok 313 - metadata authority integra app shell, network-first e no-store
+  ---
+  duration_ms: 0.467591
+  type: 'test'
+  ...
+# Subtest: 4L é política local sem nova autoridade ou telemetria remota
+ok 314 - 4L é política local sem nova autoridade ou telemetria remota
+  ---
+  duration_ms: 1.002951
+  type: 'test'
+  ...
+# Subtest: expanded-base estável recebe promoção persistida para dois writes
+ok 315 - expanded-base estável recebe promoção persistida para dois writes
+  ---
+  duration_ms: 3.060259
+  type: 'test'
+  ...
+# Subtest: piloto original e usuários fora da base nunca são promovidos pela 4L
+ok 316 - piloto original e usuários fora da base nunca são promovidos pela 4L
+  ---
+  duration_ms: 1.278397
+  type: 'test'
+  ...
+# Subtest: promoção é revogada imediatamente quando estabilidade deixa de ser válida
+ok 317 - promoção é revogada imediatamente quando estabilidade deixa de ser válida
+  ---
+  duration_ms: 1.114847
+  type: 'test'
+  ...
+# Subtest: kill switch, circuito, rollout ou graduation inativos impedem profundidade maior
+ok 318 - kill switch, circuito, rollout ou graduation inativos impedem profundidade maior
+  ---
+  duration_ms: 2.386224
+  type: 'test'
+  ...
+# Subtest: 4I consome promoção externa sem ampliar setEnabled manual para expanded-base
+ok 319 - 4I consome promoção externa sem ampliar setEnabled manual para expanded-base
+  ---
+  duration_ms: 0.216129
+  type: 'test'
+  ...
+# Subtest: AppState carrega 4L entre 4K e 4I e expõe diagnóstico
+ok 320 - AppState carrega 4L entre 4K e 4I e expõe diagnóstico
+  ---
+  duration_ms: 0.150553
+  type: 'test'
+  ...
+# Subtest: 4L integra contratos PWA e no-store sem promover versão durante implementação
+ok 321 - 4L integra contratos PWA e no-store sem promover versão durante implementação
+  ---
+  duration_ms: 0.238382
+  type: 'test'
+  ...
+# Subtest: 4K é diagnóstico local sem autoridade remota ou ledger duplicado
+ok 322 - 4K é diagnóstico local sem autoridade remota ou ledger duplicado
+  ---
+  duration_ms: 1.129288
+  type: 'test'
+  ...
+# Subtest: faixa expanded-base exige cinco canários limpos para revisão do piloto
+ok 323 - faixa expanded-base exige cinco canários limpos para revisão do piloto
+  ---
+  duration_ms: 2.532841
+  type: 'test'
+  ...
+# Subtest: quatro sucessos ainda são evidência insuficiente
+ok 324 - quatro sucessos ainda são evidência insuficiente
+  ---
+  duration_ms: 0.828543
+  type: 'test'
+  ...
+# Subtest: falha ou aborto recente bloqueia prontidão mesmo com cinco sucessos
+ok 325 - falha ou aborto recente bloqueia prontidão mesmo com cinco sucessos
+  ---
+  duration_ms: 1.392376
+  type: 'test'
+  ...
+# Subtest: piloto original e usuários excluídos não são qualificados pela 4K
+ok 326 - piloto original e usuários excluídos não são qualificados pela 4K
+  ---
+  duration_ms: 1.347029
+  type: 'test'
+  ...
+# Subtest: paridade atual continua obrigatória
+ok 327 - paridade atual continua obrigatória
+  ---
+  duration_ms: 0.67087
+  type: 'test'
+  ...
+# Subtest: evento 4H reavalia somente a faixa expanded-base
+ok 328 - evento 4H reavalia somente a faixa expanded-base
+  ---
+  duration_ms: 1.823433
+  type: 'test'
+  ...
+# Subtest: AppState carrega 4K depois da estabilidade e antes da expansão 4I
+ok 329 - AppState carrega 4K depois da estabilidade e antes da expansão 4I
+  ---
+  duration_ms: 0.214627
+  type: 'test'
+  ...
+# Subtest: 4K integra contratos PWA e no-store
+ok 330 - 4K integra contratos PWA e no-store
+  ---
+  duration_ms: 0.38562
+  type: 'test'
+  ...
+# Subtest: expansão nasce desligada e preserva teto legado de um write
+ok 331 - expansão nasce desligada e preserva teto legado de um write
+  ---
+  duration_ms: 3.506518
+  type: 'test'
+  ...
+# Subtest: estabilidade 4H é obrigatória antes da expansão
+ok 332 - estabilidade 4H é obrigatória antes da expansão
+  ---
+  duration_ms: 1.245059
+  type: 'test'
+  ...
+# Subtest: usuário estável do piloto pode optar por teto máximo de dois writes
+ok 333 - usuário estável do piloto pode optar por teto máximo de dois writes
+  ---
+  duration_ms: 1.514366
+  type: 'test'
+  ...
+# Subtest: faixa expandida 10-24 permanece rigidamente em um write
+ok 334 - faixa expandida 10-24 permanece rigidamente em um write
+  ---
+  duration_ms: 0.936432
+  type: 'test'
+  ...
+# Subtest: coorte base e elegibilidade do rollout continuam obrigatórias
+ok 335 - coorte base e elegibilidade do rollout continuam obrigatórias
+  ---
+  duration_ms: 1.405626
+  type: 'test'
+  ...
+# Subtest: circuit breaker e kill switch bloqueiam expansão
+ok 336 - circuit breaker e kill switch bloqueiam expansão
+  ---
+  duration_ms: 1.348982
+  type: 'test'
+  ...
+# Subtest: regressão de estabilidade faz fail-closed e volta ao teto um
+ok 337 - regressão de estabilidade faz fail-closed e volta ao teto um
+  ---
+  duration_ms: 1.96389
+  type: 'test'
+  ...
+# Subtest: falha/circuito da autoridade interrompe expansão
+ok 338 - falha/circuito da autoridade interrompe expansão
+  ---
+  duration_ms: 0.847652
+  type: 'test'
+  ...
+# Subtest: opt-in é estritamente separado por user_id
+ok 339 - opt-in é estritamente separado por user_id
+  ---
+  duration_ms: 0.980288
+  type: 'test'
+  ...
+# Subtest: controlador é política local e não implementa acesso remoto
+ok 340 - controlador é política local e não implementa acesso remoto
+  ---
+  duration_ms: 0.640966
+  type: 'test'
+  ...
+# Subtest: autoridade preserva um write por padrão e aceita apenas teto limitado a dois
+ok 341 - autoridade preserva um write por padrão e aceita apenas teto limitado a dois
+  ---
+  duration_ms: 0.281416
+  type: 'test'
+  ...
+# Subtest: AppState carrega expansion depois de stability e antes das autoridades do edital
+ok 342 - AppState carrega expansion depois de stability e antes das autoridades do edital
+  ---
+  duration_ms: 0.136431
+  type: 'test'
+  ...
+# Subtest: expansion integra contratos PWA e no-store
+ok 343 - expansion integra contratos PWA e no-store
+  ---
+  duration_ms: 0.10103
+  type: 'test'
+  ...
+# Subtest: graduação de metadados nasce desligada e recusa autoridade inelegível
+ok 344 - graduação de metadados nasce desligada e recusa autoridade inelegível
+  ---
+  duration_ms: 3.353883
+  type: 'test'
+  ...
+# Subtest: ativação elegível delega exclusivamente à autoridade 4E
+ok 345 - ativação elegível delega exclusivamente à autoridade 4E
+  ---
+  duration_ms: 0.969892
+  type: 'test'
+  ...
+# Subtest: falha de ativação do filho faz rollback e preserva legado
+ok 346 - falha de ativação do filho faz rollback e preserva legado
+  ---
+  duration_ms: 0.883384
+  type: 'test'
+  ...
+# Subtest: fallback da autoridade derruba graduação e desabilita o filho
+ok 347 - fallback da autoridade derruba graduação e desabilita o filho
+  ---
+  duration_ms: 0.971725
+  type: 'test'
+  ...
+# Subtest: circuit-open da autoridade derruba graduação
+ok 348 - circuit-open da autoridade derruba graduação
+  ---
+  duration_ms: 0.880631
+  type: 'test'
+  ...
+# Subtest: encerramento do canário por orçamento encerra também a graduação
+ok 349 - encerramento do canário por orçamento encerra também a graduação
+  ---
+  duration_ms: 0.868913
+  type: 'test'
+  ...
+# Subtest: kill switch compartilhado encerra graduação e autoridade
+ok 350 - kill switch compartilhado encerra graduação e autoridade
+  ---
+  duration_ms: 0.840771
+  type: 'test'
+  ...
+# Subtest: coordenador não possui caminho remoto próprio
+ok 351 - coordenador não possui caminho remoto próprio
+  ---
+  duration_ms: 0.33847
+  type: 'test'
+  ...
+# Subtest: AppState carrega graduação entre autoridade de metadados e autoridade do edital
+ok 352 - AppState carrega graduação entre autoridade de metadados e autoridade do edital
+  ---
+  duration_ms: 0.434682
+  type: 'test'
+  ...
+# Subtest: coordenador integra todos os contratos PWA e no-store
+ok 353 - coordenador integra todos os contratos PWA e no-store
+  ---
+  duration_ms: 0.464186
+  type: 'test'
+  ...
+# Subtest: 4Q permanece observador local sem nova autoridade remota
+ok 354 - 4Q permanece observador local sem nova autoridade remota
+  ---
+  duration_ms: 0.978695
+  type: 'test'
+  ...
+# Subtest: cinco sucessos limpos após a promoção 4P habilitam revisão populacional
+ok 355 - cinco sucessos limpos após a promoção 4P habilitam revisão populacional
+  ---
+  duration_ms: 3.695317
+  type: 'test'
+  ...
+# Subtest: usuário 25–34 ainda não promovido não acumula observações pós-promoção
+ok 356 - usuário 25–34 ainda não promovido não acumula observações pós-promoção
+  ---
+  duration_ms: 0.939227
+  type: 'test'
+  ...
+# Subtest: falha ou revogação da 4P invalida prontidão
+ok 357 - falha ou revogação da 4P invalida prontidão
+  ---
+  duration_ms: 1.190488
+  type: 'test'
+  ...
+# Subtest: 4Q não amplia o orçamento remoto acima de dois writes
+ok 358 - 4Q não amplia o orçamento remoto acima de dois writes
+  ---
+  duration_ms: 0.278692
+  type: 'test'
+  ...
+# Subtest: AppState carrega 4Q após 4P e expõe diagnóstico
+ok 359 - AppState carrega 4Q após 4P e expõe diagnóstico
+  ---
+  duration_ms: 0.162861
+  type: 'test'
+  ...
+# Subtest: asset 4Q integra manifesto sem alterar identidade durante implementação
+ok 360 - asset 4Q integra manifesto sem alterar identidade durante implementação
+  ---
+  duration_ms: 0.186245
+  type: 'test'
+  ...
+# Subtest: 4P é política local e não cria nova autoridade remota
+ok 361 - 4P é política local e não cria nova autoridade remota
+  ---
+  duration_ms: 1.062299
+  type: 'test'
+  ...
+# Subtest: usuário 25–34 pronto na 4O pode ser promovido individualmente
+ok 362 - usuário 25–34 pronto na 4O pode ser promovido individualmente
+  ---
+  duration_ms: 3.041401
+  type: 'test'
+  ...
+# Subtest: 4P recusa promoção sem readyForDepthReview
+ok 363 - 4P recusa promoção sem readyForDepthReview
+  ---
+  duration_ms: 0.776998
+  type: 'test'
+  ...
+# Subtest: 4P não promove piloto, expanded-base anterior ou excluídos
+ok 364 - 4P não promove piloto, expanded-base anterior ou excluídos
+  ---
+  duration_ms: 2.013854
+  type: 'test'
+  ...
+# Subtest: circuit breaker, kill switch e rollout inativo bloqueiam promoção
+ok 365 - circuit breaker, kill switch e rollout inativo bloqueiam promoção
+  ---
+  duration_ms: 3.017015
+  type: 'test'
+  ...
+# Subtest: promoção persistida é revogada quando elegibilidade longitudinal regride
+ok 366 - promoção persistida é revogada quando elegibilidade longitudinal regride
+  ---
+  duration_ms: 0.866079
+  type: 'test'
+  ...
+# Subtest: budget 4P permanece rigidamente limitado a dois writes
+ok 367 - budget 4P permanece rigidamente limitado a dois writes
+  ---
+  duration_ms: 1.132552
+  type: 'test'
+  ...
+# Subtest: AppState carrega 4P antes da política final de expansão e expõe diagnóstico
+ok 368 - AppState carrega 4P antes da política final de expansão e expõe diagnóstico
+  ---
+  duration_ms: 0.158784
+  type: 'test'
+  ...
+# Subtest: asset 4P integra shell, network-first e contratos no-store
+ok 369 - asset 4P integra shell, network-first e contratos no-store
+  ---
+  duration_ms: 0.397126
+  type: 'test'
+  ...
+# Subtest: 4P não amplia a população-base além dos 35%
+ok 370 - 4P não amplia a população-base além dos 35%
+  ---
+  duration_ms: 0.439139
+  type: 'test'
+  ...
+# Subtest: 4O reutiliza o ledger longitudinal existente sem nova autoridade remota
+ok 371 - 4O reutiliza o ledger longitudinal existente sem nova autoridade remota
+  ---
+  duration_ms: 1.097931
+  type: 'test'
+  ...
+# Subtest: population-expanded-base exige cinco canários limpos para revisão de profundidade
+ok 372 - population-expanded-base exige cinco canários limpos para revisão de profundidade
+  ---
+  duration_ms: 1.786698
+  type: 'test'
+  ...
+# Subtest: quatro sucessos ainda não liberam revisão de profundidade
+ok 373 - quatro sucessos ainda não liberam revisão de profundidade
+  ---
+  duration_ms: 0.778729
+  type: 'test'
+  ...
+# Subtest: failure ou aborto recente bloqueia a prontidão 4O
+ok 374 - failure ou aborto recente bloqueia a prontidão 4O
+  ---
+  duration_ms: 1.480937
+  type: 'test'
+  ...
+# Subtest: piloto, expanded-base legado e excluídos não são qualificados pela 4O
+ok 375 - piloto, expanded-base legado e excluídos não são qualificados pela 4O
+  ---
+  duration_ms: 1.852024
+  type: 'test'
+  ...
+# Subtest: paridade atual continua obrigatória na nova faixa
+ok 376 - paridade atual continua obrigatória na nova faixa
+  ---
+  duration_ms: 0.7791
+  type: 'test'
+  ...
+# Subtest: evento longitudinal reavalia 4O apenas para population-expanded-base
+ok 377 - evento longitudinal reavalia 4O apenas para population-expanded-base
+  ---
+  duration_ms: 2.686677
+  type: 'test'
+  ...
+# Subtest: diagnóstico já exposto pelo AppState incorpora o relatório 4O sem novo asset
+ok 378 - diagnóstico já exposto pelo AppState incorpora o relatório 4O sem novo asset
+  ---
+  duration_ms: 1.403613
+  type: 'test'
+  ...
+# Subtest: 4O não altera população nem orçamento remoto
+ok 379 - 4O não altera população nem orçamento remoto
+  ---
+  duration_ms: 0.960238
+  type: 'test'
+  ...
+# Subtest: 4M é observador local sem nova autoridade remota
+ok 380 - 4M é observador local sem nova autoridade remota
+  ---
+  duration_ms: 1.093364
+  type: 'test'
+  ...
+# Subtest: expanded-base ainda não promovido não acumula sucessos pós-promoção
+ok 381 - expanded-base ainda não promovido não acumula sucessos pós-promoção
+  ---
+  duration_ms: 2.707438
+  type: 'test'
+  ...
+# Subtest: cinco sucessos limpos após promoção habilitam apenas revisão populacional
+ok 382 - cinco sucessos limpos após promoção habilitam apenas revisão populacional
+  ---
+  duration_ms: 1.84174
+  type: 'test'
+  ...
+# Subtest: piloto original e usuários fora da base não entram na observação 4M
+ok 383 - piloto original e usuários fora da base não entram na observação 4M
+  ---
+  duration_ms: 1.545712
+  type: 'test'
+  ...
+# Subtest: revogação causada por falha de canário registra failure e invalida revisão
+ok 384 - revogação causada por falha de canário registra failure e invalida revisão
+  ---
+  duration_ms: 1.134566
+  type: 'test'
+  ...
+# Subtest: revogação administrativa registra aborted sem confundir com failure
+ok 385 - revogação administrativa registra aborted sem confundir com failure
+  ---
+  duration_ms: 0.80621
+  type: 'test'
+  ...
+# Subtest: histórico pós-promoção é separado, deduplicado e limitado a dez amostras
+ok 386 - histórico pós-promoção é separado, deduplicado e limitado a dez amostras
+  ---
+  duration_ms: 1.257897
+  type: 'test'
+  ...
+# Subtest: leitura de relatório não chama isPromoted nem provoca transição na 4L
+ok 387 - leitura de relatório não chama isPromoted nem provoca transição na 4L
+  ---
+  duration_ms: 0.804038
+  type: 'test'
+  ...
+# Subtest: 4M não amplia budget remoto da 4L acima de dois writes
+ok 388 - 4M não amplia budget remoto da 4L acima de dois writes
+  ---
+  duration_ms: 0.34508
+  type: 'test'
+  ...
+# Subtest: AppState carrega 4M após 4L e antes da 4I e expõe diagnóstico
+ok 389 - AppState carrega 4M após 4L e antes da 4I e expõe diagnóstico
+  ---
+  duration_ms: 0.48738
+  type: 'test'
+  ...
+# Subtest: 4M integra PWA/no-store e preserva a identidade canônica durante implementação
+ok 390 - 4M integra PWA/no-store e preserva a identidade canônica durante implementação
+  ---
+  duration_ms: 0.202989
+  type: 'test'
+  ...
+# Subtest: 4U permanece observador local sem nova autoridade remota
+ok 391 - 4U permanece observador local sem nova autoridade remota
+  ---
+  duration_ms: 1.010933
+  type: 'test'
+  ...
+# Subtest: cinco sucessos limpos após a promoção 4T habilitam revisão populacional
+ok 392 - cinco sucessos limpos após a promoção 4T habilitam revisão populacional
+  ---
+  duration_ms: 3.624823
+  type: 'test'
+  ...
+# Subtest: usuário 35–44 ainda não promovido não acumula observações pós-promoção
+ok 393 - usuário 35–44 ainda não promovido não acumula observações pós-promoção
+  ---
+  duration_ms: 0.855503
+  type: 'test'
+  ...
+# Subtest: falha ou revogação da 4T invalida prontidão
+ok 394 - falha ou revogação da 4T invalida prontidão
+  ---
+  duration_ms: 1.215195
+  type: 'test'
+  ...
+# Subtest: 4U não amplia o orçamento remoto acima de dois writes
+ok 395 - 4U não amplia o orçamento remoto acima de dois writes
+  ---
+  duration_ms: 0.219064
+  type: 'test'
+  ...
+# Subtest: AppState carrega 4U após 4T e expõe diagnóstico
+ok 396 - AppState carrega 4U após 4T e expõe diagnóstico
+  ---
+  duration_ms: 0.151614
+  type: 'test'
+  ...
+# Subtest: asset 4U integra manifesto sem alterar identidade durante implementação
+ok 397 - asset 4U integra manifesto sem alterar identidade durante implementação
+  ---
+  duration_ms: 0.221076
+  type: 'test'
+  ...
+# Subtest: 4T é política local e não cria nova autoridade remota
+ok 398 - 4T é política local e não cria nova autoridade remota
+  ---
+  duration_ms: 1.08336
+  type: 'test'
+  ...
+# Subtest: usuário 35–44 pronto na 4S pode ser promovido individualmente
+ok 399 - usuário 35–44 pronto na 4S pode ser promovido individualmente
+  ---
+  duration_ms: 3.046349
+  type: 'test'
+  ...
+# Subtest: 4T recusa promoção sem readyForDepthReview
+ok 400 - 4T recusa promoção sem readyForDepthReview
+  ---
+  duration_ms: 0.772711
+  type: 'test'
+  ...
+# Subtest: 4T não promove tiers históricos nem excluídos
+ok 401 - 4T não promove tiers históricos nem excluídos
+  ---
+  duration_ms: 2.562815
+  type: 'test'
+  ...
+# Subtest: circuit breaker, kill switch e rollout inativo bloqueiam 4T
+ok 402 - circuit breaker, kill switch e rollout inativo bloqueiam 4T
+  ---
+  duration_ms: 2.971749
+  type: 'test'
+  ...
+# Subtest: promoção 4T persistida é revogada quando elegibilidade regride
+ok 403 - promoção 4T persistida é revogada quando elegibilidade regride
+  ---
+  duration_ms: 1.731056
+  type: 'test'
+  ...
+# Subtest: budget 4T permanece rigidamente limitado a dois writes
+ok 404 - budget 4T permanece rigidamente limitado a dois writes
+  ---
+  duration_ms: 0.288707
+  type: 'test'
+  ...
+# Subtest: AppState carrega 4T depois da 4S e antes da política final de expansão
+ok 405 - AppState carrega 4T depois da 4S e antes da política final de expansão
+  ---
+  duration_ms: 0.146816
+  type: 'test'
+  ...
+# Subtest: asset 4T integra shell, network-first e contratos no-store
+ok 406 - asset 4T integra shell, network-first e contratos no-store
+  ---
+  duration_ms: 0.332091
+  type: 'test'
+  ...
+# Subtest: 4T não amplia população além de 45%
+ok 407 - 4T não amplia população além de 45%
+  ---
+  duration_ms: 0.492828
+  type: 'test'
+  ...
+# Subtest: 4S reutiliza o ledger longitudinal existente sem nova autoridade remota
+ok 408 - 4S reutiliza o ledger longitudinal existente sem nova autoridade remota
+  ---
+  duration_ms: 1.105773
+  type: 'test'
+  ...
+# Subtest: ring-2 exige cinco canários limpos em janela longitudinal de dez observações
+ok 409 - ring-2 exige cinco canários limpos em janela longitudinal de dez observações
+  ---
+  duration_ms: 1.734
+  type: 'test'
+  ...
+# Subtest: quatro sucessos ainda não liberam revisão de profundidade na 4S
+ok 410 - quatro sucessos ainda não liberam revisão de profundidade na 4S
+  ---
+  duration_ms: 1.616888
+  type: 'test'
+  ...
+# Subtest: failure ou aborto recente bloqueia a prontidão 4S
+ok 411 - failure ou aborto recente bloqueia a prontidão 4S
+  ---
+  duration_ms: 1.459415
+  type: 'test'
+  ...
+# Subtest: tiers históricos e excluídos não são qualificados pela 4S
+ok 412 - tiers históricos e excluídos não são qualificados pela 4S
+  ---
+  duration_ms: 2.663984
+  type: 'test'
+  ...
+# Subtest: paridade atual continua obrigatória para ring-2
+ok 413 - paridade atual continua obrigatória para ring-2
+  ---
+  duration_ms: 1.140965
+  type: 'test'
+  ...
+# Subtest: evento longitudinal reavalia 4S apenas para population-expanded-ring-2
+ok 414 - evento longitudinal reavalia 4S apenas para population-expanded-ring-2
+  ---
+  duration_ms: 2.236493
+  type: 'test'
+  ...
+# Subtest: diagnóstico AppState incorpora 4S no asset existente sem novo loader
+ok 415 - diagnóstico AppState incorpora 4S no asset existente sem novo loader
+  ---
+  duration_ms: 0.998595
+  type: 'test'
+  ...
+# Subtest: 4S preserva a fronteira ring-2 em 45% enquanto 4V amplia o rollout global para 55%
+ok 416 - 4S preserva a fronteira ring-2 em 45% enquanto 4V amplia o rollout global para 55%
+  ---
+  duration_ms: 1.876301
+  type: 'test'
+  ...
+# Subtest: 4X é política local e não cria nova autoridade remota
+ok 417 - 4X é política local e não cria nova autoridade remota
+  ---
+  duration_ms: 1.105994
+  type: 'test'
+  ...
+# Subtest: usuário 45–54 pronto na 4W pode ser promovido individualmente
+ok 418 - usuário 45–54 pronto na 4W pode ser promovido individualmente
+  ---
+  duration_ms: 3.035533
+  type: 'test'
+  ...
+# Subtest: 4X recusa promoção sem readyForDepthReview
+ok 419 - 4X recusa promoção sem readyForDepthReview
+  ---
+  duration_ms: 0.787943
+  type: 'test'
+  ...
+# Subtest: 4X não promove tiers históricos nem excluídos
+ok 420 - 4X não promove tiers históricos nem excluídos
+  ---
+  duration_ms: 3.060109
+  type: 'test'
+  ...
+# Subtest: circuit breaker, kill switch e rollout inativo bloqueiam 4X
+ok 421 - circuit breaker, kill switch e rollout inativo bloqueiam 4X
+  ---
+  duration_ms: 2.997766
+  type: 'test'
+  ...
+# Subtest: promoção 4X persistida é revogada quando elegibilidade regride
+ok 422 - promoção 4X persistida é revogada quando elegibilidade regride
+  ---
+  duration_ms: 1.78766
+  type: 'test'
+  ...
+# Subtest: budget 4X permanece rigidamente limitado a dois writes e integra política final
+ok 423 - budget 4X permanece rigidamente limitado a dois writes e integra política final
+  ---
+  duration_ms: 0.254966
+  type: 'test'
+  ...
+# Subtest: AppState carrega 4X depois da 4W e antes da política final de expansão
+ok 424 - AppState carrega 4X depois da 4W e antes da política final de expansão
+  ---
+  duration_ms: 0.204652
+  type: 'test'
+  ...
+# Subtest: asset 4X integra shell, network-first e contratos no-store
+ok 425 - asset 4X integra shell, network-first e contratos no-store
+  ---
+  duration_ms: 0.372701
+  type: 'test'
+  ...
+# Subtest: 4X preserva rollout em 55% e não amplia além de dois writes
+ok 426 - 4X preserva rollout em 55% e não amplia além de dois writes
+  ---
+  duration_ms: 0.446199
+  type: 'test'
+  ...
+# Subtest: 4W reutiliza o ledger longitudinal existente sem nova autoridade remota
+ok 427 - 4W reutiliza o ledger longitudinal existente sem nova autoridade remota
+  ---
+  duration_ms: 1.122347
+  type: 'test'
+  ...
+# Subtest: ring-3 exige cinco canários limpos em janela longitudinal de dez observações
+ok 428 - ring-3 exige cinco canários limpos em janela longitudinal de dez observações
+  ---
+  duration_ms: 1.755632
+  type: 'test'
+  ...
+# Subtest: quatro sucessos ainda não liberam revisão de profundidade na 4W
+ok 429 - quatro sucessos ainda não liberam revisão de profundidade na 4W
+  ---
+  duration_ms: 1.561246
+  type: 'test'
+  ...
+# Subtest: failure ou aborto recente bloqueia a prontidão 4W
+ok 430 - failure ou aborto recente bloqueia a prontidão 4W
+  ---
+  duration_ms: 1.474517
+  type: 'test'
+  ...
+# Subtest: tiers históricos e excluídos não são qualificados pela 4W
+ok 431 - tiers históricos e excluídos não são qualificados pela 4W
+  ---
+  duration_ms: 3.062873
+  type: 'test'
+  ...
+# Subtest: paridade atual continua obrigatória para ring-3
+ok 432 - paridade atual continua obrigatória para ring-3
+  ---
+  duration_ms: 0.77904
+  type: 'test'
+  ...
+# Subtest: evento longitudinal reavalia 4W apenas para population-expanded-ring-3
+ok 433 - evento longitudinal reavalia 4W apenas para population-expanded-ring-3
+  ---
+  duration_ms: 1.896771
+  type: 'test'
+  ...
+# Subtest: diagnóstico AppState incorpora 4W no asset existente sem novo loader
+ok 434 - diagnóstico AppState incorpora 4W no asset existente sem novo loader
+  ---
+  duration_ms: 2.063598
+  type: 'test'
+  ...
+# Subtest: 4W preserva rollout global 55% e orçamento-base de um write
+ok 435 - 4W preserva rollout global 55% e orçamento-base de um write
+  ---
+  duration_ms: 0.986337
+  type: 'test'
+  ...
+# Subtest: coorte é determinística com base 55%, fronteiras históricas 45/35/25% e piloto preservado em 10%
+ok 436 - coorte é determinística com base 55%, fronteiras históricas 45/35/25% e piloto preservado em 10%
+  ---
+  duration_ms: 4.554365
+  type: 'test'
+  ...
+# Subtest: faixa 10-24 preserva tier expanded-base
+ok 437 - faixa 10-24 preserva tier expanded-base
+  ---
+  duration_ms: 1.978682
+  type: 'test'
+  ...
+# Subtest: faixa 25-34 preserva tier population-expanded-base e promoção 4P isolada
+ok 438 - faixa 25-34 preserva tier population-expanded-base e promoção 4P isolada
+  ---
+  duration_ms: 1.44953
+  type: 'test'
+  ...
+# Subtest: faixa 35-44 preserva tier population-expanded-ring-2 e grant 4T isolado
+ok 439 - faixa 35-44 preserva tier population-expanded-ring-2 e grant 4T isolado
+  ---
+  duration_ms: 1.405125
+  type: 'test'
+  ...
+# Subtest: faixa 45-54 entra na 4V como population-expanded-ring-3 com budget base de um write
+ok 440 - faixa 45-54 entra na 4V como population-expanded-ring-3 com budget base de um write
+  ---
+  duration_ms: 1.544191
+  type: 'test'
+  ...
+# Subtest: usuário fora dos 55% não pode ativar graduação
+ok 441 - usuário fora dos 55% não pode ativar graduação
+  ---
+  duration_ms: 2.374506
+  type: 'test'
+  ...
+# Subtest: usuário da coorte ainda depende da elegibilidade da graduação 4F
+ok 442 - usuário da coorte ainda depende da elegibilidade da graduação 4F
+  ---
+  duration_ms: 1.359508
+  type: 'test'
+  ...
+# Subtest: ativação elegível delega somente à graduação 4F
+ok 443 - ativação elegível delega somente à graduação 4F
+  ---
+  duration_ms: 1.503831
+  type: 'test'
+  ...
+# Subtest: falha de ativação da graduação faz rollback local
+ok 444 - falha de ativação da graduação faz rollback local
+  ---
+  duration_ms: 1.631449
+  type: 'test'
+  ...
+# Subtest: encerramento da graduação encerra rollout
+ok 445 - encerramento da graduação encerra rollout
+  ---
+  duration_ms: 1.843272
+  type: 'test'
+  ...
+# Subtest: kill switch compartilhado encerra rollout e graduação
+ok 446 - kill switch compartilhado encerra rollout e graduação
+  ---
+  duration_ms: 1.533415
+  type: 'test'
+  ...
+# Subtest: rollout não possui caminho remoto próprio
+ok 447 - rollout não possui caminho remoto próprio
+  ---
+  duration_ms: 0.273434
+  type: 'test'
+  ...
+# Subtest: AppState carrega rollout depois da graduação e antes das autoridades do edital
+ok 448 - AppState carrega rollout depois da graduação e antes das autoridades do edital
+  ---
+  duration_ms: 0.186716
+  type: 'test'
+  ...
+# Subtest: rollout integra contratos PWA e no-store
+ok 449 - rollout integra contratos PWA e no-store
+  ---
+  duration_ms: 0.102522
+  type: 'test'
+  ...
+# Subtest: shadow preserva o legado como primeira autoridade e espelha somente depois
+ok 450 - shadow preserva o legado como primeira autoridade e espelha somente depois
+  ---
+  duration_ms: 7.962929
+  type: 'test'
+  ...
+# Subtest: setMetadataDirty(false) não cria operação e mantém semântica legada
+ok 451 - setMetadataDirty(false) não cria operação e mantém semântica legada
+  ---
+  duration_ms: 1.560714
+  type: 'test'
+  ...
+# Subtest: idempotência é determinística para mesma revisão e mesmo snapshot
+ok 452 - idempotência é determinística para mesma revisão e mesmo snapshot
+  ---
+  duration_ms: 3.788054
+  type: 'test'
+  ...
+# Subtest: mudança real de metadados produz novo fingerprint após nova revisão
+ok 453 - mudança real de metadados produz novo fingerprint após nova revisão
+  ---
+  duration_ms: 1.74019
+  type: 'test'
+  ...
+# Subtest: diagnóstico registra paridade saudável sem autoridade remota
+ok 454 - diagnóstico registra paridade saudável sem autoridade remota
+  ---
+  duration_ms: 2.462467
+  type: 'test'
+  ...
+# Subtest: falha do shadow não interrompe o caminho legado
+ok 455 - falha do shadow não interrompe o caminho legado
+  ---
+  duration_ms: 1.656427
+  type: 'test'
+  ...
+# Subtest: módulo shadow não contém caminho remoto Supabase próprio
+ok 456 - módulo shadow não contém caminho remoto Supabase próprio
+  ---
+  duration_ms: 0.552045
+  type: 'test'
+  ...
+# Subtest: AppState carrega metadata shadow após outbox e antes das autoridades remotas
+ok 457 - AppState carrega metadata shadow após outbox e antes das autoridades remotas
+  ---
+  duration_ms: 0.263579
+  type: 'test'
+  ...
+# Subtest: metadata shadow integra app shell, network-first e no-store
+ok 458 - metadata shadow integra app shell, network-first e no-store
+  ---
+  duration_ms: 0.43323
+  type: 'test'
+  ...
+# Subtest: ledger nasce observacional, local e sem autoridade remota
+ok 459 - ledger nasce observacional, local e sem autoridade remota
+  ---
+  duration_ms: 2.922486
+  type: 'test'
+  ...
+# Subtest: três canários bem-sucedidos qualificam estabilidade
+ok 460 - três canários bem-sucedidos qualificam estabilidade
+  ---
+  duration_ms: 2.18756
+  type: 'test'
+  ...
+# Subtest: fallback recente bloqueia estabilidade
+ok 461 - fallback recente bloqueia estabilidade
+  ---
+  duration_ms: 1.091032
+  type: 'test'
+  ...
+# Subtest: abort de revisão concorrente bloqueia estabilidade
+ok 462 - abort de revisão concorrente bloqueia estabilidade
+  ---
+  duration_ms: 0.862394
+  type: 'test'
+  ...
+# Subtest: budget-exhausted normal não é tratado como falha ou abort
+ok 463 - budget-exhausted normal não é tratado como falha ou abort
+  ---
+  duration_ms: 0.848373
+  type: 'test'
+  ...
+# Subtest: registro é deduplicado por sessão e limitado à janela de 10
+ok 464 - registro é deduplicado por sessão e limitado à janela de 10
+  ---
+  duration_ms: 1.29377
+  type: 'test'
+  ...
+# Subtest: histórico é estritamente separado por user_id
+ok 465 - histórico é estritamente separado por user_id
+  ---
+  duration_ms: 0.808694
+  type: 'test'
+  ...
+# Subtest: coorte e paridade saudável continuam obrigatórias
+ok 466 - coorte e paridade saudável continuam obrigatórias
+  ---
+  duration_ms: 2.568263
+  type: 'test'
+  ...
+# Subtest: AppState carrega stability depois do rollout e antes das autoridades do edital
+ok 467 - AppState carrega stability depois do rollout e antes das autoridades do edital
+  ---
+  duration_ms: 0.363176
+  type: 'test'
+  ...
+# Subtest: stability integra contratos PWA e no-store
+ok 468 - stability integra contratos PWA e no-store
+  ---
+  duration_ms: 0.455172
+  type: 'test'
+  ...
+# Subtest: outbox e shadow fazem parte do núcleo offline canônico
+ok 469 - outbox e shadow fazem parte do núcleo offline canônico
+  ---
+  duration_ms: 1.336934
+  type: 'test'
+  ...
+# Subtest: shadow continua observacional e não ganha autoridade remota por entrar no app shell
+ok 470 - shadow continua observacional e não ganha autoridade remota por entrar no app shell
+  ---
+  duration_ms: 0.346943
+  type: 'test'
+  ...
+# Subtest: shadow envolve queueEditalUpsert sem substituir envio legado nem chamar Supabase
+ok 471 - shadow envolve queueEditalUpsert sem substituir envio legado nem chamar Supabase
+  ---
+  duration_ms: 38.829893
+  type: 'test'
+  ...
+# Subtest: delete entra somente no shadow enquanto fila legada continua sendo autoridade
+ok 472 - delete entra somente no shadow enquanto fila legada continua sendo autoridade
+  ---
+  duration_ms: 37.826478
+  type: 'test'
+  ...
+# Subtest: delete repetido é idempotente no shadow e permanece idempotente na fila legada
+ok 473 - delete repetido é idempotente no shadow e permanece idempotente na fila legada
+  ---
+  duration_ms: 36.237131
+  type: 'test'
+  ...
+# Subtest: mesmo payload é idempotente no shadow e payload alterado gera nova observação
+ok 474 - mesmo payload é idempotente no shadow e payload alterado gera nova observação
+  ---
+  duration_ms: 72.197797
+  type: 'test'
+  ...
+# Subtest: diagnóstico mede upsert e delete separadamente sem promover shadow a pending
+ok 475 - diagnóstico mede upsert e delete separadamente sem promover shadow a pending
+  ---
+  duration_ms: 1.809702
+  type: 'test'
+  ...
+# Subtest: telemetria de delete fica isolada da paridade usada pelo canário de upsert
+ok 476 - telemetria de delete fica isolada da paridade usada pelo canário de upsert
+  ---
+  duration_ms: 1.188345
+  type: 'test'
+  ...
+# Subtest: telemetria local registra amostra saudável após observação shadow de upsert
+ok 477 - telemetria local registra amostra saudável após observação shadow de upsert
+  ---
+  duration_ms: 37.012347
+  type: 'test'
+  ...
+# Subtest: queueEditalDelete registra paridade saudável de delete após o legado
+ok 478 - queueEditalDelete registra paridade saudável de delete após o legado
+  ---
+  duration_ms: 35.966163
+  type: 'test'
+  ...
+# Subtest: relatório detecta divergência real quando fila legada de upsert possui id sem shadow
+ok 479 - relatório detecta divergência real quando fila legada de upsert possui id sem shadow
+  ---
+  duration_ms: 1.4289
+  type: 'test'
+  ...
+# Subtest: shadowOnly de delete após esvaziamento legado não vira falso erro
+ok 480 - shadowOnly de delete após esvaziamento legado não vira falso erro
+  ---
+  duration_ms: 1.505353
+  type: 'test'
+  ...
+# Subtest: históricos de paridade são bounded e podem ser limpos independentemente
+ok 481 - históricos de paridade são bounded e podem ser limpos independentemente
+  ---
+  duration_ms: 41.072392
+  type: 'test'
+  ...
+# Subtest: AppState carrega outbox antes do bridge na release v10.56.0
+ok 482 - AppState carrega outbox antes do bridge na release v10.56.0
+  ---
+  duration_ms: 0.257039
+  type: 'test'
+  ...
+# Subtest: bridge de delete continua estritamente shadow e sem qualquer envio remoto
+ok 483 - bridge de delete continua estritamente shadow e sem qualquer envio remoto
+  ---
+  duration_ms: 0.302917
+  type: 'test'
+  ...
+# Subtest: senha forte exige 8 caracteres e todos os grupos
+ok 484 - senha forte exige 8 caracteres e todos os grupos
+  ---
+  duration_ms: 1.091642
+  type: 'test'
+  ...
+# Subtest: retorna requisitos faltantes de forma explícita
+ok 485 - retorna requisitos faltantes de forma explícita
+  ---
+  duration_ms: 0.204582
+  type: 'test'
+  ...
+# Subtest: interface de autenticação recebe mensagem atualizada e cadastro é protegido
+ok 486 - interface de autenticação recebe mensagem atualizada e cadastro é protegido
+  ---
+  duration_ms: 0.225953
+  type: 'test'
+  ...
+# Subtest: Reader nunca usa vínculo de outro concurso como fallback
+ok 487 - Reader nunca usa vínculo de outro concurso como fallback
+  ---
+  duration_ms: 1.230687
+  type: 'test'
+  ...
+# Subtest: Flashcard independe de vínculo e exportação mantém contexto válido
+ok 488 - Flashcard independe de vínculo e exportação mantém contexto válido
+  ---
+  duration_ms: 0.319963
+  type: 'test'
+  ...
+# Subtest: hardening RLS valida propriedade do PDF e torna versões imutáveis ao cliente
+ok 489 - hardening RLS valida propriedade do PDF e torna versões imutáveis ao cliente
+  ---
+  duration_ms: 0.316787
+  type: 'test'
+  ...
+# Subtest: PDF salvo no dispositivo usa arquivo externo ao armazenamento privado do app
+ok 490 - PDF salvo no dispositivo usa arquivo externo ao armazenamento privado do app
+  ---
+  duration_ms: 27.858239
+  type: 'test'
+  ...
+# Subtest: cancelamento do seletor não é reportado como salvamento concluído
+ok 491 - cancelamento do seletor não é reportado como salvamento concluído
+  ---
+  duration_ms: 0.160276
+  type: 'test'
+  ...
+# Subtest: exclusão global purga armazenamento local pelo caminho canônico da Biblioteca
+ok 492 - exclusão global purga armazenamento local pelo caminho canônico da Biblioteca
+  ---
+  duration_ms: 25.467078
+  type: 'test'
+  ...
+# Subtest: módulo de dispositivo não substitui nem envolve PdfStudyLibrary
+ok 493 - módulo de dispositivo não substitui nem envolve PdfStudyLibrary
+  ---
+  duration_ms: 0.240315
+  type: 'test'
+  ...
+# Subtest: biblioteca offline persiste explicitamente no OPFS ou IndexedDB moderno
+ok 494 - biblioteca offline persiste explicitamente no OPFS ou IndexedDB moderno
+  ---
+  duration_ms: 25.423934
+  type: 'test'
+  ...
+# Subtest: ações dos cards respondem à largura do próprio card, não apenas à viewport
+ok 495 - ações dos cards respondem à largura do próprio card, não apenas à viewport
+  ---
+  duration_ms: 0.190251
+  type: 'test'
+  ...
+# Subtest: adapter carrega CSS e módulos PDF com revisão explícita para impedir cache stale
+ok 496 - adapter carrega CSS e módulos PDF com revisão explícita para impedir cache stale
+  ---
+  duration_ms: 0.29834
+  type: 'test'
+  ...
+# Subtest: fundação PDF cria Workspaces, documentos e progresso com RLS
+ok 497 - fundação PDF cria Workspaces, documentos e progresso com RLS
+  ---
+  duration_ms: 1.123979
+  type: 'test'
+  ...
+# Subtest: bucket study-pdfs é privado, limitado a PDF e 100 MiB
+ok 498 - bucket study-pdfs é privado, limitado a PDF e 100 MiB
+  ---
+  duration_ms: 0.252193
+  type: 'test'
+  ...
+# Subtest: metadados impõem limites e evitam caminhos duplicados por usuário
+ok 499 - metadados impõem limites e evitam caminhos duplicados por usuário
+  ---
+  duration_ms: 0.159796
+  type: 'test'
+  ...
+# Subtest: exclusão de dados cobre fundação PDF na ordem correta
+ok 500 - exclusão de dados cobre fundação PDF na ordem correta
+  ---
+  duration_ms: 0.240205
+  type: 'test'
+  ...
+# Subtest: serviços JS de fundação são privados, limitam PDF e constroem caminho por user_id
+ok 501 - serviços JS de fundação são privados, limitam PDF e constroem caminho por user_id
+  ---
+  duration_ms: 0.258321
+  type: 'test'
+  ...
+# Subtest: três filtros dividem igualmente o desktop
+ok 502 - três filtros dividem igualmente o desktop
+  ---
+  duration_ms: 1.110129
+  type: 'test'
+  ...
+# Subtest: offline remove limite e pausa e mantém Enviar e Cancelar
+ok 503 - offline remove limite e pausa e mantém Enviar e Cancelar
+  ---
+  duration_ms: 0.257991
+  type: 'test'
+  ...
+# Subtest: mobile mantém alvos de toque e rolagem
+ok 504 - mobile mantém alvos de toque e rolagem
+  ---
+  duration_ms: 0.183912
+  type: 'test'
+  ...
+# Subtest: Biblioteca tem escopo global e vínculo contextual
+ok 505 - Biblioteca tem escopo global e vínculo contextual
+  ---
+  duration_ms: 1.612812
+  type: 'test'
+  ...
+# Subtest: PDF global não carrega concurso workspace matéria ou assunto
+ok 506 - PDF global não carrega concurso workspace matéria ou assunto
+  ---
+  duration_ms: 0.415704
+  type: 'test'
+  ...
+# Subtest: Storage novo independe de workspace
+ok 507 - Storage novo independe de workspace
+  ---
+  duration_ms: 0.229238
+  type: 'test'
+  ...
+# Subtest: link table permite múltiplos contextos sem duplicar PDF
+ok 508 - link table permite múltiplos contextos sem duplicar PDF
+  ---
+  duration_ms: 0.271151
+  type: 'test'
+  ...
+# Subtest: excluir concurso remove somente vínculos
+ok 509 - excluir concurso remove somente vínculos
+  ---
+  duration_ms: 2.185968
+  type: 'test'
+  ...
+# Subtest: excluir PDF global remove arquivo e documento explicitamente
+ok 510 - excluir PDF global remove arquivo e documento explicitamente
+  ---
+  duration_ms: 0.221186
+  type: 'test'
+  ...
+# Subtest: upload PDF tem dropzone explícita e seletor múltiplo acessível
+ok 511 - upload PDF tem dropzone explícita e seletor múltiplo acessível
+  ---
+  duration_ms: 1.594855
+  type: 'test'
+  ...
+# Subtest: modal de upload garante Workspace padrão e permite criar Workspace inline
+ok 512 - modal de upload garante Workspace padrão e permite criar Workspace inline
+  ---
+  duration_ms: 0.802395
+  type: 'test'
+  ...
+# Subtest: upload modal preserva Biblioteca Global e abre Reader interno
+ok 513 - upload modal preserva Biblioteca Global e abre Reader interno
+  ---
+  duration_ms: 0.88747
+  type: 'test'
+  ...
+# Subtest: Biblioteca mantém PDFs visíveis quando a releitura remota falha
+ok 514 - Biblioteca mantém PDFs visíveis quando a releitura remota falha
+  ---
+  duration_ms: 0.627978
+  type: 'test'
+  ...
+# Subtest: Workspace padrão é idempotente e corrida 23505 é recuperada
+ok 515 - Workspace padrão é idempotente e corrida 23505 é recuperada
+  ---
+  duration_ms: 0.300594
+  type: 'test'
+  ...
+# Subtest: Biblioteca abre global por padrão e Workspace não bloqueia PDFs
+ok 516 - Biblioteca abre global por padrão e Workspace não bloqueia PDFs
+  ---
+  duration_ms: 1.990299
+  type: 'test'
+  ...
+# Subtest: Biblioteca usa cache local para renderização quase instantânea antes da sincronização
+ok 517 - Biblioteca usa cache local para renderização quase instantânea antes da sincronização
+  ---
+  duration_ms: 0.38612
+  type: 'test'
+  ...
+# Subtest: Biblioteca carrega links e progresso em paralelo e prioriza cache no first paint
+ok 518 - Biblioteca carrega links e progresso em paralelo e prioriza cache no first paint
+  ---
+  duration_ms: 0.382735
+  type: 'test'
+  ...
+# Subtest: ações da Biblioteca não estouram no mobile com quatro comandos
+ok 519 - ações da Biblioteca não estouram no mobile com quatro comandos
+  ---
+  duration_ms: 0.347783
+  type: 'test'
+  ...
+# Subtest: upload em lote aceita múltiplos PDFs com concorrência controlada
+ok 520 - upload em lote aceita múltiplos PDFs com concorrência controlada
+  ---
+  duration_ms: 0.965436
+  type: 'test'
+  ...
+# Subtest: Biblioteca permite seleção múltipla e exclusão em lote
+ok 521 - Biblioteca permite seleção múltipla e exclusão em lote
+  ---
+  duration_ms: 0.96176
+  type: 'test'
+  ...
+# Subtest: upload em lote diagnostica falha por arquivo com código etapa e mensagem amigável
+ok 522 - upload em lote diagnostica falha por arquivo com código etapa e mensagem amigável
+  ---
+  duration_ms: 0.672693
+  type: 'test'
+  ...
+# Subtest: lote não aborta por um PDF inválido e permite retry somente das falhas
+ok 523 - lote não aborta por um PDF inválido e permite retry somente das falhas
+  ---
+  duration_ms: 0.374584
+  type: 'test'
+  ...
+# Subtest: diagnóstico detecta assinatura PDF inválida antes do Storage e permite copiar relatório
+ok 524 - diagnóstico detecta assinatura PDF inválida antes do Storage e permite copiar relatório
+  ---
+  duration_ms: 0.261606
+  type: 'test'
+  ...
+# Subtest: upload de PDF permite destino somente no Workspace sem matéria obrigatória
+ok 525 - upload de PDF permite destino somente no Workspace sem matéria obrigatória
+  ---
+  duration_ms: 1.167354
+  type: 'test'
+  ...
+# Subtest: upload desfaz falha parcial sem usar catch direto em query builder do Supabase
+ok 526 - upload desfaz falha parcial sem usar catch direto em query builder do Supabase
+  ---
+  duration_ms: 0.212925
+  type: 'test'
+  ...
+# Subtest: serviço de vínculos cria, remove e sincroniza concurso
+ok 527 - serviço de vínculos cria, remove e sincroniza concurso
+  ---
+  duration_ms: 1.241353
+  type: 'test'
+  ...
+# Subtest: migration desacopla colunas contextuais de pdf_documents
+ok 528 - migration desacopla colunas contextuais de pdf_documents
+  ---
+  duration_ms: 0.328895
+  type: 'test'
+  ...
+# Subtest: RPC de exclusão completa inclui pdf_document_links
+ok 529 - RPC de exclusão completa inclui pdf_document_links
+  ---
+  duration_ms: 0.197701
+  type: 'test'
+  ...
+# Subtest: Fase 2 remove CSS de renderers obsoletos e preserva renderer atual
+ok 530 - Fase 2 remove CSS de renderers obsoletos e preserva renderer atual
+  ---
+  duration_ms: 1.109869
+  type: 'test'
+  ...
+# Subtest: Fase 2 preserva controles e correções atuais
+ok 531 - Fase 2 preserva controles e correções atuais
+  ---
+  duration_ms: 0.279263
+  type: 'test'
+  ...
+# Subtest: auditoria pós-Fase 2 mantém renderer próprio e elimina assinaturas visuais antigas
+ok 532 - auditoria pós-Fase 2 mantém renderer próprio e elimina assinaturas visuais antigas
+  ---
+  duration_ms: 0.251822
+  type: 'test'
+  ...
+# Subtest: bootstrap instala expansão do painel sem depender de módulo auxiliar
+ok 533 - bootstrap instala expansão do painel sem depender de módulo auxiliar
+  ---
+  duration_ms: 1.075588
+  type: 'test'
+  ...
+# Subtest: painel colapsado força corpo e canvas a ocupar toda a largura
+ok 534 - painel colapsado força corpo e canvas a ocupar toda a largura
+  ---
+  duration_ms: 0.149341
+  type: 'test'
+  ...
+# Subtest: modos largura e página são recalculados após mudança do painel
+ok 535 - modos largura e página são recalculados após mudança do painel
+  ---
+  duration_ms: 0.180998
+  type: 'test'
+  ...
+# Subtest: zoom manual acompanha proporcionalmente a largura liberada
+ok 536 - zoom manual acompanha proporcionalmente a largura liberada
+  ---
+  duration_ms: 0.163131
+  type: 'test'
+  ...
+# Subtest: mobile mantém painel como sobreposição sem alterar zoom
+ok 537 - mobile mantém painel como sobreposição sem alterar zoom
+  ---
+  duration_ms: 0.125846
+  type: 'test'
+  ...
+# Subtest: botão Painel alterna a classe estrutural do Reader
+ok 538 - botão Painel alterna a classe estrutural do Reader
+  ---
+  duration_ms: 1.05594
+  type: 'test'
+  ...
+# Subtest: modos Largura e Página recalculam o encaixe após o painel mudar
+ok 539 - modos Largura e Página recalculam o encaixe após o painel mudar
+  ---
+  duration_ms: 0.148449
+  type: 'test'
+  ...
+# Subtest: zoom customizado acompanha proporcionalmente a largura liberada pelo painel
+ok 540 - zoom customizado acompanha proporcionalmente a largura liberada pelo painel
+  ---
+  duration_ms: 0.245302
+  type: 'test'
+  ...
+# Subtest: mobile mantém PDF em largura total e não força novo zoom ao abrir drawer
+ok 541 - mobile mantém PDF em largura total e não força novo zoom ao abrir drawer
+  ---
+  duration_ms: 0.131465
+  type: 'test'
+  ...
+# Subtest: módulo de layout do painel é carregado pelo bootstrap já existente
+ok 542 - módulo de layout do painel é carregado pelo bootstrap já existente
+  ---
+  duration_ms: 0.126537
+  type: 'test'
+  ...
+# Subtest: Biblioteca usa renderer próprio sobre o núcleo PDF.js
+ok 543 - Biblioteca usa renderer próprio sobre o núcleo PDF.js
+  ---
+  duration_ms: 2.81648
+  type: 'test'
+  ...
+# Subtest: renderer próprio cria páginas progressivas sem restrições de container
+ok 544 - renderer próprio cria páginas progressivas sem restrições de container
+  ---
+  duration_ms: 0.571274
+  type: 'test'
+  ...
+# Subtest: Reader captura seleção direta e mantém área de transferência como fallback
+ok 545 - Reader captura seleção direta e mantém área de transferência como fallback
+  ---
+  duration_ms: 0.676519
+  type: 'test'
+  ...
+# Subtest: Reader mantém marca-texto sublinhado anotação flashcard e troca de ajuste
+ok 546 - Reader mantém marca-texto sublinhado anotação flashcard e troca de ajuste
+  ---
+  duration_ms: 1.044112
+  type: 'test'
+  ...
+# Subtest: barra de estudo permanece visível antes e depois da seleção
+ok 547 - barra de estudo permanece visível antes e depois da seleção
+  ---
+  duration_ms: 1.588766
+  type: 'test'
+  ...
+# Subtest: flashcard permite matéria e assunto opcionais no modal
+ok 548 - flashcard permite matéria e assunto opcionais no modal
+  ---
+  duration_ms: 0.848663
+  type: 'test'
+  ...
+# Subtest: nota é pontual e sublinhado não entra no painel ou exportação
+ok 549 - nota é pontual e sublinhado não entra no painel ou exportação
+  ---
+  duration_ms: 0.319732
+  type: 'test'
+  ...
+# Subtest: marca-texto oferece cor e opacidade configuráveis
+ok 550 - marca-texto oferece cor e opacidade configuráveis
+  ---
+  duration_ms: 0.702828
+  type: 'test'
+  ...
+# Subtest: anotações PDF têm RLS e versionamento
+ok 551 - anotações PDF têm RLS e versionamento
+  ---
+  duration_ms: 0.407592
+  type: 'test'
+  ...
+# Subtest: Reader próprio controla página e escala sem PDFViewer
+ok 552 - Reader próprio controla página e escala sem PDFViewer
+  ---
+  duration_ms: 0.615088
+  type: 'test'
+  ...
+# Subtest: seleção copiada alimenta flashcard e pergunta plausível
+ok 553 - seleção copiada alimenta flashcard e pergunta plausível
+  ---
+  duration_ms: 0.673665
+  type: 'test'
+  ...
+# Subtest: flashcard de trecho usa pergunta contextual sem fallback genérico
+ok 554 - flashcard de trecho usa pergunta contextual sem fallback genérico
+  ---
+  duration_ms: 0.776737
+  type: 'test'
+  ...
+# Subtest: flashcard do PDF salva a partir do modal e mantém a Biblioteca aberta
+ok 555 - flashcard do PDF salva a partir do modal e mantém a Biblioteca aberta
+  ---
+  duration_ms: 0.821563
+  type: 'test'
+  ...
+# Subtest: botão de marcador de página comunica função e estado
+ok 556 - botão de marcador de página comunica função e estado
+  ---
+  duration_ms: 0.380101
+  type: 'test'
+  ...
+# Subtest: Biblioteca estabiliza loads concorrentes e concurso usa seletor atual
+ok 557 - Biblioteca estabiliza loads concorrentes e concurso usa seletor atual
+  ---
+  duration_ms: 0.282708
+  type: 'test'
+  ...
+# Subtest: upload modal tem limites responsivos e sem overflow horizontal
+ok 558 - upload modal tem limites responsivos e sem overflow horizontal
+  ---
+  duration_ms: 0.315867
+  type: 'test'
+  ...
+# Subtest: Reader abre Blob privado sem expor URL assinada
+ok 559 - Reader abre Blob privado sem expor URL assinada
+  ---
+  duration_ms: 0.318791
+  type: 'test'
+  ...
+# Subtest: Reader mobile usa Pointer Events para pinch sem assistente touch legado
+ok 560 - Reader mobile usa Pointer Events para pinch sem assistente touch legado
+  ---
+  duration_ms: 0.571043
+  type: 'test'
+  ...
+# Subtest: seleção usa renderTextLayer e gera retângulos persistentes
+ok 561 - seleção usa renderTextLayer e gera retângulos persistentes
+  ---
+  duration_ms: 0.34587
+  type: 'test'
+  ...
+# Subtest: anotação não desenha ícone sobre o PDF e navega ao ponto exato
+ok 562 - anotação não desenha ícone sobre o PDF e navega ao ponto exato
+  ---
+  duration_ms: 0.424747
+  type: 'test'
+  ...
+# Subtest: marca-texto e sublinhado podem ser removidos pelo painel ou pela própria marca
+ok 563 - marca-texto e sublinhado podem ser removidos pelo painel ou pela própria marca
+  ---
+  duration_ms: 0.383647
+  type: 'test'
+  ...
+# Subtest: marcações sobrevivem a falha de rede e sincronizam depois
+ok 564 - marcações sobrevivem a falha de rede e sincronizam depois
+  ---
+  duration_ms: 0.220085
+  type: 'test'
+  ...
+# Subtest: flashcard usa endpoint de IA dedicado com fallback local editável
+ok 565 - flashcard usa endpoint de IA dedicado com fallback local editável
+  ---
+  duration_ms: 0.911886
+  type: 'test'
+  ...
+# Subtest: Reader oferece zoom visível e localização de frases completas
+ok 566 - Reader oferece zoom visível e localização de frases completas
+  ---
+  duration_ms: 0.894881
+  type: 'test'
+  ...
+# Subtest: ESC ENTER e Ctrl F funcionam no Reader e nos modais
+ok 567 - ESC ENTER e Ctrl F funcionam no Reader e nos modais
+  ---
+  duration_ms: 0.308596
+  type: 'test'
+  ...
+# Subtest: motor de flashcard valida grounding e informa IA real ou fallback
+ok 568 - motor de flashcard valida grounding e informa IA real ou fallback
+  ---
+  duration_ms: 0.485627
+  type: 'test'
+  ...
+# Subtest: URL temporária do PDF é revogada ao fechar o Reader
+ok 569 - URL temporária do PDF é revogada ao fechar o Reader
+  ---
+  duration_ms: 0.520128
+  type: 'test'
+  ...
+# Subtest: phase 6 performance loader has valid syntax and adaptive contracts
+ok 570 - phase 6 performance loader has valid syntax and adaptive contracts
+  ---
+  duration_ms: 1.466776
+  type: 'test'
+  ...
+# Subtest: performance enhancement stays isolated from data/auth services
+ok 571 - performance enhancement stays isolated from data/auth services
+  ---
+  duration_ms: 0.350397
+  type: 'test'
+  ...
+# Subtest: navigation loads performance layer as a non-critical enhancement
+ok 572 - navigation loads performance layer as a non-critical enhancement
+  ---
+  duration_ms: 0.238402
+  type: 'test'
+  ...
+# Subtest: phase 7 scripts have valid JavaScript syntax
+ok 573 - phase 7 scripts have valid JavaScript syntax
+  ---
+  duration_ms: 1.405886
+  type: 'test'
+  ...
+# Subtest: phase 7 measures requested browser metrics
+ok 574 - phase 7 measures requested browser metrics
+  ---
+  duration_ms: 0.292392
+  type: 'test'
+  ...
+# Subtest: phase 7 uses Core Web Vitals thresholds and local-only history
+ok 575 - phase 7 uses Core Web Vitals thresholds and local-only history
+  ---
+  duration_ms: 0.459068
+  type: 'test'
+  ...
+# Subtest: phase 7 exposes diagnostics and handles unsupported browser APIs
+ok 576 - phase 7 exposes diagnostics and handles unsupported browser APIs
+  ---
+  duration_ms: 0.152666
+  type: 'test'
+  ...
+# Subtest: performance loader starts metrics as a non-critical enhancement
+ok 577 - performance loader starts metrics as a non-critical enhancement
+  ---
+  duration_ms: 0.166246
+  type: 'test'
+  ...
+# Subtest: performance support remains available offline without becoming critical app shell
+ok 578 - performance support remains available offline without becoming critical app shell
+  ---
+  duration_ms: 0.148018
+  type: 'test'
+  ...
+# Subtest: Fase 3: asset loader usa a release canônica atual
+ok 579 - Fase 3: asset loader usa a release canônica atual
+  ---
+  duration_ms: 0.937244
+  type: 'test'
+  ...
+# Subtest: Fase 4: coordenador preserva rollout histórico e centraliza sequência
+ok 580 - Fase 4: coordenador preserva rollout histórico e centraliza sequência
+  ---
+  duration_ms: 0.37214
+  type: 'test'
+  ...
+# Subtest: Fase 5: barramento contabiliza eventos deduplicados sem reemitir
+ok 581 - Fase 5: barramento contabiliza eventos deduplicados sem reemitir
+  ---
+  duration_ms: 2.052261
+  type: 'test'
+  ...
+# Subtest: Fase 5: observabilidade registra fonte do fallback sem emitir novos eventos
+ok 582 - Fase 5: observabilidade registra fonte do fallback sem emitir novos eventos
+  ---
+  duration_ms: 1.116388
+  type: 'test'
+  ...
+# Subtest: standalone Phase 6 dashboards foram graduados para runtimes headless
+ok 583 - standalone Phase 6 dashboards foram graduados para runtimes headless
+  ---
+  duration_ms: 1.194954
+  type: 'test'
+  ...
+# Subtest: Critical Points consome domain risk sem markup legado
+ok 584 - Critical Points consome domain risk sem markup legado
+  ---
+  duration_ms: 0.174998
+  type: 'test'
+  ...
+# Subtest: Critical Points mantém optimizer e tutor sem reorder canônico
+ok 585 - Critical Points mantém optimizer e tutor sem reorder canônico
+  ---
+  duration_ms: 0.192304
+  type: 'test'
+  ...
+# Subtest: topic assessment consolida domínio, cobertura, previsão e evidência
+ok 586 - topic assessment consolida domínio, cobertura, previsão e evidência
+  ---
+  duration_ms: 2.26211
+  type: 'test'
+  ...
+# Subtest: fila de atenção ordena cópia sem alterar ordem canônica
+ok 587 - fila de atenção ordena cópia sem alterar ordem canônica
+  ---
+  duration_ms: 1.23907
+  type: 'test'
+  ...
+# Subtest: assessment explicita contrato imutável de prioridade
+ok 588 - assessment explicita contrato imutável de prioridade
+  ---
+  duration_ms: 1.294452
+  type: 'test'
+  ...
+# Subtest: asset canônico é headless e painel visual legado saiu do shell
+ok 589 - asset canônico é headless e painel visual legado saiu do shell
+  ---
+  duration_ms: 0.65702
+  type: 'test'
+  ...
+# Subtest: 6A calcula domínio, retenção prevista e risco sem alterar prioridade importada
+ok 590 - 6A calcula domínio, retenção prevista e risco sem alterar prioridade importada
+  ---
+  duration_ms: 3.497955
+  type: 'test'
+  ...
+# Subtest: assunto fraco recebe risco maior que assunto consolidado
+ok 591 - assunto fraco recebe risco maior que assunto consolidado
+  ---
+  duration_ms: 1.136769
+  type: 'test'
+  ...
+# Subtest: tendência compara nova evidência com o perfil anterior
+ok 592 - tendência compara nova evidência com o perfil anterior
+  ---
+  duration_ms: 1.95029
+  type: 'test'
+  ...
+# Subtest: cobertura ponderada usa prioridade apenas como peso, sem reordenar os tópicos
+ok 593 - cobertura ponderada usa prioridade apenas como peso, sem reordenar os tópicos
+  ---
+  duration_ms: 1.703526
+  type: 'test'
+  ...
+# Subtest: Phase 8C remove fisicamente fachada e CSS de apresentação legados
+ok 594 - Phase 8C remove fisicamente fachada e CSS de apresentação legados
+  ---
+  duration_ms: 1.186513
+  type: 'test'
+  ...
+# Subtest: engine cognitivo permanece ativo sem dashboard removido
+ok 595 - engine cognitivo permanece ativo sem dashboard removido
+  ---
+  duration_ms: 0.157653
+  type: 'test'
+  ...
+# Subtest: shell não contém painéis autônomos da antiga Fase 6
+ok 596 - shell não contém painéis autônomos da antiga Fase 6
+  ---
+  duration_ms: 0.229309
+  type: 'test'
+  ...
+# Subtest: gera planos de 30, 60 e 90 minutos respeitando o orçamento
+not ok 597 - gera planos de 30, 60 e 90 minutos respeitando o orçamento
+  ---
+  duration_ms: 2.436407
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:42:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppStudyOptimization'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (study-optimization-engine.js:17:187)
+    signals (study-optimization-engine.js:18:35)
+    study-optimization-engine.js:24:260
+    Array.map (<anonymous>)
+    buildCandidates (study-optimization-engine.js:24:213)
+    Object.optimize (study-optimization-engine.js:28:231)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:45:23)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+  ...
+# Subtest: escolhe questões quando retenção está alta mas aplicação está baixa
+not ok 598 - escolhe questões quando retenção está alta mas aplicação está baixa
+  ---
+  duration_ms: 0.783647
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:52:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppStudyOptimization'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (study-optimization-engine.js:17:187)
+    Object.chooseMethod (study-optimization-engine.js:22:40)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:55:23)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: prioriza risco cognitivo sem mutar a ordem canônica do perfil
+not ok 599 - prioriza risco cognitivo sem mutar a ordem canônica do perfil
+  ---
+  duration_ms: 0.757649
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:58:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppStudyOptimization'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (study-optimization-engine.js:17:187)
+    signals (study-optimization-engine.js:18:35)
+    study-optimization-engine.js:24:260
+    Array.map (<anonymous>)
+    buildCandidates (study-optimization-engine.js:24:213)
+    Object.optimize (study-optimization-engine.js:28:231)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:62:21)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+  ...
+# Subtest: retorna ganho esperado e justificativas por bloco
+not ok 600 - retorna ganho esperado e justificativas por bloco
+  ---
+  duration_ms: 1.59149
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:68:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppStudyOptimization'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (study-optimization-engine.js:17:187)
+    signals (study-optimization-engine.js:18:35)
+    study-optimization-engine.js:24:260
+    Array.map (<anonymous>)
+    buildCandidates (study-optimization-engine.js:24:213)
+    Object.optimize (study-optimization-engine.js:28:231)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:70:21)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+  ...
+# Subtest: emite evento de otimização resolvida sem feedback no estado importado
+not ok 601 - emite evento de otimização resolvida sem feedback no estado importado
+  ---
+  duration_ms: 0.822244
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:79:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppStudyOptimization'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (study-optimization-engine.js:17:187)
+    signals (study-optimization-engine.js:18:35)
+    study-optimization-engine.js:24:260
+    Array.map (<anonymous>)
+    buildCandidates (study-optimization-engine.js:24:213)
+    Object.optimize (study-optimization-engine.js:28:231)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6b-study-optimization.test.cjs:81:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+  ...
+# Subtest: study guidance consumes predictive tutor without becoming a new UI surface
+ok 602 - study guidance consumes predictive tutor without becoming a new UI surface
+  ---
+  duration_ms: 1.134566
+  type: 'test'
+  ...
+# Subtest: critical points prepares 6C prediction without changing card markup contract
+ok 603 - critical points prepares 6C prediction without changing card markup contract
+  ---
+  duration_ms: 0.333102
+  type: 'test'
+  ...
+# Subtest: predictive tutor is loaded after optimization engine and has cache contracts
+ok 604 - predictive tutor is loaded after optimization engine and has cache contracts
+  ---
+  duration_ms: 0.238502
+  type: 'test'
+  ...
+# Subtest: phase 6C preserves imported ordering contract
+ok 605 - phase 6C preserves imported ordering contract
+  ---
+  duration_ms: 0.215639
+  type: 'test'
+  ...
+# Subtest: predictive tutor installs without UI or imported-order mutation
+ok 606 - predictive tutor installs without UI or imported-order mutation
+  ---
+  duration_ms: 2.185317
+  type: 'test'
+  ...
+# Subtest: topic prediction differentiates strong and weak evidence states
+not ok 607 - topic prediction differentiates strong and weak evidence states
+  ---
+  duration_ms: 0.851768
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:40:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppPredictiveAdaptiveTutor'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:14:88)
+    signals (evalmachine.<anonymous>:15:35)
+    Object.predictTopic (evalmachine.<anonymous>:18:32)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:43:50)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: profile prediction preserves canonical topic order in output
+not ok 608 - profile prediction preserves canonical topic order in output
+  ---
+  duration_ms: 0.8735
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:50:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppPredictiveAdaptiveTutor'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:14:88)
+    signals (evalmachine.<anonymous>:15:35)
+    predictTopic (evalmachine.<anonymous>:18:32)
+    evalmachine.<anonymous>:26:159
+    Array.map (<anonymous>)
+    Object.predictProfile (evalmachine.<anonymous>:26:79)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:52:50)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+  ...
+# Subtest: goal probability is bounded and responds to target difficulty
+not ok 609 - goal probability is bounded and responds to target difficulty
+  ---
+  duration_ms: 0.773693
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:59:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppPredictiveAdaptiveTutor'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:14:88)
+    signals (evalmachine.<anonymous>:15:35)
+    predictTopic (evalmachine.<anonymous>:18:32)
+    evalmachine.<anonymous>:26:159
+    Array.map (<anonymous>)
+    predictProfile (evalmachine.<anonymous>:26:79)
+    Object.probabilityOfGoal (evalmachine.<anonymous>:34:67)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:61:47)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+  ...
+# Subtest: tutor switches intervention according to predicted state
+not ok 610 - tutor switches intervention according to predicted state
+  ---
+  duration_ms: 1.561166
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:68:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppPredictiveAdaptiveTutor'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:14:88)
+    signals (evalmachine.<anonymous>:15:35)
+    predictTopic (evalmachine.<anonymous>:18:32)
+    Object.tutorDecision (evalmachine.<anonymous>:36:20)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:71:55)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+  ...
+# Subtest: resolve emits canonical prediction event
+not ok 611 - resolve emits canonical prediction event
+  ---
+  duration_ms: 0.780543
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:79:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppPredictiveAdaptiveTutor'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (evalmachine.<anonymous>:14:88)
+    signals (evalmachine.<anonymous>:15:35)
+    predictTopic (evalmachine.<anonymous>:18:32)
+    evalmachine.<anonymous>:26:159
+    Array.map (<anonymous>)
+    predictProfile (evalmachine.<anonymous>:26:79)
+    probabilityOfGoal (evalmachine.<anonymous>:34:67)
+    Object.resolve (evalmachine.<anonymous>:41:117)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-6c-predictive-adaptive-tutor.test.cjs:82:50)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: 7B cria índice canônico por assunto e elimina busca linear no caminho principal
+ok 612 - 7B cria índice canônico por assunto e elimina busca linear no caminho principal
+  ---
+  duration_ms: 0.820802
+  type: 'test'
+  ...
+# Subtest: 7A mantém Student Model em memória e Pontos Críticos usa fast path
+ok 613 - 7A mantém Student Model em memória e Pontos Críticos usa fast path
+  ---
+  duration_ms: 0.269588
+  type: 'test'
+  ...
+# Subtest: 7A calcula domainRisk uma vez por assunto durante buildProfile
+ok 614 - 7A calcula domainRisk uma vez por assunto durante buildProfile
+  ---
+  duration_ms: 0.149481
+  type: 'test'
+  ...
+# Subtest: Pontos Críticos reaproveita modeledRow ao calcular risco global
+ok 615 - Pontos Críticos reaproveita modeledRow ao calcular risco global
+  ---
+  duration_ms: 0.186756
+  type: 'test'
+  ...
+# Subtest: cache do perfil evita segunda leitura do localStorage
+ok 616 - cache do perfil evita segunda leitura do localStorage
+  ---
+  duration_ms: 3.497555
+  type: 'test'
+  ...
+# Subtest: índice do edital é construído uma vez por snapshot e reutilizado em lookups
+ok 617 - índice do edital é construído uma vez por snapshot e reutilizado em lookups
+  ---
+  duration_ms: 2.369369
+  type: 'test'
+  ...
+# Subtest: contrato de prioridade importada permanece explícito e sem mutação
+ok 618 - contrato de prioridade importada permanece explícito e sem mutação
+  ---
+  duration_ms: 0.157332
+  type: 'test'
+  ...
+# Subtest: 7C: patch incremental atualiza somente o tópico e incrementa revisão
+ok 619 - 7C: patch incremental atualiza somente o tópico e incrementa revisão
+  ---
+  duration_ms: 4.183177
+  type: 'test'
+  ...
+# Subtest: 7D: previsões repetidas usam cache por identidade do snapshot
+not ok 620 - 7D: previsões repetidas usam cache por identidade do snapshot
+  ---
+  duration_ms: 1.115798
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-7c-7f-performance.test.cjs:43:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppPredictiveAdaptiveTutor'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (public/js/core/predictive-adaptive-tutor.js:14:88)
+    signals (public/js/core/predictive-adaptive-tutor.js:15:35)
+    Object.predictTopic (public/js/core/predictive-adaptive-tutor.js:18:32)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-7c-7f-performance.test.cjs:47:19)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: 7E: fast path por tópico não varre nem ordena o Student Model inteiro
+not ok 621 - 7E: fast path por tópico não varre nem ordena o Student Model inteiro
+  ---
+  duration_ms: 2.479982
+  type: 'test'
+  location: '/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-7c-7f-performance.test.cjs:61:1'
+  failureType: 'testCodeFailure'
+  error: 'AppTopicAssessment is required before AppStudyOptimization'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    requireAssessment (public/js/core/study-optimization-engine.js:17:187)
+    signals (public/js/core/study-optimization-engine.js:18:35)
+    Object.forTopic (public/js/core/study-optimization-engine.js:29:229)
+    TestContext.<anonymous> (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/phase-7c-7f-performance.test.cjs:66:44)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 7F: budgets permanentes protegem layout, ordem e fórmulas
+ok 622 - 7F: budgets permanentes protegem layout, ordem e fórmulas
+  ---
+  duration_ms: 0.408784
+  type: 'test'
+  ...
+# Subtest: 7F: observabilidade incorpora diagnósticos de performance sem nova UI
+ok 623 - 7F: observabilidade incorpora diagnósticos de performance sem nova UI
+  ---
+  duration_ms: 0.249538
+  type: 'test'
+  ...
+# Subtest: 8A/8C mantém assessment headless após graduação física
+ok 624 - 8A/8C mantém assessment headless após graduação física
+  ---
+  duration_ms: 1.475379
+  type: 'test'
+  ...
+# Subtest: 8B normaliza candidatos nested e flattened consistentemente
+ok 625 - 8B normaliza candidatos nested e flattened consistentemente
+  ---
+  duration_ms: 2.171987
+  type: 'test'
+  ...
+# Subtest: 8B preserva imported order apenas como sinal contextual
+ok 626 - 8B preserva imported order apenas como sinal contextual
+  ---
+  duration_ms: 0.950733
+  type: 'test'
+  ...
+# Subtest: optimizer delega assessment compartilhado e mantém teto de 35 minutos
+ok 627 - optimizer delega assessment compartilhado e mantém teto de 35 minutos
+  ---
+  duration_ms: 1.006006
+  type: 'test'
+  ...
+# Subtest: 8C gradua fisicamente assets de apresentação da Phase 6
+ok 628 - 8C gradua fisicamente assets de apresentação da Phase 6
+  ---
+  duration_ms: 0.918056
+  type: 'test'
+  ...
+# Subtest: 8C carrega topic assessment antes de optimizer e tutor
+ok 629 - 8C carrega topic assessment antes de optimizer e tutor
+  ---
+  duration_ms: 0.25082
+  type: 'test'
+  ...
+# Subtest: critical shell contém runtime canônico e nenhum asset aposentado
+ok 630 - critical shell contém runtime canônico e nenhum asset aposentado
+  ---
+  duration_ms: 0.226104
+  type: 'test'
+  ...
+# Subtest: assessment canônico preserva explicitamente imported order
+ok 631 - assessment canônico preserva explicitamente imported order
+  ---
+  duration_ms: 1.784646
+  type: 'test'
+  ...
+# Subtest: 8D removes final DomainRiskDashboard compatibility global
+ok 632 - 8D removes final DomainRiskDashboard compatibility global
+  ---
+  duration_ms: 0.814022
+  type: 'test'
+  ...
+# Subtest: 8D makes TopicAssessment the single owner of shared cognitive semantics
+ok 633 - 8D makes TopicAssessment the single owner of shared cognitive semantics
+  ---
+  duration_ms: 0.207376
+  type: 'test'
+  ...
+# Subtest: canonical priority contract is explicit and immutable
+ok 634 - canonical priority contract is explicit and immutable
+  ---
+  duration_ms: 1.292639
+  type: 'test'
+  ...
+# Subtest: predictive tutor ready event is guarded for headless runtime
+ok 635 - predictive tutor ready event is guarded for headless runtime
+  ---
+  duration_ms: 0.989602
+  type: 'test'
+  ...
+# Subtest: Fase 4 mantém auditoria de acessibilidade e usabilidade no navegador
+ok 636 - Fase 4 mantém auditoria de acessibilidade e usabilidade no navegador
+  ---
+  duration_ms: 1.168506
+  type: 'test'
+  ...
+# Subtest: Quality Check continua executando a suíte Playwright que inclui a Fase 4
+ok 637 - Quality Check continua executando a suíte Playwright que inclui a Fase 4
+  ---
+  duration_ms: 0.267415
+  type: 'test'
+  ...
+# Subtest: Fase 3 integra Playwright ao status obrigatório test-and-audit
+ok 638 - Fase 3 integra Playwright ao status obrigatório test-and-audit
+  ---
+  duration_ms: 0.914561
+  type: 'test'
+  ...
+# Subtest: Playwright cobre três engines e servidor local do app real
+ok 639 - Playwright cobre três engines e servidor local do app real
+  ---
+  duration_ms: 0.21696
+  type: 'test'
+  ...
+# Subtest: auditoria responsiva cobre bandas canônicas e falhas visuais críticas
+ok 640 - auditoria responsiva cobre bandas canônicas e falhas visuais críticas
+  ---
+  duration_ms: 0.201999
+  type: 'test'
+  ...
+# Subtest: nomes seguem ordem canônica e desconhecidos ficam ao final alfabeticamente
+ok 641 - nomes seguem ordem canônica e desconhecidos ficam ao final alfabeticamente
+  ---
+  duration_ms: 1.357688
+  type: 'test'
+  ...
+# Subtest: ordenação remove duplicatas sem alterar prioridade
+ok 642 - ordenação remove duplicatas sem alterar prioridade
+  ---
+  duration_ms: 0.162381
+  type: 'test'
+  ...
+# Subtest: Reader é core asset network-first no Service Worker
+ok 643 - Reader é core asset network-first no Service Worker
+  ---
+  duration_ms: 1.261595
+  type: 'test'
+  ...
+# Subtest: Reader próprio faz parte do APP_SHELL offline
+ok 644 - Reader próprio faz parte do APP_SHELL offline
+  ---
+  duration_ms: 0.283078
+  type: 'test'
+  ...
+# Subtest: PDF.js possui rotas locais com fallback e sem PDFium
+ok 645 - PDF.js possui rotas locais com fallback e sem PDFium
+  ---
+  duration_ms: 2.00798
+  type: 'test'
+  ...
+# Subtest: Fase 7 descobre módulos, CSS e testes sem listas manuais de release
+ok 646 - Fase 7 descobre módulos, CSS e testes sem listas manuais de release
+  ---
+  duration_ms: 1.085976
+  type: 'test'
+  ...
+# Subtest: todos os JS descobertos entram no syntax gate
+ok 647 - todos os JS descobertos entram no syntax gate
+  ---
+  duration_ms: 0.25724
+  type: 'test'
+  ...
+# Subtest: release contract is the canonical version identity
+ok 648 - release contract is the canonical version identity
+  ---
+  duration_ms: 35.016066
+  type: 'test'
+  ...
+# Subtest: Android pipeline is consolidated into CI and Release workflows only
+ok 649 - Android pipeline is consolidated into CI and Release workflows only
+  ---
+  duration_ms: 1.671713
+  type: 'test'
+  ...
+# Subtest: all Android workflows resolve runtime identity from the canonical contract
+ok 650 - all Android workflows resolve runtime identity from the canonical contract
+  ---
+  duration_ms: 33.440215
+  type: 'test'
+  ...
+# Subtest: Android CI preserves tests, structural audit, instrumentation and runtime diagnostics
+ok 651 - Android CI preserves tests, structural audit, instrumentation and runtime diagnostics
+  ---
+  duration_ms: 0.242639
+  type: 'test'
+  ...
+# Subtest: Android Release owns signed runtime validation and permanent distribution
+ok 652 - Android Release owns signed runtime validation and permanent distribution
+  ---
+  duration_ms: 0.360964
+  type: 'test'
+  ...
+# Subtest: release orchestration has no version-specific bump workflow
+ok 653 - release orchestration has no version-specific bump workflow
+  ---
+  duration_ms: 1.547429
+  type: 'test'
+  ...
+# Subtest: no workflow mutates source files and pushes a prepared release branch
+ok 654 - no workflow mutates source files and pushes a prepared release branch
+  ---
+  duration_ms: 0.83185
+  type: 'test'
+  ...
+# Subtest: canonical GitHub Release derives identity from release contract
+ok 655 - canonical GitHub Release derives identity from release contract
+  ---
+  duration_ms: 0.171774
+  type: 'test'
+  ...
+# Subtest: canonical tag stays immutable when runtime differs
+ok 656 - canonical tag stays immutable when runtime differs
+  ---
+  duration_ms: 0.276719
+  type: 'test'
+  ...
+# Subtest: quality check runs immutable release version guard before expensive test stages
+ok 657 - quality check runs immutable release version guard before expensive test stages
+  ---
+  duration_ms: 1.147577
+  type: 'test'
+  ...
+# Subtest: android CI runs the release version guard before dependency install and APK build
+ok 658 - android CI runs the release version guard before dependency install and APK build
+  ---
+  duration_ms: 0.188469
+  type: 'test'
+  ...
+# Subtest: release version guard protects the same canonical runtime surface used by release publishing
+ok 659 - release version guard protects the same canonical runtime surface used by release publishing
+  ---
+  duration_ms: 0.284711
+  type: 'test'
+  ...
+# Subtest: release version guard ignores CI-only PRs but blocks reused version for changed runtime
+ok 660 - release version guard ignores CI-only PRs but blocks reused version for changed runtime
+  ---
+  duration_ms: 0.151835
+  type: 'test'
+  ...
+# Subtest: responsive design system defines canonical tokens and viewport bands
+ok 661 - responsive design system defines canonical tokens and viewport bands
+  ---
+  duration_ms: 1.216499
+  type: 'test'
+  ...
+# Subtest: responsive system is loaded by the app and cached by the service worker
+ok 662 - responsive system is loaded by the app and cached by the service worker
+  ---
+  duration_ms: 0.673786
+  type: 'test'
+  ...
+# Subtest: phase 3 defines canonical responsive header layout with compact actions menu
+ok 663 - phase 3 defines canonical responsive header layout with compact actions menu
+  ---
+  duration_ms: 1.206554
+  type: 'test'
+  ...
+# Subtest: phase 3 preserves canonical viewport bands and mobile touch targets
+ok 664 - phase 3 preserves canonical viewport bands and mobile touch targets
+  ---
+  duration_ms: 0.276499
+  type: 'test'
+  ...
+# Subtest: phase 3 removes the retired generic action bar without targeting PDF Library internals
+ok 665 - phase 3 removes the retired generic action bar without targeting PDF Library internals
+  ---
+  duration_ms: 0.268427
+  type: 'test'
+  ...
+# Subtest: phase 2 defines fluid container and grid tokens
+ok 666 - phase 2 defines fluid container and grid tokens
+  ---
+  duration_ms: 1.131503
+  type: 'test'
+  ...
+# Subtest: phase 2 makes dashboard overview and generic top grid intrinsic
+ok 667 - phase 2 makes dashboard overview and generic top grid intrinsic
+  ---
+  duration_ms: 0.267035
+  type: 'test'
+  ...
+# Subtest: phase 2 provides opt-in container-query and toolbar primitives
+ok 668 - phase 2 provides opt-in container-query and toolbar primitives
+  ---
+  duration_ms: 0.290269
+  type: 'test'
+  ...
+# Subtest: phase 2 keeps specialized PDF library layouts out of generic overrides
+ok 669 - phase 2 keeps specialized PDF library layouts out of generic overrides
+  ---
+  duration_ms: 0.204783
+  type: 'test'
+  ...
+# Subtest: Fase 10 executa restore-readiness mensal e manual sem tocar produção
+ok 670 - Fase 10 executa restore-readiness mensal e manual sem tocar produção
+  ---
+  duration_ms: 1.282677
+  type: 'test'
+  ...
+# Subtest: restore-readiness verifica criptografia integridade externa e conteúdo interno
+ok 671 - restore-readiness verifica criptografia integridade externa e conteúdo interno
+  ---
+  duration_ms: 0.188829
+  type: 'test'
+  ...
+# Subtest: drill apaga payload antes de publicar somente relatório
+ok 672 - drill apaga payload antes de publicar somente relatório
+  ---
+  duration_ms: 0.312663
+  type: 'test'
+  ...
+# Subtest: novos backups não criam manifesto autorreferente
+ok 673 - novos backups não criam manifesto autorreferente
+  ---
+  duration_ms: 0.126887
+  type: 'test'
+  ...
+# Subtest: cards de diagnóstico preservam estrutura compacta sem ícones decorativos
+ok 674 - cards de diagnóstico preservam estrutura compacta sem ícones decorativos
+  ---
+  duration_ms: 1.284129
+  type: 'test'
+  ...
+# Subtest: grade final mantém quatro métricas no desktop e adapta somente em mobile real
+ok 675 - grade final mantém quatro métricas no desktop e adapta somente em mobile real
+  ---
+  duration_ms: 0.40607
+  type: 'test'
+  ...
+# Subtest: camada canônica é carregada e funciona offline sem hotfixes legados
+ok 676 - camada canônica é carregada e funciona offline sem hotfixes legados
+  ---
+  duration_ms: 0.214467
+  type: 'test'
+  ...
+# Subtest: retention metric labels are centered, smaller and protected against overflow
+ok 677 - retention metric labels are centered, smaller and protected against overflow
+  ---
+  duration_ms: 1.40648
+  type: 'test'
+  ...
+# Subtest: all diagnostic action metrics still use the same details modal contract
+ok 678 - all diagnostic action metrics still use the same details modal contract
+  ---
+  duration_ms: 0.510224
+  type: 'test'
+  ...
+# Subtest: retention detail modal uses card layout and wraps long topic text safely
+ok 679 - retention detail modal uses card layout and wraps long topic text safely
+  ---
+  duration_ms: 0.440812
+  type: 'test'
+  ...
+# Subtest: overdue and mastered retention metrics are intercepted into the modern Learning Advisor dialog
+ok 680 - overdue and mastered retention metrics are intercepted into the modern Learning Advisor dialog
+  ---
+  duration_ms: 1.124973
+  type: 'test'
+  ...
+# Subtest: modernized overdue and mastered rows reuse the exact risk-card visual language
+ok 681 - modernized overdue and mastered rows reuse the exact risk-card visual language
+  ---
+  duration_ms: 0.337109
+  type: 'test'
+  ...
+# Subtest: shared Learning Advisor dialog keeps X, backdrop and Escape close behavior
+ok 682 - shared Learning Advisor dialog keeps X, backdrop and Escape close behavior
+  ---
+  duration_ms: 0.232003
+  type: 'test'
+  ...
+# Subtest: legacy retention metric modal is explicitly closed before the modern dialog opens
+ok 683 - legacy retention metric modal is explicitly closed before the modern dialog opens
+  ---
+  duration_ms: 0.209029
+  type: 'test'
+  ...
+# Subtest: diagnóstico ignora tópicos removidos do edital ativo
+ok 684 - diagnóstico ignora tópicos removidos do edital ativo
+  ---
+  duration_ms: 1.29138
+  type: 'test'
+  ...
+# Subtest: domínio exige evidência objetiva suficiente
+ok 685 - domínio exige evidência objetiva suficiente
+  ---
+  duration_ms: 0.226995
+  type: 'test'
+  ...
+# Subtest: duas recuperações positivas também constituem evidência de domínio
+ok 686 - duas recuperações positivas também constituem evidência de domínio
+  ---
+  duration_ms: 0.142631
+  type: 'test'
+  ...
+# Subtest: runtime display mutations are reduced and guarded
+ok 687 - runtime display mutations are reduced and guarded
+  ---
+  duration_ms: 1.418828
+  type: 'test'
+  ...
+# Subtest: dynamic percentage bars use bounded classes instead of style.width in migrated UI
+ok 688 - dynamic percentage bars use bounded classes instead of style.width in migrated UI
+  ---
+  duration_ms: 0.518367
+  type: 'test'
+  ...
+# Subtest: known static runtime template styles are externalized
+ok 689 - known static runtime template styles are externalized
+  ---
+  duration_ms: 0.260204
+  type: 'test'
+  ...
+# Subtest: pass2 removes remaining display mutation and known generated style attributes
+ok 690 - pass2 removes remaining display mutation and known generated style attributes
+  ---
+  duration_ms: 0.198814
+  type: 'test'
+  ...
+# Subtest: final budget keeps generated UI style attributes at zero
+ok 691 - final budget keeps generated UI style attributes at zero
+  ---
+  duration_ms: 0.768547
+  type: 'test'
+  ...
+# Subtest: state and sync modules have valid JavaScript syntax
+ok 692 - state and sync modules have valid JavaScript syntax
+  ---
+  duration_ms: 77.128436
+  type: 'test'
+  ...
+# Subtest: AppState exposes the canonical state facade
+ok 693 - AppState exposes the canonical state facade
+  ---
+  duration_ms: 0.593087
+  type: 'test'
+  ...
+# Subtest: SyncEngine persists explicit states and bounded backoff
+ok 694 - SyncEngine persists explicit states and bounded backoff
+  ---
+  duration_ms: 0.254226
+  type: 'test'
+  ...
+# Subtest: state and sync architecture is bootstrapped and available offline
+ok 695 - state and sync architecture is bootstrapped and available offline
+  ---
+  duration_ms: 0.177963
+  type: 'test'
+  ...
+# Subtest: production no-store policy covers state and sync modules
+ok 696 - production no-store policy covers state and sync modules
+  ---
+  duration_ms: 0.421734
+  type: 'test'
+  ...
+# Subtest: state-sync release sources remain synchronized with canonical package version
+ok 697 - state-sync release sources remain synchronized with canonical package version
+  ---
+  duration_ms: 0.249619
+  type: 'test'
+  ...
+# Subtest: phase 5 keeps AppState as a versioned observable contract
+ok 698 - phase 5 keeps AppState as a versioned observable contract
+  ---
+  duration_ms: 1.200886
+  type: 'test'
+  ...
+# Subtest: phase 6 keeps SyncEngine history bounded and diagnostic-only
+ok 699 - phase 6 keeps SyncEngine history bounded and diagnostic-only
+  ---
+  duration_ms: 0.436195
+  type: 'test'
+  ...
+# Subtest: critical browser suite enforces the phase 5/6 APIs
+ok 700 - critical browser suite enforces the phase 5/6 APIs
+  ---
+  duration_ms: 0.199615
+  type: 'test'
+  ...
+# Observabilidade de estudo indisponível. ReferenceError: document is not defined
+#     at study-events.js:113:20
+#     at new Promise (<anonymous>)
+#     at loadHardeningScript (study-events.js:111:10)
+#     at bootstrapHardening (study-events.js:132:47)
+#     at installStudyEvents (study-events.js:143:1)
+#     at study-events.js:144:3
+#     at Script.runInContext (node:vm:149:12)
+#     at Script.runInNewContext (node:vm:154:17)
+#     at Object.runInNewContext (node:vm:310:38)
+#     at runtime (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/study-events-contract.test.cjs:20:6)
+# Coordenador offline indisponível; legado preservado. ReferenceError: document is not defined
+#     at study-events.js:113:20
+#     at new Promise (<anonymous>)
+#     at loadHardeningScript (study-events.js:111:10)
+#     at bootstrapHardening (study-events.js:131:48)
+#     at installStudyEvents (study-events.js:143:1)
+#     at study-events.js:144:3
+#     at Script.runInContext (node:vm:149:12)
+#     at Script.runInNewContext (node:vm:154:17)
+#     at Object.runInNewContext (node:vm:310:38)
+#     at runtime (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/study-events-contract.test.cjs:20:6)
+# Observabilidade de estudo indisponível. ReferenceError: document is not defined
+#     at study-events.js:113:20
+#     at new Promise (<anonymous>)
+#     at loadHardeningScript (study-events.js:111:10)
+#     at bootstrapHardening (study-events.js:132:47)
+#     at installStudyEvents (study-events.js:143:1)
+#     at study-events.js:144:3
+#     at Script.runInContext (node:vm:149:12)
+#     at Script.runInNewContext (node:vm:154:17)
+#     at Object.runInNewContext (node:vm:310:38)
+#     at runtime (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/study-events-contract.test.cjs:20:6)
+# Coordenador offline indisponível; legado preservado. ReferenceError: document is not defined
+#     at study-events.js:113:20
+#     at new Promise (<anonymous>)
+#     at loadHardeningScript (study-events.js:111:10)
+#     at bootstrapHardening (study-events.js:131:48)
+#     at installStudyEvents (study-events.js:143:1)
+#     at study-events.js:144:3
+#     at Script.runInContext (node:vm:149:12)
+#     at Script.runInNewContext (node:vm:154:17)
+#     at Object.runInNewContext (node:vm:310:38)
+#     at runtime (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/study-events-contract.test.cjs:20:6)
+# Observabilidade de estudo indisponível. ReferenceError: document is not defined
+#     at study-events.js:113:20
+#     at new Promise (<anonymous>)
+#     at loadHardeningScript (study-events.js:111:10)
+#     at bootstrapHardening (study-events.js:132:47)
+#     at installStudyEvents (study-events.js:143:1)
+#     at study-events.js:144:3
+#     at Script.runInContext (node:vm:149:12)
+#     at Script.runInNewContext (node:vm:154:17)
+#     at Object.runInNewContext (node:vm:310:38)
+#     at runtime (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/study-events-contract.test.cjs:20:6)
+# Coordenador offline indisponível; legado preservado. ReferenceError: document is not defined
+#     at study-events.js:113:20
+#     at new Promise (<anonymous>)
+#     at loadHardeningScript (study-events.js:111:10)
+#     at bootstrapHardening (study-events.js:131:48)
+#     at installStudyEvents (study-events.js:143:1)
+#     at study-events.js:144:3
+#     at Script.runInContext (node:vm:149:12)
+#     at Script.runInNewContext (node:vm:154:17)
+#     at Object.runInNewContext (node:vm:310:38)
+#     at runtime (/home/runner/work/app-estudos-concurso-gemini/app-estudos-concurso-gemini/tests/study-events-contract.test.cjs:20:6)
+# Subtest: ponte converte evento legado para contrato canônico
+ok 701 - ponte converte evento legado para contrato canônico
+  ---
+  duration_ms: 3.984643
+  type: 'test'
+  ...
+# Subtest: eventos idênticos em rajada são deduplicados
+ok 702 - eventos idênticos em rajada são deduplicados
+  ---
+  duration_ms: 1.583081
+  type: 'test'
+  ...
+# Subtest: snapshot de estado é obtido pelo AppState sem ler globals de domínio
+ok 703 - snapshot de estado é obtido pelo AppState sem ler globals de domínio
+  ---
+  duration_ms: 3.692942
+  type: 'test'
+  ...
+# Subtest: fallback estratégico preserva a ordem importada do JSON sem mutá-la
+ok 704 - fallback estratégico preserva a ordem importada do JSON sem mutá-la
+  ---
+  duration_ms: 3.206612
+  type: 'test'
+  ...
+# Subtest: falha de IA retorna recomendação local em vez de erro
+ok 705 - falha de IA retorna recomendação local em vez de erro
+  ---
+  duration_ms: 1.361494
+  type: 'test'
+  ...
+# Subtest: timeout de IA também degrada para orientação local
+ok 706 - timeout de IA também degrada para orientação local
+  ---
+  duration_ms: 252.055467
+  type: 'test'
+  ...
+# Subtest: payload válido da IA é aceito sem destruir a prioridade estratégica
+ok 707 - payload válido da IA é aceito sem destruir a prioridade estratégica
+  ---
+  duration_ms: 1.46071
+  type: 'test'
+  ...
+# Subtest: motor cognitivo é preferido ao JSON quando há evidência do aluno
+ok 708 - motor cognitivo é preferido ao JSON quando há evidência do aluno
+  ---
+  duration_ms: 1.009503
+  type: 'test'
+  ...
+# Subtest: contexto atual ainda gera sugestão quando não há perfil nem edital
+ok 709 - contexto atual ainda gera sugestão quando não há perfil nem edital
+  ---
+  duration_ms: 0.884518
+  type: 'test'
+  ...
+# Subtest: view model preserva autoridade do Retention Engine e não agenda
+ok 710 - view model preserva autoridade do Retention Engine e não agenda
+  ---
+  duration_ms: 2.308074
+  type: 'test'
+  ...
+# Subtest: evidência de banca mantém proveniência auditável
+ok 711 - evidência de banca mantém proveniência auditável
+  ---
+  duration_ms: 0.766994
+  type: 'test'
+  ...
+# Subtest: alternativas são limitadas a três e sanitizadas
+ok 712 - alternativas são limitadas a três e sanitizadas
+  ---
+  duration_ms: 0.846632
+  type: 'test'
+  ...
+# Subtest: superfície Prioridade cognitiva fica oculta e sem listeners quando desativada
+ok 713 - superfície Prioridade cognitiva fica oculta e sem listeners quando desativada
+  ---
+  duration_ms: 2.045165
+  type: 'test'
+  ...
+# Subtest: painel preserva ações para futura reativação e integra Tutor Contextual
+ok 714 - painel preserva ações para futura reativação e integra Tutor Contextual
+  ---
+  duration_ms: 0.170522
+  type: 'test'
+  ...
+# Subtest: painel não contém mutações diretas de cronograma
+ok 715 - painel não contém mutações diretas de cronograma
+  ---
+  duration_ms: 0.25011
+  type: 'test'
+  ...
+# Subtest: report header uses adaptive title layout and dynamic vertical flow
+ok 716 - report header uses adaptive title layout and dynamic vertical flow
+  ---
+  duration_ms: 1.017595
+  type: 'test'
+  ...
+# Subtest: known long subject names fit inside at most two header lines
+ok 717 - known long subject names fit inside at most two header lines
+  ---
+  duration_ms: 0.703751
+  type: 'test'
+  ...
+# Subtest: performance report uses manual visual design system
+ok 718 - performance report uses manual visual design system
+  ---
+  duration_ms: 1.096051
+  type: 'test'
+  ...
+# Subtest: legacy white executive cards are removed
+ok 719 - legacy white executive cards are removed
+  ---
+  duration_ms: 0.174658
+  type: 'test'
+  ...
+# Subtest: loader preserva o relatório base e carrega a camada avançada
+ok 720 - loader preserva o relatório base e carrega a camada avançada
+  ---
+  duration_ms: 1.081981
+  type: 'test'
+  ...
+# Subtest: seletor oferece relatório completo, matéria e comparativo
+ok 721 - seletor oferece relatório completo, matéria e comparativo
+  ---
+  duration_ms: 0.225834
+  type: 'test'
+  ...
+# Subtest: relatório por matéria filtra diagnóstico e reutiliza o gerador oficial
+ok 722 - relatório por matéria filtra diagnóstico e reutiliza o gerador oficial
+  ---
+  duration_ms: 0.141719
+  type: 'test'
+  ...
+# Subtest: comparativo usa janelas reais de 7, 30, 60 e 90 dias
+ok 723 - comparativo usa janelas reais de 7, 30, 60 e 90 dias
+  ---
+  duration_ms: 0.930046
+  type: 'test'
+  ...
+# Subtest: comparativo mede tempo, questões, revisões, acurácia e cobertura
+ok 724 - comparativo mede tempo, questões, revisões, acurácia e cobertura
+  ---
+  duration_ms: 0.173416
+  type: 'test'
+  ...
+# Subtest: comparativo não inventa progresso histórico
+ok 725 - comparativo não inventa progresso histórico
+  ---
+  duration_ms: 0.137263
+  type: 'test'
+  ...
+# Subtest: modal e ações são responsivos para mobile
+ok 726 - modal e ações são responsivos para mobile
+  ---
+  duration_ms: 0.173166
+  type: 'test'
+  ...
+# Subtest: legend swatches are vertically aligned with their text baseline
+ok 727 - legend swatches are vertically aligned with their text baseline
+  ---
+  duration_ms: 1.048942
+  type: 'test'
+  ...
+# Subtest: report has stronger manual-aligned visual hierarchy
+ok 728 - report has stronger manual-aligned visual hierarchy
+  ---
+  duration_ms: 0.234998
+  type: 'test'
+  ...
+# Subtest: study and export buttons have exact parity on desktop and mobile
+ok 729 - study and export buttons have exact parity on desktop and mobile
+  ---
+  duration_ms: 0.21019
+  type: 'test'
+  ...
+# Subtest: report loader uses explicit cache-busting revision
+ok 730 - report loader uses explicit cache-busting revision
+  ---
+  duration_ms: 0.126637
+  type: 'test'
+  ...
+# Subtest: all subject bars are rendered on one chart page
+ok 731 - all subject bars are rendered on one chart page
+  ---
+  duration_ms: 1.092676
+  type: 'test'
+  ...
+# Subtest: bar and legend density adapt to many subjects
+ok 732 - bar and legend density adapt to many subjects
+  ---
+  duration_ms: 0.167017
+  type: 'test'
+  ...
+# Subtest: export button inherits study-now class and accent appearance
+ok 733 - export button inherits study-now class and accent appearance
+  ---
+  duration_ms: 0.233104
+  type: 'test'
+  ...
+# Subtest: loader revision is bumped to avoid stale report UI
+ok 734 - loader revision is bumped to avoid stale report UI
+  ---
+  duration_ms: 0.126066
+  type: 'test'
+  ...
+# Subtest: relatório reutiliza métricas do app e estado de aquisição
+ok 735 - relatório reutiliza métricas do app e estado de aquisição
+  ---
+  duration_ms: 0.816467
+  type: 'test'
+  ...
+# Subtest: relatório contém gráfico por matéria com cores da paleta do app
+ok 736 - relatório contém gráfico por matéria com cores da paleta do app
+  ---
+  duration_ms: 0.214737
+  type: 'test'
+  ...
+# Subtest: relatório inclui diagnóstico completo e detalhamento por matéria
+ok 737 - relatório inclui diagnóstico completo e detalhamento por matéria
+  ---
+  duration_ms: 0.25063
+  type: 'test'
+  ...
+# Subtest: botão Exportar dados é inserido ao lado de Estudar agora e é responsivo
+ok 738 - botão Exportar dados é inserido ao lado de Estudar agora e é responsivo
+  ---
+  duration_ms: 0.22945
+  type: 'test'
+  ...
+# Subtest: relatório é carregado pelo app, preserva core e permanece no PWA
+ok 739 - relatório é carregado pelo app, preserva core e permanece no PWA
+  ---
+  duration_ms: 0.20268
+  type: 'test'
+  ...
+# Subtest: exportação gera PDF diretamente no navegador
+ok 740 - exportação gera PDF diretamente no navegador
+  ---
+  duration_ms: 0.143773
+  type: 'test'
+  ...
+# Subtest: Exportar dados mantém as mesmas dimensões de Estudar agora
+ok 741 - Exportar dados mantém as mesmas dimensões de Estudar agora
+  ---
+  duration_ms: 1.036022
+  type: 'test'
+  ...
+# Subtest: style-src-attr can be locked to none without runtime style attributes
+ok 742 - style-src-attr can be locked to none without runtime style attributes
+  ---
+  duration_ms: 24.573022
+  type: 'test'
+  ...
+# Subtest: CSP explicitly blocks style attributes
+ok 743 - CSP explicitly blocks style attributes
+  ---
+  duration_ms: 0.456705
+  type: 'test'
+  ...
+# Subtest: Reader geometry and drag ghost keep direct style-property updates
+ok 744 - Reader geometry and drag ghost keep direct style-property updates
+  ---
+  duration_ms: 2.619234
+  type: 'test'
+  ...
+# Subtest: runtime style detector does not confuse local style variables with HTML attributes
+ok 745 - runtime style detector does not confuse local style variables with HTML attributes
+  ---
+  duration_ms: 0.225423
+  type: 'test'
+  ...
+# Subtest: merge de sessões deduplica por id e preserva versão primária
+ok 746 - merge de sessões deduplica por id e preserva versão primária
+  ---
+  duration_ms: 8.610745
+  type: 'test'
+  ...
+# Subtest: merge deduplica legado por fingerprint quando não existe id
+ok 747 - merge deduplica legado por fingerprint quando não existe id
+  ---
+  duration_ms: 0.221848
+  type: 'test'
+  ...
+# Subtest: fase 5 separa navegação, busca e comportamento mobile em módulos próprios
+ok 748 - fase 5 separa navegação, busca e comportamento mobile em módulos próprios
+  ---
+  duration_ms: 1.357417
+  type: 'test'
+  ...
+# Subtest: novos módulos de UI possuem sintaxe JavaScript válida
+ok 749 - novos módulos de UI possuem sintaxe JavaScript válida
+  ---
+  duration_ms: 80.015727
+  type: 'test'
+  ...
+# Subtest: bootstrap carrega módulos após o núcleo com fallback legado
+ok 750 - bootstrap carrega módulos após o núcleo com fallback legado
+  ---
+  duration_ms: 0.340443
+  type: 'test'
+  ...
+# Subtest: módulos de UI fazem parte do app shell offline e da estratégia core
+ok 751 - módulos de UI fazem parte do app shell offline e da estratégia core
+  ---
+  duration_ms: 0.245373
+  type: 'test'
+  ...
+# Subtest: fase 5 não introduz acesso direto a Supabase nos módulos de UI
+ok 752 - fase 5 não introduz acesso direto a Supabase nos módulos de UI
+  ---
+  duration_ms: 0.579186
+  type: 'test'
+  ...
+# Subtest: header controls stay on one row with complete labels
+ok 753 - header controls stay on one row with complete labels
+  ---
+  duration_ms: 1.479659
+  type: 'test'
+  ...
+# Subtest: retention metrics are compact, iconless and remain four-across outside real mobile
+ok 754 - retention metrics are compact, iconless and remain four-across outside real mobile
+  ---
+  duration_ms: 0.628379
+  type: 'test'
+  ...
+# Subtest: canonical UI styles are cache-busted and available offline
+ok 755 - canonical UI styles are cache-busted and available offline
+  ---
+  duration_ms: 0.382406
+  type: 'test'
+  ...
+# UI canonical iconless text/layout safety contract OK
+# Subtest: tests/ui-text-safety-final-layout.test.cjs
+ok 153 - tests/ui-text-safety-final-layout.test.cjs
+  ---
+  duration_ms: 27.994581
+  type: 'test'
+  ...
+# Subtest: v10.24.1 layout aprovado
+ok 757 - v10.24.1 layout aprovado
+  ---
+  duration_ms: 1.9676
+  type: 'test'
+  ...
+# Subtest: salvar flashcard mantém o leitor da Biblioteca aberto
+ok 758 - salvar flashcard mantém o leitor da Biblioteca aberto
+  ---
+  duration_ms: 0.787705
+  type: 'test'
+  ...
+# Subtest: Reader mobile inicia com PDF visível e painel recolhido
+ok 759 - Reader mobile inicia com PDF visível e painel recolhido
+  ---
+  duration_ms: 1.110473
+  type: 'test'
+  ...
+# Subtest: Reader mobile mostra todas as ferramentas sem rolagem horizontal obrigatória
+ok 760 - Reader mobile mostra todas as ferramentas sem rolagem horizontal obrigatória
+  ---
+  duration_ms: 0.252464
+  type: 'test'
+  ...
+# Subtest: Ações mobile do cabeçalho e edital usam grids harmônicos
+ok 761 - Ações mobile do cabeçalho e edital usam grids harmônicos
+  ---
+  duration_ms: 0.631273
+  type: 'test'
+  ...
+# Subtest: Reader mobile possui pinch-to-zoom por dois toques
+ok 762 - Reader mobile possui pinch-to-zoom por dois toques
+  ---
+  duration_ms: 1.23069
+  type: 'test'
+  ...
+# Subtest: pinch preserva ponto focal e navegação de um dedo
+ok 763 - pinch preserva ponto focal e navegação de um dedo
+  ---
+  duration_ms: 0.321035
+  type: 'test'
+  ...
+# Subtest: v10.24.7 painel e botões compactos
+ok 764 - v10.24.7 painel e botões compactos
+  ---
+  duration_ms: 1.428984
+  type: 'test'
+  ...
+# Subtest: v10.24.7 painel não corta textos nem ações
+ok 765 - v10.24.7 painel não corta textos nem ações
+  ---
+  duration_ms: 0.973039
+  type: 'test'
+  ...
+# Subtest: v10.24.7 preserva seleção ao clicar em Anotação
+ok 766 - v10.24.7 preserva seleção ao clicar em Anotação
+  ---
+  duration_ms: 0.996423
+  type: 'test'
+  ...
+# Subtest: v10.24.7 abre Anotação sem clipboard
+ok 767 - v10.24.7 abre Anotação sem clipboard
+  ---
+  duration_ms: 1.281075
+  type: 'test'
+  ...
+# Subtest: v10.24.7 remove data duplicada do cabeçalho e mantém retenção
+ok 768 - v10.24.7 remove data duplicada do cabeçalho e mantém retenção
+  ---
+  duration_ms: 1.222058
+  type: 'test'
+  ...
+# Subtest: v10.24.7 biblioteca atualiza ao abrir a guia sem ativação duplicada
+ok 769 - v10.24.7 biblioteca atualiza ao abrir a guia sem ativação duplicada
+  ---
+  duration_ms: 0.963124
+  type: 'test'
+  ...
+# Subtest: flashcard manual abre sem clipboard
+ok 770 - flashcard manual abre sem clipboard
+  ---
+  duration_ms: 1.093287
+  type: 'test'
+  ...
+# Subtest: IA é explícita e usa trecho ou resposta manual
+ok 771 - IA é explícita e usa trecho ou resposta manual
+  ---
+  duration_ms: 1.024014
+  type: 'test'
+  ...
+# Subtest: Workers AI mantém parser próprio como fallback do Gemini
+ok 772 - Workers AI mantém parser próprio como fallback do Gemini
+  ---
+  duration_ms: 0.341996
+  type: 'test'
+  ...
+# Subtest: IA de flashcard tem caminho rápido e limites rígidos de latência
+ok 773 - IA de flashcard tem caminho rápido e limites rígidos de latência
+  ---
+  duration_ms: 1.039407
+  type: 'test'
+  ...
+# Subtest: Biblioteca abre no escopo global sem filtros antigos
+ok 774 - Biblioteca abre no escopo global sem filtros antigos
+  ---
+  duration_ms: 0.178705
+  type: 'test'
+  ...
+# Subtest: Gemini é a IA principal dos flashcards com fallback seguro
+ok 775 - Gemini é a IA principal dos flashcards com fallback seguro
+  ---
+  duration_ms: 1.044935
+  type: 'test'
+  ...
+# Subtest: a chave Gemini não é exposta no frontend
+ok 776 - a chave Gemini não é exposta no frontend
+  ---
+  duration_ms: 0.167888
+  type: 'test'
+  ...
+# Subtest: v10.25.4 registra causa real e amplia timeouts da cadeia de IA
+ok 777 - v10.25.4 registra causa real e amplia timeouts da cadeia de IA
+  ---
+  duration_ms: 1.033408
+  type: 'test'
+  ...
+# Subtest: v10.25.4 informa ao usuário quando Gemini ou fallback respondeu
+ok 778 - v10.25.4 informa ao usuário quando Gemini ou fallback respondeu
+  ---
+  duration_ms: 0.176201
+  type: 'test'
+  ...
+# Subtest: v10.25.4 usa Gemini 3.6 Flash
+ok 779 - v10.25.4 usa Gemini 3.6 Flash
+  ---
+  duration_ms: 1.030674
+  type: 'test'
+  ...
+# Subtest: modelo manual continua protegido por fallback
+ok 780 - modelo manual continua protegido por fallback
+  ---
+  duration_ms: 1.000299
+  type: 'test'
+  ...
+# Subtest: falha das IAs usa gerador local determinístico
+ok 781 - falha das IAs usa gerador local determinístico
+  ---
+  duration_ms: 0.185735
+  type: 'test'
+  ...
+# Subtest: v10.25.7 inicia fallback antecipado sem reduzir o teto do Gemini
+ok 782 - v10.25.7 inicia fallback antecipado sem reduzir o teto do Gemini
+  ---
+  duration_ms: 1.036613
+  type: 'test'
+  ...
+# Subtest: v10.25.7 registra sucesso falha e seleção com latência por provedor
+ok 783 - v10.25.7 registra sucesso falha e seleção com latência por provedor
+  ---
+  duration_ms: 0.25678
+  type: 'test'
+  ...
+# Subtest: v10.25.7 preserva fallback determinístico
+ok 784 - v10.25.7 preserva fallback determinístico
+  ---
+  duration_ms: 0.14895
+  type: 'test'
+  ...
+# Subtest: v10.25.7 percorre múltiplos candidates e parts do Gemini
+ok 785 - v10.25.7 percorre múltiplos candidates e parts do Gemini
+  ---
+  duration_ms: 1.08149
+  type: 'test'
+  ...
+# Subtest: v10.25.7 recupera JSON simples malformado sem inventar conteúdo
+ok 786 - v10.25.7 recupera JSON simples malformado sem inventar conteúdo
+  ---
+  duration_ms: 0.187287
+  type: 'test'
+  ...
+# Subtest: v10.25.7 registra estrutura segura e finishReason sem conteúdo bruto
+ok 787 - v10.25.7 registra estrutura segura e finishReason sem conteúdo bruto
+  ---
+  duration_ms: 0.318171
+  type: 'test'
+  ...
+# Subtest: v10.25.7 mantém hedge e fallbacks existentes
+ok 788 - v10.25.7 mantém hedge e fallbacks existentes
+  ---
+  duration_ms: 0.148329
+  type: 'test'
+  ...
+# Subtest: v10.25.7 preserves Gemini normal and compact output budgets
+ok 789 - v10.25.7 preserves Gemini normal and compact output budgets
+  ---
+  duration_ms: 1.031566
+  type: 'test'
+  ...
+# Subtest: v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON
+ok 790 - v10.25.7 retries Gemini once when MAX_TOKENS truncates JSON
+  ---
+  duration_ms: 0.200156
+  type: 'test'
+  ...
+# Subtest: v10.25.7 keeps hedge and fallback intact
+ok 791 - v10.25.7 keeps hedge and fallback intact
+  ---
+  duration_ms: 0.137283
+  type: 'test'
+  ...
+# Subtest: v10.25.7 logs retry without source content
+ok 792 - v10.25.7 logs retry without source content
+  ---
+  duration_ms: 0.284531
+  type: 'test'
+  ...
+# Subtest: V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
+ok 793 - V10.25 preserva PWA e implementa Biblioteca/IA multi-modelo com segurança
+  ---
+  duration_ms: 2.39349
+  type: 'test'
+  ...
+# Subtest: v10.26 builds deterministic evidence before asking AI
+ok 794 - v10.26 builds deterministic evidence before asking AI
+  ---
+  duration_ms: 0.902936
+  type: 'test'
+  ...
+# Subtest: v10.26 uses structured output and low thinking
+ok 795 - v10.26 uses structured output and low thinking
+  ---
+  duration_ms: 0.991857
+  type: 'test'
+  ...
+# Subtest: v10.26 validates source grounding and rejects weak questions
+ok 796 - v10.26 validates source grounding and rejects weak questions
+  ---
+  duration_ms: 0.291461
+  type: 'test'
+  ...
+# Subtest: v10.26 preserves hedge and deterministic fallback
+ok 797 - v10.26 preserves hedge and deterministic fallback
+  ---
+  duration_ms: 0.160868
+  type: 'test'
+  ...
+# Subtest: canonical version is synchronized across package, manifest, Worker and Service Worker
+ok 798 - canonical version is synchronized across package, manifest, Worker and Service Worker
+  ---
+  duration_ms: 0.350399
+  type: 'test'
+  ...
+# Subtest: novos módulos JavaScript compilam sem erro de sintaxe
+ok 799 - novos módulos JavaScript compilam sem erro de sintaxe
+  ---
+  duration_ms: 1.807483
+  type: 'test'
+  ...
+# Subtest: ordem manual de PDFs é persistida com isolamento por usuário
+ok 800 - ordem manual de PDFs é persistida com isolamento por usuário
+  ---
+  duration_ms: 1.330077
+  type: 'test'
+  ...
+# Subtest: Biblioteca usa sort_order como ordem canônica e persiste subconjunto visível
+ok 801 - Biblioteca usa sort_order como ordem canônica e persiste subconjunto visível
+  ---
+  duration_ms: 0.180267
+  type: 'test'
+  ...
+# Subtest: atalho oferece ordem manual numérica e alfabética
+ok 802 - atalho oferece ordem manual numérica e alfabética
+  ---
+  duration_ms: 0.293855
+  type: 'test'
+  ...
+# Subtest: arrastar PDF troca a ordem canônica para manual e salva
+ok 803 - arrastar PDF troca a ordem canônica para manual e salva
+  ---
+  duration_ms: 0.229149
+  type: 'test'
+  ...
+# Subtest: título do PDF vira atalho para abrir e botão Visualizar é removido da interface renderizada
+ok 804 - título do PDF vira atalho para abrir e botão Visualizar é removido da interface renderizada
+  ---
+  duration_ms: 0.142281
+  type: 'test'
+  ...
+# Subtest: abertura do PDF repete falhas transitórias e possui fallback por URL assinada
+ok 805 - abertura do PDF repete falhas transitórias e possui fallback por URL assinada
+  ---
+  duration_ms: 0.223591
+  type: 'test'
+  ...
+# Subtest: módulo de ordenação integra o app shell offline
+ok 806 - módulo de ordenação integra o app shell offline
+  ---
+  duration_ms: 0.111746
+  type: 'test'
+  ...
+# Subtest: flashcard action labels do not split on mobile
+ok 807 - flashcard action labels do not split on mobile
+  ---
+  duration_ms: 1.148478
+  type: 'test'
+  ...
+# Subtest: calendar month and year remain aligned in one row
+ok 808 - calendar month and year remain aligned in one row
+  ---
+  duration_ms: 0.251822
+  type: 'test'
+  ...
+# Subtest: retention actions are optically centered
+ok 809 - retention actions are optically centered
+  ---
+  duration_ms: 0.200997
+  type: 'test'
+  ...
+# Subtest: retention metrics remove decorative icons and keep compact balanced titles on all viewports
+ok 810 - retention metrics remove decorative icons and keep compact balanced titles on all viewports
+  ---
+  duration_ms: 0.411028
+  type: 'test'
+  ...
+# Subtest: responsive polish stylesheet is loaded after canonical UI
+ok 811 - responsive polish stylesheet is loaded after canonical UI
+  ---
+  duration_ms: 0.286254
+  type: 'test'
+  ...
+# Subtest: batch3 removes seven static inline visual states and later batches may reduce further
+ok 812 - batch3 removes seven static inline visual states and later batches may reduce further
+  ---
+  duration_ms: 2.976161
+  type: 'test'
+  ...
+# Subtest: batch3 JS uses semantic visibility
+ok 813 - batch3 JS uses semantic visibility
+  ---
+  duration_ms: 3.892557
+  type: 'test'
+  ...
+# Subtest: visual-state helper is installed before auth bootstrap
+ok 814 - visual-state helper is installed before auth bootstrap
+  ---
+  duration_ms: 0.274696
+  type: 'test'
+  ...
+# Subtest: semantic CSS preserves visual modes
+ok 815 - semantic CSS preserves visual modes
+  ---
+  duration_ms: 2.032386
+  type: 'test'
+  ...
+# Subtest: UI exposes semantic visual-state helper
+ok 816 - UI exposes semantic visual-state helper
+  ---
+  duration_ms: 1.245242
+  type: 'test'
+  ...
+# Subtest: modal overlay has semantic open state
+ok 817 - modal overlay has semantic open state
+  ---
+  duration_ms: 1.019127
+  type: 'test'
+  ...
+# Subtest: migrated app-ui modals do not mutate style.display
+ok 818 - migrated app-ui modals do not mutate style.display
+  ---
+  duration_ms: 1.465087
+  type: 'test'
+  ...
+# Subtest: repository has no temporary workflows committed
+ok 819 - repository has no temporary workflows committed
+  ---
+  duration_ms: 1.536132
+  type: 'test'
+  ...
+# Subtest: Cloudflare workflow deploys the validated SHA and verifies exact production identity
+ok 820 - Cloudflare workflow deploys the validated SHA and verifies exact production identity
+  ---
+  duration_ms: 0.388185
+  type: 'test'
+  ...
+1..820
+# tests 820
+# suites 0
+# pass 804
+# fail 16
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11966.868474
