@@ -1,0 +1,49 @@
+name: Temporary Phase 8D Final Consolidation
+on:
+  push:
+    branches:
+      - refactor/phase-8d-consolidation
+permissions:
+  contents: write
+jobs:
+  finalize:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: refactor/phase-8d-consolidation
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Apply Phase 8D final consolidation
+        run: node scripts/tmp-phase8d-finalize.mjs
+      - name: Validate syntax and release contract
+        run: |
+          node --check public/js/core/topic-assessment.js
+          node --check public/js/core/study-optimization-engine.js
+          node --check public/js/core/next-best-study-action.js
+          node --check public/js/core/predictive-adaptive-tutor.js
+          node --check tests/phase-8d-final-consolidation.test.cjs
+          node scripts/release-contract.mjs check
+      - name: Install dependencies
+        run: npm ci
+      - name: Focused Phase 8D tests
+        run: node --test tests/phase-8d-final-consolidation.test.cjs tests/phase-8c-consolidation.test.cjs tests/phase-8a-8b-consolidation.test.cjs
+      - name: Full test suite
+        run: npm test
+      - name: Structural audit
+        run: npm run audit
+      - name: Remove temporary artifacts
+        if: success()
+        run: rm -f scripts/tmp-phase8d-finalize.mjs .github/workflows/tmp-phase8d-finalize.yml
+      - name: Commit final Phase 8D
+        if: success()
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "refactor(core): concluir Fase 8D — consolidar arquitetura cognitiva"
+          git push origin HEAD:refactor/phase-8d-consolidation
