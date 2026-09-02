@@ -12,8 +12,8 @@ android {
         applicationId "com.estudoadaptativo.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 106444
-        versionName "10.64.42-mobile.1"
+        versionCode 106445
+        versionName "10.64.43-mobile.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
