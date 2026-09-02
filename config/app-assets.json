@@ -1,5 +1,5 @@
 {
-  "version": "10.64.38",
+  "version": "10.64.39",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -11,7 +11,7 @@
     "/css/dashboard.css",
     "/css/features.css",
     "/css/responsive-system.css",
-    "/css/responsive-polish-v10.64.38.css",
+    "/css/responsive-polish-v10.64.39.css",
     "/css/canonical-ui.css",
     "/css/pdf-library.css",
     "/css/pdf-reader.css",
@@ -65,11 +65,9 @@
     "/js/core/intervention-effectiveness.js",
     "/js/core/error-intelligence.js",
     "/js/core/cognitive-profile-runtime.js",
-    "/js/core/domain-risk-dashboard.js",
+    "/js/core/topic-assessment.js",
     "/js/core/study-optimization-engine.js",
-    "/js/core/predictive-adaptive-tutor.js",
-    "/js/core/study-optimization-dashboard.js",
-    "/css/study-optimization.css"
+    "/js/core/predictive-adaptive-tutor.js"
   ],
   "optionalOfflineAssets": [
     "/js/performance-loader.js",
@@ -185,11 +183,9 @@
     "/js/core/intervention-effectiveness.js",
     "/js/core/error-intelligence.js",
     "/js/core/cognitive-profile-runtime.js",
-    "/js/core/domain-risk-dashboard.js",
+    "/js/core/topic-assessment.js",
     "/js/core/study-optimization-engine.js",
-    "/js/core/predictive-adaptive-tutor.js",
-    "/js/core/study-optimization-dashboard.js",
-    "/css/study-optimization.css"
+    "/js/core/predictive-adaptive-tutor.js"
   ],
   "workerNoStorePaths": [
     "/",
@@ -263,11 +259,9 @@
     "/js/core/intervention-effectiveness.js",
     "/js/core/error-intelligence.js",
     "/js/core/cognitive-profile-runtime.js",
-    "/js/core/domain-risk-dashboard.js",
+    "/js/core/topic-assessment.js",
     "/js/core/study-optimization-engine.js",
-    "/js/core/predictive-adaptive-tutor.js",
-    "/js/core/study-optimization-dashboard.js",
-    "/css/study-optimization.css"
+    "/js/core/predictive-adaptive-tutor.js"
   ],
   "headersNoStorePaths": [
     "/",
@@ -341,11 +335,9 @@
     "/js/core/intervention-effectiveness.js",
     "/js/core/error-intelligence.js",
     "/js/core/cognitive-profile-runtime.js",
-    "/js/core/domain-risk-dashboard.js",
+    "/js/core/topic-assessment.js",
     "/js/core/study-optimization-engine.js",
-    "/js/core/predictive-adaptive-tutor.js",
-    "/js/core/study-optimization-dashboard.js",
-    "/css/study-optimization.css"
+    "/js/core/predictive-adaptive-tutor.js"
   ],
   "headersRevalidatePaths": [
     "/manifest.json"
