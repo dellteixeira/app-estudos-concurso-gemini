@@ -1,4 +1,8 @@
 const { test, expect } = require('@playwright/test');
+const fs = require('node:fs');
+
+const releaseContract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf8'));
+const RESPONSIVE_POLISH_PATH = `/css/responsive-polish-v${releaseContract.version}.css`;
 
 const MOBILE_VIEWPORTS = [
   { name: 'mobile-360', width: 360, height: 800 },
@@ -17,7 +21,7 @@ async function installRetentionFixture(page) {
     fixture.id = 'visualAuditRetentionCenteringFixture';
     fixture.style.cssText = 'display:block;width:100%;max-width:680px;margin:0 auto;padding:16px;box-sizing:border-box;';
     fixture.innerHTML = `
-      <div id="retentionDiagnosticPanel">
+      <div class="retention-diagnostic-panel">
         <div class="rd-center-v1077">
           <div class="retention-diagnostic-tools">
             <button type="button" class="retention-study-now-v1072">Estudar agora</button>
@@ -74,8 +78,8 @@ for (const viewport of MOBILE_VIEWPORTS) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await page.waitForFunction(() => [...document.styleSheets]
-      .some(sheet => (sheet.href || '').includes('/css/responsive-polish-v10.64.42.css')));
+    await page.waitForFunction((responsivePolishPath) => [...document.styleSheets]
+      .some(sheet => (sheet.href || '').includes(responsivePolishPath)), RESPONSIVE_POLISH_PATH);
 
     await installRetentionFixture(page);
     const result = await readCentering(page);
