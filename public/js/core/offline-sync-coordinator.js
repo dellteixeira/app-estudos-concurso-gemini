@@ -3,7 +3,7 @@
 if(global.OfflineSyncCoordinator)return;
 
 const SCHEMA_VERSION=1;
-const ROLLOUT_VERSION='10.56.0';
+const ASSET_STRATEGY='canonical-no-store';
 const MODULES=Object.freeze([
   ['OfflineOutboxStore','offline-outbox-store','offline-outbox-store.js'],
   ['OfflineSyncShadow','offline-sync-shadow','offline-sync-shadow.js'],
@@ -24,7 +24,7 @@ const MODULES=Object.freeze([
   ['OfflineSyncAuthority','offline-sync-authority','offline-sync-authority.js'],
   ['OfflineSyncDeleteAuthority','offline-sync-delete-authority','offline-sync-delete-authority.js'],
   ['OfflineSyncEditalGraduation','offline-sync-edital-graduation','offline-sync-edital-graduation.js']
-].map(([globalName,marker,file])=>Object.freeze({globalName,marker,file,path:`./js/core/${file}?v=${ROLLOUT_VERSION}`})));
+].map(([globalName,marker,file])=>Object.freeze({globalName,marker,file,path:`./js/core/${file}`})));
 
 let installPromise=null;
 let installed=false;
@@ -81,7 +81,7 @@ function moduleDiagnostics(definition){
   return Object.freeze({
     globalName:definition.globalName,
     file:definition.file,
-    rolloutVersion:ROLLOUT_VERSION,
+    assetStrategy:ASSET_STRATEGY,
     loaded:Boolean(api),
     diagnostics
   });
@@ -90,7 +90,7 @@ function getDiagnostics(){
   const modules=MODULES.map(moduleDiagnostics);
   return Object.freeze({
     schemaVersion:SCHEMA_VERSION,
-    rolloutVersion:ROLLOUT_VERSION,
+    assetStrategy:ASSET_STRATEGY,
     installed,
     installRunning:Boolean(installPromise),
     installs,
@@ -101,6 +101,6 @@ function getDiagnostics(){
   });
 }
 
-global.OfflineSyncCoordinator=Object.freeze({schemaVersion:SCHEMA_VERSION,rolloutVersion:ROLLOUT_VERSION,modules:MODULES,install,getDiagnostics});
-global.dispatchEvent?.(new CustomEvent('offline-sync:coordinator-ready',{detail:{schemaVersion:SCHEMA_VERSION,rolloutVersion:ROLLOUT_VERSION}}));
+global.OfflineSyncCoordinator=Object.freeze({schemaVersion:SCHEMA_VERSION,assetStrategy:ASSET_STRATEGY,modules:MODULES,install,getDiagnostics});
+global.dispatchEvent?.(new CustomEvent('offline-sync:coordinator-ready',{detail:{schemaVersion:SCHEMA_VERSION,assetStrategy:ASSET_STRATEGY}}));
 })(window);
