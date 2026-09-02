@@ -16,23 +16,25 @@ async function installRetentionFixture(page) {
       if (el) el.style.setProperty('display', 'none', 'important');
     }
 
-    document.getElementById('visualAuditRetentionCenteringFixture')?.remove();
+    document.getElementById('retentionDiagnosticPanel')?.remove();
+    document.querySelector('[data-visual-audit-retention-centering]')?.remove();
+
     const fixture = document.createElement('section');
-    fixture.id = 'visualAuditRetentionCenteringFixture';
+    fixture.id = 'retentionDiagnosticPanel';
+    fixture.dataset.visualAuditRetentionCentering = '1';
+    fixture.className = 'retention-diagnostic-panel';
     fixture.style.cssText = 'display:block;width:100%;max-width:680px;margin:0 auto;padding:16px;box-sizing:border-box;';
     fixture.innerHTML = `
-      <div class="retention-diagnostic-panel">
-        <div class="rd-center-v1077">
-          <div class="retention-diagnostic-tools">
-            <button type="button" class="retention-study-now-v1072">Estudar agora</button>
-            <button type="button" class="retention-export-btn">Exportar dados</button>
-          </div>
-          <div class="rd-metrics-v1077">
-            <div class="rd-metric-card-v1077"><span class="rd-metric-label-v1077">Retenção média</span><strong>98%</strong><div class="rd-metric-progress-v1077"></div></div>
-            <div class="rd-metric-card-v1077"><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>1</strong><div class="rd-metric-progress-v1077"></div></div>
-            <div class="rd-metric-card-v1077"><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
-            <div class="rd-metric-card-v1077"><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
-          </div>
+      <div class="rd-center-v1077">
+        <div class="retention-diagnostic-tools">
+          <button type="button" class="retention-study-now-v1072">Estudar agora</button>
+          <button type="button" class="retention-export-btn">Exportar dados</button>
+        </div>
+        <div class="rd-metrics-v1077">
+          <div class="rd-metric-card-v1077"><span class="rd-metric-label-v1077">Retenção média</span><strong>98%</strong><div class="rd-metric-progress-v1077"></div></div>
+          <div class="rd-metric-card-v1077"><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>1</strong><div class="rd-metric-progress-v1077"></div></div>
+          <div class="rd-metric-card-v1077"><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
+          <div class="rd-metric-card-v1077"><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
         </div>
       </div>`;
     document.body.appendChild(fixture);
@@ -41,8 +43,9 @@ async function installRetentionFixture(page) {
 
 async function readCentering(page) {
   return page.evaluate(() => {
+    const root = document.querySelector('[data-visual-audit-retention-centering]');
     const centerX = rect => rect.left + rect.width / 2;
-    const metrics = [...document.querySelectorAll('#visualAuditRetentionCenteringFixture .rd-metric-card-v1077')].map(card => {
+    const metrics = [...root.querySelectorAll('.rd-metric-card-v1077')].map(card => {
       const cardRect = card.getBoundingClientRect();
       const label = card.querySelector('.rd-metric-label-v1077');
       const value = card.querySelector('strong');
@@ -58,7 +61,7 @@ async function readCentering(page) {
       };
     });
 
-    const tools = document.querySelector('#visualAuditRetentionCenteringFixture .retention-diagnostic-tools');
+    const tools = root.querySelector('.retention-diagnostic-tools');
     const toolsRect = tools.getBoundingClientRect();
     const actions = [...tools.querySelectorAll('.retention-study-now-v1072, .retention-export-btn')].map(button => {
       const rect = button.getBoundingClientRect();
@@ -80,6 +83,7 @@ for (const viewport of MOBILE_VIEWPORTS) {
 
     await page.waitForFunction((responsivePolishPath) => [...document.styleSheets]
       .some(sheet => (sheet.href || '').includes(responsivePolishPath)), RESPONSIVE_POLISH_PATH);
+    await page.waitForFunction(() => !!window.AppStudyUxPhase);
 
     await installRetentionFixture(page);
     const result = await readCentering(page);
