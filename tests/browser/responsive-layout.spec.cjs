@@ -3,6 +3,7 @@ const fs = require('node:fs');
 
 const releaseContract = JSON.parse(fs.readFileSync('config/release-contract.json', 'utf8'));
 const RESPONSIVE_POLISH_PATH = `/css/responsive-polish-v${releaseContract.version}.css`;
+const RETENTION_FIXTURE = '[data-visual-audit-retention-fixture]';
 
 const VIEWPORTS = [
   { name: 'mobile-360', width: 360, height: 800 },
@@ -76,8 +77,9 @@ async function auditProductionStyles(page) {
 }
 
 async function auditRetentionCards(page) {
-  const result = await page.evaluate(() => {
-    const cards = [...document.querySelectorAll('#visualAuditRetentionFixture .rd-metric-card-v1077')];
+  const result = await page.evaluate((fixtureSelector) => {
+    const root = document.querySelector(fixtureSelector);
+    const cards = [...root.querySelectorAll('.rd-metric-card-v1077')];
     return cards.map(card => {
       const cardRect = card.getBoundingClientRect();
       const icon = card.querySelector('.rd-metric-icon-v1077');
@@ -97,7 +99,7 @@ async function auditRetentionCards(page) {
         labelTextAlign: labelStyle?.textAlign || ''
       };
     });
-  });
+  }, RETENTION_FIXTURE);
 
   expect(result.length).toBe(4);
   for (const item of result) {
@@ -147,26 +149,23 @@ async function exposeDashboardAuditFixture(page) {
     }
 
     document.getElementById('retentionDiagnosticPanel')?.remove();
+    document.querySelector('[data-visual-audit-retention-fixture]')?.remove();
 
-    let fixture = document.getElementById('visualAuditRetentionFixture');
-    if (!fixture) {
-      fixture = document.createElement('section');
-      fixture.id = 'visualAuditRetentionFixture';
-      fixture.className = 'card retention-diagnostic-panel';
-      fixture.setAttribute('aria-label', 'Fixture visual dos cards de retenção');
-      fixture.innerHTML = `
-        <div id="retentionDiagnosticPanel">
-          <div class="rd-center-v1077">
-            <div class="rd-metrics-v1077">
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção média</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077 rd-metric-risk-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
-            </div>
-          </div>
-        </div>`;
-      dashboard.appendChild(fixture);
-    }
+    const fixture = document.createElement('section');
+    fixture.id = 'retentionDiagnosticPanel';
+    fixture.dataset.visualAuditRetentionFixture = '1';
+    fixture.className = 'card retention-diagnostic-panel';
+    fixture.setAttribute('aria-label', 'Fixture visual dos cards de retenção');
+    fixture.innerHTML = `
+      <div class="rd-center-v1077">
+        <div class="rd-metrics-v1077">
+          <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção média</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
+          <div class="rd-metric-card-v1077 rd-metric-risk-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
+          <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
+          <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
+        </div>
+      </div>`;
+    dashboard.appendChild(fixture);
     fixture.style.setProperty('display', 'block', 'important');
     fixture.style.setProperty('visibility', 'visible', 'important');
     document.documentElement.scrollLeft = 0;
@@ -190,11 +189,12 @@ for (const viewport of VIEWPORTS) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await auditProductionStyles(page);
+    await page.waitForFunction(() => !!window.AppStudyUxPhase);
     await exposeDashboardAuditFixture(page);
     await expect(page.locator('.modern-header')).toBeVisible();
-    await expect(page.locator('#visualAuditRetentionFixture')).toBeVisible();
+    await expect(page.locator(RETENTION_FIXTURE)).toBeVisible();
     await auditDocumentOverflow(page);
-    await auditVisibleControls(page, ['.modern-header', '#visualAuditRetentionFixture']);
+    await auditVisibleControls(page, ['.modern-header', RETENTION_FIXTURE]);
     await auditRetentionCards(page);
     await page.screenshot({ path: testInfo.outputPath(`dashboard-${viewport.name}.png`), fullPage: true });
   });
