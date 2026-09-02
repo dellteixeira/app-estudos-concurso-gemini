@@ -20,6 +20,7 @@ jobs:
           cache: npm
       - name: Apply Phase 8C physical graduation
         run: |
+          node scripts/tmp-phase8c-patch-runner.mjs
           node scripts/tmp-phase8c-consolidate.mjs
           node scripts/tmp-phase8c-fix-tests.mjs
       - name: Validate JSON and syntax
@@ -53,7 +54,7 @@ jobs:
           git push origin HEAD:refactor/phase-8c-consolidation
       - name: Remove temporary artifacts
         if: success()
-        run: rm -f scripts/tmp-phase8c-consolidate.mjs scripts/tmp-phase8c-fix-tests.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log
+        run: rm -f scripts/tmp-phase8c-consolidate.mjs scripts/tmp-phase8c-fix-tests.mjs scripts/tmp-phase8c-patch-runner.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log
       - name: Commit Phase 8C
         if: success()
         run: |
