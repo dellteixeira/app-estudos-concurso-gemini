@@ -291,6 +291,10 @@ jobs:
           tag_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
           current_sha="$(git rev-parse HEAD)"
           if [ "$tag_sha" != "$current_sha" ]; then
+            if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
+              echo "::notice::Tag canônica $RELEASE_TAG permanece em $tag_sha e o workflow automático está em $current_sha. Nenhum asset será publicado porque não houve nova versão canônica."
+              exit 0
+            fi
             echo "::error::Tag canônica $RELEASE_TAG aponta para $tag_sha, mas o APK foi construído de $current_sha."
             exit 1
           fi
