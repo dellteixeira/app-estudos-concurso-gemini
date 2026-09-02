@@ -19,7 +19,9 @@ jobs:
           node-version: 22.23.2
           cache: npm
       - name: Apply Phase 8C physical graduation
-        run: node scripts/tmp-phase8c-consolidate.mjs
+        run: |
+          node scripts/tmp-phase8c-consolidate.mjs
+          node scripts/tmp-phase8c-fix-tests.mjs
       - name: Validate JSON and syntax
         run: |
           node -e "JSON.parse(require('fs').readFileSync('config/app-assets.json','utf8'))"
@@ -27,6 +29,7 @@ jobs:
           node --check public/js/core/study-optimization-engine.js
           node --check public/js/core/next-best-study-action.js
           node --check public/js/core/predictive-adaptive-tutor.js
+          node --check tests/phase-8c-consolidation.test.cjs
       - name: Install dependencies
         run: npm ci
       - name: Release contract
@@ -46,11 +49,11 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add phase8c-focused.log
-          git commit -m "chore(tmp): capture Phase 8C test failure"
+          git diff --cached --quiet || git commit -m "chore(tmp): capture Phase 8C test failure"
           git push origin HEAD:refactor/phase-8c-consolidation
       - name: Remove temporary artifacts
         if: success()
-        run: rm -f scripts/tmp-phase8c-consolidate.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log
+        run: rm -f scripts/tmp-phase8c-consolidate.mjs scripts/tmp-phase8c-fix-tests.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log
       - name: Commit Phase 8C
         if: success()
         run: |
