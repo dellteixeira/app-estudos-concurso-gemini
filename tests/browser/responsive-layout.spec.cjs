@@ -155,14 +155,12 @@ async function exposeDashboardAuditFixture(page) {
       fixture.className = 'card retention-diagnostic-panel';
       fixture.setAttribute('aria-label', 'Fixture visual dos cards de retenção');
       fixture.innerHTML = `
-        <div id="retentionDiagnosticPanel">
-          <div class="rd-center-v1077">
-            <div class="rd-metrics-v1077">
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção média</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077 rd-metric-risk-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
-              <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
-            </div>
+        <div class="rd-center-v1077">
+          <div class="rd-metrics-v1077">
+            <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Retenção média</span><strong>82%</strong><div class="rd-metric-progress-v1077"></div></div>
+            <div class="rd-metric-card-v1077 rd-metric-risk-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">!</span><span class="rd-metric-label-v1077">Assuntos em risco</span><strong>3</strong><div class="rd-metric-progress-v1077"></div></div>
+            <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">◎</span><span class="rd-metric-label-v1077">Revisões vencidas</span><strong>0</strong><div class="rd-metric-progress-v1077"></div></div>
+            <div class="rd-metric-card-v1077"><span class="rd-metric-icon-v1077" aria-hidden="true">✓</span><span class="rd-metric-label-v1077">Assuntos dominados</span><strong>18</strong><div class="rd-metric-progress-v1077"></div></div>
           </div>
         </div>`;
       dashboard.appendChild(fixture);
