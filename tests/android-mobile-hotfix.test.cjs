@@ -65,9 +65,12 @@ test('APK identity follows the canonical release contract', () => {
   assert.match(workflow, /versionName \\\"\$ANDROID_VERSION_NAME\\\"/);
   assert.match(workflow, /\$RESPONSIVE_CSS/);
   assert.match(workflow, /AAB inesperado foi produzido/);
-  assert.match(workflow, /if:\s*github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /workflow_run:\s*\n\s+workflows: \["Canonical GitHub Release"\]/);
+  assert.match(workflow, /github\.event\.workflow_run\.conclusion == 'success'/);
+  assert.match(workflow, /github\.event\.workflow_run\.head_branch == 'main'/);
   assert.match(workflow, /gh release upload/);
 
+  assert.doesNotMatch(workflow, /push:\s*\n\s+branches:/);
   assert.doesNotMatch(workflow, /ANDROID_VERSION_NAME:\s*['"]\d/);
   assert.doesNotMatch(workflow, /APP_VERSION_CODE:\s*['"]?\d/);
   assert.doesNotMatch(workflow, /WEB_VERSION:\s*['"]\d/);
