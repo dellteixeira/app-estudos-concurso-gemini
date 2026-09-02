@@ -32,14 +32,25 @@ jobs:
       - name: Release contract
         run: node scripts/release-contract.mjs check
       - name: Focused Phase 8C tests
-        run: node --test tests/phase-8c-consolidation.test.cjs tests/phase-8a-8b-consolidation.test.cjs tests/phase-6a-domain-risk-dashboard.test.cjs tests/phase-6b-study-optimization-dashboard.test.cjs tests/phase-6-critical-points-integration.test.cjs
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test tests/phase-8c-consolidation.test.cjs tests/phase-8a-8b-consolidation.test.cjs tests/phase-6a-domain-risk-dashboard.test.cjs tests/phase-6b-study-optimization-dashboard.test.cjs tests/phase-6-critical-points-integration.test.cjs 2>&1 | tee phase8c-focused.log
       - name: Full tests
         run: npm test
       - name: Structural audit
         run: npm run audit
+      - name: Persist diagnostics on failure
+        if: failure()
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add phase8c-focused.log
+          git commit -m "chore(tmp): capture Phase 8C test failure"
+          git push origin HEAD:refactor/phase-8c-consolidation
       - name: Remove temporary artifacts
         if: success()
-        run: rm -f scripts/tmp-phase8c-consolidate.mjs .github/workflows/tmp-phase8c-consolidate.yml
+        run: rm -f scripts/tmp-phase8c-consolidate.mjs .github/workflows/tmp-phase8c-consolidate.yml phase8c-focused.log
       - name: Commit Phase 8C
         if: success()
         run: |
