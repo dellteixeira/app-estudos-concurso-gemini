@@ -97,6 +97,12 @@
             if (!global.AppCognitiveProfileRuntime) {
                 await loader.loadScript('./js/core/cognitive-profile-runtime.js', { async: false });
             }
+            if (!global.AppStudyUxPhase) {
+                await loader.loadScript('./js/ui/study-ux-phase.js', { async: false });
+            }
+            if (!global.AppTodayBestAction) {
+                await loader.loadScript('./js/ui/today-best-action.js', { async: false });
+            }
             return loader;
         })().catch(error => {
             coreRuntimePromise = null;
