@@ -1,0 +1,65 @@
+
+> estudo-adaptativo-inteligente@10.64.39 audit
+> npm run audit:release-contract && node scripts/audit-release.mjs && node scripts/audit-css-ownership.cjs && node scripts/audit-asset-manifest.mjs && node scripts/audit-inline-csp.mjs && node scripts/audit-toolchain-pins.mjs
+
+
+> estudo-adaptativo-inteligente@10.64.39 audit:release-contract
+> node scripts/release-contract.mjs check && node scripts/audit-workflow-release-contract.mjs
+
+Release contract OK: web=10.64.39 android=10.64.39-mobile.1 code=106441 tag=v10.64.39
+OK  2 workflows Android derivam identidade do contrato canônico sem literais de release.
+OK  public/version.json é JSON válido
+OK  config/app-assets.json é JSON válido
+OK  versão de release: 10.64.39
+OK  manifesto de assets sincronizado com a release
+OK  nome da pasta raiz ignorado em ambiente de CI
+OK  75 módulos JavaScript descobertos automaticamente
+OK  25 folhas CSS descobertas automaticamente
+OK  177 testes estruturais descobertos automaticamente
+OK  app.js monolítico removido
+OK  app.css monolítico removido
+OK  assets do index descobertos em ordem determinística e sem duplicação
+OK  index.html sem versão hardcoded
+OK  sw.js sincronizado
+OK  Cloudflare Worker sincronizado
+OK  package.json sincronizado
+OK  atualização determinística do PWA preservada
+OK  Service Worker suporta skipWaiting/clients.claim
+OK  Reader coberto pelo manifesto network-first
+OK  Reader PDF com anotações/versionamento versionado
+OK  hardening RLS do Reader PDF versionado
+OK  diagnóstico e retry de upload em lote versionados
+OK  78 arquivos JavaScript passaram no node --check
+OK  public/manifest.json é JSON válido
+OK  wrangler.jsonc é JSON válido
+OK  package.json é JSON válido
+OK  config/app-assets.json é JSON válido
+OK  regras críticas compartilham StudyDomain com os testes
+OK  GitHub Actions de qualidade presente
+OK  backup Supabase preparado para banco + Storage + integridade
+OK  baseline e hardening Supabase versionados
+OK  177 arquivos de teste descobertos e aprovados
+OK  fundação PDF privada com RLS/Storage/limite versionada
+OK  PDF global desacoplado do concurso com vínculos contextuais
+OK  Timer absoluto preservado
+OK  Pomodoro manual vinculado preservado
+OK  ordem canônica do gráfico preservada
+OK  retenção ativa preservada
+OK  editor rico de notas preservado
+OK  exclusão granular preservada
+OK  layout aprovado de Retenção preservado
+
+AUDITORIA APROVADA: descoberta automática de módulos, testes e release consistente.
+CSS ownership audit — compatibilidade legada detectada:
+  - base.css: dívida legada congelada em #app-dashboard, .study-overview-grid, .grid-top, header.modern-header, .header-nav-tabs
+  - dashboard.css: dívida legada congelada em #app-dashboard, .study-overview-grid, .grid-top, header.modern-header, .header-nav-tabs
+  - features.css: dívida legada congelada em #app-dashboard, .study-overview-grid, .grid-top, header.modern-header, .header-nav-tabs
+CSS ownership audit OK: camada transversal canônica preservada, seletores aposentados ausentes e CSS especializado permanece autoritativo.
+OK  manifesto de assets sincronizado com 10.64.39
+OK  entrypoint Cloudflare efetivo auditado: src/worker.js + src/index.js
+ERRO Service Worker critical shell diverge do manifesto; extras: /css/study-optimization.css, /js/core/study-optimization-dashboard.js
+OK  Service Worker optional offline governado pelo manifesto canônico
+ERRO Service Worker network-first diverge do manifesto; extras: /css/study-optimization.css, /js/core/study-optimization-dashboard.js
+ERRO Cloudflare Worker no-store diverge do manifesto; extras: /css/study-optimization.css, /js/core/study-optimization-dashboard.js
+ERRO _headers no-store diverge do manifesto; faltando: /js/core/topic-assessment.js; extras: /css/study-optimization.css, /js/core/domain-risk-dashboard.js, /js/core/study-optimization-dashboard.js
+OK  _headers revalidate governado pelo manifesto canônico
