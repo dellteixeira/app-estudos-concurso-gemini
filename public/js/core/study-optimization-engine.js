@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppStudyOptimization)return;
 
-const SCHEMA_VERSION=2;
+const SCHEMA_VERSION=1;
 const SUPPORTED_WINDOWS=Object.freeze([30,60,90]);
 const MIN_BLOCK_MINUTES=10;
 const MAX_BLOCK_MINUTES=35;
@@ -13,122 +13,22 @@ const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
 const clean=(value,max=320)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const finite=value=>Number.isFinite(Number(value))?Number(value):null;
 const assessment=()=>global.AppTopicAssessment||null;
-
-function readProfile(context={}){
-  const userId=clean(context.userId||global.currentUser?.id||'guest',120);
-  const contest=clean(context.contest||global.currentConcurso||'Concurso Geral',180);
-  try{return global.AppCognitiveProfile?.peek?.(userId,contest)||global.AppCognitiveProfile?.read?.(userId,contest)||null}catch(_){return null}
-}
-function legacySignals(state={}){
-  const domain=state.domainRisk||{};
-  const retention=finite(state.retention)??finite(domain.predictedRetention7d)??50;
-  const accuracy=finite(state.accuracy)??retention;
-  return {
-    retention,accuracy,
-    mastery:finite(state.masteryScore)??finite(domain.masteryScore)??Math.round((retention+accuracy)/2),
-    predictedRetention7d:finite(state.predictedRetention7d)??finite(domain.predictedRetention7d)??retention,
-    forgettingRisk:finite(state.forgettingRisk)??finite(domain.forgettingRisk)??50,
-    evidenceLevel:clean(state.evidenceLevel||domain.evidenceLevel,40)||'low',
-    trend:clean(state.trend||domain.trend,60)||'insufficient_evidence',
-    applicationGap:Math.max(0,retention-accuracy),
-    lapseCount:Math.max(0,Number(state.lapseCount)||0),
-    editalPriority:finite(state.editalPriority),topicPriority:finite(state.topicPriority)
-  };
-}
+function readProfile(context={}){const userId=clean(context.userId||global.currentUser?.id||'guest',120),contest=clean(context.contest||global.currentConcurso||'Concurso Geral',180);try{return global.AppCognitiveProfile?.peek?.(userId,contest)||global.AppCognitiveProfile?.read?.(userId,contest)||null}catch(_){return null}}
+function legacySignals(state={}){const domain=state.domainRisk||{},retention=finite(state.retention)??finite(domain.predictedRetention7d)??50,accuracy=finite(state.accuracy)??retention;return {retention,accuracy,mastery:finite(state.masteryScore)??finite(domain.masteryScore)??Math.round((retention+accuracy)/2),predictedRetention7d:finite(state.predictedRetention7d)??finite(domain.predictedRetention7d)??retention,forgettingRisk:finite(state.forgettingRisk)??finite(domain.forgettingRisk)??50,evidenceLevel:clean(state.evidenceLevel||domain.evidenceLevel,40)||'low',trend:clean(state.trend||domain.trend,60)||'insufficient_evidence',applicationGap:Math.max(0,retention-accuracy),lapseCount:Math.max(0,Number(state.lapseCount)||0),editalPriority:finite(state.editalPriority),topicPriority:finite(state.topicPriority)}}
 function signals(state={}){return assessment()?.normalizeTopicState?.(state)||legacySignals(state)}
-function prioritySignal(state={}){
-  const api=assessment();
-  if(api?.prioritySignal)return api.prioritySignal(state);
-  const s=signals(state),imported=s.topicPriority??s.editalPriority;
-  return imported==null?50:clamp(100-(Math.max(1,Math.round(imported))-1)*18,28,100);
-}
+function prioritySignal(state={}){const api=assessment();if(api?.prioritySignal)return api.prioritySignal(state);const s=signals(state),imported=s.topicPriority??s.editalPriority;return imported==null?50:clamp(100-(Math.max(1,Math.round(imported))-1)*18,28,100)}
 function applicationGap(state={}){return signals(state).applicationGap||0}
-function candidateScore(state={}){
-  const api=assessment();
-  if(api?.optimizationScore)return api.optimizationScore(state);
-  const s=signals(state),trendBoost=s.trend==='declining'?100:s.trend==='improving'?20:50;
-  return Math.round(clamp(s.forgettingRisk*.30+(100-s.mastery)*.24+(100-s.predictedRetention7d)*.14+(100-s.accuracy)*.12+prioritySignal(state)*.10+trendBoost*.06+s.applicationGap*.04,0,100));
-}
-function chooseMethod(state={}){
-  const api=assessment();
-  if(api?.chooseOptimizationMethod)return api.chooseOptimizationMethod(state);
-  const s=signals(state);
-  if(s.mastery<42||s.lapseCount>=4)return {method:'focused_restudy',label:'Reestudo direcionado'};
-  if(s.retention>=70&&(s.accuracy<65||s.applicationGap>=18))return {method:'questions',label:'Questões de validação'};
-  if(s.retention<55)return {method:'active_recall',label:'Recuperação ativa'};
-  if(s.retention<70)return {method:'short_review',label:'Revisão curta'};
-  if(s.accuracy<75)return {method:'questions',label:'Questões comentadas'};
-  return {method:'questions',label:'Questões de manutenção'};
-}
-function expectedGain(state={},minutes=25){
-  const api=assessment();
-  if(api?.expectedGain)return api.expectedGain(state,minutes);
-  const s=signals(state),evidence=s.evidenceLevel==='high'?1:s.evidenceLevel==='medium'?.86:.72;
-  const opportunity=clamp((100-s.mastery)*.62+s.forgettingRisk*.38,0,100);
-  const timeFactor=1-Math.exp(-Math.max(0,Number(minutes)||0)/28);
-  return Number(clamp(opportunity*timeFactor*.34*evidence,0,25).toFixed(1));
-}
-
-function buildCandidates(profile){
-  const topicState=profile?.topicState&&typeof profile.topicState==='object'?profile.topicState:{};
-  const entries=Object.entries(topicState);candidateScans+=entries.length;
-  return entries.map(([topicId,state],canonicalIndex)=>{
-    const s=signals(state),method=chooseMethod(state);
-    return {topicId,canonicalIndex,materia:clean(state.materia,180),assunto:clean(state.assunto,400),method:method.method,methodLabel:method.label,
-      optimizationScore:candidateScore(state),masteryScore:s.mastery,forgettingRisk:s.forgettingRisk,predictedRetention7d:s.predictedRetention7d,
-      evidenceLevel:s.evidenceLevel,trend:s.trend,editalPriority:s.editalPriority,topicPriority:s.topicPriority,retention:s.retention,accuracy:s.accuracy,lapseCount:s.lapseCount};
-  });
-}
-function blockMinutesFor(candidate,remaining){
-  const base=candidate.method==='focused_restudy'?30:candidate.method==='questions'?20:15;
-  const riskBonus=(candidate.forgettingRisk??0)>=65?5:0,scoreBonus=candidate.optimizationScore>=75?5:0;
-  const suggested=clamp(base+riskBonus+scoreBonus,MIN_BLOCK_MINUTES,MAX_BLOCK_MINUTES);
-  return Math.min(remaining,suggested);
-}
-function reasonFor(candidate){
-  const reasons=[];
-  if((candidate.forgettingRisk??0)>=65)reasons.push('risco de esquecimento alto');else if((candidate.forgettingRisk??0)>=40)reasons.push('risco de esquecimento moderado');
-  if((candidate.masteryScore??100)<60)reasons.push('domínio abaixo do desejável');
-  if((candidate.retention??0)>=70&&(candidate.accuracy??100)<65)reasons.push('retenção alta com aplicação baixa');
-  if(candidate.trend==='declining')reasons.push('tendência de queda');
-  if(candidate.editalPriority===1||candidate.topicPriority===1)reasons.push('alta prioridade importada');
-  return reasons.slice(0,3);
-}
-function optimize(profile,availableMinutes=60,options={}){
-  globalPlans+=1;
-  const budget=SUPPORTED_WINDOWS.includes(Number(availableMinutes))?Number(availableMinutes):clamp(Math.round(Number(availableMinutes)||60),20,180);
-  const candidates=buildCandidates(profile),ranked=[...candidates].sort((a,b)=>b.optimizationScore-a.optimizationScore||a.canonicalIndex-b.canonicalIndex);
-  const blocks=[];let remaining=budget;
-  while(remaining>=MIN_BLOCK_MINUTES&&ranked.length){
-    const candidate=ranked.shift(),minutes=blockMinutesFor(candidate,remaining);if(minutes<MIN_BLOCK_MINUTES)break;
-    blocks.push(Object.freeze({sequence:blocks.length+1,topicId:candidate.topicId,materia:candidate.materia,assunto:candidate.assunto,method:candidate.method,methodLabel:candidate.methodLabel,minutes,
-      expectedGain:expectedGain(candidate,minutes),optimizationScore:candidate.optimizationScore,reasons:reasonFor(candidate),canonicalIndex:candidate.canonicalIndex,editalPriority:candidate.editalPriority,topicPriority:candidate.topicPriority}));
-    remaining-=minutes;
-  }
-  if(remaining>0&&blocks.length){
-    const index=blocks.length-1,last=blocks[index],extra=Math.min(remaining,Math.max(0,MAX_BLOCK_MINUTES-last.minutes));
-    if(extra>0){const nextMinutes=last.minutes+extra;blocks[index]=Object.freeze({...last,minutes:nextMinutes,expectedGain:expectedGain({...last,masteryScore:last.masteryScore,forgettingRisk:last.forgettingRisk},nextMinutes)});remaining-=extra}
-  }
-  const totalExpectedGain=Number(blocks.reduce((sum,item)=>sum+(Number(item.expectedGain)||0),0).toFixed(1));
-  const result=Object.freeze({schemaVersion:SCHEMA_VERSION,availableMinutes:budget,allocatedMinutes:blocks.reduce((sum,item)=>sum+item.minutes,0),unallocatedMinutes:remaining,totalExpectedGain,
-    blocks:Object.freeze(blocks),sourceTopicCount:candidates.length,generatedAt:new Date().toISOString(),priorityContract:Object.freeze({importedOrderMutation:false,planOrdering:'temporary-contextual-only',editalPriority:'contextual-weight-only',topicPriority:'contextual-weight-only'})});
-  try{global.AppStudyEvents?.emit?.('study:optimization-resolved',{availableMinutes:budget,allocatedMinutes:result.allocatedMinutes,totalExpectedGain,blocks:blocks.map(item=>({topicId:item.topicId,method:item.method,minutes:item.minutes}))},{source:'study-optimization'})}catch(_){}
-  return result;
-}
-function forTopic(topicId,availableMinutes=30,context={}){
-  topicPlans+=1;const profile=context.profile||readProfile(context),id=clean(topicId,640).toLowerCase(),state=profile?.topicState?.[id]||null;if(!state)return null;
-  const s=signals(state),method=chooseMethod(state),candidate={topicId:id,canonicalIndex:Number.isFinite(Number(state.canonicalIndex))?Number(state.canonicalIndex):-1,materia:clean(state.materia,180),assunto:clean(state.assunto,400),
-    method:method.method,methodLabel:method.label,optimizationScore:candidateScore(state),masteryScore:s.mastery,forgettingRisk:s.forgettingRisk,predictedRetention7d:s.predictedRetention7d,evidenceLevel:s.evidenceLevel,trend:s.trend,
-    editalPriority:s.editalPriority,topicPriority:s.topicPriority,retention:s.retention,accuracy:s.accuracy,lapseCount:s.lapseCount};
-  const budget=clamp(Math.round(Number(availableMinutes)||30),10,45),minutes=blockMinutesFor(candidate,Math.min(budget,MAX_BLOCK_MINUTES));
-  return Object.freeze({schemaVersion:SCHEMA_VERSION,topicId:id,block:Object.freeze({sequence:1,topicId:id,materia:candidate.materia,assunto:candidate.assunto,method:candidate.method,methodLabel:candidate.methodLabel,minutes,
-    expectedGain:expectedGain(candidate,minutes),optimizationScore:candidate.optimizationScore,reasons:reasonFor(candidate),canonicalIndex:candidate.canonicalIndex,editalPriority:candidate.editalPriority,topicPriority:candidate.topicPriority}),sourceTopicCount:1,
-    priorityContract:Object.freeze({importedOrderMutation:false,planOrdering:'single-topic-fast-path'})});
-}
+function candidateScore(state={}){const api=assessment();if(api?.optimizationScore)return api.optimizationScore(state);const s=signals(state),trendBoost=s.trend==='declining'?100:s.trend==='improving'?20:50;return Math.round(clamp(s.forgettingRisk*.30+(100-s.mastery)*.24+(100-s.predictedRetention7d)*.14+(100-s.accuracy)*.12+prioritySignal(state)*.10+trendBoost*.06+s.applicationGap*.04,0,100))}
+function chooseMethod(state={}){const api=assessment();if(api?.chooseOptimizationMethod)return api.chooseOptimizationMethod(state);const s=signals(state);if(s.mastery<42||s.lapseCount>=4)return {method:'focused_restudy',label:'Reestudo direcionado'};if(s.retention>=70&&(s.accuracy<65||s.applicationGap>=18))return {method:'questions',label:'Questões de validação'};if(s.retention<55)return {method:'active_recall',label:'Recuperação ativa'};if(s.retention<70)return {method:'short_review',label:'Revisão curta'};if(s.accuracy<75)return {method:'questions',label:'Questões comentadas'};return {method:'questions',label:'Questões de manutenção'}}
+function expectedGain(state={},minutes=25){const api=assessment();if(api?.expectedGain)return api.expectedGain(state,minutes);const s=signals(state),evidence=s.evidenceLevel==='high'?1:s.evidenceLevel==='medium'?0.86:0.72,opportunity=clamp((100-s.mastery)*.62+s.forgettingRisk*.38,0,100),timeFactor=1-Math.exp(-Math.max(0,Number(minutes)||0)/28);return Number(clamp(opportunity*timeFactor*.34*evidence,0,25).toFixed(1))}
+function buildCandidates(profile){const topicState=profile?.topicState&&typeof profile.topicState==='object'?profile.topicState:{},entries=Object.entries(topicState);candidateScans+=entries.length;return entries.map(([topicId,state],canonicalIndex)=>{const s=signals(state),method=chooseMethod(state);return {topicId,canonicalIndex,materia:clean(state.materia,180),assunto:clean(state.assunto,400),method:method.method,methodLabel:method.label,optimizationScore:candidateScore(state),masteryScore:s.mastery,forgettingRisk:s.forgettingRisk,predictedRetention7d:s.predictedRetention7d,evidenceLevel:s.evidenceLevel,trend:s.trend,editalPriority:s.editalPriority,topicPriority:s.topicPriority,retention:s.retention,accuracy:s.accuracy,lapseCount:s.lapseCount}})}
+function blockMinutesFor(candidate,remaining){const base=candidate.method==='focused_restudy'?30:candidate.method==='questions'?20:15,riskBonus=(candidate.forgettingRisk??0)>=65?5:0,scoreBonus=candidate.optimizationScore>=75?5:0,suggested=clamp(base+riskBonus+scoreBonus,MIN_BLOCK_MINUTES,MAX_BLOCK_MINUTES);return Math.min(remaining,suggested)}
+function reasonFor(candidate){const reasons=[];if((candidate.forgettingRisk??0)>=65)reasons.push('risco de esquecimento alto');else if((candidate.forgettingRisk??0)>=40)reasons.push('risco de esquecimento moderado');if((candidate.masteryScore??100)<60)reasons.push('domínio abaixo do desejável');if((candidate.retention??0)>=70&&(candidate.accuracy??100)<65)reasons.push('retenção alta com aplicação baixa');if(candidate.trend==='declining')reasons.push('tendência de queda');if(candidate.editalPriority===1||candidate.topicPriority===1)reasons.push('alta prioridade importada');return reasons.slice(0,3)}
+function optimize(profile,availableMinutes=60,options={}){globalPlans+=1;const budget=SUPPORTED_WINDOWS.includes(Number(availableMinutes))?Number(availableMinutes):clamp(Math.round(Number(availableMinutes)||60),20,180),candidates=buildCandidates(profile),ranked=[...candidates].sort((a,b)=>b.optimizationScore-a.optimizationScore||a.canonicalIndex-b.canonicalIndex),blocks=[];let remaining=budget;while(remaining>=MIN_BLOCK_MINUTES&&ranked.length){const candidate=ranked.shift(),minutes=blockMinutesFor(candidate,remaining);if(minutes<MIN_BLOCK_MINUTES)break;blocks.push(Object.freeze({sequence:blocks.length+1,topicId:candidate.topicId,materia:candidate.materia,assunto:candidate.assunto,method:candidate.method,methodLabel:candidate.methodLabel,minutes,expectedGain:expectedGain(candidate,minutes),optimizationScore:candidate.optimizationScore,reasons:reasonFor(candidate),canonicalIndex:candidate.canonicalIndex,editalPriority:candidate.editalPriority,topicPriority:candidate.topicPriority}));remaining-=minutes}const totalExpectedGain=Number(blocks.reduce((sum,item)=>sum+(Number(item.expectedGain)||0),0).toFixed(1)),result=Object.freeze({schemaVersion:SCHEMA_VERSION,availableMinutes:budget,allocatedMinutes:blocks.reduce((sum,item)=>sum+item.minutes,0),unallocatedMinutes:remaining,totalExpectedGain,blocks:Object.freeze(blocks),sourceTopicCount:candidates.length,generatedAt:new Date().toISOString(),priorityContract:Object.freeze({importedOrderMutation:false,planOrdering:'temporary-contextual-only',editalPriority:'contextual-weight-only',topicPriority:'contextual-weight-only'})});try{global.AppStudyEvents?.emit?.('study:optimization-resolved',{availableMinutes:budget,allocatedMinutes:result.allocatedMinutes,totalExpectedGain,blocks:blocks.map(item=>({topicId:item.topicId,method:item.method,minutes:item.minutes}))},{source:'study-optimization'})}catch(_){}return result}
+function forTopic(topicId,availableMinutes=30,context={}){topicPlans+=1;const profile=context.profile||readProfile(context),id=clean(topicId,640).toLowerCase(),state=profile?.topicState?.[id]||null;if(!state)return null;const s=signals(state),method=chooseMethod(state),candidate={topicId:id,canonicalIndex:Number.isFinite(Number(state.canonicalIndex))?Number(state.canonicalIndex):-1,materia:clean(state.materia,180),assunto:clean(state.assunto,400),method:method.method,methodLabel:method.label,optimizationScore:candidateScore(state),masteryScore:s.mastery,forgettingRisk:s.forgettingRisk,predictedRetention7d:s.predictedRetention7d,evidenceLevel:s.evidenceLevel,trend:s.trend,editalPriority:s.editalPriority,topicPriority:s.topicPriority,retention:s.retention,accuracy:s.accuracy,lapseCount:s.lapseCount},budget=clamp(Math.round(Number(availableMinutes)||30),10,45),minutes=blockMinutesFor(candidate,Math.min(budget,MAX_BLOCK_MINUTES));return Object.freeze({schemaVersion:SCHEMA_VERSION,topicId:id,block:Object.freeze({sequence:1,topicId:id,materia:candidate.materia,assunto:candidate.assunto,method:candidate.method,methodLabel:candidate.methodLabel,minutes,expectedGain:expectedGain(candidate,minutes),optimizationScore:candidate.optimizationScore,reasons:reasonFor(candidate),canonicalIndex:candidate.canonicalIndex,editalPriority:candidate.editalPriority,topicPriority:candidate.topicPriority}),sourceTopicCount:1,priorityContract:Object.freeze({importedOrderMutation:false,planOrdering:'single-topic-fast-path'})})}
 function performanceDiagnostics(){return Object.freeze({globalPlans,topicPlans,candidateScans})}
 function plan(availableMinutes=60,context={}){const profile=context.profile||readProfile(context);return optimize(profile||{topicState:{}},availableMinutes,context)}
 function presets(context={}){return Object.freeze(Object.fromEntries(SUPPORTED_WINDOWS.map(minutes=>[minutes,plan(minutes,context)])))}
-
 global.AppStudyOptimization=Object.freeze({schemaVersion:SCHEMA_VERSION,supportedWindows:SUPPORTED_WINDOWS,prioritySignal,applicationGap,candidateScore,chooseMethod,expectedGain,buildCandidates,optimize,forTopic,performanceDiagnostics,plan,presets});
 global.dispatchEvent?.(new CustomEvent('study:optimization-ready',{detail:{schemaVersion:SCHEMA_VERSION,topicAssessment:Boolean(assessment())}}));
 })(window);
