@@ -33,12 +33,23 @@ jobs:
       - name: Focused Phase 8D tests
         run: node --test tests/phase-8d-final-consolidation.test.cjs tests/phase-8c-consolidation.test.cjs tests/phase-8a-8b-consolidation.test.cjs
       - name: Full test suite
-        run: npm test
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee phase8d-full.log
       - name: Structural audit
         run: npm run audit
+      - name: Persist diagnostics on failure
+        if: failure()
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add phase8d-full.log
+          git diff --cached --quiet || git commit -m "chore(tmp): capture Phase 8D full-suite failure"
+          git push origin HEAD:refactor/phase-8d-consolidation
       - name: Remove temporary artifacts
         if: success()
-        run: rm -f scripts/tmp-phase8d-finalize.mjs .github/workflows/tmp-phase8d-finalize.yml
+        run: rm -f scripts/tmp-phase8d-finalize.mjs .github/workflows/tmp-phase8d-finalize.yml phase8d-full.log
       - name: Commit final Phase 8D
         if: success()
         run: |
