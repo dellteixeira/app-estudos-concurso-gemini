@@ -1,49 +1,10 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-const vm=require('node:vm');
-
-const source=fs.readFileSync('public/js/core/study-optimization-dashboard.js','utf8');
-const css=fs.readFileSync('public/css/study-optimization.css','utf8');
-
-function load(){
-  const window={};
-  window.window=window;
-  vm.runInContext(source,vm.createContext({window}),{filename:'study-optimization-dashboard.js'});
-  return window.AppStudyOptimizationDashboard;
-}
-
-test('Phase 8 mantém uma fachada de compatibilidade explicitamente desabilitada e headless',()=>{
-  const api=load();
-  assert.equal(api.disabled,true);
-  assert.equal(api.headless,true);
-  assert.equal(api.init(),false);
+const html=fs.readFileSync('public/index.html','utf8');
+const engine=fs.readFileSync('public/js/core/study-optimization-engine.js','utf8');
+test('Phase 8C remove fisicamente fachada e CSS de apresentação legados',()=>{
+  assert.equal(fs.existsSync('public/js/core/study-optimization-dashboard.js'),false); assert.equal(fs.existsSync('public/css/study-optimization.css'),false); assert.doesNotMatch(html,/study-optimization-dashboard.js|study-optimization.css/);
 });
-
-test('fachada não gera nem renderiza planos e preserva retornos compatíveis',()=>{
-  const api=load();
-  assert.equal(api.generate(),null);
-  assert.equal(api.renderPlan(),null);
-  assert.equal(api.selectBlock(),false);
-  assert.equal(api.latestPlan,null);
-  assert.equal(api.selectedMinutes,60);
-});
-
-test('fachada preserva apenas o helper textual necessário para consumidores legados',()=>{
-  const api=load();
-  assert.equal(api.methodLabel('questions'),'questions');
-  assert.equal(api.methodLabel(null),'');
-});
-
-test('dashboard legado não volta a executar engine, guidance ou listeners próprios',()=>{
-  assert.doesNotMatch(source,/buildPlan\(/);
-  assert.doesNotMatch(source,/AppStudyGuidance/);
-  assert.doesNotMatch(source,/addEventListener/);
-  assert.doesNotMatch(source,/dispatchEvent/);
-});
-
-test('CSS da compatibilidade apenas oculta os painéis legados',()=>{
-  assert.match(css,/#phase6aDomainRiskPanel,#phase6bStudyOptimizationPanel\{display:none!important;\}/);
-  assert.ok(css.length<300);
-  assert.doesNotMatch(css,/study-optimization-card|study-optimization-grid|study-optimization-actions/);
-});
+test('engine cognitivo permanece ativo sem dashboard removido',()=>{ assert.match(engine,/AppStudyOptimization/); assert.match(engine,/AppTopicAssessment/); assert.doesNotMatch(engine,/AppStudyOptimizationDashboard/); });
+test('shell não contém painéis autônomos da antiga Fase 6',()=>{ assert.doesNotMatch(html,/phase6aDomainRiskPanel|phase6bStudyOptimizationPanel/); });

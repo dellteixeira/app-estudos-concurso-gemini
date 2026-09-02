@@ -1,35 +1,8 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-
 const critical=fs.readFileSync('public/js/critical-points-actions.js','utf8');
-const dashboard=fs.readFileSync('public/js/core/study-optimization-dashboard.js','utf8');
-const css=fs.readFileSync('public/css/study-optimization.css','utf8');
-
-test('standalone Phase 6 dashboards stay hidden behind a headless compatibility facade',()=>{
-  assert.match(css,/#phase6aDomainRiskPanel,#phase6bStudyOptimizationPanel\{display:none!important;\}/);
-  assert.match(dashboard,/disabled:true/);
-  assert.match(dashboard,/headless:true/);
-  assert.match(dashboard,/init:\(\)=>false/);
-  assert.doesNotMatch(dashboard,/buildPlan\(/);
-});
-
-test('Critical Points consumes Phase 6A domain risk without adding visible markup',()=>{
-  assert.match(critical,/domainRisk:topic\.domainRisk\|\|null/);
-  assert.match(critical,/domainComponent=Number\.isFinite\(domainRiskValue\)/);
-  assert.match(critical,/phase6:\{masteryScore:/);
-  assert.match(critical,/dataset\.phase6Mastery/);
-  assert.doesNotMatch(critical,/Fase 6A|Fase 6B|Student Model|Study Optimizer/);
-});
-
-test('Critical Points keeps Phase 6B optimization and lets Phase 6C refine the intervention',()=>{
-  assert.match(critical,/AppStudyOptimization\?\.forTopic\?global\.AppStudyOptimization\.forTopic\(topicId,30,\{profile,source:'critical-points'\}\):null/);
-  assert.doesNotMatch(critical,/AppStudyOptimization\?\.plan\?global\.AppStudyOptimization\.plan\(30,\{profile,source:'critical-points'\}\):null/);
-  assert.match(critical,/AppPredictiveAdaptiveTutor\?\.resolve/);
-  assert.match(critical,/const tutorAction=predictive\?\.tutor\?\.action\|\|block\.method/);
-  assert.match(critical,/surface:'critical-points'/);
-  assert.match(critical,/preferredAction:tutorAction/);
-  assert.match(critical,/critical-points:phase6-prepared/);
-  assert.match(critical,/importedOrderMutation:false/);
-  assert.match(critical,/openLayeredReviewModal\(numericIndex\)/);
-});
+const html=fs.readFileSync('public/index.html','utf8');
+test('standalone Phase 6 dashboards foram graduados para runtimes headless',()=>{ assert.equal(html.includes('topic-assessment.js'),true); assert.equal(html.includes('domain-risk-dashboard.js'),false); assert.equal(html.includes('study-optimization-dashboard.js'),false); assert.equal(html.includes('study-optimization.css'),false); assert.equal(html.includes('phase6aDomainRiskPanel'),false); assert.equal(html.includes('phase6bStudyOptimizationPanel'),false); });
+test('Critical Points consome domain risk sem markup legado',()=>{ assert.equal(critical.includes('domainRisk:topic.domainRisk||null'),true); assert.equal(critical.includes('const domainComponent=Number.isFinite(domainRiskValue)?clamp(domainRiskValue,0,100)*0.20:0;'),true); assert.equal(critical.includes('phase6:{masteryScore:'),true); assert.equal(critical.includes('dataset.phase6Mastery'),true); assert.equal(critical.includes('Student Model'),false); assert.equal(critical.includes('Study Optimizer'),false); });
+test('Critical Points mantém optimizer e tutor sem reorder canônico',()=>{ assert.equal(critical.includes("global.AppStudyOptimization?.forTopic?global.AppStudyOptimization.forTopic(topicId,30,{profile,source:'critical-points'}):null"),true); assert.equal(critical.includes("global.AppStudyOptimization?.plan?global.AppStudyOptimization.plan(30,{profile,source:'critical-points'}):null"),false); assert.equal(critical.includes('global.AppPredictiveAdaptiveTutor?.resolve'),true); assert.equal(critical.includes('const tutorAction=predictive?.tutor?.action||block.method'),true); assert.equal(critical.includes("surface:'critical-points'"),true); assert.equal(critical.includes('preferredAction:tutorAction'),true); assert.equal(critical.includes('critical-points:phase6-prepared'),true); assert.equal(critical.includes('importedOrderMutation:false'),true); assert.equal(critical.includes('openLayeredReviewModal(numericIndex)'),true); });
