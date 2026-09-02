@@ -2,7 +2,7 @@
 'use strict';
 if(global.AppPredictiveAdaptiveTutor)return;
 
-const SCHEMA_VERSION=2;
+const SCHEMA_VERSION=1;
 const topicPredictionCache=new WeakMap(),profilePredictionCache=new WeakMap();
 let topicCacheHits=0,topicComputations=0,profileCacheHits=0,profileComputations=0;
 const clamp=(value,min=0,max=100)=>Math.max(min,Math.min(max,Number(value)||0));
