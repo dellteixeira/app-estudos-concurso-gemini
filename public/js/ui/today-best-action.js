@@ -4,6 +4,15 @@ if(global.AppTodayBestAction)return;
 const $=(selector,root=document)=>root.querySelector(selector);
 let current=null;
 
+function ensureStyles(){
+  if(document.querySelector('link[data-today-best-action]'))return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='./css/today-best-action.css?v=1.0.0';
+  link.dataset.todayBestAction='1';
+  document.head.appendChild(link);
+}
+
 function ensurePanel(){
   const tab=$('#tab-hoje');
   if(!tab)return null;
@@ -74,7 +83,7 @@ function refresh(){
 }
 
 function install(){
-  ensurePanel();refresh();
+  ensureStyles();ensurePanel();refresh();
   global.addEventListener?.('app:next-best-study-action',()=>setTimeout(refresh,0));
   global.addEventListener?.('app:cognitive-profile-updated',()=>setTimeout(refresh,0));
 }
