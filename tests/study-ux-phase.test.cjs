@@ -7,6 +7,7 @@ const ux=fs.readFileSync('public/js/ui/study-ux-phase.js','utf8');
 const today=fs.readFileSync('public/js/ui/today-best-action.js','utf8');
 const css=fs.readFileSync('public/css/study-ux-phase.css','utf8');
 const nav=fs.readFileSync('public/js/ui/navigation.js','utf8');
+const manifest=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 
 test('fase UX cria Hoje como command center sem substituir o motor cognitivo',()=>{
   assert.match(ux,/tab-hoje/);
@@ -25,12 +26,14 @@ test('Edital ganha resumo e cinco filtros sem reordenar a ordem importada',()=>{
   assert.doesNotMatch(ux,/\.sort\s*\(/);
 });
 
-test('Cronograma oferece Hoje Semana Mês e mobile prioriza Hoje',()=>{
+test('Cronograma oferece Hoje Semana Mês, mobile prioriza Hoje e usa data exata',()=>{
   assert.match(ux,/data-calendar-view="today"/);
   assert.match(ux,/data-calendar-view="week"/);
   assert.match(ux,/data-calendar-view="month"/);
   assert.match(ux,/max-width:700px/);
   assert.match(ux,/setCalendarView\([^\n]*'today'/);
+  assert.match(ux,/data-date-key/);
+  assert.match(ux,/cellForDate\(date\)/);
   for(const label of ['Concluir','Adiar','Trocar'])assert.match(ux,new RegExp(label));
 });
 
@@ -41,8 +44,16 @@ test('Retenção compacta mantém quatro métricas e limita pontos críticos a t
   assert.match(css,/study-ux-critical-extra/);
 });
 
-test('runtime carrega a nova fase somente na web compartilhada',()=>{
+test('Hoje não usa risco como quantidade fictícia de questões recomendadas',()=>{
+  assert.match(ux,/method==='questions'\?1:'—'/);
+  assert.doesNotMatch(ux,/risk\?risk/);
+});
+
+test('runtime e cache offline carregam a nova fase web',()=>{
   assert.match(nav,/\.\/js\/ui\/study-ux-phase\.js/);
   assert.match(nav,/\.\/js\/ui\/today-best-action\.js/);
   assert.doesNotMatch(nav,/android\//i);
+  for(const asset of ['/css/study-ux-phase.css','/css/today-best-action.css','/js/ui/study-ux-phase.js','/js/ui/today-best-action.js']){
+    assert.ok(manifest.optionalOfflineAssets.includes(asset),`asset offline ausente: ${asset}`);
+  }
 });
