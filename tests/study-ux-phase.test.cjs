@@ -45,7 +45,10 @@ test('Retenção compacta mantém quatro métricas e limita pontos críticos a t
 });
 
 test('Hoje não usa risco como quantidade fictícia de questões recomendadas',()=>{
-  assert.match(ux,/method==='questions'\?1:'—'/);
+  assert.match(
+    ux,
+    /recommendation\?\.method\s*===\s*['"]questions['"]\s*\?\s*1\s*:\s*['"]—['"]/
+  );
   assert.doesNotMatch(ux,/risk\?risk/);
 });
 
