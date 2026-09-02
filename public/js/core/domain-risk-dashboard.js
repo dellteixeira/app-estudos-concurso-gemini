@@ -10,11 +10,11 @@ const clean=(value,max=480)=>String(value??'').replace(/[\u0000-\u001F\u007F]/g,
 
 function normalizeTopicState(state={}){
   const domain=state.domainRisk||{};
-  const retention=finite(state.retention)??finite(domain.predictedRetention7d)??50;
+  const retention=finite(state.retention)??finite(state.predictedRetention7d)??finite(domain.predictedRetention7d)??50;
   const accuracy=finite(state.accuracy)??retention;
-  const mastery=finite(domain.masteryScore)??Math.round((retention+accuracy)/2);
-  const predictedRetention7d=finite(domain.predictedRetention7d)??retention;
-  const forgettingRisk=finite(domain.forgettingRisk)??clamp(100-predictedRetention7d);
+  const mastery=finite(state.masteryScore)??finite(domain.masteryScore)??Math.round((retention+accuracy)/2);
+  const predictedRetention7d=finite(state.predictedRetention7d)??finite(domain.predictedRetention7d)??retention;
+  const forgettingRisk=finite(state.forgettingRisk)??finite(domain.forgettingRisk)??clamp(100-predictedRetention7d);
   const confidence=finite(state.confidence);
   const lapseCount=Math.max(0,Number(state.lapseCount)||0);
   const reviewCount=Math.max(0,Number(state.reviewCount)||0);
@@ -27,10 +27,10 @@ function normalizeTopicState(state={}){
     assunto:clean(state.assunto||state.topic,400),
     retention,accuracy,mastery,predictedRetention7d,forgettingRisk,confidence,
     lapseCount,reviewCount,difficulty,applicationGap,
-    evidenceLevel:clean(domain.evidenceLevel,40)||'low',
-    trend:clean(domain.trend,60)||'insufficient_evidence',
-    riskBand:clean(domain.riskBand,40)||'low',
-    priorityWeight:Math.max(1,finite(domain.priorityWeight)??1),
+    evidenceLevel:clean(state.evidenceLevel||domain.evidenceLevel,40)||'low',
+    trend:clean(state.trend||domain.trend,60)||'insufficient_evidence',
+    riskBand:clean(state.riskBand||domain.riskBand,40)||'low',
+    priorityWeight:Math.max(1,finite(state.priorityWeight)??finite(domain.priorityWeight)??1),
     editalPriority,topicPriority,
     lastStudyAt:clean(state.lastStudyAt,80),
     lastRating:clean(state.lastRating,40),
@@ -148,7 +148,6 @@ function findTopicInsight(materia,assunto,profile=resolveProfile()){
 
 const API=Object.freeze({schemaVersion:SCHEMA_VERSION,normalizeTopicState,prioritySignal,optimizationScore,chooseOptimizationMethod,expectedGain,assessTopic,topicEntries,getAttentionQueue,buildViewModel,resolveProfile,findTopicInsight});
 global.AppTopicAssessment=API;
-// Compatibilidade temporária: preserva helpers antigos sem qualquer renderização, listener ou DOM.
 global.AppDomainRiskDashboard=Object.freeze({schemaVersion:SCHEMA_VERSION,buildViewModel,getAttentionQueue,findTopicInsight,resolveProfile,render:()=>null,scheduleRender:()=>null,headless:true});
 global.dispatchEvent?.(new CustomEvent('study:topic-assessment-ready',{detail:{schemaVersion:SCHEMA_VERSION,headless:true}}));
 })(window);
