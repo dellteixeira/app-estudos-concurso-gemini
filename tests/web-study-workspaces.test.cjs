@@ -41,6 +41,7 @@ test('buscas pesadas são coalescidas e reutilizam texto normalizado', () => {
   assert.match(js, /library-search/);
   assert.match(js, /notes-search/);
   assert.match(js, /getSearchableText/);
+  assert.match(js, /item\.hidden !== shouldHide/);
 });
 
 test('workspaces possuem adaptação explícita para web mobile', () => {
