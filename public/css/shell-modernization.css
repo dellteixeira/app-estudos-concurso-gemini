@@ -253,6 +253,22 @@ body.light-mode header.modern-header {
     display: none;
   }
 
+  /* Accessibility: preserve a 42×42px touch target even when the mobile
+     layout collapses the search action to icon-only presentation. */
+  .header-utility-cluster .btn-search-header {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    flex: 0 0 42px !important;
+    justify-content: center !important;
+  }
+
+  .header-utility-cluster .btn-search-header > span:not(.btn-search-header-icon) {
+    display: none !important;
+  }
+
   .header-nav-tabs,
   .nav-tabs.header-nav-tabs {
     display: none !important;
