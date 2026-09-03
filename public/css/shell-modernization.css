@@ -253,6 +253,24 @@ body.light-mode header.modern-header {
     display: none;
   }
 
+  /* Accessibility: preserve a 42×42px touch target even when the mobile
+     layout collapses the search action to icon-only presentation. The full
+     header selector intentionally outranks canonical-ui.css's later generic
+     header button contract while keeping the override scoped to this control. */
+  header.modern-header .header-utility-cluster .btn-search-header {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    flex: 0 0 42px !important;
+    justify-content: center !important;
+  }
+
+  header.modern-header .header-utility-cluster .btn-search-header > span:not(.btn-search-header-icon) {
+    display: none !important;
+  }
+
   .header-nav-tabs,
   .nav-tabs.header-nav-tabs {
     display: none !important;
