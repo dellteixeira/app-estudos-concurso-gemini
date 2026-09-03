@@ -1,0 +1,82 @@
+name: PR407 Release Sync
+
+on:
+  push:
+    branches:
+      - fix/web-workspaces-freeze
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/web-workspaces-freeze
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Promote canonical release to 10.64.45
+        run: |
+          node scripts/release-version.mjs 10.64.45
+          python - <<'PY'
+          import json, pathlib, re, shutil
+          root = pathlib.Path('.')
+
+          contract_path = root / 'config/release-contract.json'
+          contract = json.loads(contract_path.read_text())
+          contract['version'] = '10.64.45'
+          contract['android']['revision'] = 1
+          contract['android']['versionCode'] = 106447
+          contract_path.write_text(json.dumps(contract, indent=2, ensure_ascii=False) + '\n')
+
+          lock_path = root / 'package-lock.json'
+          lock = json.loads(lock_path.read_text())
+          lock['version'] = '10.64.45'
+          if '' in lock.get('packages', {}):
+              lock['packages']['']['version'] = '10.64.45'
+          lock_path.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + '\n')
+
+          assets_path = root / 'config/app-assets.json'
+          text = assets_path.read_text()
+          text = text.replace('"version": "10.64.44"', '"version": "10.64.45"')
+          text = text.replace('responsive-polish-v10.64.44.css', 'responsive-polish-v10.64.45.css')
+          assets_path.write_text(text)
+
+          gradle_path = root / 'android/app/build.gradle'
+          text = gradle_path.read_text()
+          text = re.sub(r'versionCode\s+\d+', 'versionCode 106447', text)
+          text = re.sub(r'versionName\s+"[^"]+"', 'versionName "10.64.45-mobile.1"', text)
+          gradle_path.write_text(text)
+
+          old_css = root / 'public/css/responsive-polish-v10.64.44.css'
+          new_css = root / 'public/css/responsive-polish-v10.64.45.css'
+          if old_css.exists() and not new_css.exists():
+              shutil.copyfile(old_css, new_css)
+
+          for rel in ['public/index.html', 'public/js/app-pwa.js']:
+              path = root / rel
+              text = path.read_text()
+              text = text.replace('10.64.44', '10.64.45')
+              path.write_text(text)
+
+          version_path = root / 'public/version.json'
+          version_path.write_text(json.dumps({
+              'version': '10.64.45',
+              'build': 'source',
+              'commit': 'source'
+          }, indent=2) + '\n')
+          PY
+          node scripts/release-contract.mjs check
+      - name: Remove temporary workflow and commit synchronized release
+        run: |
+          git config user.name "dellteixeira"
+          git config user.email "111660903+dellteixeira@users.noreply.github.com"
+          git rm .github/workflows/pr407-release-sync.yml
+          git add android/app/build.gradle config/app-assets.json config/release-contract.json package.json package-lock.json public/index.html public/js/app-pwa.js public/sw.js public/version.json src/index.js public/css/responsive-polish-v10.64.45.css
+          git commit -m "chore(release): promote workspace freeze fix to 10.64.45"
+          git push origin HEAD:fix/web-workspaces-freeze
