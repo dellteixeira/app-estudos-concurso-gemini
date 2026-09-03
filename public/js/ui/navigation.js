@@ -19,6 +19,13 @@
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
         }
+        if (!document.querySelector('link[data-shell-modernization]')) {
+            const shell = document.createElement('link');
+            shell.rel = 'stylesheet';
+            shell.href = `./css/shell-modernization.css?v=${CORE_VERSION}`;
+            shell.dataset.shellModernization = '1';
+            document.head.appendChild(shell);
+        }
     }
 
     function ensureAccessibleNames() {
