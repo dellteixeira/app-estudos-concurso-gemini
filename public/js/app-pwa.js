@@ -224,6 +224,24 @@
             document.head.appendChild(style);
         })();
 
+        // V10.64.43 — UX dos workspaces web: Flashcards, Biblioteca e Anotações.
+        (function loadWebStudyWorkspaces() {
+            if (!document.querySelector('link[data-web-study-workspaces-style]')) {
+                const style = document.createElement('link');
+                style.rel = 'stylesheet';
+                style.href = './css/web-study-workspaces.css?v=10.64.43';
+                style.dataset.webStudyWorkspacesStyle = '1';
+                document.head.appendChild(style);
+            }
+            if (!window.AppWebStudyWorkspaces && !document.querySelector('script[data-web-study-workspaces]')) {
+                const script = document.createElement('script');
+                script.src = './js/web-study-workspaces.js?v=10.64.43';
+                script.defer = true;
+                script.dataset.webStudyWorkspaces = '1';
+                document.head.appendChild(script);
+            }
+        })();
+
         // V10.64.43 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
         (function loadAdaptiveScheduleReconciliation() {
             if (window.AdaptiveScheduleReconciliation || document.querySelector('script[data-adaptive-schedule-reconciliation]')) return;
