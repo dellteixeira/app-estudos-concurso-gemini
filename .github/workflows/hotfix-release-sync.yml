@@ -1,0 +1,109 @@
+name: Temporary Hotfix Release Sync
+
+on:
+  push:
+    branches:
+      - fix/modal-overlay-header-stacking
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout hotfix branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/modal-overlay-header-stacking
+          fetch-depth: 0
+
+      - name: Synchronize canonical release 10.64.48
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          BASE_SHA = "784d9181c6462210e30b53403ddac3e7a81456c4"
+          OLD = "10.64.47"
+          NEW = "10.64.48"
+
+          def replace(path, old, new, count=-1, required=True):
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              if old not in text:
+                  if required and new not in text:
+                      raise SystemExit(f"expected token not found in {path}: {old}")
+                  return
+              updated = text.replace(old, new, count)
+              p.write_text(updated, encoding="utf-8")
+
+          # Restore the exact known-good dependency graph from stable main, then
+          # change only the two root project version fields.
+          lock = subprocess.check_output(
+              ["git", "show", f"{BASE_SHA}:package-lock.json"], text=True
+          )
+          token_old = '"version": "10.64.47"'
+          token_new = '"version": "10.64.48"'
+          if lock.count(token_old) < 2:
+              raise SystemExit("stable package-lock root version markers not found twice")
+          lock = lock.replace(token_old, token_new, 2)
+          Path("package-lock.json").write_text(lock, encoding="utf-8")
+
+          replace("package.json", '"version": "10.64.47"', '"version": "10.64.48"', 1)
+          replace("public/version.json", '"version": "10.64.47"', '"version": "10.64.48"', 1)
+          replace("config/release-contract.json", '"version": "10.64.47"', '"version": "10.64.48"', 1, required=False)
+          replace("config/release-contract.json", '"versionCode": 106449', '"versionCode": 106450', 1, required=False)
+          replace("android/app/build.gradle", "versionCode 106449", "versionCode 106450", 1, required=False)
+          replace("android/app/build.gradle", 'versionName "10.64.47-mobile.1"', 'versionName "10.64.48-mobile.1"', 1, required=False)
+
+          # Release-sensitive runtime surfaces.
+          replace("config/app-assets.json", OLD, NEW)
+          replace("src/index.js", 'const APP_VERSION = "10.64.47";', 'const APP_VERSION = "10.64.48";', 1)
+          replace("public/sw.js", OLD, NEW)
+          replace("public/js/app-pwa.js", OLD, NEW)
+          replace("public/js/ui/navigation.js", OLD, NEW)
+
+          source_css = Path("public/css/responsive-polish-v10.64.47.css")
+          target_css = Path("public/css/responsive-polish-v10.64.48.css")
+          target_css.write_bytes(source_css.read_bytes())
+
+          # Temporary workflow must not remain in the final branch state.
+          Path(".github/workflows/hotfix-release-sync.yml").unlink()
+
+          # Deterministic integrity assertions for the two lockfile entries that
+          # were corrupted in earlier release attempts.
+          final_lock = Path("package-lock.json").read_text(encoding="utf-8")
+          expected_graceful = "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ=="
+          expected_kleur_url = "https://registry.npmjs.org/kleur/-/kleur-3.0.3.tgz"
+          expected_kleur_integrity = "sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w=="
+          for token in (expected_graceful, expected_kleur_url, expected_kleur_integrity):
+              if token not in final_lock:
+                  raise SystemExit(f"package-lock integrity assertion failed: {token}")
+
+          # Release contract surfaces must no longer advertise the immutable
+          # previous release.
+          guarded = [
+              "package.json", "package-lock.json", "config/release-contract.json",
+              "config/app-assets.json", "public/version.json", "public/sw.js",
+              "public/js/app-pwa.js", "public/js/ui/navigation.js", "src/index.js",
+              "android/app/build.gradle"
+          ]
+          stale = [p for p in guarded if OLD in Path(p).read_text(encoding="utf-8")]
+          if stale:
+              raise SystemExit("stale 10.64.47 references remain in: " + ", ".join(stale))
+          PY
+
+      - name: Commit synchronized hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "chore(release): sincronizar hotfix 10.64.48"
+          git push origin HEAD:fix/modal-overlay-header-stacking
