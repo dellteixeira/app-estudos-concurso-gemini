@@ -217,3 +217,34 @@
         width: 100% !important;
     }
 }
+
+/* V10.64.46 — containment mobile do painel de Retenção.
+   Grid/flex children precisam de min-width:0 para não impor largura intrínseca ao painel. */
+@media (max-width: 700px) {
+    html body #retentionDiagnosticPanel {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow-x: clip !important;
+    }
+
+    html body #retentionDiagnosticPanel > .retention-diagnostic-head,
+    html body #retentionDiagnosticPanel > .rd-center-v1077,
+    html body #retentionDiagnosticPanel > .retention-critical-column {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    html body #retentionDiagnosticPanel .rd-exam-banner-v1077,
+    html body #retentionDiagnosticPanel .rd-metrics-v1077,
+    html body #retentionDiagnosticPanel .rd-metric-card-v1077,
+    html body #retentionDiagnosticPanel .retention-risk-list,
+    html body #retentionDiagnosticPanel .retention-risk-item {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
