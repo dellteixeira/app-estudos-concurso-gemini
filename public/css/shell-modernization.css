@@ -24,7 +24,7 @@
 header.modern-header {
   position: sticky;
   top: max(8px, env(safe-area-inset-top, 0px));
-  z-index: 1100;
+  z-index: 120;
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(280px, 1fr) auto;
   align-items: center;
