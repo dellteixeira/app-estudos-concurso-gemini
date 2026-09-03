@@ -1,0 +1,126 @@
+/* Edital Verticalizado — Etapa 2 (scaffold visual)
+ * Branch isolada a partir da Etapa 1 aprovada.
+ *
+ * Regras de segurança:
+ * - presentation-only nesta primeira revisão;
+ * - não altera dados, prioridade ou ordem importada;
+ * - sem MutationObserver, polling ou re-render global;
+ * - só deve ser conectado ao runtime após revisão dos seletores existentes.
+ */
+
+:root {
+  --edital-panel-radius: 16px;
+  --edital-control-height: 42px;
+  --edital-row-gap: 8px;
+  --edital-border: rgba(132, 161, 188, .18);
+  --edital-border-active: rgba(83, 227, 213, .34);
+  --edital-surface: rgba(10, 27, 44, .72);
+  --edital-surface-soft: rgba(255, 255, 255, .025);
+  --edital-muted: rgba(190, 211, 228, .76);
+}
+
+/* Esta folha começa intencionalmente desacoplada do runtime.
+ * Os seletores abaixo documentam a composição-alvo da próxima revisão.
+ */
+#tab-edital .edital-modern-shell {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+#tab-edital .edital-modern-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--edital-border);
+  border-radius: var(--edital-panel-radius);
+  background: var(--edital-surface);
+}
+
+#tab-edital .edital-modern-search {
+  min-width: 0;
+  min-height: var(--edital-control-height);
+}
+
+#tab-edital .edital-modern-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+#tab-edital .edital-modern-filter {
+  min-height: 36px;
+  border: 1px solid var(--edital-border);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: var(--edital-surface-soft);
+  color: inherit;
+}
+
+#tab-edital .edital-modern-filter[aria-pressed="true"] {
+  border-color: var(--edital-border-active);
+  background: rgba(83, 227, 213, .09);
+}
+
+#tab-edital .edital-modern-list {
+  display: grid;
+  gap: var(--edital-row-gap);
+  min-width: 0;
+}
+
+#tab-edital .edital-modern-subject {
+  min-width: 0;
+  border: 1px solid var(--edital-border);
+  border-radius: 14px;
+  background: var(--edital-surface-soft);
+  overflow: clip;
+}
+
+#tab-edital .edital-modern-subject-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+#tab-edital .edital-modern-subject-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#tab-edital .edital-modern-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding-inline: 9px;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 750;
+  color: var(--edital-muted);
+  border: 1px solid var(--edital-border);
+}
+
+@media (max-width: 700px) {
+  #tab-edital .edital-modern-toolbar {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  #tab-edital .edital-modern-filters {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: thin;
+  }
+
+  #tab-edital .edital-modern-subject-head {
+    padding: 11px 12px;
+  }
+}
