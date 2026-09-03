@@ -28,6 +28,21 @@ test('anotações ganham resumo contextual e busca', () => {
   assert.match(js, /openModalNovaNota/);
 });
 
+test('workspaces não observam toda a árvore DOM nem criam loop de renderização', () => {
+  assert.doesNotMatch(js, /observer\.observe\(document\.documentElement/);
+  assert.doesNotMatch(js, /new MutationObserver/);
+  assert.match(js, /requestAnimationFrame/);
+  assert.match(js, /setHtmlIfChanged/);
+});
+
+test('buscas pesadas são coalescidas e reutilizam texto normalizado', () => {
+  assert.match(js, /WeakMap/);
+  assert.match(js, /function debounce/);
+  assert.match(js, /library-search/);
+  assert.match(js, /notes-search/);
+  assert.match(js, /getSearchableText/);
+});
+
 test('workspaces possuem adaptação explícita para web mobile', () => {
   assert.match(css, /@media \(max-width: 700px\)/);
   assert.match(css, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
