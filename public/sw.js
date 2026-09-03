@@ -1,10 +1,10 @@
-const APP_VERSION = '10.64.46';
+const APP_VERSION = '10.64.47';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
 const CRITICAL_APP_SHELL = [
   './', './index.html', './manifest.json', './version.json', './pwa-update.js', './capacitor-runtime.js',
-  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/responsive-polish-v10.64.46.css', './css/canonical-ui.css', './css/shell-modernization.css', './css/pdf-library.css', './css/pdf-reader.css', './css/learning-advisor.css',
+  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/responsive-polish-v10.64.47.css', './css/canonical-ui.css', './css/shell-modernization.css', './css/pdf-library.css', './css/pdf-reader.css', './css/learning-advisor.css',
   './js/study-domain.js', './js/core/edital-integrity.js', './js/core/exam-board-intelligence.js', './js/core/contextual-ai-tutor.js', './js/core/cognitive-profile-source.js', './js/core/cognitive-profile.js', './js/core/intervention-effectiveness.js', './js/core/error-intelligence.js', './js/core/cognitive-profile-runtime.js', './js/core/topic-assessment.js', './js/core/study-optimization-engine.js', './js/core/study-events.js', './js/core/study-guidance-engine.js', './js/core/offline-sync-coordinator.js', './js/core/study-observability.js', './js/core/local-backup-store.js', './js/core/offline-outbox-store.js', './js/core/offline-sync-shadow.js', './js/core/offline-sync-metadata-shadow.js', './js/core/offline-sync-metadata-authority.js', './js/core/offline-sync-metadata-graduation.js', './js/core/offline-sync-metadata-rollout.js', './js/core/offline-sync-metadata-stability.js', './js/core/offline-sync-metadata-expanded-stability.js', './js/core/offline-sync-metadata-expanded-promotion.js', './js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-population-promotion.js', './js/core/offline-sync-metadata-population-promoted-stability.js', './js/core/offline-sync-metadata-ring2-promotion.js', './js/core/offline-sync-metadata-ring2-promoted-stability.js',
   '/js/core/predictive-adaptive-tutor.js',
   './js/core/offline-sync-metadata-ring3-promotion.js', './js/core/offline-sync-metadata-expansion.js', './js/core/offline-sync-authority.js', './js/core/offline-sync-delete-authority.js', './js/core/offline-sync-edital-graduation.js', './js/app-core.js', './js/app-state.js', './js/sync-engine.js', './js/adaptive-schedule-reconciliation.js', './js/learning-advisor.js', './js/critical-points-actions.js', './js/app-ai.js', './js/app-ui.js',
@@ -44,6 +44,13 @@ async function deleteOldAppCaches() {
 async function matchCurrentCache(request, url = new URL(request.url)) {
   const cache = await caches.open(CACHE_NAME);
   return (await cache.match(request, { ignoreSearch:true })) || (await cache.match(new Request(`${url.origin}${url.pathname}`), { ignoreSearch:true })) || null;
+}
+
+function isMutableAppCodeAsset(url) {
+  if (url.origin !== self.location.origin) return false;
+  const path = url.pathname;
+  if (/\/css\/responsive-polish-v\d+\.\d+\.\d+\.css$/.test(path)) return false;
+  return path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.json');
 }
 
 self.addEventListener('install', event => event.waitUntil(primeOfflineAssets({ requireCritical:true })));
@@ -88,7 +95,7 @@ self.addEventListener('fetch', event => {
     '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js', '/js/pdf/pdf-library-opfs-adapter.js', '/js/pdf/pdf-library-layout-fix.js', '/js/pdf/pdf-device-storage.js', '/js/pdf/offline-pdf-store.js', '/js/pdf/pdf-offline-library-manager.js', '/js/pdf/pdf-offline-integrity.js', '/js/pdf/pdf-offline-library-ui.js', '/js/app-ai.js', '/js/app-ui.js', '/js/ui/mobile.js', '/js/ui/navigation.js', '/js/ui/search.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
   ].some(path => url.pathname.endsWith(path));
 
-  if (isCoreAsset) {
+  if (isCoreAsset || isMutableAppCodeAsset(url)) {
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache:'no-store' });

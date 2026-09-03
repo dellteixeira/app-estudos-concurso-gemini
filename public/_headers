@@ -21,7 +21,25 @@
 /css/features.css
   Cache-Control: no-cache, no-store, must-revalidate
 
+/css/responsive-system.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/css/canonical-ui.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/css/shell-modernization.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /css/learning-advisor.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/ui/mobile.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/ui/navigation.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/ui/search.js
   Cache-Control: no-cache, no-store, must-revalidate
 
 /js/study-domain.js
@@ -249,8 +267,6 @@
 /js/core/predictive-adaptive-tutor.js
   Cache-Control: no-cache, no-store, must-revalidate
 
-
-
 /css/responsive-polish-v10.64.34.css
   Cache-Control: public, max-age=31536000, immutable
 
@@ -261,4 +277,31 @@
   Cache-Control: public, max-age=31536000, immutable
 
 /css/responsive-polish-v10.64.37.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.38.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.39.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.40.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.41.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.42.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.43.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.44.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.45.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/responsive-polish-v10.64.46.css
   Cache-Control: public, max-age=31536000, immutable
