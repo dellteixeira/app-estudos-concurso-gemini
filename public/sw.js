@@ -46,6 +46,13 @@ async function matchCurrentCache(request, url = new URL(request.url)) {
   return (await cache.match(request, { ignoreSearch:true })) || (await cache.match(new Request(`${url.origin}${url.pathname}`), { ignoreSearch:true })) || null;
 }
 
+function isMutableAppCodeAsset(url) {
+  if (url.origin !== self.location.origin) return false;
+  const path = url.pathname;
+  if (/\/css\/responsive-polish-v\d+\.\d+\.\d+\.css$/.test(path)) return false;
+  return path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.json');
+}
+
 self.addEventListener('install', event => event.waitUntil(primeOfflineAssets({ requireCritical:true })));
 self.addEventListener('activate', event => event.waitUntil((async () => { await deleteOldAppCaches(); await self.clients.claim(); await primeOfflineAssets({ requireCritical:false }).catch(() => {}); })()));
 
@@ -88,7 +95,7 @@ self.addEventListener('fetch', event => {
     '/js/pdf/pdf-core.js', '/js/pdf/pdf-workspaces.js', '/js/pdf/pdf-links.js', '/js/pdf/pdf-library.js', '/js/pdf/pdf-library-ordering.js', '/js/pdf/pdf-upload.js', '/js/pdf/pdf-library-opfs-adapter.js', '/js/pdf/pdf-library-layout-fix.js', '/js/pdf/pdf-device-storage.js', '/js/pdf/offline-pdf-store.js', '/js/pdf/pdf-offline-library-manager.js', '/js/pdf/pdf-offline-integrity.js', '/js/pdf/pdf-offline-library-ui.js', '/js/app-ai.js', '/js/app-ui.js', '/js/ui/mobile.js', '/js/ui/navigation.js', '/js/ui/search.js', '/js/pdf/pdf-annotations.js', '/js/pdf/pdf-reader.js', '/js/pdf/pdf-library-ui.js', '/js/app-pwa.js'
   ].some(path => url.pathname.endsWith(path));
 
-  if (isCoreAsset) {
+  if (isCoreAsset || isMutableAppCodeAsset(url)) {
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache:'no-store' });
