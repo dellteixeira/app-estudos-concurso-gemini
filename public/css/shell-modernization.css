@@ -1,0 +1,305 @@
+/* Shell Modernization — incremental, presentation-only.
+   No business rules, data ordering, polling or global DOM observers. */
+
+:root {
+  --shell-max-width: 1480px;
+  --shell-gap: 12px;
+  --shell-radius: 16px;
+  --shell-radius-sm: 11px;
+  --shell-border: rgba(132, 161, 188, .20);
+  --shell-border-strong: rgba(83, 227, 213, .30);
+  --shell-surface: rgba(8, 24, 39, .92);
+  --shell-surface-soft: rgba(12, 31, 49, .78);
+  --shell-text: #edf8fb;
+  --shell-muted: #8ea5b9;
+  --shell-accent: #53e3d5;
+}
+
+/* Global frame */
+#app-dashboard {
+  width: min(100%, var(--shell-max-width));
+  margin-inline: auto;
+}
+
+header.modern-header {
+  position: sticky;
+  top: max(8px, env(safe-area-inset-top, 0px));
+  z-index: 1100;
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(280px, 1fr) auto;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--shell-border);
+  border-radius: var(--shell-radius);
+  background: color-mix(in srgb, var(--shell-surface) 94%, transparent);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .20);
+  backdrop-filter: blur(18px) saturate(120%);
+}
+
+.header-brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-brand img {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+
+.header-brand-copy {
+  min-width: 0;
+}
+
+.header-brand-copy h2 {
+  margin: 0;
+  font-size: clamp(.96rem, 1.3vw, 1.16rem);
+  line-height: 1.12;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-brand-signature,
+.app-version-badge {
+  font-size: .68rem;
+}
+
+.header-control-stack {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.concurso-selector-bar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px;
+  border-radius: var(--shell-radius-sm);
+}
+
+.concurso-selector-bar select {
+  flex: 1 1 260px;
+  min-width: 150px;
+  min-height: 38px;
+}
+
+.header-utility-cluster {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.btn-search-header {
+  min-width: 42px;
+}
+
+.header-nav-tabs,
+.nav-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.header-nav-tabs .tab-btn,
+.nav-tabs .tab-btn {
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-sync-status {
+  justify-self: end;
+  max-width: 210px;
+  min-height: 38px;
+}
+
+.compact-actions-menu {
+  align-self: center;
+}
+
+.compact-actions-toggle {
+  width: 42px;
+  height: 42px;
+}
+
+/* Shared overview: compact and calmer */
+.study-overview-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.overview-card {
+  min-width: 0;
+  min-height: 78px;
+  padding: 11px 12px;
+  border-radius: 13px;
+}
+
+.overview-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus and interaction without expensive JS */
+header.modern-header :is(button, select, input, a):focus-visible,
+.mobile-nav-btn:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+}
+
+.tab-content {
+  scroll-margin-top: 130px;
+}
+
+/* Light mode */
+body.light-mode header.modern-header {
+  background: rgba(255, 255, 255, .94);
+  border-color: rgba(100, 116, 139, .20);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .10);
+}
+
+/* Tablet */
+@media (max-width: 1100px) {
+  header.modern-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .header-brand { grid-column: 1; }
+  .header-sync-status { grid-column: 2; }
+  .compact-actions-menu { grid-column: 2; grid-row: 1; margin-right: 48px; }
+  .header-control-stack { grid-column: 1 / -1; }
+  .study-overview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Mobile shell: content first, navigation at thumb reach */
+@media (max-width: 700px) {
+  #app-dashboard {
+    width: 100%;
+    padding-inline: 10px !important;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  header.modern-header {
+    position: relative;
+    top: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 10px;
+    gap: 8px;
+    border-radius: 14px;
+    backdrop-filter: none;
+  }
+
+  .header-brand img {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .header-brand-copy h2 {
+    font-size: .96rem;
+  }
+
+  .header-brand-signature,
+  .app-version-badge,
+  .header-sync-status {
+    display: none !important;
+  }
+
+  .compact-actions-menu {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  .header-control-stack {
+    grid-column: 1 / -1;
+  }
+
+  .concurso-selector-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .concurso-selector-bar select {
+    width: 100%;
+    min-width: 0;
+    grid-column: 1;
+  }
+
+  .concurso-selector-bar > .btn:not(.btn-search-header),
+  .header-utility-cluster {
+    grid-column: 2;
+  }
+
+  .concurso-selector-bar > .btn:not(:first-of-type) {
+    display: none;
+  }
+
+  .header-nav-tabs,
+  .nav-tabs.header-nav-tabs {
+    display: none !important;
+  }
+
+  .study-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .overview-card {
+    min-height: 72px;
+    padding: 10px;
+  }
+
+  .mobile-nav,
+  .mobile-bottom-nav,
+  .mobile-nav-bar {
+    border-top: 1px solid var(--shell-border) !important;
+    background: rgba(6, 19, 33, .96) !important;
+    backdrop-filter: blur(16px) saturate(120%);
+  }
+
+  .mobile-nav-btn {
+    min-width: 0;
+    min-height: 54px;
+    border-radius: 11px;
+  }
+
+  .mobile-nav-btn.active {
+    color: var(--shell-accent) !important;
+    background: rgba(83, 227, 213, .08) !important;
+  }
+
+  .tab-content {
+    scroll-margin-top: 16px;
+  }
+}
+
+@media (max-width: 390px) {
+  #app-dashboard { padding-inline: 8px !important; }
+  .study-overview-grid { grid-template-columns: 1fr 1fr; }
+  .overview-hint { display: none; }
+  .concurso-selector-bar > .btn:not(.btn-search-header) { min-width: 58px; padding-inline: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  header.modern-header *,
+  .mobile-nav-btn { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
