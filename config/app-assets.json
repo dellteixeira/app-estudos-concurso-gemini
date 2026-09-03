@@ -1,5 +1,5 @@
 {
-  "version": "10.64.42",
+  "version": "10.64.45",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -11,8 +11,9 @@
     "/css/dashboard.css",
     "/css/features.css",
     "/css/responsive-system.css",
-    "/css/responsive-polish-v10.64.42.css",
+    "/css/responsive-polish-v10.64.45.css",
     "/css/canonical-ui.css",
+    "/css/shell-modernization.css",
     "/css/pdf-library.css",
     "/css/pdf-reader.css",
     "/css/learning-advisor.css",
@@ -185,7 +186,8 @@
     "/js/core/cognitive-profile-runtime.js",
     "/js/core/topic-assessment.js",
     "/js/core/study-optimization-engine.js",
-    "/js/core/predictive-adaptive-tutor.js"
+    "/js/core/predictive-adaptive-tutor.js",
+    "/css/shell-modernization.css"
   ],
   "workerNoStorePaths": [
     "/",
@@ -261,7 +263,8 @@
     "/js/core/cognitive-profile-runtime.js",
     "/js/core/topic-assessment.js",
     "/js/core/study-optimization-engine.js",
-    "/js/core/predictive-adaptive-tutor.js"
+    "/js/core/predictive-adaptive-tutor.js",
+    "/css/shell-modernization.css"
   ],
   "headersNoStorePaths": [
     "/",
