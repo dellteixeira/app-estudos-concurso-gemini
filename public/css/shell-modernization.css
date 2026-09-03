@@ -1,43 +1,48 @@
-/* Shell Modernization — incremental, presentation-only.
-   No business rules, data ordering, polling or global DOM observers. */
+/* Shell Modernization — Etapa 1.1
+   Presentation-first, shared by Web/PWA/Capacitor Android.
+   No business-rule mutation, no polling, no global DOM observer. */
 
 :root {
   --shell-max-width: 1480px;
   --shell-gap: 12px;
-  --shell-radius: 16px;
-  --shell-radius-sm: 11px;
-  --shell-border: rgba(132, 161, 188, .20);
-  --shell-border-strong: rgba(83, 227, 213, .30);
-  --shell-surface: rgba(8, 24, 39, .92);
-  --shell-surface-soft: rgba(12, 31, 49, .78);
+  --shell-radius: 18px;
+  --shell-radius-sm: 12px;
+  --shell-border: rgba(132, 161, 188, .18);
+  --shell-border-strong: rgba(83, 227, 213, .34);
+  --shell-surface: rgba(7, 22, 36, .94);
+  --shell-surface-soft: rgba(11, 30, 48, .76);
   --shell-text: #edf8fb;
   --shell-muted: #8ea5b9;
   --shell-accent: #53e3d5;
 }
 
-/* Global frame */
 #app-dashboard {
   width: min(100%, var(--shell-max-width));
   margin-inline: auto;
 }
 
+/* Header: brand + status + one primary action row + lightweight tabs. */
 header.modern-header {
   position: sticky;
   top: max(8px, env(safe-area-inset-top, 0px));
   z-index: 1100;
   display: grid;
-  grid-template-columns: minmax(0, auto) minmax(280px, 1fr) auto;
+  grid-template-columns: minmax(260px, auto) minmax(240px, 1fr) auto;
+  grid-template-areas:
+    "brand sync menu"
+    "controls controls controls";
   align-items: center;
-  gap: 10px 16px;
-  padding: 12px 14px;
+  gap: 10px 14px;
+  padding: 12px 14px 10px;
   border: 1px solid var(--shell-border);
   border-radius: var(--shell-radius);
-  background: color-mix(in srgb, var(--shell-surface) 94%, transparent);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, .20);
+  background: color-mix(in srgb, var(--shell-surface) 95%, transparent);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .18);
   backdrop-filter: blur(18px) saturate(120%);
 }
 
 .header-brand {
+  grid-area: brand;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -45,149 +50,307 @@ header.modern-header {
 }
 
 .header-brand img {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   flex: 0 0 auto;
   border-radius: 12px;
 }
 
-.header-brand-copy {
-  min-width: 0;
-}
+.header-brand-copy { min-width: 0; }
 
 .header-brand-copy h2 {
   margin: 0;
-  font-size: clamp(.96rem, 1.3vw, 1.16rem);
-  line-height: 1.12;
+  font-size: clamp(1rem, 1.25vw, 1.18rem);
+  line-height: 1.08;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .header-brand-signature,
-.app-version-badge {
-  font-size: .68rem;
+.app-version-badge { font-size: .66rem; }
+
+.header-sync-status {
+  grid-area: sync;
+  justify-self: stretch;
+  width: min(100%, 360px);
+  min-height: 36px;
+  max-width: 360px;
+  margin-inline: auto 0;
+  border-radius: 11px;
+}
+
+.compact-actions-menu {
+  grid-area: menu;
+  align-self: center;
+  justify-self: end;
+}
+
+.compact-actions-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
 }
 
 .header-control-stack {
+  grid-area: controls;
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
 .concurso-selector-bar {
   min-width: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto;
   align-items: center;
   gap: 7px;
-  padding: 6px;
-  border-radius: var(--shell-radius-sm);
+  padding: 5px;
+  border: 1px solid rgba(117, 151, 179, .12);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .018);
 }
 
 .concurso-selector-bar select {
-  flex: 1 1 260px;
-  min-width: 150px;
+  width: 100%;
+  min-width: 0;
   min-height: 38px;
+  border-radius: 10px;
+}
+
+/* Novo permanece como única ação de gestão diretamente exposta. */
+.concurso-selector-bar > .btn[data-action="new-concurso"] {
+  min-height: 38px;
+  padding-inline: 16px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+/* Renomear/Excluir são movidos via navigation.js para o menu ⋯. */
+.concurso-selector-bar > #btnRenomearConcurso,
+.concurso-selector-bar > #btnExcluirConcurso {
+  display: none !important;
+}
+
+.compact-actions-dropdown .shell-management-action {
+  display: flex !important;
+  width: 100% !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 9px 11px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: inherit !important;
+  font-weight: 700 !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+}
+
+.compact-actions-dropdown #btnExcluirConcurso.shell-management-action {
+  color: #fda4af !important;
 }
 
 .header-utility-cluster {
-  margin-left: auto;
+  margin: 0;
   display: flex;
   align-items: center;
 }
 
 .btn-search-header {
   min-width: 42px;
+  min-height: 38px;
+  border-radius: 10px;
 }
 
+/* Tabs become navigation, not a second heavy card row. */
 .header-nav-tabs,
-.nav-tabs {
+.nav-tabs.header-nav-tabs {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
-  border-radius: 12px;
+  gap: 2px;
+  padding: 2px 4px 0;
+  border: 0;
+  border-top: 1px solid rgba(117, 151, 179, .10);
+  border-radius: 0;
+  background: transparent;
   overflow: hidden;
 }
 
 .header-nav-tabs .tab-btn,
-.nav-tabs .tab-btn {
+.nav-tabs.header-nav-tabs .tab-btn {
+  position: relative;
   min-width: 0;
   min-height: 38px;
-  padding: 7px 10px;
-  border-radius: 9px;
+  padding: 9px 8px 8px;
+  border: 0 !important;
+  border-radius: 9px 9px 4px 4px;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--shell-muted);
   line-height: 1.1;
+  font-weight: 760;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.header-sync-status {
-  justify-self: end;
-  max-width: 210px;
-  min-height: 38px;
+.header-nav-tabs .tab-btn:hover,
+.nav-tabs.header-nav-tabs .tab-btn:hover {
+  color: var(--shell-text);
+  background: rgba(255, 255, 255, .025) !important;
 }
 
-.compact-actions-menu {
-  align-self: center;
+.header-nav-tabs .tab-btn.active,
+.nav-tabs.header-nav-tabs .tab-btn.active {
+  color: var(--shell-accent) !important;
+  background: rgba(83, 227, 213, .045) !important;
 }
 
-.compact-actions-toggle {
-  width: 42px;
-  height: 42px;
+.header-nav-tabs .tab-btn.active::after,
+.nav-tabs.header-nav-tabs .tab-btn.active::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--shell-accent);
+  box-shadow: 0 0 12px rgba(83, 227, 213, .38);
 }
 
-/* Shared overview: compact and calmer */
+/* Four action-oriented overview metrics; hidden metrics remain in DOM for compatibility. */
 .study-overview-grid {
-  margin-top: 12px;
+  margin-top: 11px;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+}
+
+.study-overview-grid .overview-secondary-metric {
+  display: none !important;
 }
 
 .overview-card {
   min-width: 0;
-  min-height: 78px;
-  padding: 11px 12px;
-  border-radius: 13px;
+  min-height: 76px;
+  padding: 11px 13px;
+  border-radius: 14px;
 }
 
-.overview-value {
-  font-variant-numeric: tabular-nums;
+.overview-value { font-variant-numeric: tabular-nums; }
+
+/* Retention: remove the tall empty columns while preserving all functionality. */
+.retention-diagnostic-panel {
+  align-items: start !important;
+  grid-template-columns: minmax(220px, .72fr) minmax(390px, 1.08fr) minmax(410px, 1.2fr) !important;
+  gap: 12px !important;
+  padding: 14px !important;
 }
 
-/* Focus and interaction without expensive JS */
+.retention-diagnostic-head,
+#retentionDiagnosticPanel .rd-center-v1077,
+.retention-critical-column {
+  align-self: start !important;
+  min-height: 0 !important;
+  height: auto !important;
+  border-radius: 16px;
+}
+
+.retention-diagnostic-head {
+  display: grid !important;
+  gap: 14px !important;
+  align-content: start !important;
+  padding: 16px !important;
+}
+
+.retention-diagnostic-head h3 {
+  font-size: clamp(1.2rem, 2vw, 1.7rem) !important;
+  line-height: 1.02 !important;
+}
+
+.retention-diagnostic-head .retention-diagnostic-subtitle {
+  margin-top: 8px !important;
+  font-size: .78rem !important;
+  line-height: 1.5 !important;
+}
+
+.retention-diagnostic-head .retention-study-now-v1072,
+.retention-diagnostic-tools .retention-export-btn {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+}
+
+#retentionDiagnosticPanel .rd-center-v1077 {
+  padding: 14px !important;
+}
+
+#retentionDiagnosticPanel .rd-exam-banner-v1077 {
+  margin-bottom: 12px !important;
+}
+
+#retentionDiagnosticPanel .rd-metrics-v1077 {
+  gap: 8px !important;
+}
+
+.retention-critical-column {
+  padding: 14px !important;
+}
+
+/* Focus and interaction without expensive runtime work. */
 header.modern-header :is(button, select, input, a):focus-visible,
 .mobile-nav-btn:focus-visible {
   outline: 2px solid var(--shell-accent);
   outline-offset: 2px;
 }
 
-.tab-content {
-  scroll-margin-top: 130px;
-}
+.tab-content { scroll-margin-top: 126px; }
 
-/* Light mode */
 body.light-mode header.modern-header {
-  background: rgba(255, 255, 255, .94);
-  border-color: rgba(100, 116, 139, .20);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, .10);
+  background: rgba(255, 255, 255, .95);
+  border-color: rgba(100, 116, 139, .18);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .09);
 }
 
-/* Tablet */
-@media (max-width: 1100px) {
+body.light-mode .concurso-selector-bar {
+  background: rgba(15, 23, 42, .02);
+}
+
+@media (max-width: 1180px) {
   header.modern-header {
     grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand menu"
+      "sync sync"
+      "controls controls";
   }
 
-  .header-brand { grid-column: 1; }
-  .header-sync-status { grid-column: 2; }
-  .compact-actions-menu { grid-column: 2; grid-row: 1; margin-right: 48px; }
-  .header-control-stack { grid-column: 1 / -1; }
-  .study-overview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .header-sync-status {
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
+  }
+
+  .study-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .retention-diagnostic-panel {
+    grid-template-columns: minmax(220px, .8fr) minmax(0, 1.2fr) !important;
+    grid-template-areas:
+      "head metrics"
+      "critical critical" !important;
+  }
+
+  .retention-diagnostic-head { grid-area: head !important; }
+  #retentionDiagnosticPanel .rd-center-v1077 { grid-area: metrics !important; }
+  .retention-critical-column { grid-area: critical !important; }
 }
 
-/* Mobile shell: content first, navigation at thumb reach */
+/* Mobile / APK: content first; bottom navigation remains the primary tab switcher. */
 @media (max-width: 700px) {
   #app-dashboard {
     width: 100%;
@@ -199,6 +362,9 @@ body.light-mode header.modern-header {
     position: relative;
     top: auto;
     grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand menu"
+      "controls controls";
     padding: 10px;
     gap: 8px;
     border-radius: 14px;
@@ -211,52 +377,37 @@ body.light-mode header.modern-header {
     border-radius: 10px;
   }
 
-  .header-brand-copy h2 {
-    font-size: .96rem;
-  }
+  .header-brand-copy h2 { font-size: .96rem; }
 
   .header-brand-signature,
   .app-version-badge,
-  .header-sync-status {
-    display: none !important;
-  }
+  .header-sync-status { display: none !important; }
 
   .compact-actions-menu {
-    grid-column: 2;
-    grid-row: 1;
+    grid-area: menu;
     margin: 0;
   }
 
-  .header-control-stack {
-    grid-column: 1 / -1;
-  }
+  .header-control-stack { grid-area: controls; }
 
   .concurso-selector-bar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 6px;
-    padding: 6px;
+    padding: 5px;
   }
 
   .concurso-selector-bar select {
     width: 100%;
     min-width: 0;
-    grid-column: 1;
   }
 
-  .concurso-selector-bar > .btn:not(.btn-search-header),
-  .header-utility-cluster {
-    grid-column: 2;
-  }
-
-  .concurso-selector-bar > .btn:not(:first-of-type) {
-    display: none;
+  .concurso-selector-bar > .btn[data-action="new-concurso"] {
+    min-width: 58px;
+    padding-inline: 9px;
   }
 
   .header-nav-tabs,
-  .nav-tabs.header-nav-tabs {
-    display: none !important;
-  }
+  .nav-tabs.header-nav-tabs { display: none !important; }
 
   .study-overview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -264,15 +415,32 @@ body.light-mode header.modern-header {
   }
 
   .overview-card {
-    min-height: 72px;
+    min-height: 70px;
     padding: 10px;
+  }
+
+  .retention-diagnostic-panel {
+    grid-template-columns: 1fr !important;
+    grid-template-areas: "head" "metrics" "critical" !important;
+    padding: 10px !important;
+  }
+
+  .retention-diagnostic-head,
+  #retentionDiagnosticPanel .rd-center-v1077,
+  .retention-critical-column {
+    width: 100% !important;
+    padding: 12px !important;
+  }
+
+  .retention-diagnostic-head h3 {
+    font-size: 1.22rem !important;
   }
 
   .mobile-nav,
   .mobile-bottom-nav,
   .mobile-nav-bar {
     border-top: 1px solid var(--shell-border) !important;
-    background: rgba(6, 19, 33, .96) !important;
+    background: rgba(6, 19, 33, .97) !important;
     backdrop-filter: blur(16px) saturate(120%);
   }
 
@@ -287,19 +455,20 @@ body.light-mode header.modern-header {
     background: rgba(83, 227, 213, .08) !important;
   }
 
-  .tab-content {
-    scroll-margin-top: 16px;
-  }
+  .tab-content { scroll-margin-top: 16px; }
 }
 
 @media (max-width: 390px) {
   #app-dashboard { padding-inline: 8px !important; }
-  .study-overview-grid { grid-template-columns: 1fr 1fr; }
   .overview-hint { display: none; }
-  .concurso-selector-bar > .btn:not(.btn-search-header) { min-width: 58px; padding-inline: 8px; }
+  .btn-search-header span:last-child { display: none; }
+  .btn-search-header { min-width: 40px; padding-inline: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   header.modern-header *,
-  .mobile-nav-btn { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  .mobile-nav-btn {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
 }
