@@ -56,6 +56,7 @@ jobs:
             fs.writeFileSync(path, source.split(from).join(to));
           };
 
+          replaceIn('public/index.html', previous, version);
           replaceIn('public/js/app-pwa.js', previous, version);
           replaceIn('public/js/ui/navigation.js', previous, version);
           replaceIn('public/sw.js', `responsive-polish-v${previous}.css`, `responsive-polish-v${version}.css`);
@@ -87,6 +88,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/pr406-release-sync.yml
-          git add android/app/build.gradle config/release-contract.json config/app-assets.json package.json package-lock.json public/version.json public/sw.js public/js/app-pwa.js public/js/ui/navigation.js public/css/responsive-polish-v10.64.44.css src/index.js
+          git add android/app/build.gradle config/release-contract.json config/app-assets.json package.json package-lock.json public/version.json public/index.html public/sw.js public/js/app-pwa.js public/js/ui/navigation.js public/css/responsive-polish-v10.64.44.css src/index.js
           git commit -m "chore(release): synchronize PR406 as 10.64.44"
           git push origin HEAD:feat/web-ux-flashcards-library-notes
