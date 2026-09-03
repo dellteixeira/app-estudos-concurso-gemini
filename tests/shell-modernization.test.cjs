@@ -35,3 +35,16 @@ test('modern shell preserves the five canonical study tabs', () => {
     assert.match(html, new RegExp(`data-tab=["']${tab}["']`), `${tab} navigation must remain available`);
   }
 });
+
+test('modern shell participates in the canonical offline and worker contracts', () => {
+  const assets = JSON.parse(read('config/app-assets.json'));
+  const sw = read('public/sw.js');
+  const worker = read('src/index.js');
+  const route = '/css/shell-modernization.css';
+
+  assert.ok(assets.criticalAppShell.includes(route), 'shell CSS must be pre-cached for first-install offline use');
+  assert.ok(assets.networkFirstPaths.includes(route), 'shell CSS must follow the canonical network-first policy');
+  assert.ok(assets.workerNoStorePaths.includes(route), 'worker must not serve a stale shell asset');
+  assert.match(sw, /shell-modernization\.css/, 'service worker must know the shell CSS');
+  assert.match(worker, /shell-modernization\.css/, 'Cloudflare worker must know the shell CSS');
+});
