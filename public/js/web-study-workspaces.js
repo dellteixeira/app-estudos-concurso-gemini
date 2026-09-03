@@ -5,6 +5,10 @@
   const qsa = (selector, root = document) => [...root.querySelectorAll(selector)];
   const unique = values => [...new Set(values.filter(Boolean))];
   const safeText = value => String(value ?? '').trim();
+  const normalize = value => safeText(value).toLocaleLowerCase('pt-BR');
+  const searchableTextCache = new WeakMap();
+  const debounceTimers = new Map();
+  let refreshFrame = 0;
 
   function getFlashcards() {
     try { return Array.isArray(flashcardsList) ? flashcardsList : []; } catch (_) { return []; }
@@ -16,6 +20,28 @@
       const contest = typeof currentConcurso !== 'undefined' ? currentConcurso : 'Concurso Geral';
       return Array.isArray(metadata?.[contest]?.structuredNotes) ? metadata[contest].structuredNotes : [];
     } catch (_) { return []; }
+  }
+
+  function setHtmlIfChanged(node, html) {
+    if (node && node.innerHTML !== html) node.innerHTML = html;
+  }
+
+  function getSearchableText(item) {
+    const raw = safeText(item?.textContent);
+    const cached = searchableTextCache.get(item);
+    if (cached?.raw === raw) return cached.normalized;
+    const normalized = normalize(raw);
+    searchableTextCache.set(item, { raw, normalized });
+    return normalized;
+  }
+
+  function debounce(key, callback, delay = 120) {
+    const current = debounceTimers.get(key);
+    if (current) clearTimeout(current);
+    debounceTimers.set(key, setTimeout(() => {
+      debounceTimers.delete(key);
+      callback();
+    }, delay));
   }
 
   function ensureFlashcardsDashboard() {
@@ -51,13 +77,14 @@
         filteredCount = cards.filter(card => (!activeFcMateriaFilter || card?.materia === activeFcMateriaFilter) && (!activeFcAssuntoFilter || card?.assunto === activeFcAssuntoFilter)).length;
       }
     } catch (_) {}
-    const stats = qs('[data-flashcard-stats]', dashboard);
-    if (stats) stats.innerHTML = [
+
+    const html = [
       ['Total', cards.length, 'cartões disponíveis'],
       ['Matérias', materias.length, 'com flashcards'],
       ['Assuntos', assuntos.length, 'cobertos'],
       ['No filtro', filteredCount, 'prontos para estudar']
     ].map(([label, value, hint]) => `<article class="study-workspace-stat"><span>${label}</span><strong>${value}</strong><small>${hint}</small></article>`).join('');
+    setHtmlIfChanged(qs('[data-flashcard-stats]', dashboard), html);
   }
 
   function ensureLibraryDashboard() {
@@ -88,20 +115,20 @@
     if (!grid || !dashboard) return;
     const items = qsa(':scope > *', grid);
     const visible = items.filter(item => !item.hidden && item.style.display !== 'none').length;
-    const stats = qs('[data-library-stats]', dashboard);
-    if (stats) stats.innerHTML = [
+    const html = [
       ['Arquivos', items.length, 'na biblioteca'],
       ['Visíveis', visible, 'no filtro atual']
     ].map(([label, value, hint]) => `<article class="study-workspace-stat"><span>${label}</span><strong>${value}</strong><small>${hint}</small></article>`).join('');
+    setHtmlIfChanged(qs('[data-library-stats]', dashboard), html);
   }
 
   function filterLibrary(rawValue) {
-    const term = safeText(rawValue).toLocaleLowerCase('pt-BR');
+    const term = normalize(rawValue);
     const grid = qs('#pdfLibraryGrid');
     if (!grid) return;
     qsa(':scope > *', grid).forEach(item => {
-      const match = !term || safeText(item.textContent).toLocaleLowerCase('pt-BR').includes(term);
-      item.hidden = !match;
+      const shouldHide = !!term && !getSearchableText(item).includes(term);
+      if (item.hidden !== shouldHide) item.hidden = shouldHide;
     });
     refreshLibraryDashboard();
   }
@@ -135,22 +162,36 @@
     const materias = unique(notes.map(note => safeText(note?.materia)));
     const assuntos = unique(notes.map(note => safeText(note?.assunto)));
     const linked = notes.filter(note => safeText(note?.materia) || safeText(note?.assunto)).length;
-    const stats = qs('[data-notes-stats]', dashboard);
-    if (stats) stats.innerHTML = [
+    const html = [
       ['Notas', notes.length, 'no concurso atual'],
       ['Matérias', materias.length, 'com registros'],
       ['Assuntos', assuntos.length, 'referenciados'],
       ['Contextualizadas', linked, 'ligadas ao estudo']
     ].map(([label, value, hint]) => `<article class="study-workspace-stat"><span>${label}</span><strong>${value}</strong><small>${hint}</small></article>`).join('');
+    setHtmlIfChanged(qs('[data-notes-stats]', dashboard), html);
   }
 
   function filterNotes(rawValue) {
-    const term = safeText(rawValue).toLocaleLowerCase('pt-BR');
+    const term = normalize(rawValue);
     const container = qs('#notesContainer');
     if (!container) return;
     qsa(':scope > *', container).forEach(item => {
-      const match = !term || safeText(item.textContent).toLocaleLowerCase('pt-BR').includes(term);
-      item.hidden = !match;
+      const shouldHide = !!term && !getSearchableText(item).includes(term);
+      if (item.hidden !== shouldHide) item.hidden = shouldHide;
+    });
+  }
+
+  function refreshActiveWorkspace() {
+    if (qs('#tab-flashcards.active')) ensureFlashcardsDashboard();
+    if (qs('#tab-biblioteca.active')) ensureLibraryDashboard();
+    if (qs('#tab-anotacoes.active')) ensureNotesDashboard();
+  }
+
+  function scheduleActiveRefresh() {
+    if (refreshFrame) return;
+    refreshFrame = global.requestAnimationFrame(() => {
+      refreshFrame = 0;
+      refreshActiveWorkspace();
     });
   }
 
@@ -170,25 +211,29 @@
   });
 
   document.addEventListener('input', event => {
-    if (event.target.matches('[data-library-search]')) filterLibrary(event.target.value);
-    if (event.target.matches('[data-notes-search]')) filterNotes(event.target.value);
+    if (event.target.matches('[data-library-search]')) {
+      const value = event.target.value;
+      debounce('library-search', () => filterLibrary(value));
+    }
+    if (event.target.matches('[data-notes-search]')) {
+      const value = event.target.value;
+      debounce('notes-search', () => filterNotes(value));
+    }
   });
 
   document.addEventListener('click', event => {
     if (event.target.closest('[data-tab="tab-flashcards"], [data-tab="tab-biblioteca"], [data-tab="tab-anotacoes"]')) {
-      setTimeout(refreshAll, 0);
+      scheduleActiveRefresh();
     }
   });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshAll, { once: true });
   else refreshAll();
 
-  const observer = new MutationObserver(() => {
-    if (qs('#tab-flashcards.active')) ensureFlashcardsDashboard();
-    if (qs('#tab-biblioteca.active')) refreshLibraryDashboard();
-    if (qs('#tab-anotacoes.active')) refreshNotesDashboard();
+  global.AppWebStudyWorkspaces = Object.freeze({
+    refresh: refreshAll,
+    refreshActive: scheduleActiveRefresh,
+    filterLibrary,
+    filterNotes
   });
-  observer.observe(document.documentElement, { subtree: true, childList: true });
-
-  global.AppWebStudyWorkspaces = Object.freeze({ refresh: refreshAll, filterLibrary, filterNotes });
 })(window);
