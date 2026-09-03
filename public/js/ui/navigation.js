@@ -1,7 +1,7 @@
 (function (global) {
     'use strict';
 
-    const CORE_VERSION = '10.64.45';
+    const CORE_VERSION = '10.64.46';
     let coreRuntimePromise = null;
 
     function ensureCanonicalUiStyle() {
@@ -15,7 +15,7 @@
         if (!document.querySelector('link[data-responsive-polish]')) {
             const polish = document.createElement('link');
             polish.rel = 'stylesheet';
-            polish.href = './css/responsive-polish-v10.64.45.css?v=10.64.45';
+            polish.href = './css/responsive-polish-v10.64.46.css?v=10.64.46';
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
         }
@@ -243,6 +243,23 @@
         });
     }
 
+    function organizeShellChrome() {
+        const dropdown = document.getElementById('compactActionsDropdown');
+        if (dropdown) {
+            const divider = dropdown.querySelector('.compact-menu-divider');
+            for (const id of ['btnRenomearConcurso', 'btnExcluirConcurso']) {
+                const button = document.getElementById(id);
+                if (!button || button.parentElement === dropdown) continue;
+                button.classList.add('compact-menu-item', 'shell-management-action');
+                button.setAttribute('role', 'menuitem');
+                dropdown.insertBefore(button, divider || null);
+            }
+        }
+        for (const id of ['modernOverviewTopics', 'modernOverviewTarget']) {
+            document.getElementById(id)?.closest('.overview-card')?.classList.add('overview-secondary-metric');
+        }
+    }
+
     global.AppNavigation = Object.freeze({
         findDesktopTabButton,
         syncMobileNav,
@@ -255,10 +272,12 @@
     ensureCanonicalUiStyle();
     ensureAccessibleNames();
     installDelegatedActions();
+    organizeShellChrome();
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             ensureAccessibleNames();
+            organizeShellChrome();
             ensureCoreRuntime().then(() => ensurePerformanceLoader());
         }, { once: true });
     } else {

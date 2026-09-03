@@ -1,5 +1,5 @@
 {
-  "version": "10.64.45",
+  "version": "10.64.46",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -11,7 +11,7 @@
     "/css/dashboard.css",
     "/css/features.css",
     "/css/responsive-system.css",
-    "/css/responsive-polish-v10.64.45.css",
+    "/css/responsive-polish-v10.64.46.css",
     "/css/canonical-ui.css",
     "/css/shell-modernization.css",
     "/css/pdf-library.css",
