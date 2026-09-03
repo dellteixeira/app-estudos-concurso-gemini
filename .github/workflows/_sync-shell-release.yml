@@ -25,7 +25,6 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('fs');
-          const path = require('path');
 
           const OLD = '10.64.42';
           const VERSION = '10.64.45';
@@ -38,7 +37,6 @@ jobs:
           const writeJson = (file, value) => write(file, JSON.stringify(value, null, 2));
           const replaceVersion = file => write(file, read(file).split(OLD).join(VERSION));
 
-          // Canonical release contract.
           const contract = json('config/release-contract.json');
           contract.version = VERSION;
           contract.android.revision = REVISION;
@@ -56,16 +54,13 @@ jobs:
             writeJson('package-lock.json', lock);
           }
 
-          // Source identity must remain a source template; deploy injects real identity later.
           writeJson('public/version.json', { version: VERSION, build: 'source', commit: 'source' });
 
-          // Stable responsive baseline is copied, not rewritten in place.
           const oldResponsive = `public/css/responsive-polish-v${OLD}.css`;
           const newResponsive = `public/css/responsive-polish-v${VERSION}.css`;
           if (!fs.existsSync(oldResponsive)) throw new Error(`Missing ${oldResponsive}`);
           write(newResponsive, read(oldResponsive).split(OLD).join(VERSION));
 
-          // Current runtime references only; business logic remains unchanged.
           for (const file of [
             'public/index.html',
             'public/sw.js',
@@ -74,7 +69,6 @@ jobs:
             'src/index.js'
           ]) replaceVersion(file);
 
-          // Offline/caching contract: the new shell must be first-install offline-safe.
           let sw = read('public/sw.js');
           if (!sw.includes("'./css/shell-modernization.css'")) {
             sw = sw.replace("'./css/canonical-ui.css'", "'./css/canonical-ui.css', './css/shell-modernization.css'");
@@ -106,6 +100,9 @@ jobs:
             const canonicalIndex = assets.criticalAppShell.indexOf('/css/canonical-ui.css');
             assets.criticalAppShell.splice(canonicalIndex >= 0 ? canonicalIndex + 1 : assets.criticalAppShell.length, 0, shellRoute);
           }
+          if (Array.isArray(assets.networkFirstPaths) && !assets.networkFirstPaths.includes(shellRoute)) {
+            assets.networkFirstPaths.push(shellRoute);
+          }
           if (Array.isArray(assets.workerNoStorePaths) && !assets.workerNoStorePaths.includes(shellRoute)) {
             assets.workerNoStorePaths.push(shellRoute);
           }
@@ -116,7 +113,6 @@ jobs:
           gradle = gradle.replace(/versionName\s+"[^"]+"/, `versionName "${VERSION}-mobile.${REVISION}"`);
           write('android/app/build.gradle', gradle);
 
-          // Fail early if a canonical runtime contract remains on the old release.
           const mustBeCurrent = [
             'config/release-contract.json', 'config/app-assets.json', 'package.json',
             'public/version.json', 'public/index.html', 'public/sw.js',
