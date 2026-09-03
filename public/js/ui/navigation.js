@@ -1,7 +1,7 @@
 (function (global) {
     'use strict';
 
-    const CORE_VERSION = '10.64.42';
+    const CORE_VERSION = '10.64.45';
     let coreRuntimePromise = null;
 
     function ensureCanonicalUiStyle() {
@@ -15,9 +15,16 @@
         if (!document.querySelector('link[data-responsive-polish]')) {
             const polish = document.createElement('link');
             polish.rel = 'stylesheet';
-            polish.href = './css/responsive-polish-v10.64.42.css?v=10.64.42';
+            polish.href = './css/responsive-polish-v10.64.45.css?v=10.64.45';
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
+        }
+        if (!document.querySelector('link[data-shell-modernization]')) {
+            const shell = document.createElement('link');
+            shell.rel = 'stylesheet';
+            shell.href = `./css/shell-modernization.css?v=${CORE_VERSION}`;
+            shell.dataset.shellModernization = '1';
+            document.head.appendChild(shell);
         }
     }
 

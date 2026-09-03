@@ -1,9 +1,12 @@
 const { test, expect } = require('@playwright/test');
+const { version: RELEASE_VERSION } = require('../../config/release-contract.json');
 
 const MOBILE_VIEWPORTS = [
   { name: 'mobile-360', width: 360, height: 800 },
   { name: 'mobile-390', width: 390, height: 844 }
 ];
+
+const RESPONSIVE_STYLESHEET = `/css/responsive-polish-v${RELEASE_VERSION}.css`;
 
 async function installRetentionFixture(page) {
   await page.evaluate(() => {
@@ -74,8 +77,8 @@ for (const viewport of MOBILE_VIEWPORTS) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await page.waitForFunction(() => [...document.styleSheets]
-      .some(sheet => (sheet.href || '').includes('/css/responsive-polish-v10.64.42.css')));
+    await page.waitForFunction(expectedStylesheet => [...document.styleSheets]
+      .some(sheet => (sheet.href || '').includes(expectedStylesheet)), RESPONSIVE_STYLESHEET);
 
     await installRetentionFixture(page);
     const result = await readCentering(page);
