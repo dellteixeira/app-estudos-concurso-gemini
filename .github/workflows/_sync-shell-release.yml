@@ -1,0 +1,141 @@
+name: Sync Shell Release
+
+on:
+  push:
+    branches:
+      - ui/shell-modernization-v106442
+    paths:
+      - .github/workflows/_sync-shell-release.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/shell-modernization-v106442
+          fetch-depth: 0
+
+      - name: Promote shell release canonically
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const OLD = '10.64.42';
+          const VERSION = '10.64.45';
+          const VERSION_CODE = 106447;
+          const REVISION = 1;
+
+          const read = file => fs.readFileSync(file, 'utf8');
+          const write = (file, text) => fs.writeFileSync(file, text.endsWith('\n') ? text : `${text}\n`);
+          const json = file => JSON.parse(read(file));
+          const writeJson = (file, value) => write(file, JSON.stringify(value, null, 2));
+          const replaceVersion = file => write(file, read(file).split(OLD).join(VERSION));
+
+          // Canonical release contract.
+          const contract = json('config/release-contract.json');
+          contract.version = VERSION;
+          contract.android.revision = REVISION;
+          contract.android.versionCode = VERSION_CODE;
+          writeJson('config/release-contract.json', contract);
+
+          const pkg = json('package.json');
+          pkg.version = VERSION;
+          writeJson('package.json', pkg);
+
+          if (fs.existsSync('package-lock.json')) {
+            const lock = json('package-lock.json');
+            lock.version = VERSION;
+            if (lock.packages && lock.packages['']) lock.packages[''].version = VERSION;
+            writeJson('package-lock.json', lock);
+          }
+
+          // Source identity must remain a source template; deploy injects real identity later.
+          writeJson('public/version.json', { version: VERSION, build: 'source', commit: 'source' });
+
+          // Stable responsive baseline is copied, not rewritten in place.
+          const oldResponsive = `public/css/responsive-polish-v${OLD}.css`;
+          const newResponsive = `public/css/responsive-polish-v${VERSION}.css`;
+          if (!fs.existsSync(oldResponsive)) throw new Error(`Missing ${oldResponsive}`);
+          write(newResponsive, read(oldResponsive).split(OLD).join(VERSION));
+
+          // Current runtime references only; business logic remains unchanged.
+          for (const file of [
+            'public/index.html',
+            'public/sw.js',
+            'public/js/app-pwa.js',
+            'public/js/ui/navigation.js',
+            'src/index.js'
+          ]) replaceVersion(file);
+
+          // Offline/caching contract: the new shell must be first-install offline-safe.
+          let sw = read('public/sw.js');
+          if (!sw.includes("'./css/shell-modernization.css'")) {
+            sw = sw.replace("'./css/canonical-ui.css'", "'./css/canonical-ui.css', './css/shell-modernization.css'");
+          }
+          if (!sw.includes("'/css/shell-modernization.css'")) {
+            sw = sw.replace("'/css/canonical-ui.css'", "'/css/canonical-ui.css', '/css/shell-modernization.css'");
+          }
+          write('public/sw.js', sw);
+
+          let worker = read('src/index.js');
+          if (!worker.includes('"/css/shell-modernization.css"')) {
+            worker = worker.replace('"/css/features.css",', '"/css/features.css", "/css/shell-modernization.css",');
+          }
+          write('src/index.js', worker);
+
+          const assets = json('config/app-assets.json');
+          const migrateStrings = value => {
+            if (typeof value === 'string') return value.split(OLD).join(VERSION);
+            if (Array.isArray(value)) return value.map(migrateStrings);
+            if (value && typeof value === 'object') {
+              for (const key of Object.keys(value)) value[key] = migrateStrings(value[key]);
+            }
+            return value;
+          };
+          migrateStrings(assets);
+          assets.version = VERSION;
+          const shellRoute = '/css/shell-modernization.css';
+          if (!assets.criticalAppShell.includes(shellRoute)) {
+            const canonicalIndex = assets.criticalAppShell.indexOf('/css/canonical-ui.css');
+            assets.criticalAppShell.splice(canonicalIndex >= 0 ? canonicalIndex + 1 : assets.criticalAppShell.length, 0, shellRoute);
+          }
+          if (Array.isArray(assets.workerNoStorePaths) && !assets.workerNoStorePaths.includes(shellRoute)) {
+            assets.workerNoStorePaths.push(shellRoute);
+          }
+          writeJson('config/app-assets.json', assets);
+
+          let gradle = read('android/app/build.gradle');
+          gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${VERSION_CODE}`);
+          gradle = gradle.replace(/versionName\s+"[^"]+"/, `versionName "${VERSION}-mobile.${REVISION}"`);
+          write('android/app/build.gradle', gradle);
+
+          // Fail early if a canonical runtime contract remains on the old release.
+          const mustBeCurrent = [
+            'config/release-contract.json', 'config/app-assets.json', 'package.json',
+            'public/version.json', 'public/index.html', 'public/sw.js',
+            'public/js/app-pwa.js', 'public/js/ui/navigation.js', 'src/index.js',
+            'android/app/build.gradle'
+          ];
+          const stale = mustBeCurrent.filter(file => read(file).includes(OLD));
+          if (stale.length) throw new Error(`Stale ${OLD} references: ${stale.join(', ')}`);
+          NODE
+
+          node scripts/release-contract.mjs check
+          node scripts/audit-asset-manifest.mjs
+
+      - name: Commit synchronized release and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/_sync-shell-release.yml
+          git add -A
+          git commit -m "chore(release): promote shell modernization to 10.64.45"
+          git push origin HEAD:ui/shell-modernization-v106442
