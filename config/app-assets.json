@@ -1,5 +1,5 @@
 {
-  "version": "10.64.43",
+  "version": "10.64.44",
   "criticalAppShell": [
     "/",
     "/index.html",
@@ -11,7 +11,7 @@
     "/css/dashboard.css",
     "/css/features.css",
     "/css/responsive-system.css",
-    "/css/responsive-polish-v10.64.43.css",
+    "/css/responsive-polish-v10.64.44.css",
     "/css/canonical-ui.css",
     "/css/pdf-library.css",
     "/css/pdf-reader.css",
@@ -99,7 +99,9 @@
     "/css/study-ux-phase.css",
     "/css/today-best-action.css",
     "/js/ui/study-ux-phase.js",
-    "/js/ui/today-best-action.js"
+    "/js/ui/today-best-action.js",
+    "/css/web-study-workspaces.css",
+    "/js/web-study-workspaces.js"
   ],
   "networkFirstPaths": [
     "/pwa-update.js",

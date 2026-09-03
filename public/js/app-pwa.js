@@ -219,40 +219,58 @@
             if (document.querySelector('link[data-responsive-release-delta]')) return;
             const style = document.createElement('link');
             style.rel = 'stylesheet';
-            style.href = './css/responsive-polish-v10.64.43.css?v=10.64.43';
+            style.href = './css/responsive-polish-v10.64.44.css?v=10.64.44';
             style.dataset.responsiveReleaseDelta = '1';
             document.head.appendChild(style);
         })();
 
-        // V10.64.43 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
+        // V10.64.44 — UX dos workspaces web: Flashcards, Biblioteca e Anotações.
+        (function loadWebStudyWorkspaces() {
+            if (!document.querySelector('link[data-web-study-workspaces-style]')) {
+                const style = document.createElement('link');
+                style.rel = 'stylesheet';
+                style.href = './css/web-study-workspaces.css?v=10.64.44';
+                style.dataset.webStudyWorkspacesStyle = '1';
+                document.head.appendChild(style);
+            }
+            if (!window.AppWebStudyWorkspaces && !document.querySelector('script[data-web-study-workspaces]')) {
+                const script = document.createElement('script');
+                script.src = './js/web-study-workspaces.js?v=10.64.44';
+                script.defer = true;
+                script.dataset.webStudyWorkspaces = '1';
+                document.head.appendChild(script);
+            }
+        })();
+
+        // V10.64.44 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
         (function loadAdaptiveScheduleReconciliation() {
             if (window.AdaptiveScheduleReconciliation || document.querySelector('script[data-adaptive-schedule-reconciliation]')) return;
             const script = document.createElement('script');
-            script.src = './js/adaptive-schedule-reconciliation.js?v=10.64.43';
+            script.src = './js/adaptive-schedule-reconciliation.js?v=10.64.44';
             script.defer = true;
             script.dataset.adaptiveScheduleReconciliation = '1';
             document.head.appendChild(script);
         })();
 
-        // V10.64.43 — IA consultiva: interpreta dificuldade, mas Retenção mantém autoridade.
+        // V10.64.44 — IA consultiva: interpreta dificuldade, mas Retenção mantém autoridade.
         (function loadLearningAdvisor() {
             if (!document.querySelector('link[data-learning-advisor-style]')) {
                 const style = document.createElement('link');
                 style.rel = 'stylesheet';
-                style.href = './css/learning-advisor.css?v=10.64.43';
+                style.href = './css/learning-advisor.css?v=10.64.44';
                 style.dataset.learningAdvisorStyle = '1';
                 document.head.appendChild(style);
             }
             if (!window.AppLearningAdvisor && !document.querySelector('script[data-learning-advisor]')) {
                 const script = document.createElement('script');
-                script.src = './js/learning-advisor.js?v=10.64.43';
+                script.src = './js/learning-advisor.js?v=10.64.44';
                 script.defer = true;
                 script.dataset.learningAdvisor = '1';
                 document.head.appendChild(script);
             }
             if (!window.CriticalPointActions && !document.querySelector('script[data-critical-point-actions]')) {
                 const criticalScript = document.createElement('script');
-                criticalScript.src = './js/critical-points-actions.js?v=10.64.43';
+                criticalScript.src = './js/critical-points-actions.js?v=10.64.44';
                 criticalScript.defer = true;
                 criticalScript.dataset.criticalPointActions = '1';
                 document.head.appendChild(criticalScript);
