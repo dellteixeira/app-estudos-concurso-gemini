@@ -248,3 +248,32 @@
         box-sizing: border-box !important;
     }
 }
+
+/* V10.64.46 — acessibilidade do header mobile.
+   Reserva uma coluna real de 40px para a pesquisa, impedindo o grid de comprimir o alvo. */
+@media (max-width: 700px) {
+    html body .modern-header .concurso-selector-bar {
+        grid-template-columns: minmax(0, 1fr) minmax(58px, auto) 40px !important;
+    }
+
+    html body .modern-header .header-utility-cluster {
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+        box-sizing: border-box !important;
+    }
+
+    html body .modern-header .btn-search-header {
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+        min-height: 42px !important;
+        padding-inline: 0 !important;
+        box-sizing: border-box !important;
+        justify-content: center !important;
+    }
+
+    html body .modern-header .btn-search-header > span:last-child {
+        display: none !important;
+    }
+}
