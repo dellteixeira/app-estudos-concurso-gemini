@@ -1550,7 +1550,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const scoreActivity = methodRec.activityType === 'revisao_ativa' || methodRec.activityType === 'flashcards' ? 'questoes' : methodRec.activityType;
                 const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:true, activityType:scoreActivity, availableMinutes:minutes, suggestedMinutes:suggested, contextMode, recentMaterias });
                 const score = 900 + scheduler.total + (methodRec.method==='reestudo'?80:methodRec.method==='revisao_ativa'?45:0);
-                candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:methodRec.activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:true, retention, due, score, scheduler, minutes:suggested, reason:`${due?'Revisão vencida ou prevista para agora':'Retenção estimada abaixo do alvo'} ${methodRec.reason}`.trim() });
+                const reviewReason = scheduledOverdue
+                    ? 'Revisão vencida no cronograma'
+                    : (due ? 'Revisão recomendada pelo nível de retenção' : 'Retenção estimada abaixo do alvo');
+                candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:methodRec.activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:true, retention, due, scheduledOverdue, score, scheduler, minutes:suggested, reason:`${reviewReason}. ${methodRec.reason}`.trim() });
             });
 
             if (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly) {
