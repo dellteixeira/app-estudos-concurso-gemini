@@ -1536,7 +1536,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (!item || !state?.lastStudyAt) return;
                 const retention = calculateRetentionFromState(state, now);
                 const nextAt = state.nextReviewAt ? new Date(state.nextReviewAt) : null;
+                // `due` continua sendo o sinal cognitivo do Retention Engine para preservar
+                // ranking e elegibilidade da recomendação. A UI só pode chamar algo de
+                // "vencido" quando houver uma atividade realmente atrasada no cronograma.
                 const due = nextAt && Number.isFinite(nextAt.getTime()) && nextAt <= new Date(`${todayKey}T23:59:59`);
+                const scheduleContext = window.AdaptiveScheduleReconciliation?.getTopicScheduleContext?.(contest,state,item,now) || null;
+                const scheduledOverdue = !!scheduleContext?.scheduledOverdue;
                 if (!due && retention > 72) return;
                 const key = `review::${state.key}`;
                 if (seen.has(key)) return; seen.add(key);
@@ -1545,7 +1550,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 const scoreActivity = methodRec.activityType === 'revisao_ativa' || methodRec.activityType === 'flashcards' ? 'questoes' : methodRec.activityType;
                 const scheduler = computeRetentionSchedulerScore(item, { contest, now, state, isRevision:true, activityType:scoreActivity, availableMinutes:minutes, suggestedMinutes:suggested, contextMode, recentMaterias });
                 const score = 900 + scheduler.total + (methodRec.method==='reestudo'?80:methodRec.method==='revisao_ativa'?45:0);
-                candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:methodRec.activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:true, retention, due, score, scheduler, minutes:suggested, reason:`${due?'Revisão vencida ou prevista para agora':'Retenção estimada abaixo do alvo'} ${methodRec.reason}`.trim() });
+                const reviewReason = scheduledOverdue
+                    ? 'Revisão vencida no cronograma'
+                    : (due ? 'Revisão recomendada pelo nível de retenção' : 'Retenção estimada abaixo do alvo');
+                candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:methodRec.activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:true, retention, due, scheduledOverdue, score, scheduler, minutes:suggested, reason:`${reviewReason}. ${methodRec.reason}`.trim() });
             });
 
             if (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly) {
