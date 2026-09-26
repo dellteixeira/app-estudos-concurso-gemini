@@ -1536,7 +1536,12 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 if (!item || !state?.lastStudyAt) return;
                 const retention = calculateRetentionFromState(state, now);
                 const nextAt = state.nextReviewAt ? new Date(state.nextReviewAt) : null;
+                // `due` continua sendo o sinal cognitivo do Retention Engine para preservar
+                // ranking e elegibilidade da recomendação. A UI só pode chamar algo de
+                // "vencido" quando houver uma atividade realmente atrasada no cronograma.
                 const due = nextAt && Number.isFinite(nextAt.getTime()) && nextAt <= new Date(`${todayKey}T23:59:59`);
+                const scheduleContext = window.AdaptiveScheduleReconciliation?.getTopicScheduleContext?.(contest,state,item,now) || null;
+                const scheduledOverdue = !!scheduleContext?.scheduledOverdue;
                 if (!due && retention > 72) return;
                 const key = `review::${state.key}`;
                 if (seen.has(key)) return; seen.add(key);
