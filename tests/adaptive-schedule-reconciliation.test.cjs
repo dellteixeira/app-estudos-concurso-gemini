@@ -8,6 +8,7 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const reconciliation = read('public/js/adaptive-schedule-reconciliation.js');
+const appCore = read('public/js/app-core.js');
 const pwa = read('public/js/app-pwa.js');
 const sw = read('public/sw.js');
 const packageVersion = JSON.parse(read('package.json')).version;
@@ -90,4 +91,12 @@ test('reconciliação é carregada pelo núcleo PWA sem depender da Biblioteca P
 test('reconciliação faz parte do app shell offline', () => {
   assert.match(sw, /\.\/js\/adaptive-schedule-reconciliation\.js/);
   assert.match(sw, /\/js\/adaptive-schedule-reconciliation\.js/);
+});
+
+
+test('recomendação por retenção não é rotulada como cronograma vencido sem scheduledOverdue', () => {
+  assert.match(appCore, /const scheduledOverdue = !!scheduleContext\?\.scheduledOverdue/);
+  assert.match(appCore, /scheduledOverdue\s*\? 'Revisão vencida no cronograma'/);
+  assert.match(appCore, /due \? 'Revisão recomendada pelo nível de retenção'/);
+  assert.doesNotMatch(appCore, /Revisão vencida ou prevista para agora/);
 });
