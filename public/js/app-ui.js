@@ -509,6 +509,10 @@
 
             retentionDiagnosticRows = diag.risk.slice(0,20);
             if(!list) return;
+            if (diag.scheduleActive === false) {
+                list.innerHTML='<div class="retention-empty">Gere um cronograma para ativar revisões e pontos críticos.</div>';
+                if(moreButton) moreButton.hidden=true; return;
+            }
             if (!diag.rows.length) {
                 list.innerHTML='<div class="retention-empty">Ainda não há sessões suficientes para estimar retenção. O diagnóstico aparecerá conforme você estudar.</div>';
                 if(moreButton) moreButton.hidden=true; return;
