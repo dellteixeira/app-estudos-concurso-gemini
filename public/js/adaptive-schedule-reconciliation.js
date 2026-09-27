@@ -109,6 +109,9 @@ function reconciledSchedulerScore(item, options = {}) {
 
 function buildReconciledRetentionDiagnostics() {
     const contest = getConcursosMetadata()[currentConcurso] || {};
+    if(!hasActiveScheduledItems(contest)){
+        return {rows:[],avg:null,risk:[],overdue:[],mastered:[],scheduleActive:false};
+    }
     const engine = getRetentionEngine(contest,false);
     const now = new Date();
     const active = new Set((editalItems||[]).map(topicKeyFromItem));
@@ -174,6 +177,13 @@ function hasScheduledItems(contest) {
     return Object.values(contest?.dateSchedule||{}).some(items=>Array.isArray(items)&&items.length>0);
 }
 
+function hasActiveScheduledItems(contest) {
+    const lookup=new Map((editalItems||[]).map(item=>[`${item.materia} - ${item.assunto}`,item]));
+    return Object.entries(contest?.dateSchedule||{}).some(([dateKey,items])=>
+        Array.isArray(items)&&items.some(text=>!getScheduledItemStudyState(text,lookup,dateKey).done)
+    );
+}
+
 async function reconcileAfterScheduleMutation(source, options = {}) {
     const metadata=getConcursosMetadata();
     const contest=metadata[currentConcurso]||(metadata[currentConcurso]={});
@@ -230,6 +240,7 @@ function install(){
         getTopicScheduleContext,
         compactPastRedistributedPending,
         hasScheduledItems,
+        hasActiveScheduledItems,
         reconcileAfterScheduleMutation
     });
     try{renderRetentionDiagnostics();}catch(_){}

@@ -1529,9 +1529,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const recentMaterias = getRecentStudyMaterias(contest);
             const candidates = [];
             const seen = new Set();
+            const scheduleLookup = new Map((editalItems || []).map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const hasActiveSchedule = Object.entries(contest?.dateSchedule || {}).some(([dateKey,items]) =>
+                Array.isArray(items) && items.some(text => !getScheduledItemStudyState(text, scheduleLookup, dateKey).done)
+            );
             const engine = getRetentionEngine(contest, false);
 
-            Object.values(engine?.topics || {}).forEach(state => {
+            if (hasActiveSchedule) Object.values(engine?.topics || {}).forEach(state => {
                 const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === state.key);
                 if (!item || !state?.lastStudyAt) return;
                 const retention = calculateRetentionFromState(state, now);
@@ -1556,7 +1560,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:methodRec.activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:true, retention, due, scheduledOverdue, score, scheduler, minutes:suggested, reason:`${reviewReason}. ${methodRec.reason}`.trim() });
             });
 
-            if (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly) {
+            if (hasActiveSchedule && (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly)) {
                 editalItems.forEach(item => {
                     const count = countFlashcardsForTopic(item.materia,item.assunto);
                     if (!count) return;

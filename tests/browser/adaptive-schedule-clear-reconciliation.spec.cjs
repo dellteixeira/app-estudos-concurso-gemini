@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const reconciliationSource=fs.readFileSync(path.join(__dirname,'../../public/js/adaptive-schedule-reconciliation.js'),'utf8');
 
-test('clear schedule zeros scheduled overdue while preserving cognitive retention risk',async({page})=>{
+test('clear schedule disables retention diagnostics until a new active schedule exists',async({page})=>{
   await page.setContent('<!doctype html><html><body><div id="fixture"></div></body></html>');
   await page.evaluate(()=>{
     const key='direito civil::pessoas naturais';
@@ -57,13 +57,12 @@ test('clear schedule zeros scheduled overdue while preserving cognitive retentio
   await page.evaluate(()=>window.limparCronogramaMesAtual());
 
   const after=await page.evaluate(()=>window.buildRetentionDiagnostics());
-  expect(after.avg).toBe(40);
-  expect(after.risk).toHaveLength(1);
+  expect(after.scheduleActive).toBe(false);
+  expect(after.avg).toBeNull();
+  expect(after.rows).toHaveLength(0);
+  expect(after.risk).toHaveLength(0);
   expect(after.overdue).toHaveLength(0);
-  expect(after.rows[0].retentionDue).toBe(true);
-  expect(after.rows[0].scheduledPending).toBe(false);
-  expect(after.rows[0].scheduledOverdue).toBe(false);
-  expect(after.rows[0].overdue).toBe(false);
+  expect(after.mastered).toHaveLength(0);
   expect(await page.evaluate(()=>window.__metadata.Teste.adaptiveScheduleAnchor)).toBeUndefined();
   expect(await page.evaluate(()=>window.__calendarRenders||0)).toBeGreaterThan(0);
   expect(await page.evaluate(()=>window.__delayedRenders||0)).toBeGreaterThan(0);

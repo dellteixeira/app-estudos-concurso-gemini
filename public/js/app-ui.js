@@ -374,6 +374,13 @@
 
         function buildRetentionDiagnostics() {
             const contest = getConcursosMetadata()[currentConcurso] || {};
+            const scheduleLookup = new Map((editalItems || []).map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const hasActiveSchedule = Object.entries(contest?.dateSchedule || {}).some(([dateKey,items]) =>
+                Array.isArray(items) && items.some(text => !getScheduledItemStudyState(text, scheduleLookup, dateKey).done)
+            );
+            if (!hasActiveSchedule) {
+                return { rows:[], avg:null, risk:[], overdue:[], mastered:[], scheduleActive:false };
+            }
             const engine = getRetentionEngine(contest, false);
             const now = new Date();
             const activeTopicKeys = new Set((editalItems || []).map(item => getStudyTopicKey(item.materia, item.assunto)));
@@ -502,6 +509,10 @@
 
             retentionDiagnosticRows = diag.risk.slice(0,20);
             if(!list) return;
+            if (diag.scheduleActive === false) {
+                list.innerHTML='<div class="retention-empty">Gere um cronograma para ativar revisões e pontos críticos.</div>';
+                if(moreButton) moreButton.hidden=true; return;
+            }
             if (!diag.rows.length) {
                 list.innerHTML='<div class="retention-empty">Ainda não há sessões suficientes para estimar retenção. O diagnóstico aparecerá conforme você estudar.</div>';
                 if(moreButton) moreButton.hidden=true; return;
