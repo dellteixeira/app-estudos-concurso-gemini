@@ -109,7 +109,7 @@ function reconciledSchedulerScore(item, options = {}) {
 
 function buildReconciledRetentionDiagnostics() {
     const contest = getConcursosMetadata()[currentConcurso] || {};
-    if(!hasScheduledItems(contest)){
+    if(!hasActiveScheduledItems(contest)){
         return {rows:[],avg:null,risk:[],overdue:[],mastered:[],scheduleActive:false};
     }
     const engine = getRetentionEngine(contest,false);
