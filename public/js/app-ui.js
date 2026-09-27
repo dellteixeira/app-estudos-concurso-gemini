@@ -374,7 +374,10 @@
 
         function buildRetentionDiagnostics() {
             const contest = getConcursosMetadata()[currentConcurso] || {};
-            const hasActiveSchedule = Object.values(contest?.dateSchedule || {}).some(items => Array.isArray(items) && items.length > 0);
+            const scheduleLookup = new Map((editalItems || []).map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const hasActiveSchedule = Object.entries(contest?.dateSchedule || {}).some(([dateKey,items]) =>
+                Array.isArray(items) && items.some(text => !getScheduledItemStudyState(text, scheduleLookup, dateKey).done)
+            );
             if (!hasActiveSchedule) {
                 return { rows:[], avg:null, risk:[], overdue:[], mastered:[], scheduleActive:false };
             }
