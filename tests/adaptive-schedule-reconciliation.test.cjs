@@ -9,6 +9,7 @@ const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const reconciliation = read('public/js/adaptive-schedule-reconciliation.js');
 const appCore = read('public/js/app-core.js');
+const appUi = read('public/js/app-ui.js');
 const pwa = read('public/js/app-pwa.js');
 const sw = read('public/sw.js');
 const packageVersion = JSON.parse(read('package.json')).version;
@@ -99,4 +100,15 @@ test('recomendação por retenção não é rotulada como cronograma vencido sem
   assert.match(appCore, /scheduledOverdue\s*\? 'Revisão vencida no cronograma'/);
   assert.match(appCore, /due \? 'Revisão recomendada pelo nível de retenção'/);
   assert.doesNotMatch(appCore, /Revisão vencida ou prevista para agora/);
+});
+
+
+test('diagnóstico e revisões ficam inativos sem cronograma pendente', () => {
+  assert.match(reconciliation, /function hasActiveScheduledItems\(contest\)/);
+  assert.match(reconciliation, /items\.some\(text=>!getScheduledItemStudyState\(text,lookup,dateKey\)\.done\)/);
+  assert.match(reconciliation, /if\(!hasActiveScheduledItems\(contest\)\)\{\s*return \{rows:\[\],avg:null,risk:\[\],overdue:\[\],mastered:\[\],scheduleActive:false\}/);
+  assert.match(appUi, /return \{ rows:\[\], avg:null, risk:\[\], overdue:\[\], mastered:\[\], scheduleActive:false \}/);
+  assert.match(appUi, /Gere um cronograma para ativar revisões e pontos críticos/);
+  assert.match(appCore, /if \(hasActiveSchedule\) Object\.values\(engine\?\.topics \|\| \{\}\)\.forEach/);
+  assert.match(appCore, /if \(hasActiveSchedule && \(minutes <= 20/);
 });
