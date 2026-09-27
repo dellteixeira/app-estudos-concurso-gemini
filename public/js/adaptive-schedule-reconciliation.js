@@ -240,6 +240,7 @@ function install(){
         getTopicScheduleContext,
         compactPastRedistributedPending,
         hasScheduledItems,
+        hasActiveScheduledItems,
         reconcileAfterScheduleMutation
     });
     try{renderRetentionDiagnostics();}catch(_){}
