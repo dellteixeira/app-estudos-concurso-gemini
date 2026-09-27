@@ -1529,9 +1529,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const recentMaterias = getRecentStudyMaterias(contest);
             const candidates = [];
             const seen = new Set();
+            const hasActiveSchedule = Object.values(contest?.dateSchedule || {}).some(items => Array.isArray(items) && items.length > 0);
             const engine = getRetentionEngine(contest, false);
 
-            Object.values(engine?.topics || {}).forEach(state => {
+            if (hasActiveSchedule) Object.values(engine?.topics || {}).forEach(state => {
                 const item = editalItems.find(i => getStudyTopicKey(i.materia,i.assunto) === state.key);
                 if (!item || !state?.lastStudyAt) return;
                 const retention = calculateRetentionFromState(state, now);
