@@ -1529,7 +1529,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const recentMaterias = getRecentStudyMaterias(contest);
             const candidates = [];
             const seen = new Set();
-            const hasActiveSchedule = Object.values(contest?.dateSchedule || {}).some(items => Array.isArray(items) && items.length > 0);
+            const scheduleLookup = new Map((editalItems || []).map(item => [`${item.materia} - ${item.assunto}`, item]));
+            const hasActiveSchedule = Object.entries(contest?.dateSchedule || {}).some(([dateKey,items]) =>
+                Array.isArray(items) && items.some(text => !getScheduledItemStudyState(text, scheduleLookup, dateKey).done)
+            );
             const engine = getRetentionEngine(contest, false);
 
             if (hasActiveSchedule) Object.values(engine?.topics || {}).forEach(state => {
