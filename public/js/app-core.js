@@ -1557,7 +1557,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 candidates.push({ kind:methodRec.method==='flashcards'?'flashcards':'study', materia:item.materia, assunto:item.assunto, itemId:item.id, activityType:methodRec.activityType, method:methodRec.method, methodLabel:methodRec.label, recoveryMethod:methodRec.method, flashcardCount:methodRec.flashcardCount||0, isRevision:true, retention, due, scheduledOverdue, score, scheduler, minutes:suggested, reason:`${reviewReason}. ${methodRec.reason}`.trim() });
             });
 
-            if (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly) {
+            if (hasActiveSchedule && (minutes <= 20 || contextMode === 'transit' || contextMode === 'walking' || reviewOnly)) {
                 editalItems.forEach(item => {
                     const count = countFlashcardsForTopic(item.materia,item.assunto);
                     if (!count) return;
