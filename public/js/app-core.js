@@ -5354,6 +5354,12 @@ filterDataByConcurso();
                 updateModernOverview();
                 renderRetentionDiagnostics();
 
+                try {
+                    await window.PdfStudyLinks?.handleConcursoDelete?.(concursoRemovido);
+                } catch (pdfError) {
+                    console.warn(`Vínculos de PDF de "${concursoRemovido}" serão limpos posteriormente:`, pdfError);
+                }
+
                 if (navigator.onLine && currentUser) {
                     scheduleBackgroundTask(async () => {
                         try { await syncAllWithSupabase(); }
