@@ -121,9 +121,19 @@
   }
 
   async function handleConcursoDelete(concurso) {
-    if (navigator.onLine) return deleteConcursoNow(concurso);
-    await queueContestOperation({ type: 'delete', concurso });
-    return true;
+    if (!navigator.onLine) {
+      await queueContestOperation({ type: 'delete', concurso });
+      return true;
+    }
+    try {
+      return await deleteConcursoNow(concurso);
+    } catch (error) {
+      // A limpeza de vínculos de PDF nunca deve bloquear a exclusão do concurso.
+      // Persistimos a operação para nova tentativa quando a sincronização estiver saudável.
+      await queueContestOperation({ type: 'delete', concurso });
+      console.warn('[PDF Links] exclusão adiada para sincronização posterior:', error);
+      return false;
+    }
   }
 
   async function processPendingContestOperations() {
