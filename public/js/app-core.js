@@ -953,9 +953,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function mergeConcursosMetadataPreservingHistory(primaryMetadata, secondaryMetadata) {
             const primary = primaryMetadata && typeof primaryMetadata === 'object' ? primaryMetadata : {};
             const secondary = secondaryMetadata && typeof secondaryMetadata === 'object' ? secondaryMetadata : {};
-            const result = { ...secondary };
+            const deletedContests = new Set((getSyncState().concursoDeletes || []).map(name => String(name || '').trim()).filter(Boolean));
+            const result = Object.fromEntries(Object.entries(secondary).filter(([name]) => !deletedContests.has(name)));
             const names = new Set([...Object.keys(secondary), ...Object.keys(primary)]);
             names.forEach(name => {
+                if (deletedContests.has(name)) {
+                    delete result[name];
+                    return;
+                }
                 const p = primary[name] && typeof primary[name] === 'object' ? primary[name] : {};
                 const s = secondary[name] && typeof secondary[name] === 'object' ? secondary[name] : {};
                 const historyResetAt = getLatestIsoTimestamp(p.studyHistoryResetAt, s.studyHistoryResetAt);
