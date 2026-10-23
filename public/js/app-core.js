@@ -5321,7 +5321,8 @@ filterDataByConcurso();
             if (btn) { btn.disabled = true; btn.textContent = 'Excluindo...'; }
 
             try {
-                await window.PdfStudyLinks?.handleConcursoDelete?.(concursoRemovido);
+                // A exclusão do concurso é local-first: vínculos de PDF são acessórios e
+                // não podem impedir a remoção principal da interface/estado local.
                 queueConcursoDelete(concursoRemovido);
                 const idsRemovidos = allEditalItems
                     .filter(item => (item.concurso || 'Concurso Geral') === concursoRemovido)
@@ -5352,6 +5353,12 @@ filterDataByConcurso();
                 renderMonthCalendar();
                 updateModernOverview();
                 renderRetentionDiagnostics();
+
+                try {
+                    await window.PdfStudyLinks?.handleConcursoDelete?.(concursoRemovido);
+                } catch (pdfError) {
+                    console.warn(`Vínculos de PDF de "${concursoRemovido}" serão limpos posteriormente:`, pdfError);
+                }
 
                 if (navigator.onLine && currentUser) {
                     scheduleBackgroundTask(async () => {
