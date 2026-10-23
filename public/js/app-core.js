@@ -894,10 +894,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function ensureCurrentConcursoForUser() {
             const metadata = getConcursosMetadata();
             const real = new Set();
-            Object.keys(metadata || {}).forEach(nome => { if (!isSystemConcurso(nome)) real.add(nome); });
+            const deletedContests = new Set((getSyncState().concursoDeletes || []).map(name => String(name || '').trim()).filter(Boolean));
+            Object.keys(metadata || {}).forEach(nome => {
+                if (!isSystemConcurso(nome) && !deletedContests.has(nome)) real.add(nome);
+            });
             allEditalItems.forEach(item => {
                 const nome = item?.concurso || 'Concurso Geral';
-                if (!isSystemConcurso(nome)) real.add(nome);
+                if (!isSystemConcurso(nome) && !deletedContests.has(nome)) real.add(nome);
             });
             const list = [...real].sort((a,b) => a.localeCompare(b, 'pt-BR', { sensitivity:'base' }));
             if (!list.includes(currentConcurso)) {
@@ -953,9 +956,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function mergeConcursosMetadataPreservingHistory(primaryMetadata, secondaryMetadata) {
             const primary = primaryMetadata && typeof primaryMetadata === 'object' ? primaryMetadata : {};
             const secondary = secondaryMetadata && typeof secondaryMetadata === 'object' ? secondaryMetadata : {};
-            const result = { ...secondary };
+            const deletedContests = new Set((getSyncState().concursoDeletes || []).map(name => String(name || '').trim()).filter(Boolean));
+            const result = Object.fromEntries(Object.entries(secondary).filter(([name]) => !deletedContests.has(name)));
             const names = new Set([...Object.keys(secondary), ...Object.keys(primary)]);
             names.forEach(name => {
+                if (deletedContests.has(name)) {
+                    delete result[name];
+                    return;
+                }
                 const p = primary[name] && typeof primary[name] === 'object' ? primary[name] : {};
                 const s = secondary[name] && typeof secondary[name] === 'object' ? secondary[name] : {};
                 const historyResetAt = getLatestIsoTimestamp(p.studyHistoryResetAt, s.studyHistoryResetAt);
@@ -4904,6 +4912,28 @@ filterDataByConcurso();
                     .eq('concurso', concursoName));
                 throwIfSupabaseError(flashcardsResult, `Falha ao excluir flashcards do concurso ${concursoName}`);
 
+                // Remove também a fonte remota que reconstrói o seletor de concursos.
+                const settingsResult = await runSupabaseRequest(() => supabaseClient
+                    .from('user_settings')
+                    .select('setting_value')
+                    .eq('user_id', currentUser.id)
+                    .eq('setting_key', 'concursos_metadata')
+                    .maybeSingle());
+                throwIfSupabaseError(settingsResult, `Falha ao carregar metadados do concurso ${concursoName}`);
+                const remoteMetadata = (settingsResult?.data?.setting_value && typeof settingsResult.data.setting_value === 'object')
+                    ? { ...settingsResult.data.setting_value }
+                    : {};
+                if (Object.prototype.hasOwnProperty.call(remoteMetadata, concursoName)) {
+                    delete remoteMetadata[concursoName];
+                    const metadataResult = await runSupabaseRequest(() => supabaseClient.from('user_settings').upsert({
+                        user_id: currentUser.id,
+                        setting_key: 'concursos_metadata',
+                        setting_value: remoteMetadata,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,setting_key' }));
+                    throwIfSupabaseError(metadataResult, `Falha ao excluir metadados do concurso ${concursoName}`);
+                }
+
                 const latestState = getSyncState();
                 latestState.concursoDeletes = latestState.concursoDeletes.filter(name => name !== concursoName);
                 delete latestState.flashcardsDirty[concursoName];
@@ -5165,11 +5195,14 @@ filterDataByConcurso();
             select.innerHTML = '';
             const metadata = getConcursosMetadata();
             const set = new Set();
+            const deletedContests = new Set((getSyncState().concursoDeletes || []).map(name => String(name || '').trim()).filter(Boolean));
 
-            Object.keys(metadata).forEach(nome => { if (!isSystemConcurso(nome)) set.add(nome); });
+            Object.keys(metadata).forEach(nome => {
+                if (!isSystemConcurso(nome) && !deletedContests.has(nome)) set.add(nome);
+            });
             allEditalItems.forEach(i => {
                 const nome = i.concurso || 'Concurso Geral';
-                if (!isSystemConcurso(nome)) set.add(nome);
+                if (!isSystemConcurso(nome) && !deletedContests.has(nome)) set.add(nome);
             });
 
             const list = Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
