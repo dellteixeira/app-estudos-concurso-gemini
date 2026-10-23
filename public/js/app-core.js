@@ -4912,6 +4912,28 @@ filterDataByConcurso();
                     .eq('concurso', concursoName));
                 throwIfSupabaseError(flashcardsResult, `Falha ao excluir flashcards do concurso ${concursoName}`);
 
+                // Remove também a fonte remota que reconstrói o seletor de concursos.
+                const settingsResult = await runSupabaseRequest(() => supabaseClient
+                    .from('user_settings')
+                    .select('setting_value')
+                    .eq('user_id', currentUser.id)
+                    .eq('setting_key', 'concursos_metadata')
+                    .maybeSingle());
+                throwIfSupabaseError(settingsResult, `Falha ao carregar metadados do concurso ${concursoName}`);
+                const remoteMetadata = (settingsResult?.data?.setting_value && typeof settingsResult.data.setting_value === 'object')
+                    ? { ...settingsResult.data.setting_value }
+                    : {};
+                if (Object.prototype.hasOwnProperty.call(remoteMetadata, concursoName)) {
+                    delete remoteMetadata[concursoName];
+                    const metadataResult = await runSupabaseRequest(() => supabaseClient.from('user_settings').upsert({
+                        user_id: currentUser.id,
+                        setting_key: 'concursos_metadata',
+                        setting_value: remoteMetadata,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,setting_key' }));
+                    throwIfSupabaseError(metadataResult, `Falha ao excluir metadados do concurso ${concursoName}`);
+                }
+
                 const latestState = getSyncState();
                 latestState.concursoDeletes = latestState.concursoDeletes.filter(name => name !== concursoName);
                 delete latestState.flashcardsDirty[concursoName];
