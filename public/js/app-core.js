@@ -894,10 +894,13 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         function ensureCurrentConcursoForUser() {
             const metadata = getConcursosMetadata();
             const real = new Set();
-            Object.keys(metadata || {}).forEach(nome => { if (!isSystemConcurso(nome)) real.add(nome); });
+            const deletedContests = new Set((getSyncState().concursoDeletes || []).map(name => String(name || '').trim()).filter(Boolean));
+            Object.keys(metadata || {}).forEach(nome => {
+                if (!isSystemConcurso(nome) && !deletedContests.has(nome)) real.add(nome);
+            });
             allEditalItems.forEach(item => {
                 const nome = item?.concurso || 'Concurso Geral';
-                if (!isSystemConcurso(nome)) real.add(nome);
+                if (!isSystemConcurso(nome) && !deletedContests.has(nome)) real.add(nome);
             });
             const list = [...real].sort((a,b) => a.localeCompare(b, 'pt-BR', { sensitivity:'base' }));
             if (!list.includes(currentConcurso)) {
