@@ -5170,11 +5170,14 @@ filterDataByConcurso();
             select.innerHTML = '';
             const metadata = getConcursosMetadata();
             const set = new Set();
+            const deletedContests = new Set((getSyncState().concursoDeletes || []).map(name => String(name || '').trim()).filter(Boolean));
 
-            Object.keys(metadata).forEach(nome => { if (!isSystemConcurso(nome)) set.add(nome); });
+            Object.keys(metadata).forEach(nome => {
+                if (!isSystemConcurso(nome) && !deletedContests.has(nome)) set.add(nome);
+            });
             allEditalItems.forEach(i => {
                 const nome = i.concurso || 'Concurso Geral';
-                if (!isSystemConcurso(nome)) set.add(nome);
+                if (!isSystemConcurso(nome) && !deletedContests.has(nome)) set.add(nome);
             });
 
             const list = Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
