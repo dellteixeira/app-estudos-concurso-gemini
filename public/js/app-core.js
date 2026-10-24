@@ -3484,7 +3484,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     subfoldersHtml += `
                         <div class="anki-subfolder-item ${isAssActive ? 'active-filter' : ''}" onclick="setFlashcardViewFilter(decodeURIComponent('${safeMatHandler}'), decodeURIComponent('${safeAssHandler}'))">
                             <span class="anki-subfolder-name">${escapeHtml(assName)}</span>
-                            <span class="anki-subfolder-count">${count} cartões</span>
+                            <div class="anki-subfolder-actions">
+                                <span class="anki-subfolder-count">${count} cartões</span>
+                                <button type="button" class="anki-delete-group-btn" onclick="event.stopPropagation(); deleteFlashcardAssunto(decodeURIComponent('${safeMatHandler}'), decodeURIComponent('${safeAssHandler}'))" title="Excluir todos os flashcards deste assunto" aria-label="Excluir todos os flashcards do assunto ${escapeHtml(assName)}">Excluir</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -3498,7 +3501,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                             </div>
                             <div class="anki-folder-actions">
                                 <span class="anki-folder-count">${matData.total} cartões</span>
-                                
+                                <button type="button" class="anki-delete-group-btn" onclick="event.stopPropagation(); deleteFlashcardMateria(decodeURIComponent('${safeMatHandler}'))" title="Excluir todos os flashcards desta matéria" aria-label="Excluir todos os flashcards da matéria ${escapeHtml(matName)}">Excluir</button>
                             </div>
                         </div>
                         ${isOpen ? `<div class="anki-subfolder-list">${subfoldersHtml}</div>` : ''}
