@@ -3513,6 +3513,58 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (btnReset) setVisualState(btnReset, Boolean(activeFcMateriaFilter || activeFcAssuntoFilter));
         }
 
+        async function deleteFlashcardMateria(matName) {
+            const matches = flashcardsList.filter(fc => (fc.materia || 'Geral / Sem Matéria') === matName);
+            if (!matches.length) return;
+
+            const confirmed = await appConfirm(
+                `Excluir todos os ${matches.length} flashcards da matéria "${matName}"? Esta ação não pode ser desfeita.`,
+                { title:'Excluir matéria de flashcards', confirmText:'Excluir', cancelText:'Cancelar', danger:true }
+            );
+            if (!confirmed) return;
+
+            matches.forEach(fc => { if (fc.id) queueFlashcardDelete(fc.id); });
+            flashcardsList = flashcardsList.filter(fc => (fc.materia || 'Geral / Sem Matéria') !== matName);
+
+            delete openFcFolders[matName];
+            if (activeFcMateriaFilter === matName) {
+                activeFcMateriaFilter = '';
+                activeFcAssuntoFilter = '';
+            }
+
+            renderFlashcardFolders();
+            renderFlashcards();
+            await saveFlashcardsData();
+        }
+
+        async function deleteFlashcardAssunto(matName, assName) {
+            const matches = flashcardsList.filter(fc =>
+                (fc.materia || 'Geral / Sem Matéria') === matName &&
+                (fc.assunto || 'Sem Assunto Específico') === assName
+            );
+            if (!matches.length) return;
+
+            const confirmed = await appConfirm(
+                `Excluir todos os ${matches.length} flashcards do assunto "${assName}"? Esta ação não pode ser desfeita.`,
+                { title:'Excluir assunto de flashcards', confirmText:'Excluir', cancelText:'Cancelar', danger:true }
+            );
+            if (!confirmed) return;
+
+            matches.forEach(fc => { if (fc.id) queueFlashcardDelete(fc.id); });
+            flashcardsList = flashcardsList.filter(fc =>
+                !((fc.materia || 'Geral / Sem Matéria') === matName &&
+                  (fc.assunto || 'Sem Assunto Específico') === assName)
+            );
+
+            if (activeFcMateriaFilter === matName && activeFcAssuntoFilter === assName) {
+                activeFcAssuntoFilter = '';
+            }
+
+            renderFlashcardFolders();
+            renderFlashcards();
+            await saveFlashcardsData();
+        }
+
         function toggleFcFolder(matName) {
             openFcFolders[matName] = !openFcFolders[matName];
             renderFlashcardFolders();
