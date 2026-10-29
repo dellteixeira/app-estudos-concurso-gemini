@@ -2831,70 +2831,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!contest.dateSchedule) contest.dateSchedule = {};
             if (!contest.dateSchedule[activeSelectedDateKey]) contest.dateSchedule[activeSelectedDateKey] = [];
 
-            const existing = findNormalTopicLocation(contest.dateSchedule, newFullString);
-            if (existing) {
-                if (existing.dateKey === activeSelectedDateKey) {
-                    resetAddTopicArea();
-                    return alert('Este tópico já está agendado neste dia. Nenhuma duplicidade foi criada.');
-                }
-
-                if (existing.dateKey > activeSelectedDateKey) {
-                    const moveIt = confirm(
-                        `Este tópico já está planejado para ${formatDateKeyShort(existing.dateKey)}.\n\n` +
-                        `Deseja antecipá-lo para ${formatDateKeyShort(activeSelectedDateKey)} e ajustar somente a fila posterior, sem duplicar o assunto?`
-                    );
-                    if (!moveIt) return;
-
-                    const editalLookup = new Map(editalItems.map(item => [`${item.materia} - ${item.assunto}`, item]));
-                    contest.dateSchedule[existing.dateKey].splice(existing.index, 1);
-                    if (!contest.dateSchedule[existing.dateKey].length) delete contest.dateSchedule[existing.dateKey];
-                    insertNormalTopicBeforeRevisions(contest.dateSchedule, activeSelectedDateKey, newFullString);
-                    reanchorTopicRevisions(contest.dateSchedule, newFullString, activeSelectedDateKey, contest);
-
-                    const reflowMoves = [];
-                    let vacancyDateKey = existing.dateKey;
-                    let safety = 0;
-                    while (safety++ < 2000) {
-                        const next = findNextMovableFutureTopic(contest.dateSchedule, vacancyDateKey, editalLookup, newFullString);
-                        if (!next) break;
-                        const sourceItems = contest.dateSchedule[next.dateKey];
-                        const currentIndex = sourceItems.findIndex(item => !isRevisionScheduleText(item) && normalizeScheduledTopicForStudy(item) === next.topicText);
-                        if (currentIndex === -1) break;
-                        sourceItems.splice(currentIndex, 1);
-                        if (!sourceItems.length) delete contest.dateSchedule[next.dateKey];
-                        insertNormalTopicBeforeRevisions(contest.dateSchedule, vacancyDateKey, next.topicText);
-                        reanchorTopicRevisions(contest.dateSchedule, next.topicText, vacancyDateKey, contest);
-                        reflowMoves.push({ topic: next.topicText, fromDateKey: next.dateKey, toDateKey: vacancyDateKey });
-                        vacancyDateKey = next.dateKey;
-                    }
-
-                    const history = ensureStudyPlanHistory(contest);
-                    history.push({
-                        type: 'manual_advance',
-                        topic: newFullString,
-                        materia: newMateria,
-                        assunto: newAssunto,
-                        plannedDateKey: existing.dateKey,
-                        actualDateKey: activeSelectedDateKey,
-                        reflowMoves,
-                        createdAt: new Date().toISOString()
-                    });
-                    if (history.length > 500) contest.studyPlanHistory = history.slice(-500);
-
-                    await saveConcursosMetadata(metadata);
-                    resetAddTopicArea();
-                    renderDayTopicsList();
-                    renderMonthCalendar();
-                    return;
-                }
-
-                const duplicatePast = confirm(
-                    `Este tópico já aparece no cronograma em ${formatDateKeyShort(existing.dateKey)}.\n\n` +
-                    'Adicionar outra ocorrência criaria duplicidade. Deseja manter o cronograma como está?'
-                );
+            // Repetições são permitidas em datas diferentes. Bloqueamos somente
+            // uma segunda ocorrência idêntica dentro do mesmo dia.
+            const alreadyOnSelectedDay = contest.dateSchedule[activeSelectedDateKey].some(item =>
+                !isRevisionScheduleText(item) &&
+                normalizeScheduledTopicForStudy(item) === newFullString
+            );
+            if (alreadyOnSelectedDay) {
                 resetAddTopicArea();
-                if (!duplicatePast) renderDayTopicsList();
-                return;
+                return alert('Este tópico já está agendado neste dia.');
             }
 
             contest.dateSchedule[activeSelectedDateKey].push(newFullString);
