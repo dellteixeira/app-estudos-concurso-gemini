@@ -246,6 +246,15 @@
 /js/ui/search.js
   Cache-Control: no-cache, no-store, must-revalidate
 
+/js/edital-cross-tool.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/js/edital-cross-ui.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/css/edital-cross-tool.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /manifest.json
   Cache-Control: no-cache, must-revalidate
 
