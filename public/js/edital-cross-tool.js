@@ -197,12 +197,14 @@ function clearSelection(){
   document.querySelectorAll('#crossEditalContestList input[type="checkbox"]').forEach(x=>x.checked=false);
 }
 
-document.addEventListener('click',e=>{
-  const filter=e.target.closest('[data-cross-filter]'); if(filter){setFilter(filter.dataset.crossFilter);return;}
-  const del=e.target.closest('[data-cross-delete]'); if(del){deleteRow(del.dataset.crossDelete);return;}
-});
-document.addEventListener('input',e=>{if(e.target.closest('[data-cross-row]')) syncRowFromElement(e.target);});
-document.addEventListener('change',e=>{if(e.target.closest('[data-cross-row]')) syncRowFromElement(e.target);});
+if(typeof document!=='undefined'){
+  document.addEventListener('click',e=>{
+    const filter=e.target.closest('[data-cross-filter]'); if(filter){setFilter(filter.dataset.crossFilter);return;}
+    const del=e.target.closest('[data-cross-delete]'); if(del){deleteRow(del.dataset.crossDelete);return;}
+  });
+  document.addEventListener('input',e=>{if(e.target.closest('[data-cross-row]')) syncRowFromElement(e.target);});
+  document.addEventListener('change',e=>{if(e.target.closest('[data-cross-row]')) syncRowFromElement(e.target);});
+}
 
 const api={open,close,analyze,setFilter,addManualRow,createIntegrated,selectAll,clearSelection,normalizeText,similarity,buildCrossRows};
 global.EditalCrossTool=Object.freeze(api);
