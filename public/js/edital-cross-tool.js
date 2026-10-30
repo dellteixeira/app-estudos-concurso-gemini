@@ -12,27 +12,86 @@ function similarity(a,b){
   let inter=0; A.forEach(t=>{if(B.has(t))inter++;}); return inter/new Set([...A,...B]).size;
 }
 function subjectParts(value){
-  return String(value||'').split(/\s*[,;]\s*|\s+e\s+/giu).map(v=>v.trim()).filter(Boolean);
+  return String(value||'').split(/\s*[,;:]\s*|\s+e\s+/giu).map(v=>v.trim()).filter(Boolean);
 }
 function isListLikeSubject(value){
-  return /[,;]/.test(String(value||''))||/\s+e\s+/iu.test(String(value||''));
+  return /[,;:]/.test(String(value||''))||/\s+e\s+/iu.test(String(value||''));
+}
+function stemToken(token){
+  let t=normalizeText(token);
+  if(t.length<=3)return t;
+  const irregular={proporcoes:'proporcao',razoes:'razao',acoes:'acao',funcoes:'funcao',questoes:'questao',situacoes:'situacao',informacoes:'informacao'};
+  if(irregular[t])return irregular[t];
+  if(t.endsWith('oes')&&t.length>5)return t.slice(0,-3)+'ao';
+  if(t.endsWith('ais')&&t.length>5)return t.slice(0,-3)+'al';
+  if(t.endsWith('eis')&&t.length>5)return t.slice(0,-3)+'el';
+  if(t.endsWith('s')&&!t.endsWith('ss')&&t.length>4)return t.slice(0,-1);
+  return t;
+}
+function conceptTokens(value){
+  return [...new Set(tokens(value).map(stemToken).filter(Boolean))];
+}
+function extractNumericMarkers(value){
+  return [...new Set((String(value||'').match(/\b\d+(?:[\.\/-]\d+)*\b/g)||[]).map(normalizeText))];
 }
 function sharedTokenStats(a,b){
-  const A=new Set(tokens(a)),B=new Set(tokens(b));
-  if(!A.size||!B.size)return {shared:0,overlap:0};
+  const A=new Set(conceptTokens(a)),B=new Set(conceptTokens(b));
+  if(!A.size||!B.size)return {shared:0,overlap:0,jaccard:0};
   let shared=0;A.forEach(t=>{if(B.has(t))shared++;});
-  return {shared,overlap:shared/Math.min(A.size,B.size)};
+  const union=new Set([...A,...B]).size;
+  return {shared,overlap:shared/Math.min(A.size,B.size),jaccard:shared/union};
+}
+function hasConflictingNumericMarkers(a,b){
+  const A=extractNumericMarkers(a),B=extractNumericMarkers(b);
+  if(!A.length||!B.length)return false;
+  return !A.some(x=>B.includes(x));
+}
+function analyzeSubjectRelation(a,b){
+  const na=normalizeText(a),nb=normalizeText(b);
+  if(!na||!nb)return {merge:false,type:'none',score:0,shared:0,overlap:0};
+  if(na===nb)return {merge:true,type:'exact',score:1,shared:conceptTokens(a).length,overlap:1};
+  if(hasConflictingNumericMarkers(a,b))return {merge:false,type:'numeric-conflict',score:0,shared:0,overlap:0};
+
+  const A=conceptTokens(a),B=conceptTokens(b);
+  const setA=new Set(A),setB=new Set(B);
+  const {shared,overlap,jaccard}=sharedTokenStats(a,b);
+  const smaller=A.length<=B.length?A:B;
+  const larger=A.length<=B.length?setB:setA;
+  const subset=smaller.length>=2&&smaller.every(t=>larger.has(t));
+
+  if(subset){
+    const score=Math.min(0.95,0.72+0.05*Math.min(shared,4));
+    return {merge:true,type:'containment',score,shared,overlap};
+  }
+
+  const listLike=isListLikeSubject(a)&&isListLikeSubject(b);
+  const strongCore=shared>=2&&overlap>=0.5;
+  if(listLike&&strongCore){
+    const score=Math.min(0.92,0.52+(overlap*0.22)+(jaccard*0.18)+(Math.min(shared,4)*0.025));
+    return {merge:score>=0.66,type:'complementary-list',score,shared,overlap};
+  }
+
+  if(shared>=3&&overlap>=0.6&&jaccard>=0.45){
+    const score=Math.min(0.9,0.5+(overlap*0.25)+(jaccard*0.2));
+    return {merge:score>=0.68,type:'strong-semantic',score,shared,overlap};
+  }
+
+  return {merge:false,type:'weak',score:jaccard,shared,overlap};
 }
 function shouldMergeSubjects(a,b){
-  const na=normalizeText(a),nb=normalizeText(b);
-  if(!na||!nb)return false;
-  if(na===nb)return true;
-  const A=tokens(a),B=tokens(b);
-  if((na.includes(nb)||nb.includes(na))&&Math.min(A.length,B.length)>=2)return true;
-  const {shared,overlap}=sharedTokenStats(a,b);
-  const score=similarity(a,b);
-  if(score>=0.72&&shared>=2)return true;
-  return isListLikeSubject(a)&&isListLikeSubject(b)&&shared>=2&&overlap>=0.45;
+  return analyzeSubjectRelation(a,b).merge;
+}
+function canJoinSubjectCluster(candidate,cluster){
+  if(!cluster.length)return true;
+  const relations=cluster.map(row=>analyzeSubjectRelation(row.assunto,candidate.assunto));
+  const positives=relations.filter(r=>r.merge);
+  if(!positives.length)return false;
+  if(cluster.length===1)return positives[0].score>=0.66;
+  const required=Math.max(2,Math.ceil(cluster.length*0.6));
+  if(positives.length<required)return false;
+  const avg=positives.reduce((sum,r)=>sum+r.score,0)/positives.length;
+  const best=Math.max(...positives.map(r=>r.score));
+  return avg>=0.7&&best>=0.78;
 }
 function mergeSubjectTitles(values){
   const titles=[...new Set((values||[]).map(v=>String(v||'').trim()).filter(Boolean))];
@@ -43,16 +102,12 @@ function mergeSubjectTitles(values){
     const key=normalizeText(part);
     if(!key)return;
     const duplicate=parts.some(existing=>{
-      const ek=normalizeText(existing);
-      if(ek===key)return true;
-      const a=tokens(existing),b=tokens(part);
-      return Math.min(a.length,b.length)>=1&&(ek.includes(key)||key.includes(ek))&&similarity(existing,part)>=0.5;
+      const rel=analyzeSubjectRelation(existing,part);
+      return normalizeText(existing)===key||rel.type==='containment'||(rel.merge&&rel.score>=0.82);
     });
     if(!duplicate)parts.push(part);
   }));
-  if(parts.length<2){
-    return titles.reduce((a,b)=>b.length>a.length?b:a,titles[0]);
-  }
+  if(parts.length<2)return titles.reduce((a,b)=>b.length>a.length?b:a,titles[0]);
   const cleaned=parts.map((part,index)=>{
     const p=part.trim();
     if(index===0)return p.charAt(0).toUpperCase()+p.slice(1);
@@ -125,7 +180,7 @@ function buildCrossRows(items,contests){
         const candidate=baseRows[j];
         if(consumed.has(candidate.id))continue;
         if(normalizeText(base.materia)!==normalizeText(candidate.materia))continue;
-        if(cluster.some(row=>shouldMergeSubjects(row.assunto,candidate.assunto))){
+        if(canJoinSubjectCluster(candidate,cluster)){
           cluster.push(candidate);
           consumed.add(candidate.id);
           expanded=true;
@@ -271,7 +326,7 @@ if(typeof document!=='undefined'){
   if(e.target.closest('[data-cross-row]'))syncRowFromElement(e.target);
  });
 }
-const api={open,close,analyze,setFilter,setSourceFilter,includeScope,addManualRow,createIntegrated,selectAll,clearSelection,normalizeText,similarity,shouldMergeSubjects,mergeSubjectTitles,canonicalMateria,buildCrossRows,groupRowsByMateria};
+const api={open,close,analyze,setFilter,setSourceFilter,includeScope,addManualRow,createIntegrated,selectAll,clearSelection,normalizeText,similarity,analyzeSubjectRelation,shouldMergeSubjects,canJoinSubjectCluster,mergeSubjectTitles,canonicalMateria,buildCrossRows,groupRowsByMateria};
 global.EditalCrossTool=Object.freeze(api);
-if(typeof module!=='undefined'&&module.exports)module.exports={normalizeText,similarity,shouldMergeSubjects,mergeSubjectTitles,canonicalMateria,buildCrossRows,groupRowsByMateria};
+if(typeof module!=='undefined'&&module.exports)module.exports={normalizeText,similarity,analyzeSubjectRelation,shouldMergeSubjects,canJoinSubjectCluster,mergeSubjectTitles,canonicalMateria,buildCrossRows,groupRowsByMateria};
 })(typeof window!=='undefined'?window:globalThis);
