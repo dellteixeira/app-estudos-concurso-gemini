@@ -10,6 +10,9 @@ test('runtime carrega o cruzador e sua interface',()=>{
   assert.match(core,/\.\/js\/edital-cross-ui\.js/);
   assert.match(ui,/Cruzar Editais \/ Plano Integrado/);
   assert.match(ui,/Criar plano e montar cronograma/);
+  assert.match(ui,/crossSourceFilter/);
+  assert.match(ui,/Somente comuns/);
+  assert.match(ui,/Comuns \+ relacionados/);
 });
 
 test('plano integrado preserva origens e abre o construtor de cronograma',()=>{
