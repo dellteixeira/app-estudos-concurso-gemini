@@ -5256,6 +5256,96 @@ filterDataByConcurso();
         function openModalNovoConcurso() { setRuntimeDisplay(document.getElementById('modalNovoConcurso'), 'flex'); }
         function closeModalNovoConcurso() { setRuntimeDisplay(document.getElementById('modalNovoConcurso'), 'none'); }
 
+        async function createIntegratedContestFromCrossEdital(nomePlano, rows, sourceContests = []) {
+            const nome = String(nomePlano || '').trim();
+            const selectedRows = Array.isArray(rows) ? rows.filter(row => row && row.included !== false) : [];
+            if (!nome) {
+                await appNotice('Informe um nome para o plano integrado.', { title:'Cruzamento de editais' });
+                return false;
+            }
+            if (!selectedRows.length) {
+                await appNotice('Selecione pelo menos um conteúdo para criar o plano integrado.', { title:'Cruzamento de editais' });
+                return false;
+            }
+
+            const metadata = getConcursosMetadata();
+            const exists = Object.keys(metadata || {}).some(saved => saved.localeCompare(nome,'pt-BR',{sensitivity:'base'}) === 0)
+                || allEditalItems.some(item => String(item.concurso || '').localeCompare(nome,'pt-BR',{sensitivity:'base'}) === 0);
+            if (exists) {
+                await appNotice('Já existe um concurso/plano com esse nome. Escolha outro nome.', { title:'Plano integrado' });
+                return false;
+            }
+
+            const createdAt = new Date().toISOString();
+            const generated = [];
+            const origins = {};
+            selectedRows.forEach(row => {
+                const materia = String(row.materia || '').trim();
+                const assunto = String(row.assunto || '').trim();
+                if (!materia || !assunto) return;
+                const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+                const item = {
+                    id, concurso:nome, materia, assunto,
+                    prioridade:Math.max(1, parseInt(row.prioridade) || 1),
+                    assunto_prioridade:Math.max(1, parseInt(row.assunto_prioridade) || 1),
+                    teoria:false, questoes:false, videoaula:false,
+                    metodo_conteudo:'automatico',
+                    rev_24h:false, rev_7d:false, rev_30d:false
+                };
+                generated.push(item);
+                origins[id] = {
+                    status:String(row.status || 'unique'),
+                    sources:Array.isArray(row.sources) ? [...row.sources] : [],
+                    score:Number(row.score) || 0
+                };
+            });
+            if (!generated.length) {
+                await appNotice('Nenhuma linha válida permaneceu após a edição.', { title:'Plano integrado' });
+                return false;
+            }
+
+            metadata[nome] = {
+                dataProva:null,
+                dateSchedule:{},
+                integratedPlan:{
+                    enabled:true,
+                    sources:[...new Set((sourceContests || []).map(value => String(value || '').trim()).filter(Boolean))],
+                    createdAt, origins,
+                    commonCount:selectedRows.filter(row => row.status === 'common').length,
+                    relatedCount:selectedRows.filter(row => row.status === 'related').length,
+                    uniqueCount:selectedRows.filter(row => row.status === 'unique').length
+                }
+            };
+
+            generated.forEach(item => {
+                allEditalItems.push(item);
+                queueEditalUpsert(item);
+            });
+            saveEditalToLocalStorage();
+            await saveConcursosMetadata(metadata);
+
+            currentConcurso = nome;
+            setLastStudiedConcurso(nome);
+            filterDataByConcurso();
+            renderMonthCalendar();
+            updateModernOverview();
+            renderRetentionDiagnostics();
+            if (navigator.onLine && currentUser) scheduleEditalSync();
+
+            await appNotice(
+                `Plano integrado "${nome}" criado com ${generated.length} assunto(s). Agora configure o cronograma; depois você poderá editar, reorganizar, limpar ou excluir este plano normalmente.`,
+                { title:'Plano integrado criado' }
+            );
+
+            if (window.AppNavigation?.navigateTo) window.AppNavigation.navigateTo('tab-calendario');
+            else {
+                const btn = [...document.querySelectorAll('.nav-tabs .tab-btn')].find(el => el.dataset.tab === 'tab-calendario');
+                if (btn) switchTab('tab-calendario', btn);
+            }
+            setTimeout(() => openModalSelectCronogramaType(), 120);
+            return true;
+        }
+
         async function confirmarNovoConcurso() {
             const nome = document.getElementById('inputNomeConcurso').value.trim();
             const dataProva = document.getElementById('inputDataConcurso').value;
