@@ -110,7 +110,7 @@ function cryptoId(){
   catch(_){return 'cross-'+Date.now()+'-'+Math.random().toString(16).slice(2);}
 }
 
-let state={contests:[],rows:[],filter:'all'};
+let state={contests:[],rows:[],filter:'all',sourceFilter:'all'};
 
 function getAllItems(){
   try{return global.AppState?.getEdital?.({all:true})||[];}catch(_){}
@@ -130,7 +130,11 @@ function renderContestSelection(){
   box.innerHTML=names.length?names.map(n=>`<label class="cross-contest-option"><input type="checkbox" value="${esc(n)}"><span>${esc(n)}</span></label>`).join(''):'<div class="cross-empty">Cadastre pelo menos dois concursos com conteúdo no edital.</div>';
 }
 function visibleRows(){
-  return state.rows.filter(r=>state.filter==='all'||r.status===state.filter);
+  return state.rows.filter(r=>{
+    const statusOk=state.filter==='all'||r.status===state.filter;
+    const sourceOk=state.sourceFilter==='all'||r.sources.includes(state.sourceFilter);
+    return statusOk&&sourceOk;
+  });
 }
 function renderSummary(){
   const el=document.getElementById('crossEditalSummary'); if(!el) return;
@@ -153,7 +157,7 @@ function renderRows(){
 }
 function renderAll(){renderSummary();renderRows();}
 function open(){
-  renderContestSelection(); state={contests:[],rows:[],filter:'all'};
+  renderContestSelection(); state={contests:[],rows:[],filter:'all',sourceFilter:'all'};
   const results=document.getElementById('crossEditalResults'); if(results) results.hidden=true;
   const name=document.getElementById('crossIntegratedName'); if(name) name.value='';
   const m=modal(); if(m){m.hidden=false;m.setAttribute('aria-hidden','false');m.style.display='flex';}
@@ -165,6 +169,9 @@ function analyze(){
   state.contests=selected;
   state.rows=buildCrossRows(getAllItems(),selected);
   state.filter='all';
+  state.sourceFilter='all';
+  const sourceSelect=document.getElementById('crossSourceFilter');
+  if(sourceSelect) sourceSelect.innerHTML='<option value="all">Todos os editais</option>'+selected.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join('');
   const results=document.getElementById('crossEditalResults'); if(results) results.hidden=false;
   const name=document.getElementById('crossIntegratedName');
   if(name&&!name.value) name.value='Plano Integrado — '+selected.map(shortName).join(' + ');
@@ -178,6 +185,18 @@ function shortName(value){
 function setFilter(filter){
   state.filter=['all','common','related','unique'].includes(filter)?filter:'all';
   document.querySelectorAll('[data-cross-filter]').forEach(b=>b.classList.toggle('active',b.dataset.crossFilter===state.filter));
+  renderRows();
+}
+function setSourceFilter(value){
+  state.sourceFilter=state.contests.includes(value)?value:'all';
+  renderRows();
+}
+function includeScope(scope){
+  state.rows.forEach(row=>{
+    if(scope==='common') row.included=row.status==='common';
+    else if(scope==='connected') row.included=row.status==='common'||row.status==='related';
+    else row.included=true;
+  });
   renderRows();
 }
 function addManualRow(){
@@ -210,13 +229,17 @@ function clearSelection(){
 if(typeof document!=='undefined'){
   document.addEventListener('click',e=>{
     const filter=e.target.closest('[data-cross-filter]'); if(filter){setFilter(filter.dataset.crossFilter);return;}
+    const scope=e.target.closest('[data-cross-scope]'); if(scope){includeScope(scope.dataset.crossScope);return;}
     const del=e.target.closest('[data-cross-delete]'); if(del){deleteRow(del.dataset.crossDelete);return;}
   });
   document.addEventListener('input',e=>{if(e.target.closest('[data-cross-row]')) syncRowFromElement(e.target);});
-  document.addEventListener('change',e=>{if(e.target.closest('[data-cross-row]')) syncRowFromElement(e.target);});
+  document.addEventListener('change',e=>{
+    if(e.target.id==='crossSourceFilter'){setSourceFilter(e.target.value);return;}
+    if(e.target.closest('[data-cross-row]')) syncRowFromElement(e.target);
+  });
 }
 
-const api={open,close,analyze,setFilter,addManualRow,createIntegrated,selectAll,clearSelection,normalizeText,similarity,buildCrossRows};
+const api={open,close,analyze,setFilter,setSourceFilter,includeScope,addManualRow,createIntegrated,selectAll,clearSelection,normalizeText,similarity,buildCrossRows};
 global.EditalCrossTool=Object.freeze(api);
 if(typeof module!=='undefined'&&module.exports) module.exports={normalizeText,similarity,buildCrossRows};
 })(typeof window!=='undefined'?window:globalThis);
