@@ -5256,6 +5256,29 @@ filterDataByConcurso();
         function openModalNovoConcurso() { setRuntimeDisplay(document.getElementById('modalNovoConcurso'), 'flex'); }
         function closeModalNovoConcurso() { setRuntimeDisplay(document.getElementById('modalNovoConcurso'), 'none'); }
 
+        function loadEditalCrossToolAssets() {
+            if (document.querySelector('script[data-edital-cross-tool]')) return;
+            const tool = document.createElement('script');
+            tool.src = './js/edital-cross-tool.js';
+            tool.defer = true;
+            tool.dataset.editalCrossTool = '1';
+            tool.onload = () => {
+                if (document.querySelector('script[data-edital-cross-ui]')) return;
+                const ui = document.createElement('script');
+                ui.src = './js/edital-cross-ui.js';
+                ui.defer = true;
+                ui.dataset.editalCrossUi = '1';
+                document.head.appendChild(ui);
+            };
+            document.head.appendChild(tool);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadEditalCrossToolAssets, { once:true });
+        } else {
+            loadEditalCrossToolAssets();
+        }
+
         async function createIntegratedContestFromCrossEdital(nomePlano, rows, sourceContests = []) {
             const nome = String(nomePlano || '').trim();
             const selectedRows = Array.isArray(rows) ? rows.filter(row => row && row.included !== false) : [];
