@@ -52,29 +52,39 @@ function buildCrossRows(items,contests){
   const leftovers=source.filter(x=>!used.has(String(x.id)));
   const consumed=new Set();
   for(let i=0;i<leftovers.length;i++){
-    const a=leftovers[i]; if(consumed.has(String(a.id))) continue;
-    let bestIndex=-1,bestScore=0;
-    for(let j=i+1;j<leftovers.length;j++){
-      const b=leftovers[j];
-      if(consumed.has(String(b.id))) continue;
-      if(String(a.concurso||'')===String(b.concurso||'')) continue;
-      if(normalizeText(a.materia)!==normalizeText(b.materia)) continue;
-      const score=similarity(a.assunto,b.assunto);
-      const shared=[...new Set(tokens(a.assunto))].filter(t=>new Set(tokens(b.assunto)).has(t)).length;
-      if(score>=0.72&&shared>=2&&score>bestScore){bestScore=score;bestIndex=j;}
+    const base=leftovers[i];
+    if(consumed.has(String(base.id))) continue;
+
+    const byContest=new Map();
+    for(let j=0;j<leftovers.length;j++){
+      const candidate=leftovers[j];
+      if(j===i||consumed.has(String(candidate.id))) continue;
+      if(String(base.concurso||'')===String(candidate.concurso||'')) continue;
+      if(normalizeText(base.materia)!==normalizeText(candidate.materia)) continue;
+      const score=similarity(base.assunto,candidate.assunto);
+      const baseTokens=new Set(tokens(base.assunto));
+      const shared=[...baseTokens].filter(t=>new Set(tokens(candidate.assunto)).has(t)).length;
+      if(score<0.72||shared<2) continue;
+      const contestName=String(candidate.concurso||'Concurso Geral');
+      const previous=byContest.get(contestName);
+      if(!previous||score>previous.score) byContest.set(contestName,{item:candidate,score});
     }
-    if(bestIndex>=0){
-      const b=leftovers[bestIndex];
-      consumed.add(String(a.id)); consumed.add(String(b.id));
+
+    if(byContest.size){
+      const cluster=[base,...[...byContest.values()].map(entry=>entry.item)];
+      const scores=[...[...byContest.values()].map(entry=>entry.score)];
+      cluster.forEach(item=>consumed.add(String(item.id)));
+      const canonical=cluster.reduce((best,item)=>String(item.assunto||'').length>String(best.assunto||'').length?item:best,cluster[0]);
       rows.push({
-        id:cryptoId(), materia:a.materia||b.materia||'Geral',
-        assunto:String(a.assunto||'').length>=String(b.assunto||'').length?a.assunto:b.assunto,
+        id:cryptoId(),
+        materia:canonical.materia||base.materia||'Geral',
+        assunto:canonical.assunto||base.assunto||'Tópico',
         status:'related',
-        sources:[...new Set([String(a.concurso||'Concurso Geral'),String(b.concurso||'Concurso Geral')])],
+        sources:[...new Set(cluster.map(item=>String(item.concurso||'Concurso Geral')))],
         included:true,
-        prioridade:Math.max(Number(a.prioridade)||1,Number(b.prioridade)||1),
-        assunto_prioridade:Math.max(Number(a.assunto_prioridade)||1,Number(b.assunto_prioridade)||1),
-        score:bestScore
+        prioridade:Math.max(...cluster.map(item=>Number(item.prioridade)||1)),
+        assunto_prioridade:Math.max(...cluster.map(item=>Number(item.assunto_prioridade)||1)),
+        score:scores.length?scores.reduce((sum,value)=>sum+value,0)/scores.length:0
       });
     }
   }
