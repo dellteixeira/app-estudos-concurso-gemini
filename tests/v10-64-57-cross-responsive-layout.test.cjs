@@ -4,6 +4,7 @@ const fs=require('node:fs');
 
 const css=fs.readFileSync('public/css/edital-cross-tool.css','utf8');
 const ui=fs.readFileSync('public/js/edital-cross-ui.js','utf8');
+const contract=JSON.parse(fs.readFileSync('config/release-contract.json','utf8'));
 
 test('modal de cruzamento cresce em telas largas sem max-width legado',()=>{
   assert.match(css,/\.cross-edital-modal\{[\s\S]*width:min\(1560px,calc\(100vw - 36px\)\)/);
@@ -24,5 +25,5 @@ test('layout possui breakpoints dedicados para desktop notebook tablet e celular
 });
 
 test('stylesheet do cruzamento usa cache-buster da release atual',()=>{
-  assert.match(ui,/edital-cross-tool\.css\?v=10\.64\.57/);
+  assert.match(ui,new RegExp(`edital-cross-tool\\.css\\?v=${String(contract.version).replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\assert.match(ui,/edital-cross-tool\.css\?v=10\.64\.57/);')}`));
 });
