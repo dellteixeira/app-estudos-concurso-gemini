@@ -2585,6 +2585,179 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderMonthCalendar();
         }
 
+        let scheduledFreeTimerState = null;
+        let scheduledFreeTimerInterval = null;
+
+        function formatScheduledFreeTimer(seconds) {
+            const total = Math.max(0, Math.floor(Number(seconds) || 0));
+            const hours = Math.floor(total / 3600);
+            const minutes = Math.floor((total % 3600) / 60);
+            const secs = total % 60;
+            return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+        }
+
+        function syncScheduledFreeTimer() {
+            if (!scheduledFreeTimerState) return 0;
+            const base = Math.max(0, Number(scheduledFreeTimerState.accumulatedSeconds) || 0);
+            if (scheduledFreeTimerState.paused || !Number.isFinite(Number(scheduledFreeTimerState.startedAtMs))) return base;
+            const live = Math.max(0, Math.floor((Date.now() - Number(scheduledFreeTimerState.startedAtMs)) / 1000));
+            return base + live;
+        }
+
+        function stopScheduledFreeTimerTicker() {
+            if (scheduledFreeTimerInterval) clearInterval(scheduledFreeTimerInterval);
+            scheduledFreeTimerInterval = null;
+        }
+
+        function refreshScheduledFreeTimerUi() {
+            if (!scheduledFreeTimerState) return;
+            const elapsed = syncScheduledFreeTimer();
+            document.querySelectorAll('[data-scheduled-free-time]').forEach(el => {
+                if (el.dataset.scheduledFreeTime === scheduledFreeTimerState.key) {
+                    el.textContent = formatScheduledFreeTimer(elapsed);
+                }
+            });
+        }
+
+        function ensureScheduledFreeTimerTicker() {
+            stopScheduledFreeTimerTicker();
+            if (!scheduledFreeTimerState || scheduledFreeTimerState.paused) return;
+            refreshScheduledFreeTimerUi();
+            scheduledFreeTimerInterval = setInterval(refreshScheduledFreeTimerUi, 1000);
+        }
+
+        function getScheduledFreeTimerKey(dateKey, materia, assunto) {
+            return `${currentConcurso}::${dateKey || ''}::${getStudyTopicKey(materia, assunto)}`;
+        }
+
+        function renderScheduledFreeTimerControls(idx, matchedItem, rawText) {
+            if (!matchedItem) return '';
+            const key = getScheduledFreeTimerKey(activeSelectedDateKey, matchedItem.materia, matchedItem.assunto);
+            const state = scheduledFreeTimerState;
+            const isThis = !!state && state.key === key;
+            const anotherActive = !!state && !isThis;
+            const elapsed = isThis ? syncScheduledFreeTimer() : 0;
+            const activity = isThis ? state.activityType : 'teoria';
+            const activityOptions = [
+                ['teoria','Teoria'],
+                ['questoes','Questões'],
+                ['videoaula','Vídeoaula']
+            ].map(([value,label]) => `<option value="${value}" ${activity === value ? 'selected' : ''}>${label}</option>`).join('');
+            const actionButtons = isThis
+                ? `<button class="btn btn-warning btn-sm" type="button" onclick="toggleScheduledFreeTimerPause()">${state.paused ? 'Continuar' : 'Pausar'}</button><button class="btn btn-success btn-sm" type="button" onclick="stopAndRecordScheduledFreeTimer()">Parar e contabilizar</button>`
+                : `<button class="btn btn-primary btn-sm" type="button" onclick="startScheduledFreeTimer(${idx})" ${anotherActive ? 'disabled' : ''}>${anotherActive ? 'Outro cronômetro ativo' : 'Iniciar'}</button>`;
+            return `
+                <div class="scheduled-free-timer ${isThis ? 'is-active' : ''} ${state?.paused && isThis ? 'is-paused' : ''}">
+                    <div class="scheduled-free-timer-head">
+                        <span class="scheduled-free-timer-label">Cronômetro livre</span>
+                        <strong class="scheduled-free-timer-value" data-scheduled-free-time="${escapeHtml(key)}">${formatScheduledFreeTimer(elapsed)}</strong>
+                    </div>
+                    <div class="scheduled-free-timer-controls">
+                        <label>Atividade
+                            <select id="scheduledFreeActivity_${idx}" ${isThis ? 'disabled' : ''}>${activityOptions}</select>
+                        </label>
+                        <div class="scheduled-free-timer-actions">${actionButtons}</div>
+                    </div>
+                    <small>${isThis ? (state.paused ? 'Pausado. O tempo não está aumentando.' : 'Contando para cima sem limite.') : (anotherActive ? 'Finalize o cronômetro ativo antes de iniciar outro.' : 'Inicie e pare somente quando quiser registrar o tempo estudado.')}</small>
+                </div>`;
+        }
+
+        function startScheduledFreeTimer(idx) {
+            if (!activeSelectedDateKey) return;
+            const metadata = getConcursosMetadata();
+            const raw = metadata[currentConcurso]?.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            if (!raw) return;
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const matched = editalItems.find(i => `${i.materia} - ${i.assunto}` === clean);
+            if (!matched) return void appNotice('Este tópico não está vinculado ao edital verticalizado.', { title:'Cronômetro livre' });
+
+            const key = getScheduledFreeTimerKey(activeSelectedDateKey, matched.materia, matched.assunto);
+            if (scheduledFreeTimerState && scheduledFreeTimerState.key !== key) {
+                return void appNotice('Já existe outro cronômetro livre em andamento. Pare e contabilize a sessão atual antes de iniciar outra.', { title:'Cronômetro livre' });
+            }
+
+            if (scheduledFreeTimerState?.key === key) {
+                if (scheduledFreeTimerState.paused) {
+                    scheduledFreeTimerState.paused = false;
+                    scheduledFreeTimerState.startedAtMs = Date.now();
+                    ensureScheduledFreeTimerTicker();
+                    renderDayTopicsList();
+                }
+                return;
+            }
+
+            const activityInput = document.getElementById(`scheduledFreeActivity_${idx}`);
+            const activityType = ['teoria','questoes','videoaula'].includes(activityInput?.value) ? activityInput.value : 'teoria';
+            scheduledFreeTimerState = {
+                key,
+                concurso: currentConcurso,
+                dateKey: activeSelectedDateKey,
+                plannedDateKey: activeSelectedDateKey,
+                materia: matched.materia,
+                assunto: matched.assunto,
+                itemId: matched.id,
+                activityType,
+                isRevision: isRevisionScheduleText(raw),
+                accumulatedSeconds: 0,
+                startedAtMs: Date.now(),
+                paused: false
+            };
+            ensureScheduledFreeTimerTicker();
+            renderDayTopicsList();
+        }
+
+        function toggleScheduledFreeTimerPause() {
+            if (!scheduledFreeTimerState) return;
+            if (scheduledFreeTimerState.paused) {
+                scheduledFreeTimerState.paused = false;
+                scheduledFreeTimerState.startedAtMs = Date.now();
+                ensureScheduledFreeTimerTicker();
+            } else {
+                scheduledFreeTimerState.accumulatedSeconds = syncScheduledFreeTimer();
+                scheduledFreeTimerState.startedAtMs = null;
+                scheduledFreeTimerState.paused = true;
+                stopScheduledFreeTimerTicker();
+            }
+            renderDayTopicsList();
+        }
+
+        async function stopAndRecordScheduledFreeTimer() {
+            if (!scheduledFreeTimerState) return;
+            const elapsedSeconds = syncScheduledFreeTimer();
+            const completedMinutes = Math.floor(elapsedSeconds / 60);
+            if (completedMinutes < 1) {
+                return void appNotice('Complete pelo menos 1 minuto antes de contabilizar a sessão.', { title:'Cronômetro livre' });
+            }
+            if (!confirm(`Parar o cronômetro e contabilizar ${completedMinutes} min de estudo em "${scheduledFreeTimerState.materia} — ${scheduledFreeTimerState.assunto}"?`)) return;
+
+            const context = {
+                concurso: scheduledFreeTimerState.concurso,
+                materia: scheduledFreeTimerState.materia,
+                assunto: scheduledFreeTimerState.assunto,
+                itemId: scheduledFreeTimerState.itemId,
+                dateKey: scheduledFreeTimerState.dateKey,
+                plannedDateKey: scheduledFreeTimerState.plannedDateKey,
+                adaptiveAdvance: false,
+                isRevision: scheduledFreeTimerState.isRevision,
+                activityType: scheduledFreeTimerState.activityType
+            };
+
+            stopScheduledFreeTimerTicker();
+            const snapshot = scheduledFreeTimerState;
+            scheduledFreeTimerState = null;
+            const committedSession = await recordStudyMinutesForContext(completedMinutes, context);
+            if (!committedSession) {
+                scheduledFreeTimerState = snapshot;
+                scheduledFreeTimerState.accumulatedSeconds = elapsedSeconds;
+                scheduledFreeTimerState.startedAtMs = null;
+                scheduledFreeTimerState.paused = true;
+                renderDayTopicsList();
+                return void appNotice('Não foi possível registrar a sessão. O cronômetro ficou pausado com o tempo preservado.', { title:'Cronômetro livre' });
+            }
+            renderDayTopicsList();
+            void appNotice(`Sessão registrada: ${completedMinutes} min — ${context.materia} — ${context.assunto}.`, { title:'Tempo contabilizado' });
+        }
+
         function renderDayTopicsList() {
             const container = document.getElementById('dayTopicsContainer');
             if (!container || !activeSelectedDateKey) return;
@@ -2631,6 +2804,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                                     ${!adaptiveReviewDone ? `<div class="study-session-action-row"><label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label><div class="study-launch-controls study-launch-controls-primary ${isLegalStudyMateria(matchedItem.materia) ? 'has-legal-action' : ''}"><button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions" data-mobile-label="Estudar Teoria">Estudar Teoria</button><button class="btn btn-sm btn-study-video" onclick="startScheduledTopicStudy(${idx}, 'videoaula')" title="Inicia uma sessão de Vídeoaula e contabiliza o tempo em studySessions" data-mobile-label="Vídeoaula">Vídeoaula</button><button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions" data-mobile-label="Estudar Questões">Estudar Questões</button>${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})" data-mobile-label="Lei Seca">Lei Seca</button>` : ''}</div></div>` : `<button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia">Apagar</button>`}
                                 </div>
                             ` : ''}
+                            ${matchedItem && !adaptiveReviewDone ? renderScheduledFreeTimerControls(idx, matchedItem, topicoStr) : ''}
                             ${matchedItem && !adaptiveReviewDone ? `
                                 <div class="study-launch-controls study-launch-controls-secondary">
                                     <button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia" data-mobile-label="Apagar">Apagar</button>
