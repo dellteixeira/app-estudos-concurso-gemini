@@ -1593,3 +1593,103 @@ body.light-mode .global-search-modal-results.global-search-results { background:
     .pomodoro-actions .btn:last-child { grid-column: 1 / -1; }
     .pomodoro-free-hint { font-size: .7rem; }
 }
+
+
+/* V10.64.61 — cronômetro livre diretamente no tópico agendado */
+.scheduled-free-timer {
+    display:grid;
+    grid-template-columns:minmax(180px,.72fr) minmax(320px,1.28fr);
+    gap:9px 14px;
+    align-items:center;
+    width:100%;
+    margin-top:9px;
+    padding:10px 12px;
+    border:1px solid rgba(83,227,213,.18);
+    border-radius:11px;
+    background:rgba(83,227,213,.035);
+}
+.scheduled-free-timer.is-active {
+    border-color:rgba(83,227,213,.42);
+    background:linear-gradient(90deg,rgba(83,227,213,.075),rgba(83,227,213,.025));
+}
+.scheduled-free-timer.is-paused {
+    border-color:rgba(244,188,106,.34);
+}
+.scheduled-free-timer-head {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+}
+.scheduled-free-timer-label {
+    color:#8fa7bb;
+    font-size:.72rem;
+    font-weight:750;
+    white-space:nowrap;
+}
+.scheduled-free-timer-value {
+    color:#76eadf;
+    font-variant-numeric:tabular-nums;
+    font-size:1.05rem;
+    letter-spacing:.03em;
+    white-space:nowrap;
+}
+.scheduled-free-timer.is-paused .scheduled-free-timer-value { color:#f4bc6a; }
+.scheduled-free-timer-controls {
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:9px;
+    min-width:0;
+}
+.scheduled-free-timer-controls label {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    color:#91a8bb;
+    font-size:.68rem;
+    white-space:nowrap;
+}
+.scheduled-free-timer-controls select {
+    min-height:32px;
+    padding:5px 28px 5px 8px;
+    border:1px solid #294158;
+    border-radius:8px;
+    background:#0a1b2d;
+    color:#e6f1f7;
+}
+.scheduled-free-timer-actions {
+    display:flex;
+    gap:7px;
+    flex-wrap:wrap;
+}
+.scheduled-free-timer small {
+    grid-column:1/-1;
+    color:#7890a5;
+    font-size:.64rem;
+    line-height:1.35;
+}
+@media(max-width:760px){
+    .scheduled-free-timer{
+        grid-template-columns:1fr;
+        align-items:stretch;
+    }
+    .scheduled-free-timer-controls{
+        justify-content:flex-start;
+        flex-wrap:wrap;
+    }
+    .scheduled-free-timer small{grid-column:1}
+}
+@media(max-width:480px){
+    .scheduled-free-timer-head{justify-content:space-between}
+    .scheduled-free-timer-controls{
+        display:grid;
+        grid-template-columns:1fr;
+    }
+    .scheduled-free-timer-controls label{
+        justify-content:space-between;
+        width:100%;
+    }
+    .scheduled-free-timer-controls select{flex:1}
+    .scheduled-free-timer-actions .btn{flex:1 1 auto}
+}
