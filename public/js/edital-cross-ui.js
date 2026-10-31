@@ -2,7 +2,7 @@
 'use strict';
 function ensureUi(){
   if(!document.querySelector('link[data-edital-cross-style]')){
-    const link=document.createElement('link');link.rel='stylesheet';link.href='./css/edital-cross-tool.css?v=10.64.61';link.dataset.editalCrossStyle='1';document.head.appendChild(link);
+    const link=document.createElement('link');link.rel='stylesheet';link.href='./css/edital-cross-tool.css?v=10.64.62';link.dataset.editalCrossStyle='1';document.head.appendChild(link);
   }
   if(!document.querySelector('[data-call="EditalCrossTool.open"]')){
     const clearBtn=document.querySelector('[data-call="clearData"]');
