@@ -537,6 +537,99 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             saveSyncState(state);
         }
 
+        const DELETED_CONCURSOS_SETTING_KEY = 'deleted_concursos_v1';
+
+        function normalizeDeletedConcursoMap(value) {
+            const source = value && typeof value === 'object' ? value : {};
+            const result = {};
+            Object.entries(source).forEach(([name, deletedAt]) => {
+                const normalizedName = String(name || '').trim();
+                if (!normalizedName || isSystemConcurso(normalizedName)) return;
+                const timestamp = String(deletedAt || '').trim();
+                result[normalizedName] = timestamp || new Date(0).toISOString();
+            });
+            return result;
+        }
+
+        async function loadRemoteDeletedConcursos() {
+            if (!navigator.onLine || !currentUser) return {};
+            const result = await runSupabaseRequest(() => supabaseClient
+                .from('user_settings')
+                .select('setting_value')
+                .eq('user_id', currentUser.id)
+                .eq('setting_key', DELETED_CONCURSOS_SETTING_KEY)
+                .maybeSingle());
+            throwIfSupabaseError(result, 'Falha ao carregar exclusões sincronizadas de concursos');
+            return normalizeDeletedConcursoMap(result?.data?.setting_value);
+        }
+
+        async function saveRemoteDeletedConcursos(map) {
+            if (!navigator.onLine || !currentUser) return;
+            const normalized = normalizeDeletedConcursoMap(map);
+            const result = await runSupabaseRequest(() => supabaseClient.from('user_settings').upsert({
+                user_id: currentUser.id,
+                setting_key: DELETED_CONCURSOS_SETTING_KEY,
+                setting_value: normalized,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id,setting_key' }));
+            throwIfSupabaseError(result, 'Falha ao salvar exclusões sincronizadas de concursos');
+        }
+
+        async function persistRemoteConcursoDeletion(concursoName) {
+            const nome = String(concursoName || '').trim();
+            if (!nome || !navigator.onLine || !currentUser) return;
+            const remote = await loadRemoteDeletedConcursos();
+            remote[nome] = new Date().toISOString();
+            await saveRemoteDeletedConcursos(remote);
+        }
+
+        async function clearRemoteConcursoDeletion(concursoName) {
+            const nome = String(concursoName || '').trim();
+            if (!nome || !navigator.onLine || !currentUser) return;
+            const remote = await loadRemoteDeletedConcursos();
+            if (!Object.prototype.hasOwnProperty.call(remote, nome)) return;
+            delete remote[nome];
+            await saveRemoteDeletedConcursos(remote);
+        }
+
+        function applyDeletedConcursosLocally(deletedMap) {
+            const deletedNames = new Set(Object.keys(normalizeDeletedConcursoMap(deletedMap)));
+            if (!deletedNames.size) return false;
+
+            let changed = false;
+            const beforeItems = allEditalItems.length;
+            allEditalItems = allEditalItems.filter(item => !deletedNames.has(String(item?.concurso || 'Concurso Geral').trim()));
+            if (allEditalItems.length !== beforeItems) changed = true;
+
+            const metadata = getConcursosMetadata();
+            deletedNames.forEach(name => {
+                if (Object.prototype.hasOwnProperty.call(metadata, name)) {
+                    delete metadata[name];
+                    changed = true;
+                }
+            });
+
+            const state = getSyncState();
+            Object.keys(state.editalUpserts || {}).forEach(id => {
+                const nome = String(state.editalUpserts[id]?.concurso || 'Concurso Geral').trim();
+                if (deletedNames.has(nome)) delete state.editalUpserts[id];
+            });
+            deletedNames.forEach(name => delete state.flashcardsDirty[name]);
+            state.concursoDeletes = (state.concursoDeletes || []).filter(name => !deletedNames.has(String(name || '').trim()));
+            saveSyncState(state);
+
+            metadataCache = metadata;
+            localStorage.setItem(getConcursosMetadataStorageKey(), JSON.stringify(metadata));
+            saveEditalToLocalStorage();
+
+            if (deletedNames.has(currentConcurso)) {
+                const remaining = Object.keys(metadata).filter(name => !isSystemConcurso(name) && !deletedNames.has(name));
+                currentConcurso = remaining[0] || 'Concurso Geral';
+                setLastStudiedConcurso(currentConcurso);
+            }
+            return changed;
+        }
+
         function hasPendingSync() {
             const state = getSyncState();
             return state.metadataDirty || Object.keys(state.flashcardsDirty).length > 0 ||
@@ -5072,6 +5165,10 @@ filterDataByConcurso();
 
             const pending = [...getSyncState().concursoDeletes];
             for (const concursoName of pending) {
+                // Persiste primeiro a tombstone remota. Assim, outro aparelho desatualizado
+                // não consegue recriar o concurso enquanto processamos as demais exclusões.
+                await persistRemoteConcursoDeletion(concursoName);
+
                 const editalResult = await runSupabaseRequest(() => supabaseClient
                     .from('edital')
                     .delete()
@@ -5129,6 +5226,13 @@ filterDataByConcurso();
                 // sejam baixados novamente antes da limpeza remota terminar.
                 await flushPendingConcursoDeletes();
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
+
+                // Consulta a tombstone da conta antes de qualquer upload. Isso impede
+                // aparelhos antigos de ressuscitarem concursos já apagados em outro dispositivo.
+                const remoteDeletedConcursos = await loadRemoteDeletedConcursos();
+                applyDeletedConcursosLocally(remoteDeletedConcursos);
+                if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
+
                 await flushPendingEdital();
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 const stateAfterEdital = getSyncState();
@@ -5144,10 +5248,14 @@ filterDataByConcurso();
 
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 if (error) throw new Error(`Falha ao baixar edital: ${error.message}`);
-                allEditalItems = (data || []).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral', videoaula: !!item.videoaula, metodo_conteudo: normalizeContentMethod(item.metodo_conteudo) }));
+                const remoteDeletedNames = new Set(Object.keys(remoteDeletedConcursos));
+                allEditalItems = (data || [])
+                    .map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral', videoaula: !!item.videoaula, metodo_conteudo: normalizeContentMethod(item.metodo_conteudo) }))
+                    .filter(item => !remoteDeletedNames.has(String(item.concurso || 'Concurso Geral').trim()));
                 saveEditalToLocalStorage();
 
                 await loadConcursosMetadata();
+                applyDeletedConcursosLocally(remoteDeletedConcursos);
                 if (!isAuthenticatedUserContextCurrent(syncUserId, syncGeneration)) return;
                 const syncedMetadata = getConcursosMetadata();
                 const progressMigration = migrateStudySessionProgressV9663(syncedMetadata);
@@ -5501,9 +5609,15 @@ filterDataByConcurso();
                 return false;
             }
 
+            if (navigator.onLine && currentUser) {
+                try { await clearRemoteConcursoDeletion(nome); }
+                catch (error) { return void appNotice('Não foi possível reativar este nome de plano na nuvem: ' + error.message, { title:'Falha ao criar plano integrado' }); }
+            }
+
             metadata[nome] = {
                 dataProva:null,
                 dateSchedule:{},
+                createdAt,
                 integratedPlan:{
                     enabled:true,
                     sources:[...new Set((sourceContests || []).map(value => String(value || '').trim()).filter(Boolean))],
@@ -5548,8 +5662,13 @@ filterDataByConcurso();
             const dataProva = document.getElementById('inputDataConcurso').value;
             if (!nome) return alert('Informe o nome do concurso.');
 
+            if (navigator.onLine && currentUser) {
+                try { await clearRemoteConcursoDeletion(nome); }
+                catch (error) { return void appNotice('Não foi possível reativar este nome de concurso na nuvem: ' + error.message, { title:'Falha ao criar concurso' }); }
+            }
+
             let metadata = getConcursosMetadata();
-            metadata[nome] = { dataProva: dataProva || null, dateSchedule: {} };
+            metadata[nome] = { dataProva: dataProva || null, dateSchedule: {}, createdAt:new Date().toISOString() };
             await saveConcursosMetadata(metadata);
 
             currentConcurso = nome;
