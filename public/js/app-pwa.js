@@ -110,6 +110,7 @@
         window.handleLogout = handleLogout;
         window.toggleDarkMode = toggleDarkMode;
         window.startFocusTimer = startFocusTimer;
+        window.startFreeFocusTimer = startFreeFocusTimer;
         window.startIntervalTimer = startIntervalTimer;
         window.populateNotaAssuntoDropdown = populateNotaAssuntoDropdown;
         window.handleNotaAssuntoChange = handleNotaAssuntoChange;
