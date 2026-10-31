@@ -6483,6 +6483,8 @@ filterDataByConcurso();
         // V10.9.0 — relógio absoluto: mantém o tempo correto quando aba/PWA fica em background.
         let timerEndAtMs = null;
         let timerCompletionInFlight = false;
+        let freeTimerStartedAtMs = null;
+        let freeTimerElapsedSeconds = 0;
 
         function preparePomodoroAudio() {
             try {
@@ -7868,11 +7870,22 @@ filterDataByConcurso();
         }
 
         function armTimerDeadlineFromRemaining() {
+            if (timerMode === 'free') {
+                timerEndAtMs = null;
+                return;
+            }
             timerEndAtMs = Date.now() + Math.max(0, Number(timeLeft) || 0) * 1000;
         }
 
         function syncTimerFromClock() {
-            if (!timerHasStarted || isTimerPaused || !Number.isFinite(Number(timerEndAtMs))) return timeLeft;
+            if (!timerHasStarted || isTimerPaused) return timeLeft;
+            if (timerMode === 'free') {
+                if (!Number.isFinite(Number(freeTimerStartedAtMs))) return timeLeft;
+                const liveSeconds = Math.max(0, Math.floor((Date.now() - Number(freeTimerStartedAtMs)) / 1000));
+                timeLeft = Math.max(0, Number(freeTimerElapsedSeconds) || 0) + liveSeconds;
+                return timeLeft;
+            }
+            if (!Number.isFinite(Number(timerEndAtMs))) return timeLeft;
             const remainingMs = Math.max(0, Number(timerEndAtMs) - Date.now());
             timeLeft = Math.max(0, Math.ceil(remainingMs / 1000));
             return timeLeft;
@@ -7880,6 +7893,7 @@ filterDataByConcurso();
 
         function getCurrentTimerElapsedSeconds() {
             syncTimerFromClock();
+            if (timerMode === 'free') return Math.max(0, Number(timeLeft) || 0);
             return Math.max(0, (Number(currentTimerTotalSeconds) || 0) - (Number(timeLeft) || 0));
         }
 
@@ -7938,24 +7952,27 @@ filterDataByConcurso();
             if (!timerHasStarted || isTimerPaused) return;
             syncTimerFromClock();
             updateDisplay();
-            if (timeLeft <= 0) void completeElapsedTimerCycle();
+            if (timerMode !== 'free' && timeLeft <= 0) void completeElapsedTimerCycle();
         }
 
         function updatePauseButton() {
             const pauseBtn = document.getElementById('pauseTimerBtn');
             const completeBtn = document.getElementById('completeFocusBtn');
             if (pauseBtn) {
-                pauseBtn.disabled = !timerHasStarted || timeLeft <= 0;
+                pauseBtn.disabled = !timerHasStarted || (timerMode !== 'free' && timeLeft <= 0);
                 pauseBtn.textContent = isTimerPaused ? 'Continuar' : 'Pausar';
             }
             if (completeBtn) {
                 const elapsedSeconds = getCurrentTimerElapsedSeconds();
-                completeBtn.disabled = timerMode !== 'focus' || !timerHasStarted || focusSessionCommitted || elapsedSeconds < 60 || !activeStudyContext;
-                completeBtn.title = activeStudyContext ? 'Concluir e contabilizar os minutos completos já estudados' : 'Inicie uma atividade pelo cronograma para contabilizar a sessão';
+                const isStudyMode = timerMode === 'focus' || timerMode === 'free';
+                completeBtn.disabled = !isStudyMode || !timerHasStarted || focusSessionCommitted || elapsedSeconds < 60 || !activeStudyContext;
+                completeBtn.textContent = timerMode === 'free' ? 'Parar e registrar' : 'Concluir sessão';
+                completeBtn.title = activeStudyContext ? 'Encerrar e contabilizar os minutos completos já estudados' : 'Selecione matéria e assunto para contabilizar a sessão';
             }
         }
 
         function updateTimerSettings() {
+            if (timerMode === 'free') return;
             if (!timerInterval && !isTimerPaused) {
                 timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
                 currentTimerTotalSeconds = timeLeft;
@@ -7964,6 +7981,7 @@ filterDataByConcurso();
         }
 
         function getPomodoroRingProgress() {
+            if (timerMode === 'free') return 0;
             const total = Math.max(1, Number(currentTimerTotalSeconds) || 1);
             const safeLeft = Math.max(0, Number(timeLeft) || 0);
             const elapsedRatio = Math.min(1, Math.max(0, (total - safeLeft) / total));
@@ -7975,7 +7993,7 @@ filterDataByConcurso();
             const sec = timeLeft % 60;
             const timerEl = document.getElementById('timer');
             const ringEl = document.getElementById('pomodoroRing');
-            const modeLabel = timerMode === 'focus' ? 'foco' : 'intervalo';
+            const modeLabel = timerMode === 'free' ? 'livre' : (timerMode === 'focus' ? 'foco' : 'intervalo');
             if (timerEl) {
                 timerEl.innerHTML = `
                     <span class="timer-display-number">${min.toString().padStart(2, '0')}</span>
@@ -7993,16 +8011,20 @@ filterDataByConcurso();
                     ringEl.dataset.progressClass = progressClass;
                 }
                 ringEl.dataset.mode = timerMode;
-                ringEl.setAttribute('aria-label', `${min} minutos e ${sec} segundos restantes — ${modeLabel}`);
+                const ariaTime = timerMode === 'free'
+                    ? `${min} minutos e ${sec} segundos decorridos — modo livre`
+                    : `${min} minutos e ${sec} segundos restantes — ${modeLabel}`;
+                ringEl.setAttribute('aria-label', ariaTime);
             }
             updatePauseButton();
         }
 
         function startTimer() {
-            if (timerInterval || timeLeft <= 0) return;
+            if (timerInterval || (timerMode !== 'free' && timeLeft <= 0)) return;
 
             const isNewCycle = !timerHasStarted;
-            if (isNewCycle && timerMode === 'focus' && (!activeStudyContext || activeStudyContext.concurso !== currentConcurso)) {
+            const isStudyMode = timerMode === 'focus' || timerMode === 'free';
+            if (isNewCycle && isStudyMode && (!activeStudyContext || activeStudyContext.concurso !== currentConcurso)) {
                 if (!pomodoroContextSelectionPending) openPomodoroContextModal();
                 return;
             }
@@ -8015,6 +8037,17 @@ filterDataByConcurso();
                 timeLeft = currentTimerTotalSeconds;
                 playPomodoroStartBell();
             }
+            if (isNewCycle && timerMode === 'free') {
+                focusSessionCommitted = false;
+                currentFocusCycleMinutes = 0;
+                currentTimerTotalSeconds = 0;
+                timeLeft = 0;
+                freeTimerElapsedSeconds = 0;
+                freeTimerStartedAtMs = Date.now();
+                playPomodoroStartBell();
+            } else if (!isNewCycle && timerMode === 'free') {
+                freeTimerStartedAtMs = Date.now();
+            }
             if (isNewCycle && timerMode === 'interval') {
                 currentTimerTotalSeconds = Math.max(1, parseInt(document.getElementById('pausaMin').value) || 5) * 60;
                 timeLeft = currentTimerTotalSeconds;
@@ -8025,7 +8058,6 @@ filterDataByConcurso();
             armTimerDeadlineFromRemaining();
             updatePauseButton();
             tickPomodoroTimerFromClock();
-            // O intervalo apenas atualiza a UI; a fonte do tempo é Date.now()/timerEndAtMs.
             timerInterval = setInterval(tickPomodoroTimerFromClock, 500);
         }
 
@@ -8211,19 +8243,22 @@ filterDataByConcurso();
         }
 
         async function completeFocusSessionNow() {
-            if (timerMode !== 'focus' || !timerHasStarted || focusSessionCommitted) return;
+            if (!['focus','free'].includes(timerMode) || !timerHasStarted || focusSessionCommitted) return;
             if (!activeStudyContext || activeStudyContext.concurso !== currentConcurso) {
                 return alert('Inicie Teoria, Vídeoaula, Questões ou Lei Seca pelo cronograma antes de concluir uma sessão contabilizável.');
             }
             const elapsedSeconds = getCurrentTimerElapsedSeconds();
             const completedMinutes = Math.floor(elapsedSeconds / 60);
             if (completedMinutes < 1) return alert('Complete pelo menos 1 minuto de foco antes de contabilizar a sessão.');
-            if (!confirm(`Concluir esta sessão agora e contabilizar ${completedMinutes} min de estudo?`)) return;
+            const completionLabel = timerMode === 'free' ? 'Parar o contador livre' : 'Concluir esta sessão agora';
+            if (!confirm(`${completionLabel} e contabilizar ${completedMinutes} min de estudo?`)) return;
 
             clearInterval(timerInterval);
             timerInterval = null;
             clearTimerDeadline();
             isTimerPaused = false;
+            freeTimerStartedAtMs = null;
+            freeTimerElapsedSeconds = 0;
             focusSessionCommitted = true;
             const finalContext = finalizeLegalArticleRangeForSession({ ...activeStudyContext });
             const committedSession = await recordStudyMinutesForContext(completedMinutes, finalContext);
@@ -8243,6 +8278,26 @@ filterDataByConcurso();
             playPomodoroCompletionBell();
             const needsPostSessionFeedback = finalContext?.activityType === 'questoes' || !!(finalContext?.isRevision && isAdaptiveRetentionStrategy());
             if (!needsPostSessionFeedback) setTimeout(() => alert(`Sessão concluída: ${completedMinutes} min contabilizados.`), 500);
+        }
+
+        function startFreeFocusTimer() {
+            if (timerInterval) return;
+            if (timerMode !== 'free' || !timerHasStarted) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                clearTimerDeadline();
+                timerMode = 'free';
+                timerHasStarted = false;
+                isTimerPaused = false;
+                currentFocusCycleMinutes = 0;
+                focusSessionCommitted = false;
+                currentTimerTotalSeconds = 0;
+                timeLeft = 0;
+                freeTimerElapsedSeconds = 0;
+                freeTimerStartedAtMs = null;
+                updateDisplay();
+            }
+            startTimer();
         }
 
         function startFocusTimer() {
@@ -8281,6 +8336,10 @@ filterDataByConcurso();
         function togglePauseTimer() {
             if (timerInterval) {
                 syncTimerFromClock();
+                if (timerMode === 'free') {
+                    freeTimerElapsedSeconds = Math.max(0, Number(timeLeft) || 0);
+                    freeTimerStartedAtMs = null;
+                }
                 clearInterval(timerInterval);
                 timerInterval = null;
                 clearTimerDeadline();
@@ -8290,7 +8349,7 @@ filterDataByConcurso();
                 return;
             }
 
-            if (isTimerPaused && timerHasStarted && timeLeft > 0) {
+            if (isTimerPaused && timerHasStarted && (timerMode === 'free' || timeLeft > 0)) {
                 startTimer();
             }
         }
@@ -8304,6 +8363,8 @@ filterDataByConcurso();
             timerMode = 'focus';
             focusSessionCommitted = false;
             currentFocusCycleMinutes = 0;
+            freeTimerStartedAtMs = null;
+            freeTimerElapsedSeconds = 0;
             timeLeft = (parseInt(document.getElementById('focoMin').value) || 40) * 60;
             currentTimerTotalSeconds = timeLeft;
             updateDisplay();
