@@ -774,6 +774,7 @@ header.modern-header { margin-bottom: 10px; }
         "title title"
         "hero actions"
         "hero settings"
+        "hero hint"
         "daily daily";
     column-gap: 12px;
     row-gap: 8px;
@@ -791,7 +792,7 @@ header.modern-header { margin-bottom: 10px; }
 .pomodoro-actions {
     grid-area: actions;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0,1fr));
+    grid-template-columns: repeat(6, minmax(0,1fr));
     gap: 6px;
     align-self: end;
 }
@@ -802,7 +803,25 @@ header.modern-header { margin-bottom: 10px; }
     padding: 0 8px;
     font-size: .73rem;
 }
+.pomodoro-actions .btn:nth-child(-n+3) { grid-column: span 2; }
+.pomodoro-actions .btn:nth-child(4),
+.pomodoro-actions .btn:nth-child(5) { grid-column: span 3; }
 .pomodoro-actions .btn:last-child { grid-column: 1 / -1; }
+.pomodoro-free-hint {
+    grid-area: hint;
+    margin: 0;
+    padding: 7px 9px;
+    border: 1px solid rgba(83,227,213,.16);
+    border-radius: 9px;
+    background: rgba(83,227,213,.035);
+    color: var(--modern-muted);
+    font-size: .64rem;
+    line-height: 1.35;
+}
+.pomodoro-free-hint strong { color: #78e9de; }
+.pomodoro-ring[data-mode="free"] {
+    box-shadow: inset 0 0 0 1px rgba(83,227,213,.14), 0 0 28px rgba(83,227,213,.06);
+}
 .timer-settings {
     grid-area: settings;
     width: 100%;
@@ -1564,4 +1583,13 @@ body.light-mode .global-search-modal-results.global-search-results { background:
         gap:8px !important;
     }
     .critical-queue-head span { text-align:left !important; }
+}
+
+@media (max-width: 520px) {
+    .pomodoro-actions { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .pomodoro-actions .btn:nth-child(-n+3),
+    .pomodoro-actions .btn:nth-child(4),
+    .pomodoro-actions .btn:nth-child(5) { grid-column: auto; }
+    .pomodoro-actions .btn:last-child { grid-column: 1 / -1; }
+    .pomodoro-free-hint { font-size: .7rem; }
 }
