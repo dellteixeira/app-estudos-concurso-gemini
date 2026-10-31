@@ -239,6 +239,7 @@
                     </div>
                     <div class="pomodoro-actions">
                         <button class="btn btn-primary" id="startTimerBtn" data-action="call" data-call="startFocusTimer">Foco</button>
+                        <button class="btn btn-secondary" id="freeTimerBtn" data-action="call" data-call="startFreeFocusTimer" title="Contagem livre sem limite de tempo">Livre</button>
                         <button class="btn btn-secondary" id="intervalTimerBtn" data-action="call" data-call="startIntervalTimer">Intervalo</button>
                         <button class="btn btn-warning" id="pauseTimerBtn" data-action="call" data-call="togglePauseTimer" disabled>Pausar</button>
                         <button class="btn btn-secondary" id="completeFocusBtn" data-action="call" data-call="completeFocusSessionNow" disabled>Concluir sessão</button>
@@ -248,6 +249,7 @@
                         <label>Foco (min): <input type="number" id="focoMin" value="40" min="1" data-change-call="updateTimerSettings"></label>
                         <label>Intervalo (min): <input type="number" id="pausaMin" value="5" min="1" data-change-call="updateTimerSettings"></label>
                     </div>
+                    <p class="pomodoro-free-hint">Modo <strong>Livre</strong>: conta o tempo para cima sem limite. Pause quando quiser e use <strong>Parar e registrar</strong> para contabilizar os minutos na matéria e no assunto selecionados.</p>
 
                     <div class="pomodoro-daily-panel">
                         <h4>Horas Pomodoro do Dia</h4>
