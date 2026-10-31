@@ -1769,3 +1769,30 @@ body.light-mode .global-search-modal-results.global-search-results { background:
         white-space:normal;
     }
 }
+
+
+/* V10.64.64 — cadastro canônico de assunto a partir do cronograma */
+.canonical-subject-link-hint {
+    display:block;
+    margin-top:8px;
+    padding:7px 9px;
+    border:1px solid rgba(83,227,213,.16);
+    border-radius:9px;
+    background:rgba(83,227,213,.035);
+    color:#8299ad;
+    font-size:.62rem;
+    line-height:1.4;
+}
+.canonical-subject-link-hint::before {
+    content:'↔ ';
+    color:#65e4d8;
+    font-weight:900;
+}
+@media(max-width:520px){
+    .day-topic-form-actions .btn {
+        flex:1 1 100%;
+    }
+    .canonical-subject-link-hint {
+        font-size:.66rem;
+    }
+}
