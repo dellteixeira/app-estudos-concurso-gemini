@@ -2678,10 +2678,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderMonthCalendar();
         }
 
-        let scheduledFreeTimerState = null;
-        let scheduledFreeTimerInterval = null;
-
-        function formatScheduledFreeTimer(seconds) {
+        function formatScheduledPomodoroTime(seconds) {
             const total = Math.max(0, Math.floor(Number(seconds) || 0));
             const hours = Math.floor(total / 3600);
             const minutes = Math.floor((total % 3600) / 60);
@@ -2689,166 +2686,139 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
         }
 
-        function syncScheduledFreeTimer() {
-            if (!scheduledFreeTimerState) return 0;
-            const base = Math.max(0, Number(scheduledFreeTimerState.accumulatedSeconds) || 0);
-            if (scheduledFreeTimerState.paused || !Number.isFinite(Number(scheduledFreeTimerState.startedAtMs))) return base;
-            const live = Math.max(0, Math.floor((Date.now() - Number(scheduledFreeTimerState.startedAtMs)) / 1000));
-            return base + live;
-        }
-
-        function stopScheduledFreeTimerTicker() {
-            if (scheduledFreeTimerInterval) clearInterval(scheduledFreeTimerInterval);
-            scheduledFreeTimerInterval = null;
-        }
-
-        function refreshScheduledFreeTimerUi() {
-            if (!scheduledFreeTimerState) return;
-            const elapsed = syncScheduledFreeTimer();
-            document.querySelectorAll('[data-scheduled-free-time]').forEach(el => {
-                if (el.dataset.scheduledFreeTime === scheduledFreeTimerState.key) {
-                    el.textContent = formatScheduledFreeTimer(elapsed);
-                }
-            });
-        }
-
-        function ensureScheduledFreeTimerTicker() {
-            stopScheduledFreeTimerTicker();
-            if (!scheduledFreeTimerState || scheduledFreeTimerState.paused) return;
-            refreshScheduledFreeTimerUi();
-            scheduledFreeTimerInterval = setInterval(refreshScheduledFreeTimerUi, 1000);
-        }
-
-        function getScheduledFreeTimerKey(dateKey, materia, assunto) {
+        function getScheduledPomodoroKey(dateKey, materia, assunto) {
             return `${currentConcurso}::${dateKey || ''}::${getStudyTopicKey(materia, assunto)}`;
+        }
+
+        function getActivePomodoroScheduleKey() {
+            if (!activeStudyContext || activeStudyContext.concurso !== currentConcurso) return '';
+            return getScheduledPomodoroKey(
+                activeStudyContext.plannedDateKey || activeStudyContext.dateKey || getLocalDateKey(),
+                activeStudyContext.materia,
+                activeStudyContext.assunto
+            );
+        }
+
+        function getScheduledPomodoroElapsedSeconds() {
+            if (timerMode !== 'free' || !timerHasStarted) return 0;
+            return Math.max(0, Number(getCurrentTimerElapsedSeconds()) || 0);
+        }
+
+        function refreshScheduledPomodoroMirrorUi() {
+            const activeKey = getActivePomodoroScheduleKey();
+            const elapsed = getScheduledPomodoroElapsedSeconds();
+            document.querySelectorAll('[data-scheduled-pomodoro-time]').forEach(el => {
+                const isCurrent = timerMode === 'free' && timerHasStarted && el.dataset.scheduledPomodoroTime === activeKey;
+                el.textContent = isCurrent ? formatScheduledPomodoroTime(elapsed) : '00:00:00';
+            });
+            document.querySelectorAll('[data-scheduled-pomodoro-state]').forEach(el => {
+                const isCurrent = timerMode === 'free' && timerHasStarted && el.dataset.scheduledPomodoroState === activeKey;
+                el.classList.toggle('is-running', isCurrent && !isTimerPaused);
+                el.classList.toggle('is-paused', isCurrent && isTimerPaused);
+            });
         }
 
         function renderScheduledFreeTimerControls(idx, matchedItem, rawText) {
             if (!matchedItem) return '';
-            const key = getScheduledFreeTimerKey(activeSelectedDateKey, matchedItem.materia, matchedItem.assunto);
-            const state = scheduledFreeTimerState;
-            const isThis = !!state && state.key === key;
-            const anotherActive = !!state && !isThis;
-            const elapsed = isThis ? syncScheduledFreeTimer() : 0;
-            const activity = isThis ? state.activityType : 'teoria';
+            const key = getScheduledPomodoroKey(activeSelectedDateKey, matchedItem.materia, matchedItem.assunto);
+            const activeKey = getActivePomodoroScheduleKey();
+            const isThis = timerMode === 'free' && timerHasStarted && activeKey === key;
+            const pomodoroBusy = timerHasStarted && !isThis;
+            const elapsed = isThis ? getScheduledPomodoroElapsedSeconds() : 0;
+            const activity = isThis ? (activeStudyContext?.activityType || 'teoria') : 'teoria';
             const activityOptions = [
                 ['teoria','Teoria'],
                 ['questoes','Questões'],
                 ['videoaula','Vídeoaula']
             ].map(([value,label]) => `<option value="${value}" ${activity === value ? 'selected' : ''}>${label}</option>`).join('');
-            const actionButtons = isThis
-                ? `<button class="btn btn-warning btn-sm" type="button" onclick="toggleScheduledFreeTimerPause()">${state.paused ? 'Continuar' : 'Pausar'}</button><button class="btn btn-success btn-sm" type="button" onclick="stopAndRecordScheduledFreeTimer()">Parar e contabilizar</button>`
-                : `<button class="btn btn-primary btn-sm" type="button" onclick="startScheduledFreeTimer(${idx})" ${anotherActive ? 'disabled' : ''}>${anotherActive ? 'Outro cronômetro ativo' : 'Iniciar'}</button>`;
+
+            const primaryAction = isThis
+                ? `<button class="scheduled-timer-btn scheduled-timer-btn-pause" type="button" onclick="toggleScheduledPomodoroPause()">${isTimerPaused ? 'Continuar' : 'Pausar'}</button>
+                   <button class="scheduled-timer-btn scheduled-timer-btn-stop" type="button" onclick="stopScheduledPomodoroAndRecord()">Parar e contabilizar</button>`
+                : `<button class="scheduled-timer-btn scheduled-timer-btn-start" type="button" onclick="startScheduledFreeTimer(${idx})" ${pomodoroBusy ? 'disabled' : ''}>${pomodoroBusy ? 'Pomodoro em uso' : 'Iniciar livre'}</button>`;
+
+            const statusText = isThis
+                ? (isTimerPaused ? 'Sessão Pomodoro livre pausada.' : 'Sessão Pomodoro livre em andamento.')
+                : (pomodoroBusy ? 'Finalize a sessão Pomodoro atual para iniciar este tópico.' : 'O tempo será somado ao Pomodoro e ao histórico deste assunto.');
+
             return `
-                <div class="scheduled-free-timer ${isThis ? 'is-active' : ''} ${state?.paused && isThis ? 'is-paused' : ''}">
+                <div class="scheduled-free-timer ${isThis ? 'is-active' : ''} ${isThis && isTimerPaused ? 'is-paused' : ''}" data-scheduled-pomodoro-state="${escapeHtml(key)}">
                     <div class="scheduled-free-timer-head">
-                        <span class="scheduled-free-timer-label">Cronômetro livre</span>
-                        <strong class="scheduled-free-timer-value" data-scheduled-free-time="${escapeHtml(key)}">${formatScheduledFreeTimer(elapsed)}</strong>
+                        <div class="scheduled-free-timer-title-group">
+                            <span class="scheduled-free-timer-label">Pomodoro livre</span>
+                            <span class="scheduled-free-timer-sync-badge">integrado</span>
+                        </div>
+                        <strong class="scheduled-free-timer-value" data-scheduled-pomodoro-time="${escapeHtml(key)}">${formatScheduledPomodoroTime(elapsed)}</strong>
                     </div>
-                    <div class="scheduled-free-timer-controls">
-                        <label>Atividade
+                    <div class="scheduled-free-timer-toolbar">
+                        <label class="scheduled-free-activity">
+                            <span>Atividade</span>
                             <select id="scheduledFreeActivity_${idx}" ${isThis ? 'disabled' : ''}>${activityOptions}</select>
                         </label>
-                        <div class="scheduled-free-timer-actions">${actionButtons}</div>
+                        <div class="scheduled-free-timer-actions">${primaryAction}</div>
                     </div>
-                    <small>${isThis ? (state.paused ? 'Pausado. O tempo não está aumentando.' : 'Contando para cima sem limite.') : (anotherActive ? 'Finalize o cronômetro ativo antes de iniciar outro.' : 'Inicie e pare somente quando quiser registrar o tempo estudado.')}</small>
+                    <small class="scheduled-free-timer-status">${statusText}</small>
                 </div>`;
         }
 
         function startScheduledFreeTimer(idx) {
             if (!activeSelectedDateKey) return;
+            if (timerHasStarted) {
+                return void appNotice('Já existe uma sessão Pomodoro em andamento. Pause ou conclua essa sessão antes de iniciar outro tópico.', { title:'Pomodoro em uso' });
+            }
+
             const metadata = getConcursosMetadata();
             const raw = metadata[currentConcurso]?.dateSchedule?.[activeSelectedDateKey]?.[idx];
             if (!raw) return;
             const clean = normalizeScheduledTopicForStudy(raw);
             const matched = editalItems.find(i => `${i.materia} - ${i.assunto}` === clean);
-            if (!matched) return void appNotice('Este tópico não está vinculado ao edital verticalizado.', { title:'Cronômetro livre' });
-
-            const key = getScheduledFreeTimerKey(activeSelectedDateKey, matched.materia, matched.assunto);
-            if (scheduledFreeTimerState && scheduledFreeTimerState.key !== key) {
-                return void appNotice('Já existe outro cronômetro livre em andamento. Pare e contabilize a sessão atual antes de iniciar outra.', { title:'Cronômetro livre' });
-            }
-
-            if (scheduledFreeTimerState?.key === key) {
-                if (scheduledFreeTimerState.paused) {
-                    scheduledFreeTimerState.paused = false;
-                    scheduledFreeTimerState.startedAtMs = Date.now();
-                    ensureScheduledFreeTimerTicker();
-                    renderDayTopicsList();
-                }
-                return;
-            }
+            if (!matched) return void appNotice('Este tópico não está vinculado ao edital verticalizado.', { title:'Pomodoro livre' });
 
             const activityInput = document.getElementById(`scheduledFreeActivity_${idx}`);
             const activityType = ['teoria','questoes','videoaula'].includes(activityInput?.value) ? activityInput.value : 'teoria';
-            scheduledFreeTimerState = {
-                key,
+
+            activeStudyContext = {
                 concurso: currentConcurso,
-                dateKey: activeSelectedDateKey,
-                plannedDateKey: activeSelectedDateKey,
                 materia: matched.materia,
                 assunto: matched.assunto,
                 itemId: matched.id,
-                activityType,
-                isRevision: isRevisionScheduleText(raw),
-                accumulatedSeconds: 0,
-                startedAtMs: Date.now(),
-                paused: false
-            };
-            ensureScheduledFreeTimerTicker();
-            renderDayTopicsList();
-        }
-
-        function toggleScheduledFreeTimerPause() {
-            if (!scheduledFreeTimerState) return;
-            if (scheduledFreeTimerState.paused) {
-                scheduledFreeTimerState.paused = false;
-                scheduledFreeTimerState.startedAtMs = Date.now();
-                ensureScheduledFreeTimerTicker();
-            } else {
-                scheduledFreeTimerState.accumulatedSeconds = syncScheduledFreeTimer();
-                scheduledFreeTimerState.startedAtMs = null;
-                scheduledFreeTimerState.paused = true;
-                stopScheduledFreeTimerTicker();
-            }
-            renderDayTopicsList();
-        }
-
-        async function stopAndRecordScheduledFreeTimer() {
-            if (!scheduledFreeTimerState) return;
-            const elapsedSeconds = syncScheduledFreeTimer();
-            const completedMinutes = Math.floor(elapsedSeconds / 60);
-            if (completedMinutes < 1) {
-                return void appNotice('Complete pelo menos 1 minuto antes de contabilizar a sessão.', { title:'Cronômetro livre' });
-            }
-            if (!confirm(`Parar o cronômetro e contabilizar ${completedMinutes} min de estudo em "${scheduledFreeTimerState.materia} — ${scheduledFreeTimerState.assunto}"?`)) return;
-
-            const context = {
-                concurso: scheduledFreeTimerState.concurso,
-                materia: scheduledFreeTimerState.materia,
-                assunto: scheduledFreeTimerState.assunto,
-                itemId: scheduledFreeTimerState.itemId,
-                dateKey: scheduledFreeTimerState.dateKey,
-                plannedDateKey: scheduledFreeTimerState.plannedDateKey,
+                dateKey: activeSelectedDateKey,
+                plannedDateKey: activeSelectedDateKey,
                 adaptiveAdvance: false,
-                isRevision: scheduledFreeTimerState.isRevision,
-                activityType: scheduledFreeTimerState.activityType
+                isRevision: isRevisionScheduleText(raw),
+                activityType,
+                source: 'cronograma-pomodoro-livre'
             };
+            renderActiveStudyContext();
 
-            stopScheduledFreeTimerTicker();
-            const snapshot = scheduledFreeTimerState;
-            scheduledFreeTimerState = null;
-            const committedSession = await recordStudyMinutesForContext(completedMinutes, context);
-            if (!committedSession) {
-                scheduledFreeTimerState = snapshot;
-                scheduledFreeTimerState.accumulatedSeconds = elapsedSeconds;
-                scheduledFreeTimerState.startedAtMs = null;
-                scheduledFreeTimerState.paused = true;
-                renderDayTopicsList();
-                return void appNotice('Não foi possível registrar a sessão. O cronômetro ficou pausado com o tempo preservado.', { title:'Cronômetro livre' });
-            }
+            clearInterval(timerInterval);
+            timerInterval = null;
+            clearTimerDeadline();
+            timerMode = 'free';
+            timerHasStarted = false;
+            isTimerPaused = false;
+            currentFocusCycleMinutes = 0;
+            focusSessionCommitted = false;
+            currentTimerTotalSeconds = 0;
+            timeLeft = 0;
+            freeTimerElapsedSeconds = 0;
+            freeTimerStartedAtMs = null;
+            updateDisplay();
+            startTimer();
             renderDayTopicsList();
-            void appNotice(`Sessão registrada: ${completedMinutes} min — ${context.materia} — ${context.assunto}.`, { title:'Tempo contabilizado' });
+        }
+
+        function toggleScheduledPomodoroPause() {
+            if (timerMode !== 'free' || !timerHasStarted) return;
+            togglePauseTimer();
+            renderDayTopicsList();
+        }
+
+        async function stopScheduledPomodoroAndRecord() {
+            if (timerMode !== 'free' || !timerHasStarted) return;
+            await completeFocusSessionNow();
+            renderDayTopicsList();
+            renderPomodoroDailyCounter();
         }
 
         function renderDayTopicsList() {
@@ -8310,6 +8280,7 @@ filterDataByConcurso();
                 ringEl.setAttribute('aria-label', ariaTime);
             }
             updatePauseButton();
+            refreshScheduledPomodoroMirrorUi();
         }
 
         function startTimer() {
