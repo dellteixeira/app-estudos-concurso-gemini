@@ -2929,6 +2929,117 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return getCanonicalAssuntosForMateria(matName);
         }
 
+        function normalizeCanonicalSubjectLabel(value) {
+            return String(value || '')
+                .replace(/[\r\n\t]+/g, ' ')
+                .replace(/^[•·▪◦\-–—]+\s*/, '')
+                .replace(/\s{2,}/g, ' ')
+                .replace(/\s+([,;:.])/g, '$1')
+                .trim();
+        }
+
+        function findCanonicalSubjectItem(materia, assunto) {
+            const normalizedMateria = String(materia || '').trim();
+            const normalizedAssunto = normalizeCanonicalSubjectLabel(assunto);
+            if (!normalizedMateria || !normalizedAssunto) return null;
+            return allEditalItems.find(item =>
+                String(item.concurso || 'Concurso Geral') === currentConcurso &&
+                String(item.materia || '').localeCompare(normalizedMateria, 'pt-BR', { sensitivity:'base' }) === 0 &&
+                normalizeCanonicalSubjectLabel(item.assunto).localeCompare(normalizedAssunto, 'pt-BR', { sensitivity:'base' }) === 0
+            ) || null;
+        }
+
+        async function createCanonicalSubjectForMateria(materia, rawAssunto) {
+            const normalizedMateria = String(materia || '').trim();
+            const assunto = normalizeCanonicalSubjectLabel(rawAssunto);
+            if (!normalizedMateria || !assunto) return null;
+
+            const existing = findCanonicalSubjectItem(normalizedMateria, assunto);
+            if (existing) return existing;
+
+            const materiaItems = allEditalItems.filter(item =>
+                String(item.concurso || 'Concurso Geral') === currentConcurso &&
+                String(item.materia || '').localeCompare(normalizedMateria, 'pt-BR', { sensitivity:'base' }) === 0
+            );
+            if (!materiaItems.length) {
+                await appNotice('A matéria selecionada não existe no Edital Verticalizado atual.', { title:'Matéria não encontrada' });
+                return null;
+            }
+
+            const materiaPriority = Math.min(...materiaItems.map(item => clampMateriaPriority(item.prioridade || 1)));
+            const nextAssuntoPriority = Math.max(0, ...materiaItems.map(item => parseInt(item.assunto_prioridade, 10) || 0)) + 1;
+            const newItem = {
+                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+                materia: normalizedMateria,
+                assunto,
+                prioridade: materiaPriority,
+                assunto_prioridade: nextAssuntoPriority,
+                peso: 5 - materiaPriority,
+                concurso: currentConcurso,
+                user_id: currentUser ? currentUser.id : null,
+                teoria: false,
+                questoes: false,
+                videoaula: false,
+                metodo_conteudo: 'automatico',
+                rev_24h: false,
+                rev_7d: false,
+                rev_30d: false,
+                created_from: 'cronograma'
+            };
+
+            allEditalItems.push(newItem);
+            openMaterias[normalizedMateria] = true;
+            await saveEditalItemToCloud(newItem);
+            filterDataByConcurso();
+            return newItem;
+        }
+
+        async function promptCanonicalSubjectForMateria(materia) {
+            const normalizedMateria = String(materia || '').trim();
+            if (!normalizedMateria) return null;
+            const value = await appPrompt({
+                title:'Cadastrar novo assunto',
+                label:`Novo assunto de "${normalizedMateria}"`,
+                help:'O assunto será criado no Edital Verticalizado e ficará disponível no cronograma, Pomodoro, anotações, flashcards e demais seletores vinculados.',
+                confirmText:'Cadastrar assunto',
+                maxLength:500
+            });
+            if (value === null) return null;
+            const assunto = normalizeCanonicalSubjectLabel(value);
+            if (!assunto) {
+                await appNotice('Informe um nome válido para o assunto.', { title:'Novo assunto' });
+                return null;
+            }
+            const existing = findCanonicalSubjectItem(normalizedMateria, assunto);
+            if (existing) {
+                await appNotice('Esse assunto já existe nesta matéria. Vou reutilizar o cadastro existente.', { title:'Assunto já cadastrado' });
+                return existing;
+            }
+            return createCanonicalSubjectForMateria(normalizedMateria, assunto);
+        }
+
+        async function addCanonicalSubjectToSelectedDay(materia, assunto) {
+            if (!activeSelectedDateKey) return false;
+            const fullString = `${materia} - ${assunto}`;
+            const metadata = getConcursosMetadata();
+            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
+            const contest = metadata[currentConcurso];
+            if (!contest.dateSchedule) contest.dateSchedule = {};
+            if (!Array.isArray(contest.dateSchedule[activeSelectedDateKey])) contest.dateSchedule[activeSelectedDateKey] = [];
+
+            const alreadyOnDay = contest.dateSchedule[activeSelectedDateKey].some(item =>
+                !isRevisionScheduleText(item) &&
+                normalizeScheduledTopicForStudy(item).localeCompare(fullString, 'pt-BR', { sensitivity:'base' }) === 0
+            );
+            if (!alreadyOnDay) {
+                contest.dateSchedule[activeSelectedDateKey].push(fullString);
+                await saveConcursosMetadata(metadata);
+            }
+            renderDayTopicsList();
+            renderMonthCalendar();
+            return !alreadyOnDay;
+        }
+
         function showEditTopicDropdown(idx) {
             const editArea = document.getElementById(`editArea_${idx}`);
             if (!editArea) return;
@@ -2945,7 +3056,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     </div>
                     <div class="day-topic-form-actions day-topic-form-actions-edit">
                         <button class="btn btn-secondary btn-sm" onclick="renderDayTopicsList()">Cancelar</button>
-                        <button class="btn btn-info btn-sm" onclick="addManualTopicToDay(${idx})">Inserir Manualmente</button>
+                        <button class="btn btn-info btn-sm" onclick="addManualTopicToDay(${idx})">+ Cadastrar novo assunto</button>
                         <button class="btn btn-success btn-sm" onclick="confirmEditTopicWithSwap(${idx})">Salvar / Trocar Assunto</button>
                     </div>
                 </div>
@@ -2957,18 +3068,21 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         async function addManualTopicToDay(targetIdx) {
             const matSel = document.getElementById(`editMatSel_${targetIdx}`);
             const selectedMat = matSel ? matSel.value : '';
-            const novoAssunto = prompt(`Digite o novo assunto para a matéria "${selectedMat}":`);
-            if (!novoAssunto || !novoAssunto.trim()) return;
+            const canonicalItem = await promptCanonicalSubjectForMateria(selectedMat);
+            if (!canonicalItem) return;
 
-            const newFullString = `${selectedMat} - ${novoAssunto.trim()}`;
-            let metadata = getConcursosMetadata();
+            const metadata = getConcursosMetadata();
             if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
             if (!metadata[currentConcurso].dateSchedule) metadata[currentConcurso].dateSchedule = {};
+            if (!Array.isArray(metadata[currentConcurso].dateSchedule[activeSelectedDateKey])) return;
 
-            metadata[currentConcurso].dateSchedule[activeSelectedDateKey][targetIdx] = newFullString;
+            metadata[currentConcurso].dateSchedule[activeSelectedDateKey][targetIdx] =
+                `${canonicalItem.materia} - ${canonicalItem.assunto}`;
             await saveConcursosMetadata(metadata);
+            filterDataByConcurso();
             renderDayTopicsList();
             renderMonthCalendar();
+            await appNotice('Assunto cadastrado no Edital Verticalizado e vinculado ao cronograma.', { title:'Assunto sincronizado' });
         }
 
         function updateEditAssuntoDropdown(idx) {
@@ -3032,11 +3146,28 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     </div>
                     <div class="day-topic-form-actions">
                         <button class="btn btn-secondary btn-sm" onclick="resetAddTopicArea()">Cancelar</button>
+                        <button class="btn btn-info btn-sm" onclick="createAndAddCanonicalSubjectFromDay()">+ Novo assunto</button>
                         <button class="btn btn-primary btn-sm" onclick="confirmAddTopicWithSwap()">Adicionar ao Dia</button>
                     </div>
+                    <small class="canonical-subject-link-hint">Novo assunto = cadastro único: Edital Verticalizado + cronograma + Pomodoro + demais seletores.</small>
                 </div>
             `;
             updateAddAssuntoDropdown();
+        }
+
+        async function createAndAddCanonicalSubjectFromDay() {
+            const matSel = document.getElementById('addMatSel');
+            const selectedMat = matSel?.value || '';
+            const canonicalItem = await promptCanonicalSubjectForMateria(selectedMat);
+            if (!canonicalItem) return;
+
+            await addCanonicalSubjectToSelectedDay(canonicalItem.materia, canonicalItem.assunto);
+            filterDataByConcurso();
+            resetAddTopicArea();
+            await appNotice(
+                `"${canonicalItem.assunto}" agora pertence à matéria "${canonicalItem.materia}" no Edital Verticalizado e está vinculado ao cronograma.`,
+                { title:'Assunto sincronizado' }
+            );
         }
 
         function updateAddAssuntoDropdown() {
