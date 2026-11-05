@@ -346,9 +346,17 @@
     loadStateSyncModules();
     loadUiModules();
   }, { once: true });
+  function schedulePostLoadOptionalFeatures() {
+    const task = () => {
+      loadNotesImportExport();
+      loadStudyPerformanceReport();
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(task, { timeout: 7000 });
+    else setTimeout(task, 3500);
+  }
+
   window.addEventListener('load', bootstrapPwa, { once: true });
-  window.addEventListener('load', loadNotesImportExport, { once: true });
-  window.addEventListener('load', loadStudyPerformanceReport, { once: true });
+  window.addEventListener('load', schedulePostLoadOptionalFeatures, { once: true });
   window.applyPwaUpdate = applyPwaUpdate;
   window.checkForPwaUpdate = checkForPwaUpdate;
   window.loadStateSyncModules = loadStateSyncModules;
