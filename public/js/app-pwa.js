@@ -220,40 +220,40 @@
             if (document.querySelector('link[data-responsive-release-delta]')) return;
             const style = document.createElement('link');
             style.rel = 'stylesheet';
-            style.href = './css/responsive-polish-v10.64.64.css?v=10.64.64';
+            style.href = './css/responsive-polish-v10.64.65.css?v=10.64.65';
             style.dataset.responsiveReleaseDelta = '1';
             document.head.appendChild(style);
         })();
 
-        // V10.64.64 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
+        // V10.64.65 — ativa a reconciliação que conecta cronograma, retenção e diagnóstico.
         (function loadAdaptiveScheduleReconciliation() {
             if (window.AdaptiveScheduleReconciliation || document.querySelector('script[data-adaptive-schedule-reconciliation]')) return;
             const script = document.createElement('script');
-            script.src = './js/adaptive-schedule-reconciliation.js?v=10.64.64';
+            script.src = './js/adaptive-schedule-reconciliation.js?v=10.64.65';
             script.defer = true;
             script.dataset.adaptiveScheduleReconciliation = '1';
             document.head.appendChild(script);
         })();
 
-        // V10.64.64 — IA consultiva: interpreta dificuldade, mas Retenção mantém autoridade.
+        // V10.64.65 — IA consultiva: interpreta dificuldade, mas Retenção mantém autoridade.
         (function loadLearningAdvisor() {
             if (!document.querySelector('link[data-learning-advisor-style]')) {
                 const style = document.createElement('link');
                 style.rel = 'stylesheet';
-                style.href = './css/learning-advisor.css?v=10.64.64';
+                style.href = './css/learning-advisor.css?v=10.64.65';
                 style.dataset.learningAdvisorStyle = '1';
                 document.head.appendChild(style);
             }
             if (!window.AppLearningAdvisor && !document.querySelector('script[data-learning-advisor]')) {
                 const script = document.createElement('script');
-                script.src = './js/learning-advisor.js?v=10.64.64';
+                script.src = './js/learning-advisor.js?v=10.64.65';
                 script.defer = true;
                 script.dataset.learningAdvisor = '1';
                 document.head.appendChild(script);
             }
             if (!window.CriticalPointActions && !document.querySelector('script[data-critical-point-actions]')) {
                 const criticalScript = document.createElement('script');
-                criticalScript.src = './js/critical-points-actions.js?v=10.64.64';
+                criticalScript.src = './js/critical-points-actions.js?v=10.64.65';
                 criticalScript.defer = true;
                 criticalScript.dataset.criticalPointActions = '1';
                 document.head.appendChild(criticalScript);
