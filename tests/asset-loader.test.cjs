@@ -59,5 +59,5 @@ test('versioned request reuses an already loaded legacy script with the same pat
 test('core features are registered for chart and PDF lazy loading',()=>{
   const {api}=loadModule();
   const stats=api.stats();
-  assert.deepEqual([...stats.registeredFeatures],['charts','pdf-engine']);
+  assert.deepEqual([...stats.registeredFeatures],['charts','app-ai','pdf-engine','pdf-library']);
 });
