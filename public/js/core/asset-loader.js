@@ -106,6 +106,7 @@ function stats(){
 }
 
 defineFeature('charts',{scripts:['./vendor/chart.umd.min.js'],ready:()=>Boolean(global.Chart)});
+defineFeature('app-ai',{scripts:['./js/app-ai.js'],ready:()=>Boolean(global.AppAiRuntime)});
 defineFeature('pdf-engine',{
   styles:['./vendor/pdf_viewer.min.css','./css/pdf-reader.css'],
   scripts:['./vendor/pdf.min.js','./js/pdf/pdf-reader.js'],
