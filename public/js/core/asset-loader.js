@@ -116,16 +116,25 @@ defineFeature('pdf-library',{
   styles:['./css/pdf-library.css','./vendor/pdf_viewer.min.css','./css/pdf-reader.css'],
   scripts:[
     './js/pdf/pdf-core.js',
+    './js/pdf/offline-pdf-store.js',
+    './js/pdf/pdf-library-opfs-adapter.js',
     './js/pdf/pdf-workspaces.js',
     './js/pdf/pdf-links.js',
     './js/pdf/pdf-library.js',
     './js/pdf/pdf-upload.js',
     './js/pdf/pdf-annotations.js',
+    './js/pdf/pdf-library-ordering.js',
+    './js/pdf/pdf-offline-integrity.js',
+    './js/pdf/pdf-device-storage.js',
+    './js/pdf/pdf-library-layout-fix.js',
+    './js/pdf/pdf-reader-panel-layout.js',
     './vendor/pdf.min.js',
     './js/pdf/pdf-reader.js',
-    './js/pdf/pdf-library-ui.js'
+    './js/pdf/pdf-library-ui.js',
+    './js/pdf/pdf-offline-library-manager.js',
+    './js/pdf/pdf-offline-library-ui.js'
   ],
-  ready:()=>Boolean(global.PdfStudyLibraryUI)
+  ready:()=>Boolean(global.PdfStudyLibraryUI&&global.PdfStudyLibrary&&global.PdfDeviceStorage)
 });
 
 global.AppAssetLoader=Object.freeze({
