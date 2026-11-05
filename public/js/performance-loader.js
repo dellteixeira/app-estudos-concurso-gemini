@@ -141,12 +141,27 @@
 
   function bindIntentPreload() {
     const warmPdf = () => {
-      if (!navigator.onLine && !global.pdfjsLib) return;
-      scheduleIdleTask(() => loadFeature('pdf-engine', () => Promise.all([
-        loadScript('./vendor/pdf.min.js'),
+      const profile = connectionProfile();
+      if (profile.constrained) return;
+      if (!navigator.onLine && !global.PdfStudyLibraryUI) return;
+      scheduleIdleTask(() => loadFeature('pdf-library', () => Promise.all([
+        loadStyle('./css/pdf-library.css'),
         loadStyle('./vendor/pdf_viewer.min.css'),
         loadStyle('./css/pdf-reader.css')
-      ])), 1200);
+      ]).then(async () => {
+        const ordered = [
+          './js/pdf/pdf-core.js',
+          './js/pdf/pdf-workspaces.js',
+          './js/pdf/pdf-links.js',
+          './js/pdf/pdf-library.js',
+          './js/pdf/pdf-upload.js',
+          './js/pdf/pdf-annotations.js',
+          './vendor/pdf.min.js',
+          './js/pdf/pdf-reader.js',
+          './js/pdf/pdf-library-ui.js'
+        ];
+        for (const src of ordered) await loadScript(src, { defer:true });
+      })), 900);
     };
 
     document.querySelectorAll('[onclick*="tab-biblioteca"], [data-tab="tab-biblioteca"], [onclick*="openModalViewEdital"]').forEach(el => {
