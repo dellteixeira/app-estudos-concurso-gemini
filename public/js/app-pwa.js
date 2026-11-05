@@ -103,6 +103,35 @@
             }
         });
 
+        let appAiRuntimePromise = null;
+        function ensureAppAiRuntime() {
+            if (window.AppAiRuntime) return Promise.resolve(window.AppAiRuntime);
+            if (appAiRuntimePromise) return appAiRuntimePromise;
+            const loader = window.AppAssetLoader;
+            if (!loader?.loadFeature) {
+                appAiRuntimePromise = Promise.reject(new Error('Loader de assets indisponível para o módulo de IA.'));
+                return appAiRuntimePromise;
+            }
+            appAiRuntimePromise = loader.loadFeature('app-ai')
+                .then(() => {
+                    if (!window.AppAiRuntime) throw new Error('Runtime de IA não inicializado.');
+                    return window.AppAiRuntime;
+                })
+                .catch(error => {
+                    appAiRuntimePromise = null;
+                    console.warn('Não foi possível carregar o módulo de IA/edital sob demanda.', error);
+                    throw error;
+                });
+            return appAiRuntimePromise;
+        }
+        function lazyAppAiCall(name, ...args) {
+            return ensureAppAiRuntime().then(runtime => {
+                const fn = runtime?.[name];
+                if (typeof fn !== 'function') throw new Error(`Ação indisponível no runtime de IA: ${name}`);
+                return fn(...args);
+            });
+        }
+
         window.installPwaApp = installPwaApp;
         window.dismissPwaBanner = dismissPwaBanner;
         window.handleSignUp = handleSignUp;
@@ -115,10 +144,10 @@
         window.populateNotaAssuntoDropdown = populateNotaAssuntoDropdown;
         window.handleNotaAssuntoChange = handleNotaAssuntoChange;
         window.switchTab = switchTab;
-        window.openModalAnaliseEditalIA = openModalAnaliseEditalIA;
-        window.closeModalAnaliseEditalIA = closeModalAnaliseEditalIA;
-        window.executarAnaliseEditalIA = executarAnaliseEditalIA;
-        window.importarAnaliseEditalIA = importarAnaliseEditalIA;
+        window.openModalAnaliseEditalIA = (...args) => lazyAppAiCall('openModalAnaliseEditalIA', ...args);
+        window.closeModalAnaliseEditalIA = (...args) => lazyAppAiCall('closeModalAnaliseEditalIA', ...args);
+        window.executarAnaliseEditalIA = (...args) => lazyAppAiCall('executarAnaliseEditalIA', ...args);
+        window.importarAnaliseEditalIA = (...args) => lazyAppAiCall('importarAnaliseEditalIA', ...args);
         window.importJSON = importJSON;
         window.clearData = clearData;
         window.addManualItem = addManualItem;
@@ -140,14 +169,14 @@
         window.startTimer = startTimer;
         window.resetTimer = resetTimer;
         window.updateTimerSettings = updateTimerSettings;
-        window.openModalPromptIA = openModalPromptIA;
-        window.closeModalPromptIA = closeModalPromptIA;
-        window.copyPromptToClipboard = copyPromptToClipboard;
-        window.openModalViewEdital = openModalViewEdital;
-        window.closeModalViewEdital = closeModalViewEdital;
-        window.uploadEditalFile = uploadEditalFile;
-        window.downloadEditalFile = downloadEditalFile;
-        window.removerEditalFile = removerEditalFile;
+        window.openModalPromptIA = (...args) => lazyAppAiCall('openModalPromptIA', ...args);
+        window.closeModalPromptIA = (...args) => lazyAppAiCall('closeModalPromptIA', ...args);
+        window.copyPromptToClipboard = (...args) => lazyAppAiCall('copyPromptToClipboard', ...args);
+        window.openModalViewEdital = (...args) => lazyAppAiCall('openModalViewEdital', ...args);
+        window.closeModalViewEdital = (...args) => lazyAppAiCall('closeModalViewEdital', ...args);
+        window.uploadEditalFile = (...args) => lazyAppAiCall('uploadEditalFile', ...args);
+        window.downloadEditalFile = (...args) => lazyAppAiCall('downloadEditalFile', ...args);
+        window.removerEditalFile = (...args) => lazyAppAiCall('removerEditalFile', ...args);
         window.forceFullSync = forceFullSync;
         window.removeFlashcard = removeFlashcard;
         window.openEditarFlashcardModal = openEditarFlashcardModal;
