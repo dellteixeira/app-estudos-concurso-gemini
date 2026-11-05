@@ -29,5 +29,5 @@ test('assessment explicita contrato imutável de prioridade',()=>{
   assert.equal(result.editalPriority,1); assert.equal(result.topicPriority,2); assert.equal(result.importedOrderMutation,false); assert.equal('reorder' in api,false); assert.equal('updatePriority' in api,false);
 });
 test('asset canônico é headless e painel visual legado saiu do shell',()=>{
-  const html=fs.readFileSync('public/index.html','utf8'); assert.equal(html.includes('./js/core/topic-assessment.js'),true); assert.equal(html.includes('phase6aDomainRiskPanel'),false); assert.equal(html.includes('domain-risk-dashboard.js'),false); assert.equal(assessmentSource.includes('document.'),false);
+  const html=fs.readFileSync('public/index.html','utf8'); const navigation=fs.readFileSync('public/js/ui/navigation.js','utf8'); assert.equal(html.includes('./js/core/topic-assessment.js'),false); assert.equal(navigation.includes('./js/core/topic-assessment.js'),true); assert.equal(html.includes('phase6aDomainRiskPanel'),false); assert.equal(html.includes('domain-risk-dashboard.js'),false); assert.equal(assessmentSource.includes('document.'),false);
 });
