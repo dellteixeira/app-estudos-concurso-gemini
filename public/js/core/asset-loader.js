@@ -113,7 +113,7 @@ defineFeature('pdf-engine',{
   ready:()=>Boolean(global.pdfjsLib||global.PdfStudyReader)
 });
 defineFeature('pdf-library',{
-  styles:['./css/pdf-library.css','./vendor/pdf_viewer.min.css','./css/pdf-reader.css'],
+  styles:['./css/pdf-library.css'],
   scripts:[
     './js/pdf/pdf-core.js',
     './js/pdf/offline-pdf-store.js',
@@ -127,9 +127,6 @@ defineFeature('pdf-library',{
     './js/pdf/pdf-offline-integrity.js',
     './js/pdf/pdf-device-storage.js',
     './js/pdf/pdf-library-layout-fix.js',
-    './js/pdf/pdf-reader-panel-layout.js',
-    './vendor/pdf.min.js',
-    './js/pdf/pdf-reader.js',
     './js/pdf/pdf-library-ui.js',
     './js/pdf/pdf-offline-library-manager.js',
     './js/pdf/pdf-offline-library-ui.js'
