@@ -9,13 +9,21 @@ const nav=fs.readFileSync('public/js/ui/navigation.js','utf8');
 const sw=fs.readFileSync('public/sw.js','utf8');
 const pwa=fs.readFileSync('public/pwa-update.js','utf8');
 
-test('startup nao carrega PDF nem Chart.js antecipadamente',()=>{
+test('startup mantém orçamento enxuto de scripts e nao carrega recursos pesados',()=>{
+  const eagerScripts=[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match=>match[1]);
+  const eagerStyles=[...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(match=>match[1]);
+  assert.ok(eagerScripts.length<=11,`scripts iniciais demais: ${eagerScripts.length}`);
+  assert.ok(eagerStyles.length<=4,`styles iniciais demais: ${eagerStyles.length}`);
   assert.doesNotMatch(html,/src="\.\/vendor\/chart\.umd\.min\.js"/);
   assert.doesNotMatch(html,/src="\.\/js\/pdf\//);
   assert.doesNotMatch(html,/src="\.\/vendor\/pdf\.min\.js"/);
   assert.doesNotMatch(html,/href="\.\/css\/pdf-library\.css"/);
   assert.doesNotMatch(html,/href="\.\/css\/pdf-reader\.css"/);
   assert.doesNotMatch(html,/href="\.\/vendor\/pdf_viewer\.min\.css"/);
+  assert.doesNotMatch(html,/src="\.\/js\/app-ai\.js"/);
+  assert.doesNotMatch(html,/src="\.\/js\/core\/cognitive-profile/);
+  assert.doesNotMatch(html,/src="\.\/js\/core\/study-optimization-engine\.js"/);
+  assert.doesNotMatch(html,/src="\.\/js\/core\/predictive-adaptive-tutor\.js"/);
 });
 
 test('delta responsivo legado nao e carregado junto com a release atual',()=>{
@@ -24,8 +32,15 @@ test('delta responsivo legado nao e carregado junto com a release atual',()=>{
 
 test('asset loader registra recursos pesados sob demanda',()=>{
   assert.match(loader,/defineFeature\('charts'/);
+  assert.match(loader,/defineFeature\('app-ai'/);
   assert.match(loader,/defineFeature\('pdf-library'/);
   assert.match(loader,/\.\/js\/pdf\/pdf-library-ui\.js/);
+});
+
+test('IA de edital e Biblioteca PDF sao carregadas apenas por demanda',()=>{
+  assert.match(fs.readFileSync('public/js/app-pwa.js','utf8'),/function ensureAppAiRuntime/);
+  assert.match(fs.readFileSync('public/js/app-pwa.js','utf8'),/loadFeature\('app-ai'\)/);
+  assert.match(fs.readFileSync('public/js/app-ai.js','utf8'),/window\.AppAiRuntime/);
 });
 
 test('Biblioteca PDF e carregada apenas ao navegar para a aba',()=>{
@@ -57,7 +72,15 @@ test('service worker nao bloqueia install com assets opcionais',()=>{
   assert.match(sw,/includeOptional = true/);
 });
 
-test('precache opcional e adiado para idle depois da primeira tela',()=>{
+test('precache e features opcionais sao adiados para idle depois da primeira tela',()=>{
   assert.match(pwa,/requestIdleCallback\(primeOffline/);
   assert.match(pwa,/timeout: 8000/);
+  assert.match(pwa,/function schedulePostLoadOptionalFeatures/);
+  assert.match(pwa,/requestIdleCallback\(task, \{ timeout: 7000 \}\)/);
+});
+
+test('persistencia do edital evita escrita identica consecutiva',()=>{
+  assert.match(core,/editalSerializedCacheKey/);
+  assert.match(core,/serialized === editalSerializedCache/);
+  assert.match(core,/return false/);
 });
