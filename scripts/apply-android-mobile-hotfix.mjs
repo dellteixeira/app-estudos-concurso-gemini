@@ -31,9 +31,7 @@ for (const required of [indexFile, cssSource, manifestFile, logoSource]) {
   // Ancore o hotfix no sistema responsivo canônico, que permanece no shell mínimo.
   const pivot = /^(\s*)<link\b[^>]*href=["']\.\/css\/responsive-system\.css(?:\?[^"']*)?["'][^>]*>\s*$/im;
   if (!pivot.test(html)) throw new Error('Não foi possível localizar responsive-system.css para inserir o hotfix mobile Android.');
-  html = html.replace(pivot, `  const pivot = /^(\s*)<link\b[^>]*href=["']\.\/css\/pdf-reader\.css(?:\?[^"']*)?["'][^>]*>\s*$/im;
-  if (!pivot.test(html)) throw new Error('Não foi possível localizar pdf-reader.css para inserir o hotfix mobile Android.');
-  html = html.replace(pivot, `$&\n${tag}`);\n${tag}`);
+  html = html.replace(pivot, match => match + '\n' + tag);
   fs.writeFileSync(indexFile, html);
 }
 
