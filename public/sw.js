@@ -1,19 +1,21 @@
-const APP_VERSION = '10.64.64';
+const APP_VERSION = '10.64.65';
 const CACHE_PREFIX = 'estudo-adaptativo-';
 const CACHE_NAME = `${CACHE_PREFIX}v${APP_VERSION.replace(/\./g, '-')}`;
 
 const CRITICAL_APP_SHELL = [
   './', './index.html', './manifest.json', './version.json', './pwa-update.js', './capacitor-runtime.js',
-  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/responsive-polish-v10.64.64.css', './css/canonical-ui.css', './css/shell-modernization.css', './css/pdf-library.css', './css/pdf-reader.css', './css/learning-advisor.css',
-  './js/study-domain.js', './js/core/edital-integrity.js', './js/core/exam-board-intelligence.js', './js/core/contextual-ai-tutor.js', './js/core/cognitive-profile-source.js', './js/core/cognitive-profile.js', './js/core/intervention-effectiveness.js', './js/core/error-intelligence.js', './js/core/cognitive-profile-runtime.js', './js/core/topic-assessment.js', './js/core/study-optimization-engine.js', './js/core/study-events.js', './js/core/study-guidance-engine.js', './js/core/offline-sync-coordinator.js', './js/core/study-observability.js', './js/core/local-backup-store.js', './js/core/offline-outbox-store.js', './js/core/offline-sync-shadow.js', './js/core/offline-sync-metadata-shadow.js', './js/core/offline-sync-metadata-authority.js', './js/core/offline-sync-metadata-graduation.js', './js/core/offline-sync-metadata-rollout.js', './js/core/offline-sync-metadata-stability.js', './js/core/offline-sync-metadata-expanded-stability.js', './js/core/offline-sync-metadata-expanded-promotion.js', './js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-population-promotion.js', './js/core/offline-sync-metadata-population-promoted-stability.js', './js/core/offline-sync-metadata-ring2-promotion.js', './js/core/offline-sync-metadata-ring2-promoted-stability.js',
+  './css/base.css', './css/dashboard.css', './css/features.css', './css/responsive-system.css', './css/responsive-polish-v10.64.65.css', './css/canonical-ui.css', './css/shell-modernization.css', './css/learning-advisor.css',
+  './js/study-domain.js', './js/core/edital-integrity.js', './js/core/exam-board-intelligence.js', './js/core/contextual-ai-tutor.js', './js/core/cognitive-profile-source.js', './js/core/cognitive-profile.js', './js/core/intervention-effectiveness.js', './js/core/error-intelligence.js', './js/core/cognitive-profile-runtime.js', './js/core/topic-assessment.js', './js/core/study-optimization-engine.js', './js/core/study-events.js', './js/core/study-guidance-engine.js', './js/core/offline-sync-coordinator.js', './js/core/study-observability.js', './js/core/local-backup-store.js', './js/core/asset-loader.js', './js/core/offline-outbox-store.js', './js/core/offline-sync-shadow.js', './js/core/offline-sync-metadata-shadow.js', './js/core/offline-sync-metadata-authority.js', './js/core/offline-sync-metadata-graduation.js', './js/core/offline-sync-metadata-rollout.js', './js/core/offline-sync-metadata-stability.js', './js/core/offline-sync-metadata-expanded-stability.js', './js/core/offline-sync-metadata-expanded-promotion.js', './js/core/offline-sync-metadata-promoted-stability.js', './js/core/offline-sync-metadata-population-promotion.js', './js/core/offline-sync-metadata-population-promoted-stability.js', './js/core/offline-sync-metadata-ring2-promotion.js', './js/core/offline-sync-metadata-ring2-promoted-stability.js',
   '/js/core/predictive-adaptive-tutor.js',
-  './js/core/offline-sync-metadata-ring3-promotion.js', './js/core/offline-sync-metadata-expansion.js', './js/core/offline-sync-authority.js', './js/core/offline-sync-delete-authority.js', './js/core/offline-sync-edital-graduation.js', './js/app-core.js', './js/app-state.js', './js/sync-engine.js', './js/adaptive-schedule-reconciliation.js', './js/learning-advisor.js', './js/critical-points-actions.js', './js/edital-cross-tool.js', './js/edital-cross-ui.js', './js/app-ai.js', './js/app-ui.js',
+  './js/core/offline-sync-metadata-ring3-promotion.js', './js/core/offline-sync-metadata-expansion.js', './js/core/offline-sync-authority.js', './js/core/offline-sync-delete-authority.js', './js/core/offline-sync-edital-graduation.js', './js/app-core.js', './js/app-state.js', './js/sync-engine.js', './js/adaptive-schedule-reconciliation.js', './js/learning-advisor.js', './js/critical-points-actions.js', './js/edital-cross-tool.js', './js/edital-cross-ui.js', './js/app-ui.js',
   './css/edital-cross-tool.css',
   './js/ui/mobile.js', './js/ui/navigation.js', './js/ui/search.js', './js/app-pwa.js',
-  './vendor/supabase.js', './vendor/chart.umd.min.js', './icon-192.png', './icon-512.png'
+  './vendor/supabase.js', './icon-192.png', './icon-512.png'
 ];
 
 const OPTIONAL_OFFLINE_ASSETS = [
+  './js/app-ai.js',
+  './vendor/chart.umd.min.js', './css/pdf-library.css', './css/pdf-reader.css',
   './js/core/study-now-command-center.js', './js/performance-loader.js', './js/performance-metrics.js', './js/notes-import-export.js', './js/notes-export-rich.js', './js/study-performance-report.js',
   './js/pdf/pdf-core.js', './js/pdf/pdf-workspaces.js', './js/pdf/pdf-links.js', './js/pdf/pdf-library.js', './js/pdf/pdf-library-ordering.js', './js/pdf/pdf-upload.js', './js/pdf/pdf-annotations.js', './js/pdf/pdf-reader.js', './js/pdf/pdf-library-ui.js', './js/pdf/pdf-library-opfs-adapter.js', './js/pdf/pdf-library-layout-fix.js', './js/pdf/pdf-device-storage.js', './js/pdf/offline-pdf-store.js', './js/pdf/pdf-offline-library-manager.js', './js/pdf/pdf-offline-integrity.js', './js/pdf/pdf-offline-library-ui.js', './css/pdf-mobile-card-actions.css', './vendor/pdf.min.js', './vendor/pdf_viewer.min.css', './vendor/pdf.worker.min.js'
 ];
@@ -30,11 +32,13 @@ async function fetchAndCache(cache, asset) {
   return response;
 }
 
-async function primeOfflineAssets({ requireCritical = true } = {}) {
+async function primeOfflineAssets({ requireCritical = true, includeOptional = true } = {}) {
   const cache = await caches.open(CACHE_NAME);
   if (requireCritical) await Promise.all(CRITICAL_APP_SHELL.map(asset => fetchAndCache(cache, asset)));
   else await Promise.allSettled(CRITICAL_APP_SHELL.map(asset => fetchAndCache(cache, asset)));
-  await Promise.allSettled(OPTIONAL_OFFLINE_ASSETS.map(asset => fetchAndCache(cache, asset)));
+  if (includeOptional) {
+    await Promise.allSettled(OPTIONAL_OFFLINE_ASSETS.map(asset => fetchAndCache(cache, asset)));
+  }
 }
 
 async function deleteOldAppCaches() {
@@ -54,11 +58,16 @@ function isMutableAppCodeAsset(url) {
   return path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.json');
 }
 
-self.addEventListener('install', event => event.waitUntil(primeOfflineAssets({ requireCritical:true })));
-self.addEventListener('activate', event => event.waitUntil((async () => { await deleteOldAppCaches(); await self.clients.claim(); await primeOfflineAssets({ requireCritical:false }).catch(() => {}); })()));
+self.addEventListener('install', event => event.waitUntil(
+  primeOfflineAssets({ requireCritical:true, includeOptional:false })
+));
+self.addEventListener('activate', event => event.waitUntil((async () => {
+  await deleteOldAppCaches();
+  await self.clients.claim();
+})()));
 
 self.addEventListener('message', event => {
-  if (event.data?.type === 'PRIME_OFFLINE_ASSETS') { event.waitUntil(primeOfflineAssets({ requireCritical:false }).catch(() => {})); return; }
+  if (event.data?.type === 'PRIME_OFFLINE_ASSETS') { event.waitUntil(primeOfflineAssets({ requireCritical:false, includeOptional:true }).catch(() => {})); return; }
   if (event.data?.type === 'SKIP_WAITING') { event.waitUntil(self.skipWaiting()); return; }
   if (event.data?.type === 'GET_APP_VERSION') {
     const payload = { type:'APP_VERSION', version:APP_VERSION };

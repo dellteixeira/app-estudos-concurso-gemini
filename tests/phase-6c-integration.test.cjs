@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const guidance=fs.readFileSync('public/js/core/study-guidance-engine.js','utf8');
 const critical=fs.readFileSync('public/js/critical-points-actions.js','utf8');
 const index=fs.readFileSync('public/index.html','utf8');
+const navigation=fs.readFileSync('public/js/ui/navigation.js','utf8');
 const manifest=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 
 test('study guidance consumes predictive tutor without becoming a new UI surface',()=>{
@@ -24,8 +25,10 @@ test('critical points prepares 6C prediction without changing card markup contra
 });
 
 test('predictive tutor is loaded after optimization engine and has cache contracts',()=>{
-  const optimization=index.indexOf('./js/core/study-optimization-engine.js');
-  const predictive=index.indexOf('./js/core/predictive-adaptive-tutor.js');
+  assert.equal(index.includes('./js/core/study-optimization-engine.js'),false);
+  assert.equal(index.includes('./js/core/predictive-adaptive-tutor.js'),false);
+  const optimization=navigation.indexOf('./js/core/study-optimization-engine.js');
+  const predictive=navigation.indexOf('./js/core/predictive-adaptive-tutor.js');
   assert.ok(optimization>=0&&predictive>optimization);
   for(const key of ['criticalAppShell','networkFirstPaths','workerNoStorePaths','headersNoStorePaths']){
     assert.ok(manifest[key].includes('/js/core/predictive-adaptive-tutor.js'),`${key} must contain predictive tutor`);

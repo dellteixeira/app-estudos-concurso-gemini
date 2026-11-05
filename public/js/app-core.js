@@ -450,7 +450,14 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return `pending_sync_${uid}`;
         }
 
+        let syncStateCache = null;
+        let syncStateCacheKey = '';
+        let syncStateSerializedCache = '';
+
         function getSyncState() {
+            const storageKey = getSyncStateStorageKey();
+            if (syncStateCache && syncStateCacheKey === storageKey) return syncStateCache;
+
             const emptyState = {
                 metadataDirty: false,
                 metadataRevision: 0,
@@ -461,8 +468,9 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 concursoDeletes: []
             };
             try {
-                const saved = JSON.parse(localStorage.getItem(getSyncStateStorageKey()) || '{}');
-                return {
+                const raw = localStorage.getItem(storageKey) || '{}';
+                const saved = JSON.parse(raw);
+                syncStateCache = {
                     ...emptyState,
                     ...saved,
                     flashcardsDirty: (saved.flashcardsDirty && typeof saved.flashcardsDirty === 'object')
@@ -473,13 +481,26 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     flashcardDeletes: Array.isArray(saved.flashcardDeletes) ? saved.flashcardDeletes : [],
                     concursoDeletes: Array.isArray(saved.concursoDeletes) ? saved.concursoDeletes : []
                 };
+                syncStateCacheKey = storageKey;
+                syncStateSerializedCache = raw;
+                return syncStateCache;
             } catch (error) {
-                return emptyState;
+                syncStateCache = emptyState;
+                syncStateCacheKey = storageKey;
+                syncStateSerializedCache = '';
+                return syncStateCache;
             }
         }
 
         function saveSyncState(state) {
-            localStorage.setItem(getSyncStateStorageKey(), JSON.stringify(state));
+            const storageKey = getSyncStateStorageKey();
+            const serialized = JSON.stringify(state);
+            syncStateCache = state;
+            syncStateCacheKey = storageKey;
+            if (serialized !== syncStateSerializedCache) {
+                localStorage.setItem(storageKey, serialized);
+                syncStateSerializedCache = serialized;
+            }
             updateSyncIndicator();
         }
 
@@ -1007,9 +1028,26 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             return `concursos_metadata_${uid}`;
         }
 
+        let metadataCacheStorageKey = '';
+        let metadataSerializedCache = '';
+
         function getConcursosMetadata() {
-            try { return JSON.parse(localStorage.getItem(getConcursosMetadataStorageKey()) || '{}'); }
-            catch(e) { return {}; }
+            const storageKey = getConcursosMetadataStorageKey();
+            if (metadataCacheStorageKey === storageKey && metadataCache && typeof metadataCache === 'object') {
+                return metadataCache;
+            }
+            try {
+                const raw = localStorage.getItem(storageKey) || '{}';
+                metadataCache = JSON.parse(raw);
+                metadataCacheStorageKey = storageKey;
+                metadataSerializedCache = raw;
+                return metadataCache;
+            } catch(e) {
+                metadataCache = {};
+                metadataCacheStorageKey = storageKey;
+                metadataSerializedCache = '{}';
+                return metadataCache;
+            }
         }
 
         let metadataSyncTimer = null;
@@ -1140,10 +1178,15 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
         }
 
         async function saveConcursosMetadata(data) {
-            // Local-first: a interface nunca espera a rede para concluir uma alteração.
+            // Local-first com cache em memória: evita JSON.parse/JSON.stringify repetidos
+            // em cada render e evita escrita síncrona quando o estado não mudou.
             metadataCache = data;
             const key = getConcursosMetadataStorageKey();
-            localStorage.setItem(key, JSON.stringify(data));
+            const serialized = JSON.stringify(data);
+            metadataCacheStorageKey = key;
+            if (serialized === metadataSerializedCache) return;
+            localStorage.setItem(key, serialized);
+            metadataSerializedCache = serialized;
             setMetadataDirty(true);
             scheduleLocalBackup('alteração em concursos / planejamento');
             if (navigator.onLine && currentUser) scheduleMetadataSync();
@@ -2886,31 +2929,49 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             renderAdaptiveStudySuggestion(container);
         }
 
-        function getCanonicalMateriaOrder() {
+        let canonicalEditalIndexSource = null;
+        let canonicalEditalIndex = null;
+
+        function getCanonicalEditalIndex() {
+            if (canonicalEditalIndexSource === editalItems && canonicalEditalIndex) return canonicalEditalIndex;
+
             const materiasMap = {};
+            const assuntosByMateria = new Map();
             editalItems.forEach((item, index) => {
                 const materia = String(item?.materia || '').trim();
                 if (!materia) return;
-                const prioridade = clampMateriaPriority(item?.prioridade || 1);
-                if (!materiasMap[materia]) materiasMap[materia] = { prioridade, naturalIndex:index };
-                else materiasMap[materia].prioridade = Math.min(materiasMap[materia].prioridade, prioridade);
+                const materiaPrioridade = clampMateriaPriority(item?.prioridade || 1);
+                if (!materiasMap[materia]) materiasMap[materia] = { prioridade:materiaPrioridade, naturalIndex:index };
+                else materiasMap[materia].prioridade = Math.min(materiasMap[materia].prioridade, materiaPrioridade);
+
+                const assunto = String(item?.assunto || '').trim();
+                if (!assunto) return;
+                if (!assuntosByMateria.has(materia)) assuntosByMateria.set(materia, new Map());
+                const seen = assuntosByMateria.get(materia);
+                const assuntoPrioridade = Math.max(1, parseInt(item?.assunto_prioridade, 10) || 1);
+                if (!seen.has(assunto)) seen.set(assunto, { prioridade:assuntoPrioridade, naturalIndex:index });
+                else seen.get(assunto).prioridade = Math.min(seen.get(assunto).prioridade, assuntoPrioridade);
             });
-            return buildDisplayedMateriaOrder(materiasMap);
+
+            const materiaOrder = buildDisplayedMateriaOrder(materiasMap);
+            const assuntos = new Map();
+            assuntosByMateria.forEach((seen, materia) => {
+                assuntos.set(materia, [...seen.entries()]
+                    .sort((a,b) => a[1].prioridade - b[1].prioridade || a[1].naturalIndex - b[1].naturalIndex || a[0].localeCompare(b[0], 'pt-BR', { sensitivity:'base' }))
+                    .map(([assunto]) => assunto));
+            });
+
+            canonicalEditalIndexSource = editalItems;
+            canonicalEditalIndex = { materiaOrder, assuntos };
+            return canonicalEditalIndex;
+        }
+
+        function getCanonicalMateriaOrder() {
+            return getCanonicalEditalIndex().materiaOrder;
         }
 
         function getCanonicalAssuntosForMateria(matName) {
-            const seen = new Map();
-            editalItems.forEach((item, index) => {
-                if (item?.materia !== matName) return;
-                const assunto = String(item?.assunto || '').trim();
-                if (!assunto) return;
-                const prioridade = Math.max(1, parseInt(item?.assunto_prioridade, 10) || 1);
-                if (!seen.has(assunto)) seen.set(assunto, { prioridade, naturalIndex:index });
-                else seen.get(assunto).prioridade = Math.min(seen.get(assunto).prioridade, prioridade);
-            });
-            return [...seen.entries()]
-                .sort((a,b) => a[1].prioridade - b[1].prioridade || a[1].naturalIndex - b[1].naturalIndex || a[0].localeCompare(b[0], 'pt-BR', { sensitivity:'base' }))
-                .map(([assunto]) => assunto);
+            return getCanonicalEditalIndex().assuntos.get(matName) || [];
         }
 
         function sortMateriaNamesByCanonicalOrder(names = []) {
@@ -5449,23 +5510,42 @@ filterDataByConcurso();
             return result;
         }
 
+        let editalSerializedCacheKey = '';
+        let editalSerializedCache = '';
+
         function loadLocalEditalData() {
-            const local = localStorage.getItem(getEditalLocalStorageKey());
+            const storageKey = getEditalLocalStorageKey();
+            const local = localStorage.getItem(storageKey);
+            editalSerializedCacheKey = storageKey;
+            editalSerializedCache = local || '[]';
             if (local) {
                 try {
                     allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral', videoaula: !!item.videoaula, metodo_conteudo: normalizeContentMethod(item.metodo_conteudo) }));
                     const reconciliation = reconcileEditalTopicIntegrity();
                     if (reconciliation.changed) {
-                        localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
+                        const serialized = JSON.stringify(allEditalItems);
+                        localStorage.setItem(storageKey, serialized);
+                        editalSerializedCache = serialized;
                     }
-                } catch(e) { allEditalItems = []; }
+                } catch(e) {
+                    allEditalItems = [];
+                    editalSerializedCache = '[]';
+                }
+            } else {
+                allEditalItems = [];
             }
         }
 
         function saveEditalToLocalStorage() {
             reconcileEditalTopicIntegrity();
-            localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
+            const storageKey = getEditalLocalStorageKey();
+            const serialized = JSON.stringify(allEditalItems);
+            if (editalSerializedCacheKey === storageKey && serialized === editalSerializedCache) return false;
+            localStorage.setItem(storageKey, serialized);
+            editalSerializedCacheKey = storageKey;
+            editalSerializedCache = serialized;
             scheduleLocalBackup('alteração no edital verticalizado');
+            return true;
         }
 
         async function saveEditalItemToCloud(item) {
@@ -5656,10 +5736,14 @@ filterDataByConcurso();
             document.head.appendChild(tool);
         }
 
+        function scheduleEditalCrossToolWarmup() {
+            scheduleBackgroundTask(loadEditalCrossToolAssets, 2200);
+        }
+
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', loadEditalCrossToolAssets, { once:true });
+            document.addEventListener('DOMContentLoaded', scheduleEditalCrossToolWarmup, { once:true });
         } else {
-            loadEditalCrossToolAssets();
+            scheduleEditalCrossToolWarmup();
         }
 
         async function createIntegratedContestFromCrossEdital(nomePlano, rows, sourceContests = []) {
@@ -6278,6 +6362,8 @@ filterDataByConcurso();
             const tbody = document.getElementById('edital-list');
             const htmlParts = [];
             const materiasMap = {};
+            const activeRevisionOffsets = getActiveRevisionOffsets();
+            const contestMeta = getConcursosMetadata()[currentConcurso] || {};
             editalItems.forEach(item => {
                 const mat = item.materia || 'Geral';
                 const itemPriority = clampMateriaPriority(item.prioridade || 1);
@@ -6297,7 +6383,6 @@ filterDataByConcurso();
                 const colorIdx = getMateriaColorIndex(materiaName, sortedMaterias);
                 const safeMateriaHandler = encodeHandlerValue(materiaName);
 
-                const activeRevisionOffsets = getActiveRevisionOffsets();
                 const dynamicColspan = 5 + activeRevisionOffsets.length;
                 htmlParts.push(`
                     <tr class="materia-header-row materia-gradient-${colorIdx % PALETA_CORES_MATERIAS.length}" data-materia="${safeMateriaHandler}" onclick="handleMateriaHeaderClick(event, decodeURIComponent('${safeMateriaHandler}'))">
@@ -6332,7 +6417,7 @@ filterDataByConcurso();
                                 <td>
                                     <input type="number" class="priority-input" value="${item.assunto_prioridade || 1}" min="1" onchange="updateAssuntoPriority(decodeURIComponent('${safeId}'), this.value)" title="Prioridade do Assunto">
                                 </td>
-                                <td class="adaptive-edital-subject-cell">${escapeHtml(item.assunto)}${getTopicStudyPlanBadgeHtml(item, getConcursosMetadata()[currentConcurso] || {})}</td>
+                                <td class="adaptive-edital-subject-cell">${escapeHtml(item.assunto)}${getTopicStudyPlanBadgeHtml(item, contestMeta)}</td>
                                 <td data-study-control="true"><span class="revision-model-note">Teoria</span><input type="checkbox" ${item.teoria ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'teoria', ${item.teoria})"></td>
                                 <td data-study-control="true"><span class="revision-model-note">Questões</span><input type="checkbox" ${item.questoes ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'questoes', ${item.questoes})"></td>
                                 <td data-study-control="true"><span class="revision-model-note">Vídeoaula</span><input type="checkbox" ${item.videoaula ? 'checked' : ''} onchange="toggleCheck(decodeURIComponent('${safeId}'), 'videoaula', ${item.videoaula})"></td>
@@ -6686,12 +6771,31 @@ filterDataByConcurso();
         let chartRenderSequence = 0;
         let priorityDrivenSchedulePromptLock = false;
 
+        let chartRuntimePromise = null;
+
+        function ensureChartRuntime() {
+            if (typeof Chart !== 'undefined') return Promise.resolve(true);
+            if (chartRuntimePromise) return chartRuntimePromise;
+            const loader = window.AppAssetLoader;
+            if (!loader?.loadFeature) return Promise.resolve(false);
+            chartRuntimePromise = loader.loadFeature('charts')
+                .then(() => typeof Chart !== 'undefined')
+                .catch(error => {
+                    chartRuntimePromise = null;
+                    console.warn('Gráfico adiado: Chart.js indisponível.', error);
+                    return false;
+                });
+            return chartRuntimePromise;
+        }
+
         function renderChart() {
             const sequence = ++chartRenderSequence;
-            scheduleBackgroundTask(() => {
+            scheduleBackgroundTask(async () => {
                 if (sequence !== chartRenderSequence) return;
+                const ready = await ensureChartRuntime();
+                if (!ready || sequence !== chartRenderSequence) return;
                 renderChartNow();
-            }, 600);
+            }, 900);
         }
 
         // V10.9.0 — progresso de questões baseado em volume + desempenho, não em checkbox binário.

@@ -4,7 +4,7 @@ if(global.AppAssetLoader)return;
 
 const registry=new Map();
 const featureRegistry=new Map();
-const DEFAULT_VERSION=String(global.APP_VERSION||'10.64.28');
+const DEFAULT_VERSION=String(global.APP_VERSION||'10.64.65');
 
 function normalizeUrl(input){
   return new URL(String(input),global.location?.href||'https://estudoadaptativo.local/');
@@ -106,10 +106,32 @@ function stats(){
 }
 
 defineFeature('charts',{scripts:['./vendor/chart.umd.min.js'],ready:()=>Boolean(global.Chart)});
+defineFeature('app-ai',{scripts:['./js/app-ai.js'],ready:()=>Boolean(global.AppAiRuntime)});
 defineFeature('pdf-engine',{
   styles:['./vendor/pdf_viewer.min.css','./css/pdf-reader.css'],
   scripts:['./vendor/pdf.min.js','./js/pdf/pdf-reader.js'],
   ready:()=>Boolean(global.pdfjsLib||global.PdfStudyReader)
+});
+defineFeature('pdf-library',{
+  styles:['./css/pdf-library.css'],
+  scripts:[
+    './js/pdf/pdf-core.js',
+    './js/pdf/offline-pdf-store.js',
+    './js/pdf/pdf-library-opfs-adapter.js',
+    './js/pdf/pdf-workspaces.js',
+    './js/pdf/pdf-links.js',
+    './js/pdf/pdf-library.js',
+    './js/pdf/pdf-upload.js',
+    './js/pdf/pdf-annotations.js',
+    './js/pdf/pdf-library-ordering.js',
+    './js/pdf/pdf-offline-integrity.js',
+    './js/pdf/pdf-device-storage.js',
+    './js/pdf/pdf-library-layout-fix.js',
+    './js/pdf/pdf-library-ui.js',
+    './js/pdf/pdf-offline-library-manager.js',
+    './js/pdf/pdf-offline-library-ui.js'
+  ],
+  ready:()=>Boolean(global.PdfStudyLibraryUI&&global.PdfStudyLibrary&&global.PdfDeviceStorage)
 });
 
 global.AppAssetLoader=Object.freeze({

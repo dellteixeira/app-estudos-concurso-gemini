@@ -2174,3 +2174,20 @@
 
 
 
+
+
+// Runtime exportado para carregamento sob demanda.
+window.AppAiRuntime = Object.freeze({
+  openModalAnaliseEditalIA,
+  closeModalAnaliseEditalIA,
+  executarAnaliseEditalIA,
+  importarAnaliseEditalIA,
+  openModalPromptIA,
+  closeModalPromptIA,
+  copyPromptToClipboard,
+  openModalViewEdital,
+  closeModalViewEdital,
+  uploadEditalFile,
+  downloadEditalFile,
+  removerEditalFile
+});

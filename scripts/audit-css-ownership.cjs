@@ -8,6 +8,7 @@ const indexPath = path.join(root, 'public', 'index.html');
 const canonicalPath = path.join(cssDir, 'responsive-system.css');
 const canonical = fs.readFileSync(canonicalPath, 'utf8');
 const index = fs.readFileSync(indexPath, 'utf8');
+const assetLoader = fs.readFileSync(path.join(root, 'public', 'js', 'core', 'asset-loader.js'), 'utf8');
 
 const legacyFiles = ['base.css', 'dashboard.css', 'features.css'];
 const specializedFiles = ['pdf-library.css', 'pdf-reader.css'];
@@ -55,7 +56,7 @@ const responsiveLink = './css/responsive-system.css';
 const links = [...legacyLinks, responsiveLink, ...specializedLinks];
 
 const positions = new Map(links.map(link => [link, index.indexOf(link)]));
-for (const link of links) {
+for (const link of [...legacyLinks, responsiveLink]) {
   if (positions.get(link) < 0) errors.push(`index.html não carrega ${link}`);
 }
 
@@ -67,9 +68,16 @@ for (const link of legacyLinks) {
   }
 }
 
+// CSS especializado pode ser lazy: nesse caso ele deve pertencer explicitamente
+// ao feature loader e não competir com o first paint.
 for (const link of specializedLinks) {
-  const pos = positions.get(link);
-  if (pos >= 0 && responsivePos >= 0 && responsivePos > pos) {
+  const eagerPos = positions.get(link);
+  const lazyPath = link.replace('./', './');
+  const lazyOwned = assetLoader.includes(`'${lazyPath}'`) || assetLoader.includes(`"${lazyPath}"`);
+  if (eagerPos < 0 && !lazyOwned) {
+    errors.push(`${link} não está no index nem no loader de feature especializada`);
+  }
+  if (eagerPos >= 0 && responsivePos >= 0 && responsivePos > eagerPos) {
     errors.push(`responsive-system.css deve carregar antes de ${link} para preservar o ownership especializado`);
   }
 }
