@@ -27,9 +27,13 @@ for (const required of [indexFile, cssSource, manifestFile, logoSource]) {
   let html = fs.readFileSync(indexFile, 'utf8');
   html = html.replace(/^\s*<link\b[^>]*href=["']\.\/css\/android-mobile-hotfix\.css(?:\?[^"']*)?["'][^>]*>\s*(?:\r?\n)?/gim, '');
   const tag = '    <link rel="stylesheet" href="./css/android-mobile-hotfix.css">';
-  const pivot = /^(\s*)<link\b[^>]*href=["']\.\/css\/pdf-reader\.css(?:\?[^"']*)?["'][^>]*>\s*$/im;
+  // O PDF agora é lazy-loaded e não pertence mais ao index inicial.
+  // Ancore o hotfix no sistema responsivo canônico, que permanece no shell mínimo.
+  const pivot = /^(\s*)<link\b[^>]*href=["']\.\/css\/responsive-system\.css(?:\?[^"']*)?["'][^>]*>\s*$/im;
+  if (!pivot.test(html)) throw new Error('Não foi possível localizar responsive-system.css para inserir o hotfix mobile Android.');
+  html = html.replace(pivot, `  const pivot = /^(\s*)<link\b[^>]*href=["']\.\/css\/pdf-reader\.css(?:\?[^"']*)?["'][^>]*>\s*$/im;
   if (!pivot.test(html)) throw new Error('Não foi possível localizar pdf-reader.css para inserir o hotfix mobile Android.');
-  html = html.replace(pivot, `$&\n${tag}`);
+  html = html.replace(pivot, `$&\n${tag}`);\n${tag}`);
   fs.writeFileSync(indexFile, html);
 }
 
