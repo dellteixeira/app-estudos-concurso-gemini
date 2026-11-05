@@ -29,7 +29,8 @@ function makeBusWindow(){
 
 test('Fase 3: asset loader usa a release canônica atual',()=>{
   const source=read('public/js/core/asset-loader.js');
-  assert.match(source,/global\.APP_VERSION\|\|'10\.64\.28'/);
+  const version=JSON.parse(read('public/version.json')).version;
+  assert.ok(source.includes(`global.APP_VERSION||'${version}'`));
   assert.doesNotMatch(source,/10\.64\.22/);
 });
 
