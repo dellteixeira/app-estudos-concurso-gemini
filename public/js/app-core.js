@@ -5736,10 +5736,14 @@ filterDataByConcurso();
             document.head.appendChild(tool);
         }
 
+        function scheduleEditalCrossToolWarmup() {
+            scheduleBackgroundTask(loadEditalCrossToolAssets, 2200);
+        }
+
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', loadEditalCrossToolAssets, { once:true });
+            document.addEventListener('DOMContentLoaded', scheduleEditalCrossToolWarmup, { once:true });
         } else {
-            loadEditalCrossToolAssets();
+            scheduleEditalCrossToolWarmup();
         }
 
         async function createIntegratedContestFromCrossEdital(nomePlano, rows, sourceContests = []) {
