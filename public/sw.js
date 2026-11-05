@@ -31,11 +31,13 @@ async function fetchAndCache(cache, asset) {
   return response;
 }
 
-async function primeOfflineAssets({ requireCritical = true } = {}) {
+async function primeOfflineAssets({ requireCritical = true, includeOptional = true } = {}) {
   const cache = await caches.open(CACHE_NAME);
   if (requireCritical) await Promise.all(CRITICAL_APP_SHELL.map(asset => fetchAndCache(cache, asset)));
   else await Promise.allSettled(CRITICAL_APP_SHELL.map(asset => fetchAndCache(cache, asset)));
-  await Promise.allSettled(OPTIONAL_OFFLINE_ASSETS.map(asset => fetchAndCache(cache, asset)));
+  if (includeOptional) {
+    await Promise.allSettled(OPTIONAL_OFFLINE_ASSETS.map(asset => fetchAndCache(cache, asset)));
+  }
 }
 
 async function deleteOldAppCaches() {
@@ -55,11 +57,16 @@ function isMutableAppCodeAsset(url) {
   return path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.json');
 }
 
-self.addEventListener('install', event => event.waitUntil(primeOfflineAssets({ requireCritical:true })));
-self.addEventListener('activate', event => event.waitUntil((async () => { await deleteOldAppCaches(); await self.clients.claim(); await primeOfflineAssets({ requireCritical:false }).catch(() => {}); })()));
+self.addEventListener('install', event => event.waitUntil(
+  primeOfflineAssets({ requireCritical:true, includeOptional:false })
+));
+self.addEventListener('activate', event => event.waitUntil((async () => {
+  await deleteOldAppCaches();
+  await self.clients.claim();
+})()));
 
 self.addEventListener('message', event => {
-  if (event.data?.type === 'PRIME_OFFLINE_ASSETS') { event.waitUntil(primeOfflineAssets({ requireCritical:false }).catch(() => {})); return; }
+  if (event.data?.type === 'PRIME_OFFLINE_ASSETS') { event.waitUntil(primeOfflineAssets({ requireCritical:false, includeOptional:true }).catch(() => {})); return; }
   if (event.data?.type === 'SKIP_WAITING') { event.waitUntil(self.skipWaiting()); return; }
   if (event.data?.type === 'GET_APP_VERSION') {
     const payload = { type:'APP_VERSION', version:APP_VERSION };
