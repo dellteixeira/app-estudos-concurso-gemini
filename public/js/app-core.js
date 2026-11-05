@@ -5510,23 +5510,42 @@ filterDataByConcurso();
             return result;
         }
 
+        let editalSerializedCacheKey = '';
+        let editalSerializedCache = '';
+
         function loadLocalEditalData() {
-            const local = localStorage.getItem(getEditalLocalStorageKey());
+            const storageKey = getEditalLocalStorageKey();
+            const local = localStorage.getItem(storageKey);
+            editalSerializedCacheKey = storageKey;
+            editalSerializedCache = local || '[]';
             if (local) {
                 try {
                     allEditalItems = JSON.parse(local).map(item => ({ ...item, id: String(item.id), concurso: item.concurso || 'Concurso Geral', videoaula: !!item.videoaula, metodo_conteudo: normalizeContentMethod(item.metodo_conteudo) }));
                     const reconciliation = reconcileEditalTopicIntegrity();
                     if (reconciliation.changed) {
-                        localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
+                        const serialized = JSON.stringify(allEditalItems);
+                        localStorage.setItem(storageKey, serialized);
+                        editalSerializedCache = serialized;
                     }
-                } catch(e) { allEditalItems = []; }
+                } catch(e) {
+                    allEditalItems = [];
+                    editalSerializedCache = '[]';
+                }
+            } else {
+                allEditalItems = [];
             }
         }
 
         function saveEditalToLocalStorage() {
             reconcileEditalTopicIntegrity();
-            localStorage.setItem(getEditalLocalStorageKey(), JSON.stringify(allEditalItems));
+            const storageKey = getEditalLocalStorageKey();
+            const serialized = JSON.stringify(allEditalItems);
+            if (editalSerializedCacheKey === storageKey && serialized === editalSerializedCache) return false;
+            localStorage.setItem(storageKey, serialized);
+            editalSerializedCacheKey = storageKey;
+            editalSerializedCache = serialized;
             scheduleLocalBackup('alteração no edital verticalizado');
+            return true;
         }
 
         async function saveEditalItemToCloud(item) {
