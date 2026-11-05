@@ -104,6 +104,15 @@
             if (!global.AppCognitiveProfileRuntime) {
                 await loader.loadScript('./js/core/cognitive-profile-runtime.js', { async: false });
             }
+            if (!global.AppTopicAssessment) {
+                await loader.loadScript('./js/core/topic-assessment.js', { async: false });
+            }
+            if (!global.AppStudyOptimization) {
+                await loader.loadScript('./js/core/study-optimization-engine.js', { async: false });
+            }
+            if (!global.AppPredictiveAdaptiveTutor) {
+                await loader.loadScript('./js/core/predictive-adaptive-tutor.js', { async: false });
+            }
             return loader;
         })().catch(error => {
             coreRuntimePromise = null;
