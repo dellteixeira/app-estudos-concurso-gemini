@@ -10,7 +10,7 @@ const CRITICAL_APP_SHELL = [
   './js/core/offline-sync-metadata-ring3-promotion.js', './js/core/offline-sync-metadata-expansion.js', './js/core/offline-sync-authority.js', './js/core/offline-sync-delete-authority.js', './js/core/offline-sync-edital-graduation.js', './js/app-core.js', './js/app-state.js', './js/sync-engine.js', './js/adaptive-schedule-reconciliation.js', './js/learning-advisor.js', './js/critical-points-actions.js', './js/edital-cross-tool.js', './js/edital-cross-ui.js', './js/app-ui.js',
   './css/edital-cross-tool.css',
   './js/ui/mobile.js', './js/ui/navigation.js', './js/ui/search.js', './js/app-pwa.js',
-  './vendor/supabase.js', './vendor/chart.umd.min.js', './icon-192.png', './icon-512.png'
+  './vendor/supabase.js', './icon-192.png', './icon-512.png'
 ];
 
 const OPTIONAL_OFFLINE_ASSETS = [
