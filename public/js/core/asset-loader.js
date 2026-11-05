@@ -4,7 +4,7 @@ if(global.AppAssetLoader)return;
 
 const registry=new Map();
 const featureRegistry=new Map();
-const DEFAULT_VERSION=String(global.APP_VERSION||'10.64.28');
+const DEFAULT_VERSION=String(global.APP_VERSION||'10.64.64');
 
 function normalizeUrl(input){
   return new URL(String(input),global.location?.href||'https://estudoadaptativo.local/');
@@ -110,6 +110,21 @@ defineFeature('pdf-engine',{
   styles:['./vendor/pdf_viewer.min.css','./css/pdf-reader.css'],
   scripts:['./vendor/pdf.min.js','./js/pdf/pdf-reader.js'],
   ready:()=>Boolean(global.pdfjsLib||global.PdfStudyReader)
+});
+defineFeature('pdf-library',{
+  styles:['./css/pdf-library.css','./vendor/pdf_viewer.min.css','./css/pdf-reader.css'],
+  scripts:[
+    './js/pdf/pdf-core.js',
+    './js/pdf/pdf-workspaces.js',
+    './js/pdf/pdf-links.js',
+    './js/pdf/pdf-library.js',
+    './js/pdf/pdf-upload.js',
+    './js/pdf/pdf-annotations.js',
+    './vendor/pdf.min.js',
+    './js/pdf/pdf-reader.js',
+    './js/pdf/pdf-library-ui.js'
+  ],
+  ready:()=>Boolean(global.PdfStudyLibraryUI)
 });
 
 global.AppAssetLoader=Object.freeze({
