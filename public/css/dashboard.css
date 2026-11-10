@@ -1796,3 +1796,111 @@ body.light-mode .global-search-modal-results.global-search-results { background:
         font-size:.66rem;
     }
 }
+
+
+/* V10.64.66 — cronograma compacto: atividade + sessão no Pomodoro livre */
+.scheduled-free-timer-toolbar {
+    grid-template-columns:minmax(250px,.9fr) minmax(170px,.55fr);
+    gap:12px;
+}
+.scheduled-free-config {
+    display:grid;
+    grid-template-columns:minmax(150px,1fr) 118px;
+    gap:10px;
+    align-items:end;
+    min-width:0;
+}
+.scheduled-free-activity {
+    display:grid;
+    grid-template-columns:auto minmax(110px,1fr);
+    align-items:center;
+    gap:7px;
+    min-width:0;
+}
+.scheduled-free-activity select {
+    min-height:32px;
+    height:32px;
+    padding:4px 26px 4px 8px;
+    font-size:.68rem;
+}
+.scheduled-free-session {
+    display:grid;
+    grid-template-columns:auto 1fr;
+    align-items:center;
+    gap:6px;
+    min-width:0;
+    color:#91a8bb;
+    font-size:.68rem;
+}
+.scheduled-free-session > span:first-child {
+    font-weight:700;
+    white-space:nowrap;
+}
+.scheduled-session-input-wrap {
+    display:flex;
+    align-items:center;
+    gap:5px;
+    min-width:0;
+}
+.scheduled-session-input-wrap input {
+    width:58px;
+    min-width:58px;
+    height:32px;
+    min-height:32px;
+    padding:4px 6px;
+    border:1px solid #294158;
+    border-radius:8px;
+    background:#0a1b2d;
+    color:#e6f1f7;
+    font:inherit;
+    font-variant-numeric:tabular-nums;
+    text-align:center;
+}
+.scheduled-session-input-wrap > span {
+    color:#7890a5;
+    font-size:.62rem;
+}
+.scheduled-free-timer-actions {
+    justify-content:flex-end;
+}
+.day-topic-status-inline,
+.study-status-checks,
+.study-session-action-row,
+.study-launch-controls-primary {
+    /* Controles redundantes removidos do template; regra defensiva para builds antigos em cache. */
+    display:none!important;
+}
+
+@media(max-width:760px){
+    .scheduled-free-timer-toolbar {
+        grid-template-columns:1fr;
+    }
+    .scheduled-free-config {
+        grid-template-columns:minmax(0,1fr) 112px;
+    }
+    .scheduled-free-timer-actions {
+        justify-content:stretch;
+    }
+    .scheduled-free-timer-actions .scheduled-timer-btn {
+        flex:1 1 auto;
+    }
+}
+@media(max-width:430px){
+    .scheduled-free-config {
+        grid-template-columns:minmax(0,1fr) 104px;
+        gap:7px;
+    }
+    .scheduled-free-activity {
+        grid-template-columns:1fr;
+        gap:4px;
+    }
+    .scheduled-free-session {
+        grid-template-columns:1fr;
+        gap:4px;
+    }
+    .scheduled-free-activity select,
+    .scheduled-session-input-wrap input {
+        height:34px;
+        min-height:34px;
+    }
+}
