@@ -6,6 +6,8 @@ const html=fs.readFileSync('public/index.html','utf8');
 const ui=fs.readFileSync('public/js/app-ui.js','utf8');
 const pwa=fs.readFileSync('public/js/app-pwa.js','utf8');
 const nav=fs.readFileSync('public/js/ui/navigation.js','utf8');
+const contract=JSON.parse(fs.readFileSync('config/release-contract.json','utf8'));
+const releaseVersion=String(contract.version).replace(/\\./g,'\\\\.');
 const loader=fs.readFileSync('public/js/core/asset-loader.js','utf8');
 const assets=JSON.parse(fs.readFileSync('config/app-assets.json','utf8'));
 const perf=fs.readFileSync('public/js/performance-loader.js','utf8');
@@ -43,5 +45,5 @@ test('nenhum preload ou relatório tenta ressuscitar o leitor PDF removido',()=>
 
 test('estilos críticos da interface são carregados diretamente no HTML',()=>{
   assert.match(html,/data-canonical-ui="1"/);
-  assert.match(html,/responsive-polish-v10\.64\.68\.css[^>]*data-responsive-release-delta="1"/);
+  assert.match(html,new RegExp(`responsive-polish-v${releaseVersion}\\.css[^>]*data-responsive-release-delta="1"`));
 });
