@@ -2761,6 +2761,30 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             });
         }
 
+        function getScheduledSessionMinutes(matchedItem, contestMeta = null) {
+            if (!matchedItem) return Math.max(1, parseInt(document.getElementById('focoMin')?.value || '40') || 40);
+            const contest = contestMeta || getConcursosMetadata()[currentConcurso] || {};
+            const key = getStudyTopicKey(matchedItem.materia, matchedItem.assunto);
+            const custom = Number(contest?.topicSessionMinutes?.[key]);
+            const plan = getTopicStudyPlan(matchedItem, contest);
+            const fallback = Number(plan?.sessionMinutes) || Number(document.getElementById('focoMin')?.value) || 40;
+            return Math.max(1, Math.min(240, Number.isFinite(custom) && custom > 0 ? custom : fallback));
+        }
+
+        async function saveScheduledSessionMinutesPreference(idx, rawValue) {
+            if (!activeSelectedDateKey) return;
+            const metadata = getConcursosMetadata();
+            const contest = metadata[currentConcurso] || (metadata[currentConcurso] = {});
+            const raw = contest.dateSchedule?.[activeSelectedDateKey]?.[idx];
+            const clean = normalizeScheduledTopicForStudy(raw);
+            const item = editalItems.find(i => getStudyTopicKey(i.materia, i.assunto) === clean);
+            if (!item) return;
+            const minutes = Math.max(1, Math.min(240, parseInt(rawValue, 10) || 40));
+            if (!contest.topicSessionMinutes || typeof contest.topicSessionMinutes !== 'object') contest.topicSessionMinutes = {};
+            contest.topicSessionMinutes[getStudyTopicKey(item.materia, item.assunto)] = minutes;
+            await saveConcursosMetadata(metadata);
+        }
+
         function renderScheduledFreeTimerControls(idx, matchedItem, rawText) {
             if (!matchedItem) return '';
             const key = getScheduledPomodoroKey(activeSelectedDateKey, matchedItem.materia, matchedItem.assunto);
@@ -2772,8 +2796,10 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             const activityOptions = [
                 ['teoria','Teoria'],
                 ['questoes','Questões'],
-                ['videoaula','Vídeoaula']
+                ['videoaula','Vídeoaula'],
+                ...(isLegalStudyMateria(matchedItem.materia) ? [['lei_seca','Lei Seca']] : [])
             ].map(([value,label]) => `<option value="${value}" ${activity === value ? 'selected' : ''}>${label}</option>`).join('');
+            const sessionMinutes = getScheduledSessionMinutes(matchedItem);
 
             const primaryAction = isThis
                 ? `<button class="scheduled-timer-btn scheduled-timer-btn-pause" type="button" onclick="toggleScheduledPomodoroPause()">${isTimerPaused ? 'Continuar' : 'Pausar'}</button>
@@ -2794,10 +2820,19 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                         <strong class="scheduled-free-timer-value" data-scheduled-pomodoro-time="${escapeHtml(key)}">${formatScheduledPomodoroTime(elapsed)}</strong>
                     </div>
                     <div class="scheduled-free-timer-toolbar">
-                        <label class="scheduled-free-activity">
-                            <span>Atividade</span>
-                            <select id="scheduledFreeActivity_${idx}" ${isThis ? 'disabled' : ''}>${activityOptions}</select>
-                        </label>
+                        <div class="scheduled-free-config">
+                            <label class="scheduled-free-activity">
+                                <span>Atividade</span>
+                                <select id="scheduledFreeActivity_${idx}" ${isThis ? 'disabled' : ''}>${activityOptions}</select>
+                            </label>
+                            <label class="scheduled-free-session" title="Preferência numérica de duração para este tópico">
+                                <span>Sessão</span>
+                                <span class="scheduled-session-input-wrap">
+                                    <input id="studyMinutes_${idx}" type="number" min="1" max="240" value="${sessionMinutes}" onchange="saveScheduledSessionMinutesPreference(${idx}, this.value)" ${isThis ? 'disabled' : ''}>
+                                    <span>min</span>
+                                </span>
+                            </label>
+                        </div>
                         <div class="scheduled-free-timer-actions">${primaryAction}</div>
                     </div>
                     <small class="scheduled-free-timer-status">${statusText}</small>
@@ -2818,7 +2853,8 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             if (!matched) return void appNotice('Este tópico não está vinculado ao edital verticalizado.', { title:'Pomodoro livre' });
 
             const activityInput = document.getElementById(`scheduledFreeActivity_${idx}`);
-            const activityType = ['teoria','questoes','videoaula'].includes(activityInput?.value) ? activityInput.value : 'teoria';
+            const activityType = ['teoria','questoes','videoaula','lei_seca'].includes(activityInput?.value) ? activityInput.value : 'teoria';
+            const sessionTargetMinutes = Math.max(1, Math.min(240, parseInt(document.getElementById(`studyMinutes_${idx}`)?.value || '40', 10) || 40));
 
             activeStudyContext = {
                 concurso: currentConcurso,
@@ -2830,6 +2866,7 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                 adaptiveAdvance: false,
                 isRevision: isRevisionScheduleText(raw),
                 activityType,
+                sessionTargetMinutes,
                 source: 'cronograma-pomodoro-livre'
             };
             renderActiveStudyContext();
@@ -2882,7 +2919,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             topics.forEach((topicoStr, idx) => {
                 const cleanTop = normalizeScheduledTopicForStudy(topicoStr);
                 const matchedItem = editalItems.find(i => `${i.materia} - ${i.assunto}` === cleanTop);
-                const safeMatchedId = matchedItem ? encodeHandlerValue(matchedItem.id) : '';
                 const advanceHistory = !isRevisionScheduleText(topicoStr) ? getLatestAdvanceHistory(cleanTop, activeSelectedDateKey) : null;
                 const advanceBadge = advanceHistory ? `<span class="day-topic-badge day-topic-badge-advanced">Antecipado de ${formatDateKeyShort(advanceHistory.plannedDateKey)}</span>` : '';
                 const futureStudyHint = activeSelectedDateKey > getLocalDateKey() && matchedItem && !isRevisionScheduleText(topicoStr) ? `<span class="day-topic-future-hint">Estudar agora pode antecipar este tópico com reflow do futuro.</span>` : '';
@@ -2894,22 +2930,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
                     <div class="day-topic-row" id="topicRow_${idx}">
                         <div class="day-topic-main"><strong class="day-topic-title">${escapeHtml(formatScheduledItemForDisplay(topicoStr))}</strong>${adaptiveReviewBadge}${advanceBadge}${futureStudyHint}${studyPlanSummary}</div>
                         <div class="day-topic-controls-row">
-                            ${matchedItem ? `
-                                <div class="day-topic-status-inline">
-                                    <div class="study-status-checks">
-                                        <label>
-                                            <input type="checkbox" ${matchedItem.teoria ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'teoria', ${matchedItem.teoria})"> Teoria
-                                        </label>
-                                        <label>
-                                            <input type="checkbox" ${matchedItem.questoes ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'questoes', ${matchedItem.questoes})"> Questões
-                                        </label>
-                                        <label>
-                                            <input type="checkbox" ${matchedItem.videoaula ? 'checked' : ''} onchange="toggleCheckFromModal(decodeURIComponent('${safeMatchedId}'), 'videoaula', ${matchedItem.videoaula})"> Vídeoaula
-                                        </label>
-                                    </div>
-                                    ${!adaptiveReviewDone ? `<div class="study-session-action-row"><label class="study-session-minutes-label" title="Duração da próxima sessão de foco"><span>Sessão</span><span class="study-minutes-field"><input class="study-minutes-input" id="studyMinutes_${idx}" type="number" min="1" max="240" value="${Math.max(1, parseInt(studyPlan?.sessionMinutes || document.getElementById('focoMin')?.value || '40'))}"><span>min</span></span></label><div class="study-launch-controls study-launch-controls-primary ${isLegalStudyMateria(matchedItem.materia) ? 'has-legal-action' : ''}"><button class="btn btn-sm btn-study-theory" onclick="startScheduledTopicStudy(${idx}, 'teoria')" title="Inicia uma sessão de Teoria e contabiliza o tempo em studySessions" data-mobile-label="Estudar Teoria">Estudar Teoria</button><button class="btn btn-sm btn-study-video" onclick="startScheduledTopicStudy(${idx}, 'videoaula')" title="Inicia uma sessão de Vídeoaula e contabiliza o tempo em studySessions" data-mobile-label="Vídeoaula">Vídeoaula</button><button class="btn btn-sm btn-study-questions" onclick="startScheduledTopicStudy(${idx}, 'questoes')" title="Inicia uma sessão de Questões e contabiliza o tempo em studySessions" data-mobile-label="Estudar Questões">Estudar Questões</button>${isLegalStudyMateria(matchedItem.materia) ? `<button class="btn btn-sm btn-study-legal" onclick="openLegalReadingForScheduledTopic(${idx})" data-mobile-label="Lei Seca">Lei Seca</button>` : ''}</div></div>` : `<button class="btn btn-danger btn-sm btn-topic-delete-inline" onclick="deleteTopicFromDay(${idx})" title="Apaga este tópico do dia">Apagar</button>`}
-                                </div>
-                            ` : ''}
                             ${matchedItem && !adaptiveReviewDone ? renderScheduledFreeTimerControls(idx, matchedItem, topicoStr) : ''}
                             ${matchedItem && !adaptiveReviewDone ? `
                                 <div class="study-launch-controls study-launch-controls-secondary">
