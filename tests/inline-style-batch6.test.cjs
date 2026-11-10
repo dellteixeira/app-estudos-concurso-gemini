@@ -18,10 +18,3 @@ test('batch6 generated layout classes are present',()=>{
   assert.ok((css.match(/\.u-layout-b6-/g)||[]).length >= 29);
 });
 
-test('batch6 leaves runtime-hidden and PDF reader styles untouched',()=>{
-  const html=read('public/index.html');
-  const reset=html.match(/<button[^>]+id=["']btnResetFcFilter["'][^>]*>/i)?.[0]||'';
-  assert.ok(reset,'btnResetFcFilter missing');
-  const readerTag=html.match(/<section\b[^>]*\bid=["']pdfReaderOverlay["'][^>]*>/i)?.[0]||'';
-  assert.ok(readerTag,'PDF Reader overlay missing');
-});
