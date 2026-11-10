@@ -237,7 +237,17 @@
       await resolveRunningVersion(reg);
       await refreshUpdateState();
       const worker = navigator.serviceWorker.controller || reg.active;
-      if (worker) worker.postMessage({ type: 'PRIME_OFFLINE_ASSETS' });
+      if (worker) {
+        const primeOffline = () => {
+          try { worker.postMessage({ type: 'PRIME_OFFLINE_ASSETS' }); } catch (_) {}
+        };
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        const constrained = Boolean(connection?.saveData) || /^(slow-2g|2g)$/i.test(String(connection?.effectiveType || ''));
+        if (!constrained) {
+          if (typeof requestIdleCallback === 'function') requestIdleCallback(primeOffline, { timeout: 8000 });
+          else setTimeout(primeOffline, 4500);
+        }
+      }
       window.addEventListener('online', checkForPwaUpdate);
       window.addEventListener('focus', checkForPwaUpdate);
       window.addEventListener('pageshow', checkForPwaUpdate);
@@ -336,9 +346,17 @@
     loadStateSyncModules();
     loadUiModules();
   }, { once: true });
+  function schedulePostLoadOptionalFeatures() {
+    const task = () => {
+      loadNotesImportExport();
+      loadStudyPerformanceReport();
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(task, { timeout: 7000 });
+    else setTimeout(task, 3500);
+  }
+
   window.addEventListener('load', bootstrapPwa, { once: true });
-  window.addEventListener('load', loadNotesImportExport, { once: true });
-  window.addEventListener('load', loadStudyPerformanceReport, { once: true });
+  window.addEventListener('load', schedulePostLoadOptionalFeatures, { once: true });
   window.applyPwaUpdate = applyPwaUpdate;
   window.checkForPwaUpdate = checkForPwaUpdate;
   window.loadStateSyncModules = loadStateSyncModules;
