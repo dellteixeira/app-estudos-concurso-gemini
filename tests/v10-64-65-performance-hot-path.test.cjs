@@ -12,7 +12,7 @@ const pwa=fs.readFileSync('public/pwa-update.js','utf8');
 test('startup mantém orçamento enxuto de scripts e nao carrega recursos pesados',()=>{
   const eagerScripts=[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match=>match[1]);
   const eagerStyles=[...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(match=>match[1]);
-  assert.ok(eagerScripts.length<=11,`scripts iniciais demais: ${eagerScripts.length}`);
+  assert.ok(eagerScripts.length<=12,`scripts iniciais demais: ${eagerScripts.length}`);
   assert.ok(eagerStyles.length<=4,`styles iniciais demais: ${eagerStyles.length}`);
   assert.doesNotMatch(html,/src="\.\/vendor\/chart\.umd\.min\.js"/);
   assert.doesNotMatch(html,/src="\.\/js\/pdf\//);

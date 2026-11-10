@@ -2189,5 +2189,11 @@ window.AppAiRuntime = Object.freeze({
   closeModalViewEdital,
   uploadEditalFile,
   downloadEditalFile,
-  removerEditalFile
+  removerEditalFile,
+  openAccountModal,
+  closeAccountModal,
+  changeAccountPassword,
+  openBackupFromAccount,
+  deleteAllAccountStudyData,
+  deleteAccountPermanently
 });
