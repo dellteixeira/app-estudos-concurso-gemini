@@ -44,7 +44,7 @@ function describeAuthError(error) {
 
 async function handleLogin() {
     const email = getAuthFieldValue('email').toLowerCase();
-    const password = getAuthFieldValue('password');
+    const password = String(document.getElementById('password')?.value || '');
     if (!email || !password) return appNotice('Preencha e-mail e senha.', { title:'Entrar' });
 
     const button = document.querySelector('[data-action="auth-login"]');
@@ -68,7 +68,7 @@ async function handleLogin() {
 
 async function handleSignUp() {
     const email = getAuthFieldValue('email').toLowerCase();
-    const password = getAuthFieldValue('password');
+    const password = String(document.getElementById('password')?.value || '');
     if (!email || !password) return appNotice('Preencha e-mail e senha.', { title:'Cadastrar' });
     if (password.length < 8) return appNotice('Use uma senha com pelo menos 8 caracteres.', { title:'Senha muito curta' });
 
