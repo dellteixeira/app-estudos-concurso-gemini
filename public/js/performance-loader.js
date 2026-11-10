@@ -140,35 +140,7 @@
   }
 
   function bindIntentPreload() {
-    const warmPdf = () => {
-      const profile = connectionProfile();
-      if (profile.constrained) return;
-      if (!navigator.onLine && !global.PdfStudyLibraryUI) return;
-      scheduleIdleTask(() => loadFeature('pdf-library', () => Promise.all([
-        loadStyle('./css/pdf-library.css'),
-        loadStyle('./vendor/pdf_viewer.min.css'),
-        loadStyle('./css/pdf-reader.css')
-      ]).then(async () => {
-        const ordered = [
-          './js/pdf/pdf-core.js',
-          './js/pdf/pdf-workspaces.js',
-          './js/pdf/pdf-links.js',
-          './js/pdf/pdf-library.js',
-          './js/pdf/pdf-upload.js',
-          './js/pdf/pdf-annotations.js',
-          './vendor/pdf.min.js',
-          './js/pdf/pdf-reader.js',
-          './js/pdf/pdf-library-ui.js'
-        ];
-        for (const src of ordered) await loadScript(src, { defer:true });
-      })), 900);
-    };
-
-    document.querySelectorAll('[onclick*="tab-biblioteca"], [data-tab="tab-biblioteca"], [onclick*="openModalViewEdital"]').forEach(el => {
-      el.addEventListener('pointerenter', warmPdf, { once: true, passive: true });
-      el.addEventListener('touchstart', warmPdf, { once: true, passive: true });
-      el.addEventListener('focus', warmPdf, { once: true });
-    });
+    // Biblioteca PDF descontinuada: não há mais preload de leitor/workspace.
   }
 
   function markHeavyRegions() {
