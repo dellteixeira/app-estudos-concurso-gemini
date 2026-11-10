@@ -13,7 +13,7 @@ test('startup mantém orçamento enxuto de scripts e nao carrega recursos pesado
   const eagerScripts=[...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match=>match[1]);
   const eagerStyles=[...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(match=>match[1]);
   assert.ok(eagerScripts.length<=12,`scripts iniciais demais: ${eagerScripts.length}`);
-  assert.ok(eagerStyles.length<=4,`styles iniciais demais: ${eagerStyles.length}`);
+  assert.ok(eagerStyles.length<=6,`styles iniciais demais: ${eagerStyles.length}`);
   assert.doesNotMatch(html,/src="\.\/vendor\/chart\.umd\.min\.js"/);
   assert.doesNotMatch(html,/src="\.\/js\/pdf\//);
   assert.doesNotMatch(html,/src="\.\/vendor\/pdf\.min\.js"/);
@@ -24,6 +24,8 @@ test('startup mantém orçamento enxuto de scripts e nao carrega recursos pesado
   assert.doesNotMatch(html,/src="\.\/js\/core\/cognitive-profile/);
   assert.doesNotMatch(html,/src="\.\/js\/core\/study-optimization-engine\.js"/);
   assert.doesNotMatch(html,/src="\.\/js\/core\/predictive-adaptive-tutor\.js"/);
+  assert.match(html,/data-canonical-ui="1"/);
+  assert.match(html,/responsive-polish-v10\.64\.68\.css/);
 });
 
 test('delta responsivo legado nao e carregado junto com a release atual',()=>{
