@@ -3873,3 +3873,23 @@
 .subject-gradient-31{--subject-gradient:linear-gradient(135deg,hsl(231 92% 57%),hsl(290 88% 51%))}
 .chart-legend-color{background:var(--subject-gradient)}
 /* RUNTIME_STYLE_DEBT_BATCH8_PASS2_END */
+
+.auth-forgot-password{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  margin:10px auto 0;
+  padding:6px 8px;
+  border:0;
+  background:transparent;
+  color:var(--text-secondary,#9fb2c4);
+  font:inherit;
+  font-size:.78rem;
+  cursor:pointer;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.auth-forgot-password:hover,
+.auth-forgot-password:focus-visible{
+  color:var(--accent,#53e3d5);
+}
