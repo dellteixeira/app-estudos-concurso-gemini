@@ -30,23 +30,21 @@ test('delta responsivo legado nao e carregado junto com a release atual',()=>{
   assert.doesNotMatch(html,/responsive-polish-v10\.64\.46\.css/);
 });
 
-test('asset loader registra recursos pesados sob demanda',()=>{
+test('asset loader registra apenas recursos pesados ainda suportados',()=>{
   assert.match(loader,/defineFeature\('charts'/);
   assert.match(loader,/defineFeature\('app-ai'/);
-  assert.match(loader,/defineFeature\('pdf-library'/);
-  assert.match(loader,/\.\/js\/pdf\/pdf-library-ui\.js/);
+  assert.doesNotMatch(loader,/pdf-library|pdf-engine|\.\/js\/pdf\//);
 });
 
-test('IA de edital e Biblioteca PDF sao carregadas apenas por demanda',()=>{
+test('IA de edital continua carregada apenas por demanda',()=>{
   assert.match(fs.readFileSync('public/js/app-pwa.js','utf8'),/function ensureAppAiRuntime/);
   assert.match(fs.readFileSync('public/js/app-pwa.js','utf8'),/loadFeature\('app-ai'\)/);
   assert.match(fs.readFileSync('public/js/app-ai.js','utf8'),/window\.AppAiRuntime/);
 });
 
-test('Biblioteca PDF e carregada apenas ao navegar para a aba',()=>{
-  assert.match(nav,/function ensurePdfLibraryRuntime/);
-  assert.match(nav,/tabId === 'tab-biblioteca'/);
-  assert.match(nav,/loadFeature\('pdf-library'\)/);
+test('navegacao nao depende de Biblioteca PDF ou runtime lazy',()=>{
+  assert.doesNotMatch(nav,/ensurePdfLibraryRuntime|tab-biblioteca|pdf-library/);
+  assert.match(core,/function switchTab\(/);
 });
 
 test('metadados e fila de sync usam cache em memoria',()=>{
