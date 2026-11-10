@@ -25,7 +25,8 @@ test('startup mantém orçamento enxuto de scripts e nao carrega recursos pesado
   assert.doesNotMatch(html,/src="\.\/js\/core\/study-optimization-engine\.js"/);
   assert.doesNotMatch(html,/src="\.\/js\/core\/predictive-adaptive-tutor\.js"/);
   assert.match(html,/data-canonical-ui="1"/);
-  assert.match(html,/responsive-polish-v10\.64\.68\.css/);
+  const releaseVersion=JSON.parse(fs.readFileSync('config/release-contract.json','utf8')).version;
+  assert.match(html,new RegExp(`responsive-polish-v${releaseVersion.replace(/\\./g,'\\\\.')}\\.css`));
 });
 
 test('delta responsivo legado nao e carregado junto com a release atual',()=>{
