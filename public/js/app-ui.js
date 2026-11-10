@@ -185,6 +185,42 @@
             closeGlobalSearchModal();
         }
 
+        function switchTab(tabId, btn, options = {}) {
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+            const tab = document.getElementById(tabId);
+            if (!tab) return false;
+            tab.classList.add('active');
+            if (btn) btn.classList.add('active');
+            document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+            updateContextFab(tabId);
+            updateModernOverview();
+
+            if (tabId === 'tab-calendario') {
+                requestAnimationFrame(() => {
+                    if (typeof renderMonthCalendar === 'function') renderMonthCalendar();
+                });
+            } else if (tabId === 'tab-edital') {
+                requestAnimationFrame(() => {
+                    if (typeof renderChart === 'function') renderChart();
+                });
+            }
+
+            if (options.focus !== false) {
+                const workspaceByTab = {
+                    'tab-edital':'edital-title',
+                    'tab-calendario':'monthCalendarGrid',
+                    'tab-flashcards':'flashcardsWorkspace',
+                    'tab-anotacoes':'notesWorkspace'
+                };
+                const target = document.getElementById(workspaceByTab[tabId] || '');
+                if (target) requestAnimationFrame(() => target.scrollIntoView({ behavior:'smooth', block:'start' }));
+            }
+            return true;
+        }
+
+        window.switchTab = switchTab;
+
         function findDesktopTabButton(tabId) {
             return [...document.querySelectorAll('.nav-tabs .tab-btn')].find(btn => btn.dataset.tab === tabId);
         }
@@ -626,26 +662,12 @@
             'ih-006': function(event) { addManualItem(event) },
             'ih-007': function(event) { openMobileEditalFieldEditor('materia', this) },
             'ih-008': function(event) { openMobileEditalFieldEditor('assunto', this) },
-            'ih-009': function(event) { toggleAllGuides() },
-            'ih-014': function(event) { PdfStudyLibraryUI.onSearch(this.value) },
-            'ih-015': function(event) { PdfStudyLibraryUI.onScopeChange(this.value) },
-            'ih-017': function(event) { PdfStudyLibraryUI.onMateriaFilterChange(this.value) },
-            'ih-019': function(event) { document.getElementById('flashcardsImportFile').click() },
+            'ih-009': function(event) { toggleAllGuides() },            'ih-019': function(event) { document.getElementById('flashcardsImportFile').click() },
             'ih-020': function(event) { importFlashcardsFromFile(event) },
             'ih-021': function(event) { setFlashcardViewFilter('', '') },
             'ih-022': function(event) { mobileSwitchTab('tab-edital', this) },
-            'ih-023': function(event) { mobileSwitchTab('tab-calendario', this) },
-            'ih-024': function(event) { mobileSwitchTab('tab-biblioteca', this) },
-            'ih-025': function(event) { mobileSwitchTab('tab-flashcards', this) },
-            'ih-026': function(event) { mobileSwitchTab('tab-anotacoes', this) },
-            'ih-027': function(event) { PdfStudyLibraryUI.onDropZoneKeydown(event) },
-            'ih-028': function(event) { PdfStudyLibraryUI.handleDrop(event) },
-            'ih-029': function(event) { PdfStudyLibraryUI.handleDragOver(event) },
-            'ih-030': function(event) { PdfStudyLibraryUI.handleDragLeave() },
-            'ih-031': function(event) { event.stopPropagation(); PdfStudyLibraryUI.chooseUploadFile() },
-            'ih-032': function(event) { PdfStudyLibraryUI.onUploadFileChange(this) },
-            'ih-033': function(event) { PdfStudyLibraryUI.openWorkspaceModal('upload') },
-            'ih-034': function(event) { resolveAppDialog(false) },
+            'ih-023': function(event) { mobileSwitchTab('tab-calendario', this) },            'ih-025': function(event) { mobileSwitchTab('tab-flashcards', this) },
+            'ih-026': function(event) { mobileSwitchTab('tab-anotacoes', this) },            'ih-034': function(event) { resolveAppDialog(false) },
             'ih-035': function(event) { resolveAppDialog(true) },
             'ih-036': function(event) { resolveAppPrompt(false) },
             'ih-037': function(event) { resolveAppPrompt(true) },
@@ -688,19 +710,7 @@
             'ih-074': function(event) { formatNoteText('italic') },
             'ih-075': function(event) { formatNoteText('underline') },
             'ih-076': function(event) { setNoteFontSize(this.value) },
-            'ih-077': function(event) { uploadEditalFile(event) },
-            'ih-078': function(event) { PdfStudyReader.zoom(-0.15) },
-            'ih-079': function(event) { PdfStudyReader.zoom(0.15) },
-            'ih-080': function(event) { event.preventDefault();PdfStudyReader.searchPdf() },
-            'ih-081': function(event) { PdfStudyReader.toggleSearch(false) },
-            'ih-082': function(event) { PdfStudyReader.saveAnnotation('underline') },
-            'ih-083': function(event) { PdfStudyReader.exportFromMenu('doc') },
-            'ih-084': function(event) { PdfStudyReader.exportFromMenu('txt') },
-            'ih-085': function(event) { PdfStudyReader.formatPdfNote('bold') },
-            'ih-086': function(event) { PdfStudyReader.formatPdfNote('italic') },
-            'ih-087': function(event) { PdfStudyReader.formatPdfNote('underline') },
-            'ih-088': function(event) { PdfStudyReader.setPdfNoteFontSize(this.value) }
-            };
+            'ih-077': function(event) { uploadEditalFile(event) },            };
             const eventTypes = ["change","click","dragleave","dragover","drop","focus","input","keydown","submit"];
             const bindHandlers = () => {
                 for (const type of eventTypes) {
