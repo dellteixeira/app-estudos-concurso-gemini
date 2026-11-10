@@ -128,14 +128,14 @@ else ok('atualização determinística do PWA preservada');
 if (!/self\.skipWaiting\(\)/.test(sw) || !/self\.clients\.claim\(\)/.test(sw)) fail('Service Worker sem ativação controlada');
 else ok('Service Worker suporta skipWaiting/clients.claim');
 
-// A cobertura de cache/no-store agora é governada pelo manifesto canônico da Fase 6.
-for (const route of ['/css/pdf-reader.css','/js/pdf/pdf-annotations.js','/js/pdf/pdf-reader.js']) {
-  if (!(assetManifest.networkFirstPaths || []).includes(route)) fail(`manifesto não trata Reader como network-first: ${route}`);
+// A cobertura de cache/no-store é governada pelo manifesto canônico.
+// A Biblioteca/Reader PDF foi descontinuada na v10.64.68; nenhum asset ativo dessa feature deve permanecer.
+for (const route of manifestRoutes) {
+  if (/\/js\/pdf\/|\/css\/pdf-(?:library|reader|mobile-card-actions)\.css|\/vendor\/pdf_viewer/.test(route)) {
+    fail(`manifesto ainda referencia asset da Biblioteca PDF descontinuada: ${route}`);
+  }
 }
-if (!errors.some(e => e.includes('manifesto não trata Reader'))) ok('Reader coberto pelo manifesto network-first');
-if (!exists('supabase/migrations/20260819030000_create_pdf_reader_annotations.sql')) fail('migration do Reader PDF ausente'); else ok('Reader PDF com anotações/versionamento versionado');
-if (!exists('supabase/migrations/20260819090000_harden_pdf_reader_rls.sql')) fail('hardening RLS do Reader PDF ausente'); else ok('hardening RLS do Reader PDF versionado');
-if (!/ERROR_CODES/.test(read('public/js/pdf/pdf-upload.js')) || !/classifyError/.test(read('public/js/pdf/pdf-upload.js')) || !/retryFailedUploads/.test(read('public/js/pdf/pdf-library-ui.js')) || !/pdfUploadResultPanel/.test(html)) fail('diagnóstico/retry de upload em lote incompleto'); else ok('diagnóstico e retry de upload em lote versionados');
+if (!errors.some(e => e.includes('Biblioteca PDF descontinuada'))) ok('Biblioteca PDF ausente dos contratos ativos de assets');
 
 // Sintaxe: todos os módulos atuais entram automaticamente no gate.
 for (const rel of [...ALL_APP_JS_FILES, 'public/pwa-update.js','public/sw.js','src/index.js']) {
