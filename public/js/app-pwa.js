@@ -177,6 +177,12 @@
         window.uploadEditalFile = (...args) => lazyAppAiCall('uploadEditalFile', ...args);
         window.downloadEditalFile = (...args) => lazyAppAiCall('downloadEditalFile', ...args);
         window.removerEditalFile = (...args) => lazyAppAiCall('removerEditalFile', ...args);
+        window.openAccountModal = (...args) => lazyAppAiCall('openAccountModal', ...args);
+        window.closeAccountModal = (...args) => lazyAppAiCall('closeAccountModal', ...args);
+        window.changeAccountPassword = (...args) => lazyAppAiCall('changeAccountPassword', ...args);
+        window.openBackupFromAccount = (...args) => lazyAppAiCall('openBackupFromAccount', ...args);
+        window.deleteAllAccountStudyData = (...args) => lazyAppAiCall('deleteAllAccountStudyData', ...args);
+        window.deleteAccountPermanently = (...args) => lazyAppAiCall('deleteAccountPermanently', ...args);
         window.forceFullSync = forceFullSync;
         window.removeFlashcard = removeFlashcard;
         window.openEditarFlashcardModal = openEditarFlashcardModal;
