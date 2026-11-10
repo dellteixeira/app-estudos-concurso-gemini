@@ -137,13 +137,11 @@
         window.handleSignUp = handleSignUp;
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
-        window.toggleDarkMode = toggleDarkMode;
         window.startFocusTimer = startFocusTimer;
         window.startFreeFocusTimer = startFreeFocusTimer;
         window.startIntervalTimer = startIntervalTimer;
         window.populateNotaAssuntoDropdown = populateNotaAssuntoDropdown;
         window.handleNotaAssuntoChange = handleNotaAssuntoChange;
-        window.switchTab = switchTab;
         window.openModalAnaliseEditalIA = (...args) => lazyAppAiCall('openModalAnaliseEditalIA', ...args);
         window.closeModalAnaliseEditalIA = (...args) => lazyAppAiCall('closeModalAnaliseEditalIA', ...args);
         window.executarAnaliseEditalIA = (...args) => lazyAppAiCall('executarAnaliseEditalIA', ...args);
