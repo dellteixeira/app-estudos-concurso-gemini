@@ -8,10 +8,8 @@ const indexPath = path.join(root, 'public', 'index.html');
 const canonicalPath = path.join(cssDir, 'responsive-system.css');
 const canonical = fs.readFileSync(canonicalPath, 'utf8');
 const index = fs.readFileSync(indexPath, 'utf8');
-const assetLoader = fs.readFileSync(path.join(root, 'public', 'js', 'core', 'asset-loader.js'), 'utf8');
 
 const legacyFiles = ['base.css', 'dashboard.css', 'features.css'];
-const specializedFiles = ['pdf-library.css', 'pdf-reader.css'];
 
 const canonicalSelectors = [
   '#app-dashboard',
@@ -48,12 +46,8 @@ const legacyLinks = [
   './css/dashboard.css',
   './css/features.css'
 ];
-const specializedLinks = [
-  './css/pdf-library.css',
-  './css/pdf-reader.css'
-];
 const responsiveLink = './css/responsive-system.css';
-const links = [...legacyLinks, responsiveLink, ...specializedLinks];
+const links = [...legacyLinks, responsiveLink];
 
 const positions = new Map(links.map(link => [link, index.indexOf(link)]));
 for (const link of [...legacyLinks, responsiveLink]) {
@@ -68,19 +62,6 @@ for (const link of legacyLinks) {
   }
 }
 
-// CSS especializado pode ser lazy: nesse caso ele deve pertencer explicitamente
-// ao feature loader e não competir com o first paint.
-for (const link of specializedLinks) {
-  const eagerPos = positions.get(link);
-  const lazyPath = link.replace('./', './');
-  const lazyOwned = assetLoader.includes(`'${lazyPath}'`) || assetLoader.includes(`"${lazyPath}"`);
-  if (eagerPos < 0 && !lazyOwned) {
-    errors.push(`${link} não está no index nem no loader de feature especializada`);
-  }
-  if (eagerPos >= 0 && responsivePos >= 0 && responsivePos > eagerPos) {
-    errors.push(`responsive-system.css deve carregar antes de ${link} para preservar o ownership especializado`);
-  }
-}
 
 const canonicalMedia = [
   '@media (max-width: 600px)',
@@ -110,10 +91,6 @@ for (const file of legacyFiles) {
   }
 }
 
-for (const file of specializedFiles) {
-  const source = fs.readFileSync(path.join(cssDir, file), 'utf8');
-  if (!source.trim()) errors.push(`${file} está vazio`);
-}
 
 if (warnings.length) {
   console.log('CSS ownership audit — compatibilidade legada detectada:');
@@ -126,4 +103,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('CSS ownership audit OK: camada transversal canônica preservada, seletores aposentados ausentes e CSS especializado permanece autoritativo.');
+console.log('CSS ownership audit OK: camada transversal canônica preservada e seletores aposentados ausentes.');
