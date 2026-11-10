@@ -53,20 +53,6 @@ const VENDOR_ROUTES = {
     ],
     contentType: "application/javascript; charset=utf-8"
   },
-  "/vendor/pdf_viewer.min.js": {
-    upstreams: [
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",
-      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"
-    ],
-    contentType: "application/javascript; charset=utf-8"
-  },
-  "/vendor/pdf_viewer.min.css": {
-    upstreams: [
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",
-      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"
-    ],
-    contentType: "text/css; charset=utf-8"
-  },
   "/vendor/pdf.worker.min.js": {
     upstreams: [
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
