@@ -1524,7 +1524,7 @@
             document.getElementById('editalModalTitle').innerText = `Documento do Edital (${currentConcurso})`;
             renderEditalFileViewer();
             document.getElementById('modalViewEdital').style.display = 'flex';
-            // Biblioteca pesada carregada somente quando o recurso de edital é realmente aberto.
+            // Runtime de PDF carregado somente quando o recurso de edital é realmente aberto.
             scheduleBackgroundTask(() => loadPdfJsOnce().catch(error => console.warn(error.message)), 1000);
         }
 
