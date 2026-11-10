@@ -1,7 +1,7 @@
 (function (global) {
     'use strict';
 
-    const CORE_VERSION = '10.64.68';
+    const CORE_VERSION = '10.64.69';
     let coreRuntimePromise = null;
 
     function ensureCanonicalUiStyle() {
@@ -258,8 +258,7 @@
         navigateTo,
         mobileSwitchTab,
         callPath,
-        ensureCoreRuntime,
-        ensurePdfLibraryRuntime
+        ensureCoreRuntime
     });
 
     ensureCanonicalUiStyle();
