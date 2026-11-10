@@ -78,6 +78,7 @@
                 <button class="btn btn-primary u-static-002" data-action="auth-login">Entrar</button>
                 <button class="btn btn-secondary u-static-002" data-action="auth-signup">Cadastrar</button>
             </div>
+            <button class="auth-forgot-password" type="button" data-action="call" data-call="handleForgotPassword">Esqueci minha senha</button>
             <div id="authStatusMessage" class="auth-status-message" hidden aria-hidden="true"></div>
         </div>
     </div>
@@ -1505,6 +1506,7 @@
     <script src="./js/core/local-backup-store.js" defer></script>
     <script src="./js/core/asset-loader.js" defer></script>
     <script src="./js/app-core.js" defer></script>
+    <script src="./js/app-auth.js" defer></script>
     <script src="./js/core/study-events.js" defer></script>
     <!-- Runtime cognitivo secundário é carregado após DOMContentLoaded pelo módulo de navegação. -->
     <!-- IA/edital e Biblioteca PDF são carregados sob demanda. -->
