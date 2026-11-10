@@ -1,7 +1,7 @@
 (function (global) {
     'use strict';
 
-    const CORE_VERSION = '10.64.67';
+    const CORE_VERSION = '10.64.68';
     let coreRuntimePromise = null;
 
     function ensureCanonicalUiStyle() {
@@ -15,7 +15,7 @@
         if (!document.querySelector('link[data-responsive-polish]')) {
             const polish = document.createElement('link');
             polish.rel = 'stylesheet';
-            polish.href = './css/responsive-polish-v10.64.67.css?v=10.64.67';
+            polish.href = './css/responsive-polish-v10.64.68.css?v=10.64.68';
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
         }
@@ -185,37 +185,12 @@
         }
         syncMobileNav(tabId);
         if (typeof global.updateContextFab === 'function') global.updateContextFab(tabId);
-
-        if (tabId === 'tab-biblioteca') {
-            ensurePdfLibraryRuntime().then(ui => {
-                try { ui?.initialize?.(true); } catch (error) { console.warn('Falha ao inicializar Biblioteca PDF.', error); }
-            });
-        }
         return !!document.getElementById(tabId);
     }
 
     function mobileSwitchTab(tabId) {
         return navigateTo(tabId);
     }
-    let pdfLibraryRuntimePromise = null;
-
-    function ensurePdfLibraryRuntime() {
-        if (global.PdfStudyLibraryUI) return Promise.resolve(global.PdfStudyLibraryUI);
-        if (pdfLibraryRuntimePromise) return pdfLibraryRuntimePromise;
-        pdfLibraryRuntimePromise = ensureCoreRuntime()
-            .then(loader => {
-                if (!loader) throw new Error('Loader de assets indisponível.');
-                return loader.loadFeature('pdf-library');
-            })
-            .then(() => global.PdfStudyLibraryUI || null)
-            .catch(error => {
-                pdfLibraryRuntimePromise = null;
-                console.warn('Não foi possível carregar a Biblioteca PDF sob demanda.', error);
-                return null;
-            });
-        return pdfLibraryRuntimePromise;
-    }
-
 
     const actionHandlers = Object.freeze({
         'call': element => callPath(element.dataset.call),

@@ -2143,39 +2143,6 @@
             });
         }
 
-        function switchTab(tabId, btn, options = {}) {
-            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
-            const tab = document.getElementById(tabId);
-            if (!tab) return;
-            tab.classList.add('active');
-            if (btn) btn.classList.add('active');
-            document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
-            updateContextFab(tabId);
-            updateModernOverview();
-
-            // Renderiza componentes pesados somente quando a aba fica visível.
-            if (tabId === 'tab-calendario') {
-                requestAnimationFrame(() => {
-                    renderMonthCalendar();
-                    if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
-                });
-            } else if (tabId === 'tab-biblioteca') {
-                requestAnimationFrame(() => {
-                    Promise.resolve(window.PdfStudyLibraryUI?.onTabActivated?.())
-                        .catch(error => console.warn('Atualização automática da Biblioteca falhou:', error));
-                    if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
-                });
-            } else {
-                if (tabId === 'tab-edital') requestAnimationFrame(() => renderChart());
-                if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
-            }
-        }
-
-
-
-
-
 // Runtime exportado para carregamento sob demanda.
 window.AppAiRuntime = Object.freeze({
   openModalAnaliseEditalIA,

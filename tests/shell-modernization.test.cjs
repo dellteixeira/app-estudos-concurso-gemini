@@ -31,7 +31,7 @@ test('modern shell stays presentation-only and avoids global reactive loops', ()
 
 test('modern shell preserves the five canonical study tabs', () => {
   const html = read('public/index.html');
-  for (const tab of ['tab-edital', 'tab-calendario', 'tab-biblioteca', 'tab-flashcards', 'tab-anotacoes']) {
+  for (const tab of ['tab-edital', 'tab-calendario', 'tab-flashcards', 'tab-anotacoes']) {
     assert.match(html, new RegExp(`data-tab=["']${tab}["']`), `${tab} navigation must remain available`);
   }
 });

@@ -21,8 +21,7 @@ test('phase 6 performance loader has valid syntax and adaptive contracts', () =>
   assert.match(code, /effectiveType/);
   assert.match(code, /contentVisibility/);
   assert.match(code, /containIntrinsicSize/);
-  assert.match(code, /pointerenter/);
-  assert.match(code, /touchstart/);
+  assert.doesNotMatch(code, /pdf-library|PdfStudyLibraryUI|\.\/js\/pdf\//);
 });
 
 test('performance enhancement stays isolated from data/auth services', () => {

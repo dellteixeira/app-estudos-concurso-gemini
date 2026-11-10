@@ -1,7 +1,0 @@
-// Regression contract for the simplified Biblioteca toolbar.
-const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const root=path.resolve(__dirname,'..');
-const index=fs.readFileSync(path.join(root,'public/index.html'),'utf8');const ui=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-ui.js'),'utf8');const appUi=fs.readFileSync(path.join(root,'public/js/app-ui.js'),'utf8');const ordering=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-ordering.js'),'utf8');const layout=fs.readFileSync(path.join(root,'public/js/pdf/pdf-library-layout-fix.js'),'utf8');
-test('controles Workspace continuam ausentes do cabeçalho',()=>{assert.doesNotMatch(index,/id="pdfLibraryContestName"/);assert.doesNotMatch(index,/id="pdfWorkspaceFilter"/)});
-test('filtro visual de Assunto foi removido sem afetar upload e vínculo',()=>{assert.doesNotMatch(index,/id="pdfAssuntoFilter"/);assert.doesNotMatch(ui,/onAssuntoFilterChange/);assert.doesNotMatch(appUi,/onAssuntoFilterChange/);assert.match(ui,/pdfUploadAssunto/);assert.match(ui,/pdfLinkAssunto/)});
-test('barra de ações e filtros usam três posições',()=>{assert.match(ordering,/repeat\(3,minmax\(0,1fr\)\)/);assert.match(layout,/repeat\(3,minmax\(0,1fr\)\)/)});
-test('Selecionar saiu do cabeçalho e fica na barra offline antes de Enviar',()=>{assert.doesNotMatch(index,/id="btnPdfSelectionMode"/);assert.doesNotMatch(layout,/pdf-library-selection-row/)});
