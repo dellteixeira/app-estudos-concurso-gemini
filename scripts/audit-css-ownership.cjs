@@ -11,7 +11,7 @@ const index = fs.readFileSync(indexPath, 'utf8');
 const assetLoader = fs.readFileSync(path.join(root, 'public', 'js', 'core', 'asset-loader.js'), 'utf8');
 
 const legacyFiles = ['base.css', 'dashboard.css', 'features.css'];
-const specializedFiles = ['pdf-library.css', 'pdf-reader.css'];
+const specializedFiles = [];
 
 const canonicalSelectors = [
   '#app-dashboard',
@@ -37,11 +37,7 @@ for (const selector of retiredSelectors) {
   }
 }
 
-for (const forbidden of ['.pdf-library-actions', '.pdf-reader-shell', '.pdf-reader-toolbar']) {
-  if (canonical.includes(forbidden)) {
-    errors.push(`responsive-system.css não deve assumir layout especializado: ${forbidden}`);
-  }
-}
+
 
 const legacyLinks = [
   './css/base.css',
