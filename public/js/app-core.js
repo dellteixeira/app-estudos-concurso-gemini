@@ -41,6 +41,78 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
             element.classList.add(getProgressWidthClass(value));
         }
 
+        // V10.64.68 — navegação crítica não pode depender de módulos lazy.
+        function toggleDarkMode() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        const TAB_WORKSPACE_TARGETS = Object.freeze({
+            'tab-calendario': 'calendarWorkspace',
+            'tab-flashcards': 'flashcardsWorkspace',
+            'tab-anotacoes': 'notesWorkspace'
+        });
+
+        function getTabWorkspaceTopOffset() {
+            if (window.matchMedia('(max-width: 900px)').matches) {
+                return Math.max(10, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--workspace-mobile-top-gap')) || 12);
+            }
+            const header = document.querySelector('header.modern-header');
+            if (!header) return 18;
+            const style = getComputedStyle(header);
+            const headerTop = parseFloat(style.top) || 0;
+            return Math.ceil(headerTop + header.offsetHeight + 14);
+        }
+
+        function focusTabWorkspace(tabId, options = {}) {
+            const targetId = TAB_WORKSPACE_TARGETS[tabId];
+            if (!targetId) return;
+            const target = document.getElementById(targetId);
+            if (!target || !target.offsetParent) return;
+            const offset = getTabWorkspaceTopOffset();
+            const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - offset);
+            const behavior = options.instant ? 'auto' : (options.behavior || 'smooth');
+            window.scrollTo({ top, behavior });
+        }
+
+        function scheduleTabWorkspaceFocus(tabId, options = {}) {
+            if (!TAB_WORKSPACE_TARGETS[tabId]) return;
+            requestAnimationFrame(() => requestAnimationFrame(() => focusTabWorkspace(tabId, options)));
+        }
+
+        function switchTab(tabId, btn, options = {}) {
+            const tab = document.getElementById(tabId);
+            if (!tab) return false;
+
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.nav-tabs .tab-btn[data-tab]').forEach(tb => tb.classList.remove('active'));
+            tab.classList.add('active');
+
+            const desktopButton = btn || [...document.querySelectorAll('.nav-tabs .tab-btn[data-tab]')]
+                .find(button => button.dataset.tab === tabId);
+            if (desktopButton) desktopButton.classList.add('active');
+
+            document.querySelectorAll('.mobile-nav-btn[data-tab]').forEach(button => {
+                button.classList.toggle('active', button.dataset.tab === tabId);
+            });
+
+            window.updateContextFab?.(tabId);
+            window.updateModernOverview?.();
+
+            if (tabId === 'tab-calendario') {
+                requestAnimationFrame(() => {
+                    renderMonthCalendar();
+                    if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
+                });
+            } else {
+                if (tabId === 'tab-edital') requestAnimationFrame(() => renderChart());
+                if (options.focus !== false) scheduleTabWorkspaceFocus(tabId, options);
+            }
+            return true;
+        }
+
+        window.toggleDarkMode = toggleDarkMode;
+        window.switchTab = switchTab;
+
         const STRATEGIES_MAP = {
             nenhuma: [],
             retencao_adaptativa: [],
@@ -3673,46 +3745,6 @@ O estado local atual será substituído. Antes da restauração, o Painel preser
             assuntos.forEach(ass => { aSel.innerHTML += `<option value="${escapeHtml(ass)}">${escapeHtml(ass)}</option>`; });
         }
 
-        async function addPdfStudyNote({ materia, assunto, titulo, conteudoTexto }) {
-            const text = String(conteudoTexto || '').trim();
-            if (!materia || !titulo || !text) throw new Error('Dados insuficientes para exportar a anotação do PDF.');
-            let metadata = getConcursosMetadata();
-            if (!metadata[currentConcurso]) metadata[currentConcurso] = {};
-            if (!metadata[currentConcurso].structuredNotes) metadata[currentConcurso].structuredNotes = [];
-            const now = new Date();
-            metadata[currentConcurso].structuredNotes.push({
-                materia, assunto: assunto || '', titulo,
-                conteudo: plainTextToNoteHtml(text), conteudoTexto: text, formato: 'html',
-                data: now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
-                source_type:'pdf'
-            });
-            await saveConcursosMetadata(metadata);
-            loadNotesData();
-            return true;
-        }
-        window.addPdfStudyNote = addPdfStudyNote;
-        function getPdfStudyNotesForCurrentContest() {
-            const metadata = getConcursosMetadata();
-            const notes = metadata?.[currentConcurso]?.structuredNotes;
-            return Array.isArray(notes) ? notes.map(note => ({ ...note })) : [];
-        }
-        window.getPdfStudyNotesForCurrentContest = getPdfStudyNotesForCurrentContest;
-
-        async function addPdfStudyFlashcard({ materia, assunto, pergunta, resposta, sourcePdfId, sourcePage }) {
-            const p = String(pergunta || '').trim(), r = String(resposta || '').trim();
-            if (!p || !r) throw new Error('Pergunta e resposta são obrigatórias.');
-            const card = {
-                id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()),
-                materia: materia || '', assunto: assunto || '', pergunta:p, resposta:r,
-                source_type:'pdf', source_pdf_id:sourcePdfId || null, source_page:Number(sourcePage)||null
-            };
-            flashcardsList.push(card);
-            renderFlashcardFolders(); renderFlashcards();
-            await saveFlashcardsData();
-            return card;
-        }
-        window.addPdfStudyFlashcard = addPdfStudyFlashcard;
-
         async function saveFlashcardsData() {
             flashcardsList.forEach(fc => {
                 if (!fc.id) fc.id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
@@ -5720,9 +5752,6 @@ filterDataByConcurso();
             renderMonthCalendar();
             loadNotesData();
             loadFlashcardsData();
-            if (document.getElementById('tab-biblioteca')?.classList.contains('active')) {
-                window.PdfStudyLibraryUI?.initialize(true);
-            }
         }
 
         function filterDataByConcurso() {
@@ -5910,14 +5939,6 @@ filterDataByConcurso();
                 return;
             }
 
-            try {
-                await window.PdfStudyLinks?.handleConcursoRename?.(antigoNome, nomeFormatado);
-            } catch (error) {
-                console.error('Falha ao manter PDFs vinculados durante a renomeação:', error);
-                await appNotice('Não foi possível atualizar os Workspaces/PDFs vinculados. A renomeação foi cancelada para evitar inconsistência.', { title:'Renomear concurso' });
-                return;
-            }
-
             metadata[nomeFormatado] = metadata[antigoNome] || { dataProva: null, dateSchedule: {} };
             delete metadata[antigoNome];
             await saveConcursosMetadata(metadata);
@@ -5965,8 +5986,7 @@ filterDataByConcurso();
             if (btn) { btn.disabled = true; btn.textContent = 'Excluindo...'; }
 
             try {
-                // A exclusão do concurso é local-first: vínculos de PDF são acessórios e
-                // não podem impedir a remoção principal da interface/estado local.
+                // A exclusão do concurso é local-first e sincroniza depois com a nuvem.
                 queueConcursoDelete(concursoRemovido);
                 const idsRemovidos = allEditalItems
                     .filter(item => (item.concurso || 'Concurso Geral') === concursoRemovido)
@@ -5997,12 +6017,6 @@ filterDataByConcurso();
                 renderMonthCalendar();
                 updateModernOverview();
                 renderRetentionDiagnostics();
-
-                try {
-                    await window.PdfStudyLinks?.handleConcursoDelete?.(concursoRemovido);
-                } catch (pdfError) {
-                    console.warn(`Vínculos de PDF de "${concursoRemovido}" serão limpos posteriormente:`, pdfError);
-                }
 
                 if (navigator.onLine && currentUser) {
                     scheduleBackgroundTask(async () => {
