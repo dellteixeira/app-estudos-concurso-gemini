@@ -56,8 +56,8 @@ test('versioned request reuses an already loaded legacy script with the same pat
   assert.equal(appended.length,0);
 });
 
-test('core features are registered for chart and PDF lazy loading',()=>{
+test('core features are registered for remaining lazy loading',()=>{
   const {api}=loadModule();
   const stats=api.stats();
-  assert.deepEqual([...stats.registeredFeatures],['charts','app-ai','pdf-engine','pdf-library']);
+  assert.deepEqual([...stats.registeredFeatures],['charts','app-ai']);
 });
