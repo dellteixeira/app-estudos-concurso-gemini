@@ -59,7 +59,6 @@ else ok(rootNameCheckDisabled ? 'nome da pasta raiz ignorado em ambiente de CI' 
 
 const html = read('public/index.html');
 const ALL_APP_JS_FILES = discoverFiles('public/js', rel => rel.endsWith('.js'));
-const PDF_JS_FILES = ALL_APP_JS_FILES.filter(rel => rel.startsWith('public/js/pdf/'));
 const ALL_CSS_FILES = discoverFiles('public/css', rel => rel.endsWith('.css'));
 const TEST_FILES = discoverFiles('tests', rel => rel.endsWith('.test.cjs'));
 const HTML_CSS_FILES = discoverHtmlAssets(html, 'link', 'href', 'css/');
