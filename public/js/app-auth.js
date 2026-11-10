@@ -109,7 +109,7 @@ async function completePasswordRecovery() {
         label:'Digite sua nova senha',
         help:'Use pelo menos 8 caracteres.',
         confirmText:'Continuar',
-        inputType:'password',
+        type:'password',
         maxLength:128
     });
     if (first === null) return;
@@ -123,7 +123,7 @@ async function completePasswordRecovery() {
         title:'Confirmar nova senha',
         label:'Digite novamente a nova senha',
         confirmText:'Alterar senha',
-        inputType:'password',
+        type:'password',
         maxLength:128
     });
     if (second === null) return;
