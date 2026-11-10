@@ -23,12 +23,12 @@ const MAX_TOPICS_TOTAL = 5000;
 const MAX_MATERIA_CHARS = 180;
 const MAX_ASSUNTO_CHARS = 1200;
 
-const APP_VERSION = "10.64.67";
+const APP_VERSION = "10.64.68";
 const CORE_NO_STORE_PATHS = new Set([
   "/", "/index.html", "/sw.js", "/pwa-update.js", "/capacitor-runtime.js", "/version.json",
-  "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/shell-modernization.css", "/css/pdf-library.css", "/css/pdf-reader.css", "/css/pdf-mobile-card-actions.css",
+  "/css/base.css", "/css/dashboard.css", "/css/features.css", "/css/shell-modernization.css",
   "/js/study-domain.js", "/js/core/cognitive-profile-source.js", "/js/core/cognitive-profile.js", "/js/core/intervention-effectiveness.js", "/js/core/error-intelligence.js", "/js/core/cognitive-profile-runtime.js", "/js/core/topic-assessment.js", "/js/core/study-optimization-engine.js",
-  "/js/core/predictive-adaptive-tutor.js", "/js/core/study-events.js", "/js/core/study-guidance-engine.js", "/js/core/offline-sync-coordinator.js", "/js/core/study-observability.js", "/js/core/local-backup-store.js", "/js/app-core.js", "/js/edital-cross-tool.js", "/js/edital-cross-ui.js", "/css/edital-cross-tool.css", "/js/app-state.js", "/js/sync-engine.js", "/js/pdf/pdf-core.js", "/js/pdf/pdf-workspaces.js", "/js/pdf/pdf-links.js", "/js/pdf/pdf-library.js", "/js/pdf/pdf-upload.js", "/js/pdf/pdf-library-opfs-adapter.js", "/js/pdf/pdf-library-layout-fix.js", "/js/pdf/pdf-device-storage.js", "/js/pdf/offline-pdf-store.js", "/js/pdf/pdf-offline-library-manager.js", "/js/pdf/pdf-offline-integrity.js", "/js/pdf/pdf-offline-library-ui.js", "/js/app-ai.js", "/js/app-ui.js", "/js/pdf/pdf-annotations.js", "/js/pdf/pdf-reader.js", "/js/pdf/pdf-library-ui.js", "/js/learning-advisor.js", "/js/critical-points-actions.js", "/js/app-pwa.js"
+  "/js/core/predictive-adaptive-tutor.js", "/js/core/study-events.js", "/js/core/study-guidance-engine.js", "/js/core/offline-sync-coordinator.js", "/js/core/study-observability.js", "/js/core/local-backup-store.js", "/js/app-core.js", "/js/edital-cross-tool.js", "/js/edital-cross-ui.js", "/css/edital-cross-tool.css", "/js/app-state.js", "/js/sync-engine.js", "/js/app-ai.js", "/js/app-ui.js", "/js/learning-advisor.js", "/js/critical-points-actions.js", "/js/app-pwa.js"
 ]);
 
 const VENDOR_ROUTES = {
@@ -52,20 +52,6 @@ const VENDOR_ROUTES = {
       "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
     ],
     contentType: "application/javascript; charset=utf-8"
-  },
-  "/vendor/pdf_viewer.min.js": {
-    upstreams: [
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js",
-      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.js"
-    ],
-    contentType: "application/javascript; charset=utf-8"
-  },
-  "/vendor/pdf_viewer.min.css": {
-    upstreams: [
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css",
-      "https://unpkg.com/pdfjs-dist@3.11.174/web/pdf_viewer.css"
-    ],
-    contentType: "text/css; charset=utf-8"
   },
   "/vendor/pdf.worker.min.js": {
     upstreams: [

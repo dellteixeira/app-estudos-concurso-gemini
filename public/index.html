@@ -32,7 +32,6 @@
     <link rel="stylesheet" href="./css/features.css">
     <link rel="stylesheet" href="./css/responsive-system.css">
     <!-- O delta responsivo da release atual é injetado uma única vez pelo runtime. -->
-    <!-- Estilos da Biblioteca/PDF são carregados sob demanda ao abrir a Biblioteca. -->
 </head>
 <body>
 
@@ -140,7 +139,6 @@
                 <div class="nav-tabs header-nav-tabs" aria-label="Navegação principal">
                     <button class="tab-btn active" data-action="switch-tab" data-tab="tab-edital">Edital Verticalizado</button>
                     <button class="tab-btn" data-action="switch-tab" data-tab="tab-calendario">Cronograma Mensal</button>
-                    <button class="tab-btn" data-action="switch-tab" data-tab="tab-biblioteca">Biblioteca</button>
                     <button class="tab-btn" data-action="switch-tab" data-tab="tab-flashcards">Flashcards</button>
                     <button class="tab-btn" data-action="switch-tab" data-tab="tab-anotacoes">Anotações</button>
                 </div>
@@ -395,37 +393,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: BIBLIOTECA DE PDFs -->
-        <div id="tab-biblioteca" class="tab-content">
-            <div class="card tab-workspace-anchor" id="pdfLibraryWorkspace">
-                <div class="pdf-library-shell">
-                    <div class="pdf-library-hero">
-                        <div class="pdf-library-title">
-                            <h3>Biblioteca de Estudos</h3>
-                            <p>PDFs privados em uma Biblioteca Global. Um mesmo arquivo pode ser vinculado a vários concursos, matérias e assuntos.</p>
-                        </div>
-                        <div class="pdf-library-actions">
-                            <button class="btn btn-primary" type="button" data-action="call" data-call="PdfStudyLibraryUI.openUploadModal">+ Adicionar PDFs</button>
-                        </div>
-                    </div>
-                    <div class="pdf-library-filters" aria-label="Filtros da Biblioteca">
-                        <input id="pdfLibrarySearch" type="search" placeholder="Buscar PDF" data-inline-input="ih-014">
-                        <select id="pdfLibraryScope" data-inline-change="ih-015"><option value="global" selected>Biblioteca Global</option><option value="contest">Concurso atual</option></select>
-                        <select id="pdfMateriaFilter" data-inline-change="ih-017"><option value="">Todas as matérias</option></select>
-                    </div>
-                    <div id="pdfLibraryStatus" class="pdf-library-status" aria-live="polite"></div>
-<div id="pdfBulkToolbar" class="pdf-bulk-toolbar" hidden>
-                        <div class="pdf-bulk-count"><strong id="pdfBulkSelectedCount">0</strong> PDF(s) selecionado(s)</div>
-                        <div class="pdf-bulk-actions">
-                            <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.selectAllVisible">Selecionar todos os visíveis</button>
-                            <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.clearSelection">Limpar seleção</button>
-                            <button class="btn btn-danger btn-sm" id="btnDeleteSelectedPdfs" type="button" data-action="call" data-call="PdfStudyLibraryUI.deleteSelected">Excluir selecionados</button>
-                        </div>
-                    </div>
-                    <div id="pdfLibraryGrid" class="pdf-library-grid"></div>
-                </div>
-            </div>
-        </div>
+        <!-- TAB 3: ANOTAÇÕES -->
 
         <!-- TAB 3: ANOTAÇÕES -->
         <div id="tab-anotacoes" class="tab-content">
@@ -493,133 +461,13 @@
         <nav class="mobile-bottom-nav" aria-label="Navegação principal mobile">
             <button class="mobile-nav-btn active" type="button" data-tab="tab-edital" data-inline-click="ih-022"><span>Edital</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-calendario" data-inline-click="ih-023"><span>Cronograma</span></button>
-            <button class="mobile-nav-btn" type="button" data-tab="tab-biblioteca" data-inline-click="ih-024"><span>Biblioteca</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-flashcards" data-inline-click="ih-025"><span>Flashcards</span></button>
             <button class="mobile-nav-btn" type="button" data-tab="tab-anotacoes" data-inline-click="ih-026"><span>Anotações</span></button>
             <button id="contextFab" class="mobile-nav-btn mobile-context-action" type="button" data-action="call" data-call="handleContextFab" aria-label="Adicionar conteúdo"><span>Novo</span></button>
         </nav>
     </div>
 
-    <!-- MODAL NOVO WORKSPACE DE PDFs -->
-    <div class="modal-overlay" id="modalPdfWorkspace">
-        <div class="modal pdf-workspace-modal">
-            <div class="pdf-modal-heading">
-                <div>
-                    <h3>Novo Workspace</h3>
-                    <p>Workspace global: organize seus PDFs por finalidade sem prender o arquivo a um concurso.</p>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="pdfWorkspaceName">Nome do Workspace</label>
-                <input type="text" id="pdfWorkspaceName" maxlength="120" placeholder="Ex.: Doutrina e legislação" autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label for="pdfWorkspaceDescription">Descrição <span class="pdf-field-optional">(opcional)</span></label>
-                <textarea id="pdfWorkspaceDescription" maxlength="500" placeholder="Ex.: PDFs de doutrina, legislação comentada e jurisprudência"></textarea>
-            </div>
-            <div class="pdf-workspace-help">Depois de criado, o Workspace ficará disponível para qualquer concurso e poderá ser escolhido no upload ou no vínculo de um PDF já existente.</div>
-            <div class="modal-actions pdf-modal-actions">
-                <button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.closeWorkspaceModal">Cancelar</button>
-                <button class="btn btn-primary" id="btnCreatePdfWorkspace" type="button" data-action="call" data-call="PdfStudyLibraryUI.createWorkspace">Criar Workspace</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL UPLOAD DE PDF -->
-    <div class="modal-overlay" id="modalPdfUpload">
-        <div class="modal modal-large pdf-upload-modal">
-            <div class="pdf-modal-heading">
-                <div>
-                    <h3>Adicionar PDFs à Biblioteca</h3>
-                    <p>Você pode importar vários PDFs de uma só vez para um Workspace e, se quiser, vincular o lote a uma matéria ou assunto do edital.</p>
-                </div>
-            </div>
-
-            <div class="pdf-upload-layout">
-                <section class="pdf-upload-stage">
-                    <div id="pdfDropZone" class="pdf-drop-zone" role="button" tabindex="0" aria-label="Selecionar PDFs" data-action="call" data-call="PdfStudyLibraryUI.chooseUploadFile" data-inline-keydown="ih-027" data-inline-drop="ih-028" data-inline-dragover="ih-029" data-inline-dragleave="ih-030">
-                        <div class="pdf-drop-icon" aria-hidden="true">PDF</div>
-                        <strong>Arraste seus PDFs aqui</strong>
-                        <span class="pdf-drop-subtitle">ou escolha um ou vários arquivos do computador ou celular</span>
-                        <button class="btn btn-primary pdf-select-file-btn" type="button" data-inline-click="ih-031">Selecionar PDFs</button>
-                        <div class="pdf-drop-limit">Somente PDF · máximo 100 MB por arquivo</div>
-                        <div class="pdf-upload-file-name" id="pdfUploadFileName" data-selected="false">Nenhum arquivo selecionado</div><div id="pdfUploadFileList" class="pdf-upload-file-list"></div>
-                        <input id="pdfUploadFile" type="file" accept="application/pdf,.pdf" multiple hidden data-inline-change="ih-032">
-                    </div>
-                    <div class="pdf-upload-stage-hint">
-                        <div class="pdf-upload-stage-pill">Biblioteca Global</div>
-                        <p>O arquivo físico será salvo uma única vez e poderá ser reutilizado em vários concursos, matérias e assuntos sem duplicação.</p>
-                    </div>
-                </section>
-
-                <section class="pdf-upload-form-panel">
-                    <div class="form-group">
-                        <label for="pdfUploadTitle">Título do material <span class="pdf-field-optional">(usado somente quando houver 1 PDF)</span></label>
-                        <input id="pdfUploadTitle" type="text" maxlength="240" placeholder="Título do PDF" autocomplete="off">
-                    </div>
-
-                    <div class="pdf-upload-grid">
-                        <div class="form-group pdf-workspace-field">
-                            <label for="pdfUploadWorkspace">Workspace</label>
-                            <div class="pdf-workspace-select-row">
-                                <select id="pdfUploadWorkspace" aria-describedby="pdfUploadWorkspaceHelp"></select>
-                                <button class="btn btn-secondary pdf-new-workspace-btn" type="button" data-inline-click="ih-033">+ Novo</button>
-                            </div>
-                            <small id="pdfUploadWorkspaceHelp" class="pdf-field-help">Organiza seu acervo. Se ainda não houver nenhum, “Biblioteca Geral” será criada automaticamente.</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="pdfUploadMateria">Matéria do edital <span class="pdf-field-optional">(opcional)</span></label>
-                            <select id="pdfUploadMateria" data-change-call="PdfStudyLibraryUI.onUploadMateriaChange"><option value="">Sem matéria específica</option></select>
-                        </div>
-                        <div class="form-group pdf-upload-assunto-field">
-                            <label for="pdfUploadAssunto">Assunto do edital <span class="pdf-field-optional">(opcional)</span></label>
-                            <select id="pdfUploadAssunto"><option value="">Sem assunto específico</option></select>
-                        </div>
-                    </div>
-
-                    <div class="pdf-upload-summary-card">
-                        <h4>Como este PDF será usado</h4>
-                        <ul>
-                            <li>cada documento entra uma única vez na <strong>Biblioteca Global</strong>;</li>
-                            <li>todos os PDFs do lote recebem o mesmo <strong>Workspace</strong>;</li>
-                            <li><strong>matéria e assunto</strong> são opcionais e só serão vinculados se você escolher;</li>
-                            <li>o mesmo PDF poderá ser reutilizado depois em outros concursos.</li>
-                        </ul>
-                    </div>
-                </section>
-            </div>
-
-            <div class="pdf-upload-progress-track" aria-hidden="true"><div class="pdf-upload-progress-bar" id="pdfUploadProgress"></div></div>
-            <div class="pdf-upload-progress-text" id="pdfUploadProgressText" aria-live="polite"></div>
-            <section id="pdfUploadResultPanel" class="pdf-upload-result-panel" hidden aria-live="polite">
-                <div class="pdf-upload-result-head">
-                    <div><strong>Resultado da importação</strong><p id="pdfUploadResultSummary"></p></div>
-                    <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.copyUploadReport">Copiar relatório</button>
-                </div>
-                <div id="pdfUploadResultList" class="pdf-upload-result-list"></div>
-                <div class="pdf-upload-result-actions">
-                    <button id="btnRetryFailedPdfs" class="btn btn-warning btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.retryFailedUploads" hidden>Tentar novamente os que falharam</button>
-                    <button id="btnRemoveFailedPdfs" class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyLibraryUI.removeFailedUploads" hidden>Remover falhas da lista</button>
-                </div>
-            </section>
-            <div class="modal-actions pdf-modal-actions">
-                <button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.closeUploadModal">Cancelar</button>
-                <button class="btn btn-primary" id="btnSubmitPdfUpload" type="button" data-action="call" data-call="PdfStudyLibraryUI.submitUpload">Adicionar à Biblioteca</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL VINCULAR PDF A CONTEXTO -->
-    <div class="modal-overlay" id="modalPdfLink">
-        <div class="modal">
-            <h3>Vincular PDF ao concurso atual</h3>
-            <p id="pdfLinkDocumentTitle" class="pdf-link-document-title"></p>
-            <div class="form-group"><label for="pdfLinkWorkspace">Workspace</label><select id="pdfLinkWorkspace"></select></div>
-            <div class="form-group"><label for="pdfLinkMateria">Matéria do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkMateria" data-change-call="PdfStudyLibraryUI.onLinkMateriaChange"></select></div>
-            <div class="form-group"><label for="pdfLinkAssunto">Assunto do edital <span class="pdf-field-optional">(opcional)</span></label><select id="pdfLinkAssunto"></select></div>
-            <div class="modal-actions"><button class="btn btn-secondary" type="button" data-action="call" data-call="PdfStudyLibraryUI.closeLinkModal">Cancelar</button><button class="btn btn-primary" id="btnCreatePdfLink" type="button" data-action="call" data-call="PdfStudyLibraryUI.submitLink">Criar vínculo</button></div>
-        </div>
-    </div>
+    <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
 
     <!-- MODAL SELEÇÃO DE MATÉRIA E ASSUNTO PARA ESTUDO FOCADO -->
     <div class="modal-overlay" id="modalFiltroEstudoFC">
@@ -1428,79 +1276,6 @@
 
     <script src="./js/study-domain.js" defer></script>
 
-    <!-- READER PDF.JS OFICIAL — V10.19.0 -->
-    <section id="pdfReaderOverlay" class="pdf-reader-overlay" aria-label="Leitor PDF interno">
-        <header class="pdf-reader-topbar">
-            <div class="pdf-reader-title-group">
-                <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyReader.close">← Biblioteca</button>
-                <div class="pdf-reader-title" id="pdfReaderTitle">PDF</div>
-            </div>
-            <div class="pdf-reader-engine" title="Motor do visualizador">Leitor próprio · Biblioteca</div>
-            <div class="pdf-reader-tools">
-                <div class="pdf-reader-zoom" aria-label="Controles de zoom"><button class="pdf-reader-icon-btn" type="button" data-inline-click="ih-078" title="Diminuir zoom">−</button><output id="pdfReaderZoomValue">100%</output><button class="pdf-reader-icon-btn" type="button" data-inline-click="ih-079" title="Aumentar zoom">＋</button></div>
-                <button id="pdfReaderFitWidth" class="pdf-reader-icon-btn active" type="button" data-action="call" data-call="PdfStudyReader.fitWidth" title="Ajustar à largura">↔ <span>Largura</span></button>
-                <button id="pdfReaderFitPage" class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.fitPage" title="Ajustar página inteira">▣ <span>Página</span></button>
-                <button class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.toggleSearch" title="Localizar palavras ou frases no PDF">⌕ <span>Localizar</span></button>
-                <button class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.openNativeTab" title="Abrir em nova aba">↗</button>
-                <button id="pdfReaderBookmark" class="pdf-reader-icon-btn pdf-reader-bookmark" type="button" data-action="call" data-call="PdfStudyReader.toggleBookmark" title="Marcar página">🔖</button>
-                <button class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.toggleSide" title="Mostrar ou ocultar painel">☰ <span>Painel</span></button>
-            </div>
-        </header>
-        <form id="pdfReaderSearchBar" class="pdf-reader-search-bar" hidden data-inline-submit="ih-080">
-            <span aria-hidden="true">⌕</span><input id="pdfReaderSearchInput" type="search" autocomplete="off" placeholder="Localizar palavra, frase ou período completo" aria-label="Localizar no PDF"><button class="pdf-reader-icon-btn" type="submit">Localizar</button><button class="pdf-reader-icon-btn" type="button" data-action="call" data-call="PdfStudyReader.nextSearchResult" title="Próximo resultado">Próximo ↓</button><output id="pdfReaderSearchCount" aria-live="polite"></output><button class="pdf-reader-icon-btn" type="button" data-inline-click="ih-081" title="Fechar pesquisa">×</button>
-        </form>
-        <div id="pdfReaderSelectionBar" class="pdf-reader-selection-bar show" aria-live="polite">
-            <button class="pdf-reader-copy-btn" type="button" data-action="call" data-call="PdfStudyReader.useClipboardSelection">＋ Colar seleção</button>
-            <span id="pdfReaderSelectionText" class="pdf-reader-selection-text">Selecione diretamente no PDF</span>
-            <div class="pdf-reader-study-actions" aria-label="Ações de estudo">
-                <button class="pdf-reader-action highlight" data-action="call" data-call="PdfStudyReader.openHighlightComposer">Marca-texto</button>
-                <button class="pdf-reader-action underline" data-inline-click="ih-082">Sublinhar</button>
-                <button class="pdf-reader-action note" data-action="call" data-call="PdfStudyReader.promptNote">Anotação</button>
-                <button class="pdf-reader-action flashcard" data-action="call" data-call="PdfStudyReader.openFlashcardComposer">Flashcard</button>
-            </div>
-        </div>
-        <div class="pdf-reader-body">
-            <div id="pdfReaderCanvasWrap" class="pdf-reader-canvas-wrap" role="main"><div id="pdfReaderPageHost" class="pdf-reader-page-host" aria-label="Documento PDF"></div></div>
-            <aside class="pdf-reader-side">
-                <div class="pdf-reader-side-head"><div><strong>Marcações</strong><div id="pdfReaderStatus" class="pdf-reader-status">Use o mouse, roda ou setas.</div></div><button class="btn btn-secondary btn-sm" data-action="call" data-call="PdfStudyReader.toggleSide">×</button></div>
-                <div id="pdfReaderAnnotationsList" class="pdf-reader-side-list"></div>
-                <div class="pdf-reader-side-actions"><div class="pdf-export-menu-wrap"><button id="pdfExportMenuButton" class="pdf-reader-side-action primary" type="button" aria-haspopup="menu" aria-expanded="false" data-action="call" data-call="PdfStudyReader.toggleExportMenu">↑ Exportar⌄</button><div id="pdfExportMenu" class="pdf-export-menu" role="menu" hidden><button type="button" role="menuitem" data-inline-click="ih-083">Exportar como DOC</button><button type="button" role="menuitem" data-inline-click="ih-084">Exportar como TXT</button></div></div><button class="pdf-reader-side-action" data-action="call" data-call="PdfStudyReader.importNotes" title="Importar anotações da matéria">↓ Importar</button></div>
-            </aside>
-        </div>
-        <div id="modalPdfFlashcard" class="pdf-reader-flashcard-modal" aria-label="Criar flashcard do trecho selecionado">
-            <div class="modal-card">
-                <h3>Novo flashcard a partir do trecho</h3>
-                <p id="pdfFlashcardContext">—</p>
-                <div class="pdf-reader-flashcard-taxonomy">
-                    <label><span class="pdf-reader-import-hint">Matéria (opcional)</span><input id="pdfFlashcardMateria" type="text" maxlength="180" placeholder="Ex.: Direito Penal"></label>
-                    <label><span class="pdf-reader-import-hint">Assunto (opcional)</span><input id="pdfFlashcardAssunto" type="text" maxlength="300" placeholder="Ex.: Teoria do crime"></label>
-                </div>
-                <label>
-                    <span class="pdf-reader-import-hint">Pergunta sugerida automaticamente</span>
-                    <input id="pdfFlashcardQuestion" type="text" maxlength="500" placeholder="Pergunta do flashcard">
-                </label>
-                <label>
-                    <span class="pdf-reader-import-hint">Resposta</span>
-                    <textarea id="pdfFlashcardAnswer" placeholder="Resposta do flashcard"></textarea>
-                </label>
-                <p id="pdfFlashcardAiStatus" class="pdf-reader-ai-status" aria-live="polite">A pergunta será aprimorada automaticamente.</p>
-                <div class="pdf-reader-flashcard-actions">
-                    <button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyReader.closeFlashcardComposer">Cancelar</button>
-                    <button id="pdfFlashcardAiButton" class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyReader.enhanceFlashcardWithAI">Gerar novamente com IA</button>
-                    <button class="btn btn-success btn-sm" type="button" data-action="call" data-call="PdfStudyReader.createFlashcard">Salvar flashcard</button>
-                </div>
-            </div>
-        </div>
-        <div id="modalPdfHighlight" class="pdf-reader-flashcard-modal" aria-label="Configurar marca-texto">
-            <div class="modal-card pdf-reader-highlight-card">
-                <h3>Personalizar marca-texto</h3>
-                <div id="pdfHighlightPreview" class="pdf-reader-highlight-preview">Exemplo de marcação</div>
-                <label><span class="pdf-reader-import-hint">Cor</span><input id="pdfHighlightColor" type="color" value="#fff176" data-input-call="PdfStudyReader.updateHighlightPreview"></label>
-                <label><span class="pdf-reader-import-hint">Opacidade: <output id="pdfHighlightOpacityValue">25%</output></span><input id="pdfHighlightOpacity" type="range" min="8" max="65" value="25" data-input-call="PdfStudyReader.updateHighlightPreview"></label>
-                <div class="pdf-reader-flashcard-actions"><button class="btn btn-secondary btn-sm" type="button" data-action="call" data-call="PdfStudyReader.closeHighlightComposer">Cancelar</button><button class="btn btn-warning btn-sm" type="button" data-action="call" data-call="PdfStudyReader.applyHighlight">Aplicar marca-texto</button></div>
-            </div>
-        </div>
-    </section>
 
     <script src="./js/core/edital-integrity.js" defer></script>
     <script src="./js/core/local-backup-store.js" defer></script>
@@ -1509,11 +1284,10 @@
     <script src="./js/app-auth.js" defer></script>
     <script src="./js/core/study-events.js" defer></script>
     <!-- Runtime cognitivo secundário é carregado após DOMContentLoaded pelo módulo de navegação. -->
-    <!-- IA/edital e Biblioteca PDF são carregados sob demanda. -->
+    <!-- IA/edital é carregada sob demanda. -->
     <script src="./js/app-ui.js" defer></script>
     <script src="./js/app-pwa.js" defer></script>
 
-<div id="modalPdfNoteEditor" class="pdf-note-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="pdfNoteEditorTitle"><div class="pdf-note-card"><div class="pdf-note-head"><div><h3 id="pdfNoteEditorTitle">Nova anotação</h3><p>Edite como em uma folha de estudos.</p></div><button type="button" class="btn btn-secondary btn-sm" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Fechar</button></div><div class="pdf-note-toolbar" role="toolbar" aria-label="Formatação da anotação"><button type="button" data-inline-click="ih-085"><b>B</b></button><button type="button" data-inline-click="ih-086"><i>I</i></button><button type="button" data-inline-click="ih-087"><u>U</u></button><label>Tamanho <select data-inline-change="ih-088"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="4">Grande</option><option value="5">Título</option></select></label></div><div id="pdfNoteEditor" class="pdf-note-paper" contenteditable="true" spellcheck="true" aria-label="Conteúdo da anotação"></div><div class="pdf-note-actions"><button type="button" class="btn btn-secondary" data-action="call" data-call="PdfStudyReader.closePdfNoteEditor">Cancelar</button><button type="button" class="btn btn-primary" data-action="call" data-call="PdfStudyReader.savePdfNoteEditor">Salvar anotação</button></div></div></div>
 </body>
 </html>
 

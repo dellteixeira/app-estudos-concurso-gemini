@@ -13,7 +13,7 @@ test('batch5 keeps inline-style debt at or below 44',()=>{
 
 test('batch5 auxiliary targets use semantic classes',()=>{
   const html=read('public/index.html');
-  for(const cls of ['flashcard-bulk-import','flashcard-bulk-help','flashcard-bulk-targets','flashcard-bulk-select','flashcard-bulk-textarea','flashcard-anki-header','flashcard-anki-title','flashcard-anki-actions','pdf-link-document-title','modal-backup-manager','backup-manager-dialog','backup-manager-actions','schedule-method-help','schedule-method-options','schedule-start-card','form-control-full','schedule-hours-input','schedule-weekend-options']){
+  for(const cls of ['flashcard-bulk-import','flashcard-bulk-help','flashcard-bulk-targets','flashcard-bulk-select','flashcard-bulk-textarea','flashcard-anki-header','flashcard-anki-title','flashcard-anki-actions','modal-backup-manager','backup-manager-dialog','backup-manager-actions','schedule-method-help','schedule-method-options','schedule-start-card','form-control-full','schedule-hours-input','schedule-weekend-options']){
     assert.match(html,new RegExp(`\\b${cls}\\b`),`missing .${cls}`);
   }
 });
