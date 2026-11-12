@@ -109,17 +109,42 @@ function buildContext(topicId,extra={}){
     methodEvidence:methodEvidence(profile)
   });
 }
-async function authToken(){
-  try{const result=await global.supabaseClient?.auth?.getSession?.();return result?.data?.session?.access_token||''}catch(_){return''}
+async function authToken({forceRefresh=false}={}){
+  const auth=global.supabaseClient?.auth;
+  if(!auth)return '';
+  try{
+    if(forceRefresh&&typeof auth.refreshSession==='function'){
+      const refreshed=await auth.refreshSession();
+      return refreshed?.data?.session?.access_token||'';
+    }
+    const result=await auth.getSession?.();
+    const session=result?.data?.session||null;
+    if(session?.access_token)return session.access_token;
+    if(typeof auth.refreshSession==='function'){
+      const refreshed=await auth.refreshSession();
+      return refreshed?.data?.session?.access_token||'';
+    }
+  }catch(error){
+    console.warn('Tutor contextual não conseguiu validar/renovar a sessão.',error);
+  }
+  return '';
+}
+async function callTutorApi(token,prompt,context){
+  return fetch('/api/ai/contextual-tutor',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({question:prompt,context})});
 }
 async function ask(topicId,question,extra={}){
   const prompt=clean(question,MAX_QUESTION);
   if(!prompt)throw new Error('Digite uma pergunta para o Tutor.');
-  const token=await authToken();
-  if(!token)throw new Error('Sessão expirada. Entre novamente para usar o Tutor.');
   const context=buildContext(topicId,extra);
-  const response=await fetch('/api/ai/contextual-tutor',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify({question:prompt,context})});
+  let token=await authToken();
+  if(!token)throw new Error('Não foi possível renovar sua sessão. Entre novamente para usar o Tutor.');
+  let response=await callTutorApi(token,prompt,context);
+  if(response.status===401){
+    token=await authToken({forceRefresh:true});
+    if(token)response=await callTutorApi(token,prompt,context);
+  }
   const data=await response.json().catch(()=>({}));
+  if(response.status===401)throw new Error('Sua sessão realmente expirou. Entre novamente para continuar usando o Tutor.');
   if(!response.ok)throw new Error(data?.error||`Falha no Tutor (${response.status}).`);
   return data;
 }
