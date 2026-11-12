@@ -47,3 +47,19 @@ test('estilos críticos da interface são carregados diretamente no HTML',()=>{
   assert.match(html,/data-canonical-ui="1"/);
   assert.match(html,new RegExp(`responsive-polish-v${releaseVersion}\\.css[^>]*data-responsive-release-delta="1"`));
 });
+
+
+test('menu compacto usa roteador único para ações principais',()=>{
+  assert.match(html,/data-action="sync-now"/);
+  assert.match(html,/data-action="view-edital-pdf"/);
+  assert.match(html,/data-change-action="import-json"/);
+  assert.match(html,/data-action="analyze-edital-ai"/);
+  assert.match(html,/data-action="json-ai-help"/);
+  assert.doesNotMatch(html,/data-inline-click="ih-00[1245]"/);
+  assert.doesNotMatch(html,/data-inline-change="ih-003"/);
+  assert.match(nav,/'sync-now'/);
+  assert.match(nav,/'view-edital-pdf'/);
+  assert.match(nav,/'analyze-edital-ai'/);
+  assert.match(nav,/'json-ai-help'/);
+  assert.match(nav,/changeAction === 'import-json'/);
+});
