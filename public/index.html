@@ -107,14 +107,14 @@
                     <span aria-hidden="true"></span>
                 </button>
                 <div id="compactActionsDropdown" class="compact-actions-dropdown" role="menu" hidden aria-hidden="true">
-                    <button class="compact-menu-item" type="button" data-inline-click="ih-001" role="menuitem">Sincronizar Agora</button>
-                    <button class="compact-menu-item" type="button" data-inline-click="ih-002" role="menuitem">Ver / Anexar Edital PDF</button>
+                    <button class="compact-menu-item" type="button" data-action="sync-now" role="menuitem">Sincronizar Agora</button>
+                    <button class="compact-menu-item" type="button" data-action="view-edital-pdf" role="menuitem">Ver / Anexar Edital PDF</button>
                     <label class="compact-menu-item compact-menu-file" role="menuitem">
                         Importar JSON
-                        <input type="file" id="jsonInput" accept=".json" hidden data-inline-change="ih-003">
+                        <input type="file" id="jsonInput" accept=".json" hidden data-change-action="import-json">
                     </label>
-                    <button class="compact-menu-item" type="button" data-inline-click="ih-004" role="menuitem">Analisar Edital com IA</button>
-                    <button class="compact-menu-item" type="button" data-inline-click="ih-005" role="menuitem">Como Gerar JSON com IA</button>
+                    <button class="compact-menu-item" type="button" data-action="analyze-edital-ai" role="menuitem">Analisar Edital com IA</button>
+                    <button class="compact-menu-item" type="button" data-action="json-ai-help" role="menuitem">Como Gerar JSON com IA</button>
                     <button class="compact-menu-item" type="button" data-action="call" data-call="clearData" role="menuitem">Limpar Edital Atual</button>
                     <div class="compact-menu-divider" aria-hidden="true"></div>
                     <button class="compact-menu-item" type="button" data-action="open-account" role="menuitem" title="Abrir dados e segurança da conta">Conta</button>
