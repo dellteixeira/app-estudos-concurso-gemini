@@ -654,11 +654,6 @@
         // Generated once from the former static inline handlers. Explicit external functions only.
         (function installExternalizedInlineHandlers() {
             const adapters = {
-            'ih-001': function(event) { handleActionButton(this, forceFullSync) },
-            'ih-002': function(event) { handleActionButton(this, openModalViewEdital) },
-            'ih-003': function(event) { handleActionButton(this.parentElement, importJSON, event) },
-            'ih-004': function(event) { handleActionButton(this, openModalAnaliseEditalIA) },
-            'ih-005': function(event) { handleActionButton(this, openModalPromptIA) },
             'ih-006': function(event) { addManualItem(event) },
             'ih-007': function(event) { openMobileEditalFieldEditor('materia', this) },
             'ih-008': function(event) { openMobileEditalFieldEditor('assunto', this) },
@@ -739,7 +734,7 @@
 (function loadNavigationRuntime(){
     if (window.AppNavigation || document.querySelector('script[data-navigation-runtime]')) return;
     const script = document.createElement('script');
-    script.src = './js/ui/navigation.js?v=10.64.71';
+    script.src = './js/ui/navigation.js?v=10.64.72';
     script.async = false;
     script.dataset.navigationRuntime = '1';
     script.addEventListener('error', () => console.error('Falha ao carregar o runtime de navegação.'), { once:true });

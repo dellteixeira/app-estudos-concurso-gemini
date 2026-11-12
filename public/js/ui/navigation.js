@@ -1,7 +1,7 @@
 (function (global) {
     'use strict';
 
-    const CORE_VERSION = '10.64.71';
+    const CORE_VERSION = '10.64.72';
     let coreRuntimePromise = null;
 
     function ensureCanonicalUiStyle() {
@@ -15,7 +15,7 @@
         if (!document.querySelector('link[data-responsive-polish]')) {
             const polish = document.createElement('link');
             polish.rel = 'stylesheet';
-            polish.href = './css/responsive-polish-v10.64.71.css?v=10.64.71';
+            polish.href = './css/responsive-polish-v10.64.72.css?v=10.64.72';
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
         }
@@ -200,10 +200,10 @@
         'auth-login': () => callGlobal('handleLogin'),
         'auth-signup': () => callGlobal('handleSignUp'),
         'toggle-modern-tools': () => callGlobal('toggleModernTools'),
-        'sync-now': element => callGlobal('handleActionButton', element, global.forceFullSync),
-        'view-edital-pdf': element => callGlobal('handleActionButton', element, global.openModalViewEdital),
-        'analyze-edital-ai': element => callGlobal('handleActionButton', element, global.openModalAnaliseEditalIA),
-        'json-ai-help': element => callGlobal('handleActionButton', element, global.openModalPromptIA),
+        'sync-now': element => callGlobal('forceFullSync', { target: element }),
+        'view-edital-pdf': () => callGlobal('openModalViewEdital'),
+        'analyze-edital-ai': () => callGlobal('openModalAnaliseEditalIA'),
+        'json-ai-help': () => callGlobal('openModalPromptIA'),
         'new-concurso': () => callGlobal('openModalNovoConcurso'),
         'rename-concurso': () => callGlobal('renomearConcursoAtual'),
         'delete-concurso': element => callGlobal('removerConcursoAtual', element),
@@ -239,8 +239,7 @@
             const element = event.target.closest('[data-change-action], [data-change-call]');
             if (!element) return;
             if (element.dataset.changeAction === 'import-json') {
-                const host = element.closest('.compact-menu-item') || element;
-                callGlobal('handleActionButton', host, global.importJSON, event);
+                callGlobal('importJSON', event);
                 return;
             }
             if (element.dataset.changeAction === 'change-concurso') {
