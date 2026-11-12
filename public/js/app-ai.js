@@ -2095,8 +2095,6 @@
             }
         });
 
-        function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
-
         function updateDesktopStickyTabsOffset() {
             if (window.matchMedia('(max-width: 900px)').matches) return;
             const header = document.querySelector('header.modern-header');
