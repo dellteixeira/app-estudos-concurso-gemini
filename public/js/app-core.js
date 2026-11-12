@@ -4,6 +4,8 @@ const SUPABASE_URL = 'https://vqtcveixmwiaoweimdik.supabase.co';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
+        // Compartilha a única instância autenticada com módulos carregados sob demanda.
+        window.supabaseClient = supabaseClient;
 
         const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         const PALETA_CORES_MATERIAS = [
