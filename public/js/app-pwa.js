@@ -103,6 +103,8 @@
             }
         });
 
+        function toggleDarkMode() { document.body.classList.toggle('light-mode'); }
+
         let appAiRuntimePromise = null;
         function ensureAppAiRuntime() {
             if (window.AppAiRuntime) return Promise.resolve(window.AppAiRuntime);
