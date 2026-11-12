@@ -16,7 +16,7 @@ test('menu compacto substitui a barra horizontal sem duplicar handlers',()=>{
   assert.doesNotMatch(html,/>Mais<\/span>/);
   assert.match(html,/header-utility-cluster\" aria-label=\"Pesquisa\"/);
   for(const action of ['sync-now','view-edital-pdf','analyze-edital-ai','json-ai-help']) {
-    assert.equal((html.match(new RegExp(`data-action="\${action}"`,'g'))||[]).length,1);
+    assert.equal((html.match(new RegExp('data-action="'+action+'"','g'))||[]).length,1);
   }
   assert.equal((html.match(/data-change-action="import-json"/g)||[]).length,1);
   assert.doesNotMatch(html,/ih-001|ih-002|ih-003|ih-004|ih-005/);
