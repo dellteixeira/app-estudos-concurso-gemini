@@ -62,3 +62,18 @@ test('Worker publica rota contextual separada do diagnóstico',()=>{
   assert.match(worker,/handleContextualTutor/);
   assert.match(worker,/\/js\/core\/contextual-ai-tutor\.js/);
 });
+
+
+test('Tutor tenta renovar sessão e repete uma vez após 401',()=>{
+  assert.match(source,/refreshSession/);
+  assert.match(source,/forceRefresh:true/);
+  assert.match(source,/if\(response\.status===401\)/);
+  assert.match(source,/callTutorApi\(token,prompt,context\)/);
+});
+
+test('cliente Supabase autenticado é compartilhado com módulos lazy',()=>{
+  const core=fs.readFileSync('public/js/app-core.js','utf8');
+  assert.match(core,/window\.supabaseClient\s*=\s*supabaseClient/);
+  assert.match(core,/persistSession:\s*true/);
+  assert.match(core,/autoRefreshToken:\s*true/);
+});
