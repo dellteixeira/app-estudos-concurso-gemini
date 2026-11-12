@@ -1,7 +1,7 @@
 (function (global) {
     'use strict';
 
-    const CORE_VERSION = '10.64.72';
+    const CORE_VERSION = '10.64.73';
     let coreRuntimePromise = null;
 
     function ensureCanonicalUiStyle() {
@@ -15,7 +15,7 @@
         if (!document.querySelector('link[data-responsive-polish]')) {
             const polish = document.createElement('link');
             polish.rel = 'stylesheet';
-            polish.href = './css/responsive-polish-v10.64.72.css?v=10.64.72';
+            polish.href = './css/responsive-polish-v10.64.73.css?v=10.64.73';
             polish.dataset.responsivePolish = '1';
             document.head.appendChild(polish);
         }
