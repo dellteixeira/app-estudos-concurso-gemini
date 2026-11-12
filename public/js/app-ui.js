@@ -734,7 +734,7 @@
 (function loadNavigationRuntime(){
     if (window.AppNavigation || document.querySelector('script[data-navigation-runtime]')) return;
     const script = document.createElement('script');
-    script.src = './js/ui/navigation.js?v=10.64.73';
+    script.src = './js/ui/navigation.js?v=10.64.74';
     script.async = false;
     script.dataset.navigationRuntime = '1';
     script.addEventListener('error', () => console.error('Falha ao carregar o runtime de navegação.'), { once:true });
